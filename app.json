@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "KankreG",
+    "slug": "kankreg",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "ios": {
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Allow KankreG to access your location to auto-fill delivery address.",
+        "NSUserNotificationUsageDescription": "Allow KankreG to send order updates and important announcements."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFCF8"
+      },
+      "permissions": [
+        "INTERNET",
+        "POST_NOTIFICATIONS",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow KankreG to use your location to auto-fill delivery address."
+        }
+      ],
+      "expo-notifications",
+      "expo-asset",
+      "expo-font"
+    ]
+  }
+}

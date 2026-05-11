@@ -20,7 +20,7 @@ const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
 const app = express();
 app.disable("x-powered-by");
 
-const allowedOrigins = [
+const defaultAllowedOrigins = [
   "http://localhost:8081",
   "http://localhost:8082",
   "http://localhost:8083",
@@ -30,6 +30,13 @@ const allowedOrigins = [
   "https://novarosolution.com",
   "https://www.novarosolution.com",
 ];
+
+const configuredOrigins = String(process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...configuredOrigins])];
 
 const corsOptions = {
   origin(origin, callback) {

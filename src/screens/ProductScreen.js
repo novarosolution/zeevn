@@ -731,7 +731,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth + 96, default: "100%" }),
+    maxWidth: Platform.select({ web: layout.maxContentWidth + 48, default: "100%" }),
   },
   container: {
     ...customerPanel(c, shadowPremium, isDark),
@@ -753,7 +753,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     position: "relative",
     ...Platform.select({
       web: {
-        minHeight: 360,
+        minHeight: 320,
       },
       default: {},
     }),
@@ -829,7 +829,7 @@ function createProductStyles(c, shadowPremium, isDark) {
   heroTopRow: {
     position: "absolute",
     top: spacing.sm,
-    left: 72,
+    left: 64,
     right: spacing.sm,
     flexDirection: "row",
     justifyContent: "flex-end",
@@ -900,12 +900,12 @@ function createProductStyles(c, shadowPremium, isDark) {
   galleryRow: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.xs,
-    gap: spacing.sm,
+    gap: spacing.xs + 2,
     alignItems: "center",
   },
   thumbWrap: {
-    width: 72,
-    height: 72,
+    width: 64,
+    height: 64,
     borderRadius: radius.lg + 4,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: isDark ? c.border : "rgba(63, 63, 70, 0.22)",

@@ -36,9 +36,9 @@ function createStyles(c, isDark, semantic) {
       flexDirection: "row",
       alignItems: "center",
       alignSelf: "flex-start",
-      marginBottom: spacing.lg,
-      paddingVertical: 8,
-      paddingRight: spacing.md,
+      marginBottom: spacing.md,
+      paddingVertical: 6,
+      paddingRight: spacing.sm + 2,
       paddingLeft: spacing.sm,
       borderRadius: semanticRadius.full,
       borderWidth: StyleSheet.hairlineWidth,
@@ -48,7 +48,7 @@ function createStyles(c, isDark, semantic) {
       ...Platform.select({
         web: {
           cursor: "pointer",
-          transition: "background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease",
+          transition: "background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease",
         },
         default: {},
       }),
@@ -58,8 +58,7 @@ function createStyles(c, isDark, semantic) {
       borderColor: isDark ? semantic.border.accent : ALCHEMY.lineStrong,
       ...Platform.select({
         web: {
-          transform: [{ translateY: -1 }],
-          boxShadow: "0 8px 18px rgba(24, 24, 27, 0.1)",
+          boxShadow: "0 4px 10px rgba(24, 24, 27, 0.08)",
         },
         default: {},
       }),

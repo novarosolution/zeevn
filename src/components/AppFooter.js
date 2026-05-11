@@ -11,7 +11,6 @@ import {
   APP_TAGLINE,
   APP_WORDMARK_SUBLINE,
   FOOTER_COMPACT,
-  RAZORPAY_PAY_URL,
 } from "../content/appContent";
 import { useTheme } from "../context/ThemeContext";
 import { SUPPORT_EMAIL_DISPLAY } from "../constants/brand";
@@ -51,7 +50,6 @@ export default function AppFooter({ webTight = false }) {
   const supportMeta = String(FOOTER_COMPACT.chatSupport247 || "").trim();
   const engineerName = String(APP_ENGINEER_NAME || "").trim();
   const engineerUrl = String(APP_ENGINEER_URL || "").trim();
-  const razorpayUrl = String(RAZORPAY_PAY_URL || "").trim();
   const hasSupportPrimary = Boolean(needHelp && supportEmail);
   const hasSupportSecondary = Boolean(customerCare && supportMeta);
   const navLinks = APP_FOOTER_NAV_LINKS.filter((item) => item?.route && item?.label);
@@ -109,22 +107,13 @@ export default function AppFooter({ webTight = false }) {
         </View>
       ) : null}
 
-      {razorpayUrl ? (
-        <Text style={[styles.engineerLine, { marginTop: hasSupportPrimary || hasSupportSecondary ? spacing.sm : spacing.md }]}>
-          <Text
-            style={styles.engineerLink}
-            onPress={() => Linking.openURL(razorpayUrl)}
-            accessibilityRole="link"
-            accessibilityLabel="Pay with Razorpay"
-          >
-            Pay online — Razorpay
-          </Text>
-        </Text>
-      ) : null}
+      <Text style={[styles.engineerLine, { marginTop: hasSupportPrimary || hasSupportSecondary ? spacing.sm : spacing.md }]}>
+        {FOOTER_COMPACT.onlinePaymentCta}
+      </Text>
 
       {engineerName && engineerUrl ? (
         <Text style={styles.engineerLine} accessibilityRole="text">
-          App by{" "}
+          {FOOTER_COMPACT.engineerPrefix}{" "}
           <Text
             style={styles.engineerLink}
             onPress={() => Linking.openURL(engineerUrl)}
@@ -143,9 +132,9 @@ export default function AppFooter({ webTight = false }) {
 function createFooterStyles(c, shadowLift, isDark, semantic, webTight) {
   return StyleSheet.create({
     footer: {
-      marginTop: Platform.select({ web: webTight ? spacing.lg : spacing.xxl, default: spacing.xl }),
-      paddingVertical: spacing.xl + 2,
-      paddingHorizontal: Platform.select({ web: spacing.xl + 8, default: spacing.lg + 2 }),
+      marginTop: Platform.select({ web: webTight ? spacing.md + 2 : spacing.xl, default: spacing.xl }),
+      paddingVertical: spacing.lg,
+      paddingHorizontal: Platform.select({ web: spacing.lg + 2, default: spacing.lg }),
       borderRadius: semanticRadius.panel,
       backgroundColor: isDark ? c.surface : ALCHEMY.ivory,
       borderWidth: StyleSheet.hairlineWidth,
@@ -159,12 +148,12 @@ function createFooterStyles(c, shadowLift, isDark, semantic, webTight) {
             ? undefined
             : "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(247,249,252,1))",
           boxShadow: isDark
-            ? "0 18px 38px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05)"
-            : "0 14px 28px rgba(15, 23, 42, 0.07), inset 0 1px 0 rgba(255,255,255,0.94)",
+            ? "0 12px 24px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.05)"
+            : "0 10px 20px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255,255,255,0.94)",
           maxWidth: 1280,
           alignSelf: "center",
           width: "100%",
-          transition: "box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease",
+          transition: "box-shadow 0.22s ease, border-color 0.22s ease",
         },
         default: {},
       }),
@@ -203,12 +192,12 @@ function createFooterStyles(c, shadowLift, isDark, semantic, webTight) {
     offerLine: {
       marginTop: spacing.sm,
       color: c.textSecondary,
-      fontSize: typography.body,
+      fontSize: typography.bodySmall,
       fontFamily: fonts.semibold,
-      lineHeight: 24,
+      lineHeight: 20,
     },
     linksRow: {
-      marginTop: spacing.md,
+      marginTop: spacing.sm + 2,
       flexDirection: "row",
       flexWrap: "wrap",
       alignItems: "center",
@@ -225,9 +214,8 @@ function createFooterStyles(c, shadowLift, isDark, semantic, webTight) {
     linkPressHoverLift: Platform.select({
       web: {
         boxShadow: isDark
-          ? "0 10px 18px rgba(0,0,0,0.18)"
-          : "0 10px 18px rgba(15, 23, 42, 0.08)",
-        transform: [{ translateY: -1 }],
+          ? "0 6px 12px rgba(0,0,0,0.16)"
+          : "0 6px 12px rgba(15, 23, 42, 0.06)",
       },
       default: {},
     }),
@@ -236,7 +224,7 @@ function createFooterStyles(c, shadowLift, isDark, semantic, webTight) {
     },
     linkText: {
       color: c.primary,
-      fontSize: typography.bodySmall + 1,
+      fontSize: typography.bodySmall,
       fontFamily: fonts.bold,
     },
     sep: {
@@ -251,7 +239,7 @@ function createFooterStyles(c, shadowLift, isDark, semantic, webTight) {
       backgroundColor: isDark ? c.border : ALCHEMY.lineStrong,
     },
     supportRow: {
-      marginTop: spacing.sm,
+      marginTop: spacing.xs + 4,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",

@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, RefreshControl, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Animated from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import AppFooter from "../components/AppFooter";
 import BottomNavBar from "../components/BottomNavBar";
 import AuthGateShell from "../components/AuthGateShell";
@@ -226,23 +225,6 @@ export default function NotificationsScreen({ navigation }) {
         <GoldHairline marginVertical={spacing.sm} />
         <SectionReveal preset="fade-up" delay={40}>
         <View style={styles.panel}>
-          {Platform.OS === "web" ? (
-            <View style={styles.headerRow}>
-              <View style={styles.titleRow}>
-                <View style={styles.titleIconWrap}>
-                  <Ionicons name="mail-unread-outline" size={22} color={c.secondary} />
-                </View>
-                <Text style={styles.title}>{NOTIFICATIONS_SCREEN.panelTitle}</Text>
-              </View>
-              <PremiumButton
-                label={NOTIFICATIONS_SCREEN.refreshCta}
-                iconLeft="refresh-outline"
-                variant="ghost"
-                size="sm"
-                onPress={loadNotifications}
-              />
-            </View>
-          ) : null}
           {error ? (
             <View style={styles.bannerWrap}>
               <PremiumErrorBanner severity="error" message={error} compact />

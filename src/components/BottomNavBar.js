@@ -11,6 +11,7 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { isAdminRouteName } from "../constants/adminNav";
+import { CUSTOMER_NAV_LINKS } from "../content/appContent";
 import { HERITAGE } from "../theme/customerAlchemy";
 
 const useNativeDriver = Platform.OS !== "web";
@@ -127,14 +128,14 @@ export default function BottomNavBar() {
     return [
       {
         key: "Home",
-        label: "Home",
+        label: CUSTOMER_NAV_LINKS.home.label,
         icon: "home-outline",
         iconActive: "home",
         onPress: () => navigateTab("Home"),
       },
       {
         key: "Cart",
-        label: "Cart",
+        label: CUSTOMER_NAV_LINKS.cart.label,
         icon: "bag-outline",
         iconActive: "bag",
         onPress: () => navigateTab("Cart", true),
@@ -143,7 +144,7 @@ export default function BottomNavBar() {
       ...adminTab,
       {
         key: "Profile",
-        label: "Profile",
+        label: CUSTOMER_NAV_LINKS.profile.label,
         icon: "person-outline",
         iconActive: "person",
         onPress: () => navigateTab("Profile", true),
@@ -179,23 +180,23 @@ export default function BottomNavBar() {
           flexDirection: "row",
           borderRadius: semanticRadius.full,
           borderWidth: StyleSheet.hairlineWidth,
-          borderTopWidth: 2,
+          borderTopWidth: 1,
           borderTopColor: isDark ? semantic.border.accent : HERITAGE.amberMid,
           borderColor: isDark ? semantic.border.subtle : colors.border,
           backgroundColor: isDark ? colors.surfaceOverlay : "rgba(255,255,255,0.9)",
-          paddingVertical: 10,
-          paddingHorizontal: spacing.sm + 2,
+          paddingVertical: 7,
+          paddingHorizontal: spacing.xs + 2,
           justifyContent: "space-around",
           overflow: "hidden",
           ...platformShadow({
-            web: { boxShadow: "0 18px 36px rgba(15, 23, 42, 0.12), 0 6px 16px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255,255,255,0.78)" },
+            web: { boxShadow: "0 12px 24px rgba(15, 23, 42, 0.1), 0 4px 12px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255,255,255,0.78)" },
             ios: {
               shadowColor: colors.shadow,
-              shadowOffset: { width: 0, height: 14 },
+              shadowOffset: { width: 0, height: 10 },
               shadowOpacity: isDark ? 0.3 : 0.08,
-              shadowRadius: 20,
+              shadowRadius: 16,
             },
-            android: { elevation: 10 },
+            android: { elevation: 8 },
           }),
         },
         activeIndicator: {
@@ -277,8 +278,8 @@ export default function BottomNavBar() {
 const styles = StyleSheet.create({
   mobileContainer: {
     position: "absolute",
-    left: spacing.md,
-    right: spacing.md,
+    left: spacing.sm + 2,
+    right: spacing.sm + 2,
     bottom: spacing.md + 2,
   },
   glassShine: {
@@ -286,7 +287,7 @@ const styles = StyleSheet.create({
     left: 10,
     right: 10,
     top: 4,
-    height: 14,
+    height: 8,
     borderRadius: semanticRadius.full,
     backgroundColor: "rgba(255,255,255,0.28)",
   },
@@ -301,10 +302,10 @@ const styles = StyleSheet.create({
   tabItem: {
     alignItems: "center",
     justifyContent: "center",
-    minWidth: 62,
-    minHeight: 44,
-    paddingHorizontal: 9,
-    paddingVertical: 7,
+    minWidth: 58,
+    minHeight: 40,
+    paddingHorizontal: 7,
+    paddingVertical: 5,
     borderRadius: semanticRadius.control,
   },
   tabItemActive: {
@@ -316,7 +317,7 @@ const styles = StyleSheet.create({
   },
   tabLabel: {
     marginTop: 2,
-    fontSize: typography.overline + 1,
+    fontSize: typography.overline - 1,
     letterSpacing: 0.28,
   },
   badge: {

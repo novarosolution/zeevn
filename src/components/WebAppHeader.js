@@ -19,6 +19,7 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { WEB_HEADER_HEIGHT, WEB_Z_INDEX } from "../theme/web";
 import { SEARCH_PLACEHOLDER } from "../constants/brand";
+import { CUSTOMER_NAV_LINKS } from "../content/appContent";
 import BrandHeaderMark from "./BrandHeaderMark";
 import LocationIconButton from "./LocationIconButton";
 import useReducedMotion from "../hooks/useReducedMotion";
@@ -150,12 +151,18 @@ export default function WebAppHeader({ navigationRef }) {
         ]
       : [];
     return [
-      { key: "Home", label: "Home", icon: "home-outline", iconActive: "home", onPress: () => go("Home") },
+      {
+        key: "Home",
+        label: CUSTOMER_NAV_LINKS.home.label,
+        icon: "home-outline",
+        iconActive: "home",
+        onPress: () => go("Home"),
+      },
       ...deliveryNavItem,
       ...adminNavItem,
       {
         key: "Cart",
-        label: "Cart",
+        label: CUSTOMER_NAV_LINKS.cart.label,
         icon: "bag-outline",
         iconActive: "bag",
         onPress: () => go("Cart", true),
@@ -163,14 +170,14 @@ export default function WebAppHeader({ navigationRef }) {
       },
       {
         key: "Settings",
-        label: "Settings",
+        label: CUSTOMER_NAV_LINKS.settings.label,
         icon: "settings-outline",
         iconActive: "settings",
         onPress: () => go("Settings", true),
       },
       {
         key: "Profile",
-        label: "Account",
+        label: CUSTOMER_NAV_LINKS.profile.label,
         icon: "person-outline",
         iconActive: "person",
         onPress: () => go("Profile", true),
@@ -475,7 +482,7 @@ const styles = StyleSheet.create({
     zIndex: WEB_Z_INDEX.header,
     height: WEB_HEADER_HEIGHT,
     ...Platform.select({
-      web: { backdropFilter: "blur(14px) saturate(1.05)" },
+      web: { backdropFilter: "blur(12px) saturate(1.04)" },
       default: {},
     }),
   },
@@ -510,14 +517,14 @@ const styles = StyleSheet.create({
   },
   inner: {
     flex: 1,
-    maxWidth: layout.maxContentWidth + 48,
+    maxWidth: layout.maxContentWidth + 24,
     width: "100%",
     alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Platform.select({ web: spacing.xl, default: spacing.md }),
-    paddingVertical: 10,
+    paddingHorizontal: Platform.select({ web: spacing.lg + 2, default: spacing.md }),
+    paddingVertical: 8,
     gap: spacing.md,
     ...Platform.select({
       web: { transition: "padding 0.2s ease" },
@@ -525,7 +532,7 @@ const styles = StyleSheet.create({
     }),
   },
   innerCompact: {
-    paddingVertical: 6,
+    paddingVertical: 5,
   },
   brandCluster: {
     flexDirection: "row",
@@ -535,13 +542,13 @@ const styles = StyleSheet.create({
   },
   searchFake: {
     flex: 1,
-    maxWidth: 520,
+    maxWidth: 460,
     minWidth: 100,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingVertical: 11,
-    paddingHorizontal: spacing.lg,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.md + 2,
     borderRadius: semanticRadius.full,
     borderWidth: 1,
     ...Platform.select({
@@ -554,7 +561,7 @@ const styles = StyleSheet.create({
     }),
   },
   searchFakeCompact: {
-    paddingVertical: 9,
+    paddingVertical: 8,
   },
   searchFakeText: {
     flex: 1,
@@ -563,7 +570,7 @@ const styles = StyleSheet.create({
   navRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 4,
     flexShrink: 0,
   },
   navRowPhone: {
@@ -573,8 +580,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+    paddingHorizontal: spacing.sm + 4,
     minHeight: 44,
     borderRadius: semanticRadius.full,
     ...Platform.select({
@@ -592,9 +599,9 @@ const styles = StyleSheet.create({
     minHeight: 36,
   },
   navItemCompact: {
-    paddingVertical: 7,
-    paddingHorizontal: spacing.sm + 4,
-    minHeight: 38,
+    paddingVertical: 6,
+    paddingHorizontal: spacing.sm + 2,
+    minHeight: 36,
   },
   navIconWrap: {
     position: "relative",

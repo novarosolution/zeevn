@@ -228,7 +228,7 @@ function createStyles(c, isDark, multiline) {
       borderRadius: radius.lg,
       backgroundColor: isDark ? c.surfaceMuted : c.surface,
       paddingHorizontal: spacing.md,
-      minHeight: multiline ? 100 : 56,
+      minHeight: multiline ? 96 : 52,
       ...Platform.select({
         web: {
           transition: "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease",
@@ -240,8 +240,8 @@ function createStyles(c, isDark, multiline) {
       ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 0 0 3px rgba(248, 113, 113, 0.14), 0 8px 16px rgba(0,0,0,0.22)"
-            : "0 0 0 3px rgba(220, 38, 38, 0.1), 0 6px 14px rgba(15, 23, 42, 0.06)",
+            ? "0 0 0 3px rgba(248, 113, 113, 0.12), 0 6px 12px rgba(0,0,0,0.2)"
+            : "0 0 0 3px rgba(220, 38, 38, 0.08), 0 4px 10px rgba(15, 23, 42, 0.05)",
         },
         default: {},
       }),
@@ -250,8 +250,8 @@ function createStyles(c, isDark, multiline) {
       ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 0 0 3px rgba(248, 113, 113, 0.16), 0 8px 16px rgba(0,0,0,0.24)"
-            : "0 0 0 3px rgba(220, 38, 38, 0.1), 0 6px 14px rgba(63, 63, 70, 0.05)",
+            ? "0 0 0 3px rgba(248, 113, 113, 0.14), 0 6px 12px rgba(0,0,0,0.22)"
+            : "0 0 0 3px rgba(220, 38, 38, 0.08), 0 4px 10px rgba(63, 63, 70, 0.05)",
         },
         default: {},
       }),
@@ -289,7 +289,7 @@ function createStyles(c, isDark, multiline) {
       fontFamily: fonts.medium,
       fontSize: typography.body,
       lineHeight: typography.body + 6,
-      paddingVertical: 13,
+      paddingVertical: 11,
       includeFontPadding: false,
       ...Platform.select({
         web: { outlineStyle: "none" },
@@ -297,14 +297,14 @@ function createStyles(c, isDark, multiline) {
       }),
     },
     inputWithLabel: {
-      paddingTop: 20,
+      paddingTop: 18,
       paddingBottom: 8,
     },
     inputMultiline: {
-      paddingTop: 24,
-      paddingBottom: 12,
+      paddingTop: 22,
+      paddingBottom: 10,
       textAlignVertical: "top",
-      minHeight: 80,
+      minHeight: 76,
     },
     helperRow: {
       flexDirection: "row",

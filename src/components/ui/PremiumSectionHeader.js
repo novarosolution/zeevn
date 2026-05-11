@@ -101,13 +101,13 @@ function PremiumSectionHeaderBase({
 }
 
 function createStyles(c, isDark, align, compact) {
-  const titleSize = compact ? 21 : 26;
-  const titleSizeWeb = compact ? 23 : 28;
+  const titleSize = compact ? 20 : 25;
+  const titleSizeWeb = compact ? 22 : 27;
 
   return StyleSheet.create({
     wrap: {
       width: "100%",
-      marginBottom: compact ? spacing.sm + 4 : spacing.md + 2,
+      marginBottom: compact ? spacing.sm + 2 : spacing.md,
     },
     row: {
       flexDirection: "row",
@@ -172,8 +172,8 @@ function createStyles(c, isDark, align, compact) {
       }),
     },
     countChip: {
-      paddingHorizontal: 12,
-      paddingVertical: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
       borderRadius: radius.pill,
       backgroundColor: isDark
         ? "rgba(248, 113, 113, 0.16)"
@@ -187,8 +187,8 @@ function createStyles(c, isDark, align, compact) {
     },
     subtitle: {
       fontFamily: fonts.medium,
-      fontSize: 13,
-      lineHeight: 18,
+      fontSize: 12,
+      lineHeight: 17,
       color: c.textMuted,
       marginTop: 2,
     },
@@ -236,7 +236,7 @@ function createStyles(c, isDark, align, compact) {
       color: isDark ? c.primaryBright : c.primaryDark,
     },
     hairlineWrap: {
-      marginTop: 10,
+      marginTop: 8,
       flexDirection: "row",
       alignItems: "center",
       gap: 6,

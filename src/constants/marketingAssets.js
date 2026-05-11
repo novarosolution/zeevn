@@ -3,6 +3,8 @@
  * First slide title/subtitle can be overridden in HomeScreen from admin `homeViewConfig`.
  */
 
+import { HOME_HERO_SLIDE_COPY } from "../content/appContent";
+
 /** Gradient-only hero backgrounds (red / black family). */
 export const HERO_GRADIENT_PRESETS = {
   ember: {
@@ -27,14 +29,13 @@ export const HERO_GRADIENT_PRESETS = {
 
 const _cycle = ["ember", "noir", "flare"];
 
-const HERO_SLIDE_MEDIA = {
-  tradition: require("../../assets/marketing/hero-slide-1.jpg"),
-  trust: require("../../assets/marketing/hero-slide-2.jpg"),
-  premium: require("../../assets/marketing/hero-slide-3.jpg"),
-  catalog: require("../../assets/marketing/hero-slide-11.png"),
-  essentials: require("../../assets/marketing/hero-slide-14.png"),
-  discovery: require("../../assets/marketing/hero-slide-15.png"),
-};
+/**
+ * Single managed customer-facing hero image used in both app and web.
+ * The user requested this exact file from the `web img` folder.
+ */
+export const SHARED_APP_AND_WEB_HERO_IMAGE = require("../../web img/ChatGPT Image May 11, 2026, 08_04_26 PM.png");
+/** @deprecated Prefer `SHARED_APP_AND_WEB_HERO_IMAGE`. */
+export const WEB_MARKETING_SHARED_IMAGE = SHARED_APP_AND_WEB_HERO_IMAGE;
 
 function carouselSlide(i, key, title, subtitle, cta, action) {
   return {
@@ -69,29 +70,29 @@ export const HOME_HERO_WEB_SLIDER_SLIDES = [
   {
     key: "web-hero-a7b4",
     preset: "ember",
-    title: "Trust in every order",
-    subtitle: "Quality, support, and a cart that stays in sync.",
-    cta: "Start shopping",
-    action: "catalog",
-    image: HERO_SLIDE_MEDIA.catalog,
+    title: HOME_HERO_SLIDE_COPY[0].title,
+    subtitle: HOME_HERO_SLIDE_COPY[0].subtitle,
+    cta: HOME_HERO_SLIDE_COPY[0].cta,
+    action: HOME_HERO_SLIDE_COPY[0].action,
+    image: WEB_MARKETING_SHARED_IMAGE,
   },
   {
     key: "web-hero-54c4",
     preset: "noir",
-    title: "Your everyday essentials",
-    subtitle: "Stock up on favourites without compromise.",
-    cta: "See highlights",
-    action: "featured",
-    image: HERO_SLIDE_MEDIA.essentials,
+    title: HOME_HERO_SLIDE_COPY[1].title,
+    subtitle: HOME_HERO_SLIDE_COPY[1].subtitle,
+    cta: HOME_HERO_SLIDE_COPY[1].cta,
+    action: HOME_HERO_SLIDE_COPY[1].action,
+    image: WEB_MARKETING_SHARED_IMAGE,
   },
   {
     key: "web-hero-0500",
     preset: "flare",
-    title: "Curated for you",
-    subtitle: "Quick discovery on the web.",
-    cta: "Explore collection",
-    action: "featured",
-    image: HERO_SLIDE_MEDIA.discovery,
+    title: HOME_HERO_SLIDE_COPY[2].title,
+    subtitle: HOME_HERO_SLIDE_COPY[2].subtitle,
+    cta: HOME_HERO_SLIDE_COPY[2].cta,
+    action: HOME_HERO_SLIDE_COPY[2].action,
+    image: WEB_MARKETING_SHARED_IMAGE,
   },
 ];
 
@@ -105,29 +106,29 @@ export const HOME_HERO_MOBILE_SLIDER_SLIDES = [
   {
     key: "phone-hero-iae",
     preset: "flare",
-    title: "From our kitchen to yours",
-    subtitle: "Tradition-led staples for every day.",
-    cta: "Browse catalog",
-    action: "catalog",
-    image: HERO_SLIDE_MEDIA.tradition,
+    title: HOME_HERO_SLIDE_COPY[0].title,
+    subtitle: HOME_HERO_SLIDE_COPY[0].subtitle,
+    cta: HOME_HERO_SLIDE_COPY[0].cta,
+    action: HOME_HERO_SLIDE_COPY[0].action,
+    image: SHARED_APP_AND_WEB_HERO_IMAGE,
   },
   {
     key: "phone-hero-0808",
     preset: "ember",
-    title: "Pure & natural",
-    subtitle: "Thoughtfully sourced staples you can trust.",
-    cta: "Shop now",
-    action: "catalog",
-    image: HERO_SLIDE_MEDIA.trust,
+    title: HOME_HERO_SLIDE_COPY[1].title,
+    subtitle: HOME_HERO_SLIDE_COPY[1].subtitle,
+    cta: HOME_HERO_SLIDE_COPY[1].cta,
+    action: HOME_HERO_SLIDE_COPY[1].action,
+    image: SHARED_APP_AND_WEB_HERO_IMAGE,
   },
   {
     key: "phone-hero-0909",
     preset: "noir",
-    title: "Small batch quality",
-    subtitle: "Carefully selected for flavour and freshness.",
-    cta: "See highlights",
-    action: "featured",
-    image: HERO_SLIDE_MEDIA.premium,
+    title: HOME_HERO_SLIDE_COPY[2].title,
+    subtitle: HOME_HERO_SLIDE_COPY[2].subtitle,
+    cta: HOME_HERO_SLIDE_COPY[2].cta,
+    action: HOME_HERO_SLIDE_COPY[2].action,
+    image: SHARED_APP_AND_WEB_HERO_IMAGE,
   },
 ];
 

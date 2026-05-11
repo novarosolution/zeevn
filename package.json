@@ -70,6 +70,7 @@
     "react-native-web": "^0.20.0"
   },
   "devDependencies": {
+    "@types/react": "~19.0.10",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~9.2.0",
     "react-native-svg-transformer": "^1.5.3",

@@ -20,7 +20,7 @@ export function adminPanel(c, shadowPremium, isDark) {
     borderRadius: semanticRadius.panel,
     borderTopWidth: 2,
     borderTopColor: dark ? semantic.border.accent : HERITAGE.amberMid,
-    padding: spacing.lg + 6,
+    padding: spacing.lg,
     ...shadowPremium,
   };
   if (Platform.OS !== "web" || !shadowPremium?.boxShadow) {
@@ -49,8 +49,8 @@ export function adminModuleSection(isDark, c) {
   return {
     marginBottom: spacing.lg,
     borderRadius: semanticRadius.card,
-    padding: spacing.md + 4,
-    paddingTop: spacing.sm + 2,
+    padding: spacing.md + 2,
+    paddingTop: spacing.sm,
     backgroundColor: isDark ? semantic.bg.muted : ALCHEMY.creamAlt,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: isDark ? semantic.border.subtle : ALCHEMY.pillInactive,
@@ -66,8 +66,8 @@ export function adminModuleSection(isDark, c) {
       android: { elevation: isDark ? 2 : 1 },
       web: {
         boxShadow: isDark
-          ? "0 12px 28px rgba(0,0,0,0.24), 0 4px 10px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.05)"
-          : "0 12px 26px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 0 0 1px rgba(255,255,255,0.45)",
+          ? "0 10px 22px rgba(0,0,0,0.22), 0 3px 8px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.05)"
+          : "0 10px 20px rgba(15, 23, 42, 0.07), 0 3px 8px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 0 0 1px rgba(255,255,255,0.45)",
         transition: "box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease",
       },
       default: {},

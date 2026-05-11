@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { fonts, spacing, typography } from "../theme/tokens";
@@ -127,7 +127,7 @@ export default function RegisterScreen({ navigation }) {
                   autoCorrect={false}
                   autoComplete="new-password"
                   textContentType="newPassword"
-                  helperText={REGISTER_SCREEN.credentialHelper}
+                  helperText={REGISTER_SCREEN.credentialHelper || undefined}
                 />
               </SectionReveal>
 
@@ -172,12 +172,7 @@ export default function RegisterScreen({ navigation }) {
               />
             </SectionReveal>
 
-            <View style={styles.secondaryDivider}>
-              <View style={styles.secondaryDividerLine} />
-              <Text style={styles.secondaryDividerLabel}>{REGISTER_SCREEN.dividerExisting}</Text>
-              <View style={styles.secondaryDividerLine} />
-            </View>
-
+            <Text style={styles.secondaryLabel}>{REGISTER_SCREEN.dividerExisting}</Text>
             <PremiumButton
               label={REGISTER_SCREEN.signInInsteadCta}
               variant="subtle"
@@ -194,33 +189,22 @@ export default function RegisterScreen({ navigation }) {
 function createRegisterStyles(c) {
   return StyleSheet.create({
   fieldStack: {
-    gap: spacing.sm + 2,
-    marginTop: spacing.lg,
+    gap: spacing.sm,
+    marginTop: spacing.md + 2,
     marginBottom: spacing.sm + 2,
   },
   errorWrap: {
     marginBottom: spacing.sm,
   },
   primaryCta: {
+    marginTop: spacing.sm + 2,
+  },
+  secondaryLabel: {
     marginTop: spacing.md,
-  },
-  secondaryDivider: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginTop: spacing.md + 2,
     marginBottom: spacing.sm,
-  },
-  secondaryDividerLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: c.border,
-  },
-  secondaryDividerLabel: {
-    fontFamily: fonts.bold,
-    fontSize: typography.overline,
-    letterSpacing: 1.4,
-    textTransform: "uppercase",
+    textAlign: "center",
+    fontFamily: fonts.semibold,
+    fontSize: typography.bodySmall,
     color: c.textMuted,
   },
   secondaryActionBtn: {

@@ -4,13 +4,13 @@ const homeViewConfigSchema = new mongoose.Schema(
   {
     heroTitle: {
       type: String,
-      default: "Pure Heritage in Every Drop",
+      default: "Curated pantry essentials, delivered well",
       trim: true,
     },
     heroSubtitle: {
       type: String,
       default:
-        "Slow-churned from the milk of grass-fed cows — golden clarity and aroma rooted in tradition.",
+        "Pure staples, calmer shopping, and faster doorstep delivery.",
       trim: true,
     },
     primeSectionTitle: {

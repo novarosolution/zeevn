@@ -141,8 +141,8 @@ function createStyles(rowMinH, isDark) {
       width: "100%",
       borderRadius: semanticRadius.panel,
       borderWidth: StyleSheet.hairlineWidth,
-      paddingHorizontal: spacing.lg,
-      paddingBottom: 12,
+      paddingHorizontal: spacing.md + 2,
+      paddingBottom: 10,
       overflow: Platform.OS === "web" ? "visible" : "hidden",
       position: "relative",
       ...Platform.select({
@@ -162,7 +162,7 @@ function createStyles(rowMinH, isDark) {
       opacity: 0.96,
     },
     rowBelowAccent: {
-      paddingTop: 12,
+      paddingTop: 10,
     },
     row: {
       flexDirection: "row",
@@ -179,8 +179,8 @@ function createStyles(rowMinH, isDark) {
     },
     backBtn: {
       marginLeft: -2,
-      width: 38,
-      height: 38,
+      width: 36,
+      height: 36,
       borderRadius: semanticRadius.full,
       alignItems: "center",
       justifyContent: "center",
@@ -218,7 +218,7 @@ function createStyles(rowMinH, isDark) {
       letterSpacing: -0.48,
       lineHeight: lineHeight.h3,
       ...Platform.select({
-        web: { fontSize: typography.h2 - 2 },
+        web: { fontSize: typography.h3 + 1 },
         default: {},
       }),
     },
@@ -230,12 +230,12 @@ function createStyles(rowMinH, isDark) {
       opacity: 0.92,
     },
     subtitlePill: {
-      marginTop: 7,
+      marginTop: 6,
       alignSelf: "flex-start",
       borderRadius: semanticRadius.control,
       borderWidth: StyleSheet.hairlineWidth,
-      paddingHorizontal: spacing.sm + 2,
-      paddingVertical: 6,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 5,
       maxWidth: "100%",
     },
     rightCluster: {

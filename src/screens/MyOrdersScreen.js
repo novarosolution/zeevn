@@ -69,7 +69,7 @@ import {
 } from "../utils/orderStatus";
 import PaymentStatusBanner from "../components/payments/PaymentStatusBanner";
 import OrderLiveMapCard from "../components/orders/OrderLiveMapCard";
-import { APP_DISPLAY_NAME, MY_ORDERS_UI, SUPPORT_EMAIL_DISPLAY } from "../content/appContent";
+import { APP_DISPLAY_NAME, MY_ORDERS_UI, SUPPORT_EMAIL_DISPLAY, fillPlaceholders } from "../content/appContent";
 import { formatCompactShippingLine } from "../utils/shippingAddressFormat";
 
 const ORDER_STATUSES_WITH_LIVE_MAP = new Set(["ready_for_pickup", "shipped", "out_for_delivery"]);
@@ -823,7 +823,7 @@ export default function MyOrdersScreen({ navigation, route }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const isWide = width >= 768;
+  const isWide = width >= 860;
   const isPhoneCompact = width < 420;
   const styles = useMemo(
     () => createMyOrdersStyles(c, shadowPremium, isDark, { isWide, isPhoneCompact }),
@@ -1215,36 +1215,36 @@ export default function MyOrdersScreen({ navigation, route }) {
               <View style={styles.statsGridCell}>
                 <PremiumStatCard
                   iconName="receipt-outline"
-                  label="Total"
+                  label={MY_ORDERS_UI.statsTotalLabel}
                   value={String(Math.round(totalOrdersCount))}
-                  hint="All-time orders"
+                  hint={MY_ORDERS_UI.statsTotalHint}
                   tone="gold"
                 />
               </View>
               <View style={styles.statsGridCell}>
                 <PremiumStatCard
                   iconName="rocket-outline"
-                  label="In-flight"
+                  label={MY_ORDERS_UI.statsInFlightLabel}
                   value={String(Math.round(inFlightCount))}
-                  hint="Currently active"
+                  hint={MY_ORDERS_UI.statsInFlightHint}
                   tone="navy"
                 />
               </View>
               <View style={styles.statsGridCell}>
                 <PremiumStatCard
                   iconName="checkmark-done-outline"
-                  label="Delivered"
+                  label={MY_ORDERS_UI.statsDeliveredLabel}
                   value={String(Math.round(deliveredCount))}
-                  hint="Successfully completed"
+                  hint={MY_ORDERS_UI.statsDeliveredHint}
                   tone="green"
                 />
               </View>
               <View style={styles.statsGridCell}>
                 <PremiumStatCard
                   iconName="wallet-outline"
-                  label="Lifetime spend"
+                  label={MY_ORDERS_UI.statsSpendLabel}
                   value={formatINR(Math.round(totalSpentCount))}
-                  hint="Across all orders"
+                  hint={MY_ORDERS_UI.statsSpendHint}
                   tone="neutral"
                 />
               </View>
@@ -1270,7 +1270,7 @@ export default function MyOrdersScreen({ navigation, route }) {
             </View>
             <SkeletonBlock width="100%" height={140} rounded="xl" />
             <SkeletonBlock width="100%" height={140} rounded="xl" />
-            <PremiumLoader size="sm" caption="Loading your orders…" />
+            <PremiumLoader size="sm" caption={MY_ORDERS_UI.loadingCaption} />
           </View>
         ) : orders.length === 0 ? (
           <View style={[styles.panel, styles.emptyPanel]}>
@@ -1288,7 +1288,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                 iconName="cube-outline"
                 title={MY_ORDERS_UI.emptyTitle}
                 description={MY_ORDERS_UI.emptyDescriptionShort}
-                ctaLabel="Browse catalog"
+                ctaLabel={MY_ORDERS_UI.emptyBrowseCta}
                 ctaIconLeft="storefront-outline"
                 onCtaPress={() => navigation.navigate("Home")}
               />
@@ -1298,10 +1298,15 @@ export default function MyOrdersScreen({ navigation, route }) {
           <>
           <View style={styles.filterChipBar}>
             {[
-              { key: "all", label: "All", count: orders.length, tone: "gold" },
-              { key: "active", label: "Active", count: activeOrders.length, tone: "info" },
-              { key: "delivered", label: "Delivered", count: orderStats.delivered, tone: "green" },
-              { key: "cancelled", label: "Cancelled", count: orders.length - orderStats.delivered - activeOrders.length, tone: "red" },
+              { key: "all", label: MY_ORDERS_UI.filterAll, count: orders.length, tone: "gold" },
+              { key: "active", label: MY_ORDERS_UI.filterActive, count: activeOrders.length, tone: "info" },
+              { key: "delivered", label: MY_ORDERS_UI.filterDelivered, count: orderStats.delivered, tone: "green" },
+              {
+                key: "cancelled",
+                label: MY_ORDERS_UI.filterCancelled,
+                count: orders.length - orderStats.delivered - activeOrders.length,
+                tone: "red",
+              },
             ].map((chip) => {
               const active = filter === chip.key;
               const label = chip.count > 0 ? `${chip.label} · ${chip.count}` : chip.label;
@@ -1376,7 +1381,9 @@ export default function MyOrdersScreen({ navigation, route }) {
                   variant="ghost"
                   size="sm"
                   onPress={() => setHistoryExpanded((v) => !v)}
-                  accessibilityLabel={historyExpanded ? "Collapse order history" : "Expand order history"}
+                  accessibilityLabel={
+                    historyExpanded ? MY_ORDERS_UI.collapseHistoryA11y : MY_ORDERS_UI.expandHistoryA11y
+                  }
                   style={styles.historyToggleBtn}
                 />
               </View>
@@ -1391,7 +1398,7 @@ export default function MyOrdersScreen({ navigation, route }) {
               <View style={styles.panel}>
               <View style={styles.orderCardHeader}>
                 <View style={styles.orderTitleBlock}>
-                  <Text style={styles.orderKicker}>Order</Text>
+                  <Text style={styles.orderKicker}>{MY_ORDERS_UI.orderKicker}</Text>
                   <Text style={[styles.orderTitle, isDark ? null : styles.orderTitleLight]}>
                     #{item._shortId}
                   </Text>
@@ -1446,7 +1453,7 @@ export default function MyOrdersScreen({ navigation, route }) {
 
               <View style={styles.summaryBand}>
                 <View style={styles.summaryBandMain}>
-                  <Text style={styles.summaryBandLabel}>Total</Text>
+                  <Text style={styles.summaryBandLabel}>{MY_ORDERS_UI.summaryTotalLabel}</Text>
                   <Text style={[styles.amountMain, styles.amountMainHero]}>{formatINR(item.totalPrice)}</Text>
                 </View>
                 <View style={styles.summaryBandMeta}>
@@ -1506,7 +1513,11 @@ export default function MyOrdersScreen({ navigation, route }) {
                     </View>
                   ))}
                   {(item.products || []).length > 4 ? (
-                    <Text style={styles.itemsMore}>+{(item.products || []).length - 4} more items</Text>
+                    <Text style={styles.itemsMore}>
+                      {fillPlaceholders(MY_ORDERS_UI.moreItemsLabel, {
+                        count: (item.products || []).length - 4,
+                      })}
+                    </Text>
                   ) : null}
                 </View>
               ) : null}
@@ -1532,22 +1543,28 @@ export default function MyOrdersScreen({ navigation, route }) {
                   />
                 ) : null}
                 <PremiumButton
-                  label={downloadingOrderId === item._id ? "Generating invoice..." : "Download invoice PDF"}
+                  label={
+                    downloadingOrderId === item._id ? MY_ORDERS_UI.generatingInvoiceCta : MY_ORDERS_UI.downloadInvoiceCta
+                  }
                   iconLeft="document-text-outline"
                   size="sm"
-                  variant="ghost"
+                  variant="subtle"
                   fullWidth={isPhoneCompact}
-                  disabled={downloadingOrderId === item._id}
+                  disabled
                   onPress={() => handleDownloadInvoice(item)}
                 />
                 {isDeliveredOrder(item.status) ? (
                   <PremiumButton
                     label={
                       item.reward?.claimedAt
-                        ? `Reward claimed (${Number(item.reward?.claimedPoints || item.reward?.eligiblePoints || 25)} pts)`
+                        ? fillPlaceholders(MY_ORDERS_UI.rewardClaimedCta, {
+                            points: Number(item.reward?.claimedPoints || item.reward?.eligiblePoints || 25),
+                          })
                         : claimingRewardOrderId === item._id
-                          ? "Claiming reward..."
-                          : `Claim reward (${Number(item.reward?.eligiblePoints || 25)} pts)`
+                          ? MY_ORDERS_UI.rewardClaimingCta
+                          : fillPlaceholders(MY_ORDERS_UI.rewardClaimCta, {
+                              points: Number(item.reward?.eligiblePoints || 25),
+                            })
                     }
                     iconLeft={item.reward?.claimedAt ? "checkmark-circle-outline" : "gift-outline"}
                     size="sm"
@@ -1564,19 +1581,43 @@ export default function MyOrdersScreen({ navigation, route }) {
               ) : null}
               {expandedOrderId === item._id ? (
                 <View style={styles.detailBox}>
-                  <Text style={styles.detailKicker}>Full order</Text>
-                  <Text style={styles.detailTitle}>Price Breakdown</Text>
-                  <Text style={styles.meta}>Items: {formatINR(item.priceBreakdown?.itemsTotal || 0)}</Text>
-                  <Text style={styles.meta}>Delivery: {formatINR(item.priceBreakdown?.deliveryFee || 0)}</Text>
-                  <Text style={styles.meta}>Platform Fee: {formatINR(item.priceBreakdown?.platformFee || 0)}</Text>
-                  <Text style={styles.meta}>Discount: -{formatINR(item.priceBreakdown?.discountAmount || 0)}</Text>
-                  <Text style={styles.meta}>Payment Method: {item.paymentMethod || "Cash on Delivery"}</Text>
+                  <Text style={styles.detailKicker}>{MY_ORDERS_UI.detailKicker}</Text>
+                  <Text style={styles.detailTitle}>{MY_ORDERS_UI.detailTitle}</Text>
                   <Text style={styles.meta}>
-                    Payment status: {formatPaymentStatusLabel(item.paymentStatus)}
+                    {fillPlaceholders(MY_ORDERS_UI.detailItems, {
+                      amount: formatINR(item.priceBreakdown?.itemsTotal || 0),
+                    })}
+                  </Text>
+                  <Text style={styles.meta}>
+                    {fillPlaceholders(MY_ORDERS_UI.detailDelivery, {
+                      amount: formatINR(item.priceBreakdown?.deliveryFee || 0),
+                    })}
+                  </Text>
+                  <Text style={styles.meta}>
+                    {fillPlaceholders(MY_ORDERS_UI.detailPlatformFee, {
+                      amount: formatINR(item.priceBreakdown?.platformFee || 0),
+                    })}
+                  </Text>
+                  <Text style={styles.meta}>
+                    {fillPlaceholders(MY_ORDERS_UI.detailDiscount, {
+                      amount: formatINR(item.priceBreakdown?.discountAmount || 0),
+                    })}
+                  </Text>
+                  <Text style={styles.meta}>
+                    {fillPlaceholders(MY_ORDERS_UI.detailPaymentMethod, {
+                      method: item.paymentMethod || MY_ORDERS_UI.detailPaymentMethodFallback,
+                    })}
+                  </Text>
+                  <Text style={styles.meta}>
+                    {fillPlaceholders(MY_ORDERS_UI.detailPaymentStatus, {
+                      status: formatPaymentStatusLabel(item.paymentStatus),
+                    })}
                   </Text>
                   {item.razorpay?.paymentId ? (
                     <Text style={styles.meta} numberOfLines={2}>
-                      Razorpay payment ID: {item.razorpay.paymentId}
+                      {fillPlaceholders(MY_ORDERS_UI.detailRazorpayPaymentId, {
+                        id: item.razorpay.paymentId,
+                      })}
                     </Text>
                   ) : null}
                   <View style={styles.addressDetailStack}>
@@ -1605,7 +1646,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                   <Text style={styles.detailTitle}>{MY_ORDERS_UI.editAddressTitle}</Text>
                   <View style={styles.editFieldGap}>
                     <PremiumInput
-                      label="Full name"
+                      label={MY_ORDERS_UI.addressFullNameLabel}
                       value={addressForm.fullName}
                       onChangeText={(value) => setAddressForm((current) => ({ ...current, fullName: value }))}
                       iconLeft="person-outline"
@@ -1614,7 +1655,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                   </View>
                   <View style={styles.editFieldGap}>
                     <PremiumInput
-                      label="Phone"
+                      label={MY_ORDERS_UI.addressPhoneLabel}
                       value={addressForm.phone}
                       onChangeText={(value) => setAddressForm((current) => ({ ...current, phone: value }))}
                       iconLeft="call-outline"
@@ -1623,7 +1664,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                   </View>
                   <View style={styles.editFieldGap}>
                     <PremiumInput
-                      label="Address line"
+                      label={MY_ORDERS_UI.addressLine1Label}
                       value={addressForm.line1}
                       onChangeText={(value) => setAddressForm((current) => ({ ...current, line1: value }))}
                       iconLeft="home-outline"
@@ -1633,7 +1674,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                   <View style={styles.splitRow}>
                     <View style={[styles.editFieldGap, styles.editHalfField]}>
                       <PremiumInput
-                        label="City"
+                        label={MY_ORDERS_UI.addressCityLabel}
                         value={addressForm.city}
                         onChangeText={(value) => setAddressForm((current) => ({ ...current, city: value }))}
                         autoCapitalize="words"
@@ -1641,7 +1682,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                     </View>
                     <View style={[styles.editFieldGap, styles.editHalfField]}>
                       <PremiumInput
-                        label="State"
+                        label={MY_ORDERS_UI.addressStateLabel}
                         value={addressForm.state}
                         onChangeText={(value) => setAddressForm((current) => ({ ...current, state: value }))}
                         autoCapitalize="words"
@@ -1651,7 +1692,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                   <View style={styles.splitRow}>
                     <View style={[styles.editFieldGap, styles.editHalfField]}>
                       <PremiumInput
-                        label="Postal code"
+                        label={MY_ORDERS_UI.addressPostalCodeLabel}
                         value={addressForm.postalCode}
                         onChangeText={(value) => setAddressForm((current) => ({ ...current, postalCode: value }))}
                         keyboardType="number-pad"
@@ -1659,7 +1700,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                     </View>
                     <View style={[styles.editFieldGap, styles.editHalfField]}>
                       <PremiumInput
-                        label="Country"
+                        label={MY_ORDERS_UI.addressCountryLabel}
                         value={addressForm.country}
                         onChangeText={(value) => setAddressForm((current) => ({ ...current, country: value }))}
                         autoCapitalize="words"
@@ -1668,7 +1709,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                   </View>
                   <View style={styles.editFieldGap}>
                     <PremiumInput
-                      label="Note (optional)"
+                      label={MY_ORDERS_UI.addressNoteLabel}
                       value={addressForm.note}
                       onChangeText={(value) => setAddressForm((current) => ({ ...current, note: value }))}
                       iconLeft="chatbubbles-outline"
@@ -1676,14 +1717,14 @@ export default function MyOrdersScreen({ navigation, route }) {
                   </View>
                   <View style={styles.rowButtons}>
                     <PremiumButton
-                      label={savingOrderId === item._id ? "Saving..." : "Save address"}
+                      label={savingOrderId === item._id ? MY_ORDERS_UI.savingAddressCta : MY_ORDERS_UI.saveAddressCta}
                       size="sm"
                       variant="primary"
                       onPress={() => handleSaveAddress(item._id)}
                       disabled={savingOrderId === item._id}
                     />
                     <PremiumButton
-                      label="Cancel"
+                      label={MY_ORDERS_UI.cancelCta}
                       size="sm"
                       variant="ghost"
                       onPress={() => setEditingOrderId("")}
@@ -1692,7 +1733,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                 </View>
               ) : null}
               <PremiumButton
-                label={reorderingOrderId === item._id ? "Adding..." : "Reorder in-stock items"}
+                label={reorderingOrderId === item._id ? MY_ORDERS_UI.reorderingCta : MY_ORDERS_UI.reorderCta}
                 iconLeft="refresh-outline"
                 variant="primary"
                 size="md"

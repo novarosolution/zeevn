@@ -8,10 +8,10 @@ import {
   APP_ENGINEER_URL,
   APP_TAGLINE,
   APP_WORDMARK_SUBLINE,
+  FOOTER_COMPACT,
   HOME_PAGE_FOOTER_COLUMNS,
   HOME_PAGE_FOOTER_META,
   HOME_PAGE_TRUST_BADGES,
-  RAZORPAY_PAY_URL,
   SUPPORT_EMAIL_DISPLAY,
 } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
@@ -31,7 +31,6 @@ export default function HomePageFooter({ colors: c }) {
   const engineerName = String(APP_ENGINEER_NAME || "").trim();
   const engineerUrl = String(APP_ENGINEER_URL || "").trim();
   const supportEmail = String(SUPPORT_EMAIL_DISPLAY || "").trim();
-  const payOnlineUrl = String(RAZORPAY_PAY_URL || "").trim();
   const footerColumns = HOME_PAGE_FOOTER_COLUMNS
     .map((col) => ({
       ...col,
@@ -63,12 +62,9 @@ export default function HomePageFooter({ colors: c }) {
           >
             <Ionicons name="mail-outline" size={icon.md} color={c.textSecondary} />
           </Pressable>
-          <Pressable
-            style={({ hovered }) => [styles.socialBtn, hovered && Platform.OS === "web" ? styles.socialBtnHover : null]}
-            onPress={() => payOnlineUrl ? Linking.openURL(payOnlineUrl) : null}
-          >
-            <Ionicons name="card-outline" size={icon.md} color={c.textSecondary} />
-          </Pressable>
+          <View style={[styles.socialBtn, styles.socialBtnStatic]}>
+            <Ionicons name="time-outline" size={icon.md} color={c.textSecondary} />
+          </View>
         </View>
       </View>
 
@@ -122,7 +118,7 @@ export default function HomePageFooter({ colors: c }) {
       </View>
       {engineerName && engineerUrl ? (
         <Text style={styles.engineerLine} accessibilityRole="text">
-          App by{" "}
+          {FOOTER_COMPACT.engineerPrefix}{" "}
           <Text
             style={styles.engineerLink}
             onPress={() => Linking.openURL(engineerUrl)}
@@ -140,10 +136,10 @@ export default function HomePageFooter({ colors: c }) {
 function createStyles(c, shadowPremium, isDark, semantic) {
   return StyleSheet.create({
     shell: {
-      marginTop: spacing.xxl + 8,
-      paddingVertical: spacing.xl + 8,
-      paddingHorizontal: Platform.select({ web: spacing.xxl, default: spacing.lg }),
-      paddingBottom: 44,
+      marginTop: spacing.xl + 6,
+      paddingVertical: spacing.xl,
+      paddingHorizontal: Platform.select({ web: spacing.xl + 2, default: spacing.lg }),
+      paddingBottom: 36,
       borderRadius: semanticRadius.panel,
       backgroundColor: isDark ? c.surface : ALCHEMY.cardBg,
       borderWidth: StyleSheet.hairlineWidth,
@@ -170,8 +166,8 @@ function createStyles(c, shadowPremium, isDark, semantic) {
       justifyContent: "space-between",
       alignItems: "flex-start",
       gap: spacing.sm,
-      marginBottom: spacing.md + 2,
-      paddingBottom: spacing.sm,
+      marginBottom: spacing.md,
+      paddingBottom: spacing.xs + 4,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(63, 63, 70, 0.1)",
     },
@@ -217,6 +213,12 @@ function createStyles(c, shadowPremium, isDark, semantic) {
         default: {},
       }),
     },
+    socialBtnStatic: {
+      ...Platform.select({
+        web: { cursor: "default" },
+        default: {},
+      }),
+    },
     socialBtnHover: {
       backgroundColor: isDark ? c.surface : ALCHEMY.ivory,
       borderColor: isDark ? semantic.border.accent : c.borderStrong,
@@ -231,10 +233,10 @@ function createStyles(c, shadowPremium, isDark, semantic) {
     grid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: spacing.xl + 4,
-      rowGap: spacing.lg,
+      gap: spacing.lg + 2,
+      rowGap: spacing.md + 2,
       justifyContent: "space-between",
-      marginBottom: spacing.lg + 4,
+      marginBottom: spacing.lg,
     },
     col: {
       minWidth: Platform.OS === "web" ? 140 : "45%",
@@ -278,7 +280,7 @@ function createStyles(c, shadowPremium, isDark, semantic) {
       flexDirection: "row",
       flexWrap: "wrap",
       gap: spacing.sm,
-      marginBottom: spacing.md,
+      marginBottom: spacing.sm + 2,
     },
     badge: {
       flexDirection: "row",

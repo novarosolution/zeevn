@@ -33,7 +33,7 @@ export default function AuthGateShell({ navigation, signedOut = false }) {
             </View>
             <Text style={styles.signedOutTitle}>Sign in to your account</Text>
             <Text style={styles.signedOutSub}>
-              Continue to access your orders, saved addresses, account settings, and premium member benefits.
+              Continue to view orders, saved addresses, and account settings.
             </Text>
             <PremiumButton
               label="Sign in"
@@ -75,14 +75,14 @@ function createStyles(c, isDark, shadowPremium) {
     signedOutInner: {
       flex: 1,
       paddingHorizontal: spacing.lg,
-      paddingTop: spacing.xxl,
+      paddingTop: spacing.xl + 6,
       paddingBottom: spacing.lg,
       justifyContent: "center",
       alignItems: "center",
     },
     signedOutCard: {
       width: "100%",
-      maxWidth: 420,
+      maxWidth: 400,
       alignSelf: "center",
       borderTopWidth: 3,
       borderTopColor: isDark ? "rgba(220, 38, 38, 0.58)" : ALCHEMY.gold,
@@ -103,11 +103,11 @@ function createStyles(c, isDark, shadowPremium) {
       marginBottom: spacing.xs,
     },
     signedOutSub: {
-      fontSize: typography.body,
+      fontSize: typography.bodySmall + 1,
       color: c.textSecondary,
       textAlign: "center",
-      lineHeight: 22,
-      marginBottom: spacing.xl,
+      lineHeight: 21,
+      marginBottom: spacing.lg + 2,
     },
     signedOutIconWrap: {
       alignSelf: "center",

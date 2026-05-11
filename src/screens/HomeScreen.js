@@ -40,8 +40,11 @@ import {
   HOME_HERO_BANNER,
   HOME_CATALOG_INTRO,
   HOME_LIVE_ORDER_CARD,
+  HOME_MENU_LINKS,
+  HOME_SEARCH_UI,
   HOME_VIEW_DEFAULTS,
   HOME_WORDMARK_TAGLINE,
+  fillPlaceholders,
 } from "../content/appContent";
 import {
   BRAND_HOME_TOP_BAR_LAYOUT_HEIGHT,
@@ -199,7 +202,7 @@ export default function HomeScreen({ navigation }) {
       setProducts(data);
       setHomeViewConfig(viewConfig);
     } catch (err) {
-      setError(err.message || "Unable to load products.");
+      setError(err.message || HOME_SEARCH_UI.loadErrorFallback);
     } finally {
       if (isPullRefresh) {
         setRefreshing(false);
@@ -586,9 +589,11 @@ export default function HomeScreen({ navigation }) {
                   </Pressable>
                   <View style={styles.wordmarkBlock}>
                     <BrandWordmark sizeKey="homeTopBar" style={styles.topBarLogo} />
-                    <Text style={[styles.topBarTagline, { color: c.textMuted }]} numberOfLines={1}>
-                      {HOME_WORDMARK_TAGLINE}
-                    </Text>
+                    {HOME_WORDMARK_TAGLINE ? (
+                      <Text style={[styles.topBarTagline, { color: c.textMuted }]} numberOfLines={1}>
+                        {HOME_WORDMARK_TAGLINE}
+                      </Text>
+                    ) : null}
                   </View>
                   <Pressable
                     onPress={() => navigation.navigate("Cart")}
@@ -645,7 +650,43 @@ export default function HomeScreen({ navigation }) {
                 </View>
               ) : null}
             </View>
-          ) : null}
+          ) : (
+            <View
+              style={[
+                styles.headerAmbientCard,
+                styles.webSearchCard,
+                isDark ? styles.headerAmbientCardDark : styles.headerAmbientCardLight,
+              ]}
+            >
+              <View style={[styles.searchWrap, styles.searchWrapWeb]}>
+                <LinearGradient
+                  colors={["rgba(185, 28, 28, 0.32)", "rgba(63, 63, 70, 0.18)", "rgba(185, 28, 28, 0.22)"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.searchGradientFrame}
+                >
+                  <View style={[styles.searchInner, { backgroundColor: isDark ? c.surface : ALCHEMY.cardBg }]}>
+                    <QCommerceSearchField
+                      premium
+                      value={query}
+                      onChangeText={setQuery}
+                      onClear={() => setQuery("")}
+                      placeholder={SEARCH_PLACEHOLDER}
+                    />
+                  </View>
+                </LinearGradient>
+              </View>
+              {isAuthenticated ? (
+                <View style={[styles.homeLocationWrap, styles.homeLocationWrapWeb]}>
+                  <LocationBar
+                    addressLine={deliveryLine1}
+                    city={deliveryCity}
+                    onPress={() => navigation.navigate("ManageAddress")}
+                  />
+                </View>
+              ) : null}
+            </View>
+          )}
 
           <HomeMarketingHero
             goToHeroSlide={goToHeroSlide}
@@ -669,9 +710,12 @@ export default function HomeScreen({ navigation }) {
             <TouchableOpacity style={styles.activeFilterBar} onPress={() => setQuery("")} activeOpacity={0.85}>
               <Ionicons name="search-outline" size={icon.xs} color={c.primary} />
               <Text style={styles.activeFilterText} numberOfLines={1}>
-                “{query.trim()}”
+                {fillPlaceholders(HOME_SEARCH_UI.catalogResultsTitle, {
+                  count: totalMatches,
+                  query: query.trim(),
+                })}
               </Text>
-              <Text style={styles.activeFilterClear}>Clear</Text>
+              <Text style={styles.activeFilterClear}>{HOME_SEARCH_UI.activeFilterClear}</Text>
             </TouchableOpacity>
           ) : null}
           {sectionFilter ? (
@@ -680,7 +724,7 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.activeFilterText} numberOfLines={1}>
                 {sectionFilter}
               </Text>
-              <Text style={styles.sectionFilterClear}>Clear</Text>
+              <Text style={styles.sectionFilterClear}>{HOME_SEARCH_UI.activeFilterClear}</Text>
             </TouchableOpacity>
           ) : null}
           {error ? (
@@ -699,16 +743,131 @@ export default function HomeScreen({ navigation }) {
           ) : null}
         </View>
 
-        {showMarketing && !query.trim() ? (
-          <HomeTrustStrip
-            c={c}
-            forwardedRef={webTrustRef}
-            isDark={isDark}
-            reducedMotion={reducedMotion}
-            styles={styles}
-            trustVisualDense={trustVisualDense}
-          />
-        ) : null}
+        {totalMatches > 0 ? (
+          <View
+            onLayout={(e) => {
+              featuredYRef.current = e.nativeEvent.layout.y;
+            }}
+          >
+            <PremiumCard variant="hero" padding="lg" style={styles.catalogIntroCard} contentStyle={styles.catalogIntroContent}>
+              <Text style={styles.catalogIntroEyebrow}>
+                {query.trim()
+                  ? HOME_SEARCH_UI.catalogOverlineSearch
+                  : sectionFilter
+                    ? HOME_SEARCH_UI.catalogOverlineSection
+                    : HOME_SEARCH_UI.catalogOverlineDefault}
+              </Text>
+              <Text style={styles.catalogIntroTitle}>
+                {query.trim()
+                  ? fillPlaceholders(HOME_SEARCH_UI.catalogResultsTitle, {
+                      count: totalMatches,
+                      query: query.trim(),
+                    })
+                  : sectionFilter
+                    ? sectionFilter
+                    : showMarketing
+                      ? HOME_CATALOG_INTRO.starter
+                      : HOME_CATALOG_INTRO.all}
+              </Text>
+              {!query.trim() ? (
+                <Text style={styles.catalogIntroSubtitle}>
+                  {homeViewConfig.productCardStyle === "comfortable"
+                    ? HOME_SEARCH_UI.catalogSubtitleComfortable
+                    : HOME_SEARCH_UI.catalogSubtitleCompact}
+                </Text>
+              ) : null}
+            </PremiumCard>
+            {sectionFilter && sectionsForRender.length === 0 ? (
+              <View style={[styles.catalogSurface, styles.emptySectionHint]}>
+                <PremiumEmptyState
+                  iconName="layers-outline"
+                  title={fillPlaceholders(HOME_SEARCH_UI.sectionEmptyTitle, { section: sectionFilter })}
+                  description={HOME_SEARCH_UI.sectionEmptyDescription}
+                  ctaLabel={HOME_SEARCH_UI.sectionEmptyCta}
+                  ctaIconLeft="close-circle-outline"
+                  onCtaPress={clearSectionFilter}
+                  compact
+                />
+              </View>
+            ) : homeViewConfig.showHomeSections && sectionsForRender.length > 0 ? (
+              <View nativeID="home-sections">
+              {sectionsForRender.map((section, sIdx) => (
+                <Animated.View
+                  key={section.title}
+                  style={styles.listSection}
+                  entering={
+                    Platform.OS === "web" || reducedMotion
+                      ? undefined
+                      : FadeInDown.delay(Math.min(sIdx * 72, 400)).duration(420)
+                  }
+                >
+                  <View ref={(node) => setWebCatalogRef(sIdx, node)} style={styles.catalogSurface}>
+                    <HomeSectionHeader
+                      overline={sIdx === 0 ? HOME_SEARCH_UI.sectionOverlineFirst : HOME_SEARCH_UI.sectionOverlineOther}
+                      title={section.title}
+                      count={section.items.length}
+                      onSeeAll={
+                        section.items.length > 3
+                          ? () =>
+                              navigation.navigate({
+                                name: "Home",
+                                merge: true,
+                                params: { filterHomeSection: String(section.title).trim() },
+                              })
+                          : undefined
+                      }
+                    />
+                    {renderCatalogItems(section.items, `sec-${section.title}`)}
+                  </View>
+                </Animated.View>
+              ))}
+              </View>
+            ) : (
+              <Animated.View
+                nativeID="home-sections"
+                collapsable={false}
+                style={styles.listSection}
+                entering={Platform.OS === "web" || reducedMotion ? undefined : FadeInDown.delay(80).duration(440)}
+              >
+                <View ref={(node) => setWebCatalogRef(0, node)} style={styles.catalogSurface}>
+                  <HomeSectionHeader
+                    overline={homeViewConfig.showPrimeSection ? HOME_SEARCH_UI.primeOverline : HOME_SEARCH_UI.catalogOverlineDefault}
+                    title={homeViewConfig.showPrimeSection ? homeViewConfig.primeSectionTitle : HOME_SEARCH_UI.allProductsTitle}
+                    count={productsForHome.length}
+                  />
+                  {renderCatalogItems(productsForHome, "shop")}
+                </View>
+              </Animated.View>
+            )}
+          </View>
+        ) : (
+          <View ref={(node) => setWebCatalogRef(0, node)} style={[styles.catalogSurface, styles.emptyWrap]}>
+            {loading ? (
+              <PremiumLoader size="md" caption={HOME_SEARCH_UI.loadingCatalog} />
+            ) : (
+              <PremiumEmptyState
+                iconName={query.trim() ? "search-outline" : "cube-outline"}
+                title={
+                  filteredProducts.length > 0 && productsForHome.length === 0
+                    ? HOME_SEARCH_UI.emptyHomeCuratedTitle
+                    : query.trim()
+                      ? HOME_SEARCH_UI.emptySearchTitle
+                      : HOME_SEARCH_UI.emptyCatalogTitle
+                }
+                description={
+                  filteredProducts.length > 0 && productsForHome.length === 0
+                    ? HOME_SEARCH_UI.emptyHomeCuratedDescription
+                    : query.trim()
+                      ? HOME_SEARCH_UI.emptySearchDescription
+                      : HOME_SEARCH_UI.emptyCatalogDescription
+                }
+                ctaLabel={query.trim() ? HOME_SEARCH_UI.clearSearchCta : undefined}
+                ctaIconLeft={query.trim() ? "close-circle-outline" : undefined}
+                onCtaPress={query.trim() ? () => setQuery("") : undefined}
+              />
+            )}
+          </View>
+        )}
 
         {isAuthenticated && liveOrder ? (
           <View style={styles.liveOrderWrap}>
@@ -758,122 +917,16 @@ export default function HomeScreen({ navigation }) {
           </View>
         ) : null}
 
-        {totalMatches > 0 ? (
-          <View
-            onLayout={(e) => {
-              featuredYRef.current = e.nativeEvent.layout.y;
-            }}
-          >
-            <PremiumCard variant="hero" padding="lg" style={styles.catalogIntroCard} contentStyle={styles.catalogIntroContent}>
-              <Text style={styles.catalogIntroEyebrow}>
-                {query.trim() ? "Search results" : sectionFilter ? "Shelf focus" : "Curated catalog"}
-              </Text>
-              <Text style={styles.catalogIntroTitle}>
-                {query.trim()
-                  ? `${totalMatches} results for "${query.trim()}"`
-                  : sectionFilter
-                    ? sectionFilter
-                    : showMarketing
-                      ? HOME_CATALOG_INTRO.starter
-                      : HOME_CATALOG_INTRO.all}
-              </Text>
-              <Text style={styles.catalogIntroSubtitle}>
-                {homeViewConfig.productCardStyle === "comfortable"
-                  ? "Browse with fuller detail, roomier cards, and easier comparison."
-                  : "Fast, premium browsing with compact cards and clear add-to-cart actions."}
-              </Text>
-            </PremiumCard>
-            {sectionFilter && sectionsForRender.length === 0 ? (
-              <View style={[styles.catalogSurface, styles.emptySectionHint]}>
-                <PremiumEmptyState
-                  iconName="layers-outline"
-                  title={`No section named “${sectionFilter}”.`}
-                  description="Pick another section or clear the filter."
-                  ctaLabel="Clear filter"
-                  ctaIconLeft="close-circle-outline"
-                  onCtaPress={clearSectionFilter}
-                  compact
-                />
-              </View>
-            ) : homeViewConfig.showHomeSections && sectionsForRender.length > 0 ? (
-              <View nativeID="home-sections">
-              {sectionsForRender.map((section, sIdx) => (
-                <Animated.View
-                  key={section.title}
-                  style={styles.listSection}
-                  entering={
-                    Platform.OS === "web" || reducedMotion
-                      ? undefined
-                      : FadeInDown.delay(Math.min(sIdx * 72, 400)).duration(420)
-                  }
-                >
-                  <View ref={(node) => setWebCatalogRef(sIdx, node)} style={styles.catalogSurface}>
-                    <HomeSectionHeader
-                      overline={sIdx === 0 ? "Curated for you" : "Featured shelf"}
-                      title={section.title}
-                      count={section.items.length}
-                      onSeeAll={
-                        section.items.length > 3
-                          ? () =>
-                              navigation.navigate({
-                                name: "Home",
-                                merge: true,
-                                params: { filterHomeSection: String(section.title).trim() },
-                              })
-                          : undefined
-                      }
-                    />
-                    {renderCatalogItems(section.items, `sec-${section.title}`)}
-                  </View>
-                </Animated.View>
-              ))}
-              </View>
-            ) : (
-              <Animated.View
-                nativeID="home-sections"
-                collapsable={false}
-                style={styles.listSection}
-                entering={Platform.OS === "web" || reducedMotion ? undefined : FadeInDown.delay(80).duration(440)}
-              >
-                <View ref={(node) => setWebCatalogRef(0, node)} style={styles.catalogSurface}>
-                  <HomeSectionHeader
-                    overline={homeViewConfig.showPrimeSection ? "Prime selection" : "All products"}
-                    title={homeViewConfig.showPrimeSection ? homeViewConfig.primeSectionTitle : "Shop"}
-                    count={productsForHome.length}
-                  />
-                  {renderCatalogItems(productsForHome, "shop")}
-                </View>
-              </Animated.View>
-            )}
-          </View>
-        ) : (
-          <View ref={(node) => setWebCatalogRef(0, node)} style={[styles.catalogSurface, styles.emptyWrap]}>
-            {loading ? (
-              <PremiumLoader size="md" caption="Loading catalog…" />
-            ) : (
-              <PremiumEmptyState
-                iconName={query.trim() ? "search-outline" : "cube-outline"}
-                title={
-                  filteredProducts.length > 0 && productsForHome.length === 0
-                    ? "Nothing curated for Home yet"
-                    : query.trim()
-                      ? "No products match your search"
-                      : "Catalog is empty"
-                }
-                description={
-                  filteredProducts.length > 0 && productsForHome.length === 0
-                    ? "Ask admin to enable “Show on Home” for products to feature them here."
-                    : query.trim()
-                      ? `Try a different keyword — or browse the full collection.`
-                      : "Add items or adjust filters to see the catalog."
-                }
-                ctaLabel={query.trim() ? "Clear search" : undefined}
-                ctaIconLeft={query.trim() ? "close-circle-outline" : undefined}
-                onCtaPress={query.trim() ? () => setQuery("") : undefined}
-              />
-            )}
-          </View>
-        )}
+        {showMarketing && !query.trim() ? (
+          <HomeTrustStrip
+            c={c}
+            forwardedRef={webTrustRef}
+            isDark={isDark}
+            reducedMotion={reducedMotion}
+            styles={styles}
+            trustVisualDense={trustVisualDense}
+          />
+        ) : null}
 
         {showMarketing && !query.trim() ? (
           <GoldHairline marginVertical={spacing.md} withDot />
@@ -955,82 +1008,29 @@ export default function HomeScreen({ navigation }) {
                 </Pressable>
               </View>
               <Text style={[styles.menuSectionLabel, { color: c.textMuted }]}>Account</Text>
-              <Pressable
-                style={({ pressed, hovered }) => [
-                  styles.menuRow,
-                  hovered && Platform.OS === "web" ? styles.menuRowHover : null,
-                  pressed && styles.menuRowPressed,
-                ]}
-                onPress={() => {
-                  setMenuOpen(false);
-                  navigation.navigate("Profile");
-                }}
-              >
-                <View style={[styles.menuIconCircle, { backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt }]}>
-                  <Ionicons name="person-outline" size={icon.md} color={isDark ? c.textPrimary : ALCHEMY.brown} />
-                </View>
-                <View style={styles.menuRowTextCol}>
-                  <Text style={[styles.menuRowTitle, { color: c.textPrimary }]}>Profile</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={icon.sm} color={c.textMuted} />
-              </Pressable>
-              <Pressable
-                style={({ pressed, hovered }) => [
-                  styles.menuRow,
-                  hovered && Platform.OS === "web" ? styles.menuRowHover : null,
-                  pressed && styles.menuRowPressed,
-                ]}
-                onPress={() => {
-                  setMenuOpen(false);
-                  navigation.navigate("MyOrders");
-                }}
-              >
-                <View style={[styles.menuIconCircle, { backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt }]}>
-                  <Ionicons name="receipt-outline" size={icon.md} color={isDark ? c.textPrimary : ALCHEMY.brown} />
-                </View>
-                <View style={styles.menuRowTextCol}>
-                  <Text style={[styles.menuRowTitle, { color: c.textPrimary }]}>My orders</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={icon.sm} color={c.textMuted} />
-              </Pressable>
-              <Pressable
-                style={({ pressed, hovered }) => [
-                  styles.menuRow,
-                  hovered && Platform.OS === "web" ? styles.menuRowHover : null,
-                  pressed && styles.menuRowPressed,
-                ]}
-                onPress={() => {
-                  setMenuOpen(false);
-                  navigation.navigate("Support");
-                }}
-              >
-                <View style={[styles.menuIconCircle, { backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt }]}>
-                  <Ionicons name="help-circle-outline" size={icon.md} color={isDark ? c.textPrimary : ALCHEMY.brown} />
-                </View>
-                <View style={styles.menuRowTextCol}>
-                  <Text style={[styles.menuRowTitle, { color: c.textPrimary }]}>Support</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={icon.sm} color={c.textMuted} />
-              </Pressable>
-              <Pressable
-                style={({ pressed, hovered }) => [
-                  styles.menuRow,
-                  hovered && Platform.OS === "web" ? styles.menuRowHover : null,
-                  pressed && styles.menuRowPressed,
-                ]}
-                onPress={() => {
-                  setMenuOpen(false);
-                  navigation.navigate("Settings");
-                }}
-              >
-                <View style={[styles.menuIconCircle, { backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt }]}>
-                  <Ionicons name="settings-outline" size={icon.md} color={isDark ? c.textPrimary : ALCHEMY.brown} />
-                </View>
-                <View style={styles.menuRowTextCol}>
-                  <Text style={[styles.menuRowTitle, { color: c.textPrimary }]}>Settings</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={icon.sm} color={c.textMuted} />
-              </Pressable>
+              {HOME_MENU_LINKS.map((item) => (
+                <Pressable
+                  key={item.key}
+                  style={({ pressed, hovered }) => [
+                    styles.menuRow,
+                    hovered && Platform.OS === "web" ? styles.menuRowHover : null,
+                    pressed && styles.menuRowPressed,
+                  ]}
+                  onPress={() => {
+                    setMenuOpen(false);
+                    navigation.navigate(item.route);
+                  }}
+                >
+                  <View style={[styles.menuIconCircle, { backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt }]}>
+                    <Ionicons name={item.icon} size={icon.md} color={isDark ? c.textPrimary : ALCHEMY.brown} />
+                  </View>
+                  <View style={styles.menuRowTextCol}>
+                    <Text style={[styles.menuRowTitle, { color: c.textPrimary }]}>{item.label}</Text>
+                    <Text style={[styles.menuRowValue, { color: c.textMuted }]}>{item.hint}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={icon.sm} color={c.textMuted} />
+                </Pressable>
+              ))}
             </View>
           </View>
         </View>
@@ -1065,7 +1065,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       borderWidth: StyleSheet.hairlineWidth,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: isDark ? "rgba(248, 113, 113, 0.42)" : "rgba(220, 38, 38, 0.38)",
-      marginBottom: spacing.md + 4,
+      marginBottom: spacing.md,
       ...Platform.select({
         ios: {
           shadowColor: "#18181B",
@@ -1207,9 +1207,23 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       marginBottom: spacing.sm + 2,
       paddingHorizontal: spacing.sm,
     },
+    searchWrapWeb: {
+      marginBottom: 0,
+      paddingHorizontal: 0,
+    },
     homeLocationWrap: {
       paddingHorizontal: spacing.sm,
       marginBottom: spacing.sm + 2,
+    },
+    homeLocationWrapWeb: {
+      paddingHorizontal: 0,
+      marginBottom: 0,
+      marginTop: spacing.sm,
+    },
+    webSearchCard: {
+      paddingHorizontal: spacing.md + 2,
+      paddingVertical: spacing.md + 2,
+      marginBottom: spacing.md + 2,
     },
     searchGradientFrame: {
       borderRadius: 999,
@@ -1235,7 +1249,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       overflow: "hidden",
     },
     heroImageOuter: {
-      marginBottom: Platform.select({ web: spacing.xl + 12, default: spacing.xl + 8 }),
+      marginBottom: Platform.select({ web: spacing.xl, default: spacing.xl + 4 }),
       borderRadius: radius.xxl + 2,
       overflow: "hidden",
       borderWidth: StyleSheet.hairlineWidth,
@@ -2235,7 +2249,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       }),
     },
     catalogIntroContent: {
-      gap: spacing.xs + 2,
+      gap: spacing.xs,
     },
     catalogIntroEyebrow: {
       fontFamily: fonts.extrabold,

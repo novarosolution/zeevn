@@ -52,6 +52,7 @@ export default function EditProfileScreen({ navigation }) {
   const [fieldErrors, setFieldErrors] = useState({ name: "", phone: "" });
   const [showStickySave, setShowStickySave] = useState(false);
   const stickyStateRef = useRef({ name: "", phone: "", saving: false });
+  const initialProfileRef = useRef({ name: "", phone: "" });
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -60,8 +61,11 @@ export default function EditProfileScreen({ navigation }) {
       setLoading(true);
       setError("");
       const profile = await fetchUserProfile(token);
-      setName(profile.name || "");
-      setPhone(profile.phone || "");
+      const nextName = String(profile.name || "");
+      const nextPhone = String(profile.phone || "");
+      setName(nextName);
+      setPhone(nextPhone);
+      initialProfileRef.current = { name: nextName, phone: nextPhone };
       setAvatarUrl((profile.avatar || "").trim());
       setHasAddress(Boolean(profile.defaultAddress?.line1));
     } catch (err) {
@@ -111,6 +115,7 @@ export default function EditProfileScreen({ navigation }) {
       setSuccess("");
       const updated = await updateUserProfile(token, { name, phone });
       await updateStoredUser(updated);
+      initialProfileRef.current = { name, phone };
       setSuccess("Profile saved.");
       if (!reducedMotion) {
         successRipple.value = withSequence(
@@ -131,7 +136,10 @@ export default function EditProfileScreen({ navigation }) {
   }, [success, reducedMotion]);
 
   useEffect(() => {
-    const hasDirty = Boolean(String(name || "").trim() || String(phone || "").trim());
+    const initial = initialProfileRef.current;
+    const hasDirty =
+      String(name || "").trim() !== String(initial?.name || "").trim() ||
+      String(phone || "").trim() !== String(initial?.phone || "").trim();
     setShowStickySave(hasDirty && !saving);
     stickyStateRef.current = { name, phone, saving };
   }, [name, phone, saving]);
@@ -141,9 +149,10 @@ export default function EditProfileScreen({ navigation }) {
     const showSub = Keyboard.addListener("keyboardDidShow", () => setShowStickySave(false));
     const hideSub = Keyboard.addListener("keyboardDidHide", () => {
       const snapshot = stickyStateRef.current;
-      const hasDirty = Boolean(
-        String(snapshot?.name || "").trim() || String(snapshot?.phone || "").trim()
-      );
+      const initial = initialProfileRef.current;
+      const hasDirty =
+        String(snapshot?.name || "").trim() !== String(initial?.name || "").trim() ||
+        String(snapshot?.phone || "").trim() !== String(initial?.phone || "").trim();
       setShowStickySave(hasDirty && !snapshot?.saving);
     });
     return () => {

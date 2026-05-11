@@ -69,4 +69,3 @@ The server exposes routes at both `/products` and `/api/products` (same for user
 ### Razorpay (online checkout)
 
 Set **`EXPO_PUBLIC_RAZORPAY_KEY_ID`** in the app root `.env` to the same **Key ID** as backend `RAZORPAY_KEY_ID` (safe to expose — it is public). Restart Expo after changing. The backend still requires `RAZORPAY_KEY_SECRET` and `RAZORPAY_WEBHOOK_SECRET`; see `backend/README.md`.
-# zeevn

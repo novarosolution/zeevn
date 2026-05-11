@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Linking, Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 import Animated, { FadeInLeft, FadeInRight } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -80,6 +80,8 @@ export default function SupportScreen({ navigation }) {
   const [message, setMessage] = useState("");
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
   const [toast, setToast] = useState("");
+  const scrollRef = useRef(null);
+  const chatSectionYRef = useRef(0);
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -136,6 +138,13 @@ export default function SupportScreen({ navigation }) {
   }, [toast]);
 
   const handleContactPress = useCallback(async (link) => {
+    if (link.actionType === "scroll") {
+      scrollRef.current?.scrollTo?.({
+        y: Math.max(0, chatSectionYRef.current - spacing.lg),
+        animated: true,
+      });
+      return;
+    }
     if (link.actionType === "link" && link.url) {
       try {
         const can = await Linking.canOpenURL(link.url);
@@ -156,6 +165,7 @@ export default function SupportScreen({ navigation }) {
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
       >
       <MotionScrollView
+        ref={scrollRef}
         style={customerScrollFill}
         contentContainerStyle={customerInnerPageScrollContent(insets)}
         showsVerticalScrollIndicator={false}
@@ -210,23 +220,6 @@ export default function SupportScreen({ navigation }) {
         </SectionReveal>
         <SectionReveal preset="fade-up" delay={40}>
         <View style={styles.panel}>
-          {Platform.OS === "web" ? (
-            <View style={styles.headerRow}>
-              <View style={styles.titleRow}>
-                <View style={styles.titleIconWrap}>
-                  <Ionicons name="headset-outline" size={icon.lg} color={c.secondary} />
-                </View>
-                <Text style={styles.title}>{SUPPORT_SCREEN.liveChatTitle}</Text>
-              </View>
-              <PremiumButton
-                label={SUPPORT_SCREEN.refreshCta}
-                iconLeft="refresh-outline"
-                variant="ghost"
-                size="sm"
-                onPress={loadThread}
-              />
-            </View>
-          ) : null}
           {error ? (
             <View style={styles.bannerWrap}>
               <PremiumErrorBanner severity="error" message={error} compact />
@@ -241,7 +234,9 @@ export default function SupportScreen({ navigation }) {
               <View style={styles.metaPill}>
                 <Ionicons name="time-outline" size={14} color={c.textSecondary} />
                 <Text style={styles.metaPillText}>
-                  {thread.lastMessageAt ? new Date(thread.lastMessageAt).toLocaleString() : "Last update unavailable"}
+                  {thread.lastMessageAt
+                    ? new Date(thread.lastMessageAt).toLocaleString()
+                    : SUPPORT_SCREEN.lastUpdateUnavailable}
                 </Text>
               </View>
             </View>
@@ -259,12 +254,17 @@ export default function SupportScreen({ navigation }) {
           </View>
         ) : (
           <SectionReveal preset="fade-up" delay={120}>
-          <View style={styles.panel}>
+          <View
+            style={styles.panel}
+            onLayout={(event) => {
+              chatSectionYRef.current = event.nativeEvent.layout.y;
+            }}
+          >
             {(thread?.messages || []).length === 0 ? (
               <PremiumEmptyState
                 iconName="chatbubbles-outline"
-                title="Start the conversation"
-                description="Tell our team how we can help. We typically reply within a few hours."
+                title={SUPPORT_SCREEN.emptyThreadTitle}
+                description={SUPPORT_SCREEN.emptyThreadDescription}
                 compact
               />
             ) : (
@@ -287,7 +287,7 @@ export default function SupportScreen({ navigation }) {
                       ]}
                     >
                       <Text style={styles.messageAuthor}>
-                        {isAdmin ? "Admin" : "You"} •{" "}
+                        {isAdmin ? SUPPORT_SCREEN.authorAdmin : SUPPORT_SCREEN.authorYou} •{" "}
                         {item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}
                       </Text>
                       <Text style={styles.messageText}>{item.message}</Text>
@@ -298,11 +298,11 @@ export default function SupportScreen({ navigation }) {
             )}
             <View style={styles.composerWrap}>
               <View style={styles.composerHeader}>
-                <Text style={styles.composerTitle}>Reply to support</Text>
-                <Text style={styles.composerHint}>Keep it short and add any order detail if needed.</Text>
+                <Text style={styles.composerTitle}>{SUPPORT_SCREEN.composerTitle}</Text>
+                <Text style={styles.composerHint}>{SUPPORT_SCREEN.composerHint}</Text>
               </View>
               <PremiumInput
-                label="Your message"
+                label={SUPPORT_SCREEN.composerLabel}
                 value={message}
                 onChangeText={setMessage}
                 multiline
@@ -311,7 +311,7 @@ export default function SupportScreen({ navigation }) {
               />
             </View>
             <PremiumButton
-              label={sending ? "Sending…" : "Send message"}
+              label={sending ? SUPPORT_SCREEN.sendingCta : SUPPORT_SCREEN.sendCta}
               iconRight="paper-plane"
               variant="primary"
               size="md"

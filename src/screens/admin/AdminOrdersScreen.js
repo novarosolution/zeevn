@@ -711,61 +711,10 @@ export default function AdminOrdersScreen({ navigation, route }) {
                         iconLeft="document-outline"
                       />
                     </View>
-                    <SectionTitle icon="document-text-outline" label="Invoice (Admin update)" />
-                    <View style={styles.orderFieldGap}>
-                      <PremiumInput
-                        label="Invoice number"
-                        value={getOrderEditForm(item).invoiceNumber}
-                        onChangeText={(value) => updateOrderFormField(item._id, "invoiceNumber", value, item)}
-                        iconLeft="receipt-outline"
-                      />
-                    </View>
-                    <View style={styles.editSplitRow}>
-                      <View style={[styles.orderFieldGap, styles.orderHalfField]}>
-                        <PremiumInput
-                          label="Issue date (YYYY-MM-DD)"
-                          value={getOrderEditForm(item).invoiceIssueDate}
-                          onChangeText={(value) => updateOrderFormField(item._id, "invoiceIssueDate", value, item)}
-                          autoCapitalize="none"
-                        />
-                      </View>
-                      <View style={[styles.orderFieldGap, styles.orderHalfField]}>
-                        <PremiumInput
-                          label="Due date (YYYY-MM-DD)"
-                          value={getOrderEditForm(item).invoiceDueDate}
-                          onChangeText={(value) => updateOrderFormField(item._id, "invoiceDueDate", value, item)}
-                          autoCapitalize="none"
-                        />
-                      </View>
-                    </View>
-                    <View style={styles.editSplitRow}>
-                      <View style={[styles.orderFieldGap, styles.orderHalfField]}>
-                        <PremiumInput
-                          label="Tax %"
-                          value={getOrderEditForm(item).invoiceTaxRatePercent}
-                          onChangeText={(value) => updateOrderFormField(item._id, "invoiceTaxRatePercent", value, item)}
-                          keyboardType="decimal-pad"
-                        />
-                      </View>
-                      <View style={[styles.orderFieldGap, styles.orderHalfField]}>
-                        <PremiumInput
-                          label="Invoice status"
-                          value={getOrderEditForm(item).invoiceStatus}
-                          onChangeText={(value) => updateOrderFormField(item._id, "invoiceStatus", value, item)}
-                          placeholder="draft / final / paid / void"
-                          autoCapitalize="none"
-                        />
-                      </View>
-                    </View>
-                    <View style={styles.orderFieldGap}>
-                      <PremiumInput
-                        label="Invoice notes"
-                        value={getOrderEditForm(item).invoiceNotes}
-                        onChangeText={(value) => updateOrderFormField(item._id, "invoiceNotes", value, item)}
-                        multiline
-                        numberOfLines={2}
-                      />
-                    </View>
+                    <SectionTitle icon="document-text-outline" label="Invoice tools" />
+                    <Text style={styles.cardMeta}>
+                      Invoice editing is coming soon. Order status, payment state, and delivery assignment still work as usual.
+                    </Text>
                     <PremiumButton
                       label={busyOrderId === item._id ? "Saving…" : "Save order details"}
                       iconLeft="save-outline"

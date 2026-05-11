@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Platform, StyleSheet, Text, TouchableOpacity, View, Pressable } from "react-native";
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { fonts, getSemanticColors, icon, radius, semanticRadius, spacing, typography } from "../theme/tokens";
@@ -11,8 +10,7 @@ import { getImageUriCandidates } from "../utils/image";
 import { matchesShelfProduct } from "../utils/shelfMatch";
 import { APP_DISPLAY_NAME } from "../constants/brand";
 import { useTheme } from "../context/ThemeContext";
-import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI, HERITAGE } from "../theme/customerAlchemy";
-import PremiumProductCard from "./PremiumProductCard";
+import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
 
 export default function ProductCard({
   product,
@@ -59,10 +57,6 @@ export default function ProductCard({
   const animatedCardStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
-  const ctaScale = useSharedValue(1);
-  const ctaScaleStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: ctaScale.value }],
-  }));
 
   const hasEtaCopy = Boolean(String(product?.eta || "").trim());
   const showEtaBadge = showEta && hasEtaCopy;
@@ -80,12 +74,6 @@ export default function ProductCard({
   const handlePressOut = () => {
     scale.value = withSpring(1, { damping: 18, stiffness: 280 });
   };
-  const handleAddPress = () => {
-    ctaScale.value = withSpring(0.96, { damping: 18, stiffness: 280 }, () => {
-      ctaScale.value = withSpring(1, { damping: 15, stiffness: 250 });
-    });
-    onAddToCart?.();
-  };
 
   const CardInner = isWeb ? View : Animated.View;
   const Root = isWeb || index == null ? View : Animated.View;
@@ -94,22 +82,6 @@ export default function ProductCard({
       ? FadeInDown.delay(Math.min(index * 52, 520)).duration(400)
       : undefined;
 
-  const isPremiumCatalog = compact && !isList;
-
-  if (isPremiumCatalog) {
-    return (
-      <PremiumProductCard
-        product={product}
-        onPress={onPress}
-        onAddToCart={onAddToCart}
-        onRemoveFromCart={onRemoveFromCart}
-        quantity={quantity}
-        isOutOfStock={isOutOfStock}
-        index={index}
-      />
-    );
-  }
-
   const safePrice = (() => {
     const n = Number(product?.price);
     return Number.isFinite(n) && n >= 0 ? n : 0;
@@ -117,143 +89,6 @@ export default function ProductCard({
   const mrpNum = product?.mrp != null ? Number(product.mrp) : NaN;
   const listMrp = Number.isFinite(mrpNum) && mrpNum > safePrice ? mrpNum : null;
   const offPct = listMrp ? Math.round((1 - safePrice / listMrp) * 100) : null;
-  const discountBadge =
-    offPct != null && offPct > 0
-      ? `${offPct}% OFF`
-      : product?.isSpecial
-        ? "OFFER"
-        : null;
-  const ratingAvg = Number(product?.ratingAverage || 0);
-  const reviewCount = Number(product?.reviewCount || 0);
-  const cardBody = (
-    <CardInner
-      style={[
-        styles.cardQcShell,
-        { backgroundColor: c.surface, borderColor: c.border },
-        shelfMatch ? styles.cardQcShelfAccent : null,
-        !isWeb ? animatedCardStyle : null,
-      ]}
-    >
-      <Pressable
-        onPress={onPress}
-        onPressIn={isWeb ? undefined : handlePressIn}
-        onPressOut={isWeb ? undefined : handlePressOut}
-        style={({ pressed }) => [styles.qcPress, pressed && { opacity: 0.98 }]}
-      >
-        <View style={styles.qcImageBlock}>
-          <View style={[styles.qcImageFrame, { borderColor: c.border, backgroundColor: isDark ? c.surfaceMuted : "#FAFAFA" }]}>
-            {discountBadge ? (
-              <LinearGradient
-                colors={isDark ? ["#EF4444", "#DC2626"] : ["#F97316", "#DC2626"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.qcDiscountBadge}
-              >
-                <Text style={[styles.qcDiscountBadgeText, { fontFamily: fonts.bold, color: "#FFF7ED" }]} numberOfLines={1}>
-                  {discountBadge}
-                </Text>
-              </LinearGradient>
-            ) : null}
-            <View style={[styles.qcImageInner, { backgroundColor: isDark ? "#292524" : "#FFFFFF" }]}>
-              {imageUri && !imageFailed ? (
-                <Image
-                  source={{ uri: imageUri }}
-                  style={styles.qcImage}
-                  contentFit="contain"
-                  transition={240}
-                  recyclingKey={`${product?.id || "product"}:${imageUri}`}
-                  onError={handleImageError}
-                />
-              ) : (
-                <View style={styles.imageFallback}>
-                  <View style={[styles.imageFallbackIconWrap, { backgroundColor: isDark ? c.surface : ALCHEMY.goldSoft }]}>
-                    <Ionicons name="image-outline" size={icon.md} color={c.textMuted} />
-                  </View>
-                  <Text style={[styles.imageFallbackText, { color: c.textMuted, fontFamily: fonts.semibold }]}>
-                    {imageFallbackLabel}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.qcBody}>
-          <Text style={[styles.qcTitle, { color: c.textPrimary }]} numberOfLines={2}>
-            {product.name}
-          </Text>
-          {ratingAvg > 0 ? (
-            <View style={styles.qcRatingRow}>
-              <Ionicons name="star" size={icon.tiny} color={HERITAGE.amberMid} />
-              <Text style={[styles.qcRatingText, { color: c.textSecondary, fontFamily: fonts.semibold }]} numberOfLines={1}>
-                {ratingAvg.toFixed(1)} ({reviewCount})
-              </Text>
-            </View>
-          ) : null}
-          <View style={styles.qcUnitRow}>
-            <Text style={[styles.qcUnit, { color: c.textMuted, fontFamily: fonts.medium }]} numberOfLines={1}>
-              {product.unit || "1 pc"}
-            </Text>
-          </View>
-
-          <View style={styles.qcPriceRow}>
-            <View style={styles.qcPriceCol}>
-              <Text style={[styles.qcPrice, { color: c.textPrimary, fontFamily: fonts.extrabold }]}>
-                {formatINRWhole(safePrice)}
-              </Text>
-              {listMrp ? (
-                <Text
-                  style={[styles.qcMrp, { color: c.textMuted, fontFamily: fonts.medium }]}
-                  numberOfLines={1}
-                >
-                  {formatINRWhole(listMrp)}
-                </Text>
-              ) : null}
-              {listMrp ? (
-                <Text style={[styles.qcSaveText, { color: c.secondaryDark, fontFamily: fonts.bold }]} numberOfLines={1}>
-                  Save {formatINRWhole(listMrp - safePrice)}
-                </Text>
-              ) : null}
-            </View>
-            {quantity > 0 ? (
-              <View style={[styles.qcStepper, { borderColor: c.secondary }]}>
-                <TouchableOpacity style={styles.qcStepHit} activeOpacity={0.85} onPress={onRemoveFromCart}>
-                  <Ionicons name="remove" size={icon.sm} color={c.secondary} />
-                </TouchableOpacity>
-                <Text style={[styles.qcStepQty, { color: c.textPrimary, fontFamily: fonts.bold }]}>{quantity}</Text>
-                <TouchableOpacity style={styles.qcStepHit} activeOpacity={0.85} onPress={onAddToCart}>
-                  <Ionicons name="add" size={icon.sm} color={c.secondary} />
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <Animated.View style={ctaScaleStyle}>
-                <TouchableOpacity
-                  style={[
-                    styles.qcAddBtn,
-                    { borderColor: c.primaryDark, backgroundColor: c.primary },
-                    isOutOfStock && { borderColor: c.textMuted, backgroundColor: c.textMuted, opacity: 0.7 },
-                  ]}
-                  activeOpacity={0.88}
-                  onPress={handleAddPress}
-                  disabled={isOutOfStock}
-                >
-                  <Ionicons
-                    name={isOutOfStock ? "close-outline" : "add"}
-                    size={icon.xs}
-                    color={c.onPrimary}
-                  />
-                  <Text style={[styles.qcAddBtnText, { color: c.onPrimary, fontFamily: fonts.extrabold }]}>
-                    {isOutOfStock ? "OUT" : "ADD"}
-                  </Text>
-                </TouchableOpacity>
-              </Animated.View>
-            )}
-          </View>
-        </View>
-      </Pressable>
-    </CardInner>
-  );
-
   const legacyBody = (
     <CardInner
       style={[
@@ -548,7 +383,7 @@ export default function ProductCard({
 
   return (
     <Root style={styles.cardEntryWrap} {...(rootEntering ? { entering: rootEntering } : {})}>
-      {isList ? legacyBody : cardBody}
+      {legacyBody}
     </Root>
   );
 }

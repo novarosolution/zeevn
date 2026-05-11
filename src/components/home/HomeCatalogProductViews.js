@@ -1,6 +1,5 @@
 import React, { memo } from "react";
-import { Platform, View } from "react-native";
-import PremiumProductCard from "../PremiumProductCard";
+import { View } from "react-native";
 import ProductCard from "../ProductCard";
 
 /** Single-row catalog layout (memoized). */
@@ -16,8 +15,6 @@ export const HomeCatalogListRow = memo(function HomeCatalogListRow({
   isOutOfStock,
   cardStyle = "compact",
 }) {
-  const useLegacyMobileCard = Platform.OS !== "web";
-
   return (
     <View
       style={[
@@ -25,31 +22,19 @@ export const HomeCatalogListRow = memo(function HomeCatalogListRow({
         index < totalInGroup - 1 ? styles.productListRowDivider : styles.productListRowLast,
       ]}
     >
-      {useLegacyMobileCard ? (
-        <PremiumProductCard
-          index={index}
-          imagePriority={index < 4 ? "high" : "normal"}
-          isOutOfStock={isOutOfStock}
-          product={item}
-          onPress={() => navigation.navigate("Product", { productId: item.id })}
-          quantity={quantity}
-          onAddToCart={onAddToCart}
-          onRemoveFromCart={onRemoveFromCart}
-        />
-      ) : (
-        <ProductCard
-          index={index}
-          isOutOfStock={isOutOfStock}
-          product={item}
-          onPress={() => navigation.navigate("Product", { productId: item.id })}
-          quantity={quantity}
-          onAddToCart={onAddToCart}
-          onRemoveFromCart={onRemoveFromCart}
-          variant="list"
-          editorial={cardStyle === "comfortable"}
-          showEta={cardStyle === "comfortable"}
-        />
-      )}
+      <ProductCard
+        index={index}
+        isOutOfStock={isOutOfStock}
+        product={item}
+        onPress={() => navigation.navigate("Product", { productId: item.id })}
+        quantity={quantity}
+        onAddToCart={onAddToCart}
+        onRemoveFromCart={onRemoveFromCart}
+        variant="list"
+        compact={cardStyle !== "comfortable"}
+        editorial={cardStyle === "comfortable"}
+        showEta={cardStyle === "comfortable"}
+      />
     </View>
   );
 });

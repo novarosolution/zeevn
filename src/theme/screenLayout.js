@@ -14,7 +14,7 @@ export function customerPanel(c, shadowPremium, isDark) {
     ...admin,
     borderRadius: semanticRadius.panel,
     borderTopWidth: 1,
-    padding: spacing.lg,
+    padding: spacing.md + 2,
     ...(isDark
       ? {
           backgroundColor: c.surfaceElevated || c.surface,
@@ -83,7 +83,7 @@ export function customerPanelVariant(c, shadowPremium, isDark, variant = "defaul
 export const customerContentWidth = {
   width: "100%",
   alignSelf: "center",
-  maxWidth: Platform.select({ web: layout.maxContentWidth + 24, default: "100%" }),
+  maxWidth: Platform.select({ web: layout.maxContentWidth + 12, default: "100%" }),
 };
 
 /** Inner height of floating `BottomNavBar` row (paddingVertical 10×2 + min tab ~44). */
@@ -147,16 +147,16 @@ export function customerWebStickyTop(extra = 0) {
 export const customerPageScrollBase = {
   /** Balanced gutters: generous on web for an editorial, premium layout. */
   paddingHorizontal: Platform.select({
-    web: Math.max(spacing.lg, container.gutter.desktop - 8),
+    web: Math.max(spacing.md + 2, container.gutter.desktop - 16),
     default: spacing.lg,
   }),
   width: "100%",
   alignSelf: "center",
-  maxWidth: Platform.select({ web: layout.maxContentWidth + 24, default: "100%" }),
+  maxWidth: Platform.select({ web: layout.maxContentWidth + 12, default: "100%" }),
 };
 
 /** Vertical rhythm between major blocks on inner pages (pairs with `ScreenPageHeader` flush bottom margin). */
-export const CUSTOMER_INNER_PAGE_GAP = spacing.lg;
+export const CUSTOMER_INNER_PAGE_GAP = spacing.md + 2;
 
 /**
  * Standard `MotionScrollView` / `ScrollView` content for logged-in inner pages: gutters, safe padding,
@@ -205,10 +205,10 @@ export const authScrollContent = {
   ...Platform.select({
     web: {
       width: "100%",
-      maxWidth: layout.maxContentWidth + 24,
+      maxWidth: layout.maxContentWidth + 12,
       alignSelf: "center",
-      paddingHorizontal: Math.max(spacing.lg, container.gutter.desktop - 8),
-      paddingTop: spacing.lg + 4,
+      paddingHorizontal: Math.max(spacing.md + 2, container.gutter.desktop - 16),
+      paddingTop: spacing.md + 6,
       paddingBottom: spacing.xxl,
       flexGrow: 1,
       minHeight: `calc(100dvh - ${WEB_HEADER_HEIGHT}px)`,

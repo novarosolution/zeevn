@@ -17,10 +17,10 @@ import { useTheme } from "../../context/ThemeContext";
 import useReducedMotion from "../../hooks/useReducedMotion";
 
 const SIZE_TOKENS = {
-  sm: { padV: 8, padH: 14, fs: typography.caption, gap: 6, iconSize: icon.xs, height: 36 },
-  md: { padV: 10, padH: 18, fs: typography.bodySmall, gap: 8, iconSize: icon.sm, height: 44 },
-  lg: { padV: 12, padH: 22, fs: typography.bodySmall + 1, gap: 8, iconSize: icon.md, height: 48 },
-  xl: { padV: 14, padH: 26, fs: typography.body + 1, gap: 9, iconSize: icon.md, height: 52 },
+  sm: { padV: 7, padH: 13, fs: typography.caption, gap: 6, iconSize: icon.xs, height: 34 },
+  md: { padV: 9, padH: 16, fs: typography.bodySmall, gap: 8, iconSize: icon.sm, height: 42 },
+  lg: { padV: 11, padH: 20, fs: typography.bodySmall + 1, gap: 8, iconSize: icon.md, height: 46 },
+  xl: { padV: 13, padH: 24, fs: typography.body + 1, gap: 9, iconSize: icon.md, height: 50 },
 };
 
 /**
@@ -276,13 +276,13 @@ function createStyles(c, isDark, t, fullWidth) {
     },
     pulseGlow: {
       position: "absolute",
-      top: -6,
-      left: -6,
-      right: -6,
-      bottom: -6,
+      top: -5,
+      left: -5,
+      right: -5,
+      bottom: -5,
       borderRadius: radius.pill,
       ...Platform.select({
-        web: { filter: "blur(10px)" },
+        web: { filter: "blur(8px)" },
         default: {},
       }),
       zIndex: -1,
@@ -321,8 +321,8 @@ function createStyles(c, isDark, t, fullWidth) {
         android: { elevation: 2 },
         web: {
           boxShadow: isDark
-            ? "0 8px 18px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12)"
-            : "0 10px 22px rgba(15, 23, 42, 0.1), inset 0 1px 0 rgba(255,255,255,0.24)",
+            ? "0 7px 14px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.12)"
+            : "0 8px 16px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255,255,255,0.24)",
         },
         default: {},
       }),
@@ -338,8 +338,8 @@ function createStyles(c, isDark, t, fullWidth) {
       ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 6px 14px rgba(0,0,0,0.16)"
-            : "0 4px 10px rgba(15, 23, 42, 0.05)",
+            ? "0 5px 12px rgba(0,0,0,0.14)"
+            : "0 3px 8px rgba(15, 23, 42, 0.04)",
         },
         default: {},
       }),
@@ -354,8 +354,8 @@ function createStyles(c, isDark, t, fullWidth) {
       ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 6px 12px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255, 255, 255, 0.04)"
-            : "0 4px 10px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255,255,255,0.92)",
+            ? "0 5px 10px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255, 255, 255, 0.04)"
+            : "0 3px 8px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255,255,255,0.92)",
         },
         default: {},
       }),
@@ -366,7 +366,7 @@ function createStyles(c, isDark, t, fullWidth) {
       backgroundColor: isDark ? c.surfaceMuted : "#F8F6F3",
       ...Platform.select({
         web: {
-          boxShadow: "0 3px 8px rgba(15, 23, 42, 0.04)",
+          boxShadow: "0 2px 6px rgba(15, 23, 42, 0.04)",
         },
         default: {},
       }),
@@ -398,7 +398,7 @@ function createStyles(c, isDark, t, fullWidth) {
     hover: {
       ...Platform.select({
         web: {
-          transform: [{ translateY: -1 }],
+          transform: [{ translateY: -0.5 }],
         },
         default: {},
       }),

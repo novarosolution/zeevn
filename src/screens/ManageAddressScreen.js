@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Platform,
   StyleSheet,
@@ -56,16 +56,26 @@ export default function ManageAddressScreen({ navigation }) {
   const [saving, setSaving] = useState(false);
   const [detecting, setDetecting] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [showStickySave, setShowStickySave] = useState(false);
+  const initialAddressRef = useRef({ line1: "", city: "", state: "", postalCode: "", country: "" });
 
   const loadAddress = useCallback(async () => {
     if (!token) return;
     try {
       const profile = await fetchUserProfile(token);
-      setLine1(profile.defaultAddress?.line1 || "");
-      setCity(profile.defaultAddress?.city || "");
-      setState(profile.defaultAddress?.state || "");
-      setPostalCode(profile.defaultAddress?.postalCode || "");
-      setCountry(profile.defaultAddress?.country || "");
+      const nextAddress = {
+        line1: String(profile.defaultAddress?.line1 || ""),
+        city: String(profile.defaultAddress?.city || ""),
+        state: String(profile.defaultAddress?.state || ""),
+        postalCode: String(profile.defaultAddress?.postalCode || ""),
+        country: String(profile.defaultAddress?.country || ""),
+      };
+      setLine1(nextAddress.line1);
+      setCity(nextAddress.city);
+      setState(nextAddress.state);
+      setPostalCode(nextAddress.postalCode);
+      setCountry(nextAddress.country);
+      initialAddressRef.current = nextAddress;
       setLatitude(Number.isFinite(Number(profile.defaultAddress?.latitude)) ? Number(profile.defaultAddress?.latitude) : null);
       setLongitude(Number.isFinite(Number(profile.defaultAddress?.longitude)) ? Number(profile.defaultAddress?.longitude) : null);
     } catch {
@@ -137,6 +147,13 @@ export default function ManageAddressScreen({ navigation }) {
         },
       });
       await updateStoredUser(updated);
+      initialAddressRef.current = {
+        line1: line1.trim(),
+        city: city.trim(),
+        state: state.trim(),
+        postalCode: postalCode.trim(),
+        country: country.trim(),
+      };
       setSuccess("Address saved successfully.");
     } catch (err) {
       setError(err.message || "Unable to save address.");
@@ -144,6 +161,17 @@ export default function ManageAddressScreen({ navigation }) {
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    const initial = initialAddressRef.current;
+    const hasDirty =
+      line1.trim() !== String(initial?.line1 || "").trim() ||
+      city.trim() !== String(initial?.city || "").trim() ||
+      state.trim() !== String(initial?.state || "").trim() ||
+      postalCode.trim() !== String(initial?.postalCode || "").trim() ||
+      country.trim() !== String(initial?.country || "").trim();
+    setShowStickySave(hasDirty && !saving);
+  }, [line1, city, state, postalCode, country, saving]);
 
   if (isAuthLoading || !isAuthenticated) {
     return <AuthGateShell />;
@@ -290,7 +318,7 @@ export default function ManageAddressScreen({ navigation }) {
         </View>
         <AppFooter />
       </MotionScrollView>
-      {Platform.OS !== "web" ? (
+      {Platform.OS !== "web" && showStickySave ? (
         <PremiumStickyBar>
           <PremiumButton
             label={saving ? "Saving…" : "Save address"}

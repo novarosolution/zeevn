@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { fonts, spacing, typography } from "../theme/tokens";
@@ -116,12 +116,6 @@ export default function LoginScreen({ navigation }) {
               />
             </SectionReveal>
 
-            <View style={styles.secondaryDivider}>
-              <View style={styles.secondaryDividerLine} />
-              <Text style={styles.secondaryDividerLabel}>{LOGIN_SCREEN.dividerOr}</Text>
-              <View style={styles.secondaryDividerLine} />
-            </View>
-
             <View style={styles.secondaryStack}>
               <PremiumButton
                 label={LOGIN_SCREEN.createAccountCta}
@@ -132,16 +126,10 @@ export default function LoginScreen({ navigation }) {
                 style={styles.secondaryActionBtn}
                 onPress={() => navigation.navigate("Register")}
               />
-              <PremiumButton
-                label={LOGIN_SCREEN.guestCta}
-                variant="ghost"
-                size="md"
-                fullWidth
-                iconLeft="storefront-outline"
-                style={styles.secondaryActionBtn}
-                onPress={() => navigation.navigate("Home")}
-              />
             </View>
+            <Text style={styles.guestLink} onPress={() => navigation.navigate("Home")} accessibilityRole="button">
+              {LOGIN_SCREEN.guestCta}
+            </Text>
     </AuthPageScaffold>
   );
 }
@@ -149,40 +137,29 @@ export default function LoginScreen({ navigation }) {
 function createLoginStyles(c) {
   return StyleSheet.create({
     fieldStack: {
-      gap: spacing.sm + 2,
-      marginTop: spacing.lg,
+      gap: spacing.sm,
+      marginTop: spacing.md + 2,
       marginBottom: spacing.sm + 2,
     },
     errorWrap: {
       marginBottom: spacing.sm,
     },
     primaryCta: {
-      marginTop: spacing.md,
-    },
-    secondaryDivider: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.sm,
-      marginTop: spacing.md + 2,
-      marginBottom: spacing.sm,
-    },
-    secondaryDividerLine: {
-      flex: 1,
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: c.border,
-    },
-    secondaryDividerLabel: {
-      fontFamily: fonts.bold,
-      fontSize: typography.overline,
-      letterSpacing: 1.4,
-      textTransform: "uppercase",
-      color: c.textMuted,
+      marginTop: spacing.sm + 2,
     },
     secondaryStack: {
       gap: spacing.xs + 2,
+      marginTop: spacing.md,
     },
     secondaryActionBtn: {
       opacity: 0.94,
+    },
+    guestLink: {
+      marginTop: spacing.sm + 2,
+      textAlign: "center",
+      fontFamily: fonts.semibold,
+      fontSize: typography.bodySmall,
+      color: c.textMuted,
     },
   });
 }

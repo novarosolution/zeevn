@@ -51,7 +51,7 @@ import GoldHairline from "../components/ui/GoldHairline";
 import MotionScrollView from "../components/motion/MotionScrollView";
 import SectionReveal from "../components/motion/SectionReveal";
 import { staggerDelay } from "../theme/motion";
-import { CART_ADDRESS, CART_UI } from "../content/appContent";
+import { CART_ADDRESS, CART_UI, fillPlaceholders } from "../content/appContent";
 import PaymentMethodSelector from "../components/payments/PaymentMethodSelector";
 import {
   getPublicRazorpayKeyId,
@@ -78,9 +78,9 @@ export default function CartScreen({ navigation, route }) {
   const { isAuthenticated, token, user } = useAuth();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const isCompact = width < 420;
-  const isDesktop = Platform.OS === "web" && width >= 1180;
-  const stackCouponRow = width < 640;
+  const isCompact = width < 480;
+  const isDesktop = Platform.OS === "web" && width >= 1160;
+  const stackCouponRow = width < 720;
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [line1, setLine1] = useState("");
@@ -229,12 +229,12 @@ export default function CartScreen({ navigation, route }) {
             <BrandWordmark sizeKey="footerCompact" style={styles.loginBrandLogo} />
             <PremiumEmptyState
               iconName="bag-handle-outline"
-              title="Sign in to continue"
-              description="Sign in to use your cart."
-              ctaLabel="Go to login"
+              title={CART_UI.signInTitle}
+              description={CART_UI.signInDescription}
+              ctaLabel={CART_UI.signInCta}
               ctaIconLeft="log-in-outline"
               onCtaPress={() => navigation.navigate("Login")}
-              secondaryCtaLabel="Browse store"
+              secondaryCtaLabel={CART_UI.browseStoreCta}
               onSecondaryCtaPress={() => navigation.navigate("Home")}
             />
           </View>
@@ -326,7 +326,7 @@ export default function CartScreen({ navigation, route }) {
       !postalCode.trim() ||
       !country.trim()
     ) {
-      setError("Please complete delivery address details.");
+      setError(CART_UI.validationAddressIncomplete);
       return false;
     }
     return true;
@@ -375,7 +375,7 @@ export default function CartScreen({ navigation, route }) {
       clearCart();
 
       if (paymentMethod === "Cash on Delivery") {
-        setSuccess("Order placed—track it in Profile.");
+        setSuccess(CART_UI.orderPlacedCodSuccess);
         navigation.navigate("Profile");
         return;
       }
@@ -383,7 +383,7 @@ export default function CartScreen({ navigation, route }) {
       const orderId = created?._id || created?.id;
       const keyId = created?.razorpayKeyId || getPublicRazorpayKeyId();
       if (!orderId) {
-        throw new Error("Order created but response was incomplete. Check My Orders.");
+        throw new Error(CART_UI.orderIncompleteError);
       }
       if (Platform.OS === "web") {
         await loadRazorpayWebSdk();
@@ -403,19 +403,19 @@ export default function CartScreen({ navigation, route }) {
           razorpay_payment_id: p.razorpay_payment_id,
           razorpay_signature: p.razorpay_signature,
         });
-        setSuccess("Payment confirmed.");
+        setSuccess(CART_UI.paymentConfirmed);
         navigation.navigate("MyOrders");
         return;
       }
 
       if (checkout.status === "fallback") {
-        setSuccess("Finish payment on Razorpay—then check My Orders.");
+        setSuccess(CART_UI.paymentFallback);
       } else {
-        setSuccess("Resume payment from My Orders within 30 minutes.");
+        setSuccess(CART_UI.paymentResume);
       }
       navigation.navigate("MyOrders");
     } catch (err) {
-      setError(err.message || "Unable to place order.");
+      setError(err.message || CART_UI.placeOrderError);
     } finally {
       setIsPlacingOrder(false);
     }
@@ -427,7 +427,7 @@ export default function CartScreen({ navigation, route }) {
       setSuccess("");
       const normalized = String(couponCode || "").trim().toUpperCase();
       if (!normalized) {
-        setError("Enter coupon code.");
+        setError(CART_UI.couponRequired);
         return;
       }
       const result = await validateCouponRequest(token, normalized, totalAmount);
@@ -437,7 +437,7 @@ export default function CartScreen({ navigation, route }) {
       setAvailableCoupons((current) => current.filter((coupon) => coupon.code !== normalized));
     } catch (err) {
       setAppliedCoupon(null);
-      setError(err.message || "Unable to apply coupon.");
+      setError(err.message || CART_UI.couponApplyError);
     }
   };
 
@@ -473,7 +473,7 @@ export default function CartScreen({ navigation, route }) {
       if (Number.isFinite(Number(address.longitude))) setLongitude(Number(address.longitude));
       setSuccess(CART_ADDRESS.gpsFillSuccess);
     } catch (err) {
-      setError(err.message || "Unable to get current location.");
+      setError(err.message || CART_UI.locationError);
     } finally {
       setIsDetectingLocation(false);
     }
@@ -533,8 +533,10 @@ export default function CartScreen({ navigation, route }) {
           title={CART_UI.pageTitle}
           subtitle={
             cartItems.length === 0
-              ? "Add items from the shop."
-              : `${totalItems} item${totalItems === 1 ? "" : "s"}`
+              ? CART_UI.pageSubtitleEmpty
+              : fillPlaceholders(CART_UI.pageSubtitleCount, {
+                  count: `${totalItems} item${totalItems === 1 ? "" : "s"}`,
+                })
           }
         />
 
@@ -544,7 +546,9 @@ export default function CartScreen({ navigation, route }) {
               <View style={styles.cartHeroTextBlock}>
                 <Text style={styles.cartHeroEyebrow}>{CART_UI.pageEyebrow}</Text>
                 <Text style={styles.cartHeroTitle}>
-                  {`${totalItems} item${totalItems === 1 ? "" : "s"} ready for checkout`}
+                  {fillPlaceholders(CART_UI.readyTitle, {
+                    count: `${totalItems} item${totalItems === 1 ? "" : "s"}`,
+                  })}
                 </Text>
                 <LinearGradient
                   colors={[c.primaryBright, c.primary, c.primaryDark]}
@@ -552,9 +556,7 @@ export default function CartScreen({ navigation, route }) {
                   end={{ x: 1, y: 0.5 }}
                   style={styles.cartHeroAccent}
                 />
-                <Text style={styles.cartHeroSubtitle}>
-                  Review items, apply savings, and check out with a clearer delivery summary.
-                </Text>
+                <Text style={styles.cartHeroSubtitle}>{CART_UI.readySubtitle}</Text>
               </View>
               <View style={styles.cartHeroIcon}>
                 <Ionicons
@@ -616,7 +618,7 @@ export default function CartScreen({ navigation, route }) {
                     </Text>
                     <Text style={styles.upsellPrice}>{formatINR(p.price)}</Text>
                     <PremiumButton
-                      label="Add"
+                      label={CART_UI.addUpsellCta}
                       iconLeft="add-outline"
                       variant="secondary"
                       size="sm"
@@ -655,7 +657,7 @@ export default function CartScreen({ navigation, route }) {
           <View style={[styles.couponRow, stackCouponRow ? styles.couponRowStack : null]}>
             <View style={styles.couponInputWrap}>
               <PremiumInput
-                label="Coupon code"
+                label={CART_UI.couponCodeLabel}
                 value={couponCode}
                 onChangeText={setCouponCode}
                 autoCapitalize="characters"
@@ -665,7 +667,7 @@ export default function CartScreen({ navigation, route }) {
               />
             </View>
             <PremiumButton
-              label="Apply"
+              label={CART_UI.applyCouponCta}
               variant="subtle"
               size="sm"
               fullWidth={stackCouponRow}
@@ -733,7 +735,7 @@ export default function CartScreen({ navigation, route }) {
           />
           <View style={styles.addressFieldGap}>
             <PremiumInput
-              label="Full name"
+                      label={CART_ADDRESS.fullNameLabel}
               value={fullName}
               onChangeText={setFullName}
               iconLeft="person-outline"
@@ -744,7 +746,7 @@ export default function CartScreen({ navigation, route }) {
           </View>
           <View style={styles.addressFieldGap}>
             <PremiumInput
-              label="Phone"
+                      label={CART_ADDRESS.phoneLabel}
               value={phone}
               onChangeText={setPhone}
               iconLeft="call-outline"
@@ -755,7 +757,7 @@ export default function CartScreen({ navigation, route }) {
           </View>
           <View style={styles.addressFieldGap}>
             <PremiumInput
-              label="Address line"
+                      label={CART_ADDRESS.line1Label}
               value={line1}
               onChangeText={setLine1}
               iconLeft="home-outline"
@@ -767,7 +769,7 @@ export default function CartScreen({ navigation, route }) {
           <View style={[styles.addressRow, isCompact ? styles.addressRowCompact : null]}>
             <View style={[styles.addressFieldGap, styles.halfField]}>
               <PremiumInput
-                label="City"
+                        label={CART_ADDRESS.cityLabel}
                 value={city}
                 onChangeText={setCity}
                 autoCapitalize="words"
@@ -777,7 +779,7 @@ export default function CartScreen({ navigation, route }) {
             </View>
             <View style={[styles.addressFieldGap, styles.halfField]}>
               <PremiumInput
-                label="State"
+                        label={CART_ADDRESS.stateLabel}
                 value={state}
                 onChangeText={setState}
                 autoCapitalize="words"
@@ -789,7 +791,7 @@ export default function CartScreen({ navigation, route }) {
           <View style={[styles.addressRow, isCompact ? styles.addressRowCompact : null]}>
             <View style={[styles.addressFieldGap, styles.halfField]}>
               <PremiumInput
-                label="Postal code"
+                        label={CART_ADDRESS.postalCodeLabel}
                 value={postalCode}
                 onChangeText={setPostalCode}
                 keyboardType="number-pad"
@@ -799,7 +801,7 @@ export default function CartScreen({ navigation, route }) {
             </View>
             <View style={[styles.addressFieldGap, styles.halfField]}>
               <PremiumInput
-                label="Country"
+                        label={CART_ADDRESS.countryLabel}
                 value={country}
                 onChangeText={setCountry}
                 autoCapitalize="words"
@@ -810,7 +812,7 @@ export default function CartScreen({ navigation, route }) {
           </View>
           <View style={styles.addressFieldGap}>
             <PremiumInput
-              label="Delivery note (optional)"
+                      label={CART_ADDRESS.noteLabel}
               value={note}
               onChangeText={setNote}
               multiline
@@ -827,11 +829,11 @@ export default function CartScreen({ navigation, route }) {
         {cartItems.length > 0 ? (
           <View style={styles.checkoutProgress}>
             {[
-              { key: "bag", label: "Bag", active: cartItems.length > 0 },
-              { key: "address", label: "Address", active: addressReady },
+              { key: "bag", label: CART_UI.progressBag, active: cartItems.length > 0 },
+              { key: "address", label: CART_UI.progressAddress, active: addressReady },
               {
                 key: "payment",
-                label: "Payment",
+                label: CART_UI.progressPayment,
                 active: Boolean(paymentMethod),
               },
             ].map((step) => (
@@ -926,7 +928,7 @@ export default function CartScreen({ navigation, route }) {
         <View style={styles.cartCtaDock}>
           <View style={styles.checkoutCtaWrap}>
             <PremiumButton
-              label={cartItems.length === 0 ? "Add items to continue" : primaryCtaLabel}
+              label={cartItems.length === 0 ? CART_UI.addItemsToContinueCta : primaryCtaLabel}
               iconRight={cartItems.length > 0 && !isPlacingOrder ? "arrow-forward" : undefined}
               variant="primary"
               size="lg"
@@ -941,7 +943,7 @@ export default function CartScreen({ navigation, route }) {
           </View>
 
           <PremiumButton
-            label="Continue exploring"
+            label={CART_UI.continueExploringCta}
             iconLeft="chevron-back"
             variant="ghost"
             size="md"
@@ -968,7 +970,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth + 96, default: "100%" }),
+    maxWidth: Platform.select({ web: layout.maxContentWidth + 56, default: "100%" }),
   },
   scrollFill: {
     flex: 1,
@@ -977,14 +979,14 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   cartGridRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: spacing.xl + 8,
+    gap: spacing.xl,
   },
   cartLeftCol: {
     flex: 1,
     minWidth: 0,
   },
   cartRightCol: {
-    width: 360,
+    width: 340,
     flexShrink: 0,
     ...Platform.select({
       web: {

@@ -7,7 +7,6 @@ import Animated, { FadeInDown } from "react-native-reanimated";
 import HomeAmbientOrbs from "./HomeAmbientOrbs";
 import BrandWordmark from "../BrandWordmark";
 import { HERO_GRADIENT_PRESETS } from "../../constants/marketingAssets";
-import { HOME_HERO_BANNER } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
 import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { icon } from "../../theme/tokens";
@@ -134,14 +133,6 @@ export default function HomeMarketingHero({
                       </View>
                     ) : null}
                     <View style={styles.heroImageInner}>
-                      {slideIndex === 0 ? (
-                        <View style={styles.heroEditorialRow}>
-                          <Text style={styles.heroKickerText}>{HOME_HERO_BANNER.kicker}</Text>
-                          <View style={styles.heroBadgePill}>
-                            <Text style={styles.heroBadgePillText}>{HOME_HERO_BANNER.badge}</Text>
-                          </View>
-                        </View>
-                      ) : null}
                       <BrandWordmark
                         sizeKey="homeHero"
                         color={c.heroForeground}
@@ -149,21 +140,6 @@ export default function HomeMarketingHero({
                       />
                       <Text style={[styles.heroDisplayTitle, styles.heroDisplayOnPhoto]}>{slide.title}</Text>
                       <Text style={[styles.heroDisplaySub, styles.heroDisplaySubOnPhoto]}>{slide.subtitle}</Text>
-                      {slideIndex === 0 && HOME_HERO_BANNER.editorialNote ? (
-                        <Text style={styles.heroEditorialNote}>{HOME_HERO_BANNER.editorialNote}</Text>
-                      ) : null}
-                      {(HOME_HERO_BANNER.highlights || []).length > 0 ? (
-                        <View style={styles.heroPromiseRow}>
-                          {HOME_HERO_BANNER.highlights.map((item) => (
-                            <View key={item.key} style={styles.heroPromiseChip}>
-                              <Ionicons name={item.icon} size={icon.xs} color={c.heroForeground} />
-                              <Text style={styles.heroPromiseChipText} numberOfLines={1}>
-                                {item.label}
-                              </Text>
-                            </View>
-                          ))}
-                        </View>
-                      ) : null}
                       <PremiumButton
                         label={slide.cta}
                         iconRight="arrow-forward"

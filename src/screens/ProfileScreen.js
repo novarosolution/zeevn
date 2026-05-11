@@ -36,7 +36,7 @@ import {
 } from "../theme/screenLayout";
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
 import { fonts, icon as glyphSize, layout, radius, spacing, typography } from "../theme/tokens";
-import { PROFILE_SCREEN } from "../content/appContent";
+import { PROFILE_SCREEN, fillPlaceholders } from "../content/appContent";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import PremiumButton from "../components/ui/PremiumButton";
 import PremiumCard from "../components/ui/PremiumCard";
@@ -108,7 +108,7 @@ export default function ProfileScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isDesktop = Platform.OS === "web" && width >= 1180;
-  const useStickyHeroCol = Platform.OS === "web" && width >= 1320;
+  const useStickyHeroCol = Platform.OS === "web" && width >= 1360;
   const profileStyles = useMemo(
     () => createProfileStyles(c, isDark, { isDesktop, useStickyHeroCol }),
     [c, isDark, isDesktop, useStickyHeroCol]
@@ -316,7 +316,7 @@ export default function ProfileScreen({ navigation }) {
 
           <View style={profileStyles.heroActionRow}>
             <PremiumButton
-              label="Edit profile"
+              label={PROFILE_SCREEN.editProfileCta}
               iconLeft="create-outline"
               variant="primary"
               size="md"
@@ -324,7 +324,7 @@ export default function ProfileScreen({ navigation }) {
               style={profileStyles.heroPrimaryBtn}
             />
             <PremiumButton
-              label={hasAddress ? "Manage address" : "Add address"}
+              label={hasAddress ? PROFILE_SCREEN.manageAddressCta : PROFILE_SCREEN.addressAddCta}
               iconLeft="location-outline"
               variant="secondary"
               size="md"
@@ -339,7 +339,7 @@ export default function ProfileScreen({ navigation }) {
             <StatTile
               iconName="receipt-outline"
               value={orders.length}
-              label="Orders"
+              label={PROFILE_SCREEN.ordersStatLabel}
               tone="gold"
               active={!loading}
               reducedMotion={reducedMotion}
@@ -348,7 +348,7 @@ export default function ProfileScreen({ navigation }) {
             <StatTile
               iconName="checkmark-circle-outline"
               value={deliveredOrders}
-              label="Delivered"
+              label={PROFILE_SCREEN.deliveredStatLabel}
               tone="green"
               active={!loading}
               reducedMotion={reducedMotion}
@@ -357,7 +357,7 @@ export default function ProfileScreen({ navigation }) {
             <StatTile
               iconName="notifications-outline"
               value={unreadNotifications}
-              label="Unread"
+              label={PROFILE_SCREEN.unreadStatLabel}
               tone="rose"
               active={!loading}
               reducedMotion={reducedMotion}
@@ -440,30 +440,30 @@ export default function ProfileScreen({ navigation }) {
   const accountOptions = [
     {
       key: "edit-profile",
-      title: "Edit profile",
-      hint: "Name and photo",
+      title: PROFILE_SCREEN.quickActions.editProfileTitle,
+      hint: PROFILE_SCREEN.quickActions.editProfileHint,
       iconName: "create-outline",
       tone: "accent",
       onPress: () => navigation.navigate("EditProfile"),
     },
     {
       key: "address",
-      title: "Manage address",
-      hint: hasAddress ? "Address saved" : "Add location",
+      title: PROFILE_SCREEN.quickActions.addressTitle,
+      hint: hasAddress ? PROFILE_SCREEN.quickActions.addressSavedHint : PROFILE_SCREEN.quickActions.addressMissingHint,
       iconName: "location-outline",
       tone: "accent",
       onPress: () => navigation.navigate("ManageAddress"),
     },
     {
       key: "orders",
-      title: "My orders",
+      title: PROFILE_SCREEN.quickActions.ordersTitle,
       hint: `${orders.length} total`,
       iconName: "bag-handle-outline",
       onPress: () => navigation.navigate("MyOrders"),
     },
     {
       key: "redeem-rewards",
-      title: "Redeem rewards",
+      title: PROFILE_SCREEN.quickActions.rewardsTitle,
       hint: `${Math.max(0, Number(user?.rewardPoints ?? 0))} points`,
       iconName: "gift-outline",
       tone: "accent",
@@ -471,8 +471,11 @@ export default function ProfileScreen({ navigation }) {
     },
     {
       key: "notifications",
-      title: "Notifications",
-      hint: unreadNotifications > 0 ? `${unreadNotifications} unread` : "All caught up",
+      title: PROFILE_SCREEN.quickActions.notificationsTitle,
+      hint:
+        unreadNotifications > 0
+          ? fillPlaceholders("{count} unread", { count: unreadNotifications })
+          : PROFILE_SCREEN.quickActions.notificationsAllCaughtUp,
       iconName: "notifications-outline",
       tone: unreadNotifications > 0 ? "accent" : "normal",
       rightSlot:
@@ -483,15 +486,15 @@ export default function ProfileScreen({ navigation }) {
     },
     {
       key: "settings",
-      title: "Settings",
-      hint: "Theme and alerts",
+      title: PROFILE_SCREEN.quickActions.settingsTitle,
+      hint: PROFILE_SCREEN.quickActions.settingsHint,
       iconName: "settings-outline",
       onPress: () => navigation.navigate("Settings"),
     },
     {
       key: "support",
-      title: "Support",
-      hint: "Help and contact",
+      title: PROFILE_SCREEN.quickActions.supportTitle,
+      hint: PROFILE_SCREEN.quickActions.supportHint,
       iconName: "chatbubble-ellipses-outline",
       onPress: () => navigation.navigate("Support"),
     },
@@ -519,27 +522,33 @@ export default function ProfileScreen({ navigation }) {
             <Ionicons name="diamond-outline" size={glyphSize.md} color={ALCHEMY.brown} />
           </View>
           <View style={profileStyles.membershipTitleCol}>
-            <Text style={profileStyles.membershipEyebrow}>Premium membership</Text>
-            <Text style={profileStyles.membershipTitle}>Exclusive account benefits</Text>
+            <Text style={profileStyles.membershipEyebrow}>{PROFILE_SCREEN.membershipEyebrow}</Text>
+            <Text style={profileStyles.membershipTitle}>{PROFILE_SCREEN.membershipTitle}</Text>
           </View>
           <PremiumChip
-            label={deliveredOrders > 12 ? "Platinum" : deliveredOrders > 5 ? "Gold" : "Classic"}
+            label={
+              deliveredOrders > 12
+                ? PROFILE_SCREEN.membershipTierPlatinum
+                : deliveredOrders > 5
+                  ? PROFILE_SCREEN.membershipTierGold
+                  : PROFILE_SCREEN.membershipTierClassic
+            }
             tone="gold"
             size="sm"
             selected
           />
         </View>
-        <Text style={profileStyles.membershipSub}>Priority support and faster checkout experience.</Text>
+        <Text style={profileStyles.membershipSub}>{PROFILE_SCREEN.membershipSubtitle}</Text>
         <View style={profileStyles.membershipCtaRow}>
           <PremiumButton
-            label="View benefits"
+            label={PROFILE_SCREEN.membershipBenefitsCta}
             iconLeft="sparkles-outline"
             variant="secondary"
             size="sm"
             onPress={() => navigation.navigate("Settings")}
           />
           <PremiumButton
-            label="My orders"
+            label={PROFILE_SCREEN.membershipOrdersCta}
             iconLeft="bag-handle-outline"
             variant="ghost"
             size="sm"
@@ -559,31 +568,29 @@ export default function ProfileScreen({ navigation }) {
               <Ionicons name="sparkles-outline" size={glyphSize.md} color={c.primary} />
             </View>
             <View>
-              <Text style={profileStyles.loyaltyEyebrow}>Loyalty rewards</Text>
+              <Text style={profileStyles.loyaltyEyebrow}>{PROFILE_SCREEN.loyaltyEyebrow}</Text>
               <Text style={profileStyles.loyaltyPoints}>{Math.max(0, Number(user?.rewardPoints ?? 0))} pts</Text>
             </View>
           </View>
         </View>
-        <Text style={profileStyles.loyaltyHint}>
-          Claim points on delivered orders in My Orders, then redeem here for coupon codes at checkout.
-        </Text>
+        <Text style={profileStyles.loyaltyHint}>{PROFILE_SCREEN.loyaltyHint}</Text>
         <View style={profileStyles.loyaltyCtaRow}>
           <PremiumButton
-            label="Redeem rewards"
+            label={PROFILE_SCREEN.loyaltyRedeemCta}
             iconLeft="sparkles-outline"
             variant="primary"
             size="sm"
             onPress={() => navigation.navigate("RedeemRewards")}
           />
           <PremiumButton
-            label="Earn points"
+            label={PROFILE_SCREEN.loyaltyEarnCta}
             iconLeft="gift-outline"
             variant="ghost"
             size="sm"
             onPress={() => navigation.navigate("MyOrders", { initialFilter: "delivered", source: "rewards" })}
           />
           <PremiumButton
-            label="Notifications"
+            label={PROFILE_SCREEN.loyaltyNotificationsCta}
             iconLeft="notifications-outline"
             variant="subtle"
             size="sm"
@@ -792,7 +799,7 @@ function createProfileStyles(c, isDark, layoutFlags = {}) {
     profileGridRow: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: spacing.xl + 2,
+      gap: spacing.xl - 2,
     },
     profileLeftCol: {
       flex: 5,
@@ -843,9 +850,9 @@ function createProfileStyles(c, isDark, layoutFlags = {}) {
       }),
     },
     heroGradient: {
-      paddingTop: spacing.xl,
-      paddingHorizontal: spacing.xl - 2,
-      paddingBottom: spacing.xl + 2,
+      paddingTop: spacing.lg + 6,
+      paddingHorizontal: spacing.lg + 2,
+      paddingBottom: spacing.lg + 8,
       position: "relative",
       overflow: "hidden",
     },

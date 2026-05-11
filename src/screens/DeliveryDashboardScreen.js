@@ -707,7 +707,7 @@ function createStyles(c, isDark) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth + 96, default: "100%" }),
+      maxWidth: Platform.select({ web: layout.maxContentWidth + 48, default: "100%" }),
     },
     panel: {
       marginBottom: spacing.lg + 2,
@@ -768,6 +768,7 @@ function createStyles(c, isDark) {
     hintCard: {
       flexDirection: "row",
       alignItems: "flex-start",
+      flexWrap: "wrap",
       gap: spacing.sm,
       marginBottom: spacing.md,
       paddingHorizontal: spacing.md,

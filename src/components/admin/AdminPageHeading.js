@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
 import { FONT_DISPLAY, HERITAGE, heritageHairlineGradient } from "../../theme/customerAlchemy";
@@ -10,7 +10,9 @@ import { spacing, typography } from "../../theme/tokens";
  */
 export default function AdminPageHeading({ title, subtitle, right }) {
   const { colors: c, isDark } = useTheme();
-  const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
+  const { width } = useWindowDimensions();
+  const isCompact = width < 720;
+  const styles = useMemo(() => createStyles(c, isDark, { isCompact }), [c, isDark, isCompact]);
 
   return (
     <View style={styles.wrap}>
@@ -36,14 +38,15 @@ export default function AdminPageHeading({ title, subtitle, right }) {
   );
 }
 
-function createStyles(_c, isDark) {
+function createStyles(_c, isDark, layoutFlags = {}) {
+  const { isCompact = false } = layoutFlags;
   return StyleSheet.create({
     wrap: {
-      marginBottom: spacing.md + 2,
+      marginBottom: spacing.md,
       paddingBottom: spacing.xs,
     },
     row: {
-      flexDirection: "row",
+      flexDirection: isCompact ? "column" : "row",
       alignItems: "flex-start",
       justifyContent: "space-between",
       gap: spacing.md,
@@ -53,17 +56,19 @@ function createStyles(_c, isDark) {
       minWidth: 0,
     },
     title: {
-      fontSize: typography.h2,
+      fontSize: isCompact ? typography.h2 - 3 : typography.h2 - 1,
       letterSpacing: -0.38,
     },
     subtitle: {
-      marginTop: spacing.xs,
+      marginTop: spacing.xs - 2,
       fontSize: typography.bodySmall,
-      lineHeight: 21,
+      lineHeight: 20,
     },
     right: {
       flexShrink: 0,
-      alignItems: "flex-end",
+      alignItems: isCompact ? "flex-start" : "flex-end",
+      width: isCompact ? "100%" : undefined,
+      ...(Platform.OS === "web" && isCompact ? { maxWidth: "100%" } : {}),
     },
     hairlineRow: {
       marginTop: spacing.sm + 2,

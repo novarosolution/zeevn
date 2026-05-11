@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AppFooter from "../../components/AppFooter";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
 import AdminBackLink from "../../components/admin/AdminBackLink";
+import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminHomeView, updateAdminHomeView } from "../../services/adminService";
@@ -138,8 +139,7 @@ export default function AdminHomeViewScreen({ navigation }) {
       >
         <View style={styles.panel}>
           <AdminBackLink navigation={navigation} />
-          <Text style={styles.title}>{copy.title}</Text>
-          <Text style={styles.subtitle}>{copy.subtitle}</Text>
+          <AdminPageHeading title={copy.title} subtitle={copy.subtitle} />
           {error ? (
             <View style={styles.bannerSpacer}>
               <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />

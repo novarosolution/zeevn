@@ -61,7 +61,7 @@ function SettingsItem({ icon, title, subtitle, onPress, danger = false, styles, 
 export default function SettingsScreen({ navigation }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const isCompactWeb = Platform.OS === "web" && width < 760;
+  const isCompactWeb = Platform.OS === "web" && width < 860;
   const { isAuthenticated, token, user, logout } = useAuth();
   const [permissionMsg, setPermissionMsg] = useState("");
   const [error, setError] = useState("");
@@ -97,7 +97,6 @@ export default function SettingsScreen({ navigation }) {
   const handleSavedPayments = () => {
     setError("");
     setPermissionMsg(SETTINGS_SCREEN.savedPaymentsSoon);
-    navigation.navigate("Support");
   };
 
   let groupIndex = 0;
@@ -400,7 +399,7 @@ function createSettingsStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     itemContent: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: spacing.sm,
+      gap: spacing.xs + 6,
       minHeight: 50,
       position: "relative",
       flexWrap: "nowrap",

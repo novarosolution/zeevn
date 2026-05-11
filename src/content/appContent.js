@@ -98,9 +98,9 @@ export const PAYMENT_METHODS = [
 ];
 
 /** Fallback hero when API is offline — also seed defaults for new HomeViewConfig documents. */
-export const HOME_HERO_TITLE_DEFAULT = "Premium pantry staples, delivered with care";
+export const HOME_HERO_TITLE_DEFAULT = "Curated pantry essentials, delivered well";
 export const HOME_HERO_SUBTITLE_DEFAULT =
-  "Small-batch essentials, trusted sourcing, and a smoother everyday shop.";
+  "Pure staples, calmer shopping, and faster doorstep delivery.";
 
 export const HOME_VIEW_DEFAULTS = {
   heroTitle: HOME_HERO_TITLE_DEFAULT,
@@ -115,16 +115,37 @@ export const HOME_VIEW_DEFAULTS = {
 
 /** Hero image card (above-the-fold marketing, not the same fields as API hero title). */
 export const HOME_HERO_BANNER = {
-  kicker: "Zeevan heritage pantry",
-  badge: "CURATED QUALITY",
+  kicker: "",
+  badge: "",
   cta: "Explore collection",
-  editorialNote: "Thoughtfully sourced staples with faster delivery and a calmer shopping experience.",
-  highlights: [
-    { key: "source", label: "Trusted sourcing", icon: "leaf-outline" },
-    { key: "delivery", label: "Fast delivery", icon: "flash-outline" },
-    { key: "secure", label: "Secure pay", icon: "shield-checkmark-outline" },
-  ],
+  editorialNote: "",
+  highlights: [],
 };
+
+/** Shared hero slide copy; marketing assets choose only platform-specific imagery/layout. */
+export const HOME_HERO_SLIDE_COPY = [
+  {
+    key: "tradition",
+    title: "Curated pantry staples",
+    subtitle: "Pure essentials for everyday cooking.",
+    cta: "Browse catalog",
+    action: "catalog",
+  },
+  {
+    key: "purity",
+    title: "Delivered with care",
+    subtitle: "Fast fulfilment and smoother checkout.",
+    cta: "Shop now",
+    action: "catalog",
+  },
+  {
+    key: "quality",
+    title: "A better everyday basket",
+    subtitle: "Premium picks without the clutter.",
+    cta: "See highlights",
+    action: "featured",
+  },
+];
 
 /** Light-mode tagline under the home top wordmark (same voice as `APP_TAGLINE`). */
 export const HOME_WORDMARK_TAGLINE = APP_TAGLINE;
@@ -224,12 +245,75 @@ export const HOME_LIVE_ORDER_CARD = {
 
 /** Catalog section intro (when not searching). */
 export const HOME_CATALOG_INTRO = {
-  starter: "Hand-picked to begin your basket",
-  all: "Curated essentials for everyday cooking",
+  starter: "Start with our best picks",
+  all: "Shop the essentials",
+};
+
+/** Shared home search + catalog copy used across web/mobile. */
+export const HOME_SEARCH_UI = {
+  webOverline: "",
+  webTitle: "",
+  webHint: "",
+  activeSearchOverline: "Search results",
+  activeSectionOverline: "Shelf focus",
+  activeFilterClear: "Clear",
+  catalogOverlineDefault: "Curated catalog",
+  catalogOverlineSearch: "Search results",
+  catalogOverlineSection: "Shelf focus",
+  catalogResultsTitle: '{count} results for "{query}"',
+  catalogSubtitleComfortable: "Roomier cards with more product detail.",
+  catalogSubtitleCompact: "Quick browsing with clear add-to-cart actions.",
+  sectionEmptyTitle: 'No section named "{section}".',
+  sectionEmptyDescription: "Pick another section or clear the filter.",
+  sectionEmptyCta: "Clear filter",
+  sectionOverlineFirst: "Featured",
+  sectionOverlineOther: "More to shop",
+  primeOverline: "Highlights",
+  allProductsTitle: "All products",
+  loadingCatalog: "Loading catalog...",
+  emptyHomeCuratedTitle: "Nothing curated for Home yet",
+  emptyHomeCuratedDescription: "Ask admin to enable Show on Home for products to feature them here.",
+  emptySearchTitle: "No products match your search",
+  emptySearchDescription: "Try a different keyword or browse the full collection.",
+  emptyCatalogTitle: "Catalog is empty",
+  emptyCatalogDescription: "Add items or adjust filters to see the catalog.",
+  clearSearchCta: "Clear search",
+  loadErrorFallback: "Unable to load products.",
 };
 
 /** Suffix for the side menu “starter” row (after dynamic counts). */
 export const HOME_MENU_STARTER_TAG = "Starter picks";
+
+/** Shared customer navigation labels so web/mobile/footer/menu stay aligned. */
+export const CUSTOMER_NAV_LINKS = {
+  home: { key: "home", label: "Home", route: "Home", icon: "home-outline" },
+  cart: { key: "cart", label: "Cart", route: "Cart", icon: "bag-outline" },
+  orders: { key: "orders", label: "Orders", route: "MyOrders", icon: "receipt-outline" },
+  profile: { key: "profile", label: "Profile", route: "Profile", icon: "person-outline" },
+  settings: { key: "settings", label: "Settings", route: "Settings", icon: "settings-outline" },
+  support: { key: "support", label: "Support", route: "Support", icon: "chatbubble-ellipses-outline" },
+  delivery: { key: "delivery", label: "Delivery", route: "DeliveryDashboard", icon: "bicycle-outline" },
+  admin: { key: "admin", label: "Admin", route: "AdminDashboard", icon: "shield-checkmark-outline" },
+};
+
+export const HOME_MENU_LINKS = [
+  {
+    ...CUSTOMER_NAV_LINKS.profile,
+    hint: "Account and address",
+  },
+  {
+    ...CUSTOMER_NAV_LINKS.orders,
+    hint: "Track and reorder",
+  },
+  {
+    ...CUSTOMER_NAV_LINKS.support,
+    hint: "Help and contact",
+  },
+  {
+    ...CUSTOMER_NAV_LINKS.settings,
+    hint: "Theme and alerts",
+  },
+];
 
 /** Compact footer (auth screens, etc.). */
 export const FOOTER_COMPACT = {
@@ -237,14 +321,16 @@ export const FOOTER_COMPACT = {
   needHelp: "Need Zeevan support?",
   customerCare: "Customer care",
   chatSupport247: "Order help · 24×7",
+  onlinePaymentCta: "Online payment coming soon",
+  engineerPrefix: "App by",
 };
 
 export const APP_FOOTER_NAV_LINKS = [
-  { label: "Home", route: "Home" },
-  { label: "Cart", route: "Cart" },
-  { label: "Orders", route: "MyOrders" },
-  { label: "Profile", route: "Profile" },
-  { label: "Help", route: "Support" },
+  { label: CUSTOMER_NAV_LINKS.home.label, route: CUSTOMER_NAV_LINKS.home.route },
+  { label: CUSTOMER_NAV_LINKS.cart.label, route: CUSTOMER_NAV_LINKS.cart.route },
+  { label: CUSTOMER_NAV_LINKS.orders.label, route: CUSTOMER_NAV_LINKS.orders.route },
+  { label: CUSTOMER_NAV_LINKS.profile.label, route: CUSTOMER_NAV_LINKS.profile.route },
+  { label: CUSTOMER_NAV_LINKS.support.label, route: CUSTOMER_NAV_LINKS.support.route },
 ];
 
 /** Wide home footer: column titles + links (`route` null = no navigation). */
@@ -252,18 +338,18 @@ export const HOME_PAGE_FOOTER_COLUMNS = [
   {
     title: "Shop",
     links: [
-      { label: "All products", route: "Home" },
-      { label: "Cart", route: "Cart" },
-      { label: "My orders", route: "MyOrders" },
+      { label: "All products", route: CUSTOMER_NAV_LINKS.home.route },
+      { label: CUSTOMER_NAV_LINKS.cart.label, route: CUSTOMER_NAV_LINKS.cart.route },
+      { label: CUSTOMER_NAV_LINKS.orders.label, route: CUSTOMER_NAV_LINKS.orders.route },
     ],
   },
   {
-    title: "Help",
+    title: "Support",
     links: [
-      { label: "Support", route: "Support" },
+      { label: CUSTOMER_NAV_LINKS.support.label, route: CUSTOMER_NAV_LINKS.support.route },
       { label: "Delivery", route: "ManageAddress" },
-      { label: "Account", route: "Profile" },
-      { label: "Pay online (Razorpay)", url: RAZORPAY_PAY_URL },
+      { label: CUSTOMER_NAV_LINKS.profile.label, route: CUSTOMER_NAV_LINKS.profile.route },
+      { label: "Online payment coming soon", route: null },
     ],
   },
   {
@@ -288,8 +374,8 @@ export const HOME_PAGE_FOOTER_META = "Curated pantry essentials for modern India
 /** Support screen (customer). */
 export const SUPPORT_SCREEN = {
   pageTitle: "Support",
-  pageSubtitle: "Fast help, chat and order support",
-  pageHeaderSubtitle: "Fast help",
+  pageSubtitle: "Help, chat and order support",
+  pageHeaderSubtitle: "Help",
   liveChatTitle: "Live chat",
   contactEmailTitle: "Email",
   contactWhatsAppTitle: "WhatsApp",
@@ -301,8 +387,18 @@ export const SUPPORT_SCREEN = {
   openChatCta: "Open chat",
   reachOutCta: "Reach out",
   sentToast: "Sent",
+  lastUpdateUnavailable: "Last update unavailable",
   loadErrorFallback: "Unable to load support chat.",
   sendErrorFallback: "Unable to send message.",
+  emptyThreadTitle: "Start the conversation",
+  emptyThreadDescription: "Tell our team how we can help. We typically reply within a few hours.",
+  authorAdmin: "Admin",
+  authorYou: "You",
+  composerTitle: "Reply to support",
+  composerHint: "Keep it short and add any order detail if needed.",
+  composerLabel: "Your message",
+  sendCta: "Send message",
+  sendingCta: "Sending...",
   faqTitle: "FAQs",
   faqEyebrow: "Quick answers",
   faqHeading: "Frequently asked questions",
@@ -321,7 +417,7 @@ export const SUPPORT_SCREEN = {
     },
     {
       q: "How do refunds work?",
-      a: "Refunds go back to your original payment method in a few business days.",
+      a: "Refund help is handled by our support team right now.",
     },
   ],
 };
@@ -334,7 +430,7 @@ export const PROFILE_SCREEN = {
   pageTitle: "Profile",
   eyebrow: "Zeevan account",
   memberSincePrefix: "Member since",
-  pageSubtitle: "Orders, address & rewards",
+  pageSubtitle: "Orders, address and account",
   fallbackName: "Welcome",
   emptyPhone: "Add phone in Edit profile",
   roleAdmin: "Admin",
@@ -347,9 +443,42 @@ export const PROFILE_SCREEN = {
   addressMissingHint: "Add an address for quicker checkout.",
   addressChangeCta: "Change address",
   addressAddCta: "Add address",
+  editProfileCta: "Edit profile",
+  manageAddressCta: "Manage address",
+  ordersStatLabel: "Orders",
+  deliveredStatLabel: "Delivered",
+  unreadStatLabel: "Unread",
   quickActionsEyebrow: "Account hub",
   quickActionsTitle: "Account options",
-  quickActionsSubtitle: "Profile, orders, support",
+  quickActionsSubtitle: "Profile, orders and support",
+  quickActions: {
+    editProfileTitle: "Edit profile",
+    editProfileHint: "Name and photo",
+    addressTitle: "Manage address",
+    addressSavedHint: "Address saved",
+    addressMissingHint: "Add location",
+    ordersTitle: "My orders",
+    rewardsTitle: "Redeem rewards",
+    notificationsTitle: "Notifications",
+    notificationsAllCaughtUp: "All caught up",
+    settingsTitle: "Settings",
+    settingsHint: "Theme and alerts",
+    supportTitle: "Support",
+    supportHint: "Help and contact",
+  },
+  membershipEyebrow: "Premium membership",
+  membershipTitle: "Exclusive account benefits",
+  membershipSubtitle: "Priority support and a smoother checkout.",
+  membershipTierClassic: "Classic",
+  membershipTierGold: "Gold",
+  membershipTierPlatinum: "Platinum",
+  membershipBenefitsCta: "View benefits",
+  membershipOrdersCta: "My orders",
+  loyaltyEyebrow: "Loyalty rewards",
+  loyaltyHint: "Claim points from delivered orders, then redeem them here for checkout codes.",
+  loyaltyRedeemCta: "Redeem rewards",
+  loyaltyEarnCta: "Earn points",
+  loyaltyNotificationsCta: "Notifications",
   adminRibbonTitle: "Admin dashboard",
   adminRibbonHint: "Storefront & orders",
   deliveryRibbonTitle: "Delivery dashboard",
@@ -362,7 +491,7 @@ export const PROFILE_SCREEN = {
 /** Settings screen — short labels for density. */
 export const SETTINGS_SCREEN = {
   pageTitle: "Settings",
-  pageSubtitle: "Theme, alerts and account tools",
+  pageSubtitle: "Theme, alerts and account",
   appearanceGroup: "Appearance",
   appearanceGroupSub: "Theme",
   themeSectionTitle: "Theme",
@@ -392,7 +521,7 @@ export const SETTINGS_SCREEN = {
   notificationsEnabledSuccess: "Notifications on.",
   notificationsDisabledHint: "Notifications off—enable in system settings.",
   notificationsErrorFallback: "Unable to update notification permission.",
-  savedPaymentsSoon: "Saved payments soon—see Support for help.",
+  savedPaymentsSoon: "Saved payment methods are coming soon.",
   orderUpdatesHint: "Dispatch & delivery",
   marketingHint: "Offers & promos",
   deliveryGroup: "Delivery",
@@ -425,17 +554,13 @@ const PASSWORD_MISMATCH_TEXT = `${PASSWORD_LABEL}s do not match.`;
 /** Login — [`LoginScreen.js`](../screens/LoginScreen.js). */
 export const LOGIN_SCREEN = {
   heroBannerA11y: `${APP_DISPLAY_NAME} sign in`,
-  heroKicker: `${APP_DISPLAY_NAME} member sign in`,
+  heroKicker: "",
   heroTitle: "Welcome back",
-  heroSubtitle: "Sign in for quicker checkout, saved addresses, and live delivery updates.",
+  heroSubtitle: "Sign in for faster checkout and tracking.",
   authEyebrow: "Account access",
   authTitle: "Sign in",
-  authSubtitle: "Use your Zeevan account email to continue smoothly.",
-  heroHighlights: [
-    { key: "checkout", label: "Fast checkout", icon: "bag-handle-outline" },
-    { key: "address", label: "Saved addresses", icon: "location-outline" },
-    { key: "tracking", label: "Live tracking", icon: "navigate-outline" },
-  ],
+  authSubtitle: "Use your Zeevan account.",
+  heroHighlights: [],
   labelEmail: "Email",
   labelSecret: PASSWORD_LABEL,
   submitLoading: "Please wait…",
@@ -443,34 +568,30 @@ export const LOGIN_SCREEN = {
   dividerOr: "or",
   createAccountCta: "Create new account",
   guestCta: "Continue as guest",
-  assuranceNote: "Protected sign-in for your saved Zeevan details.",
+  assuranceNote: "",
   genericError: "Unable to sign in. Please try again.",
 };
 
 /** Register — [`RegisterScreen.js`](../screens/RegisterScreen.js). Validation lines mirror client checks. */
 export const REGISTER_SCREEN = {
   heroBannerA11y: `Create your ${APP_DISPLAY_NAME} account`,
-  heroKicker: `Create your ${APP_DISPLAY_NAME} account`,
+  heroKicker: "",
   heroTitle: "Create your account",
-  heroSubtitle: "Save addresses, reorder faster, and keep every delivery in view.",
+  heroSubtitle: "Save your details for quicker checkout.",
   authEyebrow: "New account",
   authTitle: "Register",
-  authSubtitle: "Secure checkout, saved details, and clearer order updates from day one.",
-  heroHighlights: [
-    { key: "address", label: "Save addresses", icon: "location-outline" },
-    { key: "orders", label: "Track orders", icon: "cube-outline" },
-    { key: "reorder", label: "Reorder faster", icon: "flash-outline" },
-  ],
+  authSubtitle: "Create your Zeevan account.",
+  heroHighlights: [],
   labelFullName: "Full name",
   labelEmail: "Email",
   labelSecret: PASSWORD_LABEL,
   labelConfirmSecret: CONFIRM_PASSWORD_LABEL,
-  credentialHelper: "Use 8+ characters with at least one letter and one number.",
+  credentialHelper: "",
   submitLoading: "Please wait…",
   submitCta: "Create account",
   dividerExisting: "Already have an account",
   signInInsteadCta: "Sign in instead",
-  assuranceNote: "Your Zeevan account keeps your next checkout faster.",
+  assuranceNote: "",
   emailRequired: "Please enter your email.",
   emailInvalid: "Please enter a valid email address.",
   credentialMismatch: PASSWORD_MISMATCH_TEXT,
@@ -483,7 +604,7 @@ export const REGISTER_SCREEN = {
  */
 export const NOTIFICATIONS_SCREEN = {
   pageTitle: "Notifications",
-  pageSubtitle: "Inbox, offers & order updates",
+  pageSubtitle: "Inbox and order updates",
   panelTitle: "Notifications",
   refreshCta: "Refresh",
   loadingCaption: "Loading notifications…",
@@ -510,7 +631,7 @@ export const NOTIFICATIONS_SCREEN = {
 /** Edit profile — [`EditProfileScreen.js`](../screens/EditProfileScreen.js). */
 export const EDIT_PROFILE_SCREEN = {
   pageTitle: "Edit profile",
-  pageSubtitle: "Name, photo & phone",
+  pageSubtitle: "Name and phone",
   photoOverline: "Profile",
   photoTitle: "Profile photo",
   accountOverline: "Account",
@@ -521,7 +642,7 @@ export const EDIT_PROFILE_SCREEN = {
 /** Manage address — [`ManageAddressScreen.js`](../screens/ManageAddressScreen.js). */
 export const MANAGE_ADDRESS_SCREEN = {
   pageTitle: "Delivery address",
-  pageSubtitle: "Save where we deliver",
+  pageSubtitle: "Save your default address",
   cardTitleWhenFilled: "Update your address",
   cardTitleWhenEmpty: "Add your address",
   cardSubtitle: "Used for shipping and checkout.",
@@ -530,7 +651,7 @@ export const MANAGE_ADDRESS_SCREEN = {
 /** Rewards — [`RedeemRewardsScreen.js`](../screens/RedeemRewardsScreen.js). */
 export const REDEEM_REWARDS_SCREEN = {
   pageTitle: "Rewards shop",
-  pageSubtitle: "Points, coupons and premium savings",
+  pageSubtitle: "Points, coupons and savings",
   howItWorks:
     "Claim points from delivered orders, redeem an offer, then use the code in Cart.",
   subtotalHintWithCart: "Estimates use your current cart subtotal ({amount}).",
@@ -568,7 +689,7 @@ export const DELIVERY_LIVE_SHARE = {
 /** Delivery partner dashboard — order cards and navigation. */
 export const DELIVERY_DASHBOARD_COPY = {
   pageTitle: "Delivery",
-  pageSubtitle: "Assigned orders",
+  pageSubtitle: "Assigned orders and live tracking",
   noAccessSubtitle: "Your delivery runs",
   noAccessTitle: "No delivery access",
   noAccessDescription:
@@ -595,21 +716,47 @@ export const LOCATION_BAR = {
 export const CART_UI = {
   pageEyebrow: "Checkout",
   pageTitle: "Cart",
+  signInTitle: "Sign in to continue",
+  signInDescription: "Sign in to use your cart.",
+  signInCta: "Go to login",
+  browseStoreCta: "Browse store",
   itemsOverline: "Bag",
   itemsTitle: "Your items",
+  pageSubtitleEmpty: "Add items from the shop.",
+  pageSubtitleCount: "{count} items in your bag",
+  readyTitle: "{count} ready for checkout",
+  readySubtitle: "Review items, confirm delivery, and place your order.",
   pairOverline: "Pair",
   pairTitle: "Add with your order",
+  addUpsellCta: "Add",
   couponOverline: "Save",
   couponTitle: "Apply savings",
+  couponCodeLabel: "Coupon code",
+  applyCouponCta: "Apply",
   summaryOverline: "Total",
   summaryTitle: "Checkout summary",
   addressOverline: "Delivery",
+  progressBag: "Bag",
+  progressAddress: "Address",
+  progressPayment: "Payment",
   trustPure: "Pure ingredients",
   trustPay: "Secure payments",
   trustOrganic: "Organic focus",
   emptyTitle: "Your cart is empty",
   emptyDescription: "Browse the shop and add items.",
   browseCta: "Browse products",
+  continueExploringCta: "Continue exploring",
+  addItemsToContinueCta: "Add items to continue",
+  validationAddressIncomplete: "Please complete delivery address details.",
+  orderPlacedCodSuccess: "Order placed - track it in Profile.",
+  orderIncompleteError: "Order created but response was incomplete. Check My Orders.",
+  paymentConfirmed: "Payment confirmed.",
+  paymentFallback: "Finish payment on Razorpay, then check My Orders.",
+  paymentResume: "Resume payment from My Orders within 30 minutes.",
+  placeOrderError: "Unable to place order.",
+  couponRequired: "Enter coupon code.",
+  couponApplyError: "Unable to apply coupon.",
+  locationError: "Unable to get current location.",
 };
 
 /** Cart — deliver-to panel and profile address prompts. */
@@ -622,19 +769,27 @@ export const CART_ADDRESS = {
   useGps: "Use GPS",
   useGpsLoading: "Locating…",
   gpsFillSuccess: "Filled from your location.",
+  fullNameLabel: "Full name",
+  phoneLabel: "Phone",
+  line1Label: "Address line",
+  cityLabel: "City",
+  stateLabel: "State",
+  postalCodeLabel: "Postal code",
+  countryLabel: "Country",
+  noteLabel: "Delivery note (optional)",
 };
 
 /** My Orders — buttons and compact copy (avoid repeating map/address lines). */
 export const MY_ORDERS_UI = {
   pageTitle: "My orders",
-  pageSubtitle: "Track progress and reorder faster",
+  pageSubtitle: "Track orders and reorder faster",
   refreshCta: "Refresh",
   detailsExpand: "Details",
   detailsCollapse: "Hide",
   changeAddress: "Change address",
   /** Shown above the address edit form. */
   editAddressTitle: "Update address (5 min)",
-  invoiceHintWeb: "Tip: print dialog → Save as PDF.",
+  invoiceHintWeb: "Invoice downloads are coming soon.",
   itemsPreviewTitle: "Items",
   inFlightOverline: "Active",
   inFlightTitle: "Active orders",
@@ -649,6 +804,53 @@ export const MY_ORDERS_UI = {
   invoiceOpenedWeb: 'Invoice opened. Choose "Save as PDF" in the print dialog.',
   invoiceReady: "Invoice PDF is ready.",
   invoiceGeneratedDevice: "Invoice PDF generated on device.",
+  statsTotalLabel: "Total",
+  statsTotalHint: "All-time orders",
+  statsInFlightLabel: "In-flight",
+  statsInFlightHint: "Currently active",
+  statsDeliveredLabel: "Delivered",
+  statsDeliveredHint: "Successfully completed",
+  statsSpendLabel: "Lifetime spend",
+  statsSpendHint: "Across all orders",
+  loadingCaption: "Loading your orders...",
+  emptyBrowseCta: "Browse catalog",
+  filterAll: "All",
+  filterActive: "Active",
+  filterDelivered: "Delivered",
+  filterCancelled: "Cancelled",
+  collapseHistoryA11y: "Collapse order history",
+  expandHistoryA11y: "Expand order history",
+  orderKicker: "Order",
+  summaryTotalLabel: "Total",
+  downloadInvoiceCta: "Invoice coming soon",
+  generatingInvoiceCta: "Invoice coming soon",
+  rewardClaimedCta: "Reward claimed ({points} pts)",
+  rewardClaimingCta: "Claiming reward...",
+  rewardClaimCta: "Claim reward ({points} pts)",
+  detailKicker: "Full order",
+  detailTitle: "Price breakdown",
+  detailItems: "Items: {amount}",
+  detailDelivery: "Delivery: {amount}",
+  detailPlatformFee: "Platform fee: {amount}",
+  detailDiscount: "Discount: -{amount}",
+  detailPaymentMethod: "Payment method: {method}",
+  detailPaymentMethodFallback: "Cash on Delivery",
+  detailPaymentStatus: "Payment status: {status}",
+  detailRazorpayPaymentId: "Razorpay payment ID: {id}",
+  addressFullNameLabel: "Full name",
+  addressPhoneLabel: "Phone",
+  addressLine1Label: "Address line",
+  addressCityLabel: "City",
+  addressStateLabel: "State",
+  addressPostalCodeLabel: "Postal code",
+  addressCountryLabel: "Country",
+  addressNoteLabel: "Note (optional)",
+  saveAddressCta: "Save address",
+  savingAddressCta: "Saving...",
+  cancelCta: "Cancel",
+  reorderCta: "Reorder in-stock items",
+  reorderingCta: "Adding...",
+  moreItemsLabel: "+{count} more items",
 };
 
 /**
@@ -820,20 +1022,24 @@ export const APP_CONTENT_INDEX = {
     heroKicker: APP_HERO_KICKER,
     searchPlaceholder: SEARCH_PLACEHOLDER,
     supportEmail: SUPPORT_EMAIL_DISPLAY,
+    navLinks: CUSTOMER_NAV_LINKS,
   },
   home: {
     viewDefaults: HOME_VIEW_DEFAULTS,
     heroTitleDefault: HOME_HERO_TITLE_DEFAULT,
     heroSubtitleDefault: HOME_HERO_SUBTITLE_DEFAULT,
     heroBanner: HOME_HERO_BANNER,
+    heroSlides: HOME_HERO_SLIDE_COPY,
     wordmarkTagline: HOME_WORDMARK_TAGLINE,
     labels: HOME_PAGE_LABELS,
     trustStrip: HOME_TRUST_STRIP,
     statsStrip: HOME_STATS_STRIP,
     testimonials: HOME_TESTIMONIALS,
     catalogIntro: HOME_CATALOG_INTRO,
+    searchUi: HOME_SEARCH_UI,
     liveOrderCard: HOME_LIVE_ORDER_CARD,
     menuStarterTag: HOME_MENU_STARTER_TAG,
+    menuLinks: HOME_MENU_LINKS,
   },
   footer: {
     compact: FOOTER_COMPACT,

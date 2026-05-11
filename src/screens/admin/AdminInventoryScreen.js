@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppFooter from "../../components/AppFooter";
 import AdminBackLink from "../../components/admin/AdminBackLink";
+import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -194,13 +195,10 @@ export default function AdminInventoryScreen({ navigation }) {
               <AdminBackLink navigation={navigation} />
             </View>
             <View style={styles.titleBlock}>
-              <View style={styles.titleRow}>
-                <Ionicons name="layers" size={26} color={isDark ? c.primary : ALCHEMY.brown} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={styles.h1}>{ADMIN_SCREEN_COPY.inventory.title}</Text>
-                  <Text style={styles.subH}>{ADMIN_SCREEN_COPY.inventory.subtitle}</Text>
-                </View>
-              </View>
+              <AdminPageHeading
+                title={ADMIN_SCREEN_COPY.inventory.title}
+                subtitle={ADMIN_SCREEN_COPY.inventory.subtitle}
+              />
             </View>
 
             <View style={styles.statsRow}>

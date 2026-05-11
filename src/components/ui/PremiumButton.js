@@ -272,6 +272,7 @@ function createStyles(c, isDark, t, fullWidth) {
   return StyleSheet.create({
     outer: {
       ...(fullWidth ? { width: "100%" } : { alignSelf: "flex-start" }),
+      maxWidth: "100%",
       position: "relative",
     },
     pulseGlow: {
@@ -294,6 +295,7 @@ function createStyles(c, isDark, t, fullWidth) {
       borderRadius: radius.pill,
       overflow: "visible",
       minHeight: t.height,
+      minWidth: 0,
       ...Platform.select({
         web: {
           transition: "transform 0.2s ease, opacity 0.2s ease",

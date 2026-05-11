@@ -404,7 +404,7 @@ function createStyles(c, shadowPremium) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
+      maxWidth: Platform.select({ web: layout.maxContentWidth + 96, default: "100%" }),
     },
     listContent: {
       paddingHorizontal: Platform.select({ web: spacing.xl, default: spacing.lg }),
@@ -452,7 +452,7 @@ function createStyles(c, shadowPremium) {
       marginBottom: spacing.sm,
     },
     chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginBottom: spacing.md },
-    searchRow: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm },
+    searchRow: { flexDirection: "row", alignItems: "flex-end", flexWrap: "wrap", gap: spacing.sm },
     searchInputFlex: { flex: 1, minWidth: 0 },
     loadRow: { marginBottom: spacing.sm },
     busyInline: { marginRight: 8 },

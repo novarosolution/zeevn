@@ -16,6 +16,7 @@ import { useTheme } from "../context/ThemeContext";
 import { SUPPORT_EMAIL_DISPLAY } from "../constants/brand";
 import { ALCHEMY, HERITAGE } from "../theme/customerAlchemy";
 import { fonts, getSemanticColors, icon, semanticRadius, spacing, typography } from "../theme/tokens";
+import { CUSTOMER_PAGE_MAX_WIDTH } from "../theme/screenLayout";
 import BrandWordmark from "./BrandWordmark";
 
 function FooterNavLink({ label, onPress, styles }) {
@@ -150,7 +151,7 @@ function createFooterStyles(c, shadowLift, isDark, semantic, webTight) {
           boxShadow: isDark
             ? "0 12px 24px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.05)"
             : "0 10px 20px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255,255,255,0.94)",
-          maxWidth: 1280,
+          maxWidth: CUSTOMER_PAGE_MAX_WIDTH,
           alignSelf: "center",
           width: "100%",
           transition: "box-shadow 0.22s ease, border-color 0.22s ease",

@@ -191,7 +191,7 @@ export const darkColors = {
 export const colors = lightColors;
 
 export const layout = {
-  maxContentWidth: Platform.select({ web: 1180, default: 980 }),
+  maxContentWidth: Platform.select({ web: 1240, default: 980 }),
 };
 
 export const breakpoints = {

@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
+import { fonts, icon, lineHeight, radius, spacing, typography } from "../../theme/tokens";
 import { inputOutlineWeb } from "../../theme/screenLayout";
 import { useTheme } from "../../context/ThemeContext";
 import useReducedMotion from "../../hooks/useReducedMotion";
@@ -82,15 +82,18 @@ function PremiumInputBase({
       ? isDark ? c.primaryBright : c.primary
       : c.border;
 
-  const labelTopBase = multiline ? 14 : 16;
-  const labelTopFloated = multiline ? 6 : 8;
+  const labelTopBase = multiline ? spacing.md : spacing.md;
+  const labelTopFloated = multiline ? spacing.xs + 2 : spacing.xs + 4;
+  const labelCollapsedSize = typography.bodySmall;
+  const labelFloatedSize = typography.caption;
+
   const labelTop = labelAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [labelTopBase, labelTopFloated],
   });
   const labelFontSize = labelAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [typography.bodySmall, 11],
+    outputRange: [labelCollapsedSize, labelFloatedSize],
   });
   const labelColor = hasError ? c.danger : focused ? (isDark ? c.primaryBright : c.primaryDark) : c.textMuted;
 
@@ -222,13 +225,14 @@ function createStyles(c, isDark, multiline) {
       width: "100%",
     },
     field: {
+      width: "100%",
       flexDirection: "row",
       alignItems: multiline ? "flex-start" : "center",
       borderWidth: 1,
       borderRadius: radius.lg,
       backgroundColor: isDark ? c.surfaceMuted : c.surface,
       paddingHorizontal: spacing.md,
-      minHeight: multiline ? 96 : 52,
+      minHeight: multiline ? 96 : 54,
       ...Platform.select({
         web: {
           transition: "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease",
@@ -273,6 +277,7 @@ function createStyles(c, isDark, multiline) {
     },
     inputCol: {
       flex: 1,
+      minWidth: 0,
       position: "relative",
       justifyContent: "center",
     },
@@ -288,8 +293,8 @@ function createStyles(c, isDark, multiline) {
     input: {
       fontFamily: fonts.medium,
       fontSize: typography.body,
-      lineHeight: typography.body + 6,
-      paddingVertical: 11,
+      lineHeight: lineHeight.body,
+      paddingVertical: spacing.sm + 1,
       includeFontPadding: false,
       ...Platform.select({
         web: { outlineStyle: "none" },
@@ -297,18 +302,18 @@ function createStyles(c, isDark, multiline) {
       }),
     },
     inputWithLabel: {
-      paddingTop: 18,
-      paddingBottom: 8,
+      paddingTop: spacing.md + 2,
+      paddingBottom: spacing.xs + 2,
     },
     inputMultiline: {
-      paddingTop: 22,
-      paddingBottom: 10,
+      paddingTop: spacing.lg,
+      paddingBottom: spacing.sm,
       textAlignVertical: "top",
-      minHeight: 76,
+      minHeight: spacing.xxl + spacing.md,
     },
     helperRow: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-start",
       gap: 6,
       marginTop: 6,
       paddingHorizontal: 4,

@@ -55,11 +55,16 @@ export default function ProductScreen({ route, navigation }) {
   const { productId } = route.params ?? {};
   const { colors: c, shadowPremium, isDark } = useTheme();
   const insets = useSafeAreaInsets();
-  const styles = useMemo(() => createProductStyles(c, shadowPremium, isDark), [c, shadowPremium, isDark]);
   const reducedMotion = useReducedMotion();
   const { addToCart, removeFromCart, getItemQuantity } = useCart();
   const { isAuthenticated, token } = useAuth();
   const { width } = useWindowDimensions();
+  const isWideWeb = Platform.OS === "web" && width >= 1180;
+  const isHugeWeb = Platform.OS === "web" && width >= 1440;
+  const styles = useMemo(
+    () => createProductStyles(c, shadowPremium, isDark, { isWideWeb, isHugeWeb }),
+    [c, shadowPremium, isDark, isWideWeb, isHugeWeb]
+  );
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -214,7 +219,10 @@ export default function ProductScreen({ route, navigation }) {
   };
 
   const quantity = getItemQuantity(product.id, cartLine?.variantLabel ?? "");
-  const heroImageHeight = Math.min(380, Math.max(260, Math.round(width * 0.72)));
+  const heroImageHeight = Platform.select({
+    web: isHugeWeb ? 520 : isWideWeb ? 460 : Math.min(380, Math.max(280, Math.round(width * 0.44))),
+    default: Math.min(380, Math.max(260, Math.round(width * 0.72))),
+  });
   const storySubtitleOptional = String(PRODUCT_SCREEN.storySubtitle ?? "").trim() || undefined;
   const variantSubtitleOptional = String(PRODUCT_SCREEN.variantSubtitle ?? "").trim() || undefined;
   const isOutOfStock = product.inStock === false || Number(product.stockQty || 0) <= 0;
@@ -695,7 +703,8 @@ export default function ProductScreen({ route, navigation }) {
   );
 }
 
-function createProductStyles(c, shadowPremium, isDark) {
+function createProductStyles(c, shadowPremium, isDark, layoutFlags = {}) {
+  const { isWideWeb = false, isHugeWeb = false } = layoutFlags;
   const panelLift = platformShadow({
     web: {
       boxShadow: isDark
@@ -731,7 +740,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth + 48, default: "100%" }),
+    maxWidth: Platform.select({ web: layout.maxContentWidth + 24, default: "100%" }),
   },
   container: {
     ...customerPanel(c, shadowPremium, isDark),
@@ -753,7 +762,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     position: "relative",
     ...Platform.select({
       web: {
-        minHeight: 320,
+        minHeight: isHugeWeb ? 500 : isWideWeb ? 440 : 320,
       },
       default: {},
     }),
@@ -876,9 +885,9 @@ function createProductStyles(c, shadowPremium, isDark) {
   },
   galleryStrip: {
     marginTop: -10,
-    marginHorizontal: spacing.sm,
+    marginHorizontal: isWideWeb ? spacing.lg : spacing.sm,
     paddingBottom: spacing.sm + 2,
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: isWideWeb ? spacing.sm : spacing.xs,
     zIndex: 2,
     borderRadius: radius.xl + 4,
     backgroundColor: isDark ? "rgba(28, 25, 23, 0.72)" : "rgba(255, 253, 248, 0.88)",
@@ -886,7 +895,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(185, 28, 28, 0.08)",
     ...Platform.select({
       web: {
-        maxWidth: "100%",
+        maxWidth: isWideWeb ? 960 : "100%",
         alignSelf: "center",
         backdropFilter: "blur(12px)",
         WebkitBackdropFilter: "blur(12px)",
@@ -985,21 +994,21 @@ function createProductStyles(c, shadowPremium, isDark) {
     width: "100%",
     ...Platform.select({
       web: {
-        maxWidth: 960,
+        maxWidth: isHugeWeb ? 1080 : isWideWeb ? 1020 : 960,
         alignSelf: "center",
       },
       default: {},
     }),
   },
   titleBlock: {
-    marginBottom: spacing.xs,
+    marginBottom: isWideWeb ? spacing.sm : spacing.xs,
   },
   heroMetaRow: {
-    marginTop: spacing.xs,
+    marginTop: isWideWeb ? spacing.sm : spacing.xs,
     flexDirection: "row",
     alignItems: "center",
     flexWrap: "wrap",
-    gap: spacing.xs,
+    gap: isWideWeb ? spacing.sm : spacing.xs,
   },
   heroMetaPill: {
     flexDirection: "row",
@@ -1038,8 +1047,14 @@ function createProductStyles(c, shadowPremium, isDark) {
     fontFamily: fonts.bold,
   },
   name: {
-    fontSize: typography.h1,
-    lineHeight: lineHeight.h1,
+    fontSize: Platform.select({
+      web: isHugeWeb ? typography.h1 + 6 : isWideWeb ? typography.h1 + 3 : typography.h1,
+      default: typography.h1,
+    }),
+    lineHeight: Platform.select({
+      web: isHugeWeb ? lineHeight.h1 + 8 : isWideWeb ? lineHeight.h1 + 4 : lineHeight.h1,
+      default: lineHeight.h1,
+    }),
     fontFamily: FONT_DISPLAY,
     color: c.textPrimary,
     letterSpacing: Platform.OS === "web" ? -0.55 : -0.42,
@@ -1054,9 +1069,9 @@ function createProductStyles(c, shadowPremium, isDark) {
     letterSpacing: 1.4,
   },
   priceBand: {
-    marginTop: spacing.md,
+    marginTop: isWideWeb ? spacing.lg : spacing.md,
     borderRadius: radius.xl + 2,
-    padding: spacing.md,
+    padding: isWideWeb ? spacing.lg : spacing.md,
     borderWidth: StyleSheet.hairlineWidth,
     borderTopWidth: 2,
   },
@@ -1101,7 +1116,10 @@ function createProductStyles(c, shadowPremium, isDark) {
     letterSpacing: 0.25,
   },
   price: {
-    fontSize: typography.h2 + 2,
+    fontSize: Platform.select({
+      web: isWideWeb ? typography.h1 - 2 : typography.h2 + 2,
+      default: typography.h2 + 2,
+    }),
     fontFamily: fonts.extrabold,
     color: c.textPrimary,
     letterSpacing: -0.35,
@@ -1113,7 +1131,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     marginBottom: 3,
   },
   storyCard: {
-    marginTop: spacing.lg,
+    marginTop: isWideWeb ? spacing.xl : spacing.lg,
     borderRadius: semanticRadius.card,
   },
   descriptionBelowHeader: {
@@ -1130,10 +1148,10 @@ function createProductStyles(c, shadowPremium, isDark) {
     marginTop: spacing.sm,
   },
   quickFactsWrap: {
-    marginTop: spacing.lg,
+    marginTop: isWideWeb ? spacing.xl : spacing.lg,
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: spacing.xs,
+    gap: isWideWeb ? spacing.sm : spacing.xs,
   },
   quickFactPill: {
     flexDirection: "row",
@@ -1165,7 +1183,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     position: "absolute",
     right: spacing.sm,
     bottom: spacing.sm,
-    maxWidth: "46%",
+    maxWidth: Platform.select({ web: "62%", default: "46%" }),
     backgroundColor: ALCHEMY.brownMuted,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -1279,8 +1297,8 @@ function createProductStyles(c, shadowPremium, isDark) {
     borderLeftWidth: 3,
     borderLeftColor: isDark ? "rgba(220, 38, 38, 0.55)" : ALCHEMY.gold,
     backgroundColor: isDark ? c.surfaceMuted : "rgba(255, 253, 249, 0.92)",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md + 2,
+    paddingHorizontal: isWideWeb ? spacing.lg : spacing.md,
+    paddingVertical: isWideWeb ? spacing.lg : spacing.md + 2,
     ...moduleShadow,
   },
   reviewBannerWrap: {

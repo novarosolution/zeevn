@@ -141,8 +141,8 @@ function createStyles(rowMinH, isDark) {
       width: "100%",
       borderRadius: semanticRadius.panel,
       borderWidth: StyleSheet.hairlineWidth,
-      paddingHorizontal: spacing.md + 2,
-      paddingBottom: 10,
+      paddingHorizontal: spacing.lg,
+      paddingBottom: 12,
       overflow: Platform.OS === "web" ? "visible" : "hidden",
       position: "relative",
       ...Platform.select({
@@ -162,12 +162,12 @@ function createStyles(rowMinH, isDark) {
       opacity: 0.96,
     },
     rowBelowAccent: {
-      paddingTop: 10,
+      paddingTop: 12,
     },
     row: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: 8,
+      gap: spacing.sm,
       minHeight: rowMinH,
       ...Platform.select({
         web: {
@@ -211,14 +211,15 @@ function createStyles(rowMinH, isDark) {
       flex: 1,
       minWidth: 0,
       justifyContent: "center",
-      paddingTop: 1,
+      paddingTop: 2,
+      paddingRight: spacing.sm,
     },
     title: {
       fontSize: typography.h3,
       letterSpacing: -0.48,
       lineHeight: lineHeight.h3,
       ...Platform.select({
-        web: { fontSize: typography.h3 + 1 },
+        web: { fontSize: typography.h3 + 2, lineHeight: lineHeight.h3 + 2 },
         default: {},
       }),
     },
@@ -230,17 +231,17 @@ function createStyles(rowMinH, isDark) {
       opacity: 0.92,
     },
     subtitlePill: {
-      marginTop: 6,
+      marginTop: spacing.xs,
       alignSelf: "flex-start",
       borderRadius: semanticRadius.control,
       borderWidth: StyleSheet.hairlineWidth,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 5,
-      maxWidth: "100%",
+      paddingHorizontal: spacing.sm + 2,
+      paddingVertical: 6,
+      maxWidth: Platform.select({ web: "92%", default: "100%" }),
     },
     rightCluster: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-start",
       gap: spacing.xs,
       flexShrink: 0,
       ...Platform.select({

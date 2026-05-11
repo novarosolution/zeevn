@@ -20,7 +20,7 @@ export function adminPanel(c, shadowPremium, isDark) {
     borderRadius: semanticRadius.panel,
     borderTopWidth: 2,
     borderTopColor: dark ? semantic.border.accent : HERITAGE.amberMid,
-    padding: spacing.lg,
+    padding: Platform.OS === "web" ? spacing.lg + 2 : spacing.lg,
     ...shadowPremium,
   };
   if (Platform.OS !== "web" || !shadowPremium?.boxShadow) {
@@ -81,7 +81,7 @@ export function adminScreenRoot(c) {
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
+    maxWidth: Platform.select({ web: layout.maxContentWidth + 96, default: "100%" }),
     backgroundColor: c?.background ?? "transparent",
   };
 }

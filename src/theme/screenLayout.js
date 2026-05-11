@@ -4,6 +4,9 @@ import { ALCHEMY, HERITAGE } from "./customerAlchemy";
 import { container, layout, semanticRadius, spacing } from "./tokens";
 import { WEB_HEADER_HEIGHT, WEB_STICKY_TOP_OFFSET } from "./web";
 
+export const CUSTOMER_PAGE_MAX_WIDTH = Platform.select({ web: layout.maxContentWidth + 24, default: "100%" });
+export const ADMIN_PAGE_MAX_WIDTH = Platform.select({ web: layout.maxContentWidth + 96, default: "100%" });
+
 /**
  * Customer-facing panels: warm card in light mode, theme surface in dark — aligned with Home catalog cards.
  * @param {boolean} isDark from `useTheme()`
@@ -83,7 +86,7 @@ export function customerPanelVariant(c, shadowPremium, isDark, variant = "defaul
 export const customerContentWidth = {
   width: "100%",
   alignSelf: "center",
-  maxWidth: Platform.select({ web: layout.maxContentWidth + 12, default: "100%" }),
+  maxWidth: CUSTOMER_PAGE_MAX_WIDTH,
 };
 
 /** Inner height of floating `BottomNavBar` row (paddingVertical 10×2 + min tab ~44). */
@@ -147,12 +150,22 @@ export function customerWebStickyTop(extra = 0) {
 export const customerPageScrollBase = {
   /** Balanced gutters: generous on web for an editorial, premium layout. */
   paddingHorizontal: Platform.select({
-    web: Math.max(spacing.md + 2, container.gutter.desktop - 16),
+    web: Math.max(spacing.md + 4, container.gutter.desktop - 20),
     default: spacing.lg,
   }),
   width: "100%",
   alignSelf: "center",
-  maxWidth: Platform.select({ web: layout.maxContentWidth + 12, default: "100%" }),
+  maxWidth: CUSTOMER_PAGE_MAX_WIDTH,
+};
+
+export const adminPageScrollBase = {
+  paddingHorizontal: Platform.select({
+    web: Math.max(spacing.md + 6, container.gutter.desktop - 12),
+    default: spacing.lg,
+  }),
+  width: "100%",
+  alignSelf: "center",
+  maxWidth: ADMIN_PAGE_MAX_WIDTH,
 };
 
 /** Vertical rhythm between major blocks on inner pages (pairs with `ScreenPageHeader` flush bottom margin). */
@@ -183,7 +196,7 @@ export function customerInnerPageScrollContent(insets, extra = {}) {
 /** Admin tool screens: same gutters + gap as customer inner pages, but bottom padding clears home indicator only (no floating nav). */
 export function adminInnerPageScrollContent(insets, extra = {}) {
   return [
-    customerPageScrollBase,
+    adminPageScrollBase,
     {
       paddingTop: customerScrollPaddingTop(insets),
       paddingBottom: adminScrollPaddingBottom(insets),
@@ -205,9 +218,9 @@ export const authScrollContent = {
   ...Platform.select({
     web: {
       width: "100%",
-      maxWidth: layout.maxContentWidth + 12,
+      maxWidth: CUSTOMER_PAGE_MAX_WIDTH,
       alignSelf: "center",
-      paddingHorizontal: Math.max(spacing.md + 2, container.gutter.desktop - 16),
+      paddingHorizontal: Math.max(spacing.md + 4, container.gutter.desktop - 20),
       paddingTop: spacing.md + 6,
       paddingBottom: spacing.xxl,
       flexGrow: 1,

@@ -446,22 +446,37 @@ export default function AdminOrdersScreen({ navigation, route }) {
             />
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filtersRow}
-          >
-            {STATUSES.map((status) => (
-              <PremiumChip
-                key={status}
-                label={status === "all" ? "All" : getOrderStatusLabel(status)}
-                tone="gold"
-                size="sm"
-                selected={statusFilter === status}
-                onPress={() => setStatusFilter(status)}
-              />
-            ))}
-          </ScrollView>
+          {Platform.OS === "web" ? (
+            <View style={styles.filtersRow}>
+              {STATUSES.map((status) => (
+                <PremiumChip
+                  key={status}
+                  label={status === "all" ? "All" : getOrderStatusLabel(status)}
+                  tone="gold"
+                  size="sm"
+                  selected={statusFilter === status}
+                  onPress={() => setStatusFilter(status)}
+                />
+              ))}
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filtersRow}
+            >
+              {STATUSES.map((status) => (
+                <PremiumChip
+                  key={status}
+                  label={status === "all" ? "All" : getOrderStatusLabel(status)}
+                  tone="gold"
+                  size="sm"
+                  selected={statusFilter === status}
+                  onPress={() => setStatusFilter(status)}
+                />
+              ))}
+            </ScrollView>
+          )}
           </SectionReveal>
 
           <SectionReveal preset="fade-up" delay={60}>
@@ -728,20 +743,37 @@ export default function AdminOrdersScreen({ navigation, route }) {
                     />
 
                     <Text style={styles.cardMeta}>Set status (any stage)</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statusButtonsWrap}>
-                      {STATUSES.filter((status) => status !== "all").map((status) => (
-                        <PremiumChip
-                          key={status}
-                          label={getOrderStatusLabel(status)}
-                          tone="gold"
-                          size="sm"
-                          selected={item.status === status}
-                          onPress={
-                            busyOrderId === item._id ? undefined : () => handleStatus(item._id, status)
-                          }
-                        />
-                      ))}
-                    </ScrollView>
+                    {Platform.OS === "web" ? (
+                      <View style={[styles.statusButtonsWrap, styles.statusButtonsWrapWeb]}>
+                        {STATUSES.filter((status) => status !== "all").map((status) => (
+                          <PremiumChip
+                            key={status}
+                            label={getOrderStatusLabel(status)}
+                            tone="gold"
+                            size="sm"
+                            selected={item.status === status}
+                            onPress={
+                              busyOrderId === item._id ? undefined : () => handleStatus(item._id, status)
+                            }
+                          />
+                        ))}
+                      </View>
+                    ) : (
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statusButtonsWrap}>
+                        {STATUSES.filter((status) => status !== "all").map((status) => (
+                          <PremiumChip
+                            key={status}
+                            label={getOrderStatusLabel(status)}
+                            tone="gold"
+                            size="sm"
+                            selected={item.status === status}
+                            onPress={
+                              busyOrderId === item._id ? undefined : () => handleStatus(item._id, status)
+                            }
+                          />
+                        ))}
+                      </ScrollView>
+                    )}
                   </View>
                 ) : null}
 
@@ -792,7 +824,7 @@ function createAdminOrdersStyles(c, shadowPremium) {
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
+    maxWidth: Platform.select({ web: layout.maxContentWidth + 96, default: "100%" }),
   },
   panel: {
     ...adminPanel(c, shadowPremium),
@@ -853,7 +885,7 @@ function createAdminOrdersStyles(c, shadowPremium) {
     alignItems: "center",
     gap: spacing.xs,
     marginBottom: spacing.sm,
-    paddingRight: spacing.md,
+    paddingRight: Platform.select({ web: 0, default: spacing.md }),
   },
   listContent: {
     gap: spacing.sm,
@@ -998,6 +1030,10 @@ function createAdminOrdersStyles(c, shadowPremium) {
     alignItems: "center",
     gap: spacing.xs,
     paddingBottom: spacing.xs,
+  },
+  statusButtonsWrapWeb: {
+    flexWrap: "wrap",
+    paddingBottom: 0,
   },
   actionsWrap: {
     marginTop: spacing.sm,

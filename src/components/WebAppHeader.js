@@ -9,7 +9,6 @@ import {
   fonts,
   getSemanticColors,
   icon,
-  layout,
   semanticRadius,
   spacing,
   typography,
@@ -18,6 +17,7 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { WEB_HEADER_HEIGHT, WEB_Z_INDEX } from "../theme/web";
+import { CUSTOMER_PAGE_MAX_WIDTH } from "../theme/screenLayout";
 import { SEARCH_PLACEHOLDER } from "../constants/brand";
 import { CUSTOMER_NAV_LINKS } from "../content/appContent";
 import BrandHeaderMark from "./BrandHeaderMark";
@@ -288,7 +288,7 @@ export default function WebAppHeader({ navigationRef }) {
           end={{ x: 1, y: 1 }}
           style={[StyleSheet.absoluteFillObject, styles.peNone]}
         />
-        <View style={[styles.inner, compact ? styles.innerCompact : null]}>
+        <View style={[styles.inner, compact ? styles.innerCompact : null, isPhoneWeb ? styles.innerPhone : null]}>
           <View ref={brandRef} style={styles.brandCluster}>
             <BrandHeaderMark
               navigationRef={navigationRef}
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
   },
   inner: {
     flex: 1,
-    maxWidth: layout.maxContentWidth + 24,
+    maxWidth: CUSTOMER_PAGE_MAX_WIDTH,
     width: "100%",
     alignSelf: "center",
     flexDirection: "row",
@@ -525,9 +525,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: Platform.select({ web: spacing.lg + 2, default: spacing.md }),
     paddingVertical: 8,
-    gap: spacing.md,
+    gap: spacing.md + 2,
     ...Platform.select({
       web: { transition: "padding 0.2s ease" },
+      default: {},
+    }),
+  },
+  innerPhone: {
+    alignItems: "flex-start",
+    ...Platform.select({
+      web: {
+        flexWrap: "wrap",
+        rowGap: spacing.xs,
+      },
       default: {},
     }),
   },
@@ -538,11 +548,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    flexShrink: 0,
+    flexShrink: 1,
+    minWidth: 0,
   },
   searchFake: {
     flex: 1,
-    maxWidth: 460,
+    maxWidth: 560,
     minWidth: 100,
     flexDirection: "row",
     alignItems: "center",
@@ -570,18 +581,20 @@ const styles = StyleSheet.create({
   navRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
-    flexShrink: 0,
+    gap: spacing.xs,
+    flexShrink: 1,
   },
   navRowPhone: {
     gap: 4,
+    width: "100%",
+    justifyContent: "space-between",
   },
   navItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
     paddingVertical: 7,
-    paddingHorizontal: spacing.sm + 4,
+    paddingHorizontal: spacing.md,
     minHeight: 44,
     borderRadius: semanticRadius.full,
     ...Platform.select({

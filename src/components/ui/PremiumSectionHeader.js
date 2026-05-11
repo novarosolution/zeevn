@@ -101,8 +101,14 @@ function PremiumSectionHeaderBase({
 }
 
 function createStyles(c, isDark, align, compact) {
-  const titleSize = compact ? 20 : 25;
-  const titleSizeWeb = compact ? 22 : 27;
+  const titleSize = compact ? typography.h3 - 1 : typography.h2;
+  const titleSizeWeb = compact ? typography.h3 : typography.h2 + 2;
+  const titleLine = compact ? lineHeight.h3 - 1 : lineHeight.h2;
+  const titleLineWeb = compact ? lineHeight.h3 : lineHeight.h2 + 2;
+  const metaTextSize = typography.caption;
+  const metaLineHeight = lineHeight.caption;
+  const subtitleSize = typography.bodySmall;
+  const subtitleLineHeight = lineHeight.bodySmall;
 
   return StyleSheet.create({
     wrap: {
@@ -111,7 +117,7 @@ function createStyles(c, isDark, align, compact) {
     },
     row: {
       flexDirection: "row",
-      alignItems: "flex-end",
+      alignItems: "flex-start",
       justifyContent: "space-between",
       gap: spacing.md,
       ...Platform.select({
@@ -124,7 +130,7 @@ function createStyles(c, isDark, align, compact) {
     left: {
       flex: 1,
       minWidth: 0,
-      gap: 5,
+      gap: 6,
       alignItems: align === "center" ? "center" : "flex-start",
     },
     overlineRow: {
@@ -163,11 +169,11 @@ function createStyles(c, isDark, align, compact) {
     title: {
       fontFamily: FONT_DISPLAY,
       fontSize: titleSize,
-      lineHeight: titleSize + 5,
+      lineHeight: titleLine,
       letterSpacing: -0.55,
       color: c.textPrimary,
       ...Platform.select({
-        web: { fontSize: titleSizeWeb, lineHeight: titleSizeWeb + 4 },
+        web: { fontSize: titleSizeWeb, lineHeight: titleLineWeb },
         default: {},
       }),
     },
@@ -181,16 +187,18 @@ function createStyles(c, isDark, align, compact) {
     },
     countText: {
       fontFamily: fonts.extrabold,
-      fontSize: 12,
+      fontSize: metaTextSize,
+      lineHeight: metaLineHeight,
       letterSpacing: 0.4,
       color: isDark ? c.primaryBright : c.primaryDark,
     },
     subtitle: {
       fontFamily: fonts.medium,
-      fontSize: 12,
-      lineHeight: 17,
+      fontSize: subtitleSize,
+      lineHeight: subtitleLineHeight,
       color: c.textMuted,
       marginTop: 2,
+      maxWidth: Platform.select({ web: 760, default: "100%" }),
     },
     seeAllBtn: {
       flexDirection: "row",
@@ -231,12 +239,13 @@ function createStyles(c, isDark, align, compact) {
     },
     seeAllText: {
       fontFamily: fonts.extrabold,
-      fontSize: 12,
+      fontSize: metaTextSize,
+      lineHeight: metaLineHeight,
       letterSpacing: 0.4,
       color: isDark ? c.primaryBright : c.primaryDark,
     },
     hairlineWrap: {
-      marginTop: 8,
+      marginTop: 10,
       flexDirection: "row",
       alignItems: "center",
       gap: 6,

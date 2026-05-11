@@ -220,10 +220,17 @@ function createStyles(c, isDark, pad, variant, borderless) {
       opacity: 0.95,
     },
     content: {
+      width: "100%",
       padding: hero ? pad + 2 : panel ? pad + 1 : pad,
       ...(variant === "muted" ? { backgroundColor: "transparent" } : {}),
       borderRadius: list ? radius.xl : radius.xl,
       overflow: "hidden",
+      ...Platform.select({
+        web: {
+          boxSizing: "border-box",
+        },
+        default: {},
+      }),
     },
     hover: {
       ...Platform.select({

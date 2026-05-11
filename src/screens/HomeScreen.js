@@ -258,21 +258,44 @@ export default function HomeScreen({ navigation }) {
   const totalMatches = productsForHome.length;
   /** Two-column tiles on tablets / landscape — list stays for active search (easier to scan). */
   const useProductGridLayout = windowWidth >= 560 && !query.trim();
-  const catalogGridColStyle = useMemo(() => {
+  const catalogGridMetrics = useMemo(() => {
     if (!useProductGridLayout) return null;
-    const scrollPad = Platform.OS === "web" ? spacing.xl : spacing.lg;
-    const surfacePad = Platform.OS === "web" ? spacing.lg : spacing.lg;
+    const surfacePad = Platform.OS === "web" ? spacing.xl + 6 : spacing.md + 8;
     const gap = Platform.OS === "web" ? spacing.lg : spacing.md;
-    const columnCount =
-      windowWidth >= 1440 ? 4 : windowWidth >= 1100 ? 3 : 2;
+    const desiredColumnCount =
+      windowWidth >= 1500 ? 5 : windowWidth >= 1260 ? 4 : windowWidth >= 920 ? 3 : 2;
     const contentW = Math.min(windowWidth, layout.maxContentWidth);
-    const inner = Math.max(0, contentW - 2 * scrollPad - 2 * surfacePad);
-    const totalGap = gap * (columnCount - 1);
-    const col = Math.max(136, Math.floor((inner - totalGap) / columnCount));
-    const maxCol = Platform.OS === "web" ? 300 : col;
-    const finalCol = Math.min(col, maxCol);
-    return { width: finalCol, minWidth: finalCol, maxWidth: finalCol };
+    const innerWidth = Math.max(0, contentW - surfacePad * 2);
+    return { gap, desiredColumnCount, innerWidth };
   }, [useProductGridLayout, windowWidth]);
+  const getCatalogGridColStyle = useCallback(
+    (itemCount = 1) => {
+      if (!catalogGridMetrics) return null;
+      const effectiveColumnCount = Math.max(1, Math.min(catalogGridMetrics.desiredColumnCount, itemCount));
+      const totalGap = catalogGridMetrics.gap * Math.max(0, effectiveColumnCount - 1);
+      const rawColumnWidth = Math.max(
+        176,
+        Math.floor((catalogGridMetrics.innerWidth - totalGap) / effectiveColumnCount)
+      );
+      const cappedColumnWidth = Platform.select({
+        web:
+          effectiveColumnCount <= 2
+            ? 420
+            : effectiveColumnCount === 3
+              ? 360
+              : 320,
+        default: rawColumnWidth,
+      });
+      const finalColumnWidth = Math.min(rawColumnWidth, cappedColumnWidth);
+      return {
+        width: finalColumnWidth,
+        minWidth: finalColumnWidth,
+        maxWidth: finalColumnWidth,
+        flexGrow: effectiveColumnCount > 1 ? 1 : 0,
+      };
+    },
+    [catalogGridMetrics]
+  );
 
   const adminManagedSections = useMemo(() => {
     const grouped = productsForHome.reduce((acc, item) => {
@@ -463,13 +486,19 @@ export default function HomeScreen({ navigation }) {
 
   const renderCatalogItems = (items, listKeyPrefix = "cat") => {
     const outOfStock = (p) => p.inStock === false || Number(p.stockQty || 0) <= 0;
-    if (useProductGridLayout && catalogGridColStyle && items.length > 0) {
+    const gridCellStyle = getCatalogGridColStyle(items.length);
+    if (useProductGridLayout && gridCellStyle && items.length > 0) {
       return (
-        <View style={styles.productGridWrap}>
+        <View
+          style={[
+            styles.productGridWrap,
+            items.length < (catalogGridMetrics?.desiredColumnCount || 1) ? styles.productGridWrapCentered : null,
+          ]}
+        >
           {items.map((item, idx) => (
             <HomeCatalogGridCard
               key={item.id ?? `${listKeyPrefix}-g-${idx}`}
-              catalogGridColStyle={catalogGridColStyle}
+              catalogGridColStyle={gridCellStyle}
               cardStyle={homeViewConfig.productCardStyle}
               idx={idx}
               isOutOfStock={outOfStock(item)}
@@ -2418,6 +2447,10 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       justifyContent: "flex-start",
       columnGap: Platform.OS === "web" ? spacing.lg : spacing.md,
       rowGap: Platform.OS === "web" ? spacing.lg + 4 : spacing.md + 4,
+      alignItems: "stretch",
+    },
+    productGridWrapCentered: {
+      justifyContent: "center",
     },
     productGridCell: {
       marginBottom: 0,

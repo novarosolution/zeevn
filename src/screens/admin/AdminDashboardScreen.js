@@ -22,13 +22,14 @@ import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../../theme/customerAl
 import MotionScrollView from "../../components/motion/MotionScrollView";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
 import { ADMIN_MANAGE_SECTIONS as MANAGE_SECTIONS } from "../../constants/adminNav";
-import { APP_DISPLAY_NAME } from "../../constants/brand";
 import { fonts, layout, semanticRadius, spacing, typography } from "../../theme/tokens";
 import PremiumLoader from "../../components/ui/PremiumLoader";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumStatCard from "../../components/ui/PremiumStatCard";
+import AdminBackLink from "../../components/admin/AdminBackLink";
+import AdminPageHeading from "../../components/admin/AdminPageHeading";
 
 /** Group icon shown on each collapsible admin module header. */
 const SECTION_GROUP_ICONS = {
@@ -276,28 +277,11 @@ export default function AdminDashboardScreen({ navigation }) {
           <View style={[styles.heroBlobA, isDark ? null : styles.heroBlobALight]} />
           <View style={[styles.heroBlobB, isDark ? null : styles.heroBlobBLight]} />
           <View style={styles.heroInner}>
-            <TouchableOpacity
-              style={[styles.heroBack, isDark ? null : styles.heroBackLight]}
-              onPress={() => navigation.navigate("Home")}
-              activeOpacity={0.88}
-            >
-              <Ionicons name="arrow-back" size={18} color={isDark ? "#f8fafc" : ALCHEMY.brown} />
-              <Text style={[styles.heroBackText, isDark ? null : styles.heroBackTextLight]}>Storefront</Text>
-            </TouchableOpacity>
-            <View style={styles.heroTitleRow}>
-              <View style={[styles.heroShield, isDark ? null : styles.heroShieldLight]}>
-                <Ionicons name="shield-checkmark" size={26} color={isDark ? c.primaryBright : ALCHEMY.brown} />
-              </View>
-              <View style={styles.heroTitleBlock}>
-                <Text style={[styles.heroKicker, isDark ? null : styles.heroKickerLight]}>
-                  {`${APP_DISPLAY_NAME} · Admin`}
-                </Text>
-                <Text style={[styles.heroTitle, isDark ? null : styles.heroTitleLight]}>Control center</Text>
-                <Text style={[styles.heroSub, isDark ? null : styles.heroSubLight]}>
-                  Catalog, orders, users, and analytics.
-                </Text>
-              </View>
-            </View>
+            <AdminBackLink navigation={navigation} label="Storefront" target="Home" />
+            <AdminPageHeading
+              title="Control center"
+              subtitle="Catalog, orders, users, and analytics."
+            />
           </View>
         </LinearGradient>
 
@@ -432,7 +416,7 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
+      maxWidth: Platform.select({ web: layout.maxContentWidth + 96, default: "100%" }),
     },
     hero: {
       borderRadius: semanticRadius.panel,
@@ -477,8 +461,8 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
       backgroundColor: "rgba(63, 63, 70, 0.07)",
     },
     heroInner: {
-      padding: spacing.lg,
-      paddingVertical: spacing.xl,
+      padding: Platform.select({ web: spacing.xl, default: spacing.lg }),
+      paddingVertical: Platform.select({ web: spacing.xl + 4, default: spacing.xl }),
     },
     heroBack: {
       flexDirection: "row",
@@ -527,6 +511,7 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
     heroTitleBlock: {
       flex: 1,
       minWidth: 0,
+      maxWidth: 720,
     },
     heroKicker: {
       color: "rgba(248,250,252,0.85)",
@@ -555,6 +540,7 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
       fontSize: typography.bodySmall,
       fontFamily: fonts.regular,
       lineHeight: 20,
+      maxWidth: 560,
     },
     heroSubLight: {
       color: "#5C534A",
@@ -627,8 +613,8 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
       paddingBottom: 2,
     },
     quickTileCard: {
-      width: 104,
-      minHeight: 108,
+      width: 116,
+      minHeight: 116,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -694,6 +680,7 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
       color: c.textSecondary,
       marginBottom: spacing.md,
       lineHeight: 18,
+      maxWidth: 560,
     },
     manageSectionWrap: {
       marginBottom: spacing.lg,

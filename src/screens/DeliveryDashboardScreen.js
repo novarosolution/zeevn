@@ -707,10 +707,10 @@ function createStyles(c, isDark) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth + 48, default: "100%" }),
+      maxWidth: Platform.select({ web: layout.maxContentWidth + 96, default: "100%" }),
     },
     panel: {
-      marginBottom: spacing.lg + 2,
+      marginBottom: spacing.xl,
     },
     liveLocationCard: {
       marginBottom: spacing.md,
@@ -784,6 +784,8 @@ function createStyles(c, isDark) {
       lineHeight: 20,
       fontFamily: fonts.regular,
       flex: 1,
+      minWidth: 0,
+      maxWidth: Platform.select({ web: 760, default: "100%" }),
     },
     bannerWrap: {
       marginBottom: spacing.sm,
@@ -862,8 +864,9 @@ function createStyles(c, isDark) {
     },
     dropoffStripHeader: {
       flexDirection: "row",
-      alignItems: "center",
+      alignItems: "flex-start",
       justifyContent: "space-between",
+      flexWrap: "wrap",
       gap: spacing.sm,
     },
     dropoffStripLead: {
@@ -902,6 +905,11 @@ function createStyles(c, isDark) {
     },
     navigateBtnWrap: {
       flexShrink: 0,
+      alignSelf: "flex-start",
+      ...Platform.select({
+        web: { marginLeft: "auto" },
+        default: {},
+      }),
     },
     orderId: {
       fontFamily: fonts.extrabold,

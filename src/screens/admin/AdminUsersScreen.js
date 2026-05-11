@@ -419,7 +419,7 @@ function createAdminUsersStyles(c, shadowPremium) {
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
+    maxWidth: Platform.select({ web: layout.maxContentWidth + 96, default: "100%" }),
   },
   panel: {
     ...adminPanel(c, shadowPremium),
@@ -495,7 +495,7 @@ function createAdminUsersStyles(c, shadowPremium) {
     flexWrap: "wrap",
     gap: 6,
     justifyContent: "flex-end",
-    maxWidth: "48%",
+    minWidth: 0,
   },
   cardTitle: {
     fontWeight: "700",

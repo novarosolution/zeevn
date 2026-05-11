@@ -7,6 +7,7 @@ import { BarChart, LineChart, PieChart } from "react-native-chart-kit";
 import AppFooter from "../../components/AppFooter";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
 import AdminBackLink from "../../components/admin/AdminBackLink";
+import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
 import { fetchAdminAnalytics } from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
@@ -306,50 +307,45 @@ export default function AdminAnalyticsScreen({ navigation }) {
       <LinearGradient colors={heroColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.heroGradient, { borderColor: hairline }]}>
         {!isDark ? <View style={styles.heroGoldHairline} /> : null}
         <AdminBackLink navigation={navigation} />
-        <View style={styles.heroTitleRow}>
-          <View style={[styles.heroIconWrap, !isDark && styles.heroIconWrapLight]}>
-            <Ionicons name="analytics" size={26} color={isDark ? c.primary : ALCHEMY.brown} />
-          </View>
-          <View style={styles.heroTextCol}>
-            <Text style={[styles.title, !isDark && styles.titleLight]}>Analytics</Text>
-            <Text style={[styles.subtitle, !isDark && styles.subtitleLight]}>
-              Revenue, trends, catalog health, carts, and coupons — filter by period or export PDF / CSV.
-            </Text>
-          </View>
-        </View>
+        <AdminPageHeading
+          title="Analytics"
+          subtitle="Revenue, trends, catalog health, carts, and coupons. Filter by period or export PDF / CSV."
+          right={
+            <View style={styles.heroActionsRow}>
+              <PremiumButton
+                label="Refresh"
+                iconLeft="refresh-outline"
+                variant="primary"
+                size="sm"
+                onPress={loadAnalytics}
+                style={styles.heroActionBtn}
+              />
+              <PremiumButton
+                label="Export PDF"
+                iconLeft="document-text-outline"
+                variant="secondary"
+                size="sm"
+                onPress={handleExportPdf}
+                disabled={!analytics}
+                style={styles.heroActionBtn}
+              />
+              <PremiumButton
+                label="Export CSV"
+                iconLeft="download-outline"
+                variant="secondary"
+                size="sm"
+                onPress={handleExportCsv}
+                disabled={!analytics}
+                style={styles.heroActionBtn}
+              />
+            </View>
+          }
+        />
         {error ? (
           <View style={styles.bannerSpacer}>
             <PremiumErrorBanner severity="error" message={error} compact />
           </View>
         ) : null}
-        <View style={styles.heroActionsRow}>
-          <PremiumButton
-            label="Refresh"
-            iconLeft="refresh-outline"
-            variant="primary"
-            size="sm"
-            onPress={loadAnalytics}
-            style={styles.heroActionBtn}
-          />
-          <PremiumButton
-            label="Export PDF"
-            iconLeft="document-text-outline"
-            variant="secondary"
-            size="sm"
-            onPress={handleExportPdf}
-            disabled={!analytics}
-            style={styles.heroActionBtn}
-          />
-          <PremiumButton
-            label="Export CSV"
-            iconLeft="download-outline"
-            variant="secondary"
-            size="sm"
-            onPress={handleExportCsv}
-            disabled={!analytics}
-            style={styles.heroActionBtn}
-          />
-        </View>
       </LinearGradient>
 
       <PremiumCard variant="muted" padding="md" style={styles.filterCard}>
@@ -913,6 +909,9 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
   return StyleSheet.create({
   screen: {
     flex: 1,
+    width: "100%",
+    alignSelf: "center",
+    maxWidth: Platform.select({ web: 1336, default: "100%" }),
   },
   heroGradient: {
     position: "relative",
@@ -967,8 +966,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
-    marginTop: spacing.sm,
-    alignSelf: "stretch",
+    marginTop: 0,
   },
   heroActionBtn: {
     flex: 1,

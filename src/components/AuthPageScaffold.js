@@ -155,16 +155,16 @@ function createStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     },
     contentGrid: {
       width: "100%",
-      maxWidth: isWebWide ? 1080 : 500,
+      maxWidth: isWebWide ? 1140 : 520,
       alignSelf: "center",
       flexDirection: isWebWide ? "row" : "column",
       alignItems: isWebWide ? "stretch" : "center",
       justifyContent: "center",
-      gap: isWebWide ? spacing.lg : spacing.sm + 4,
+      gap: isWebWide ? spacing.xl : spacing.sm + 4,
     },
     hero: {
       width: "100%",
-      maxWidth: isWebWide ? 500 : 480,
+      maxWidth: isWebWide ? 540 : 500,
       flex: isWebWide ? 1 : undefined,
       borderRadius: semanticRadius.panel,
       borderWidth: StyleSheet.hairlineWidth,
@@ -176,7 +176,7 @@ function createStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     heroImageWrap: {
       width: "100%",
       overflow: "hidden",
-      minHeight: Platform.OS === "web" ? (isWebWide ? 432 : 244) : isCompactMobile ? 204 : 224,
+      minHeight: Platform.OS === "web" ? (isWebWide ? 460 : 252) : isCompactMobile ? 204 : 224,
       backgroundColor: c.heroBackground,
       flex: isWebWide ? 1 : undefined,
     },
@@ -186,7 +186,7 @@ function createStyles(c, shadowPremium, isDark, layoutFlags = {}) {
       paddingTop: isCompactMobile ? spacing.lg : spacing.lg + 2,
       paddingBottom: isCompactMobile ? spacing.md : spacing.lg,
       justifyContent: isWebWide ? "center" : "flex-start",
-      minHeight: isWebWide ? 432 : undefined,
+      minHeight: isWebWide ? 460 : undefined,
     },
     heroBrandStack: {
       alignSelf: "stretch",
@@ -233,7 +233,7 @@ function createStyles(c, shadowPremium, isDark, layoutFlags = {}) {
       fontSize: isCompactMobile ? typography.bodySmall : typography.bodySmall + 1,
       lineHeight: isCompactMobile ? lineHeight.bodySmall : lineHeight.bodySmall + 1,
       fontFamily: fonts.medium,
-      maxWidth: isWebWide ? 380 : 344,
+      maxWidth: isWebWide ? 420 : 344,
       ...Platform.select({
         web: { textShadow: "0 1px 6px rgba(0,0,0,0.25)" },
         default: {
@@ -268,12 +268,12 @@ function createStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     },
     cardReveal: {
       width: "100%",
-      maxWidth: isWebWide ? 500 : 480,
+      maxWidth: isWebWide ? 540 : 500,
       flex: isWebWide ? 1 : undefined,
     },
     card: {
       width: "100%",
-      maxWidth: isWebWide ? 500 : 480,
+      maxWidth: isWebWide ? 540 : 500,
       ...customerPanel(c, shadowPremium, isDark),
       paddingHorizontal: isCompactMobile ? spacing.lg : spacing.lg + 2,
       paddingVertical: isCompactMobile ? spacing.lg : spacing.lg + 2,
@@ -302,6 +302,7 @@ function createStyles(c, shadowPremium, isDark, layoutFlags = {}) {
       fontSize: isCompactMobile ? typography.bodySmall : typography.bodySmall + 1,
       lineHeight: isCompactMobile ? lineHeight.bodySmall + 2 : lineHeight.bodySmall + 4,
       fontFamily: fonts.medium,
+      maxWidth: isWebWide ? 420 : "100%",
     },
     assuranceNote: {
       marginTop: spacing.md,
@@ -314,7 +315,7 @@ function createStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     footerWrap: {
       marginTop: spacing.md,
       width: "100%",
-      maxWidth: isWebWide ? 1080 : 500,
+      maxWidth: isWebWide ? 1140 : 520,
       alignSelf: "center",
     },
   });

@@ -795,11 +795,14 @@ function createProfileStyles(c, isDark, layoutFlags = {}) {
     },
     screen: {
       flex: 1,
+      width: "100%",
+      alignSelf: "center",
+      maxWidth: Platform.select({ web: layout.maxContentWidth + 24, default: "100%" }),
     },
     profileGridRow: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: spacing.xl - 2,
+      gap: spacing.xl + 4,
     },
     profileLeftCol: {
       flex: 5,
@@ -842,7 +845,7 @@ function createProfileStyles(c, isDark, layoutFlags = {}) {
       ...cardLift,
       ...Platform.select({
         web: {
-          maxWidth: layout.maxContentWidth,
+          maxWidth: layout.maxContentWidth + 16,
           alignSelf: "center",
           width: "100%",
         },
@@ -851,8 +854,8 @@ function createProfileStyles(c, isDark, layoutFlags = {}) {
     },
     heroGradient: {
       paddingTop: spacing.lg + 6,
-      paddingHorizontal: spacing.lg + 2,
-      paddingBottom: spacing.lg + 8,
+      paddingHorizontal: Platform.select({ web: spacing.xl, default: spacing.lg + 2 }),
+      paddingBottom: Platform.select({ web: spacing.xl + 2, default: spacing.lg + 8 }),
       position: "relative",
       overflow: "hidden",
     },
@@ -1219,8 +1222,8 @@ function createProfileStyles(c, isDark, layoutFlags = {}) {
     quickActionsGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: spacing.sm + 2,
-      marginTop: spacing.xs,
+      gap: spacing.md,
+      marginTop: spacing.sm,
     },
     membershipCard: {
       marginBottom: 0,
@@ -1325,7 +1328,8 @@ function createProfileStyles(c, isDark, layoutFlags = {}) {
       marginTop: 2,
       color: c.primary,
       fontFamily: FONT_DISPLAY_SEMI,
-      fontSize: typography.h4,
+      fontSize: typography.h2,
+      letterSpacing: -0.3,
     },
     loyaltyHint: {
       marginTop: 6,

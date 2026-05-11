@@ -53,7 +53,7 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
   cardStyle = "compact",
 }) {
   return (
-    <View style={[styles.productGridCell, catalogGridColStyle]}>
+    <View style={[styles.productGridCell, { flexGrow: 1 }, catalogGridColStyle]}>
       <ProductCard
         index={idx}
         isOutOfStock={isOutOfStock}

@@ -11,7 +11,6 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import AppFooter from "../components/AppFooter";
@@ -540,35 +539,6 @@ export default function CartScreen({ navigation, route }) {
           }
         />
 
-        {cartItems.length > 0 ? (
-          <SectionReveal delay={40} preset="fade-up">
-            <View style={[styles.cartHero, isCompact ? styles.cartHeroStack : null]}>
-              <View style={styles.cartHeroTextBlock}>
-                <Text style={styles.cartHeroEyebrow}>{CART_UI.pageEyebrow}</Text>
-                <Text style={styles.cartHeroTitle}>
-                  {fillPlaceholders(CART_UI.readyTitle, {
-                    count: `${totalItems} item${totalItems === 1 ? "" : "s"}`,
-                  })}
-                </Text>
-                <LinearGradient
-                  colors={[c.primaryBright, c.primary, c.primaryDark]}
-                  start={{ x: 0, y: 0.5 }}
-                  end={{ x: 1, y: 0.5 }}
-                  style={styles.cartHeroAccent}
-                />
-                <Text style={styles.cartHeroSubtitle}>{CART_UI.readySubtitle}</Text>
-              </View>
-              <View style={styles.cartHeroIcon}>
-                <Ionicons
-                  name={isRazorpayMethod ? "card-outline" : "bag-check-outline"}
-                  size={icon.lg}
-                  color={c.primary}
-                />
-              </View>
-            </View>
-          </SectionReveal>
-        ) : null}
-
         <View style={isDesktop ? styles.cartGridRow : null}>
         <View style={isDesktop ? styles.cartLeftCol : null}>
 
@@ -970,7 +940,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth + 56, default: "100%" }),
+    maxWidth: Platform.select({ web: layout.maxContentWidth + 24, default: "100%" }),
   },
   scrollFill: {
     flex: 1,
@@ -979,14 +949,14 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   cartGridRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: spacing.xl,
+    gap: spacing.xl + 8,
   },
   cartLeftCol: {
     flex: 1,
     minWidth: 0,
   },
   cartRightCol: {
-    width: 340,
+    width: 376,
     flexShrink: 0,
     ...Platform.select({
       web: {
@@ -1068,7 +1038,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: spacing.md,
-    padding: spacing.md + 2,
+    padding: Platform.select({ web: spacing.lg, default: spacing.md + 2 }),
   },
   selectionCardRowStack: {
     flexDirection: "column",
@@ -1248,6 +1218,12 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     marginBottom: spacing.lg,
     alignSelf: "stretch",
     overflow: "hidden",
+    ...Platform.select({
+      web: {
+        position: "relative",
+      },
+      default: {},
+    }),
   },
   shippingFree: {
     fontFamily: fonts.bold,
@@ -1303,7 +1279,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   summaryTrustRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     gap: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -1313,6 +1289,8 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    flexGrow: 1,
+    minWidth: 92,
   },
   summaryTrustText: {
     fontSize: 9,
@@ -1486,8 +1464,8 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     alignItems: "center",
     justifyContent: "space-between",
     marginBottom: spacing.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md + 2,
+    paddingHorizontal: Platform.select({ web: spacing.lg, default: spacing.md }),
     borderRadius: radius.xxl,
     borderWidth: 1,
     borderColor: c.border,

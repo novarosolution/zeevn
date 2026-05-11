@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
@@ -30,9 +30,12 @@ export default function ProductCard({
   /** Warm editorial list styling (e.g. Home catalog) */
   editorial = false,
 }) {
+  const { width } = useWindowDimensions();
   const { colors: c, isDark } = useTheme();
   const semantic = getSemanticColors(c);
-  const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
+  const isWideWeb = Platform.OS === "web" && width >= 1180;
+  const isHugeWeb = Platform.OS === "web" && width >= 1440;
+  const styles = useMemo(() => createStyles(c, isDark, { isWideWeb, isHugeWeb }), [c, isDark, isWideWeb, isHugeWeb]);
 
   const scale = useSharedValue(1);
   const isList = variant === "list";
@@ -446,7 +449,8 @@ function getCategoryTone(rawCategory, isDark, editorial, c) {
   return neutral;
 }
 
-function createStyles(c, isDark) {
+function createStyles(c, isDark, layoutFlags = {}) {
+  const { isWideWeb = false, isHugeWeb = false } = layoutFlags;
   const cardLiftShadow = platformShadow({
     web: {
       boxShadow: isDark
@@ -468,7 +472,10 @@ function createStyles(c, isDark) {
     },
     card: {
       width: "100%",
-      minHeight: Platform.select({ web: 168, default: 186 }),
+      minHeight: Platform.select({
+        web: isHugeWeb ? 220 : isWideWeb ? 204 : 168,
+        default: 186,
+      }),
       backgroundColor: c.surface,
       borderRadius: radius.xxl,
       overflow: "hidden",
@@ -696,7 +703,11 @@ function createStyles(c, isDark) {
       borderLeftColor: c.accentGold,
     },
     cardList: {
-      minHeight: Platform.OS === "ios" ? 168 : 174,
+      minHeight: Platform.select({
+        web: isHugeWeb ? 212 : isWideWeb ? 192 : 174,
+        ios: 168,
+        default: 174,
+      }),
       borderRadius: semanticRadius.card,
       marginBottom: 0,
       borderWidth: StyleSheet.hairlineWidth,
@@ -736,11 +747,18 @@ function createStyles(c, isDark) {
       backgroundColor: isDark ? "rgba(255,255,255,0.04)" : ALCHEMY.creamAlt,
     },
     imageWrapList: {
-      width: Platform.OS === "ios" ? 132 : 140,
+      width: Platform.select({
+        web: isHugeWeb ? 180 : isWideWeb ? 164 : 140,
+        ios: 132,
+        default: 140,
+      }),
       padding: spacing.sm,
     },
     imageBox: {
-      height: Platform.select({ web: 76, default: 94 }),
+      height: Platform.select({
+        web: isHugeWeb ? 112 : isWideWeb ? 98 : 76,
+        default: 94,
+      }),
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: c.border,
       borderRadius: radius.lg + 2,
@@ -750,7 +768,10 @@ function createStyles(c, isDark) {
       overflow: "hidden",
     },
     imageBoxList: {
-      height: 130,
+      height: Platform.select({
+        web: isHugeWeb ? 176 : isWideWeb ? 152 : 130,
+        default: 130,
+      }),
       borderRadius: radius.xl + 4,
       position: "relative",
     },
@@ -911,7 +932,10 @@ function createStyles(c, isDark) {
       fontSize: 9,
     },
     content: {
-      padding: Platform.select({ web: spacing.sm, default: spacing.md }),
+      padding: Platform.select({
+        web: isWideWeb ? spacing.md : spacing.sm,
+        default: spacing.md,
+      }),
     },
     contentCompact: {
       paddingTop: 6,
@@ -919,9 +943,9 @@ function createStyles(c, isDark) {
     },
     contentList: {
       flex: 1,
-      paddingVertical: spacing.md + 2,
-      paddingRight: spacing.lg,
-      paddingLeft: spacing.sm,
+      paddingVertical: isWideWeb ? spacing.lg : spacing.md + 2,
+      paddingRight: isWideWeb ? spacing.xl : spacing.lg,
+      paddingLeft: isWideWeb ? spacing.md : spacing.sm,
       justifyContent: "flex-start",
     },
     category: {
@@ -930,14 +954,23 @@ function createStyles(c, isDark) {
       marginBottom: 2,
     },
     name: {
-      fontSize: typography.body + 1,
-      lineHeight: 22,
-      minHeight: 42,
+      fontSize: Platform.select({
+        web: isWideWeb ? typography.body + 3 : typography.body + 1,
+        default: typography.body + 1,
+      }),
+      lineHeight: Platform.select({
+        web: isWideWeb ? 25 : 22,
+        default: 22,
+      }),
+      minHeight: Platform.select({
+        web: isWideWeb ? 50 : 42,
+        default: 42,
+      }),
     },
     description: {
       marginTop: 4,
       fontSize: typography.bodySmall,
-      lineHeight: 17,
+      lineHeight: isWideWeb ? 19 : 17,
     },
     metaRowList: {
       marginTop: 2,
@@ -969,19 +1002,26 @@ function createStyles(c, isDark) {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginTop: spacing.md,
+      marginTop: isWideWeb ? spacing.md + 2 : spacing.md,
+      gap: spacing.sm,
     },
     price: {
-      fontSize: typography.body + 2,
+      fontSize: Platform.select({
+        web: isWideWeb ? typography.h3 : typography.body + 2,
+        default: typography.body + 2,
+      }),
     },
     priceList: {
-      fontSize: 20,
+      fontSize: Platform.select({
+        web: isWideWeb ? 22 : 20,
+        default: 20,
+      }),
     },
     button: {
       borderRadius: semanticRadius.control + 2,
-      minWidth: Platform.select({ web: 72, default: 84 }),
-      paddingHorizontal: Platform.select({ web: spacing.md, default: spacing.md + 2 }),
-      paddingVertical: Platform.select({ web: 10, default: 11 }),
+      minWidth: Platform.select({ web: isWideWeb ? 92 : 72, default: 84 }),
+      paddingHorizontal: Platform.select({ web: isWideWeb ? spacing.md + 2 : spacing.md, default: spacing.md + 2 }),
+      paddingVertical: Platform.select({ web: isWideWeb ? 11 : 10, default: 11 }),
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
@@ -998,7 +1038,7 @@ function createStyles(c, isDark) {
     buttonDisabled: {},
     buttonText: {
       fontSize: typography.bodySmall,
-      letterSpacing: 0.15,
+      letterSpacing: isWideWeb ? 0.22 : 0.15,
     },
     stepper: {
       flexDirection: "row",

@@ -265,7 +265,7 @@ function createAdminSupportStyles(c, shadowPremium) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
+      maxWidth: Platform.select({ web: layout.maxContentWidth + 96, default: "100%" }),
     },
     panel: {
       ...adminPanel(c, shadowPremium),

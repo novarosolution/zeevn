@@ -9,9 +9,12 @@ const connectDB = require("./src/config/db");
 const { getProducts } = require("./src/controllers/productController");
 const { getPublicHomeViewConfig } = require("./src/controllers/homeViewController");
 const { loginUser, registerUser } = require("./src/controllers/userController");
+const { sweepExpiredPendingPayments } = require("./src/controllers/orderController");
 const userRoutes = require("./src/routes/userRoutes");
 const orderRoutes = require("./src/routes/orderRoutes");
+const productRoutes = require("./src/routes/productRoutes");
 const adminRoutes = require("./src/routes/adminRoutes");
+const deliveryRoutes = require("./src/routes/deliveryRoutes");
 const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
 
 const app = express();
@@ -67,17 +70,34 @@ function mountApi(routePath, router) {
 
 mountApi("/users", userRoutes);
 mountApi("/orders", orderRoutes);
+mountApi("/products", productRoutes);
 mountApi("/admin", adminRoutes);
+mountApi("/delivery", deliveryRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5001;
 
+/**
+ * Razorpay-backed orders are created with status `pending_payment` and a
+ * `paymentExpiresAt` timestamp ~30m in the future. This loop flips any
+ * abandoned ones to `cancelled` so admin dashboards stay clean.
+ */
+function startExpiredPaymentSweeper() {
+  const interval = setInterval(() => {
+    sweepExpiredPendingPayments().catch(() => {});
+  }, 60 * 1000);
+  if (typeof interval.unref === "function") interval.unref();
+  sweepExpiredPendingPayments().catch(() => {});
+  return interval;
+}
+
 async function start() {
   await connectDB();
+  startExpiredPaymentSweeper();
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Kankreg API on port ${PORT} (listening on 0.0.0.0)`);
+    console.log(`Zeevan API on port ${PORT} (listening on 0.0.0.0)`);
     console.log("Try: GET http://127.0.0.1:" + PORT + "/products");
   });
 }

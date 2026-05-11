@@ -1,18 +1,10 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppFooter from "../../components/AppFooter";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
 import AdminBackLink from "../../components/admin/AdminBackLink";
+import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -21,12 +13,21 @@ import {
   updateAdminSupportThreadStatus,
 } from "../../services/adminService";
 import { adminPanel } from "../../theme/adminLayout";
-import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
+import MotionScrollView from "../../components/motion/MotionScrollView";
+import SectionReveal from "../../components/motion/SectionReveal";
+import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
+import { layout, radius, spacing } from "../../theme/tokens";
+import PremiumLoader from "../../components/ui/PremiumLoader";
+import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
+import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import PremiumInput from "../../components/ui/PremiumInput";
+import PremiumButton from "../../components/ui/PremiumButton";
+import PremiumCard from "../../components/ui/PremiumCard";
 
 export default function AdminSupportScreen({ navigation }) {
   const { colors: c, shadowPremium } = useTheme();
   const styles = useMemo(() => createAdminSupportStyles(c, shadowPremium), [c, shadowPremium]);
+  const insets = useSafeAreaInsets();
   const { user, token } = useAuth();
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -35,7 +36,7 @@ export default function AdminSupportScreen({ navigation }) {
   const [selectedThreadId, setSelectedThreadId] = useState("");
   const [message, setMessage] = useState("");
 
-  async function loadThreads() {
+  const loadThreads = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -49,12 +50,12 @@ export default function AdminSupportScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token, selectedThreadId]);
 
   useEffect(() => {
     if (!user?.isAdmin) return;
     loadThreads();
-  }, [user?.isAdmin]);
+  }, [user, loadThreads]);
 
   const selectedThread = useMemo(
     () => threads.find((item) => item._id === selectedThreadId) || null,
@@ -91,74 +92,118 @@ export default function AdminSupportScreen({ navigation }) {
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
-        <ScrollView style={customerScrollFill} contentContainerStyle={styles.scrollContent}>
-          <View style={styles.panel}>
-            <Text style={styles.errorText}>Admin access required.</Text>
-          </View>
-        </ScrollView>
+      <CustomerScreenShell style={styles.screen} variant="admin">
+        <MotionScrollView
+          style={customerScrollFill}
+          contentContainerStyle={adminInnerPageScrollContent(insets)}
+          showsVerticalScrollIndicator={false}
+        >
+          <SectionReveal delay={40} preset="fade-up">
+            <View style={styles.panel}>
+              <PremiumErrorBanner
+                severity="warning"
+                title="Admin access required"
+                message="Sign in with an admin account to view support."
+              />
+              <PremiumButton
+                label="Back to Home"
+                variant="primary"
+                onPress={() => navigation.navigate("Home")}
+                style={styles.gateCta}
+              />
+            </View>
+          </SectionReveal>
+        </MotionScrollView>
       </CustomerScreenShell>
     );
   }
 
   return (
-    <CustomerScreenShell style={styles.screen}>
-      <ScrollView style={customerScrollFill} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <CustomerScreenShell style={styles.screen} variant="admin">
+      <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <MotionScrollView
+        style={customerScrollFill}
+        contentContainerStyle={adminInnerPageScrollContent(insets)}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <SectionReveal preset="fade-up" delay={0}>
         <View style={styles.panel}>
           <AdminBackLink navigation={navigation} />
-          <View style={styles.headerRow}>
-            <Text style={styles.title}>Support Inbox</Text>
-            <TouchableOpacity style={styles.refreshBtn} onPress={loadThreads}>
-              <Ionicons name="refresh-outline" size={14} color={c.primary} />
-              <Text style={styles.refreshBtnText}>Refresh</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.subtitle}>Simple support chat between users and admin.</Text>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          <AdminPageHeading
+            title="Support Inbox"
+            subtitle="Customer conversations and replies."
+            right={
+              <PremiumButton label="Refresh" iconLeft="refresh-outline" variant="secondary" size="sm" onPress={loadThreads} />
+            }
+          />
+          {error ? (
+            <View style={styles.bannerSpacer}>
+              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+            </View>
+          ) : null}
         </View>
+        </SectionReveal>
 
         {loading ? (
+          <SectionReveal preset="fade-up" delay={40}>
           <View style={styles.panel}>
-            <ActivityIndicator color={c.primary} />
+            <PremiumLoader size="sm" caption="Loading conversations…" />
           </View>
+          </SectionReveal>
         ) : (
           <>
+            <SectionReveal preset="fade-up" delay={40}>
             <View style={styles.panel}>
               <Text style={styles.sectionTitle}>Conversations</Text>
               {(threads || []).length === 0 ? (
-                <Text style={styles.emptyText}>No support messages yet.</Text>
+                <PremiumEmptyState
+                  iconName="chatbubbles-outline"
+                  title="No support messages yet"
+                  description="Customer threads will appear here."
+                  compact
+                />
               ) : (
                 (threads || []).map((thread) => (
-                  <TouchableOpacity
+                  <PremiumCard
                     key={thread._id}
-                    style={[
-                      styles.threadItem,
-                      selectedThreadId === thread._id ? styles.threadItemActive : null,
-                    ]}
+                    padding="md"
+                    interactive
                     onPress={() => setSelectedThreadId(thread._id)}
+                    goldAccent={selectedThreadId === thread._id}
+                    style={styles.threadCard}
+                    accessibilityLabel={`Open conversation with ${thread.user?.name || "user"}`}
                   >
-                    <Text style={styles.threadTitle}>{thread.user?.name || "User"}</Text>
-                    <Text style={styles.threadMeta}>{thread.user?.email || "N/A"}</Text>
-                    <Text style={styles.threadMeta}>
+                    <Text style={[styles.threadTitle, { color: c.textPrimary }]}>{thread.user?.name || "User"}</Text>
+                    <Text style={[styles.threadMeta, { color: c.textSecondary }]}>{thread.user?.email || "N/A"}</Text>
+                    <Text style={[styles.threadMeta, { color: c.textSecondary }]}>
                       Status: {thread.status} • Messages: {(thread.messages || []).length}
                     </Text>
-                  </TouchableOpacity>
+                  </PremiumCard>
                 ))
               )}
             </View>
+            </SectionReveal>
+            <SectionReveal preset="fade-up" delay={100}>
             <View style={styles.panel}>
               <View style={styles.rowBetween}>
                 <Text style={styles.sectionTitle}>Thread Details</Text>
                 {selectedThread ? (
-                  <TouchableOpacity style={styles.statusBtn} onPress={handleToggleStatus}>
-                    <Text style={styles.statusBtnText}>
-                      Mark {selectedThread.status === "closed" ? "Open" : "Closed"}
-                    </Text>
-                  </TouchableOpacity>
+                  <PremiumButton
+                    label={`Mark ${selectedThread.status === "closed" ? "Open" : "Closed"}`}
+                    variant="secondary"
+                    size="sm"
+                    onPress={handleToggleStatus}
+                  />
                 ) : null}
               </View>
               {!selectedThread ? (
-                <Text style={styles.emptyText}>Select a conversation.</Text>
+                <PremiumEmptyState
+                  iconName="hand-left-outline"
+                  title="Select a conversation"
+                  description="Choose a thread to read and reply."
+                  compact
+                />
               ) : (
                 <>
                   <Text style={styles.threadMeta}>
@@ -179,25 +224,37 @@ export default function AdminSupportScreen({ navigation }) {
                       <Text style={styles.messageText}>{item.message}</Text>
                     </View>
                   ))}
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Type reply..."
-                    placeholderTextColor={c.textMuted}
-                    value={message}
-                    onChangeText={setMessage}
-                    multiline
+                  <View style={styles.replyInputWrap}>
+                    <PremiumInput
+                      label="Reply"
+                      value={message}
+                      onChangeText={setMessage}
+                      placeholder="Type your message…"
+                      multiline
+                      numberOfLines={3}
+                      iconLeft="chatbubble-ellipses-outline"
+                    />
+                  </View>
+                  <PremiumButton
+                    label={sending ? "Sending..." : "Send Reply"}
+                    iconLeft="send-outline"
+                    variant="primary"
+                    size="md"
+                    onPress={handleReply}
+                    disabled={sending}
+                    loading={sending}
+                    fullWidth
+                    style={styles.sendBtnMargin}
                   />
-                  <TouchableOpacity style={styles.sendBtn} onPress={handleReply} disabled={sending}>
-                    <Ionicons name="send-outline" size={14} color={c.onPrimary} />
-                    <Text style={styles.sendBtnText}>{sending ? "Sending..." : "Send Reply"}</Text>
-                  </TouchableOpacity>
                 </>
               )}
             </View>
+            </SectionReveal>
           </>
         )}
         <AppFooter />
-      </ScrollView>
+      </MotionScrollView>
+      </KeyboardAvoidingView>
     </CustomerScreenShell>
   );
 }
@@ -208,48 +265,15 @@ function createAdminSupportStyles(c, shadowPremium) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth, default: "100%" }),
-    },
-    scrollContent: {
-      padding: spacing.lg,
-      paddingBottom: spacing.xxl,
+      maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
     },
     panel: {
       ...adminPanel(c, shadowPremium),
       marginBottom: spacing.md,
     },
-    headerRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: spacing.sm,
-    },
-    title: {
-      color: c.textPrimary,
-      fontSize: typography.h2,
-      fontFamily: fonts.extrabold,
-      letterSpacing: -0.35,
-    },
-    subtitle: {
-      marginTop: spacing.xs,
-      color: c.textSecondary,
-      fontSize: 13,
-    },
-    refreshBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 5,
-      borderWidth: 1,
-      borderColor: c.primaryBorder,
-      backgroundColor: c.primarySoft,
-      borderRadius: radius.pill,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 7,
-    },
-    refreshBtnText: {
-      color: c.primary,
-      fontSize: 12,
-      fontWeight: "700",
+    gateCta: {
+      marginTop: spacing.md,
+      alignSelf: "flex-start",
     },
     sectionTitle: {
       color: c.textPrimary,
@@ -257,26 +281,15 @@ function createAdminSupportStyles(c, shadowPremium) {
       fontWeight: "800",
       marginBottom: spacing.xs,
     },
-    threadItem: {
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.md,
-      backgroundColor: c.surfaceMuted,
-      padding: spacing.sm,
+    threadCard: {
       marginBottom: spacing.xs,
     },
-    threadItemActive: {
-      borderColor: c.primaryBorder,
-      backgroundColor: c.primarySoft,
-    },
     threadTitle: {
-      color: c.textPrimary,
       fontSize: 13,
       fontWeight: "700",
     },
     threadMeta: {
       marginTop: 3,
-      color: c.textSecondary,
       fontSize: 11,
     },
     rowBetween: {
@@ -286,22 +299,9 @@ function createAdminSupportStyles(c, shadowPremium) {
       gap: spacing.sm,
       marginBottom: spacing.xs,
     },
-    statusBtn: {
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.pill,
-      backgroundColor: c.surfaceMuted,
-      paddingHorizontal: spacing.md,
-      paddingVertical: 7,
-    },
-    statusBtnText: {
-      color: c.textPrimary,
-      fontSize: 11,
-      fontWeight: "700",
-    },
     messageBubble: {
       borderWidth: 1,
-      borderRadius: radius.md,
+      borderRadius: radius.lg,
       padding: spacing.sm,
       marginBottom: spacing.xs,
     },
@@ -324,45 +324,14 @@ function createAdminSupportStyles(c, shadowPremium) {
       fontSize: 12,
       lineHeight: 18,
     },
-    input: {
+    bannerSpacer: {
+      marginBottom: spacing.sm,
+    },
+    replyInputWrap: {
       marginTop: spacing.sm,
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.md,
-      backgroundColor: c.surface,
-      color: c.textPrimary,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 10,
-      minHeight: 64,
-      textAlignVertical: "top",
     },
-    sendBtn: {
+    sendBtnMargin: {
       marginTop: spacing.sm,
-      borderWidth: 1,
-      borderColor: c.primary,
-      borderRadius: radius.pill,
-      backgroundColor: c.primary,
-      alignItems: "center",
-      justifyContent: "center",
-      flexDirection: "row",
-      gap: 7,
-      paddingVertical: 10,
-    },
-    sendBtnText: {
-      color: c.onPrimary,
-      fontSize: 12,
-      fontWeight: "700",
-    },
-    emptyText: {
-      color: c.textSecondary,
-      fontSize: 12,
-      textAlign: "center",
-      paddingVertical: spacing.md,
-    },
-    errorText: {
-      color: c.danger,
-      fontSize: 12,
-      fontWeight: "700",
     },
   });
 }

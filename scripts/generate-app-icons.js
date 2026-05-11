@@ -1,5 +1,5 @@
 /**
- * Rasterize repo-root `SVG.svg` into Expo / web icon assets.
+ * Rasterize `assets/brand/zeevan-app-icon.svg` into Expo / web icon assets.
  * Run: `npm run icons:generate` (after editing the SVG).
  */
 const fs = require("fs");
@@ -7,13 +7,13 @@ const path = require("path");
 const sharp = require("sharp");
 
 const root = path.join(__dirname, "..");
-const svgPath = path.join(root, "SVG.svg");
+const svgPath = path.join(root, "assets", "brand", "zeevan-app-icon.svg");
 const assetsDir = path.join(root, "assets");
 const cream = { r: 255, g: 252, b: 248, alpha: 1 };
 
 async function main() {
   if (!fs.existsSync(svgPath)) {
-    console.error("Missing SVG.svg at project root.");
+    console.error("Missing assets/brand/zeevan-app-icon.svg.");
     process.exit(1);
   }
   if (!fs.existsSync(assetsDir)) fs.mkdirSync(assetsDir, { recursive: true });
@@ -25,7 +25,7 @@ async function main() {
     .resize(48, 48, { fit: "contain", background: cream })
     .png()
     .toFile(path.join(assetsDir, "favicon.png"));
-  console.log("Wrote assets/icon.png, assets/adaptive-icon.png, assets/favicon.png from SVG.svg");
+  console.log("Wrote assets/icon.png, assets/adaptive-icon.png, assets/favicon.png from zeevan-app-icon.svg");
 }
 
 main().catch((e) => {

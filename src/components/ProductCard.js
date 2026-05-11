@@ -1,15 +1,18 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Platform, StyleSheet, Text, TouchableOpacity, View, Pressable } from "react-native";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
-import { fonts, radius, spacing, typography } from "../theme/tokens";
+import { fonts, getSemanticColors, icon, radius, semanticRadius, spacing, typography } from "../theme/tokens";
 import { platformShadow } from "../theme/shadowPlatform";
 import { formatINR, formatINRWhole } from "../utils/currency";
 import { getImageUriCandidates } from "../utils/image";
 import { matchesShelfProduct } from "../utils/shelfMatch";
+import { APP_DISPLAY_NAME } from "../constants/brand";
 import { useTheme } from "../context/ThemeContext";
-import { ALCHEMY, FONT_DISPLAY } from "../theme/customerAlchemy";
+import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI, HERITAGE } from "../theme/customerAlchemy";
+import PremiumProductCard from "./PremiumProductCard";
 
 export default function ProductCard({
   product,
@@ -29,11 +32,9 @@ export default function ProductCard({
   /** Warm editorial list styling (e.g. Home catalog) */
   editorial = false,
 }) {
-  const { colors: c, shadowPremium, shadowLift, isDark } = useTheme();
-  const styles = useMemo(
-    () => createStyles(c, shadowPremium, shadowLift, isDark),
-    [c, shadowPremium, shadowLift, isDark]
-  );
+  const { colors: c, isDark } = useTheme();
+  const semantic = getSemanticColors(c);
+  const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
 
   const scale = useSharedValue(1);
   const isList = variant === "list";
@@ -49,18 +50,24 @@ export default function ProductCard({
   const imageUris = useMemo(() => getImageUriCandidates(primaryImage), [primaryImage]);
   const imageUri = imageUris[imageCandidateIndex] || "";
   const imageFailed = imageUris.length === 0 || imageCandidateIndex >= imageUris.length;
+  const imageFallbackLabel = imageUris.length > 0 ? "Image unavailable" : "No image";
   const categoryTone = useMemo(
-    () => getCategoryTone(product?.category, isDark, editorial),
-    [product?.category, isDark, editorial]
+    () => getCategoryTone(product?.category, isDark, editorial, c),
+    [product?.category, isDark, editorial, c]
   );
   const shelfMatch = useMemo(() => matchesShelfProduct(product), [product]);
   const animatedCardStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
   }));
+  const ctaScale = useSharedValue(1);
+  const ctaScaleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: ctaScale.value }],
+  }));
 
   const hasEtaCopy = Boolean(String(product?.eta || "").trim());
   const showEtaBadge = showEta && hasEtaCopy;
   const showUnitRow = showUnit !== undefined ? showUnit : isList || !compact;
+  const handleImageError = () => setImageCandidateIndex((index) => index + 1);
 
   useEffect(() => {
     setImageCandidateIndex(0);
@@ -73,6 +80,12 @@ export default function ProductCard({
   const handlePressOut = () => {
     scale.value = withSpring(1, { damping: 18, stiffness: 280 });
   };
+  const handleAddPress = () => {
+    ctaScale.value = withSpring(0.96, { damping: 18, stiffness: 280 }, () => {
+      ctaScale.value = withSpring(1, { damping: 15, stiffness: 250 });
+    });
+    onAddToCart?.();
+  };
 
   const CardInner = isWeb ? View : Animated.View;
   const Root = isWeb || index == null ? View : Animated.View;
@@ -82,6 +95,20 @@ export default function ProductCard({
       : undefined;
 
   const isPremiumCatalog = compact && !isList;
+
+  if (isPremiumCatalog) {
+    return (
+      <PremiumProductCard
+        product={product}
+        onPress={onPress}
+        onAddToCart={onAddToCart}
+        onRemoveFromCart={onRemoveFromCart}
+        quantity={quantity}
+        isOutOfStock={isOutOfStock}
+        index={index}
+      />
+    );
+  }
 
   const safePrice = (() => {
     const n = Number(product?.price);
@@ -96,7 +123,9 @@ export default function ProductCard({
       : product?.isSpecial
         ? "OFFER"
         : null;
-  const cardBody = isPremiumCatalog ? (
+  const ratingAvg = Number(product?.ratingAverage || 0);
+  const reviewCount = Number(product?.reviewCount || 0);
+  const cardBody = (
     <CardInner
       style={[
         styles.cardQcShell,
@@ -114,11 +143,16 @@ export default function ProductCard({
         <View style={styles.qcImageBlock}>
           <View style={[styles.qcImageFrame, { borderColor: c.border, backgroundColor: isDark ? c.surfaceMuted : "#FAFAFA" }]}>
             {discountBadge ? (
-              <View style={[styles.qcDiscountBadge, { backgroundColor: c.primary }]}>
-                <Text style={[styles.qcDiscountBadgeText, { fontFamily: fonts.bold, color: c.onPrimary }]} numberOfLines={1}>
+              <LinearGradient
+                colors={isDark ? ["#EF4444", "#DC2626"] : ["#F97316", "#DC2626"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.qcDiscountBadge}
+              >
+                <Text style={[styles.qcDiscountBadgeText, { fontFamily: fonts.bold, color: "#FFF7ED" }]} numberOfLines={1}>
                   {discountBadge}
                 </Text>
-              </View>
+              </LinearGradient>
             ) : null}
             <View style={[styles.qcImageInner, { backgroundColor: isDark ? "#292524" : "#FFFFFF" }]}>
               {imageUri && !imageFailed ? (
@@ -127,12 +161,17 @@ export default function ProductCard({
                   style={styles.qcImage}
                   contentFit="contain"
                   transition={240}
-                  recyclingKey={String(product?.id || imageUri)}
+                  recyclingKey={`${product?.id || "product"}:${imageUri}`}
+                  onError={handleImageError}
                 />
               ) : (
                 <View style={styles.imageFallback}>
-                  <Ionicons name="image-outline" size={26} color={c.textMuted} />
-                  <Text style={[styles.imageFallbackText, { fontFamily: fonts.semibold }]}>No image</Text>
+                  <View style={[styles.imageFallbackIconWrap, { backgroundColor: isDark ? c.surface : ALCHEMY.goldSoft }]}>
+                    <Ionicons name="image-outline" size={icon.md} color={c.textMuted} />
+                  </View>
+                  <Text style={[styles.imageFallbackText, { color: c.textMuted, fontFamily: fonts.semibold }]}>
+                    {imageFallbackLabel}
+                  </Text>
                 </View>
               )}
             </View>
@@ -140,14 +179,21 @@ export default function ProductCard({
         </View>
 
         <View style={styles.qcBody}>
-          <Text style={[styles.qcTitle, { color: c.textPrimary, fontFamily: fonts.bold }]} numberOfLines={2}>
+          <Text style={[styles.qcTitle, { color: c.textPrimary }]} numberOfLines={2}>
             {product.name}
           </Text>
+          {ratingAvg > 0 ? (
+            <View style={styles.qcRatingRow}>
+              <Ionicons name="star" size={icon.tiny} color={HERITAGE.amberMid} />
+              <Text style={[styles.qcRatingText, { color: c.textSecondary, fontFamily: fonts.semibold }]} numberOfLines={1}>
+                {ratingAvg.toFixed(1)} ({reviewCount})
+              </Text>
+            </View>
+          ) : null}
           <View style={styles.qcUnitRow}>
             <Text style={[styles.qcUnit, { color: c.textMuted, fontFamily: fonts.medium }]} numberOfLines={1}>
               {product.unit || "1 pc"}
             </Text>
-            <Ionicons name="chevron-down" size={12} color={c.secondary} style={{ opacity: 0.85 }} />
           </View>
 
           <View style={styles.qcPriceRow}>
@@ -163,42 +209,56 @@ export default function ProductCard({
                   {formatINRWhole(listMrp)}
                 </Text>
               ) : null}
+              {listMrp ? (
+                <Text style={[styles.qcSaveText, { color: c.secondaryDark, fontFamily: fonts.bold }]} numberOfLines={1}>
+                  Save {formatINRWhole(listMrp - safePrice)}
+                </Text>
+              ) : null}
             </View>
             {quantity > 0 ? (
               <View style={[styles.qcStepper, { borderColor: c.secondary }]}>
                 <TouchableOpacity style={styles.qcStepHit} activeOpacity={0.85} onPress={onRemoveFromCart}>
-                  <Ionicons name="remove" size={16} color={c.secondary} />
+                  <Ionicons name="remove" size={icon.sm} color={c.secondary} />
                 </TouchableOpacity>
                 <Text style={[styles.qcStepQty, { color: c.textPrimary, fontFamily: fonts.bold }]}>{quantity}</Text>
                 <TouchableOpacity style={styles.qcStepHit} activeOpacity={0.85} onPress={onAddToCart}>
-                  <Ionicons name="add" size={16} color={c.secondary} />
+                  <Ionicons name="add" size={icon.sm} color={c.secondary} />
                 </TouchableOpacity>
               </View>
             ) : (
-              <TouchableOpacity
-                style={[
-                  styles.qcAddBtn,
-                  { borderColor: c.secondary, backgroundColor: c.surface },
-                  isOutOfStock && { borderColor: c.textMuted, opacity: 0.7 },
-                ]}
-                activeOpacity={0.88}
-                onPress={onAddToCart}
-                disabled={isOutOfStock}
-              >
-                <Text style={[styles.qcAddBtnText, { color: isOutOfStock ? c.textMuted : c.secondary, fontFamily: fonts.extrabold }]}>
-                  {isOutOfStock ? "OUT" : "ADD"}
-                </Text>
-              </TouchableOpacity>
+              <Animated.View style={ctaScaleStyle}>
+                <TouchableOpacity
+                  style={[
+                    styles.qcAddBtn,
+                    { borderColor: c.primaryDark, backgroundColor: c.primary },
+                    isOutOfStock && { borderColor: c.textMuted, backgroundColor: c.textMuted, opacity: 0.7 },
+                  ]}
+                  activeOpacity={0.88}
+                  onPress={handleAddPress}
+                  disabled={isOutOfStock}
+                >
+                  <Ionicons
+                    name={isOutOfStock ? "close-outline" : "add"}
+                    size={icon.xs}
+                    color={c.onPrimary}
+                  />
+                  <Text style={[styles.qcAddBtnText, { color: c.onPrimary, fontFamily: fonts.extrabold }]}>
+                    {isOutOfStock ? "OUT" : "ADD"}
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
             )}
           </View>
         </View>
       </Pressable>
     </CardInner>
-  ) : (
+  );
+
+  const legacyBody = (
     <CardInner
       style={[
         styles.card,
-        shelfMatch && !isPremiumCatalog ? styles.cardShelfAccent : null,
+        shelfMatch ? styles.cardShelfAccent : null,
         isList ? styles.cardList : null,
         isList && editorial ? styles.cardListEditorial : null,
         isList
@@ -238,12 +298,17 @@ export default function ProductCard({
                 style={styles.image}
                 contentFit="cover"
                 transition={240}
-                recyclingKey={String(product?.id || imageUri)}
+                recyclingKey={`${product?.id || "product"}:${imageUri}`}
+                onError={handleImageError}
               />
             ) : (
               <View style={styles.imageFallback}>
-                <Ionicons name="image-outline" size={18} color={c.textMuted} />
-                <Text style={[styles.imageFallbackText, { fontFamily: fonts.semibold }]}>No image</Text>
+                <View style={[styles.imageFallbackIconWrap, { backgroundColor: isDark ? c.surface : ALCHEMY.goldSoft }]}>
+                  <Ionicons name="image-outline" size={icon.sm} color={c.textMuted} />
+                </View>
+                <Text style={[styles.imageFallbackText, { color: c.textMuted, fontFamily: fonts.semibold }]}>
+                  {imageFallbackLabel}
+                </Text>
               </View>
             )}
             {isList && editorial && offPct != null && offPct > 0 ? (
@@ -256,7 +321,7 @@ export default function ProductCard({
           </View>
           {!isList && showEtaBadge ? (
             <View style={styles.etaBadge}>
-              <Ionicons name="time-outline" size={11} color={c.primary} />
+              <Ionicons name="time-outline" size={icon.tiny} color={c.primary} />
               <Text style={[styles.etaText, { color: c.textPrimary, fontFamily: fonts.bold }]} numberOfLines={1}>
                 {String(product.eta).trim()}
               </Text>
@@ -264,7 +329,7 @@ export default function ProductCard({
           ) : null}
           {!isList && !compact && product.isSpecial ? (
             <View style={styles.badge}>
-              <MaterialCommunityIcons name="star-four-points-outline" size={11} color={c.onPrimary} />
+              <MaterialCommunityIcons name="star-four-points-outline" size={icon.tiny} color={c.onPrimary} />
               <Text style={[styles.badgeText, { fontFamily: fonts.bold }]}>Special</Text>
             </View>
           ) : null}
@@ -303,7 +368,7 @@ export default function ProductCard({
                     },
                   ]}
                 >
-                  <Ionicons name="cube-outline" size={11} color={c.textSecondary} />
+                  <Ionicons name="cube-outline" size={icon.tiny} color={c.textSecondary} />
                   <Text style={[styles.metaPillTextList, { color: c.textSecondary, fontFamily: fonts.bold }]}>
                     {product.unit || "1 pc"}
                   </Text>
@@ -319,7 +384,7 @@ export default function ProductCard({
                 >
                   <Ionicons
                     name={isOutOfStock ? "alert-circle-outline" : "checkmark-circle-outline"}
-                    size={11}
+                    size={icon.tiny}
                     color={isOutOfStock ? c.danger : c.secondary}
                   />
                   <Text
@@ -345,7 +410,7 @@ export default function ProductCard({
                       },
                     ]}
                   >
-                    <Ionicons name="information-circle-outline" size={11} color={c.textSecondary} />
+                    <Ionicons name="information-circle-outline" size={icon.tiny} color={c.textSecondary} />
                     <Text style={[styles.metaPillTextList, { color: c.textSecondary, fontFamily: fonts.bold }]} numberOfLines={1}>
                       {String(product.eta).trim()}
                     </Text>
@@ -353,12 +418,15 @@ export default function ProductCard({
                 ) : null}
               </View>
               {String(product.description || "").trim() ? (
-                <Text numberOfLines={editorial ? 2 : 2} style={[styles.description, { color: c.textSecondary, fontFamily: fonts.regular }]}>
+                <Text
+                  numberOfLines={editorial ? 1 : 2}
+                  style={[styles.description, { color: c.textSecondary, fontFamily: fonts.regular }]}
+                >
                   {String(product.description).trim()}
                 </Text>
               ) : !editorial ? (
-                <Text numberOfLines={2} style={[styles.description, { color: c.textSecondary, fontFamily: fonts.regular }]}>
-                  Trusted picks from KankreG.
+                <Text numberOfLines={1} style={[styles.description, { color: c.textSecondary, fontFamily: fonts.regular }]}>
+                  {`Trusted ${APP_DISPLAY_NAME} pick.`}
                 </Text>
               ) : null}
             </>
@@ -402,11 +470,11 @@ export default function ProductCard({
                     ]}
                   >
                     <TouchableOpacity style={styles.stepButton} activeOpacity={0.85} onPress={onRemoveFromCart}>
-                      <Ionicons name="remove" size={16} color={c.onPrimary} />
+                      <Ionicons name="remove" size={icon.sm} color={c.onPrimary} />
                     </TouchableOpacity>
                     <Text style={[styles.quantityText, { color: c.onPrimary, fontFamily: fonts.bold }]}>{quantity}</Text>
                     <TouchableOpacity style={styles.stepButton} activeOpacity={0.85} onPress={onAddToCart}>
-                      <Ionicons name="add" size={16} color={c.onPrimary} />
+                      <Ionicons name="add" size={icon.sm} color={c.onPrimary} />
                     </TouchableOpacity>
                   </View>
                 ) : (
@@ -423,8 +491,12 @@ export default function ProductCard({
                     onPress={onAddToCart}
                     disabled={isOutOfStock}
                   >
-                    <Ionicons name="bag-add-outline" size={compact && !isList ? 14 : 15} color="#FFFCF8" />
-                    <Text style={[styles.buttonText, { fontFamily: fonts.bold, color: "#FFFCF8" }]}>
+                    <Ionicons
+                      name="bag-add-outline"
+                      size={compact && !isList ? icon.micro : icon.xs}
+                      color={semantic.text.onPrimary}
+                    />
+                    <Text style={[styles.buttonText, { fontFamily: fonts.bold, color: semantic.text.onPrimary }]}>
                       {isOutOfStock ? "Out of Stock" : isList ? "Add" : compact ? "Add" : "ADD"}
                     </Text>
                   </TouchableOpacity>
@@ -439,11 +511,11 @@ export default function ProductCard({
               {quantity > 0 ? (
                 <View style={[styles.stepper, { backgroundColor: c.primaryDark }]}>
                   <TouchableOpacity style={styles.stepButton} activeOpacity={0.85} onPress={onRemoveFromCart}>
-                    <Ionicons name="remove" size={16} color={c.onPrimary} />
+                    <Ionicons name="remove" size={icon.sm} color={c.onPrimary} />
                   </TouchableOpacity>
                   <Text style={[styles.quantityText, { color: c.onPrimary, fontFamily: fonts.bold }]}>{quantity}</Text>
                   <TouchableOpacity style={styles.stepButton} activeOpacity={0.85} onPress={onAddToCart}>
-                    <Ionicons name="add" size={16} color={c.onPrimary} />
+                    <Ionicons name="add" size={icon.sm} color={c.onPrimary} />
                   </TouchableOpacity>
                 </View>
               ) : (
@@ -457,8 +529,12 @@ export default function ProductCard({
                   onPress={onAddToCart}
                   disabled={isOutOfStock}
                 >
-                  <Ionicons name="bag-add-outline" size={compact && !isList ? 14 : 15} color="#FFFCF8" />
-                  <Text style={[styles.buttonText, { fontFamily: fonts.bold, color: "#FFFCF8" }]}>
+                  <Ionicons
+                    name="bag-add-outline"
+                    size={compact && !isList ? icon.micro : icon.xs}
+                    color={semantic.text.onPrimary}
+                  />
+                  <Text style={[styles.buttonText, { fontFamily: fonts.bold, color: semantic.text.onPrimary }]}>
                     {isOutOfStock ? "Out of Stock" : compact ? "Add" : "ADD"}
                   </Text>
                 </TouchableOpacity>
@@ -472,102 +548,110 @@ export default function ProductCard({
 
   return (
     <Root style={styles.cardEntryWrap} {...(rootEntering ? { entering: rootEntering } : {})}>
-      {cardBody}
+      {isList ? legacyBody : cardBody}
     </Root>
   );
 }
 
-function getCategoryTone(rawCategory, isDark, editorial) {
+function getCategoryTone(rawCategory, isDark, editorial, c) {
   const key = String(rawCategory || "").toLowerCase();
+  const editorialLight = {
+    cardBg: c.surface,
+    cardBorder: c.border,
+    imageWrapBg: c.surfaceMuted,
+    imageBoxBg: c.surface,
+    imageBoxBorder: c.border,
+  };
+  const editorialDark = {
+    cardBg: c.surface,
+    cardBorder: c.border,
+    imageWrapBg: c.surfaceMuted,
+    imageBoxBg: c.surfaceMuted,
+    imageBoxBorder: c.borderStrong,
+  };
   if (editorial && !isDark) {
-    return {
-      cardBg: ALCHEMY.cardBg,
-      cardBorder: "rgba(116, 79, 28, 0.14)",
-      imageWrapBg: ALCHEMY.creamAlt,
-      imageBoxBg: "#FFFCF8",
-      imageBoxBorder: ALCHEMY.pillInactive,
-    };
+    return editorialLight;
   }
   if (editorial && isDark) {
-    return {
-      cardBg: "#1C1917",
-      cardBorder: "#44403C",
-      imageWrapBg: "rgba(28,25,23,0.92)",
-      imageBoxBg: "#292524",
-      imageBoxBorder: "#57534E",
-    };
+    return editorialDark;
   }
   if (isDark) {
-    return {
-      cardBg: "#1C1917",
-      cardBorder: "#44403C",
-      imageWrapBg: "rgba(28,25,23,0.9)",
-      imageBoxBg: "#292524",
-      imageBoxBorder: "#57534E",
-    };
+    return editorialDark;
   }
-  if (key.includes("dairy")) {
-    return {
-      cardBg: "#F8FAFC",
-      cardBorder: "#E5E7EB",
-      imageWrapBg: "rgba(249,250,251,0.95)",
-      imageBoxBg: "#FFFFFF",
-      imageBoxBorder: "#E5E7EB",
-    };
-  }
+  const neutral = {
+    cardBg: c.surface,
+    cardBorder: c.border,
+    imageWrapBg: "rgba(248, 250, 252, 0.96)",
+    imageBoxBg: c.surface,
+    imageBoxBorder: c.border,
+  };
+  const redShelf = {
+    cardBg: c.primarySoft,
+    cardBorder: c.primaryBorder,
+    imageWrapBg: "rgba(254, 242, 242, 0.94)",
+    imageBoxBg: c.surface,
+    imageBoxBorder: c.primaryBorder,
+  };
+  const slateShelf = {
+    cardBg: c.secondarySoft,
+    cardBorder: c.secondaryBorder,
+    imageWrapBg: "rgba(241, 245, 249, 0.95)",
+    imageBoxBg: c.surface,
+    imageBoxBorder: c.secondaryBorder,
+  };
   if (key.includes("fruit") || key.includes("vegetable")) {
-    return {
-      cardBg: "#F0FDF4",
-      cardBorder: "#D1FAE5",
-      imageWrapBg: "rgba(236,253,245,0.9)",
-      imageBoxBg: "#FFFFFF",
-      imageBoxBorder: "#BBF7D0",
-    };
+    return redShelf;
   }
   if (key.includes("snack") || key.includes("bakery")) {
-    return {
-      cardBg: "#FFFBEB",
-      cardBorder: "#FDE68A",
-      imageWrapBg: "rgba(255,251,235,0.9)",
-      imageBoxBg: "#FFFFFF",
-      imageBoxBorder: "#FCD34D",
-    };
+    return slateShelf;
   }
-  if (key.includes("beverage") || key.includes("drink")) {
-    return {
-      cardBg: "#EFF6FF",
-      cardBorder: "#BFDBFE",
-      imageWrapBg: "rgba(239,246,255,0.9)",
-      imageBoxBg: "#FFFFFF",
-      imageBoxBorder: "#93C5FD",
-    };
+  if (key.includes("dairy") || key.includes("beverage") || key.includes("drink")) {
+    return neutral;
   }
-  return {
-    cardBg: "#F9FAFB",
-    cardBorder: "#E5E7EB",
-    imageWrapBg: "rgba(249,250,251,0.9)",
-    imageBoxBg: "#FFFFFF",
-    imageBoxBorder: "#E5E7EB",
-  };
+  return neutral;
 }
 
-function createStyles(c, shadowPremium, shadowLift, isDark) {
+function createStyles(c, isDark) {
+  const cardLiftShadow = platformShadow({
+    web: {
+      boxShadow: isDark
+        ? "0 12px 36px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05)"
+        : "0 8px 22px rgba(15, 23, 42, 0.06), 0 1px 4px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255,255,255,0.92)",
+    },
+    ios: {
+      shadowColor: "#18181B",
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: isDark ? 0.22 : 0.07,
+      shadowRadius: 14,
+    },
+    android: { elevation: isDark ? 4 : 3 },
+  });
+
   return StyleSheet.create({
     cardEntryWrap: {
       width: "100%",
     },
     card: {
       width: "100%",
-      minHeight: 168,
+      minHeight: Platform.select({ web: 168, default: 186 }),
       backgroundColor: c.surface,
       borderRadius: radius.xxl,
       overflow: "hidden",
       marginBottom: spacing.sm,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border,
+      borderColor: isDark ? c.border : "rgba(100, 116, 139, 0.12)",
       borderTopWidth: 2,
-      borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
-      ...shadowPremium,
+      borderTopColor: isDark ? "rgba(220, 38, 38, 0.5)" : "rgba(185, 28, 28, 0.65)",
+      ...cardLiftShadow,
+      ...Platform.select({
+        web: {
+          backgroundImage: isDark
+            ? undefined
+            : "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,253,250,0.99))",
+          transition: "box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease",
+        },
+        default: {},
+      }),
     },
     /** Quick-commerce tile: white card, blue discount badge, ETA row, outlined ADD. */
     cardQcShell: {
@@ -577,13 +661,23 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
       minHeight: 0,
       marginBottom: 0,
       padding: 0,
-      borderRadius: radius.xl,
+      borderRadius: semanticRadius.card,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border,
+      borderColor: isDark ? c.border : "rgba(100, 116, 139, 0.12)",
       borderTopWidth: 2,
-      borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
+      borderTopColor: isDark ? "rgba(220, 38, 38, 0.5)" : "rgba(185, 28, 28, 0.65)",
       overflow: "hidden",
-      ...shadowLift,
+      ...cardLiftShadow,
+      ...Platform.select({
+        web: {
+          backgroundImage: isDark
+            ? undefined
+            : "linear-gradient(180deg, rgba(255,255,255,0.92), rgba(255,253,250,0.99))",
+          transitionProperty: "transform, box-shadow, border-color, background-color",
+          transitionDuration: "180ms",
+        },
+        default: {},
+      }),
     },
     cardQcShelfAccent: {
       borderLeftWidth: 2,
@@ -599,10 +693,11 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
       position: "relative",
       marginHorizontal: spacing.sm,
       marginTop: spacing.sm,
-      borderRadius: radius.lg,
-      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: radius.lg + 4,
+      borderWidth: 1,
       padding: spacing.xs,
       overflow: "hidden",
+      backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(255, 252, 248, 0.85)",
     },
     qcDiscountBadge: {
       position: "absolute",
@@ -611,17 +706,21 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
       zIndex: 4,
       paddingHorizontal: 8,
       paddingVertical: 4,
-      borderRadius: radius.md,
+      borderRadius: radius.pill,
       maxWidth: "62%",
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(255, 252, 248, 0.35)",
+      borderWidth: 1,
+      borderColor: "rgba(255, 252, 248, 0.5)",
+      ...Platform.select({
+        web: { boxShadow: "0 8px 18px rgba(220, 38, 38, 0.25)" },
+        default: {},
+      }),
     },
     qcDiscountBadgeText: {
       fontSize: 10,
       letterSpacing: 0.5,
     },
     qcImageInner: {
-      borderRadius: radius.md,
+      borderRadius: radius.lg,
       aspectRatio: 1,
       width: "100%",
       overflow: "hidden",
@@ -633,15 +732,16 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
       height: "100%",
     },
     qcBody: {
-      paddingHorizontal: spacing.md,
-      paddingTop: spacing.sm,
-      paddingBottom: spacing.md,
+      paddingHorizontal: spacing.md + 2,
+      paddingTop: spacing.md - 2,
+      paddingBottom: spacing.md + 2,
     },
     qcTitle: {
-      fontSize: typography.bodySmall,
-      lineHeight: 19,
-      letterSpacing: -0.25,
-      minHeight: 36,
+      fontSize: typography.body,
+      fontFamily: FONT_DISPLAY_SEMI,
+      lineHeight: 21,
+      letterSpacing: -0.3,
+      minHeight: 40,
       width: "100%",
       ...Platform.select({
         android: { includeFontPadding: false },
@@ -653,6 +753,24 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
       flexDirection: "row",
       alignItems: "center",
       gap: 4,
+    },
+    qcRatingRow: {
+      marginTop: 6,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      alignSelf: "flex-start",
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: radius.pill,
+      backgroundColor: isDark ? "rgba(185, 28, 28, 0.1)" : ALCHEMY.goldSoft,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? c.primaryBorder : "rgba(185, 28, 28, 0.2)",
+    },
+    qcRatingText: {
+      fontSize: typography.overline + 1,
+      lineHeight: 15,
+      fontFamily: fonts.semibold,
     },
     qcUnit: {
       fontSize: 11,
@@ -672,8 +790,9 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
       paddingRight: 4,
     },
     qcPrice: {
-      fontSize: typography.h3,
-      letterSpacing: -0.4,
+      fontSize: typography.h3 - 1,
+      fontFamily: FONT_DISPLAY,
+      letterSpacing: -0.45,
       maxWidth: "100%",
       ...Platform.select({
         android: { includeFontPadding: false },
@@ -685,15 +804,31 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
       fontSize: 11,
       textDecorationLine: "line-through",
     },
+    qcSaveText: {
+      marginTop: 2,
+      fontSize: 10,
+      letterSpacing: 0.15,
+      opacity: 0.92,
+    },
     qcAddBtn: {
-      borderWidth: StyleSheet.hairlineWidth,
-      borderRadius: radius.md,
+      borderWidth: 1,
+      borderRadius: semanticRadius.full,
       paddingHorizontal: spacing.md,
-      paddingVertical: 8,
-      minWidth: 58,
+      paddingVertical: 9,
+      minWidth: 64,
       flexShrink: 0,
+      flexDirection: "row",
+      gap: 4,
       alignItems: "center",
       justifyContent: "center",
+      ...Platform.select({
+        web: {
+          boxShadow: "0 12px 20px rgba(62, 40, 12, 0.22), inset 0 1px 0 rgba(255,255,255,0.2)",
+          transitionProperty: "transform, box-shadow, background-color, border-color",
+          transitionDuration: "180ms",
+        },
+        default: {},
+      }),
     },
     qcAddBtnText: {
       fontSize: typography.caption,
@@ -703,9 +838,9 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
       flexDirection: "row",
       alignItems: "center",
       borderWidth: StyleSheet.hairlineWidth,
-      borderRadius: radius.md,
+      borderRadius: semanticRadius.control,
       paddingHorizontal: 4,
-      height: 32,
+      height: 34,
       flexShrink: 0,
       backgroundColor: "transparent",
     },
@@ -727,19 +862,29 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
     },
     cardList: {
       minHeight: Platform.OS === "ios" ? 168 : 174,
-      borderRadius: radius.xl,
+      borderRadius: semanticRadius.card,
       marginBottom: 0,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border,
+      borderColor: isDark ? c.border : "rgba(100, 116, 139, 0.1)",
       ...platformShadow({
-        web: { boxShadow: "0 6px 20px rgba(28, 25, 23, 0.07), 0 2px 8px rgba(61, 42, 18, 0.04)" },
-        ios: {
-          shadowColor: "#3D2A12",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: isDark ? 0.28 : 0.09,
-          shadowRadius: 12,
+        web: {
+          boxShadow: isDark
+            ? "0 10px 28px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04)"
+            : "0 8px 20px rgba(28, 25, 23, 0.07), 0 2px 8px rgba(24, 24, 27, 0.04), inset 0 1px 0 rgba(255,255,255,0.82)",
         },
-        android: { elevation: 3 },
+        ios: {
+          shadowColor: "#18181B",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: isDark ? 0.22 : 0.07,
+          shadowRadius: 11,
+        },
+        android: { elevation: isDark ? 3 : 2 },
+      }),
+      ...Platform.select({
+        web: {
+          transition: "box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease",
+        },
+        default: {},
       }),
     },
     cardListShelfAccent: {
@@ -760,48 +905,64 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
       padding: spacing.sm,
     },
     imageBox: {
-      height: 76,
+      height: Platform.select({ web: 76, default: 94 }),
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: c.border,
-      borderRadius: radius.lg,
+      borderRadius: radius.lg + 2,
       backgroundColor: c.surfaceMuted,
       alignItems: "center",
       justifyContent: "center",
       overflow: "hidden",
     },
     imageBoxList: {
-      height: 128,
-      borderRadius: radius.xl,
+      height: 130,
+      borderRadius: radius.xl + 4,
       position: "relative",
     },
     listSaveBadge: {
       position: "absolute",
-      top: 8,
-      left: 8,
+      top: 10,
+      left: 10,
       zIndex: 2,
-      paddingHorizontal: 8,
-      paddingVertical: 5,
-      borderRadius: radius.md,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: radius.pill,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: "rgba(255,252,248,0.45)",
+      ...Platform.select({
+        web: { boxShadow: "0 6px 14px rgba(180, 83, 9, 0.22)" },
+        ios: {
+          shadowColor: "#B45309",
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.2,
+          shadowRadius: 6,
+        },
+        android: { elevation: 2 },
+        default: {},
+      }),
     },
     listSaveBadgeText: {
       fontSize: 10,
-      letterSpacing: 0.4,
+      letterSpacing: 0.45,
     },
     cardListEditorial: {
-      borderLeftWidth: 3,
-      borderLeftColor: ALCHEMY.gold,
-      borderTopWidth: 2,
-      borderTopColor: isDark ? "rgba(201, 162, 39, 0.35)" : ALCHEMY.gold,
-      borderRadius: radius.xxl,
+      borderLeftWidth: 0,
+      borderTopWidth: isDark ? StyleSheet.hairlineWidth : 2,
+      borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(185, 28, 28, 0.55)",
+      borderRadius: radius.xxl - 2,
       ...Platform.select({
         ios: {
-          shadowColor: "#3D2A12",
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: isDark ? 0.26 : 0.12,
-          shadowRadius: 18,
+          shadowColor: "#18181B",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: isDark ? 0.18 : 0.06,
+          shadowRadius: 12,
         },
-        android: { elevation: isDark ? 5 : 4 },
-        web: { boxShadow: "0 12px 36px rgba(61, 42, 18, 0.1), 0 4px 12px rgba(28, 25, 23, 0.04)" },
+        android: { elevation: isDark ? 3 : 2 },
+        web: {
+          boxShadow: isDark
+            ? "0 10px 28px rgba(0,0,0,0.22)"
+            : "0 8px 20px rgba(28, 25, 23, 0.05), 0 2px 6px rgba(28, 25, 23, 0.035)",
+        },
         default: {},
       }),
     },
@@ -818,8 +979,8 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
       gap: spacing.sm,
     },
     bottomStackListEditorial: {
-      marginTop: spacing.sm + 4,
-      gap: spacing.md,
+      marginTop: spacing.sm + 2,
+      gap: spacing.sm + 2,
     },
     priceBlockListFull: {
       width: "100%",
@@ -854,7 +1015,7 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
     },
     buttonEditorialList: {
       paddingHorizontal: spacing.md,
-      minWidth: 88,
+      minWidth: 96,
       flexShrink: 0,
     },
     image: {
@@ -865,10 +1026,19 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
     imageFallback: {
       alignItems: "center",
       justifyContent: "center",
-      gap: 4,
+      gap: 6,
+      paddingHorizontal: spacing.xs,
+    },
+    imageFallbackIconWrap: {
+      width: 34,
+      height: 34,
+      borderRadius: radius.pill,
+      alignItems: "center",
+      justifyContent: "center",
     },
     imageFallbackText: {
       fontSize: typography.caption,
+      textAlign: "center",
     },
     etaBadge: {
       position: "absolute",
@@ -906,7 +1076,7 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
       fontSize: 9,
     },
     content: {
-      padding: spacing.sm,
+      padding: Platform.select({ web: spacing.sm, default: spacing.md }),
     },
     contentCompact: {
       paddingTop: 6,
@@ -914,9 +1084,9 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
     },
     contentList: {
       flex: 1,
-      paddingVertical: spacing.md,
+      paddingVertical: spacing.md + 2,
       paddingRight: spacing.lg,
-      paddingLeft: spacing.xs,
+      paddingLeft: spacing.sm,
       justifyContent: "flex-start",
     },
     category: {
@@ -925,8 +1095,9 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
       marginBottom: 2,
     },
     name: {
-      fontSize: typography.body,
-      minHeight: 36,
+      fontSize: typography.body + 1,
+      lineHeight: 22,
+      minHeight: 42,
     },
     description: {
       marginTop: 4,
@@ -942,17 +1113,18 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
     },
     metaPillList: {
       borderWidth: StyleSheet.hairlineWidth,
-      borderRadius: radius.md,
-      paddingHorizontal: 8,
+      borderRadius: radius.pill,
+      paddingHorizontal: 9,
       paddingVertical: 5,
       flexDirection: "row",
       alignItems: "center",
-      gap: 5,
+      gap: 4,
       maxWidth: "100%",
     },
     metaPillTextList: {
-      fontSize: 10,
+      fontSize: 11,
       flexShrink: 1,
+      letterSpacing: 0.15,
     },
     unit: {
       marginTop: 4,
@@ -965,19 +1137,28 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
       marginTop: spacing.md,
     },
     price: {
-      fontSize: typography.body,
+      fontSize: typography.body + 2,
     },
     priceList: {
       fontSize: 20,
     },
     button: {
-      borderRadius: radius.lg,
-      minWidth: 64,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 8,
+      borderRadius: semanticRadius.control + 2,
+      minWidth: Platform.select({ web: 72, default: 84 }),
+      paddingHorizontal: Platform.select({ web: spacing.md, default: spacing.md + 2 }),
+      paddingVertical: Platform.select({ web: 10, default: 11 }),
       flexDirection: "row",
       alignItems: "center",
-      gap: 4,
+      justifyContent: "center",
+      gap: 6,
+      ...Platform.select({
+        web: {
+          boxShadow: isDark
+            ? "0 8px 18px rgba(0,0,0,0.35)"
+            : "0 6px 16px rgba(62, 40, 12, 0.14), inset 0 1px 0 rgba(255,255,255,0.15)",
+        },
+        default: {},
+      }),
     },
     buttonDisabled: {},
     buttonText: {
@@ -987,14 +1168,18 @@ function createStyles(c, shadowPremium, shadowLift, isDark) {
     stepper: {
       flexDirection: "row",
       alignItems: "center",
-      borderRadius: radius.lg,
+      borderRadius: semanticRadius.control,
       paddingHorizontal: 4,
-      height: 30,
-      minWidth: 68,
+      height: 34,
+      minWidth: 78,
       justifyContent: "space-between",
+      ...Platform.select({
+        web: { boxShadow: "0 4px 12px rgba(15, 23, 42, 0.1)" },
+        default: {},
+      }),
     },
     stepButton: {
-      width: 22,
+      width: 26,
       alignItems: "center",
       justifyContent: "center",
     },

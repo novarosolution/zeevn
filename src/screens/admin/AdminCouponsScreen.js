@@ -1,28 +1,32 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppFooter from "../../components/AppFooter";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
 import AdminBackLink from "../../components/admin/AdminBackLink";
+import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { createAdminCoupon, fetchAdminCoupons, updateAdminCoupon } from "../../services/adminService";
 import { adminPanel } from "../../theme/adminLayout";
-import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
+import MotionScrollView from "../../components/motion/MotionScrollView";
+import SectionReveal from "../../components/motion/SectionReveal";
+import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
+import { layout, radius, spacing } from "../../theme/tokens";
+import PremiumLoader from "../../components/ui/PremiumLoader";
+import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
+import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import PremiumInput from "../../components/ui/PremiumInput";
+import PremiumButton from "../../components/ui/PremiumButton";
+import PremiumCard from "../../components/ui/PremiumCard";
+import PremiumChip from "../../components/ui/PremiumChip";
+import PremiumSwitch from "../../components/ui/PremiumSwitch";
+import { ADMIN_SCREEN_COPY } from "../../content/appContent";
 
 export default function AdminCouponsScreen({ navigation }) {
   const { colors: c, shadowPremium } = useTheme();
   const styles = useMemo(() => createAdminCouponsStyles(c, shadowPremium), [c, shadowPremium]);
+  const insets = useSafeAreaInsets();
   const { user, token } = useAuth();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -43,7 +47,7 @@ export default function AdminCouponsScreen({ navigation }) {
     isOneTimePerUser: false,
   });
 
-  async function loadCoupons() {
+  const loadCoupons = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -54,12 +58,12 @@ export default function AdminCouponsScreen({ navigation }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token]);
 
   useEffect(() => {
     if (!user?.isAdmin) return;
     loadCoupons();
-  }, [user?.isAdmin]);
+  }, [user, loadCoupons]);
 
   const handleCreate = async () => {
     try {
@@ -129,180 +133,253 @@ export default function AdminCouponsScreen({ navigation }) {
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
-        <ScrollView style={customerScrollFill} contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.errorText}>Admin access required.</Text>
-        </ScrollView>
+      <CustomerScreenShell style={styles.screen} variant="admin">
+        <MotionScrollView
+          style={customerScrollFill}
+          contentContainerStyle={adminInnerPageScrollContent(insets)}
+          showsVerticalScrollIndicator={false}
+        >
+          <SectionReveal delay={40} preset="fade-up">
+            <View style={styles.panel}>
+              <PremiumErrorBanner
+                severity="warning"
+                title="Admin access required"
+                message="Sign in with an admin account to manage coupons."
+              />
+              <PremiumButton
+                label="Back to Home"
+                variant="primary"
+                onPress={() => navigation.navigate("Home")}
+                style={styles.gateCta}
+              />
+            </View>
+          </SectionReveal>
+        </MotionScrollView>
       </CustomerScreenShell>
     );
   }
 
   return (
-    <CustomerScreenShell style={styles.screen}>
-      <ScrollView style={customerScrollFill} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <CustomerScreenShell style={styles.screen} variant="admin">
+      <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <MotionScrollView
+        style={customerScrollFill}
+        contentContainerStyle={adminInnerPageScrollContent(insets)}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.panel}>
+          <SectionReveal preset="fade-up" delay={0}>
           <AdminBackLink navigation={navigation} />
-          <Text style={styles.title}>Manage Coupons</Text>
-          <Text style={styles.subtitle}>Create discount offers and control coupon availability.</Text>
+          <AdminPageHeading
+            title={ADMIN_SCREEN_COPY.coupons.title}
+            subtitle={ADMIN_SCREEN_COPY.coupons.subtitle}
+          />
 
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          {success ? <Text style={styles.successText}>{success}</Text> : null}
-
-          <View style={styles.formCard}>
-            <Text style={styles.formTitle}>Create Coupon</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Coupon code (e.g. SAVE20)"
-              placeholderTextColor={c.textMuted}
-              value={form.code}
-              onChangeText={(value) => setForm((current) => ({ ...current, code: value }))}
-              autoCapitalize="characters"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Coupon title (optional)"
-              placeholderTextColor={c.textMuted}
-              value={form.title}
-              onChangeText={(value) => setForm((current) => ({ ...current, title: value }))}
-            />
-            <View style={styles.typeRow}>
-              <TouchableOpacity
-                style={[styles.typeBtn, form.type === "percent" ? styles.typeBtnActive : null]}
-                onPress={() => setForm((current) => ({ ...current, type: "percent" }))}
-              >
-                <Text style={[styles.typeBtnText, form.type === "percent" ? styles.typeBtnTextActive : null]}>Percent</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.typeBtn, form.type === "flat" ? styles.typeBtnActive : null]}
-                onPress={() => setForm((current) => ({ ...current, type: "flat" }))}
-              >
-                <Text style={[styles.typeBtnText, form.type === "flat" ? styles.typeBtnTextActive : null]}>Flat</Text>
-              </TouchableOpacity>
+          {error ? (
+            <View style={styles.bannerSpacer}>
+              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
             </View>
-            <TextInput
-              style={styles.input}
-              placeholder={form.type === "percent" ? "Discount % (e.g. 20)" : "Flat discount amount"}
-              placeholderTextColor={c.textMuted}
-              keyboardType="numeric"
-              value={form.value}
-              onChangeText={(value) => setForm((current) => ({ ...current, value }))}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Minimum order amount (optional)"
-              placeholderTextColor={c.textMuted}
-              keyboardType="numeric"
-              value={form.minOrderAmount}
-              onChangeText={(value) => setForm((current) => ({ ...current, minOrderAmount: value }))}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Max discount amount (optional)"
-              placeholderTextColor={c.textMuted}
-              keyboardType="numeric"
-              value={form.maxDiscountAmount}
-              onChangeText={(value) => setForm((current) => ({ ...current, maxDiscountAmount: value }))}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Usage limit (optional)"
-              placeholderTextColor={c.textMuted}
-              keyboardType="numeric"
-              value={form.usageLimit}
-              onChangeText={(value) => setForm((current) => ({ ...current, usageLimit: value }))}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Expiry date (YYYY-MM-DD, optional)"
-              placeholderTextColor={c.textMuted}
-              value={form.expiresAt}
-              onChangeText={(value) => setForm((current) => ({ ...current, expiresAt: value }))}
-            />
-            <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Active</Text>
-              <Switch
-                value={Boolean(form.isActive)}
-                onValueChange={(value) => setForm((current) => ({ ...current, isActive: value }))}
+          ) : null}
+          {success ? (
+            <View style={styles.bannerSpacer}>
+              <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
+            </View>
+          ) : null}
+
+          <PremiumCard padding="lg" style={styles.formCard}>
+            <Text style={[styles.formTitle, { color: c.textPrimary }]}>{ADMIN_SCREEN_COPY.coupons.createTitle}</Text>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Coupon code"
+                value={form.code}
+                onChangeText={(value) => setForm((current) => ({ ...current, code: value }))}
+                placeholder="e.g. SAVE20"
+                autoCapitalize="characters"
+                iconLeft="pricetag-outline"
+              />
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Title (optional)"
+                value={form.title}
+                onChangeText={(value) => setForm((current) => ({ ...current, title: value }))}
+                iconLeft="text-outline"
+              />
+            </View>
+            <View style={styles.typeRow}>
+              <PremiumChip
+                label="Percent"
+                tone="gold"
+                size="md"
+                selected={form.type === "percent"}
+                onPress={() => setForm((current) => ({ ...current, type: "percent" }))}
+                style={styles.typeChipFlex}
+              />
+              <PremiumChip
+                label="Flat"
+                tone="gold"
+                size="md"
+                selected={form.type === "flat"}
+                onPress={() => setForm((current) => ({ ...current, type: "flat" }))}
+                style={styles.typeChipFlex}
+              />
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label={form.type === "percent" ? "Discount %" : "Flat discount amount"}
+                value={form.value}
+                onChangeText={(value) => setForm((current) => ({ ...current, value }))}
+                placeholder={form.type === "percent" ? "e.g. 20" : "Amount"}
+                keyboardType="decimal-pad"
+                iconLeft="calculator-outline"
+              />
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Minimum order amount (optional)"
+                value={form.minOrderAmount}
+                onChangeText={(value) => setForm((current) => ({ ...current, minOrderAmount: value }))}
+                keyboardType="decimal-pad"
+                iconLeft="cart-outline"
+              />
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Max discount amount (optional)"
+                value={form.maxDiscountAmount}
+                onChangeText={(value) => setForm((current) => ({ ...current, maxDiscountAmount: value }))}
+                keyboardType="decimal-pad"
+                iconLeft="trending-down-outline"
+              />
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Usage limit (optional)"
+                value={form.usageLimit}
+                onChangeText={(value) => setForm((current) => ({ ...current, usageLimit: value }))}
+                keyboardType="number-pad"
+                iconLeft="people-outline"
+              />
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Expiry (YYYY-MM-DD, optional)"
+                value={form.expiresAt}
+                onChangeText={(value) => setForm((current) => ({ ...current, expiresAt: value }))}
+                placeholder="2026-12-31"
+                autoCapitalize="none"
+                iconLeft="calendar-outline"
               />
             </View>
             <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Show to users at checkout</Text>
-              <Switch
+              <PremiumSwitch
+                label="Active"
+                hint="Coupon can be applied at checkout"
+                value={Boolean(form.isActive)}
+                onChange={(value) => setForm((current) => ({ ...current, isActive: value }))}
+              />
+            </View>
+            <View style={styles.toggleRow}>
+              <PremiumSwitch
+                label="Show to users at checkout"
+                hint="Visible while browsing offers and checkout"
                 value={Boolean(form.isVisibleToUsers)}
-                onValueChange={(value) =>
+                onChange={(value) =>
                   setForm((current) => ({ ...current, isVisibleToUsers: value }))
                 }
               />
             </View>
             <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>One time per user</Text>
-              <Switch
+              <PremiumSwitch
+                label="One time per user"
+                hint="Prevent repeat redemption from the same account"
                 value={Boolean(form.isOneTimePerUser)}
-                onValueChange={(value) =>
+                onChange={(value) =>
                   setForm((current) => ({ ...current, isOneTimePerUser: value }))
                 }
               />
             </View>
-            <TouchableOpacity style={styles.createBtn} onPress={handleCreate} disabled={submitting}>
-              <Text style={styles.createBtnText}>{submitting ? "Creating..." : "Create Coupon"}</Text>
-            </TouchableOpacity>
-          </View>
+            <PremiumButton
+              label={submitting ? "Creating..." : "Create Coupon"}
+              variant="primary"
+              size="md"
+              onPress={handleCreate}
+              disabled={submitting}
+              loading={submitting}
+              fullWidth
+              style={styles.createBtnMargin}
+            />
+          </PremiumCard>
+          </SectionReveal>
 
-          <Text style={styles.listTitle}>All Coupons</Text>
+          <SectionReveal preset="fade-up" delay={60}>
+          <Text style={[styles.listTitle, { color: c.textPrimary }]}>{ADMIN_SCREEN_COPY.coupons.listTitle}</Text>
           {loading ? (
-            <ActivityIndicator color={c.primary} />
+            <PremiumLoader size="sm" caption="Loading coupons…" />
           ) : coupons.length === 0 ? (
-            <Text style={styles.emptyText}>No coupons yet.</Text>
+            <PremiumEmptyState
+              iconName="pricetag-outline"
+              title={ADMIN_SCREEN_COPY.coupons.emptyTitle}
+              description={ADMIN_SCREEN_COPY.coupons.emptyDescription}
+              compact
+            />
           ) : (
             coupons.map((coupon) => (
-              <View key={coupon._id} style={styles.couponCard}>
+              <PremiumCard key={coupon._id} padding="md" style={styles.couponCard}>
                 <View style={styles.couponTopRow}>
-                  <Text style={styles.couponCode}>{coupon.code}</Text>
-                  <Text style={styles.switchLabel}>{coupon.isActive ? "Active" : "Inactive"}</Text>
+                  <Text style={[styles.couponCode, { color: c.textPrimary }]}>{coupon.code}</Text>
+                  <PremiumChip
+                    label={coupon.isActive ? "Active" : "Inactive"}
+                    tone={coupon.isActive ? "green" : "neutral"}
+                    size="xs"
+                  />
                 </View>
-                <Text style={styles.couponMeta}>
+                <Text style={[styles.couponMeta, { color: c.textSecondary }]}>
                   {coupon.type === "percent" ? `${coupon.value}% off` : `${coupon.value} off`} • Min order: {coupon.minOrderAmount || 0}
                 </Text>
-                <Text style={styles.couponMeta}>
+                <Text style={[styles.couponMeta, { color: c.textSecondary }]}>
                   Used: {coupon.usedCount || 0}
                   {coupon.usageLimit ? ` / ${coupon.usageLimit}` : ""}
                 </Text>
-                <Text style={styles.couponMeta}>
+                <Text style={[styles.couponMeta, { color: c.textSecondary }]}>
                   User visibility: {coupon.isVisibleToUsers ? "Shown" : "Hidden"} •
                   One-time per user: {coupon.isOneTimePerUser ? "Yes" : "No"}
                 </Text>
-                <Text style={styles.couponMeta}>
+                <Text style={[styles.couponMeta, { color: c.textSecondary }]}>
                   Expires: {coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : "No expiry"}
                 </Text>
                 <View style={styles.rowSwitches}>
                   <View style={styles.switchRow}>
-                    <Text style={styles.switchLabel}>Active</Text>
-                    <Switch
+                    <PremiumSwitch
+                      label="Active"
                       value={Boolean(coupon.isActive)}
-                      onValueChange={() => handleToggleActive(coupon)}
+                      onChange={() => handleToggleActive(coupon)}
                     />
                   </View>
                   <View style={styles.switchRow}>
-                    <Text style={styles.switchLabel}>Visible</Text>
-                    <Switch
+                    <PremiumSwitch
+                      label="Visible"
                       value={Boolean(coupon.isVisibleToUsers)}
-                      onValueChange={() => handleToggleVisibility(coupon)}
+                      onChange={() => handleToggleVisibility(coupon)}
                     />
                   </View>
                   <View style={styles.switchRow}>
-                    <Text style={styles.switchLabel}>One-Time</Text>
-                    <Switch
+                    <PremiumSwitch
+                      label="One-Time"
                       value={Boolean(coupon.isOneTimePerUser)}
-                      onValueChange={() => handleToggleOneTime(coupon)}
+                      onChange={() => handleToggleOneTime(coupon)}
                     />
                   </View>
                 </View>
-              </View>
+              </PremiumCard>
             ))
           )}
+          </SectionReveal>
         </View>
         <AppFooter />
-      </ScrollView>
+      </MotionScrollView>
+      </KeyboardAvoidingView>
     </CustomerScreenShell>
   );
 }
@@ -313,33 +390,17 @@ function createAdminCouponsStyles(c, shadowPremium) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth, default: "100%" }),
-    },
-    scrollContent: {
-      padding: spacing.lg,
-      paddingBottom: spacing.xxl,
+      maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
     },
     panel: {
       ...adminPanel(c, shadowPremium),
     },
-    title: {
-      color: c.textPrimary,
-      fontSize: typography.h2,
-      fontFamily: fonts.extrabold,
-      letterSpacing: -0.35,
-    },
-    subtitle: {
-      color: c.textSecondary,
-      fontSize: 13,
-      marginTop: spacing.xs,
-      marginBottom: spacing.md,
+    gateCta: {
+      marginTop: spacing.md,
+      alignSelf: "flex-start",
     },
     formCard: {
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.md,
-      backgroundColor: c.surfaceMuted,
-      padding: spacing.md,
+      marginBottom: spacing.md,
     },
     formTitle: {
       color: c.textPrimary,
@@ -347,15 +408,10 @@ function createAdminCouponsStyles(c, shadowPremium) {
       fontSize: 14,
       marginBottom: spacing.sm,
     },
-    input: {
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.md,
-      backgroundColor: c.surface,
-      color: c.textPrimary,
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 10,
-      fontSize: 13,
+    bannerSpacer: {
+      marginBottom: spacing.sm,
+    },
+    fieldGap: {
       marginBottom: spacing.sm,
     },
     typeRow: {
@@ -363,38 +419,11 @@ function createAdminCouponsStyles(c, shadowPremium) {
       gap: spacing.sm,
       marginBottom: spacing.sm,
     },
-    typeBtn: {
+    typeChipFlex: {
       flex: 1,
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.pill,
-      backgroundColor: c.surface,
-      alignItems: "center",
-      paddingVertical: 9,
     },
-    typeBtnActive: {
-      borderColor: c.primaryBorder,
-      backgroundColor: c.primarySoft,
-    },
-    typeBtnText: {
-      color: c.textPrimary,
-      fontSize: 12,
-      fontWeight: "700",
-    },
-    typeBtnTextActive: {
-      color: c.primary,
-    },
-    createBtn: {
-      marginTop: spacing.xs,
-      backgroundColor: c.primary,
-      borderRadius: radius.pill,
-      alignItems: "center",
-      paddingVertical: 12,
-    },
-    createBtnText: {
-      color: c.onPrimary,
-      fontWeight: "700",
-      fontSize: 13,
+    createBtnMargin: {
+      marginTop: spacing.sm,
     },
     toggleRow: {
       marginBottom: spacing.xs,
@@ -416,16 +445,10 @@ function createAdminCouponsStyles(c, shadowPremium) {
     listTitle: {
       marginTop: spacing.md,
       marginBottom: spacing.sm,
-      color: c.textPrimary,
       fontSize: 16,
       fontWeight: "800",
     },
     couponCard: {
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.md,
-      backgroundColor: c.surfaceMuted,
-      padding: spacing.md,
       marginBottom: spacing.sm,
     },
     couponTopRow: {
@@ -435,13 +458,11 @@ function createAdminCouponsStyles(c, shadowPremium) {
       gap: spacing.sm,
     },
     couponCode: {
-      color: c.textPrimary,
       fontSize: 14,
       fontWeight: "800",
     },
     couponMeta: {
       marginTop: 4,
-      color: c.textSecondary,
       fontSize: 12,
     },
     switchRow: {
@@ -456,23 +477,8 @@ function createAdminCouponsStyles(c, shadowPremium) {
       gap: spacing.sm,
     },
     switchLabel: {
-      color: c.textSecondary,
       fontSize: 12,
       fontWeight: "600",
-    },
-    emptyText: {
-      color: c.textSecondary,
-      fontSize: 13,
-    },
-    errorText: {
-      color: c.danger,
-      fontWeight: "600",
-      marginBottom: spacing.sm,
-    },
-    successText: {
-      color: c.success,
-      fontWeight: "600",
-      marginBottom: spacing.sm,
     },
   });
 }

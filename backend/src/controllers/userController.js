@@ -4,7 +4,12 @@ const { resolveProductLineFromRaw } = require("../utils/productLine");
 const cloudinary = require("../config/cloudinary");
 const Product = require("../models/Product");
 const User = require("../models/User");
-const generateToken = require("../utils/generateToken");
+const generateTokenModule = require("../utils/generateToken");
+
+const generateToken = generateTokenModule;
+const generateRefreshToken =
+  generateTokenModule.generateRefreshToken || generateTokenModule;
+const verifyRefreshToken = generateTokenModule.verifyRefreshToken;
 
 function serializePublicUser(user) {
   return {
@@ -14,8 +19,10 @@ function serializePublicUser(user) {
     phone: user.phone || "",
     defaultAddress: user.defaultAddress,
     isAdmin: user.isAdmin,
+    isDeliveryPartner: Boolean(user.isDeliveryPartner),
     cartItems: user.cartItems || [],
     avatar: user.avatar || "",
+    rewardPoints: Number(user.rewardPoints || 0),
   };
 }
 
@@ -44,9 +51,11 @@ async function registerUser(req, res, next) {
     });
 
     const token = generateToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
     res.status(201).json({
       token,
+      refreshToken,
       user: serializePublicUser(user),
       message: "User registered successfully.",
     });
@@ -74,7 +83,42 @@ async function loginUser(req, res, next) {
     }
 
     const token = generateToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
+    res.json({
+      token,
+      refreshToken,
+      user: serializePublicUser(user),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function refreshAccessToken(req, res, next) {
+  try {
+    const refreshToken = String(req.body?.refreshToken || "").trim();
+    if (!refreshToken) {
+      return res.status(400).json({ message: "refreshToken is required." });
+    }
+
+    let decoded;
+    try {
+      decoded = verifyRefreshToken(refreshToken);
+    } catch (err) {
+      return res.status(401).json({ message: "Invalid or expired refresh token." });
+    }
+
+    if (decoded.type && decoded.type !== "refresh") {
+      return res.status(401).json({ message: "Token is not a refresh token." });
+    }
+
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) {
+      return res.status(401).json({ message: "User no longer exists." });
+    }
+
+    const token = generateToken(user._id);
     res.json({
       token,
       user: serializePublicUser(user),
@@ -140,7 +184,7 @@ async function uploadUserAvatar(req, res, next) {
       : `data:${safeMime};base64,${imageBase64}`;
 
     const uploaded = await cloudinary.uploader.upload(uploadSource, {
-      folder: "kankreg/avatars",
+      folder: "zeevan/avatars",
       resource_type: "image",
     });
 
@@ -290,6 +334,35 @@ async function updateUserAdminStatus(req, res, next) {
         name: user.name,
         email: user.email,
         isAdmin: user.isAdmin,
+        isDeliveryPartner: Boolean(user.isDeliveryPartner),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateUserDeliveryPartnerStatus(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { isDeliveryPartner } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    user.isDeliveryPartner = Boolean(isDeliveryPartner);
+    await user.save();
+
+    res.json({
+      message: "Delivery partner flag updated successfully.",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        isDeliveryPartner: Boolean(user.isDeliveryPartner),
       },
     });
   } catch (error) {
@@ -317,14 +390,17 @@ async function deleteUser(req, res, next) {
   }
 }
 
+
 module.exports = {
   registerUser,
   loginUser,
+  refreshAccessToken,
   getProfile,
   updateProfile,
   uploadUserAvatar,
   getAllUsers,
   updateUserAdminStatus,
+  updateUserDeliveryPartnerStatus,
   deleteUser,
   upsertPushToken,
   getMyCart,

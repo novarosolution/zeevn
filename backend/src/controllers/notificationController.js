@@ -14,7 +14,7 @@ async function sendExpoPushBroadcast({ title, message }) {
     { expoPushTokens: { $exists: true, $not: { $size: 0 } } },
     { expoPushTokens: 1 }
   ).lean();
-
+  
   const allTokens = Array.from(
     new Set(
       users.flatMap((user) => (Array.isArray(user.expoPushTokens) ? user.expoPushTokens : []))
@@ -118,19 +118,21 @@ async function getAdminNotifications(req, res, next) {
 async function getMyNotifications(req, res, next) {
   try {
     const userId = String(req.user._id);
+    const includeArchived = String(req.query.includeArchived || "false") === "true";
     const notifications = await Notification.find({ forAllUsers: true })
       .sort({ createdAt: -1 })
       .limit(100);
 
     const mapped = notifications.map((item) => {
       const readers = Array.isArray(item.readBy) ? item.readBy : [];
+      const archived = Array.isArray(item.archivedBy) ? item.archivedBy : [];
       return {
         ...item.toObject(),
         isRead: readers.some((readerId) => String(readerId) === userId),
+        isArchived: archived.some((readerId) => String(readerId) === userId),
       };
     });
-
-    res.json(mapped);
+    res.json(includeArchived ? mapped : mapped.filter((item) => !item.isArchived));
   } catch (error) {
     next(error);
   }
@@ -158,9 +160,47 @@ async function markNotificationAsRead(req, res, next) {
   }
 }
 
+async function archiveNotification(req, res, next) {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+    const notification = await Notification.findById(id);
+    if (!notification) {
+      return res.status(404).json({ message: "Notification not found." });
+    }
+    const archived = Array.isArray(notification.archivedBy) ? notification.archivedBy : [];
+    if (!archived.some((readerId) => String(readerId) === String(userId))) {
+      notification.archivedBy = [...archived, userId];
+      await notification.save();
+    }
+    return res.json({ message: "Notification archived." });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function unarchiveNotification(req, res, next) {
+  try {
+    const { id } = req.params;
+    const userId = req.user._id;
+    const notification = await Notification.findById(id);
+    if (!notification) {
+      return res.status(404).json({ message: "Notification not found." });
+    }
+    const archived = Array.isArray(notification.archivedBy) ? notification.archivedBy : [];
+    notification.archivedBy = archived.filter((readerId) => String(readerId) !== String(userId));
+    await notification.save();
+    return res.json({ message: "Notification restored." });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   createBroadcastNotification,
   getAdminNotifications,
   getMyNotifications,
   markNotificationAsRead,
+  archiveNotification,
+  unarchiveNotification,
 };

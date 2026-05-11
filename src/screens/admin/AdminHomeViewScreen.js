@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import AppFooter from "../../components/AppFooter";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
@@ -8,9 +9,15 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminHomeView, updateAdminHomeView } from "../../services/adminService";
 import { adminPanel } from "../../theme/adminLayout";
-import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
+import MotionScrollView from "../../components/motion/MotionScrollView";
+import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
+import { fonts, radius, spacing, typography } from "../../theme/tokens";
 import { ADMIN_HOME_VIEW_COPY, HOME_VIEW_DEFAULTS } from "../../content/appContent";
+import PremiumInput from "../../components/ui/PremiumInput";
+import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import PremiumButton from "../../components/ui/PremiumButton";
+import PremiumChip from "../../components/ui/PremiumChip";
+import PremiumCard from "../../components/ui/PremiumCard";
 
 function Section({ label, hint, children, styles }) {
   return (
@@ -47,6 +54,7 @@ function QuickLinkRow({ title, subtitle, icon, onPress, styles, c }) {
 export default function AdminHomeViewScreen({ navigation }) {
   const { colors: c, shadowPremium } = useTheme();
   const styles = useMemo(() => createAdminHomeViewStyles(c, shadowPremium), [c, shadowPremium]);
+  const insets = useSafeAreaInsets();
   const { token, user } = useAuth();
   const copy = ADMIN_HOME_VIEW_COPY;
   const [heroTitle, setHeroTitle] = useState(HOME_VIEW_DEFAULTS.heroTitle);
@@ -61,7 +69,7 @@ export default function AdminHomeViewScreen({ navigation }) {
   const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
 
-  async function loadSettings() {
+  const loadSettings = useCallback(async () => {
     try {
       setError("");
       const data = await fetchAdminHomeView(token);
@@ -76,12 +84,12 @@ export default function AdminHomeViewScreen({ navigation }) {
     } catch (err) {
       setError(err.message || "Unable to load home view settings.");
     }
-  }
+  }, [token]);
 
   useEffect(() => {
     if (!user?.isAdmin) return;
     loadSettings();
-  }, [user?.isAdmin]);
+  }, [user, loadSettings]);
 
   const handleSave = async () => {
     try {
@@ -98,7 +106,7 @@ export default function AdminHomeViewScreen({ navigation }) {
         showProductTypeSections,
         productCardStyle,
       });
-      setSuccess("Storefront settings saved.");
+      setSuccess("Storefront saved.");
     } catch (err) {
       setError(err.message || "Unable to save settings.");
     } finally {
@@ -108,114 +116,143 @@ export default function AdminHomeViewScreen({ navigation }) {
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <CustomerScreenShell style={styles.screen} variant="admin">
         <View style={[styles.panel, { margin: spacing.lg }]}>
-          <Text style={styles.title}>Admin Access Required</Text>
-          <TouchableOpacity style={styles.saveBtn} onPress={() => navigation.navigate("Home")}>
-            <Text style={styles.saveBtnText}>Back to Home</Text>
-          </TouchableOpacity>
+          <PremiumErrorBanner
+            severity="warning"
+            title="Admin access required"
+            message="This account does not have admin privileges."
+          />
+          <PremiumButton label="Back to Home" variant="primary" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
         </View>
       </CustomerScreenShell>
     );
   }
 
   return (
-    <CustomerScreenShell style={styles.screen}>
-      <ScrollView style={customerScrollFill} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <CustomerScreenShell style={styles.screen} variant="admin">
+      <MotionScrollView
+        style={customerScrollFill}
+        contentContainerStyle={adminInnerPageScrollContent(insets)}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.panel}>
           <AdminBackLink navigation={navigation} />
           <Text style={styles.title}>{copy.title}</Text>
           <Text style={styles.subtitle}>{copy.subtitle}</Text>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          {success ? <Text style={styles.successText}>{success}</Text> : null}
+          {error ? (
+            <View style={styles.bannerSpacer}>
+              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+            </View>
+          ) : null}
+          {success ? (
+            <View style={styles.bannerSpacer}>
+              <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
+            </View>
+          ) : null}
 
           <Section label={copy.heroSection} hint={copy.heroHint} styles={styles}>
-            <TextInput
-              style={styles.input}
-              placeholder="Hero title"
-              placeholderTextColor={c.textMuted}
-              value={heroTitle}
-              onChangeText={setHeroTitle}
-            />
-            <TextInput
-              style={[styles.input, styles.inputMultiline]}
-              placeholder="Hero subtitle"
-              placeholderTextColor={c.textMuted}
-              value={heroSubtitle}
-              onChangeText={setHeroSubtitle}
-              multiline
-            />
+            <View style={styles.fieldGap}>
+              <PremiumInput label="Hero title" value={heroTitle} onChangeText={setHeroTitle} iconLeft="sparkles-outline" />
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Hero subtitle"
+                value={heroSubtitle}
+                onChangeText={setHeroSubtitle}
+                multiline
+                numberOfLines={3}
+                iconLeft="text-outline"
+              />
+            </View>
           </Section>
 
           <Section label={copy.sectionTitles} hint={copy.sectionTitlesHint} styles={styles}>
-            <TextInput
-              style={styles.input}
-              placeholder="Prime / default section title (e.g. Prime Products)"
-              placeholderTextColor={c.textMuted}
-              value={primeSectionTitle}
-              onChangeText={setPrimeSectionTitle}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Product type strip title (e.g. Shop by category)"
-              placeholderTextColor={c.textMuted}
-              value={productTypeTitle}
-              onChangeText={setProductTypeTitle}
-            />
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Prime section title"
+                value={primeSectionTitle}
+                onChangeText={setPrimeSectionTitle}
+                placeholder="e.g. Prime Products"
+                iconLeft="layers-outline"
+              />
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Product type strip title"
+                value={productTypeTitle}
+                onChangeText={setProductTypeTitle}
+                placeholder="e.g. Shop by category"
+                iconLeft="grid-outline"
+              />
+            </View>
           </Section>
 
           <Section label={copy.visibilitySection} hint={copy.visibilityHint} styles={styles}>
-            <TouchableOpacity
-              style={[styles.toggleBtn, showPrimeSection ? styles.toggleBtnActive : null]}
+            <PremiumCard
+              padding="md"
+              interactive
               onPress={() => setShowPrimeSection((current) => !current)}
+              goldAccent={showPrimeSection}
+              style={styles.toggleCard}
             >
-              <Text style={[styles.toggleBtnText, showPrimeSection ? styles.toggleBtnTextActive : null]}>
+              <Text style={[styles.toggleBtnText, { color: c.textPrimary }]}>
                 {showPrimeSection ? "Show prime section: ON" : "Show prime section: OFF"}
               </Text>
-              <Text style={styles.toggleDetail}>
-                Affects how the prime-titled bucket is merged with other Home section groups on the storefront.
+              <Text style={[styles.toggleDetail, { color: c.textSecondary }]}>
+                Controls the main prime section on Home.
               </Text>
-            </TouchableOpacity>
+            </PremiumCard>
 
-            <TouchableOpacity
-              style={[styles.toggleBtn, showHomeSections ? styles.toggleBtnActive : null]}
+            <PremiumCard
+              padding="md"
+              interactive
               onPress={() => setShowHomeSections((current) => !current)}
+              goldAccent={showHomeSections}
+              style={styles.toggleCard}
             >
-              <Text style={[styles.toggleBtnText, showHomeSections ? styles.toggleBtnTextActive : null]}>
+              <Text style={[styles.toggleBtnText, { color: c.textPrimary }]}>
                 {showHomeSections ? "Show home sections: ON" : "Show home sections: OFF"}
               </Text>
-              <Text style={styles.toggleDetail}>When on, Home can render one card per section title (plus merged list rules above).</Text>
-            </TouchableOpacity>
+              <Text style={[styles.toggleDetail, { color: c.textSecondary }]}>
+                Shows section-based groups on Home.
+              </Text>
+            </PremiumCard>
 
-            <TouchableOpacity
-              style={[styles.toggleBtn, showProductTypeSections ? styles.toggleBtnActive : null]}
+            <PremiumCard
+              padding="md"
+              interactive
               onPress={() => setShowProductTypeSections((current) => !current)}
+              goldAccent={showProductTypeSections}
+              style={styles.toggleCard}
             >
-              <Text style={[styles.toggleBtnText, showProductTypeSections ? styles.toggleBtnTextActive : null]}>
+              <Text style={[styles.toggleBtnText, { color: c.textPrimary }]}>
                 {showProductTypeSections ? "Show product types: ON" : "Show product types: OFF"}
               </Text>
-              <Text style={styles.toggleDetail}>Saved for your storefront profile (toggle + title travel with the same home-view API).</Text>
-            </TouchableOpacity>
+              <Text style={[styles.toggleDetail, { color: c.textSecondary }]}>
+                Shows the product type strip on Home.
+              </Text>
+            </PremiumCard>
           </Section>
 
           <Section label={copy.cardLayoutSection} hint={copy.cardLayoutHint} styles={styles}>
             <View style={styles.row}>
-              <TouchableOpacity
-                style={[styles.modeBtn, productCardStyle === "compact" ? styles.modeBtnActive : null]}
+              <PremiumChip
+                label="Compact"
+                tone="gold"
+                size="md"
+                selected={productCardStyle === "compact"}
                 onPress={() => setProductCardStyle("compact")}
-              >
-                <Text style={[styles.modeBtnText, productCardStyle === "compact" ? styles.modeBtnTextActive : null]}>Compact</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modeBtn, productCardStyle === "comfortable" ? styles.modeBtnActive : null]}
+                style={styles.modeChip}
+              />
+              <PremiumChip
+                label="Comfortable"
+                tone="gold"
+                size="md"
+                selected={productCardStyle === "comfortable"}
                 onPress={() => setProductCardStyle("comfortable")}
-              >
-                <Text
-                  style={[styles.modeBtnText, productCardStyle === "comfortable" ? styles.modeBtnTextActive : null]}
-                >
-                  Comfortable
-                </Text>
-              </TouchableOpacity>
+                style={styles.modeChip}
+              />
             </View>
           </Section>
 
@@ -241,12 +278,18 @@ export default function AdminHomeViewScreen({ navigation }) {
             </View>
           </Section>
 
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={saving}>
-            <Text style={styles.saveBtnText}>{saving ? "Saving…" : "Save storefront settings"}</Text>
-          </TouchableOpacity>
+          <PremiumButton
+            label={saving ? "Saving…" : "Save storefront settings"}
+            variant="primary"
+            size="lg"
+            onPress={handleSave}
+            disabled={saving}
+            loading={saving}
+            fullWidth
+          />
         </View>
         <AppFooter />
-      </ScrollView>
+      </MotionScrollView>
     </CustomerScreenShell>
   );
 }
@@ -256,15 +299,18 @@ function createAdminHomeViewStyles(c, shadowPremium) {
     screen: {
       flex: 1,
     },
-    scrollContent: {
-      padding: spacing.lg,
-      width: "100%",
-      alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth, default: "100%" }),
-      paddingBottom: spacing.xxl,
-    },
     panel: {
       ...adminPanel(c, shadowPremium),
+    },
+    gateCta: {
+      marginTop: spacing.md,
+      alignSelf: "flex-start",
+    },
+    toggleCard: {
+      marginBottom: spacing.sm,
+    },
+    modeChip: {
+      flex: 1,
     },
     title: {
       color: c.textPrimary,
@@ -298,85 +344,26 @@ function createAdminHomeViewStyles(c, shadowPremium) {
       fontFamily: fonts.medium,
       marginBottom: spacing.sm,
     },
-    input: {
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.md,
-      paddingHorizontal: spacing.md,
-      paddingVertical: 11,
-      marginBottom: spacing.sm,
-      backgroundColor: c.surfaceMuted,
-      color: c.textPrimary,
-      fontFamily: fonts.regular,
-    },
-    inputMultiline: {
-      minHeight: 72,
-      textAlignVertical: "top",
-      paddingTop: spacing.sm,
-    },
-    errorText: {
-      color: c.danger,
-      fontWeight: "600",
+    bannerSpacer: {
       marginBottom: spacing.sm,
     },
-    successText: {
-      color: c.success,
-      fontWeight: "600",
+    fieldGap: {
       marginBottom: spacing.sm,
-    },
-    toggleBtn: {
-      marginBottom: spacing.sm,
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.md,
-      paddingVertical: spacing.sm,
-      paddingHorizontal: spacing.md,
-      backgroundColor: c.surfaceMuted,
-    },
-    toggleBtnActive: {
-      borderColor: c.primaryBorder,
-      backgroundColor: c.primarySoft,
     },
     toggleBtnText: {
-      color: c.textPrimary,
       fontWeight: "700",
       fontSize: typography.bodySmall,
       fontFamily: fonts.bold,
     },
-    toggleBtnTextActive: {
-      color: c.primaryDark,
-    },
     toggleDetail: {
       marginTop: 4,
       fontSize: typography.caption,
-      color: c.textSecondary,
       fontFamily: fonts.medium,
       lineHeight: 16,
     },
     row: {
       flexDirection: "row",
       gap: spacing.sm,
-    },
-    modeBtn: {
-      flex: 1,
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.md,
-      paddingVertical: 12,
-      alignItems: "center",
-      backgroundColor: c.surfaceMuted,
-    },
-    modeBtnActive: {
-      borderColor: c.primaryBorder,
-      backgroundColor: c.primarySoft,
-    },
-    modeBtnText: {
-      color: c.textPrimary,
-      fontWeight: "700",
-      fontSize: typography.bodySmall,
-    },
-    modeBtnTextActive: {
-      color: c.primary,
     },
     linkStack: {
       borderRadius: radius.lg,
@@ -417,18 +404,6 @@ function createAdminHomeViewStyles(c, shadowPremium) {
     linkDivider: {
       height: StyleSheet.hairlineWidth,
       marginLeft: spacing.md + 44 + spacing.md,
-    },
-    saveBtn: {
-      marginTop: spacing.sm,
-      backgroundColor: c.primary,
-      borderRadius: radius.pill,
-      alignItems: "center",
-      paddingVertical: 14,
-    },
-    saveBtnText: {
-      color: c.onPrimary,
-      fontWeight: "700",
-      fontSize: typography.bodySmall,
     },
   });
 }

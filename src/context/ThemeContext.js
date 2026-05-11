@@ -8,8 +8,12 @@ import {
   getShadowPremium,
   lightColors,
 } from "../theme/tokens";
+import {
+  LEGACY_JEEVAN_THEME_MODE_KEY,
+  LEGACY_THEME_MODE_KEY,
+} from "../constants/migrationKeys";
 
-const STORAGE_KEY = "@kankreg_theme_mode";
+const STORAGE_KEY = "@zeevan_theme_mode";
 
 const ThemeContext = createContext(null);
 
@@ -22,7 +26,21 @@ export function ThemeProvider({ children }) {
     let cancelled = false;
     (async () => {
       try {
-        const stored = await AsyncStorage.getItem(STORAGE_KEY);
+        let stored = await AsyncStorage.getItem(STORAGE_KEY);
+        if (stored == null) {
+          stored = await AsyncStorage.getItem(LEGACY_JEEVAN_THEME_MODE_KEY);
+          if (stored === "light" || stored === "dark" || stored === "system") {
+            await AsyncStorage.setItem(STORAGE_KEY, stored);
+            await AsyncStorage.removeItem(LEGACY_JEEVAN_THEME_MODE_KEY);
+          }
+        }
+        if (stored == null) {
+          stored = await AsyncStorage.getItem(LEGACY_THEME_MODE_KEY);
+          if (stored === "light" || stored === "dark" || stored === "system") {
+            await AsyncStorage.setItem(STORAGE_KEY, stored);
+            await AsyncStorage.removeItem(LEGACY_THEME_MODE_KEY);
+          }
+        }
         if (!cancelled && (stored === "light" || stored === "dark" || stored === "system")) {
           setModeState(stored);
         }

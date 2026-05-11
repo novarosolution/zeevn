@@ -38,7 +38,9 @@ export function getApiBaseUrl() {
     return configured;
   }
 
-  const isDev = typeof __DEV__ === "undefined" || __DEV__;
+  // Only treat as dev when Metro/babel explicitly sets __DEV__ === true.
+  // If __DEV__ is missing (some embedded/minified bundles), default to production API.
+  const isDev = typeof __DEV__ !== "undefined" && __DEV__;
   if (!isDev) {
     return PRODUCTION_API_URL;
   }

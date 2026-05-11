@@ -27,10 +27,10 @@ export const createOrderRequest = (token, payload) =>
     body: JSON.stringify(payload),
   });
 
-export const validateCouponRequest = (token, couponCode) =>
+export const validateCouponRequest = (token, couponCode, subtotal) =>
   orderRequest("/orders/validate-coupon", token, {
     method: "POST",
-    body: JSON.stringify({ couponCode }),
+    body: JSON.stringify({ couponCode, subtotal }),
   });
 
 export const reorderMyOrderRequest = (token, orderId) =>
@@ -38,11 +38,21 @@ export const reorderMyOrderRequest = (token, orderId) =>
     method: "POST",
   });
 
-export const fetchAvailableCouponsRequest = (token) =>
-  orderRequest("/orders/available-coupons", token);
+export const fetchAvailableCouponsRequest = (token, subtotal) => {
+  const numericSubtotal = Number(subtotal);
+  const query = Number.isFinite(numericSubtotal) && numericSubtotal >= 0
+    ? `?subtotal=${encodeURIComponent(numericSubtotal)}`
+    : "";
+  return orderRequest(`/orders/available-coupons${query}`, token);
+};
 
 export const updateMyOrderAddressRequest = (token, orderId, shippingAddress) =>
   orderRequest(`/orders/${orderId}/address`, token, {
     method: "PATCH",
     body: JSON.stringify({ shippingAddress }),
+  });
+
+export const claimMyOrderRewardRequest = (token, orderId) =>
+  orderRequest(`/orders/${orderId}/claim-reward`, token, {
+    method: "POST",
   });

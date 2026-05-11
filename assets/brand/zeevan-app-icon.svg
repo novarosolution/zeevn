@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Zeevan">
+  <title>Zeevan</title>
+  <defs>
+    <linearGradient id="zeevanIcon" x1="96" y1="80" x2="416" y2="432" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fecaca"/>
+      <stop offset="0.5" stop-color="#dc2626"/>
+      <stop offset="1" stop-color="#7f1d1d"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="#0c0a0a"/>
+  <path
+    fill="url(#zeevanIcon)"
+    d="M152 152h208l-56 104h-72l128 104H152l56-88h72l-72-120z"
+  />
+</svg>

@@ -46,8 +46,19 @@ cp .env.example .env
 
 3. Update `.env` values:
 - `PORT` (default set to `5001`)
-- `MONGO_URI`
+- `MONGO_URI` — example local DB: `mongodb://127.0.0.1:27017/zeevan`
 - `JWT_SECRET`
+- `RAZORPAY_KEY_ID` — public key id from the Razorpay dashboard (test or live).
+- `RAZORPAY_KEY_SECRET` — secret key, **server-only**.
+- `RAZORPAY_WEBHOOK_SECRET` — webhook secret you set when creating the
+  webhook in the Razorpay dashboard. Point the webhook URL at
+  `https://<your-host>/orders/razorpay-webhook` (or `/api/orders/razorpay-webhook`)
+  and subscribe to `payment.captured`, `payment.failed`, and `order.paid`.
+
+> The same `RAZORPAY_KEY_ID` value should be exposed to the mobile/web client
+> as `EXPO_PUBLIC_RAZORPAY_KEY_ID` so the SDK can open Checkout. The
+> `RAZORPAY_KEY_SECRET` and `RAZORPAY_WEBHOOK_SECRET` must NEVER ship to the
+> client.
 
 4. Start server:
 
@@ -61,6 +72,10 @@ npm run dev
 - `POST /users/register`
 - `POST /users/login`
 - `POST /orders` (Protected: requires `Authorization: Bearer <token>`)
+- `POST /orders/:id/verify-payment` (Protected) — Razorpay handler payload.
+- `POST /orders/:id/cancel-pending` (Protected) — abandon an unpaid order.
+- `POST /orders/razorpay-webhook` (Public) — Razorpay webhook receiver,
+  signed with `RAZORPAY_WEBHOOK_SECRET`.
 - `GET /admin/products` (Admin)
 - `POST /admin/products` (Admin)
 - `PUT /admin/products/:id` (Admin)
@@ -69,6 +84,11 @@ npm run dev
 - `PATCH /admin/orders/:id/status` (Admin)
 - `GET /admin/users` (Admin)
 - `PATCH /admin/users/:id/role` (Admin)
+- `GET /admin/analytics` (Admin) — optional query filters:
+  - No query: legacy behaviour (all-time metrics plus rolling 7/14-day chart trends).
+  - `preset`: `today`, `7d`, `30d`, `90d`, `1y`, `mtd`, `ytd`, `all`, or combine `from`/`to` for a custom range.
+  - `from`, `to`: `YYYY-MM-DD` (UTC day boundaries) — both required together.
+  - `bucket`: `day` or `month` for the returned `trends.rangeSeries` (defaults to `month` when the span exceeds ~120 days).
 
 ### Admin note
 

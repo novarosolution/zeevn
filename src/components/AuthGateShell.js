@@ -1,11 +1,15 @@
 import React, { useMemo } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 import { resetNavigationToHome } from "../navigation/resetToHome";
+import { Ionicons } from "@expo/vector-icons";
 import { ALCHEMY } from "../theme/customerAlchemy";
-import { radius, spacing, typography } from "../theme/tokens";
+import { customerPanel } from "../theme/screenLayout";
+import { fonts, spacing, typography } from "../theme/tokens";
 import BottomNavBar from "./BottomNavBar";
 import CustomerScreenShell from "./CustomerScreenShell";
+import SessionExpiredBanner from "./SessionExpiredBanner";
+import PremiumButton from "./ui/PremiumButton";
 
 /**
  * Empty shell while auth is restoring.
@@ -16,30 +20,38 @@ export default function AuthGateShell({ navigation, signedOut = false }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
   const styles = useMemo(() => createStyles(c, isDark, shadowPremium), [c, isDark, shadowPremium]);
 
+  const goToLogin = navigation ? () => navigation.navigate("Login") : undefined;
+
   if (signedOut && navigation) {
     return (
       <CustomerScreenShell style={styles.shell}>
+        <SessionExpiredBanner onSignIn={goToLogin} />
         <View style={styles.signedOutInner}>
-          <Text style={styles.signedOutTitle}>Sign in to your account</Text>
-          <Text style={styles.signedOutSub}>View orders, saved address, and account preferences.</Text>
-          <TouchableOpacity
-            style={styles.primaryBtn}
-            onPress={() => navigation.navigate("Login")}
-            activeOpacity={0.9}
-            accessibilityRole="button"
-            accessibilityLabel="Sign in"
-          >
-            <Text style={styles.primaryBtnText}>Sign in</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.secondaryBtn}
-            onPress={() => resetNavigationToHome(navigation)}
-            activeOpacity={0.9}
-            accessibilityRole="button"
-            accessibilityLabel="Continue as guest, go to home"
-          >
-            <Text style={styles.secondaryBtnText}>Continue as guest</Text>
-          </TouchableOpacity>
+          <View style={[customerPanel(c, shadowPremium, isDark), styles.signedOutCard]}>
+            <View style={styles.signedOutIconWrap}>
+              <Ionicons name="person-circle-outline" size={30} color={isDark ? c.primaryBright : ALCHEMY.brown} />
+            </View>
+            <Text style={styles.signedOutTitle}>Sign in to your account</Text>
+            <Text style={styles.signedOutSub}>
+              Continue to access your orders, saved addresses, account settings, and premium member benefits.
+            </Text>
+            <PremiumButton
+              label="Sign in"
+              onPress={() => navigation.navigate("Login")}
+              variant="primary"
+              size="lg"
+              fullWidth
+              style={styles.primaryBtn}
+            />
+            <PremiumButton
+              label="Continue as guest"
+              onPress={() => resetNavigationToHome(navigation)}
+              variant="ghost"
+              size="lg"
+              fullWidth
+              style={styles.secondaryBtn}
+            />
+          </View>
         </View>
         <BottomNavBar />
       </CustomerScreenShell>
@@ -48,6 +60,7 @@ export default function AuthGateShell({ navigation, signedOut = false }) {
 
   return (
     <CustomerScreenShell style={styles.shell}>
+      <SessionExpiredBanner onSignIn={goToLogin} />
       <View style={styles.fill} />
       <BottomNavBar />
     </CustomerScreenShell>
@@ -65,13 +78,29 @@ function createStyles(c, isDark, shadowPremium) {
       paddingTop: spacing.xxl,
       paddingBottom: spacing.lg,
       justifyContent: "center",
+      alignItems: "center",
+    },
+    signedOutCard: {
+      width: "100%",
+      maxWidth: 420,
+      alignSelf: "center",
+      borderTopWidth: 3,
+      borderTopColor: isDark ? "rgba(220, 38, 38, 0.58)" : ALCHEMY.gold,
+      ...Platform.select({
+        web: {
+          boxShadow: isDark
+            ? "0 20px 44px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.04)"
+            : "0 16px 38px rgba(24, 24, 27, 0.09), inset 0 1px 0 rgba(255,255,255,0.92)",
+        },
+        default: {},
+      }),
     },
     signedOutTitle: {
       fontSize: typography.h2,
-      fontWeight: "700",
-      color: c.text,
+      fontFamily: fonts.extrabold,
+      color: c.textPrimary,
       textAlign: "center",
-      marginBottom: spacing.sm,
+      marginBottom: spacing.xs,
     },
     signedOutSub: {
       fontSize: typography.body,
@@ -80,31 +109,23 @@ function createStyles(c, isDark, shadowPremium) {
       lineHeight: 22,
       marginBottom: spacing.xl,
     },
-    primaryBtn: {
-      backgroundColor: isDark ? c.primary : ALCHEMY.brown,
-      paddingVertical: spacing.md,
-      borderRadius: radius.md,
+    signedOutIconWrap: {
+      alignSelf: "center",
+      width: 58,
+      height: 58,
+      borderRadius: 29,
       alignItems: "center",
+      justifyContent: "center",
       marginBottom: spacing.sm,
-      ...shadowPremium,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? "rgba(220, 38, 38, 0.35)" : ALCHEMY.pillInactive,
+      backgroundColor: isDark ? "rgba(220, 38, 38, 0.12)" : ALCHEMY.goldSoft,
     },
-    primaryBtnText: {
-      color: "#FFFCF8",
-      fontSize: typography.body,
-      fontWeight: "600",
+    primaryBtn: {
+      marginBottom: spacing.sm,
     },
     secondaryBtn: {
       backgroundColor: cardBg,
-      paddingVertical: spacing.md,
-      borderRadius: radius.md,
-      alignItems: "center",
-      borderWidth: 1,
-      borderColor: isDark ? c.border : ALCHEMY.pillInactive,
-    },
-    secondaryBtnText: {
-      color: c.text,
-      fontSize: typography.body,
-      fontWeight: "500",
     },
   });
 }

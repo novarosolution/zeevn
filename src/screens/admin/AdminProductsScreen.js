@@ -1,39 +1,74 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Platform, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
 import AppFooter from "../../components/AppFooter";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
 import AdminBackLink from "../../components/admin/AdminBackLink";
+import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
 import { deleteAdminProduct, fetchAdminProducts } from "../../services/adminService";
 import { adminPanel } from "../../theme/adminLayout";
-import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
+import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
+import { ALCHEMY } from "../../theme/customerAlchemy";
+import { layout, radius, spacing, typography } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
+import PremiumInput from "../../components/ui/PremiumInput";
+import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
+import PremiumButton from "../../components/ui/PremiumButton";
+import PremiumCard from "../../components/ui/PremiumCard";
+import PremiumChip from "../../components/ui/PremiumChip";
+import MotionScrollView from "../../components/motion/MotionScrollView";
+import SectionReveal from "../../components/motion/SectionReveal";
 
 const LOW_STOCK_MAX = 5;
 
-function productStockPill(p, c) {
+function productStockChip(p) {
   const q = Math.max(0, Number(p.stockQty) || 0);
   if (p.inStock === false || q < 1) {
-    return { label: "Out", key: "out", bg: "rgba(220, 38, 38, 0.12)", border: c.danger, text: c.danger };
+    return { label: "Out", tone: "red" };
   }
   if (q <= LOW_STOCK_MAX) {
-    return { label: "Low", key: "low", bg: c.primarySoft, border: c.primaryBorder, text: c.primaryDark };
+    return { label: "Low", tone: "gold" };
   }
-  return { label: "In stock", key: "ok", bg: c.secondarySoft, border: c.secondaryBorder, text: c.secondaryDark };
+  return { label: "In stock", tone: "green" };
+}
+
+function catalogSummary(products) {
+  let inStock = 0;
+  let low = 0;
+  let out = 0;
+  for (const p of products) {
+    const chip = productStockChip(p);
+    if (chip.tone === "red") out += 1;
+    else if (chip.tone === "gold") low += 1;
+    else inStock += 1;
+  }
+  return { total: products.length, inStock, low, out };
+}
+
+function coverUri(p) {
+  const imgs = Array.isArray(p.images) ? p.images : [];
+  const first = imgs.find((u) => String(u || "").trim());
+  if (first) return String(first).trim();
+  if (p.image && String(p.image).trim()) return String(p.image).trim();
+  return "";
 }
 
 export default function AdminProductsScreen({ navigation }) {
   const { colors: c, shadowPremium } = useTheme();
   const styles = useMemo(() => createAdminProductsStyles(c, shadowPremium), [c, shadowPremium]);
+  const insets = useSafeAreaInsets();
   const { user, token } = useAuth();
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [error, setError] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const [renderCount, setRenderCount] = useState(40);
 
-  async function loadProducts() {
+  const loadProducts = useCallback(async () => {
     try {
       setError("");
       const response = await fetchAdminProducts(token);
@@ -41,7 +76,16 @@ export default function AdminProductsScreen({ navigation }) {
     } catch (err) {
       setError(err.message || "Failed to load products.");
     }
-  }
+  }, [token]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadProducts();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadProducts]);
 
   useEffect(() => {
     if (!user) {
@@ -49,7 +93,7 @@ export default function AdminProductsScreen({ navigation }) {
     }
     if (!user.isAdmin) return;
     loadProducts();
-  }, [user?.isAdmin]);
+  }, [user, loadProducts]);
 
   const filteredProducts = useMemo(() => {
     if (!search.trim()) return products;
@@ -61,18 +105,42 @@ export default function AdminProductsScreen({ navigation }) {
     );
   }, [products, search]);
 
+  const stats = useMemo(() => catalogSummary(products), [products]);
+
+  const visibleProducts = useMemo(
+    () => filteredProducts.slice(0, renderCount),
+    [filteredProducts, renderCount]
+  );
+
+  useEffect(() => {
+    setRenderCount(40);
+  }, [search]);
+
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
-        <ScrollView style={customerScrollFill} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.panel}>
-            <Text style={styles.title}>Admin Access Required</Text>
-            <Text style={styles.subtitle}>This account does not have admin privileges.</Text>
-            <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate("Home")}>
-              <Text style={styles.addBtnText}>Back to Home</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+      <CustomerScreenShell style={styles.screen} variant="admin">
+        <MotionScrollView
+          style={customerScrollFill}
+          contentContainerStyle={adminInnerPageScrollContent(insets)}
+          showsVerticalScrollIndicator={false}
+        >
+          <SectionReveal delay={40} preset="fade-up">
+            <View style={styles.panel}>
+              <AdminBackLink navigation={navigation} />
+              <PremiumErrorBanner
+                severity="warning"
+                title="Admin access required"
+                message="Sign in with an admin account to manage the catalog."
+              />
+              <PremiumButton
+                label="Back to Home"
+                variant="primary"
+                onPress={() => navigation.navigate("Home")}
+                style={styles.gateCta}
+              />
+            </View>
+          </SectionReveal>
+        </MotionScrollView>
       </CustomerScreenShell>
     );
   }
@@ -88,80 +156,175 @@ export default function AdminProductsScreen({ navigation }) {
   };
 
   return (
-    <CustomerScreenShell style={styles.screen}>
-        <ScrollView style={customerScrollFill} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.panel}>
-            <AdminBackLink navigation={navigation} />
-            <Text style={styles.title}>Manage Products</Text>
-          <Text style={styles.subtitle}>Edit catalog and manage product lifecycle.</Text>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+    <CustomerScreenShell style={styles.screen} variant="admin">
+      <MotionScrollView
+        style={customerScrollFill}
+        contentContainerStyle={adminInnerPageScrollContent(insets)}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          Platform.OS === "web" ? undefined : (
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} colors={[c.primary]} />
+          )
+        }
+      >
+        <View style={styles.panel}>
+          <AdminBackLink navigation={navigation} />
+          <AdminPageHeading
+            title="Manage Products"
+            subtitle="Search, stock visibility, and quick edits."
+          />
+          {error ? (
+            <View style={styles.bannerSpacer}>
+              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+            </View>
+          ) : null}
+
+          <SectionReveal preset="fade-up" delay={0}>
+            <PremiumCard padding="md" variant="elevated" goldAccent style={styles.summaryCard}>
+              <Text style={[styles.summaryEyebrow, { color: c.textMuted }]}>Catalog snapshot</Text>
+              <View style={styles.summaryGrid}>
+                <View style={styles.summaryCell}>
+                  <Text style={[styles.summaryValue, { color: c.textPrimary }]}>{stats.total}</Text>
+                  <Text style={[styles.summaryLabel, { color: c.textSecondary }]}>Total SKUs</Text>
+                </View>
+                <View style={styles.summaryCell}>
+                  <Text style={[styles.summaryValue, { color: c.secondaryDark }]}>{stats.inStock}</Text>
+                  <Text style={[styles.summaryLabel, { color: c.textSecondary }]}>Healthy</Text>
+                </View>
+                <View style={styles.summaryCell}>
+                  <Text style={[styles.summaryValue, { color: ALCHEMY.gold }]}>{stats.low}</Text>
+                  <Text style={[styles.summaryLabel, { color: c.textSecondary }]}>Low stock</Text>
+                </View>
+                <View style={styles.summaryCell}>
+                  <Text style={[styles.summaryValue, { color: c.danger }]}>{stats.out}</Text>
+                  <Text style={[styles.summaryLabel, { color: c.textSecondary }]}>Out</Text>
+                </View>
+              </View>
+            </PremiumCard>
+          </SectionReveal>
 
           <View style={styles.actionsRow}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search products..."
-              placeholderTextColor={c.textMuted}
-              value={search}
-              onChangeText={setSearch}
-            />
-            <TouchableOpacity style={styles.refreshBtn} onPress={loadProducts}>
-              <Text style={styles.refreshBtnText}>Refresh</Text>
-            </TouchableOpacity>
+            <View style={styles.searchInputWrap}>
+              <PremiumInput
+                label="Search catalog"
+                value={search}
+                onChangeText={setSearch}
+                iconLeft="search-outline"
+                iconRight={search ? "close-circle" : undefined}
+                onIconRightPress={search ? () => setSearch("") : undefined}
+                autoCapitalize="none"
+              />
+            </View>
+            <PremiumButton label="Refresh" variant="secondary" size="md" onPress={loadProducts} />
           </View>
 
           <View style={styles.ctaRow}>
-            <TouchableOpacity style={styles.invBtn} onPress={() => navigation.navigate("AdminInventory")}>
-              <Ionicons name="layers-outline" size={20} color={c.secondary} />
-              <Text style={styles.invBtnText}>Inventory & stock</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.addBtn} onPress={() => navigation.navigate("AdminAddProduct")}>
-              <Ionicons name="add" size={22} color={c.onPrimary} />
-              <Text style={styles.addBtnText}>Add product</Text>
-            </TouchableOpacity>
+            <PremiumButton
+              label="Inventory & stock"
+              variant="secondary"
+              iconLeft="layers-outline"
+              onPress={() => navigation.navigate("AdminInventory")}
+              style={styles.ctaFlex}
+            />
+            <PremiumButton
+              label="Add product"
+              variant="primary"
+              iconLeft="add"
+              onPress={() => navigation.navigate("AdminAddProduct")}
+              style={styles.ctaFlex}
+            />
           </View>
 
           <View style={styles.listContent}>
-            {filteredProducts.map((item) => (
-              <View key={item._id} style={styles.card}>
-                <View style={styles.cardTitleRow}>
-                  <Text style={styles.cardTitle}>{item.name}</Text>
-                  {(() => {
-                    const pill = productStockPill(item, c);
-                    return (
-                      <View style={[styles.stockPill, { backgroundColor: pill.bg, borderColor: pill.border }]}>
-                        <Text style={[styles.stockPillText, { color: pill.text }]}>{pill.label}</Text>
+            {filteredProducts.length === 0 ? (
+              <PremiumEmptyState
+                iconName="cube-outline"
+                title={search.trim() ? "No matching products" : "No products in catalog"}
+                description={search.trim() ? "Try another search term." : "Add a product to get started."}
+                ctaLabel={search.trim() ? undefined : "Add product"}
+                ctaIconLeft="add-outline"
+                onCtaPress={search.trim() ? undefined : () => navigation.navigate("AdminAddProduct")}
+                compact
+              />
+            ) : null}
+            {visibleProducts.map((item, idx) => {
+              const chip = productStockChip(item);
+              const uri = coverUri(item);
+              const photoCount = (item.images || []).length || (item.image ? 1 : 0);
+              return (
+                <SectionReveal key={item._id} preset="fade-up" delay={Math.min(idx * 24, 120)}>
+                  <PremiumCard padding="md" variant="elevated" style={styles.productCard}>
+                    <View style={styles.cardTop}>
+                      {uri ? (
+                        <Image source={{ uri }} style={styles.thumb} contentFit="cover" transition={120} />
+                      ) : (
+                        <View style={[styles.thumb, styles.thumbPlaceholder, { borderColor: c.border }]}>
+                          <Text style={[styles.thumbGlyph, { color: c.textMuted }]}>∷</Text>
+                        </View>
+                      )}
+                      <View style={styles.cardHead}>
+                        <View style={styles.cardTitleRow}>
+                          <Text style={[styles.cardTitle, { color: c.textPrimary }]} numberOfLines={2}>
+                            {item.name}
+                          </Text>
+                          <PremiumChip label={chip.label} tone={chip.tone} size="sm" />
+                        </View>
+                        <Text style={[styles.cardPrice, { color: c.primary }]}>{formatINR(item.price)}</Text>
                       </View>
-                    );
-                  })()}
-                </View>
-                <Text style={styles.cardMeta}>Price: {formatINR(item.price)}</Text>
-                <Text style={styles.cardMeta}>Home Section: {item.homeSection || "Prime Products"}</Text>
-                <Text style={styles.cardMeta}>Product Type: {item.productType || item.category || "General"}</Text>
-                <Text style={styles.cardMeta}>Home Visible: {item.showOnHome === false ? "No" : "Yes"}</Text>
-                <Text style={styles.cardMeta}>Home Order: {Number.isFinite(Number(item.homeOrder)) ? Number(item.homeOrder) : 0}</Text>
-                <Text style={styles.cardMeta}>
-                  Stock: {item.inStock === false ? "Out of stock" : "In stock"} ({Math.max(0, Number(item.stockQty) || 0)})
-                </Text>
-                {item.brand ? <Text style={styles.cardMeta}>Brand: {item.brand}</Text> : null}
-                {item.sku ? <Text style={styles.cardMeta}>SKU: {item.sku}</Text> : null}
-                <Text style={styles.cardMeta}>Photos: {(item.images || []).length || (item.image ? 1 : 0)}</Text>
-                <View style={styles.cardActions}>
-                  <TouchableOpacity
-                    style={styles.smallBtn}
-                    onPress={() => navigation.navigate("AdminAddProduct", { product: item })}
-                  >
-                    <Text style={styles.smallBtnText}>Edit</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.dangerBtn} onPress={() => handleDelete(item._id)}>
-                    <Text style={styles.dangerBtnText}>Delete</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
+                    </View>
+
+                    <View style={styles.metaGrid}>
+                      <Text style={[styles.metaCell, { color: c.textSecondary }]} numberOfLines={1}>
+                        Section · {item.homeSection || "—"}
+                      </Text>
+                      <Text style={[styles.metaCell, { color: c.textSecondary }]} numberOfLines={1}>
+                        Type · {item.productType || item.category || "—"}
+                      </Text>
+                      <Text style={[styles.metaCell, { color: c.textSecondary }]} numberOfLines={1}>
+                        Home · {item.showOnHome === false ? "Hidden" : "Visible"}
+                      </Text>
+                      <Text style={[styles.metaCell, { color: c.textSecondary }]} numberOfLines={1}>
+                        Sort · {Number.isFinite(Number(item.homeOrder)) ? Number(item.homeOrder) : 0}
+                      </Text>
+                      <Text style={[styles.metaCell, { color: c.textSecondary }]} numberOfLines={1}>
+                        Qty · {Math.max(0, Number(item.stockQty) || 0)}
+                      </Text>
+                      <Text style={[styles.metaCell, { color: c.textSecondary }]} numberOfLines={1}>
+                        Photos · {photoCount}
+                      </Text>
+                    </View>
+                    {item.brand || item.sku ? (
+                      <Text style={[styles.brandSku, { color: c.textMuted }]} numberOfLines={1}>
+                        {[item.brand, item.sku].filter(Boolean).join(" · ")}
+                      </Text>
+                    ) : null}
+
+                    <View style={styles.cardActions}>
+                      <PremiumButton
+                        label="Edit"
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => navigation.navigate("AdminAddProduct", { product: item })}
+                      />
+                      <PremiumButton label="Delete" variant="danger" size="sm" onPress={() => handleDelete(item._id)} />
+                    </View>
+                  </PremiumCard>
+                </SectionReveal>
+              );
+            })}
+            {visibleProducts.length < filteredProducts.length ? (
+              <PremiumButton
+                label={`Load more (${filteredProducts.length - visibleProducts.length} remaining)`}
+                variant="subtle"
+                size="md"
+                onPress={() => setRenderCount((prev) => prev + 40)}
+                fullWidth
+              />
+            ) : null}
           </View>
         </View>
         <AppFooter />
-      </ScrollView>
+      </MotionScrollView>
     </CustomerScreenShell>
   );
 }
@@ -172,146 +335,132 @@ function createAdminProductsStyles(c, shadowPremium) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth, default: "100%" }),
-    },
-    scrollContent: {
-      padding: spacing.lg,
-      paddingBottom: spacing.xxl,
+      maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
     },
     panel: {
       ...adminPanel(c, shadowPremium),
     },
-    title: {
-      color: c.textPrimary,
-      fontSize: typography.h2,
-      fontFamily: fonts.extrabold,
-      letterSpacing: -0.35,
+    gateCta: {
+      marginTop: spacing.md,
+      alignSelf: "flex-start",
     },
-    subtitle: {
-      marginTop: spacing.xs,
-      color: c.textSecondary,
+    bannerSpacer: {
+      marginBottom: spacing.sm,
+    },
+    summaryCard: {
       marginBottom: spacing.md,
     },
-    errorText: {
-      color: c.danger,
-      fontWeight: "600",
+    summaryEyebrow: {
+      fontSize: 11,
+      fontWeight: "700",
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
       marginBottom: spacing.sm,
+    },
+    summaryGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.md,
+    },
+    summaryCell: {
+      flexGrow: 1,
+      flexBasis: "40%",
+      minWidth: 120,
+    },
+    summaryValue: {
+      fontSize: typography.h3,
+      fontWeight: "800",
+    },
+    summaryLabel: {
+      marginTop: 2,
+      fontSize: typography.caption,
     },
     actionsRow: {
       flexDirection: "row",
-      alignItems: "center",
+      flexWrap: "wrap",
+      alignItems: "flex-end",
       gap: spacing.sm,
       marginBottom: spacing.sm,
     },
-    searchInput: {
+    searchInputWrap: {
       flex: 1,
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.md,
-      paddingHorizontal: spacing.md,
-      paddingVertical: 10,
-      backgroundColor: c.surfaceMuted,
-      color: c.textPrimary,
-    },
-    refreshBtn: {
-      paddingHorizontal: spacing.md,
-      borderWidth: 1,
-      borderColor: c.primaryBorder,
-      borderRadius: radius.md,
-      backgroundColor: c.primarySoft,
-      justifyContent: "center",
-      paddingVertical: 10,
-    },
-    refreshBtnText: {
-      color: c.primary,
-      fontWeight: "700",
-      fontSize: 12,
+      minWidth: 0,
     },
     ctaRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, marginBottom: spacing.md },
-    invBtn: {
-      flex: 1,
-      minWidth: 140,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 8,
-      backgroundColor: c.secondarySoft,
-      borderWidth: 1,
-      borderColor: c.secondaryBorder,
-      borderRadius: radius.pill,
-      paddingVertical: 11,
-    },
-    invBtnText: { color: c.secondary, fontWeight: "700" },
-    addBtn: {
-      flex: 1,
-      minWidth: 140,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 6,
-      backgroundColor: c.primary,
-      borderRadius: radius.pill,
-      paddingVertical: 11,
-    },
-    addBtnText: {
-      color: c.onPrimary,
-      fontWeight: "700",
-    },
+    ctaFlex: { flex: 1, minWidth: 140 },
     listContent: {
       gap: spacing.sm,
       paddingBottom: spacing.xl,
     },
-    card: {
-      borderWidth: 1,
-      borderColor: c.border,
+    productCard: {
+      width: "100%",
+      ...Platform.select({
+        web: shadowPremium,
+        default: {},
+      }),
+    },
+    cardTop: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.sm,
+    },
+    thumb: {
+      width: 56,
+      height: 56,
       borderRadius: radius.md,
-      padding: spacing.md,
       backgroundColor: c.surfaceMuted,
     },
-    cardTitleRow: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm },
-    cardTitle: {
-      color: c.textPrimary,
-      fontWeight: "700",
+    thumbPlaceholder: {
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: StyleSheet.hairlineWidth,
+    },
+    thumbGlyph: {
+      fontSize: 20,
+    },
+    cardHead: {
       flex: 1,
       minWidth: 0,
     },
-    stockPill: { borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, flexShrink: 0 },
-    stockPillText: { fontSize: 10, fontWeight: "800" },
-    cardMeta: {
-      marginTop: 4,
-      color: c.textSecondary,
+    cardTitleRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+    },
+    cardTitle: {
+      fontWeight: "800",
+      flex: 1,
+      minWidth: 0,
+      fontSize: typography.body,
+    },
+    cardPrice: {
+      marginTop: spacing.xs,
+      fontSize: typography.bodySmall,
+      fontWeight: "800",
+    },
+    metaGrid: {
+      marginTop: spacing.sm,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+    },
+    metaCell: {
+      flexGrow: 1,
+      flexBasis: "45%",
+      minWidth: 128,
       fontSize: 12,
+    },
+    brandSku: {
+      marginTop: spacing.xs,
+      fontSize: typography.caption,
     },
     cardActions: {
       marginTop: spacing.sm,
       flexDirection: "row",
+      flexWrap: "wrap",
       gap: spacing.sm,
-    },
-    smallBtn: {
-      borderWidth: 1,
-      borderColor: c.border,
-      borderRadius: radius.pill,
-      paddingHorizontal: spacing.md,
-      paddingVertical: 7,
-      backgroundColor: c.surface,
-    },
-    smallBtnText: {
-      color: c.textPrimary,
-      fontWeight: "700",
-      fontSize: 12,
-    },
-    dangerBtn: {
-      borderWidth: 1,
-      borderColor: c.danger,
-      borderRadius: radius.pill,
-      paddingHorizontal: spacing.md,
-      paddingVertical: 7,
-      backgroundColor: "rgba(220, 38, 38, 0.08)",
-    },
-    dangerBtnText: {
-      color: c.danger,
-      fontWeight: "700",
-      fontSize: 12,
+      alignItems: "center",
     },
   });
 }

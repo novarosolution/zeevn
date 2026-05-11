@@ -1,28 +1,35 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  Alert,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert, Platform, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppFooter from "../../components/AppFooter";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
 import AdminBackLink from "../../components/admin/AdminBackLink";
+import AdminPageHeading from "../../components/admin/AdminPageHeading";
+import MotionScrollView from "../../components/motion/MotionScrollView";
+import SectionReveal from "../../components/motion/SectionReveal";
 import { useAuth } from "../../context/AuthContext";
-import { deleteAdminUser, fetchAdminUsers, updateAdminRole } from "../../services/adminService";
+import {
+  deleteAdminUser,
+  fetchAdminUsers,
+  updateAdminRole,
+  updateDeliveryPartnerRole,
+} from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
 import { adminPanel } from "../../theme/adminLayout";
-import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
+import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
+import { layout, radius, spacing } from "../../theme/tokens";
+import PremiumInput from "../../components/ui/PremiumInput";
+import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
+import PremiumButton from "../../components/ui/PremiumButton";
+import PremiumCard from "../../components/ui/PremiumCard";
+import PremiumChip from "../../components/ui/PremiumChip";
+import { ADMIN_SCREEN_COPY } from "../../content/appContent";
 
 export default function AdminUsersScreen({ navigation }) {
   const { colors: c, shadowPremium } = useTheme();
   const styles = useMemo(() => createAdminUsersStyles(c, shadowPremium), [c, shadowPremium]);
+  const insets = useSafeAreaInsets();
   const { token, user } = useAuth();
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
@@ -31,8 +38,9 @@ export default function AdminUsersScreen({ navigation }) {
   const [success, setSuccess] = useState("");
   const [expandedUserId, setExpandedUserId] = useState("");
   const [busyUserId, setBusyUserId] = useState("");
+  const [renderCount, setRenderCount] = useState(40);
 
-  async function loadUsers() {
+  const loadUsers = useCallback(async () => {
     try {
       setError("");
       const response = await fetchAdminUsers(token);
@@ -40,7 +48,7 @@ export default function AdminUsersScreen({ navigation }) {
     } catch (err) {
       setError(err.message || "Failed to load users.");
     }
-  }
+  }, [token]);
 
   useEffect(() => {
     if (!user) {
@@ -48,7 +56,7 @@ export default function AdminUsersScreen({ navigation }) {
     }
     if (!user.isAdmin) return;
     loadUsers();
-  }, [user?.isAdmin]);
+  }, [user, loadUsers]);
 
   const visibleUsers = useMemo(() => {
     let base = users;
@@ -56,6 +64,8 @@ export default function AdminUsersScreen({ navigation }) {
       base = users.filter((item) => item.isAdmin);
     } else if (roleFilter === "customers") {
       base = users.filter((item) => !item.isAdmin);
+    } else if (roleFilter === "delivery") {
+      base = users.filter((item) => item.isDeliveryPartner);
     }
     if (!search.trim()) return base;
     const query = search.toLowerCase();
@@ -66,27 +76,50 @@ export default function AdminUsersScreen({ navigation }) {
         String(item.phone || "").toLowerCase().includes(query)
     );
   }, [users, search, roleFilter]);
+  const renderedUsers = useMemo(
+    () => visibleUsers.slice(0, renderCount),
+    [visibleUsers, renderCount]
+  );
+
+  useEffect(() => {
+    setRenderCount(40);
+  }, [search, roleFilter]);
 
   const stats = useMemo(() => {
     const total = users.length;
     const admins = users.filter((item) => item.isAdmin).length;
+    const deliveryPartners = users.filter((item) => item.isDeliveryPartner).length;
     const customers = total - admins;
     const usersWithAddress = users.filter((item) => Boolean(item.defaultAddress?.line1)).length;
-    return { total, admins, customers, usersWithAddress };
+    return { total, admins, customers, usersWithAddress, deliveryPartners };
   }, [users]);
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
-        <ScrollView style={customerScrollFill} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.panel}>
-            <Text style={styles.title}>Admin Access Required</Text>
-            <Text style={styles.subtitle}>This account does not have admin privileges.</Text>
-            <TouchableOpacity style={styles.refreshBtn} onPress={() => navigation.navigate("Home")}>
-              <Text style={styles.refreshBtnText}>Back to Home</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+      <CustomerScreenShell style={styles.screen} variant="admin">
+        <MotionScrollView
+          style={customerScrollFill}
+          contentContainerStyle={adminInnerPageScrollContent(insets)}
+          showsVerticalScrollIndicator={false}
+        >
+          <SectionReveal delay={40} preset="fade-up">
+            <View style={styles.panel}>
+              <PremiumErrorBanner
+                severity="warning"
+                title="Admin access required"
+                message="This account does not have admin privileges."
+              />
+              <PremiumButton
+                label="Back to home"
+                iconLeft="home-outline"
+                variant="primary"
+                size="md"
+                onPress={() => navigation.navigate("Home")}
+                style={styles.gateCta}
+              />
+            </View>
+          </SectionReveal>
+        </MotionScrollView>
       </CustomerScreenShell>
     );
   }
@@ -100,23 +133,33 @@ export default function AdminUsersScreen({ navigation }) {
     );
   }
 
-  function RoleBadge({ isAdmin }) {
+  function RoleBadges({ isAdmin, isDeliveryPartner }) {
     return (
-      <View style={[styles.roleBadge, isAdmin ? styles.roleBadgeAdmin : null]}>
-        <Text style={[styles.roleBadgeText, isAdmin ? styles.roleBadgeTextAdmin : null]}>
-          {isAdmin ? "Admin" : "Customer"}
-        </Text>
+      <View style={styles.roleBadgeRow}>
+        <PremiumChip label={isAdmin ? "Admin" : "Customer"} tone={isAdmin ? "gold" : "neutral"} size="xs" />
+        {isDeliveryPartner ? <PremiumChip label="Delivery" tone="green" size="xs" /> : null}
       </View>
     );
   }
 
   function FilterPill({ label, active, onPress }) {
-    return (
-      <TouchableOpacity style={[styles.filterPill, active ? styles.filterPillActive : null]} onPress={onPress}>
-        <Text style={[styles.filterText, active ? styles.filterTextActive : null]}>{label}</Text>
-      </TouchableOpacity>
-    );
+    return <PremiumChip label={label} tone={active ? "gold" : "neutral"} size="sm" selected={active} onPress={onPress} />;
   }
+
+  const handleDeliveryPartner = async (id, isDeliveryPartner) => {
+    try {
+      setBusyUserId(id);
+      setError("");
+      setSuccess("");
+      await updateDeliveryPartnerRole(token, id, isDeliveryPartner);
+      setSuccess(isDeliveryPartner ? "User can now use the delivery dashboard." : "Delivery access removed.");
+      await loadUsers();
+    } catch (err) {
+      setError(err.message || "Unable to update delivery access.");
+    } finally {
+      setBusyUserId("");
+    }
+  };
 
   const handleRole = async (id, isAdmin) => {
     try {
@@ -158,33 +201,58 @@ export default function AdminUsersScreen({ navigation }) {
   };
 
   return (
-    <CustomerScreenShell style={styles.screen}>
-      <ScrollView style={customerScrollFill} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <CustomerScreenShell style={styles.screen} variant="admin">
+      <MotionScrollView
+        style={customerScrollFill}
+        contentContainerStyle={adminInnerPageScrollContent(insets)}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.panel}>
+          <SectionReveal preset="fade-up" delay={0}>
           <AdminBackLink navigation={navigation} />
-          <Text style={styles.title}>Manage Users</Text>
-          <Text style={styles.subtitle}>User roles, account overview, and quick actions.</Text>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          {success ? <Text style={styles.successText}>{success}</Text> : null}
+          <AdminPageHeading
+            title={ADMIN_SCREEN_COPY.users.title}
+            subtitle={ADMIN_SCREEN_COPY.users.subtitle}
+          />
+          {error ? (
+            <View style={styles.bannerSpacer}>
+              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+            </View>
+          ) : null}
+          {success ? (
+            <View style={styles.bannerSpacer}>
+              <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
+            </View>
+          ) : null}
 
           <View style={styles.statsGrid}>
             <MetricCard label="Total" value={stats.total} />
             <MetricCard label="Admins" value={stats.admins} />
             <MetricCard label="Customers" value={stats.customers} />
             <MetricCard label="Address Saved" value={stats.usersWithAddress} />
+            <MetricCard label="Delivery" value={stats.deliveryPartners} />
           </View>
 
           <View style={styles.actionsRow}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search name / email / phone..."
-              placeholderTextColor={c.textMuted}
-              value={search}
-              onChangeText={setSearch}
+            <View style={styles.searchInputWrap}>
+              <PremiumInput
+                label="Search users"
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Name, email, or phone"
+                iconLeft="search-outline"
+                iconRight={search ? "close-circle" : undefined}
+                onIconRightPress={search ? () => setSearch("") : undefined}
+                autoCapitalize="none"
+              />
+            </View>
+            <PremiumButton
+              label={ADMIN_SCREEN_COPY.refreshCta}
+              iconLeft="refresh-outline"
+              variant="secondary"
+              size="sm"
+              onPress={loadUsers}
             />
-            <TouchableOpacity style={styles.refreshBtn} onPress={loadUsers}>
-              <Text style={styles.refreshBtnText}>Refresh</Text>
-            </TouchableOpacity>
           </View>
           <View style={styles.filtersRow}>
             <FilterPill
@@ -202,98 +270,115 @@ export default function AdminUsersScreen({ navigation }) {
               active={roleFilter === "customers"}
               onPress={() => setRoleFilter("customers")}
             />
+            <FilterPill
+              label="Delivery"
+              active={roleFilter === "delivery"}
+              onPress={() => setRoleFilter("delivery")}
+            />
           </View>
+          </SectionReveal>
 
+          <SectionReveal preset="fade-up" delay={60}>
           <View style={styles.listContent}>
-            {visibleUsers.map((item) => (
-              <View key={item._id} style={styles.card}>
+            {visibleUsers.length === 0 ? (
+              <PremiumEmptyState
+                iconName="people-outline"
+                title="No users match"
+                description={search.trim() || roleFilter !== "all" ? "Try clearing search or switching the role filter." : "No accounts loaded yet."}
+                compact
+              />
+            ) : null}
+            {renderedUsers.map((item) => (
+              <PremiumCard key={item._id} padding="md" style={styles.cardWrap}>
                 <View style={styles.cardTopRow}>
                   <View style={styles.userMain}>
-                    <Text style={styles.cardTitle}>{item.name || "Unnamed User"}</Text>
-                    <Text style={styles.cardMeta}>{item.email}</Text>
+                    <Text style={[styles.cardTitle, { color: c.textPrimary }]}>{item.name || "Unnamed User"}</Text>
+                    <Text style={[styles.cardMeta, { color: c.textSecondary }]}>{item.email}</Text>
                   </View>
-                  <RoleBadge isAdmin={Boolean(item.isAdmin)} />
+                  <RoleBadges isAdmin={Boolean(item.isAdmin)} isDeliveryPartner={Boolean(item.isDeliveryPartner)} />
                 </View>
-                {item.phone ? <Text style={styles.cardMeta}>Phone: {item.phone}</Text> : null}
-                <Text style={styles.cardMeta}>
+                {item.phone ? <Text style={[styles.cardMeta, { color: c.textSecondary }]}>Phone: {item.phone}</Text> : null}
+                <Text style={[styles.cardMeta, { color: c.textSecondary }]}>
                   Joined: {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "N/A"}
                 </Text>
 
                 <View style={styles.actionsWrap}>
-                  <TouchableOpacity
-                    style={styles.smallBtn}
-                    onPress={() => handleRole(item._id, !item.isAdmin)}
+                  <PremiumButton
+                    label={
+                      busyUserId === item._id
+                        ? "Updating..."
+                        : item.isDeliveryPartner
+                          ? "Remove delivery"
+                          : "Enable delivery"
+                    }
+                    iconLeft="bicycle-outline"
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => handleDeliveryPartner(item._id, !item.isDeliveryPartner)}
                     disabled={busyUserId === item._id}
-                  >
-                    <Ionicons name="shield-checkmark-outline" size={14} color={c.textPrimary} />
-                    <Text style={styles.smallBtnText}>
-                      {busyUserId === item._id
+                  />
+                  <PremiumButton
+                    label={
+                      busyUserId === item._id
                         ? "Updating..."
                         : item.isAdmin
                           ? "Make Customer"
-                          : "Make Admin"}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.smallBtn}
-                    onPress={() => navigation.navigate("AdminOrders", { query: item.email || item.name })}
-                  >
-                    <Ionicons name="receipt-outline" size={14} color={c.textPrimary} />
-                    <Text style={styles.smallBtnText}>View Orders</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.smallBtn}
-                    onPress={() =>
-                      setExpandedUserId((current) => (current === item._id ? "" : item._id))
+                          : "Make Admin"
                     }
-                  >
-                    <Ionicons
-                      name={expandedUserId === item._id ? "chevron-up" : "chevron-down"}
-                      size={14}
-                      color={c.textPrimary}
-                    />
-                    <Text style={styles.smallBtnText}>
-                      {expandedUserId === item._id ? "Hide Details" : "More Details"}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.dangerBtn}
+                    iconLeft="shield-checkmark-outline"
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => handleRole(item._id, !item.isAdmin)}
+                    disabled={busyUserId === item._id}
+                  />
+                  <PremiumButton
+                    label="View Orders"
+                    iconLeft="receipt-outline"
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => navigation.navigate("AdminOrders", { query: item.email || item.name })}
+                  />
+                  <PremiumButton
+                    label={expandedUserId === item._id ? "Hide Details" : "More Details"}
+                    iconLeft={expandedUserId === item._id ? "chevron-up" : "chevron-down"}
+                    variant="subtle"
+                    size="sm"
+                    onPress={() => setExpandedUserId((current) => (current === item._id ? "" : item._id))}
+                  />
+                  <PremiumButton
+                    label={busyUserId === item._id ? "Deleting..." : "Delete User"}
+                    iconLeft="trash-outline"
+                    variant="danger"
+                    size="sm"
                     onPress={() => handleDelete(item._id)}
                     disabled={busyUserId === item._id}
-                  >
-                    <Ionicons name="trash-outline" size={14} color={c.primary} />
-                    <Text style={styles.dangerBtnText}>
-                      {busyUserId === item._id ? "Deleting..." : "Delete User"}
-                    </Text>
-                  </TouchableOpacity>
+                  />
                 </View>
 
                 {expandedUserId === item._id ? (
                   <View style={styles.detailsWrap}>
                     <View style={styles.sectionTitleRow}>
-                      <Ionicons name="location-outline" size={14} color={c.primary} />
-                      <Text style={styles.sectionTitleText}>Address</Text>
+                      <Text style={[styles.sectionTitleText, { color: c.textPrimary }]}>Address</Text>
                     </View>
                     {item.defaultAddress?.line1 ? (
                       <>
-                        <Text style={styles.cardMeta}>
+                        <Text style={[styles.cardMeta, { color: c.textSecondary }]}>
                           {item.defaultAddress.line1}, {item.defaultAddress.city || ""},{" "}
                           {item.defaultAddress.state || ""} {item.defaultAddress.postalCode || ""}
                         </Text>
-                        <Text style={styles.cardMeta}>{item.defaultAddress.country || ""}</Text>
+                        <Text style={[styles.cardMeta, { color: c.textSecondary }]}>{item.defaultAddress.country || ""}</Text>
                       </>
                     ) : (
-                      <Text style={styles.cardMeta}>No default address saved.</Text>
+                      <Text style={[styles.cardMeta, { color: c.textSecondary }]}>No default address saved.</Text>
                     )}
 
                     <View style={styles.sectionTitleRow}>
-                      <Ionicons name="cart-outline" size={14} color={c.primary} />
-                      <Text style={styles.sectionTitleText}>Cart</Text>
+                      <Text style={[styles.sectionTitleText, { color: c.textPrimary }]}>Cart</Text>
                     </View>
-                    <Text style={styles.cardMeta}>
+                    <Text style={[styles.cardMeta, { color: c.textSecondary }]}>
                       Active cart lines: {Array.isArray(item.cartItems) ? item.cartItems.length : 0}
                     </Text>
-                    <Text style={styles.cardMeta}>
+                    <Text style={[styles.cardMeta, { color: c.textSecondary }]}>
                       Cart quantity:{" "}
                       {Array.isArray(item.cartItems)
                         ? item.cartItems.reduce((sum, cartItem) => sum + Number(cartItem.quantity || 0), 0)
@@ -301,25 +386,29 @@ export default function AdminUsersScreen({ navigation }) {
                     </Text>
 
                     <View style={styles.sectionTitleRow}>
-                      <Ionicons name="notifications-outline" size={14} color={c.primary} />
-                      <Text style={styles.sectionTitleText}>Push Tokens</Text>
+                      <Text style={[styles.sectionTitleText, { color: c.textPrimary }]}>Push Tokens</Text>
                     </View>
-                    <Text style={styles.cardMeta}>
+                    <Text style={[styles.cardMeta, { color: c.textSecondary }]}>
                       Token count: {Array.isArray(item.expoPushTokens) ? item.expoPushTokens.length : 0}
                     </Text>
                   </View>
                 ) : null}
-              </View>
+              </PremiumCard>
             ))}
-            {visibleUsers.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyText}>No users found with current filters.</Text>
-              </View>
+            {renderedUsers.length < visibleUsers.length ? (
+              <PremiumButton
+                label={`Load more (${visibleUsers.length - renderedUsers.length} remaining)`}
+                variant="subtle"
+                size="md"
+                onPress={() => setRenderCount((prev) => prev + 40)}
+                fullWidth
+              />
             ) : null}
           </View>
+          </SectionReveal>
         </View>
         <AppFooter />
-      </ScrollView>
+      </MotionScrollView>
     </CustomerScreenShell>
   );
 }
@@ -330,29 +419,16 @@ function createAdminUsersStyles(c, shadowPremium) {
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth, default: "100%" }),
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+    maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
   },
   panel: {
     ...adminPanel(c, shadowPremium),
   },
-  title: {
-    fontSize: typography.h2,
-    fontFamily: fonts.extrabold,
-    letterSpacing: -0.35,
-    color: c.textPrimary,
+  gateCta: {
+    marginTop: spacing.md,
+    alignSelf: "flex-start",
   },
-  subtitle: {
-    marginTop: spacing.xs,
-    color: c.textSecondary,
-    marginBottom: spacing.md,
-  },
-  successText: {
-    color: c.success,
-    fontWeight: "600",
+  bannerSpacer: {
     marginBottom: spacing.sm,
   },
   statsGrid: {
@@ -381,39 +457,16 @@ function createAdminUsersStyles(c, shadowPremium) {
     fontSize: 11,
     fontWeight: "700",
   },
-  errorText: {
-    color: c.danger,
-    fontWeight: "600",
-    marginBottom: spacing.sm,
-  },
   actionsRow: {
     flexDirection: "row",
-    alignItems: "center",
+    flexWrap: "wrap",
+    alignItems: "flex-end",
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
-  searchInput: {
+  searchInputWrap: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    backgroundColor: c.surfaceMuted,
-    color: c.textPrimary,
-    minHeight: 42,
-  },
-  refreshBtn: {
-    paddingHorizontal: spacing.md,
-    borderWidth: 1,
-    borderColor: c.primaryBorder,
-    borderRadius: radius.md,
-    backgroundColor: c.primarySoft,
-    justifyContent: "center",
-  },
-  refreshBtnText: {
-    color: c.primary,
-    fontSize: 12,
-    fontWeight: "700",
+    minWidth: 0,
   },
   filtersRow: {
     flexDirection: "row",
@@ -421,36 +474,12 @@ function createAdminUsersStyles(c, shadowPremium) {
     gap: spacing.xs,
     marginBottom: spacing.sm,
   },
-  filterPill: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: c.surface,
-  },
-  filterPillActive: {
-    borderColor: c.primaryBorder,
-    backgroundColor: c.primarySoft,
-  },
-  filterText: {
-    color: c.textPrimary,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  filterTextActive: {
-    color: c.primary,
-  },
   listContent: {
     gap: spacing.sm,
     paddingBottom: spacing.xl,
   },
-  card: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    backgroundColor: c.surfaceMuted,
+  cardWrap: {
+    width: "100%",
   },
   cardTopRow: {
     flexDirection: "row",
@@ -461,33 +490,18 @@ function createAdminUsersStyles(c, shadowPremium) {
   userMain: {
     flex: 1,
   },
+  roleBadgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    justifyContent: "flex-end",
+    maxWidth: "48%",
+  },
   cardTitle: {
-    color: c.textPrimary,
     fontWeight: "700",
-  },
-  roleBadge: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.pill,
-    backgroundColor: c.surface,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  roleBadgeAdmin: {
-    borderColor: c.primaryBorder,
-    backgroundColor: c.primarySoft,
-  },
-  roleBadgeText: {
-    color: c.textPrimary,
-    fontSize: 10,
-    fontWeight: "700",
-  },
-  roleBadgeTextAdmin: {
-    color: c.primary,
   },
   cardMeta: {
     marginTop: 4,
-    color: c.textSecondary,
     fontSize: 12,
   },
   actionsWrap: {
@@ -495,38 +509,7 @@ function createAdminUsersStyles(c, shadowPremium) {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.xs,
-  },
-  smallBtn: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: c.surface,
-    flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-  },
-  smallBtnText: {
-    color: c.textPrimary,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  dangerBtn: {
-    borderWidth: 1,
-    borderColor: c.primaryBorder,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    backgroundColor: c.primarySoft,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  dangerBtnText: {
-    color: c.primary,
-    fontWeight: "700",
-    fontSize: 12,
   },
   detailsWrap: {
     marginTop: spacing.sm,
@@ -545,19 +528,6 @@ function createAdminUsersStyles(c, shadowPremium) {
     color: c.textPrimary,
     fontSize: 12,
     fontWeight: "800",
-  },
-  emptyCard: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.md,
-    backgroundColor: c.surfaceMuted,
-    paddingVertical: spacing.lg,
-    alignItems: "center",
-  },
-  emptyText: {
-    color: c.textSecondary,
-    fontSize: 13,
-    fontWeight: "600",
   },
   });
 }

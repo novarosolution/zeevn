@@ -1,5 +1,5 @@
 {
-  "name": "kankreg-ecommerce-backend",
+  "name": "zeevan-ecommerce-backend",
   "version": "1.0.0",
   "description": "Beginner-friendly Express backend for e-commerce",
   "main": "server.js",
@@ -14,7 +14,8 @@
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.19.1"
+    "mongoose": "^8.19.1",
+    "razorpay": "^2.9.6"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

@@ -60,8 +60,16 @@ const couponSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    /** When set, coupon applies only for this user (e.g. issued from loyalty redeem). May be non-visible in catalog. */
+    issuedForUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   { timestamps: true }
 );
+
+couponSchema.index({ issuedForUser: 1, code: 1 });
 
 module.exports = mongoose.model("Coupon", couponSchema);

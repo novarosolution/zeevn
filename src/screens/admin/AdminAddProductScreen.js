@@ -1,32 +1,31 @@
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import AppFooter from "../../components/AppFooter";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
 import AdminBackLink from "../../components/admin/AdminBackLink";
+import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
 import {
   createAdminProduct,
   updateAdminProduct,
   uploadAdminProductImage,
 } from "../../services/adminService";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
 import { adminPanel } from "../../theme/adminLayout";
-import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
-import { getImageUriCandidates } from "../../utils/image";
+import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
+import { radius, spacing } from "../../theme/tokens";
+import { getImageUriCandidates, PRODUCT_HERO_BLURHASH } from "../../utils/image";
+import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import MotionScrollView from "../../components/motion/MotionScrollView";
+import SectionReveal from "../../components/motion/SectionReveal";
+import PremiumInput from "../../components/ui/PremiumInput";
+import PremiumButton from "../../components/ui/PremiumButton";
+import PremiumChip from "../../components/ui/PremiumChip";
+import PremiumSectionHeader from "../../components/ui/PremiumSectionHeader";
 
 function dedupeUrls(urls = []) {
   const seen = new Set();
@@ -53,6 +52,7 @@ const CATEGORY_OPTIONS = [
 export default function AdminAddProductScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
   const styles = useMemo(() => createAdminAddProductStyles(c, shadowPremium), [c, shadowPremium]);
+  const insets = useSafeAreaInsets();
   const { token, user } = useAuth();
   const editingProduct = route?.params?.product;
 
@@ -139,7 +139,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
 
   useEffect(() => {
     if (!user) return;
-  }, [user?.isAdmin, navigation]);
+  }, [user]);
 
   const addPhotoUrl = (url) => {
     const clean = String(url || "").trim();
@@ -310,84 +310,113 @@ export default function AdminAddProductScreen({ navigation, route }) {
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
-        <View style={[styles.panel, { margin: spacing.lg }]}>
-          <Text style={styles.title}>Admin Access Required</Text>
-          <Text style={styles.subtitle}>This account does not have admin privileges.</Text>
-          <TouchableOpacity style={styles.saveBtn} onPress={() => navigation.navigate("Home")}>
-            <Text style={styles.saveBtnText}>Back to Home</Text>
-          </TouchableOpacity>
-        </View>
+      <CustomerScreenShell style={styles.screen} variant="admin">
+        <MotionScrollView
+          style={customerScrollFill}
+          contentContainerStyle={adminInnerPageScrollContent(insets)}
+          showsVerticalScrollIndicator={false}
+        >
+          <SectionReveal delay={40} preset="fade-up">
+            <View style={styles.panel}>
+              <PremiumErrorBanner
+                severity="warning"
+                title="Admin access required"
+                message="This account does not have admin privileges."
+              />
+              <PremiumButton
+                label="Back to home"
+                iconLeft="home-outline"
+                variant="primary"
+                size="md"
+                onPress={() => navigation.navigate("Home")}
+                style={styles.gateCta}
+              />
+            </View>
+          </SectionReveal>
+        </MotionScrollView>
       </CustomerScreenShell>
     );
   }
 
   return (
-    <CustomerScreenShell style={styles.screen}>
-    <ScrollView
+    <CustomerScreenShell style={styles.screen} variant="admin">
+    <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+    <MotionScrollView
       style={customerScrollFill}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={adminInnerPageScrollContent(insets)}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.panel}>
         <AdminBackLink navigation={navigation} target="AdminProducts" label="Products" />
-        <View style={styles.titleRow}>
-          <View style={styles.titleIconWrap}>
-            <MaterialCommunityIcons name="package-variant-closed" size={18} color={c.primary} />
+        <AdminPageHeading title={title} subtitle="Create products and choose a cover image." />
+        {error ? (
+          <View style={styles.fieldGap}>
+            <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
           </View>
-          <Text style={styles.title}>{title}</Text>
-        </View>
-        <Text style={styles.subtitle}>Create products with multiple photos and choose a cover image.</Text>
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        {uploadMessage ? <Text style={styles.successText}>{uploadMessage}</Text> : null}
+        ) : null}
+        {uploadMessage ? (
+          <View style={styles.fieldGap}>
+            <PremiumErrorBanner severity="success" message={uploadMessage} onClose={() => setUploadMessage("")} compact />
+          </View>
+        ) : null}
 
-        <TextInput style={styles.input} placeholder="Product name" value={name} onChangeText={setName} />
-        <TextInput
-          style={styles.input}
-          placeholder="Price (sale)"
-          value={price}
-          onChangeText={setPrice}
-          keyboardType="decimal-pad"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="MRP (optional, for strike price & % off)"
-          value={mrp}
-          onChangeText={setMrp}
-          keyboardType="decimal-pad"
-        />
-
-        <View style={styles.photoHeader}>
-          <Text style={styles.photoHeaderText}>Product Photos</Text>
-          <TouchableOpacity style={styles.uploadBtn} onPress={handlePickAndUpload} disabled={isUploadingImage}>
-            {isUploadingImage ? (
-              <ActivityIndicator size="small" color={c.onPrimary} />
-            ) : (
-              <>
-                <Ionicons name="cloud-upload-outline" size={15} color={c.onPrimary} />
-                <Text style={styles.uploadBtnText}>Upload Photo</Text>
-              </>
-            )}
-          </TouchableOpacity>
+        <View style={styles.fieldGap}>
+          <PremiumInput label="Product name" value={name} onChangeText={setName} iconLeft="cube-outline" />
         </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Price (sale)"
+            value={price}
+            onChangeText={setPrice}
+            keyboardType="decimal-pad"
+            iconLeft="pricetag-outline"
+          />
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="MRP (optional)"
+            value={mrp}
+            onChangeText={setMrp}
+            keyboardType="decimal-pad"
+            helperText="Shows strike price and % off"
+            iconLeft="trending-up-outline"
+          />
+        </View>
+
+        <PremiumSectionHeader title="Product photos" compact />
+        <PremiumButton
+          label={isUploadingImage ? "Uploading…" : "Upload photo"}
+          iconLeft="cloud-upload-outline"
+          variant="secondary"
+          size="sm"
+          loading={isUploadingImage}
+          disabled={isUploadingImage}
+          onPress={handlePickAndUpload}
+          style={styles.uploadPhotoBtn}
+        />
 
         <View style={styles.manualUrlRow}>
-          <TextInput
-            style={[styles.input, styles.manualUrlInput]}
-            placeholder="Or paste image URL"
-            value={manualPhotoUrl}
-            onChangeText={setManualPhotoUrl}
-          />
-          <TouchableOpacity
-            style={styles.addUrlBtn}
+          <View style={styles.manualUrlInputFlex}>
+            <PremiumInput
+              label="Or paste image URL"
+              value={manualPhotoUrl}
+              onChangeText={setManualPhotoUrl}
+              autoCapitalize="none"
+              autoCorrect={false}
+              iconLeft="link-outline"
+            />
+          </View>
+          <PremiumButton
+            label="Add"
+            variant="ghost"
+            size="sm"
             onPress={() => {
               addPhotoUrl(manualPhotoUrl);
               setManualPhotoUrl("");
             }}
-          >
-            <Text style={styles.addUrlBtnText}>Add</Text>
-          </TouchableOpacity>
+            style={styles.addUrlBtnWrap}
+          />
         </View>
 
         {primaryImage ? (
@@ -407,337 +436,368 @@ export default function AdminAddProductScreen({ navigation, route }) {
             <View style={styles.thumbCard}>
               <RetryImage sourceUri={item} style={styles.thumbImage} />
               <View style={styles.thumbActions}>
-                <TouchableOpacity
-                  style={[
-                    styles.thumbBtn,
-                    primaryImage === item ? styles.thumbBtnPrimary : null,
-                  ]}
+                <PremiumButton
+                  label="Cover"
+                  variant={primaryImage === item ? "primary" : "ghost"}
+                  size="sm"
                   onPress={() => setPrimaryImage(item)}
-                >
-                  <Text
-                    style={[
-                      styles.thumbBtnText,
-                      primaryImage === item ? styles.thumbBtnTextPrimary : null,
-                    ]}
-                  >
-                    Cover
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.thumbDeleteBtn} onPress={() => removePhoto(item)}>
-                  <Ionicons name="trash-outline" size={14} color={c.primary} />
-                </TouchableOpacity>
+                  style={styles.thumbCoverBtn}
+                />
+                <PremiumButton
+                  iconLeft="trash-outline"
+                  variant="danger"
+                  size="sm"
+                  accessibilityLabel="Remove photo"
+                  onPress={() => removePhoto(item)}
+                  style={styles.thumbDeleteBtn}
+                />
               </View>
             </View>
           )}
         />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Category (e.g. Dairy)"
-          value={category}
-          onChangeText={setCategory}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Home Section (e.g. Best Sellers)"
-          value={homeSection}
-          onChangeText={setHomeSection}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Product Type (e.g. Milk, Chips, Juice)"
-          value={productType}
-          onChangeText={setProductType}
-        />
-        <View style={styles.row}>
-          <TextInput
-            style={[styles.input, styles.halfInput]}
-            placeholder="Home Order (0,1,2...)"
-            value={homeOrder}
-            onChangeText={setHomeOrder}
-            keyboardType="number-pad"
+        <View style={styles.fieldGap}>
+          <PremiumInput label="Category" value={category} onChangeText={setCategory} placeholder="e.g. Dairy" iconLeft="folder-outline" />
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Home section"
+            value={homeSection}
+            onChangeText={setHomeSection}
+            placeholder="e.g. Best Sellers"
+            iconLeft="home-outline"
           />
-          <TouchableOpacity
-            style={[styles.toggleBtn, styles.halfInput, showOnHome ? styles.toggleBtnActive : null]}
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Product type"
+            value={productType}
+            onChangeText={setProductType}
+            placeholder="e.g. Milk, Chips, Juice"
+            iconLeft="pricetags-outline"
+          />
+        </View>
+        <View style={styles.row}>
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput
+              label="Home order"
+              value={homeOrder}
+              onChangeText={setHomeOrder}
+              keyboardType="number-pad"
+              placeholder="0, 1, 2…"
+            />
+          </View>
+          <PremiumChip
+            label={showOnHome ? "Show on Home: ON" : "Show on Home: OFF"}
+            tone="gold"
+            size="sm"
+            selected={showOnHome}
             onPress={() => setShowOnHome((current) => !current)}
-          >
-            <Text style={[styles.toggleBtnText, showOnHome ? styles.toggleBtnTextActive : null]}>
-              {showOnHome ? "Show on Home: ON" : "Show on Home: OFF"}
-            </Text>
-          </TouchableOpacity>
+            style={styles.halfInputChip}
+          />
         </View>
         <View style={styles.categoryHintWrap}>
           <Text style={styles.categoryHintText}>Quick categories:</Text>
           <View style={styles.categoryChipsRow}>
             {CATEGORY_OPTIONS.map((item) => (
-              <TouchableOpacity
+              <PremiumChip
                 key={item}
-                style={[
-                  styles.categoryChip,
-                  String(category || "").trim().toLowerCase() === item.toLowerCase()
-                    ? styles.categoryChipActive
-                    : null,
-                ]}
+                label={item}
+                tone="gold"
+                size="xs"
+                selected={String(category || "").trim().toLowerCase() === item.toLowerCase()}
                 onPress={() => setCategory(item)}
-              >
-                <Text
-                  style={[
-                    styles.categoryChipText,
-                    String(category || "").trim().toLowerCase() === item.toLowerCase()
-                      ? styles.categoryChipTextActive
-                      : null,
-                  ]}
-                >
-                  {item}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
           </View>
         </View>
         <View style={styles.row}>
-          <TextInput
-            style={[styles.input, styles.halfInput]}
-            placeholder="Brand (e.g. Amul)"
-            value={brand}
-            onChangeText={setBrand}
-          />
-          <TextInput
-            style={[styles.input, styles.halfInput]}
-            placeholder="SKU (e.g. MLK-1L-001)"
-            value={sku}
-            onChangeText={setSku}
-          />
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput label="Brand" value={brand} onChangeText={setBrand} placeholder="e.g. Amul" />
+          </View>
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput label="SKU" value={sku} onChangeText={setSku} placeholder="e.g. MLK-1L-001" autoCapitalize="none" />
+          </View>
         </View>
         <View style={styles.row}>
-          <TextInput style={[styles.input, styles.halfInput]} placeholder="Unit (e.g. 1 kg)" value={unit} onChangeText={setUnit} />
-          <TextInput style={[styles.input, styles.halfInput]} placeholder="Optional note (e.g. batch)" value={eta} onChangeText={setEta} />
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput label="Unit" value={unit} onChangeText={setUnit} placeholder="e.g. 1 kg" />
+          </View>
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput label="Optional note" value={eta} onChangeText={setEta} placeholder="e.g. batch" />
+          </View>
         </View>
         <View style={styles.row}>
-          <TextInput
-            style={[styles.input, styles.halfInput]}
-            placeholder="Stock Quantity"
-            value={stockQty}
-            onChangeText={setStockQty}
-            keyboardType="number-pad"
-          />
-          <TouchableOpacity
-            style={[
-              styles.toggleBtn,
-              styles.halfInput,
-              inStock ? styles.toggleBtnActive : null,
-            ]}
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput label="Stock quantity" value={stockQty} onChangeText={setStockQty} keyboardType="number-pad" />
+          </View>
+          <PremiumChip
+            label={inStock ? "In Stock: ON" : "In Stock: OFF"}
+            tone="gold"
+            size="sm"
+            selected={inStock}
             onPress={() => setInStock((current) => !current)}
-          >
-            <Text style={[styles.toggleBtnText, inStock ? styles.toggleBtnTextActive : null]}>
-              {inStock ? "In Stock: ON" : "In Stock: OFF"}
-            </Text>
-          </TouchableOpacity>
+            style={styles.halfInputChip}
+          />
         </View>
-        <TouchableOpacity
-          style={[styles.toggleBtn, isSpecial ? styles.toggleBtnActive : null]}
+        <PremiumChip
+          label={isSpecial ? "Special product: ON" : "Special product: OFF"}
+          tone="gold"
+          size="sm"
+          selected={isSpecial}
           onPress={() => setIsSpecial((current) => !current)}
-        >
-          <Text style={[styles.toggleBtnText, isSpecial ? styles.toggleBtnTextActive : null]}>
-            {isSpecial ? "Special Product: ON" : "Special Product: OFF"}
-          </Text>
-        </TouchableOpacity>
+          style={styles.toggleChipFull}
+        />
 
-        <Text style={styles.sectionHeading}>Rich product page (optional)</Text>
-        <Text style={styles.sectionHint}>
-          Hero badge, ratings, size variants, USPs, lifestyle image, process story, and usage cards — shown on the
-          product screen when filled.
-        </Text>
-        <TouchableOpacity
-          style={[styles.toggleBtn, richProductPage ? styles.toggleBtnActive : null]}
+        <PremiumSectionHeader
+          title="Rich product page (optional)"
+          subtitle="Adds badge, ratings, variants, story, and usage sections when filled."
+          compact
+        />
+        <PremiumChip
+          label={richProductPage ? "Use rich layout: ON" : "Use rich layout: OFF"}
+          tone="gold"
+          size="sm"
+          selected={richProductPage}
           onPress={() => setRichProductPage((current) => !current)}
-        >
-          <Text style={[styles.toggleBtnText, richProductPage ? styles.toggleBtnTextActive : null]}>
-            {richProductPage ? "Use rich layout: ON" : "Use rich layout: OFF"}
-          </Text>
-        </TouchableOpacity>
+          style={styles.toggleChipFull}
+        />
         <View style={styles.row}>
-          <TextInput
-            style={[styles.input, styles.halfInput]}
-            placeholder="Rating avg (0–5)"
-            value={ratingAverage}
-            onChangeText={setRatingAverage}
-            keyboardType="decimal-pad"
-          />
-          <TextInput
-            style={[styles.input, styles.halfInput]}
-            placeholder="Review count"
-            value={reviewCount}
-            onChangeText={setReviewCount}
-            keyboardType="number-pad"
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput
+              label="Rating avg (0–5)"
+              value={ratingAverage}
+              onChangeText={setRatingAverage}
+              keyboardType="decimal-pad"
+            />
+          </View>
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <PremiumInput
+              label="Review count"
+              value={reviewCount}
+              onChangeText={setReviewCount}
+              keyboardType="number-pad"
+            />
+          </View>
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput label="Hero badge" value={badgeText} onChangeText={setBadgeText} placeholder="e.g. HAND CHURNED" />
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Lifestyle image URL"
+            value={lifestyleImage}
+            onChangeText={setLifestyleImage}
+            autoCapitalize="none"
+            iconLeft="image-outline"
           />
         </View>
-        <TextInput
-          style={styles.input}
-          placeholder="Hero badge (e.g. HAND CHURNED)"
-          value={badgeText}
-          onChangeText={setBadgeText}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Lifestyle image URL (full-width)"
-          value={lifestyleImage}
-          onChangeText={setLifestyleImage}
-        />
 
-        <Text style={styles.subSectionLabel}>Size / price variants</Text>
-        <Text style={styles.sectionHint}>Leave empty to sell a single price. Each row: label (e.g. 500ml) + price.</Text>
+        <PremiumSectionHeader
+          title="Size / price variants"
+          subtitle="Leave empty for one price. Each row needs a label and price."
+          compact
+        />
         {variantRows.map((row, idx) => (
           <View key={`v-${idx}`} style={styles.variantRowWrap}>
             <View style={styles.row}>
-              <TextInput
-                style={[styles.input, styles.halfInput]}
-                placeholder="Label"
-                value={row.label}
-                onChangeText={(t) =>
-                  setVariantRows((rows) => rows.map((r, i) => (i === idx ? { ...r, label: t } : r)))
-                }
-              />
-              <TextInput
-                style={[styles.input, styles.halfInput]}
-                placeholder="Price"
-                value={row.price}
-                onChangeText={(t) =>
-                  setVariantRows((rows) => rows.map((r, i) => (i === idx ? { ...r, price: t } : r)))
-                }
-                keyboardType="decimal-pad"
-              />
+              <View style={[styles.fieldGap, styles.halfInput]}>
+                <PremiumInput
+                  label="Label"
+                  value={row.label}
+                  onChangeText={(t) =>
+                    setVariantRows((rows) => rows.map((r, i) => (i === idx ? { ...r, label: t } : r)))
+                  }
+                  placeholder="e.g. 500ml"
+                />
+              </View>
+              <View style={[styles.fieldGap, styles.halfInput]}>
+                <PremiumInput
+                  label="Price"
+                  value={row.price}
+                  onChangeText={(t) =>
+                    setVariantRows((rows) => rows.map((r, i) => (i === idx ? { ...r, price: t } : r)))
+                  }
+                  keyboardType="decimal-pad"
+                />
+              </View>
             </View>
-            <TouchableOpacity style={styles.removeRowBtn} onPress={() => setVariantRows((rows) => rows.filter((_, i) => i !== idx))}>
-              <Text style={styles.removeRowBtnText}>Remove variant</Text>
-            </TouchableOpacity>
+            <PremiumButton
+              label="Remove variant"
+              variant="danger"
+              size="sm"
+              onPress={() => setVariantRows((rows) => rows.filter((_, i) => i !== idx))}
+              style={styles.removeRowBtn}
+            />
           </View>
         ))}
-        <TouchableOpacity
-          style={styles.addRowBtn}
+        <PremiumButton
+          label="Add variant"
+          iconLeft="add-outline"
+          variant="ghost"
+          size="sm"
           onPress={() => setVariantRows((rows) => [...rows, { label: "", price: "" }])}
-        >
-          <Text style={styles.addRowBtnText}>+ Add variant</Text>
-        </TouchableOpacity>
+          style={styles.addRowBtn}
+        />
 
-        <Text style={styles.subSectionLabel}>Selling points (USPs)</Text>
+        <PremiumSectionHeader title="Selling points (USPs)" compact />
         {uspRows.map((row, idx) => (
           <View key={`usp-${idx}`} style={styles.blockCard}>
-            <TextInput
-              style={styles.input}
-              placeholder="Ionicons name (e.g. flask-outline)"
-              value={row.icon}
-              onChangeText={(t) =>
-                setUspRows((rows) => rows.map((r, i) => (i === idx ? { ...r, icon: t } : r)))
-              }
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Title"
-              value={row.title}
-              onChangeText={(t) =>
-                setUspRows((rows) => rows.map((r, i) => (i === idx ? { ...r, title: t } : r)))
-              }
-            />
-            <TextInput
-              style={[styles.input, styles.multilineInput]}
-              placeholder="Description"
-              value={row.description}
-              onChangeText={(t) =>
-                setUspRows((rows) => rows.map((r, i) => (i === idx ? { ...r, description: t } : r)))
-              }
-              multiline
-            />
-            <TouchableOpacity
-              style={styles.removeRowBtn}
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Ionicons name"
+                value={row.icon}
+                onChangeText={(t) =>
+                  setUspRows((rows) => rows.map((r, i) => (i === idx ? { ...r, icon: t } : r)))
+                }
+                placeholder="e.g. flask-outline"
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Title"
+                value={row.title}
+                onChangeText={(t) =>
+                  setUspRows((rows) => rows.map((r, i) => (i === idx ? { ...r, title: t } : r)))
+                }
+              />
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Description"
+                value={row.description}
+                onChangeText={(t) =>
+                  setUspRows((rows) => rows.map((r, i) => (i === idx ? { ...r, description: t } : r)))
+                }
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+            <PremiumButton
+              label="Remove"
+              variant="danger"
+              size="sm"
               onPress={() => setUspRows((rows) => rows.filter((_, i) => i !== idx))}
-            >
-              <Text style={styles.removeRowBtnText}>Remove</Text>
-            </TouchableOpacity>
+              style={styles.removeRowBtn}
+            />
           </View>
         ))}
-        <TouchableOpacity style={styles.addRowBtn} onPress={() => setUspRows((rows) => [...rows, { icon: "flask-outline", title: "", description: "" }])}>
-          <Text style={styles.addRowBtnText}>+ Add USP</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.subSectionLabel}>Process story</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Process section title (e.g. The Vedic Bilona Method)"
-          value={processTitle}
-          onChangeText={setProcessTitle}
-        />
-        <TextInput
-          style={[styles.input, styles.multilineInput]}
-          placeholder="Process steps — one per line"
-          value={processStepsText}
-          onChangeText={setProcessStepsText}
-          multiline
-        />
-        <TextInput
-          style={[styles.input, styles.multilineInput]}
-          placeholder="Highlight quote"
-          value={highlightQuote}
-          onChangeText={setHighlightQuote}
-          multiline
+        <PremiumButton
+          label="Add USP"
+          iconLeft="add-outline"
+          variant="ghost"
+          size="sm"
+          onPress={() => setUspRows((rows) => [...rows, { icon: "flask-outline", title: "", description: "" }])}
+          style={styles.addRowBtn}
         />
 
-        <Text style={styles.subSectionLabel}>Usage & rituals</Text>
+        <PremiumSectionHeader title="Process story" compact />
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Process section title"
+            value={processTitle}
+            onChangeText={setProcessTitle}
+            placeholder="e.g. The Vedic Bilona Method"
+          />
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Process steps"
+            value={processStepsText}
+            onChangeText={setProcessStepsText}
+            placeholder="One per line"
+            multiline
+            numberOfLines={4}
+          />
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Highlight quote"
+            value={highlightQuote}
+            onChangeText={setHighlightQuote}
+            multiline
+            numberOfLines={2}
+          />
+        </View>
+
+        <PremiumSectionHeader title="Usage & rituals" compact />
         {usageRows.map((row, idx) => (
           <View key={`use-${idx}`} style={styles.blockCard}>
-            <TextInput
-              style={styles.input}
-              placeholder="Ionicons name"
-              value={row.icon}
-              onChangeText={(t) =>
-                setUsageRows((rows) => rows.map((r, i) => (i === idx ? { ...r, icon: t } : r)))
-              }
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Title"
-              value={row.title}
-              onChangeText={(t) =>
-                setUsageRows((rows) => rows.map((r, i) => (i === idx ? { ...r, title: t } : r)))
-              }
-            />
-            <TextInput
-              style={[styles.input, styles.multilineInput]}
-              placeholder="Description"
-              value={row.description}
-              onChangeText={(t) =>
-                setUsageRows((rows) => rows.map((r, i) => (i === idx ? { ...r, description: t } : r)))
-              }
-              multiline
-            />
-            <TouchableOpacity
-              style={styles.removeRowBtn}
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Ionicons name"
+                value={row.icon}
+                onChangeText={(t) =>
+                  setUsageRows((rows) => rows.map((r, i) => (i === idx ? { ...r, icon: t } : r)))
+                }
+                autoCapitalize="none"
+              />
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Title"
+                value={row.title}
+                onChangeText={(t) =>
+                  setUsageRows((rows) => rows.map((r, i) => (i === idx ? { ...r, title: t } : r)))
+                }
+              />
+            </View>
+            <View style={styles.fieldGap}>
+              <PremiumInput
+                label="Description"
+                value={row.description}
+                onChangeText={(t) =>
+                  setUsageRows((rows) => rows.map((r, i) => (i === idx ? { ...r, description: t } : r)))
+                }
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+            <PremiumButton
+              label="Remove"
+              variant="danger"
+              size="sm"
               onPress={() => setUsageRows((rows) => rows.filter((_, i) => i !== idx))}
-            >
-              <Text style={styles.removeRowBtnText}>Remove</Text>
-            </TouchableOpacity>
+              style={styles.removeRowBtn}
+            />
           </View>
         ))}
-        <TouchableOpacity style={styles.addRowBtn} onPress={() => setUsageRows((rows) => [...rows, { icon: "cafe-outline", title: "", description: "" }])}>
-          <Text style={styles.addRowBtnText}>+ Add usage card</Text>
-        </TouchableOpacity>
-
-        <TextInput
-          style={[styles.input, styles.multilineInput]}
-          placeholder="Description"
-          value={description}
-          onChangeText={setDescription}
-          multiline
+        <PremiumButton
+          label="Add usage card"
+          iconLeft="add-outline"
+          variant="ghost"
+          size="sm"
+          onPress={() => setUsageRows((rows) => [...rows, { icon: "cafe-outline", title: "", description: "" }])}
+          style={styles.addRowBtn}
         />
 
-        <TouchableOpacity style={styles.saveBtn} onPress={handleSubmit} disabled={isSaving}>
-          <View style={styles.buttonContent}>
-            <Ionicons name="save-outline" size={16} color={c.onPrimary} />
-            <Text style={styles.saveBtnText}>{isSaving ? "Saving..." : "Save Product"}</Text>
-          </View>
-        </TouchableOpacity>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Description"
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            numberOfLines={5}
+            iconLeft="document-text-outline"
+          />
+        </View>
+
+        <PremiumButton
+          label={isSaving ? "Saving…" : "Save product"}
+          iconLeft="save-outline"
+          variant="primary"
+          size="lg"
+          loading={isSaving}
+          disabled={isSaving}
+          onPress={handleSubmit}
+          fullWidth
+          style={styles.saveProductBtn}
+        />
       </View>
       <AppFooter />
-    </ScrollView>
+    </MotionScrollView>
+    </KeyboardAvoidingView>
     </CustomerScreenShell>
   );
 }
@@ -769,6 +829,10 @@ function RetryImage({ sourceUri, style }) {
     <Image
       source={{ uri: currentUri }}
       style={style}
+      contentFit="cover"
+      cachePolicy="memory-disk"
+      transition={200}
+      placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
       onError={() => setIndex((prev) => prev + 1)}
     />
   );
@@ -779,59 +843,15 @@ function createAdminAddProductStyles(c, shadowPremium) {
   screen: {
     flex: 1,
   },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
-    width: "100%",
-    alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth, default: "100%" }),
-  },
   panel: {
     ...adminPanel(c, shadowPremium),
   },
-  title: {
-    fontSize: typography.h2,
-    fontFamily: fonts.extrabold,
-    letterSpacing: -0.35,
-    color: c.textPrimary,
+  gateCta: {
+    marginTop: spacing.md,
+    alignSelf: "flex-start",
   },
-  titleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-  },
-  titleIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.md,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: c.primarySoft,
-  },
-  subtitle: {
-    marginTop: spacing.xs,
-    marginBottom: spacing.md,
-    color: c.textSecondary,
-  },
-  successText: {
-    color: c.success,
-    fontWeight: "600",
+  fieldGap: {
     marginBottom: spacing.sm,
-  },
-  errorText: {
-    color: c.danger,
-    fontWeight: "600",
-    marginBottom: spacing.sm,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 11,
-    marginBottom: spacing.sm,
-    backgroundColor: c.surfaceMuted,
-    color: c.textPrimary,
   },
   categoryHintWrap: {
     marginTop: -4,
@@ -848,77 +868,32 @@ function createAdminAddProductStyles(c, shadowPremium) {
     flexWrap: "wrap",
     gap: spacing.xs,
   },
-  categoryChip: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.pill,
-    backgroundColor: c.surface,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-  },
-  categoryChipActive: {
-    borderColor: c.primaryBorder,
-    backgroundColor: c.primarySoft,
-  },
-  categoryChipText: {
-    color: c.textSecondary,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  categoryChipTextActive: {
-    color: c.primary,
-  },
-  multilineInput: {
-    minHeight: 90,
-    textAlignVertical: "top",
-  },
-  photoHeader: {
+  uploadPhotoBtn: {
+    alignSelf: "flex-start",
     marginBottom: spacing.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
   },
-  photoHeaderText: {
-    color: c.textPrimary,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  uploadBtn: {
-    borderRadius: radius.md,
-    alignItems: "center",
+  halfInputChip: {
+    flex: 1,
+    alignSelf: "stretch",
     justifyContent: "center",
-    paddingHorizontal: spacing.md,
-    backgroundColor: c.primary,
-    flexDirection: "row",
-    gap: 6,
-    paddingVertical: 9,
+    minHeight: 44,
   },
-  uploadBtnText: {
-    color: c.onPrimary,
-    fontWeight: "700",
-    fontSize: 12,
+  toggleChipFull: {
+    alignSelf: "stretch",
+    marginBottom: spacing.sm,
   },
   manualUrlRow: {
     flexDirection: "row",
     gap: spacing.sm,
-    alignItems: "flex-start",
+    alignItems: "flex-end",
+    marginBottom: spacing.sm,
   },
-  manualUrlInput: {
+  manualUrlInputFlex: {
     flex: 1,
+    minWidth: 0,
   },
-  addUrlBtn: {
-    backgroundColor: c.primarySoft,
-    borderWidth: 1,
-    borderColor: c.primaryBorder,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-  },
-  addUrlBtnText: {
-    color: c.primary,
-    fontWeight: "700",
-    fontSize: 12,
+  addUrlBtnWrap: {
+    marginBottom: 6,
   },
   coverWrap: {
     marginBottom: spacing.sm,
@@ -964,53 +939,15 @@ function createAdminAddProductStyles(c, shadowPremium) {
     gap: 6,
     alignItems: "center",
   },
-  thumbBtn: {
+  thumbCoverBtn: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.pill,
-    backgroundColor: c.surface,
-    paddingVertical: 5,
-    alignItems: "center",
-  },
-  thumbBtnPrimary: {
-    borderColor: c.primaryBorder,
-    backgroundColor: c.primarySoft,
-  },
-  thumbBtnText: {
-    color: c.textPrimary,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  thumbBtnTextPrimary: {
-    color: c.primary,
+    minWidth: 0,
   },
   thumbDeleteBtn: {
-    width: 30,
-    height: 28,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: c.primaryBorder,
-    backgroundColor: c.primarySoft,
-    alignItems: "center",
-    justifyContent: "center",
+    flexShrink: 0,
   },
-  saveBtn: {
-    marginTop: spacing.xs,
-    backgroundColor: c.primary,
-    borderRadius: radius.pill,
-    alignItems: "center",
-    paddingVertical: 12,
-  },
-  buttonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  saveBtnText: {
-    color: c.onPrimary,
-    fontWeight: "700",
-    fontSize: 14,
+  saveProductBtn: {
+    marginTop: spacing.md,
   },
   row: {
     flexDirection: "row",
@@ -1018,46 +955,6 @@ function createAdminAddProductStyles(c, shadowPremium) {
   },
   halfInput: {
     flex: 1,
-  },
-  toggleBtn: {
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.md,
-    paddingVertical: 10,
-    alignItems: "center",
-    backgroundColor: c.surfaceMuted,
-  },
-  toggleBtnActive: {
-    borderColor: c.primaryBorder,
-    backgroundColor: c.primarySoft,
-  },
-  toggleBtnText: {
-    color: c.textPrimary,
-    fontWeight: "700",
-    fontSize: 12,
-  },
-  toggleBtnTextActive: {
-    color: c.primary,
-  },
-  sectionHeading: {
-    marginTop: spacing.md,
-    fontSize: typography.body,
-    fontFamily: fonts.extrabold,
-    color: c.textPrimary,
-  },
-  sectionHint: {
-    fontSize: 12,
-    color: c.textSecondary,
-    marginBottom: spacing.sm,
-    lineHeight: 18,
-  },
-  subSectionLabel: {
-    marginTop: spacing.sm,
-    marginBottom: 4,
-    fontSize: 12,
-    fontWeight: "700",
-    color: c.textSecondary,
   },
   blockCard: {
     borderWidth: 1,
@@ -1070,22 +967,10 @@ function createAdminAddProductStyles(c, shadowPremium) {
   addRowBtn: {
     alignSelf: "flex-start",
     marginBottom: spacing.sm,
-    paddingVertical: 6,
-    paddingHorizontal: spacing.sm,
-  },
-  addRowBtnText: {
-    color: c.primary,
-    fontWeight: "700",
-    fontSize: 13,
   },
   removeRowBtn: {
     alignSelf: "flex-end",
-    paddingVertical: 4,
-  },
-  removeRowBtnText: {
-    color: c.danger,
-    fontSize: 12,
-    fontWeight: "700",
+    marginTop: spacing.xs,
   },
   variantRowWrap: {
     marginBottom: spacing.xs,

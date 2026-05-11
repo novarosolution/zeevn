@@ -28,6 +28,11 @@ const notificationSchema = new mongoose.Schema(
       ref: "User",
       default: [],
     },
+    archivedBy: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: "User",
+      default: [],
+    },
   },
   { timestamps: true }
 );

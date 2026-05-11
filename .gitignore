@@ -1,8 +1,13 @@
 node_modules
+.tmp-bundle-check
+.tmp-export-verify
+.tmp-*
 .expo
 .expo-build-check
 dist
 dist-web
+dist-export-check
+dist-export-web-check
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

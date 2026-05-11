@@ -1,14 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Alert, Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -21,9 +12,22 @@ import { fetchAdminAnalytics } from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
 import { adminPanel } from "../../theme/adminLayout";
-import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
+import MotionScrollView from "../../components/motion/MotionScrollView";
+import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
+import { fonts, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
+import { exportAnalyticsReport } from "../../utils/adminAnalyticsPdf";
+import { exportAnalyticsCsv } from "../../utils/adminAnalyticsCsv";
+import { ALL_ORDER_STATUSES, getOrderStatusLabel } from "../../utils/orderStatus";
+import PremiumLoader from "../../components/ui/PremiumLoader";
+import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import PremiumButton from "../../components/ui/PremiumButton";
+import PremiumCard from "../../components/ui/PremiumCard";
+import PremiumSectionHeader from "../../components/ui/PremiumSectionHeader";
+import PremiumStatCard from "../../components/ui/PremiumStatCard";
+import PremiumChip from "../../components/ui/PremiumChip";
+import PremiumInput from "../../components/ui/PremiumInput";
+import SectionReveal from "../../components/motion/SectionReveal";
 
 function hexToRgb(hex) {
   const h = String(hex || "").replace("#", "");
@@ -33,6 +37,35 @@ function hexToRgb(hex) {
     g: parseInt(h.slice(2, 4), 16),
     b: parseInt(h.slice(4, 6), 16),
   };
+}
+
+function chartInt(value) {
+  const num = Number(value || 0);
+  return Number.isFinite(num) ? Math.round(num) : 0;
+}
+
+function safePercent(part, whole) {
+  const p = Number(part || 0);
+  const w = Number(whole || 0);
+  if (!Number.isFinite(p) || !Number.isFinite(w) || w <= 0) return 0;
+  return Math.round((p / w) * 100);
+}
+
+function compactStatusLabel(status) {
+  const full = getOrderStatusLabel(status);
+  if (full.length <= 7) return full;
+  return `${full.slice(0, 6)}…`;
+}
+
+function sparseAxisLabels(labels, maxVisible = 6, compactLen = 3) {
+  const source = Array.isArray(labels) ? labels : [];
+  if (source.length === 0) return [];
+  const step = Math.max(1, Math.ceil(source.length / maxVisible));
+  return source.map((label, index) => {
+    if (index % step !== 0) return "";
+    const text = String(label || "").trim();
+    return text.length > compactLen ? text.slice(0, compactLen) : text;
+  });
 }
 
 export default function AdminAnalyticsScreen({ navigation }) {
@@ -48,7 +81,12 @@ export default function AdminAnalyticsScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [analytics, setAnalytics] = useState(null);
-  const chartWidth = Math.min(760, Math.max(280, width - spacing.lg * 3));
+  const [rangePreset, setRangePreset] = useState("30d");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const [bucket, setBucket] = useState("auto");
+  const isCompact = width < 420;
+  const chartWidth = Math.min(720, Math.max(300, width - spacing.lg * (isCompact ? 3 : 4)));
 
   const statusColors = useMemo(
     () => [c.primary, c.secondary, c.accentGold, "#0ea5e9", "#22c55e", "#7D6B5A"],
@@ -74,36 +112,61 @@ export default function AdminAnalyticsScreen({ navigation }) {
     };
   }, [c.surface, c.primary, c.secondary, isDark]);
 
-  async function loadAnalytics() {
+  const loadAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
-      const data = await fetchAdminAnalytics(token);
+      const q = {};
+      if (rangePreset === "legacy") {
+        /* no params → backend legacy snapshot */
+      } else if (rangePreset === "custom") {
+        q.from = customFrom.trim();
+        q.to = customTo.trim();
+      } else {
+        q.preset = rangePreset;
+      }
+      if (bucket !== "auto") q.bucket = bucket;
+      const data = await fetchAdminAnalytics(token, q);
       setAnalytics(data);
     } catch (err) {
       setError(err.message || "Unable to load analytics.");
     } finally {
       setLoading(false);
     }
-  }
+  }, [token, rangePreset, customFrom, customTo, bucket]);
 
   useEffect(() => {
     if (!user?.isAdmin) return;
+    if (rangePreset === "custom") return;
     loadAnalytics();
-  }, [user?.isAdmin]);
+  }, [user?.isAdmin, rangePreset, bucket, loadAnalytics]);
 
-  function SectionHeader({ title, icon }) {
-    return (
-      <View style={styles.sectionHeader}>
-        {icon ? (
-          <View style={styles.sectionIconWrap}>
-            <Ionicons name={icon} size={15} color={isDark ? c.primary : ALCHEMY.brown} />
-          </View>
-        ) : null}
-        <Text style={styles.sectionTitle}>{title}</Text>
-      </View>
-    );
-  }
+  const applyCustomRange = useCallback(() => {
+    if (!customFrom.trim() || !customTo.trim()) {
+      setError("Enter both dates (YYYY-MM-DD).");
+      return;
+    }
+    setError("");
+    loadAnalytics();
+  }, [customFrom, customTo, loadAnalytics]);
+
+  const handleExportPdf = useCallback(async () => {
+    if (!analytics) return;
+    try {
+      await exportAnalyticsReport(analytics);
+    } catch (err) {
+      Alert.alert("Export failed", err.message || "Could not export report.");
+    }
+  }, [analytics]);
+
+  const handleExportCsv = useCallback(async () => {
+    if (!analytics) return;
+    try {
+      await exportAnalyticsCsv(analytics);
+    } catch (err) {
+      Alert.alert("Export failed", err.message || "Could not export CSV.");
+    }
+  }, [analytics]);
 
   function StatRow({ label, value, isLast }) {
     return (
@@ -116,15 +179,16 @@ export default function AdminAnalyticsScreen({ navigation }) {
     );
   }
 
-  function MetricCard({ label, value, icon }) {
+  function MetricCard({ label, value, icon, tone = "gold" }) {
     return (
-      <View style={styles.metricCard}>
-        <View style={styles.metricIconWrap}>
-          <Ionicons name={icon} size={14} color={isDark ? c.primary : ALCHEMY.brown} />
-        </View>
-        <Text style={styles.metricValue}>{value}</Text>
-        <Text style={styles.metricLabel}>{label}</Text>
-      </View>
+      <PremiumStatCard
+        compact
+        iconName={icon}
+        label={label}
+        value={String(value)}
+        tone={tone}
+        style={styles.metricStatTile}
+      />
     );
   }
 
@@ -145,21 +209,83 @@ export default function AdminAnalyticsScreen({ navigation }) {
     );
   }
 
+  function ChartFrame({ children }) {
+    return (
+      <View style={styles.chartWrap}>
+        <ScrollView
+          horizontal
+          nestedScrollEnabled
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chartScrollContent}
+        >
+          {children}
+        </ScrollView>
+      </View>
+    );
+  }
+
   const statusEntries = analytics ? Object.entries(analytics.statusBreakdown || {}) : [];
   const statusTotal = statusEntries.reduce((sum, [, c]) => sum + Number(c || 0), 0);
+  const advancedInsights = useMemo(() => {
+    if (!analytics) {
+      return {
+        revenuePerUser: 0,
+        revenuePerOrder: 0,
+        cartToOrderPercent: 0,
+        topProductRevenueSharePercent: 0,
+        lowOrOutStockPercent: 0,
+        newUserSharePercent: 0,
+      };
+    }
+    const filtered = Boolean(analytics.range?.filtered);
+    const totalRevenue = Number(analytics.revenue?.total || 0);
+    const totalUsers = Number(analytics.totals?.users || 0);
+    const totalOrders = Number(analytics.totals?.orders || 0);
+    const activeCartUsers = Number(analytics.carts?.usersWithActiveCart || 0);
+    const topProducts = Array.isArray(analytics.topProducts) ? analytics.topProducts : [];
+    const topProductsRevenue = topProducts.reduce((sum, item) => sum + Number(item?.revenue || 0), 0);
+    const lowStock = Number(analytics.inventory?.lowStockProducts || 0);
+    const outOfStock = Number(analytics.inventory?.outOfStockProducts || 0);
+    const inStock = Number(analytics.inventory?.inStockProducts || 0);
+    const totalKnownStock = inStock + lowStock + outOfStock;
+    const newUsersForShare = filtered
+      ? Number(analytics.activity?.newUsersInPeriod ?? 0)
+      : Number(analytics.activity?.newUsersLast30Days || 0);
+    return {
+      revenuePerUser: totalUsers > 0 ? totalRevenue / totalUsers : 0,
+      revenuePerOrder: totalOrders > 0 ? totalRevenue / totalOrders : 0,
+      cartToOrderPercent: safePercent(activeCartUsers, totalOrders),
+      topProductRevenueSharePercent: safePercent(topProductsRevenue, totalRevenue),
+      lowOrOutStockPercent: safePercent(lowStock + outOfStock, totalKnownStock),
+      newUserSharePercent: safePercent(newUsersForShare, totalUsers),
+    };
+  }, [analytics]);
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
-        <ScrollView style={customerScrollFill} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.panel}>
-            <Text style={styles.title}>Admin Access Required</Text>
-            <Text style={styles.subtitle}>This account does not have admin privileges.</Text>
-            <TouchableOpacity style={styles.refreshBtnPrimary} onPress={() => navigation.navigate("Home")}>
-              <Text style={styles.refreshBtnPrimaryText}>Back to Home</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+      <CustomerScreenShell style={styles.screen} variant="admin">
+        <MotionScrollView
+          style={customerScrollFill}
+          contentContainerStyle={adminInnerPageScrollContent(insets)}
+          showsVerticalScrollIndicator={false}
+        >
+          <SectionReveal delay={40} preset="fade-up">
+            <View style={styles.deniedGate}>
+              <PremiumErrorBanner
+                severity="warning"
+                title="Admin access required"
+                message="This account does not have admin privileges."
+              />
+              <PremiumButton
+                label="Back to home"
+                iconLeft="home-outline"
+                variant="primary"
+                onPress={() => navigation.navigate("Home")}
+                style={styles.gateCta}
+              />
+            </View>
+          </SectionReveal>
+        </MotionScrollView>
       </CustomerScreenShell>
     );
   }
@@ -168,10 +294,15 @@ export default function AdminAnalyticsScreen({ navigation }) {
   const heroColors = isDark
     ? [c.surfaceMuted, "#1a1714"]
     : [ALCHEMY.creamAlt, ALCHEMY.cardBg];
+  const isFiltered = Boolean(analytics?.range?.filtered);
 
   return (
-    <CustomerScreenShell style={styles.screen}>
-    <ScrollView style={customerScrollFill} contentContainerStyle={[styles.scrollContent, { paddingTop: Math.max(insets.top, Platform.OS === "web" ? spacing.md : spacing.sm) }]} showsVerticalScrollIndicator={false}>
+    <CustomerScreenShell style={styles.screen} variant="admin">
+      <MotionScrollView
+        style={customerScrollFill}
+        contentContainerStyle={adminInnerPageScrollContent(insets)}
+        showsVerticalScrollIndicator={false}
+      >
       <LinearGradient colors={heroColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.heroGradient, { borderColor: hairline }]}>
         {!isDark ? <View style={styles.heroGoldHairline} /> : null}
         <AdminBackLink navigation={navigation} />
@@ -182,48 +313,251 @@ export default function AdminAnalyticsScreen({ navigation }) {
           <View style={styles.heroTextCol}>
             <Text style={[styles.title, !isDark && styles.titleLight]}>Analytics</Text>
             <Text style={[styles.subtitle, !isDark && styles.subtitleLight]}>
-              Full snapshot: revenue, trends, catalog, carts, coupons, and order mix.
+              Revenue, trends, catalog health, carts, and coupons — filter by period or export PDF / CSV.
             </Text>
           </View>
         </View>
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        <TouchableOpacity style={[styles.refreshBtnPrimary, !isDark && styles.refreshBtnWarm]} onPress={loadAnalytics} activeOpacity={0.85}>
-          <Ionicons name="refresh" size={18} color="#FFFCF8" style={styles.refreshBtnIcon} />
-          <Text style={styles.refreshBtnPrimaryText}>Refresh data</Text>
-        </TouchableOpacity>
+        {error ? (
+          <View style={styles.bannerSpacer}>
+            <PremiumErrorBanner severity="error" message={error} compact />
+          </View>
+        ) : null}
+        <View style={styles.heroActionsRow}>
+          <PremiumButton
+            label="Refresh"
+            iconLeft="refresh-outline"
+            variant="primary"
+            size="sm"
+            onPress={loadAnalytics}
+            style={styles.heroActionBtn}
+          />
+          <PremiumButton
+            label="Export PDF"
+            iconLeft="document-text-outline"
+            variant="secondary"
+            size="sm"
+            onPress={handleExportPdf}
+            disabled={!analytics}
+            style={styles.heroActionBtn}
+          />
+          <PremiumButton
+            label="Export CSV"
+            iconLeft="download-outline"
+            variant="secondary"
+            size="sm"
+            onPress={handleExportCsv}
+            disabled={!analytics}
+            style={styles.heroActionBtn}
+          />
+        </View>
       </LinearGradient>
+
+      <PremiumCard variant="muted" padding="md" style={styles.filterCard}>
+        <Text style={[styles.filterTitle, { color: c.textSecondary }]}>Date range</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipScroll}>
+          {[
+            { key: "today", label: "Today" },
+            { key: "7d", label: "7d" },
+            { key: "30d", label: "30d" },
+            { key: "90d", label: "90d" },
+            { key: "1y", label: "1y" },
+            { key: "mtd", label: "MTD" },
+            { key: "ytd", label: "YTD" },
+            { key: "all", label: "All" },
+            { key: "legacy", label: "Full history" },
+            { key: "custom", label: "Custom" },
+          ].map((item) => (
+            <PremiumChip
+              key={item.key}
+              label={item.label}
+              tone="gold"
+              size="sm"
+              selected={rangePreset === item.key}
+              onPress={() => setRangePreset(item.key)}
+              style={styles.filterChip}
+            />
+          ))}
+        </ScrollView>
+        <Text style={[styles.filterTitle, { color: c.textSecondary, marginTop: spacing.sm }]}>Chart buckets</Text>
+        <View style={styles.bucketRow}>
+          {[
+            { key: "auto", label: "Auto" },
+            { key: "day", label: "Daily" },
+            { key: "month", label: "Monthly" },
+          ].map((item) => (
+            <PremiumChip
+              key={item.key}
+              label={item.label}
+              tone="neutral"
+              size="sm"
+              selected={bucket === item.key}
+              onPress={() => setBucket(item.key)}
+              style={styles.filterChip}
+            />
+          ))}
+        </View>
+        {rangePreset === "custom" ? (
+          <View style={styles.customRangeBlock}>
+            <View style={styles.customInputs}>
+              <View style={styles.customInputGrow}>
+                <PremiumInput
+                  label="From (YYYY-MM-DD)"
+                  value={customFrom}
+                  onChangeText={setCustomFrom}
+                  iconLeft="calendar-outline"
+                  autoCapitalize="none"
+                />
+              </View>
+              <View style={styles.customInputGrow}>
+                <PremiumInput
+                  label="To (YYYY-MM-DD)"
+                  value={customTo}
+                  onChangeText={setCustomTo}
+                  iconLeft="calendar-outline"
+                  autoCapitalize="none"
+                />
+              </View>
+            </View>
+            <PremiumButton label="Apply range" variant="primary" size="sm" onPress={applyCustomRange} fullWidth />
+          </View>
+        ) : null}
+        {analytics?.range?.filtered ? (
+          <Text style={[styles.rangeFootnote, { color: c.textMuted }]}>
+            {analytics.range.preset} · {analytics.range.bucket} buckets
+            {analytics.range.from && analytics.range.to
+              ? ` · ${String(analytics.range.from).slice(0, 10)} → ${String(analytics.range.to).slice(0, 10)}`
+              : ""}
+          </Text>
+        ) : analytics && !analytics.range ? (
+          <Text style={[styles.rangeFootnote, { color: c.textMuted }]}>Legacy snapshot · rolling 7/14-day charts</Text>
+        ) : null}
+      </PremiumCard>
 
       {loading ? (
         <View style={styles.loaderWrap}>
-          <ActivityIndicator size="large" color={c.primary} />
-          <Text style={styles.loaderHint}>Loading metrics…</Text>
+          <PremiumLoader size="md" caption="Loading metrics…" hint="Charts and revenue data will appear here." />
         </View>
       ) : analytics ? (
         <>
-          <View style={styles.panel}>
-            <SectionHeader title="Totals" icon="grid-outline" />
+          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
+            <PremiumSectionHeader title="Overview" compact />
+            <View style={styles.summaryGrid}>
+              <PremiumStatCard
+                compact
+                iconName="cash-outline"
+                label="Total revenue"
+                value={formatINR(analytics.revenue?.total || 0)}
+                tone="gold"
+                style={styles.summaryStatTile}
+              />
+              <PremiumStatCard
+                compact
+                iconName="trending-up-outline"
+                label={isFiltered ? "Delivered (period)" : "30-day revenue"}
+                value={formatINR(
+                  isFiltered ? analytics.revenue?.delivered || 0 : analytics.activity?.revenueLast30Days || 0
+                )}
+                tone="green"
+                style={styles.summaryStatTile}
+              />
+              <PremiumStatCard
+                compact
+                iconName="checkmark-done-outline"
+                label="Delivery rate"
+                value={`${analytics.funnel?.deliveryRatePercent ?? 0}%`}
+                tone="gold"
+                style={styles.summaryStatTile}
+              />
+              <PremiumStatCard
+                compact
+                iconName="cart-outline"
+                label="Active carts"
+                value={String(analytics.carts?.usersWithActiveCart || 0)}
+                tone="green"
+                style={styles.summaryStatTile}
+              />
+            </View>
+          </PremiumCard>
+
+          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
+            <PremiumSectionHeader title="Advanced insights" compact />
+            <View style={styles.metricGrid}>
+              <MetricCard
+                icon="person-circle-outline"
+                label="Revenue / user"
+                value={formatINR(advancedInsights.revenuePerUser)}
+              />
+              <MetricCard
+                icon="receipt-outline"
+                label="Revenue / order"
+                value={formatINR(advancedInsights.revenuePerOrder)}
+              />
+              <MetricCard
+                icon="cart-outline"
+                label="Cart vs orders"
+                value={`${advancedInsights.cartToOrderPercent}%`}
+              />
+              <MetricCard
+                icon="star-outline"
+                label="Top SKU share"
+                value={`${advancedInsights.topProductRevenueSharePercent}%`}
+              />
+            </View>
+            <View style={styles.statList}>
+              <StatRow
+                label="Low + out of stock pressure"
+                value={`${advancedInsights.lowOrOutStockPercent}%`}
+              />
+              <StatRow
+                label={isFiltered ? "New users (period share)" : "New users contribution (30 days)"}
+                value={`${advancedInsights.newUserSharePercent}%`}
+                isLast
+              />
+            </View>
+          </PremiumCard>
+
+          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
+            <PremiumSectionHeader title="Totals" compact />
             <View style={styles.metricGrid}>
               <MetricCard icon="receipt-outline" label="Orders" value={analytics.totals?.orders || 0} />
               <MetricCard icon="cube-outline" label="Products" value={analytics.totals?.products || 0} />
-              <MetricCard icon="people-outline" label="Users" value={analytics.totals?.users || 0} />
+              <MetricCard
+                icon="people-outline"
+                label={isFiltered ? "Users (period)" : "Users"}
+                value={analytics.totals?.users || 0}
+              />
               <MetricCard icon="shield-checkmark-outline" label="Admins" value={analytics.totals?.admins || 0} />
             </View>
-          </View>
+          </PremiumCard>
 
-          <View style={styles.panel}>
-            <SectionHeader title="Recent activity" icon="pulse-outline" />
+          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
+            <PremiumSectionHeader title={isFiltered ? "Period activity" : "Recent activity"} compact />
             <View style={styles.statList}>
-              <StatRow label="Orders (last 7 days)" value={String(analytics.activity?.ordersLast7Days ?? 0)} />
-              <StatRow label="Orders (last 30 days)" value={String(analytics.activity?.ordersLast30Days ?? 0)} />
-              <StatRow label="Revenue (last 7 days)" value={formatINR(analytics.activity?.revenueLast7Days || 0)} />
-              <StatRow label="Revenue (last 30 days)" value={formatINR(analytics.activity?.revenueLast30Days || 0)} />
-              <StatRow label="New users (last 7 days)" value={String(analytics.activity?.newUsersLast7Days ?? 0)} />
-              <StatRow label="New users (last 30 days)" value={String(analytics.activity?.newUsersLast30Days ?? 0)} isLast />
+              {isFiltered ? (
+                <>
+                  <StatRow label="Orders in period" value={String(analytics.activity?.ordersInPeriod ?? 0)} />
+                  <StatRow label="Revenue in period" value={formatINR(analytics.activity?.revenueInPeriod || 0)} />
+                  <StatRow
+                    label="New users registered (period)"
+                    value={String(analytics.activity?.newUsersInPeriod ?? 0)}
+                    isLast
+                  />
+                </>
+              ) : (
+                <>
+                  <StatRow label="Orders (last 7 days)" value={String(analytics.activity?.ordersLast7Days ?? 0)} />
+                  <StatRow label="Orders (last 30 days)" value={String(analytics.activity?.ordersLast30Days ?? 0)} />
+                  <StatRow label="Revenue (last 7 days)" value={formatINR(analytics.activity?.revenueLast7Days || 0)} />
+                  <StatRow label="Revenue (last 30 days)" value={formatINR(analytics.activity?.revenueLast30Days || 0)} />
+                  <StatRow label="New users (last 7 days)" value={String(analytics.activity?.newUsersLast7Days ?? 0)} />
+                  <StatRow label="New users (last 30 days)" value={String(analytics.activity?.newUsersLast30Days ?? 0)} isLast />
+                </>
+              )}
             </View>
-          </View>
+          </PremiumCard>
 
-          <View style={styles.panel}>
-            <SectionHeader title="Revenue" icon="cash-outline" />
+          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
+            <PremiumSectionHeader title="Revenue" compact />
             <View style={styles.statList}>
               <StatRow label="Total revenue (all orders)" value={formatINR(analytics.revenue?.total || 0)} />
               <StatRow label="Delivered revenue" value={formatINR(analytics.revenue?.delivered || 0)} />
@@ -235,59 +569,62 @@ export default function AdminAnalyticsScreen({ navigation }) {
             </View>
             <Text style={styles.subSectionLabel}>Revenue by order status</Text>
             <View style={styles.statList}>
-              {["pending", "paid", "shipped", "delivered", "cancelled"].map((status, idx) => (
+              {ALL_ORDER_STATUSES.map((status, idx) => (
                 <StatRow
                   key={status}
-                  label={status}
+                  label={getOrderStatusLabel(status)}
                   value={formatINR(analytics.revenue?.byStatus?.[status] || 0)}
-                  isLast={idx === 4}
+                  isLast={idx === ALL_ORDER_STATUSES.length - 1}
                 />
               ))}
             </View>
-            <View style={styles.chartWrap}>
-              <BarChart
-                data={{
-                  labels: ["Pend", "Paid", "Ship", "Del", "X"],
-                  datasets: [
-                    {
-                      data: ["pending", "paid", "shipped", "delivered", "cancelled"].map((s) =>
-                        Number(analytics.revenue?.byStatus?.[s] || 0)
-                      ),
-                    },
-                  ],
-                }}
-                width={chartWidth}
-                height={220}
-                fromZero
-                showValuesOnTopOfBars
-                withInnerLines={false}
-                chartConfig={chartConfig}
-                style={styles.chart}
-                yAxisLabel=""
-                yAxisSuffix=""
-              />
-            </View>
-          </View>
+            <ChartFrame>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <BarChart
+                  data={{
+                    labels: ALL_ORDER_STATUSES.map((s) => compactStatusLabel(s)),
+                    datasets: [
+                      {
+                        data: ALL_ORDER_STATUSES.map((s) => chartInt(analytics.revenue?.byStatus?.[s])),
+                      },
+                    ],
+                  }}
+                  width={Math.max(chartWidth, ALL_ORDER_STATUSES.length * 82)}
+                  height={220}
+                  fromZero
+                  showValuesOnTopOfBars
+                  withInnerLines={false}
+                  chartConfig={chartConfig}
+                  style={styles.chart}
+                  yAxisLabel=""
+                  yAxisSuffix=""
+                />
+              </ScrollView>
+            </ChartFrame>
+          </PremiumCard>
 
-          <View style={styles.panel}>
-            <SectionHeader title="Conversion & coupons" icon="ribbon-outline" />
+          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
+            <PremiumSectionHeader title="Conversion & coupons" compact />
             <View style={styles.statList}>
               <StatRow label="Delivered orders" value={String(analytics.funnel?.deliveredOrders ?? 0)} />
               <StatRow label="Cancelled orders" value={String(analytics.funnel?.cancelledOrders ?? 0)} />
               <StatRow label="Delivery rate" value={`${analytics.funnel?.deliveryRatePercent ?? 0}%`} />
               <StatRow label="Coupon penetration" value={`${analytics.funnel?.couponPenetrationPercent ?? 0}%`} isLast />
             </View>
-          </View>
+          </PremiumCard>
 
-          {(analytics.trends?.last7Days?.labels || []).length > 0 ? (
-            <View style={styles.panel}>
-              <SectionHeader title="7-day trend" icon="trending-up-outline" />
-              <Text style={styles.chartCaption}>Orders per day</Text>
-              <View style={styles.chartWrap}>
+          {(analytics.trends?.rangeSeries?.labels || []).length >= 2 ? (
+            <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
+              <PremiumSectionHeader
+                title={`Orders trend (${analytics.range?.bucket || "day"})`}
+                compact
+              />
+              <Text style={styles.chartCaption}>Orders per bucket</Text>
+              <ChartFrame>
                 <LineChart
                   data={{
-                    labels: analytics.trends.last7Days.labels,
-                    datasets: [{ data: analytics.trends.last7Days.orderCounts.map((n) => Number(n || 0)) }],
+                    labels: sparseAxisLabels(analytics.trends.rangeSeries.labels, 8, 3),
+                    datasets: [{ data: analytics.trends.rangeSeries.orderCounts.map((n) => chartInt(n)) }],
                   }}
                   width={chartWidth}
                   height={200}
@@ -296,13 +633,13 @@ export default function AdminAnalyticsScreen({ navigation }) {
                   bezier
                   style={styles.chart}
                 />
-              </View>
-              <Text style={styles.chartCaption}>Revenue per day</Text>
-              <View style={styles.chartWrap}>
+              </ChartFrame>
+              <Text style={styles.chartCaption}>Revenue per bucket</Text>
+              <ChartFrame>
                 <LineChart
                   data={{
-                    labels: analytics.trends.last7Days.labels,
-                    datasets: [{ data: analytics.trends.last7Days.revenues.map((n) => Number(n || 0)) }],
+                    labels: sparseAxisLabels(analytics.trends.rangeSeries.labels, 8, 3),
+                    datasets: [{ data: analytics.trends.rangeSeries.revenues.map((n) => chartInt(n)) }],
                   }}
                   width={chartWidth}
                   height={200}
@@ -311,18 +648,54 @@ export default function AdminAnalyticsScreen({ navigation }) {
                   bezier
                   style={styles.chart}
                 />
-              </View>
-            </View>
+              </ChartFrame>
+            </PremiumCard>
           ) : null}
 
-          {(analytics.trends?.last14Days?.labels || []).length > 0 ? (
-            <View style={styles.panel}>
-              <SectionHeader title="14-day order volume" icon="calendar-outline" />
-              <View style={styles.chartWrap}>
+          {!isFiltered && (analytics.trends?.last7Days?.labels || []).length > 0 ? (
+            <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
+              <PremiumSectionHeader title="7-day trend" compact />
+              <Text style={styles.chartCaption}>Orders per day</Text>
+              <ChartFrame>
+                <LineChart
+                  data={{
+                    labels: sparseAxisLabels(analytics.trends.last7Days.labels, 7, 3),
+                    datasets: [{ data: analytics.trends.last7Days.orderCounts.map((n) => chartInt(n)) }],
+                  }}
+                  width={chartWidth}
+                  height={200}
+                  fromZero
+                  chartConfig={chartConfig}
+                  bezier
+                  style={styles.chart}
+                />
+              </ChartFrame>
+              <Text style={styles.chartCaption}>Revenue per day</Text>
+              <ChartFrame>
+                <LineChart
+                  data={{
+                    labels: sparseAxisLabels(analytics.trends.last7Days.labels, 7, 3),
+                    datasets: [{ data: analytics.trends.last7Days.revenues.map((n) => chartInt(n)) }],
+                  }}
+                  width={chartWidth}
+                  height={200}
+                  fromZero
+                  chartConfig={chartConfig}
+                  bezier
+                  style={styles.chart}
+                />
+              </ChartFrame>
+            </PremiumCard>
+          ) : null}
+
+          {!isFiltered && (analytics.trends?.last14Days?.labels || []).length > 0 ? (
+            <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
+              <PremiumSectionHeader title="14-day order volume" compact />
+              <ChartFrame>
                 <BarChart
                   data={{
-                    labels: analytics.trends.last14Days.labels.map((lb) => String(lb).slice(0, 5)),
-                    datasets: [{ data: analytics.trends.last14Days.orderCounts.map((n) => Number(n || 0)) }],
+                    labels: sparseAxisLabels(analytics.trends.last14Days.labels, 7, 3),
+                    datasets: [{ data: analytics.trends.last14Days.orderCounts.map((n) => chartInt(n)) }],
                   }}
                   width={chartWidth}
                   height={240}
@@ -332,12 +705,12 @@ export default function AdminAnalyticsScreen({ navigation }) {
                   withInnerLines={false}
                   showValuesOnTopOfBars={false}
                 />
-              </View>
-            </View>
+              </ChartFrame>
+            </PremiumCard>
           ) : null}
 
-          <View style={styles.panel}>
-            <SectionHeader title="Coupon insights" icon="pricetag-outline" />
+          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
+            <PremiumSectionHeader title="Coupon insights" compact />
             <View style={styles.statList}>
               <StatRow label="Orders with coupon" value={String(analytics.coupons?.couponOrders || 0)} />
               <StatRow label="Total discount given" value={formatINR(analytics.coupons?.totalDiscount || 0)} />
@@ -349,7 +722,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
             </View>
             {(analytics.coupons?.topCoupons || []).length > 0 ? (
               <>
-                <View style={styles.chartWrap}>
+                <ChartFrame>
                   <BarChart
                     data={{
                       labels: (analytics.coupons?.topCoupons || []).slice(0, 6).map((item) =>
@@ -357,7 +730,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
                       ),
                       datasets: [
                         {
-                          data: (analytics.coupons?.topCoupons || []).slice(0, 6).map((item) => Number(item.orders || 0)),
+                          data: (analytics.coupons?.topCoupons || []).slice(0, 6).map((item) => chartInt(item.orders)),
                         },
                       ],
                     }}
@@ -370,7 +743,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
                     style={styles.chart}
                     yAxisLabel=""
                   />
-                </View>
+                </ChartFrame>
                 {(analytics.coupons?.topCoupons || []).map((item, index) => (
                   <View key={`${item.code}-${index}`} style={styles.listCard}>
                     <View style={styles.listCardRank}>
@@ -391,10 +764,10 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 <Text style={styles.emptyHintText}>No coupon usage data yet.</Text>
               </View>
             )}
-          </View>
+          </PremiumCard>
 
-          <View style={styles.panel}>
-            <SectionHeader title="Catalog & stock" icon="layers-outline" />
+          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
+            <PremiumSectionHeader title="Catalog & stock" compact />
             <View style={styles.statList}>
               <StatRow label="SKUs in stock" value={String(analytics.inventory?.inStockProducts ?? 0)} />
               <StatRow label="Low stock (≤5 units)" value={String(analytics.inventory?.lowStockProducts || 0)} />
@@ -426,19 +799,19 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 </View>
               </>
             ) : null}
-          </View>
+          </PremiumCard>
 
-          <View style={styles.panel}>
-            <SectionHeader title="Carts" icon="cart-outline" />
+          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
+            <PremiumSectionHeader title="Carts" compact />
             <View style={styles.statList}>
               <StatRow label="Users with items in cart" value={String(analytics.carts?.usersWithActiveCart || 0)} />
               <StatRow label="Total cart line items" value={String(analytics.carts?.totalCartItems || 0)} />
               <StatRow label="Estimated cart value" value={formatINR(analytics.carts?.estimatedCartValue || 0)} isLast />
             </View>
-          </View>
+          </PremiumCard>
 
-          <View style={styles.panel}>
-            <SectionHeader title="Order status" icon="pie-chart-outline" />
+          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
+            <PremiumSectionHeader title="Order status" compact />
             {statusEntries.length === 0 ? (
               <View style={styles.emptyHint}>
                 <Ionicons name="information-circle-outline" size={20} color={c.textMuted} />
@@ -455,7 +828,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
                     color={statusColors[index % statusColors.length]}
                   />
                 ))}
-                <View style={styles.chartWrap}>
+                <ChartFrame>
                   <PieChart
                     data={statusEntries.map(([status, count], index) => ({
                       name: status,
@@ -472,13 +845,13 @@ export default function AdminAnalyticsScreen({ navigation }) {
                     paddingLeft="4"
                     absolute
                   />
-                </View>
+                </ChartFrame>
               </>
             )}
-          </View>
+          </PremiumCard>
 
-          <View style={styles.panel}>
-            <SectionHeader title="Top products" icon="trophy-outline" />
+          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
+            <PremiumSectionHeader title="Top products" compact />
             {(analytics.topProducts || []).length === 0 ? (
               <View style={styles.emptyHint}>
                 <Ionicons name="information-circle-outline" size={20} color={c.textMuted} />
@@ -486,7 +859,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
               </View>
             ) : (
               <>
-                <View style={styles.chartWrap}>
+                <ChartFrame>
                   <BarChart
                     data={{
                       labels: (analytics.topProducts || []).slice(0, 6).map((item) =>
@@ -494,7 +867,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
                       ),
                       datasets: [
                         {
-                          data: (analytics.topProducts || []).slice(0, 6).map((item) => Number(item.qty || 0)),
+                          data: (analytics.topProducts || []).slice(0, 6).map((item) => chartInt(item.qty)),
                         },
                       ],
                     }}
@@ -507,7 +880,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
                     style={styles.chart}
                     yAxisLabel=""
                   />
-                </View>
+                </ChartFrame>
                 {(analytics.topProducts || []).map((item, index) => (
                   <View key={`${item.key}-${index}`} style={styles.listCard}>
                     <View style={styles.listCardRank}>
@@ -525,11 +898,11 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 ))}
               </>
             )}
-          </View>
+          </PremiumCard>
         </>
       ) : null}
       <AppFooter />
-    </ScrollView>
+      </MotionScrollView>
     </CustomerScreenShell>
   );
 }
@@ -541,17 +914,10 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
   screen: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxl,
-    width: "100%",
-    alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth, default: "100%" }),
-  },
   heroGradient: {
     position: "relative",
     borderRadius: radius.xxl,
-    padding: spacing.lg,
+    padding: Platform.select({ web: spacing.lg + 4, default: spacing.lg }),
     marginBottom: spacing.md,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
@@ -567,12 +933,138 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     opacity: 0.95,
     zIndex: 2,
   },
-  panel: {
-    ...adminPanel(c, themeShadowPremium),
+  deniedGate: {
+    ...adminPanel(c, themeShadowPremium, isDark),
     marginBottom: spacing.md,
     backgroundColor: cardBg,
     borderColor: hairline,
     borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
+    ...Platform.select({
+      web: {
+        padding: spacing.lg + 6,
+      },
+      default: {},
+    }),
+  },
+  sectionCard: {
+    marginBottom: spacing.md,
+    width: "100%",
+  },
+  summaryStatTile: {
+    flexGrow: 1,
+    flexBasis: Platform.select({ web: 240, default: "47%" }),
+    minWidth: 150,
+  },
+  metricStatTile: {
+    minWidth: 110,
+    flex: 1,
+  },
+  gateCta: {
+    marginTop: spacing.md,
+    alignSelf: "flex-start",
+  },
+  heroActionsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    alignSelf: "stretch",
+  },
+  heroActionBtn: {
+    flex: 1,
+    minWidth: 130,
+  },
+  filterCard: {
+    marginBottom: spacing.md,
+  },
+  filterTitle: {
+    fontSize: typography.caption,
+    fontFamily: fonts.semibold,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    marginBottom: spacing.xs,
+  },
+  filterChipScroll: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    alignItems: "center",
+  },
+  filterChip: {
+    marginBottom: 4,
+  },
+  bucketRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    alignItems: "center",
+  },
+  customRangeBlock: {
+    marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+  customInputs: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  customInputGrow: {
+    flex: 1,
+    minWidth: 140,
+  },
+  rangeFootnote: {
+    marginTop: spacing.sm,
+    fontSize: typography.caption,
+  },
+  summaryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  summaryPill: {
+    flexGrow: 1,
+    flexBasis: Platform.select({ web: 240, default: "47%" }),
+    minWidth: 150,
+    borderWidth: 1,
+    borderColor: hairline,
+    borderRadius: radius.lg,
+    backgroundColor: isDark ? c.surface : c.surfaceElevated,
+    padding: spacing.md,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    borderTopWidth: 2,
+    borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
+    ...themeShadowLift,
+  },
+  summaryPillSecondary: {
+    borderTopColor: c.secondary,
+  },
+  summaryPillIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: hairline,
+  },
+  summaryPillText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  summaryPillLabel: {
+    color: c.textSecondary,
+    fontSize: typography.caption,
+    fontFamily: fonts.semibold,
+  },
+  summaryPillValue: {
+    marginTop: 2,
+    color: c.textPrimary,
+    fontSize: typography.h3,
+    fontFamily: fonts.extrabold,
+    letterSpacing: -0.3,
   },
   heroTitleRow: {
     flexDirection: "row",
@@ -602,7 +1094,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.sm,
-    marginBottom: spacing.md,
+    marginBottom: spacing.md + 2,
   },
   sectionIconWrap: {
     width: 30,
@@ -686,6 +1178,10 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     fontFamily: FONT_DISPLAY,
     letterSpacing: -0.25,
     flex: 1,
+    ...Platform.select({
+      web: { fontSize: typography.h3 + 1 },
+      default: {},
+    }),
   },
   metricGrid: {
     flexDirection: "row",
@@ -697,11 +1193,19 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     flex: 1,
     borderWidth: 1,
     borderColor: hairline,
-    borderRadius: radius.md,
+    borderRadius: semanticRadius.card,
     backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xs,
     alignItems: "center",
+    ...Platform.select({
+      web: {
+        boxShadow: isDark
+          ? "0 10px 24px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.04)"
+          : "0 10px 22px rgba(24, 24, 27, 0.08), inset 0 1px 0 rgba(255,255,255,0.88)",
+      },
+      default: {},
+    }),
   },
   metricIconWrap: {
     width: 30,
@@ -729,7 +1233,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
   statList: {
     borderWidth: 1,
     borderColor: hairline,
-    borderRadius: radius.md,
+    borderRadius: semanticRadius.card,
     backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
     overflow: "hidden",
     marginBottom: spacing.sm,
@@ -739,7 +1243,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing.md,
-    paddingVertical: 10,
+    paddingVertical: 11,
     paddingHorizontal: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: hairline,
@@ -764,14 +1268,22 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     alignItems: "stretch",
     borderWidth: 1,
     borderColor: c.border,
-    borderRadius: radius.md,
-    backgroundColor: c.surfaceMuted,
+    borderRadius: semanticRadius.card,
+    backgroundColor: c.surface,
     marginBottom: spacing.sm,
     overflow: "hidden",
+    ...Platform.select({
+      web: {
+        boxShadow: isDark
+          ? "0 10px 22px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.03)"
+          : "0 8px 18px rgba(24, 24, 27, 0.08), inset 0 1px 0 rgba(255,255,255,0.88)",
+      },
+      default: {},
+    }),
   },
   listCardRank: {
     width: 36,
-    backgroundColor: c.primarySoft,
+    backgroundColor: isDark ? c.primarySoft : ALCHEMY.goldSoft,
     borderRightWidth: 1,
     borderRightColor: c.primaryBorder,
     alignItems: "center",
@@ -801,51 +1313,34 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     marginTop: spacing.sm,
     borderWidth: 1,
     borderColor: c.border,
-    borderRadius: radius.md,
+    borderRadius: semanticRadius.card,
     backgroundColor: c.surface,
     overflow: "hidden",
+    paddingVertical: Platform.select({ web: spacing.xs, default: 0 }),
     ...themeShadowLift,
+    ...Platform.select({
+      web: {
+        boxShadow: isDark
+          ? "0 14px 34px rgba(0,0,0,0.3)"
+          : "0 12px 30px rgba(24, 24, 27, 0.1), inset 0 1px 0 rgba(255,255,255,0.85)",
+      },
+      default: {},
+    }),
+  },
+  chartScrollContent: {
+    minWidth: "100%",
+    alignItems: "center",
+    justifyContent: "center",
   },
   chart: {
     borderRadius: radius.md,
   },
-  refreshBtnPrimary: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "stretch",
-    backgroundColor: c.primary,
-    borderRadius: radius.pill,
-    paddingVertical: 12,
-    paddingHorizontal: spacing.lg,
-    gap: spacing.xs,
-  },
-  refreshBtnWarm: {
-    backgroundColor: ALCHEMY.brown,
-  },
-  refreshBtnIcon: {
-    marginTop: 1,
-  },
-  refreshBtnPrimaryText: {
-    color: c.onPrimary,
-    fontSize: typography.body,
-    fontWeight: "700",
+  bannerSpacer: {
+    marginBottom: spacing.sm,
   },
   loaderWrap: {
     paddingVertical: spacing.xxl,
     alignItems: "center",
-    gap: spacing.sm,
-  },
-  loaderHint: {
-    color: c.textMuted,
-    fontSize: typography.caption,
-    fontWeight: "600",
-  },
-  errorText: {
-    color: c.danger,
-    marginBottom: spacing.sm,
-    fontWeight: "600",
-    fontSize: typography.bodySmall,
   },
   emptyHint: {
     flexDirection: "row",

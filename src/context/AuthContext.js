@@ -1,23 +1,138 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { loginRequest, registerRequest } from "../services/authService";
 import { fetchUserProfile } from "../services/userService";
 import { registerForPushNotifications } from "../services/pushNotificationService";
+import { configureApiClient, onSessionExpiredEvent } from "../services/apiClient";
+import {
+  LEGACY_AUTH_SESSION_KEY,
+  LEGACY_JEEVAN_AUTH_SESSION_KEY,
+} from "../constants/migrationKeys";
 
 const AuthContext = createContext(undefined);
-const AUTH_STORAGE_KEY = "@kankreg_auth";
+const AUTH_STORAGE_KEY = "@zeevan_auth";
+const PROFILE_REFRESH_TTL_MS = 45 * 1000;
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
+  const [refreshToken, setRefreshToken] = useState(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  const tokenRef = useRef(null);
+  const refreshTokenRef = useRef(null);
+  const userRef = useRef(null);
+  const profileRefreshAtRef = useRef(0);
+
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
+  useEffect(() => {
+    refreshTokenRef.current = refreshToken;
+  }, [refreshToken]);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  const persistSession = useCallback(async (nextToken, nextRefreshToken, nextUser) => {
+    await AsyncStorage.setItem(
+      AUTH_STORAGE_KEY,
+      JSON.stringify({
+        token: nextToken,
+        refreshToken: nextRefreshToken,
+        user: nextUser,
+      })
+    );
+  }, []);
+
+  const refreshProfile = useCallback(
+    async ({ force = false } = {}) => {
+      if (!tokenRef.current) return userRef.current;
+      const now = Date.now();
+      if (!force && userRef.current && now - profileRefreshAtRef.current < PROFILE_REFRESH_TTL_MS) {
+        return userRef.current;
+      }
+      const freshUser = await fetchUserProfile();
+      profileRefreshAtRef.current = Date.now();
+      setUser(freshUser);
+      userRef.current = freshUser;
+      await persistSession(tokenRef.current, refreshTokenRef.current, freshUser);
+      return freshUser;
+    },
+    [persistSession]
+  );
+
+  const clearSession = useCallback(async () => {
+    setUser(null);
+    setToken(null);
+    setRefreshToken(null);
+    try {
+      await AsyncStorage.multiRemove([
+        AUTH_STORAGE_KEY,
+        LEGACY_JEEVAN_AUTH_SESSION_KEY,
+        LEGACY_AUTH_SESSION_KEY,
+      ]);
+    } catch {
+      // memory state already cleared
+    }
+  }, []);
+
+  // Configure the API client once. Use refs so the client always sees the
+  // latest tokens without recreating the configuration on every render.
+  useEffect(() => {
+    configureApiClient({
+      getAccessToken: () => tokenRef.current,
+      getRefreshToken: () => refreshTokenRef.current,
+      onTokensRefreshed: async (nextToken, nextUser) => {
+        if (!nextToken) return;
+        setToken(nextToken);
+        tokenRef.current = nextToken;
+        const mergedUser = nextUser || userRef.current;
+        if (nextUser) {
+          setUser(nextUser);
+          userRef.current = nextUser;
+        }
+        try {
+          await persistSession(nextToken, refreshTokenRef.current, mergedUser);
+        } catch {
+          // Persisting is best-effort; in-memory state is already updated.
+        }
+      },
+      onSessionExpired: () => {
+        setSessionExpired(true);
+        clearSession().catch(() => {});
+      },
+    });
+  }, [persistSession, clearSession]);
+
+  useEffect(() => {
+    const off = onSessionExpiredEvent(() => setSessionExpired(true));
+    return () => {
+      if (typeof off === "function") off();
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
 
     async function restoreAuth() {
       try {
-        const saved = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
+        let saved = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
+        if (!saved) {
+          saved = await AsyncStorage.getItem(LEGACY_JEEVAN_AUTH_SESSION_KEY);
+          if (saved) {
+            await AsyncStorage.setItem(AUTH_STORAGE_KEY, saved);
+            await AsyncStorage.removeItem(LEGACY_JEEVAN_AUTH_SESSION_KEY);
+          }
+        }
+        if (!saved) {
+          saved = await AsyncStorage.getItem(LEGACY_AUTH_SESSION_KEY);
+          if (saved) {
+            await AsyncStorage.setItem(AUTH_STORAGE_KEY, saved);
+            await AsyncStorage.removeItem(LEGACY_AUTH_SESSION_KEY);
+          }
+        }
         if (!saved) {
           return;
         }
@@ -26,30 +141,35 @@ export function AuthProvider({ children }) {
         if (parsed?.token && parsed?.user) {
           if (isMounted) {
             setToken(parsed.token);
+            tokenRef.current = parsed.token;
+            setRefreshToken(parsed.refreshToken || null);
+            refreshTokenRef.current = parsed.refreshToken || null;
             setUser(parsed.user);
+            userRef.current = parsed.user;
           }
 
           // Keep role/profile fresh so admin access reflects backend state.
           try {
             const freshUser = await Promise.race([
-              fetchUserProfile(parsed.token),
+              refreshProfile({ force: true }),
               new Promise((_, reject) =>
                 setTimeout(() => reject(new Error("Profile refresh timeout")), 3500)
               ),
             ]);
-            if (isMounted) {
+            if (isMounted && freshUser) {
               setUser(freshUser);
+              userRef.current = freshUser;
             }
-            await AsyncStorage.setItem(
-              AUTH_STORAGE_KEY,
-              JSON.stringify({ token: parsed.token, user: freshUser })
-            );
           } catch {
             // If profile refresh fails, continue with cached session.
           }
         }
       } catch {
-        await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+        await AsyncStorage.multiRemove([
+          AUTH_STORAGE_KEY,
+          LEGACY_JEEVAN_AUTH_SESSION_KEY,
+          LEGACY_AUTH_SESSION_KEY,
+        ]);
       } finally {
         if (isMounted) {
           setIsAuthLoading(false);
@@ -69,7 +189,7 @@ export function AuthProvider({ children }) {
       isMounted = false;
       clearTimeout(watchdog);
     };
-  }, []);
+  }, [refreshProfile]);
 
   useEffect(() => {
     if (!token) return;
@@ -78,48 +198,48 @@ export function AuthProvider({ children }) {
     });
   }, [token]);
 
-  const saveSession = async (sessionToken, sessionUser) => {
+  const saveSession = useCallback(async (sessionToken, sessionUser, sessionRefreshToken = null) => {
     setToken(sessionToken);
+    tokenRef.current = sessionToken;
+    setRefreshToken(sessionRefreshToken);
+    refreshTokenRef.current = sessionRefreshToken;
     setUser(sessionUser);
+    userRef.current = sessionUser;
+    profileRefreshAtRef.current = Date.now();
+    setSessionExpired(false);
+    await persistSession(sessionToken, sessionRefreshToken, sessionUser);
+  }, [persistSession]);
 
-    await AsyncStorage.setItem(
-      AUTH_STORAGE_KEY,
-      JSON.stringify({ token: sessionToken, user: sessionUser })
-    );
-  };
-
-  const updateStoredUser = async (nextUser) => {
+  const updateStoredUser = useCallback(async (nextUser) => {
     setUser(nextUser);
-    if (!token) {
+    userRef.current = nextUser;
+    profileRefreshAtRef.current = Date.now();
+    if (!tokenRef.current) {
       return;
     }
-    await AsyncStorage.setItem(
-      AUTH_STORAGE_KEY,
-      JSON.stringify({ token, user: nextUser })
-    );
-  };
+    await persistSession(tokenRef.current, refreshTokenRef.current, nextUser);
+  }, [persistSession]);
 
-  const loginWithCredentials = async ({ email, password }) => {
+  const loginWithCredentials = useCallback(async ({ email, password }) => {
     const data = await loginRequest({ email, password });
-    await saveSession(data.token, data.user);
+    await saveSession(data.token, data.user, data.refreshToken || null);
     return data.user;
-  };
+  }, [saveSession]);
 
-  const registerWithCredentials = async ({ name, email, password }) => {
+  const registerWithCredentials = useCallback(async ({ name, email, password }) => {
     const data = await registerRequest({ name, email, password });
-    await saveSession(data.token, data.user);
+    await saveSession(data.token, data.user, data.refreshToken || null);
     return data.user;
-  };
+  }, [saveSession]);
 
-  const logout = async () => {
-    setUser(null);
-    setToken(null);
-    try {
-      await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
-    } catch {
-      // still signed out in memory; storage clear is best-effort
-    }
-  };
+  const logout = useCallback(async () => {
+    await clearSession();
+    setSessionExpired(false);
+  }, [clearSession]);
+
+  const acknowledgeSessionExpired = useCallback(() => {
+    setSessionExpired(false);
+  }, []);
 
   const value = useMemo(
     () => ({
@@ -127,12 +247,26 @@ export function AuthProvider({ children }) {
       token,
       isAuthenticated: Boolean(token),
       isAuthLoading,
+      sessionExpired,
+      acknowledgeSessionExpired,
       loginWithCredentials,
       registerWithCredentials,
       updateStoredUser,
+      refreshProfile,
       logout,
     }),
-    [user, token, isAuthLoading]
+    [
+      user,
+      token,
+      isAuthLoading,
+      sessionExpired,
+      acknowledgeSessionExpired,
+      loginWithCredentials,
+      registerWithCredentials,
+      updateStoredUser,
+      refreshProfile,
+      logout,
+    ]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

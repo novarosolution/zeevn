@@ -1,41 +1,64 @@
 import { Platform, StyleSheet } from "react-native";
-import { ALCHEMY } from "./customerAlchemy";
-import { layout, radius, spacing } from "./tokens";
+import { ALCHEMY, HERITAGE } from "./customerAlchemy";
+import { darkColors, getSemanticColors, layout, semanticRadius, spacing } from "./tokens";
+
+function themeIsDark(c) {
+  return c?.textPrimary === darkColors.textPrimary;
+}
 
 /**
- * Shared “premium” panel for admin screens (matches customer Settings/Cart panels).
+ * Shared panel chrome for admin screens — matches customer cards (slate + brand accent).
+ * @param {boolean} [isDark] omit to infer from `c.textPrimary` vs theme dark palette
  */
-export function adminPanel(c, shadowPremium) {
-  return {
-    backgroundColor: c.surface,
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.xl,
-    borderTopWidth: 3,
-    borderTopColor: c.accentGold ?? c.primary,
-    padding: spacing.lg,
+export function adminPanel(c, shadowPremium, isDark) {
+  const dark = typeof isDark === "boolean" ? isDark : themeIsDark(c);
+  const semantic = getSemanticColors(c);
+  const base = {
+    backgroundColor: dark ? semantic.bg.surface : ALCHEMY.ivory,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: dark ? semantic.border.subtle : ALCHEMY.pillInactive,
+    borderRadius: semanticRadius.panel,
+    borderTopWidth: 2,
+    borderTopColor: dark ? semantic.border.accent : HERITAGE.amberMid,
+    padding: spacing.lg + 6,
     ...shadowPremium,
+  };
+  if (Platform.OS !== "web" || !shadowPremium?.boxShadow) {
+    return base;
+  }
+  const inset = dark
+    ? "inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.04)"
+    : "inset 0 0 0 1px rgba(226,232,240,0.85), inset 0 1px 0 rgba(255,255,255,0.95)";
+  return {
+    ...base,
+    boxShadow: `${shadowPremium.boxShadow}, ${inset}`,
+    ...(Platform.OS === "web"
+      ? {
+          transition: "box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease",
+        }
+      : {}),
   };
 }
 
 /**
  * Grouped “module” on the admin dashboard (and similar stacked tools).
- * Light: warm card; dark: slightly lifted surface.
+ * Light: soft surface; dark: slightly lifted surface.
  */
 export function adminModuleSection(isDark, c) {
+  const semantic = getSemanticColors(c);
   return {
     marginBottom: spacing.lg,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    paddingTop: spacing.sm,
-    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
+    borderRadius: semanticRadius.card,
+    padding: spacing.md + 4,
+    paddingTop: spacing.sm + 2,
+    backgroundColor: isDark ? semantic.bg.muted : ALCHEMY.creamAlt,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.border : ALCHEMY.pillInactive,
-    borderLeftWidth: 3,
+    borderColor: isDark ? semantic.border.subtle : ALCHEMY.pillInactive,
+    borderLeftWidth: 2,
     borderLeftColor: c.primary,
     ...Platform.select({
       ios: {
-        shadowColor: isDark ? "#000" : "#3D2A12",
+        shadowColor: isDark ? "#000" : "#18181B",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: isDark ? 0.22 : 0.06,
         shadowRadius: 10,
@@ -43,8 +66,9 @@ export function adminModuleSection(isDark, c) {
       android: { elevation: isDark ? 2 : 1 },
       web: {
         boxShadow: isDark
-          ? "0 10px 28px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.04)"
-          : "0 10px 28px rgba(61, 42, 18, 0.08), 0 2px 8px rgba(28, 25, 23, 0.04), inset 0 1px 0 rgba(255,253,251,0.82)",
+          ? "0 12px 28px rgba(0,0,0,0.24), 0 4px 10px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.05)"
+          : "0 12px 26px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 0 0 1px rgba(255,255,255,0.45)",
+        transition: "box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease",
       },
       default: {},
     }),
@@ -57,7 +81,7 @@ export function adminScreenRoot(c) {
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth, default: "100%" }),
+    maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
     backgroundColor: c?.background ?? "transparent",
   };
 }

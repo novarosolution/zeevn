@@ -47,6 +47,12 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    /** Admin assigns a delivery partner to fulfill this order. */
+    assignedDeliveryUser: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
     products: {
       type: [orderItemSchema],
       required: true,
@@ -77,6 +83,20 @@ const orderSchema = new mongoose.Schema(
       default: "Cash on Delivery",
       trim: true,
     },
+    paymentStatus: {
+      type: String,
+      default: "pending",
+      enum: ["pending", "paid", "failed", "refunded"],
+    },
+    razorpay: {
+      orderId: { type: String, default: "", trim: true },
+      paymentId: { type: String, default: "", trim: true },
+      signature: { type: String, default: "", trim: true },
+    },
+    paymentExpiresAt: {
+      type: Date,
+      default: null,
+    },
     coupon: {
       code: { type: String, default: "", trim: true },
       title: { type: String, default: "", trim: true },
@@ -90,13 +110,45 @@ const orderSchema = new mongoose.Schema(
       platformFee: { type: Number, default: 0, min: 0 },
       discountAmount: { type: Number, default: 0, min: 0 },
     },
+    invoice: {
+      number: { type: String, default: "", trim: true },
+      issueDate: { type: Date, default: Date.now },
+      dueDate: { type: Date, default: null },
+      notes: { type: String, default: "", trim: true },
+      taxRatePercent: { type: Number, default: 0, min: 0 },
+      taxAmount: { type: Number, default: 0, min: 0 },
+      status: {
+        type: String,
+        default: "draft",
+        enum: ["draft", "final", "paid", "void"],
+      },
+      updatedAt: { type: Date, default: Date.now },
+    },
     status: {
       type: String,
       default: "pending",
-      enum: ["pending", "paid", "shipped", "delivered", "cancelled"],
+      enum: [
+        "pending_payment",
+        "pending",
+        "confirmed",
+        "preparing",
+        "ready_for_pickup",
+        "out_for_delivery",
+        "paid",
+        "shipped",
+        "delivered",
+        "cancelled",
+      ],
+    },
+    reward: {
+      eligiblePoints: { type: Number, default: 25, min: 0 },
+      claimedPoints: { type: Number, default: 0, min: 0 },
+      claimedAt: { type: Date, default: null },
     },
   },
   { timestamps: true }
 );
+
+orderSchema.index({ createdAt: 1 });
 
 module.exports = mongoose.model("Order", orderSchema);

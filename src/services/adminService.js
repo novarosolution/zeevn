@@ -31,6 +31,12 @@ export const updateAdminRole = (token, userId, isAdmin) =>
     body: JSON.stringify({ isAdmin }),
   });
 
+export const updateDeliveryPartnerRole = (token, userId, isDeliveryPartner) =>
+  adminRequest(`/admin/users/${userId}/delivery-role`, token, {
+    method: "PATCH",
+    body: JSON.stringify({ isDeliveryPartner }),
+  });
+
 export const updateOrderStatus = (token, orderId, status) =>
   adminRequest(`/admin/orders/${orderId}/status`, token, {
     method: "PATCH",
@@ -88,7 +94,21 @@ export const sendAdminBroadcastNotification = (token, payload) =>
     body: JSON.stringify(payload),
   });
 
-export const fetchAdminAnalytics = (token) => adminRequest("/admin/analytics", token);
+/**
+ * @param {string} token
+ * @param {Record<string, string | number | boolean | undefined | null>} [query] e.g. { preset: "30d", bucket: "day" }
+ */
+export const fetchAdminAnalytics = (token, query = {}) => {
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(query)) {
+    if (v === undefined || v === null) continue;
+    const s = String(v).trim();
+    if (s === "") continue;
+    params.set(k, s);
+  }
+  const qs = params.toString();
+  return adminRequest(`/admin/analytics${qs ? `?${qs}` : ""}`, token);
+};
 export const fetchAdminHomeView = (token) => adminRequest("/admin/home-view", token);
 export const updateAdminHomeView = (token, payload) =>
   adminRequest("/admin/home-view", token, {
@@ -106,6 +126,20 @@ export const createAdminCoupon = (token, payload) =>
 
 export const updateAdminCoupon = (token, couponId, payload) =>
   adminRequest(`/admin/coupons/${couponId}`, token, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+
+export const fetchAdminRewards = (token) => adminRequest("/admin/rewards", token);
+
+export const createAdminReward = (token, payload) =>
+  adminRequest("/admin/rewards", token, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+export const updateAdminReward = (token, rewardId, payload) =>
+  adminRequest(`/admin/rewards/${rewardId}`, token, {
     method: "PUT",
     body: JSON.stringify(payload),
   });

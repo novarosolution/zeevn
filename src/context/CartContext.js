@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { fetchMyCart, replaceMyCart } from "../services/userService";
 import { cartLineKey } from "../utils/productCart";
@@ -12,7 +12,7 @@ export function CartProvider({ children }) {
   const isHydratingRef = useRef(false);
   const syncTimerRef = useRef(null);
 
-  const addToCart = (product) => {
+  const addToCart = useCallback((product) => {
     setCartItems((currentItems) => {
       const key = cartLineKey(product);
       const existingItem = currentItems.find((item) => cartLineKey(item) === key);
@@ -25,13 +25,13 @@ export function CartProvider({ children }) {
 
       return [...currentItems, { ...product, quantity: 1 }];
     });
-  };
+  }, []);
 
   /**
    * @param {string} productId
    * @param {string} [variantLabel] If omitted, removes one unit from the first cart line with this product (e.g. home list).
    */
-  const removeFromCart = (productId, variantLabel) => {
+  const removeFromCart = useCallback((productId, variantLabel) => {
     setCartItems((currentItems) => {
       if (variantLabel === undefined) {
         const idx = currentItems.findIndex((item) => item.id === productId);
@@ -60,32 +60,46 @@ export function CartProvider({ children }) {
         cartLineKey(item) === key ? { ...item, quantity: item.quantity - 1 } : item
       );
     });
-  };
+  }, []);
 
   /** Removes the line entirely (e.g. cart “Remove”). */
-  const removeLineFromCart = (productId, variantLabel = "") => {
+  const removeLineFromCart = useCallback((productId, variantLabel = "") => {
     const key = cartLineKey({ id: productId, variantLabel });
     setCartItems((currentItems) => currentItems.filter((item) => cartLineKey(item) !== key));
-  };
+  }, []);
 
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCartItems([]);
-  };
+  }, []);
+
+  const quantityByProductId = useMemo(() => {
+    const map = new Map();
+    cartItems.forEach((item) => {
+      const id = String(item.id || "");
+      map.set(id, (map.get(id) || 0) + Number(item.quantity || 0));
+    });
+    return map;
+  }, [cartItems]);
+
+  const quantityByLineKey = useMemo(() => {
+    const map = new Map();
+    cartItems.forEach((item) => {
+      map.set(cartLineKey(item), Number(item.quantity || 0));
+    });
+    return map;
+  }, [cartItems]);
 
   /**
    * @param {string} productId
    * @param {string} [variantLabel] If omitted, sums quantity across all variants of this product.
    */
-  const getItemQuantity = (productId, variantLabel) => {
+  const getItemQuantity = useCallback((productId, variantLabel) => {
     if (variantLabel === undefined) {
-      return cartItems
-        .filter((item) => item.id === productId)
-        .reduce((sum, item) => sum + item.quantity, 0);
+      return quantityByProductId.get(String(productId || "")) || 0;
     }
     const key = cartLineKey({ id: productId, variantLabel });
-    const found = cartItems.find((item) => cartLineKey(item) === key);
-    return found ? found.quantity : 0;
-  };
+    return quantityByLineKey.get(key) || 0;
+  }, [quantityByProductId, quantityByLineKey]);
 
   const totalAmount = useMemo(() => {
     return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -149,7 +163,7 @@ export function CartProvider({ children }) {
     };
   }, [cartItems, isAuthenticated, token]);
 
-  const refreshCartFromServer = async () => {
+  const refreshCartFromServer = useCallback(async () => {
     if (!isAuthenticated || !token) {
       setCartItems([]);
       return [];
@@ -162,7 +176,7 @@ export function CartProvider({ children }) {
     } finally {
       setIsCartSyncing(false);
     }
-  };
+  }, [isAuthenticated, token]);
 
   const value = useMemo(
     () => ({
@@ -177,7 +191,18 @@ export function CartProvider({ children }) {
       getItemQuantity,
       refreshCartFromServer,
     }),
-    [cartItems, totalAmount, totalItems, isCartSyncing]
+    [
+      cartItems,
+      totalAmount,
+      totalItems,
+      isCartSyncing,
+      addToCart,
+      removeFromCart,
+      removeLineFromCart,
+      clearCart,
+      getItemQuantity,
+      refreshCartFromServer,
+    ]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

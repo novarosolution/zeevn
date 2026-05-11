@@ -17,6 +17,34 @@ const labeledBlockSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const reviewSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    userName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+    },
+    comment: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 800,
+    },
+  },
+  { timestamps: true }
+);
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -114,6 +142,10 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
       min: 0,
+    },
+    reviews: {
+      type: [reviewSchema],
+      default: [],
     },
     /** Hero badge overlay, e.g. HAND CHURNED */
     badgeText: {

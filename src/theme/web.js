@@ -1,8 +1,16 @@
 import { Platform } from "react-native";
-import { ALCHEMY } from "./customerAlchemy";
+import { ALCHEMY, HERITAGE } from "./customerAlchemy";
 
 /** Fixed top bar height on web — minimal vertical padding around the logo. */
-export const WEB_HEADER_HEIGHT = 64;
+export const WEB_HEADER_HEIGHT = 72;
+/** Shared top offset for sticky page chrome below fixed header. */
+export const WEB_STICKY_TOP_OFFSET = WEB_HEADER_HEIGHT + 18;
+/** Shared z-index ladder to prevent header/dropdown overlap bugs. */
+export const WEB_Z_INDEX = {
+  header: 1000,
+  dropdown: 1200,
+  overlay: 1100,
+};
 
 /** Root shell: full viewport height on web so the layout feels like a real page. */
 export const webRootStyle = Platform.select({
@@ -11,7 +19,7 @@ export const webRootStyle = Platform.select({
     width: "100%",
     maxWidth: "100%",
     // Match Expo’s html/body/#root chain so flex children get a real height (avoids blank web).
-    minHeight: "100vh",
+    minHeight: "100dvh",
     height: "100%",
   },
   default: {
@@ -35,36 +43,74 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
   html.style.minHeight = "100%";
 
   if (isDark) {
-    body.style.background = backgroundSolid || "#0A0908";
-    body.style.backgroundAttachment = "scroll";
-    html.style.background = backgroundSolid || "#0A0908";
+    const darkGradient = `radial-gradient(ellipse 120% 90% at 90% 0%, rgba(239,68,68,0.09) 0%, transparent 36%), radial-gradient(ellipse 100% 80% at 8% 4%, rgba(96,165,250,0.08) 0%, transparent 40%), linear-gradient(180deg, #060A12 0%, #0B1120 40%, #141B2B 100%)`;
+    body.style.background = backgroundSolid || darkGradient;
+    body.style.backgroundAttachment = "fixed";
+    html.style.background = backgroundSolid || darkGradient;
     html.style.colorScheme = "dark";
   } else {
-    const g = `linear-gradient(168deg, ${ALCHEMY.creamHighlight} 0%, ${ALCHEMY.cream} 42%, ${ALCHEMY.creamDeep} 100%)`;
+    const g = `radial-gradient(ellipse 120% 80% at 88% 0%, ${ALCHEMY.goldMist} 0%, transparent 34%), radial-gradient(ellipse 100% 70% at 10% 8%, rgba(37,99,235,0.08) 0%, transparent 42%), radial-gradient(ellipse 90% 70% at 10% 100%, ${HERITAGE.mist} 0%, transparent 38%), linear-gradient(180deg, #FFFDFC 0%, ${ALCHEMY.creamHighlight} 18%, ${ALCHEMY.cream} 48%, ${ALCHEMY.pearl} 76%, ${ALCHEMY.creamDeep} 100%)`;
     body.style.background = g;
     body.style.backgroundAttachment = "fixed";
     html.style.background = g;
     html.style.colorScheme = "light";
   }
 
-  // eslint-disable-next-line no-undef
   body.style.webkitFontSmoothing = "antialiased";
   // @ts-ignore
   body.style.MozOsxFontSmoothing = "grayscale";
   body.style.textRendering = "geometricPrecision";
+  body.style.letterSpacing = "0.01em";
+  body.style.fontFeatureSettings = '"cv11","ss01","ss03"';
 
   if (!premiumChromeInjected) {
     premiumChromeInjected = true;
     const style = document.createElement("style");
-    style.setAttribute("data-kankreg", "premium-chrome");
+    style.setAttribute("data-zeevan", "premium-chrome");
     style.textContent = `
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        overscroll-behavior-y: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+      ::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(100, 116, 139, 0.06);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.4);
+        border-radius: 999px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(100, 116, 139, 0.56);
+      }
       ::selection {
-        background: rgba(201, 162, 39, 0.22);
+        background: rgba(220, 38, 38, 0.22);
         color: inherit;
       }
       *:focus-visible {
-        outline: 2px solid rgba(184, 134, 11, 0.42);
-        outline-offset: 2px;
+        outline: 2px solid rgba(220, 38, 38, 0.45);
+        outline-offset: 3px;
+      }
+      a, button, [role="button"], [role="tab"] {
+        transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease, background-color 180ms ease, border-color 180ms ease;
+      }
+      a:hover, button:hover, [role="button"]:hover, [role="tab"]:hover {
+        transform: translateY(-1px);
+      }
+      a:active, button:active, [role="button"]:active, [role="tab"]:active {
+        transform: translateY(0);
+      }
+      @media (max-width: 760px) {
+        ::-webkit-scrollbar {
+          width: 7px;
+          height: 7px;
+        }
       }
     `;
     document.head.appendChild(style);

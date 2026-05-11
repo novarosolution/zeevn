@@ -1,20 +1,33 @@
-import React from "react";
-import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { layout, radius, spacing, typography, fonts } from "../theme/tokens";
+import { useAnimatedReaction, runOnJS } from "react-native-reanimated";
+import { gsap } from "gsap";
+import {
+  breakpoints,
+  fonts,
+  getSemanticColors,
+  icon,
+  layout,
+  semanticRadius,
+  spacing,
+  typography,
+} from "../theme/tokens";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-import { WEB_HEADER_HEIGHT } from "../theme/web";
+import { WEB_HEADER_HEIGHT, WEB_Z_INDEX } from "../theme/web";
 import { SEARCH_PLACEHOLDER } from "../constants/brand";
-import { ALCHEMY } from "../theme/customerAlchemy";
 import BrandHeaderMark from "./BrandHeaderMark";
 import LocationIconButton from "./LocationIconButton";
+import useReducedMotion from "../hooks/useReducedMotion";
+import useScrollOffset from "../hooks/useScrollOffset";
+import { getAdminMenuFlatLinks, isAdminRouteName } from "../constants/adminNav";
 
-/**
- * Desktop top navigation (web): sticky, minimal, search affordance, cart + profile.
- */
+const COMPACT_SCROLL_THRESHOLD = 80;
+
+/** Sticky desktop nav (web). Compacts on scroll, animates cart badge bumps, shows scroll progress hairline. */
 function routeMatchesNav(navKey, routeName) {
   if (!routeName) return false;
   if (navKey === routeName) return true;
@@ -30,132 +43,316 @@ function routeMatchesNav(navKey, routeName) {
   ) {
     return true;
   }
+  if (navKey === "Delivery" && routeName === "DeliveryDashboard") {
+    return true;
+  }
+  if (navKey === "Admin" && isAdminRouteName(routeName)) {
+    return true;
+  }
   return false;
 }
 
-export default function WebAppHeader({ currentRouteName, navigationRef }) {
-  const { colors, isDark, shadowLift } = useTheme();
+export default function WebAppHeader({ navigationRef }) {
+  const { colors, isDark, shadowLift, shadowPremium } = useTheme();
+  const semantic = getSemanticColors(colors);
   const { width: windowWidth } = useWindowDimensions();
-  const compactNav = windowWidth < 720;
+  const { totalItems } = useCart();
+  const { isAuthenticated, user } = useAuth();
+  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
+  const adminWrapRef = useRef(null);
+  const reducedMotion = useReducedMotion();
+  const shellRef = useRef(null);
+  const brandRef = useRef(null);
+  const searchRef = useRef(null);
+  const navRefs = useRef([]);
+  const cartBadgeRef = useRef(null);
+  const progressRef = useRef(null);
+  const prevTotalItemsRef = useRef(totalItems);
+  const [compact, setCompact] = useState(false);
+  const [currentRouteName, setCurrentRouteName] = useState(
+    navigationRef?.getCurrentRoute?.()?.name
+  );
+  const { scrollY } = useScrollOffset({ trackWindow: true });
+
+  useEffect(() => {
+    if (!navigationRef?.addListener) return undefined;
+    const syncRoute = () => {
+      setCurrentRouteName(navigationRef?.getCurrentRoute?.()?.name);
+    };
+    syncRoute();
+    const unsubscribe = navigationRef.addListener("state", syncRoute);
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
+  }, [navigationRef]);
+
+  useEffect(() => {
+    setAdminMenuOpen(false);
+  }, [currentRouteName]);
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || !adminMenuOpen || typeof document === "undefined") return undefined;
+    const onDocDown = (e) => {
+      const node = adminWrapRef.current;
+      const t = e?.target;
+      if (node && t && typeof node.contains === "function" && !node.contains(t)) {
+        setAdminMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocDown);
+    return () => document.removeEventListener("mousedown", onDocDown);
+  }, [adminMenuOpen]);
+
+  const compactNav = windowWidth < breakpoints.md;
+  const isPhoneWeb = windowWidth < 760;
+
+  const go = React.useCallback((name, requiresAuth = false) => {
+    const dest = requiresAuth && !isAuthenticated ? "Login" : name;
+    if (currentRouteName !== dest && navigationRef?.isReady?.()) {
+      navigationRef.navigate(dest);
+    }
+  }, [currentRouteName, isAuthenticated, navigationRef]);
+
+  const goAdmin = React.useCallback(
+    (routeName) => {
+      setAdminMenuOpen(false);
+      if (navigationRef?.isReady?.()) {
+        navigationRef.navigate(routeName);
+      }
+    },
+    [navigationRef]
+  );
+
+  const adminFlatLinks = React.useMemo(() => getAdminMenuFlatLinks(), []);
+
+  const items = React.useMemo(() => {
+    const deliveryNavItem = user?.isDeliveryPartner
+      ? [
+          {
+            key: "Delivery",
+            label: "Delivery",
+            icon: "bicycle-outline",
+            iconActive: "bicycle",
+            onPress: () => go("DeliveryDashboard", true),
+          },
+        ]
+      : [];
+    const adminNavItem = user?.isAdmin
+      ? [
+          {
+            key: "Admin",
+            label: "Admin",
+            icon: "shield-checkmark-outline",
+            iconActive: "shield-checkmark",
+            onPress: () => setAdminMenuOpen((o) => !o),
+            adminMenu: true,
+          },
+        ]
+      : [];
+    return [
+      { key: "Home", label: "Home", icon: "home-outline", iconActive: "home", onPress: () => go("Home") },
+      ...deliveryNavItem,
+      ...adminNavItem,
+      {
+        key: "Cart",
+        label: "Cart",
+        icon: "bag-outline",
+        iconActive: "bag",
+        onPress: () => go("Cart", true),
+        badge: totalItems > 0 ? String(totalItems) : "",
+      },
+      {
+        key: "Settings",
+        label: "Settings",
+        icon: "settings-outline",
+        iconActive: "settings",
+        onPress: () => go("Settings", true),
+      },
+      {
+        key: "Profile",
+        label: "Account",
+        icon: "person-outline",
+        iconActive: "person",
+        onPress: () => go("Profile", true),
+      },
+    ];
+  }, [go, totalItems, user?.isDeliveryPartner, user?.isAdmin]);
+
+  const itemCount = items.length;
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || reducedMotion) {
+      return undefined;
+    }
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    if (shellRef.current) {
+      tl.fromTo(shellRef.current, { y: -26 }, { y: 0, duration: 0.52 });
+    }
+    if (brandRef.current) {
+      tl.fromTo(brandRef.current, { x: -14 }, { x: 0, duration: 0.34 }, "-=0.36");
+    }
+    if (searchRef.current) {
+      tl.fromTo(searchRef.current, { y: -8 }, { y: 0, duration: 0.3 }, "-=0.25");
+    }
+    if (navRefs.current.length) {
+      tl.fromTo(
+        navRefs.current.filter(Boolean),
+        { y: -8 },
+        { y: 0, duration: 0.24, stagger: 0.045 },
+        "-=0.24"
+      );
+    }
+    return () => tl.kill();
+  }, [itemCount, reducedMotion]);
+
+  const updateChrome = React.useCallback((y) => {
+    if (typeof globalThis === "undefined" || typeof globalThis.window === "undefined") {
+      return;
+    }
+    const win = globalThis.window;
+    const doc = globalThis.document;
+    const docHeight =
+      Math.max(
+        doc?.documentElement?.scrollHeight || 0,
+        doc?.body?.scrollHeight || 0
+      ) - (win.innerHeight || 0);
+    const ratio = docHeight > 0 ? Math.max(0, Math.min(1, y / docHeight)) : 0;
+    setCompact((prev) => {
+      const next = y > COMPACT_SCROLL_THRESHOLD;
+      return prev === next ? prev : next;
+    });
+    if (progressRef.current) {
+      progressRef.current.style.transform = `scaleX(${ratio})`;
+    }
+  }, []);
+
+  useAnimatedReaction(
+    () => scrollY.value,
+    (current, previous) => {
+      if (previous === current) return;
+      if (Math.abs(current - previous) < 2) return;
+      runOnJS(updateChrome)(current);
+    },
+    [updateChrome],
+  );
+
+  useEffect(() => {
+    const prev = prevTotalItemsRef.current;
+    prevTotalItemsRef.current = totalItems;
+    if (reducedMotion || totalItems <= prev) return;
+    if (!cartBadgeRef.current) return;
+    gsap.fromTo(
+      cartBadgeRef.current,
+      { scale: 0.8 },
+      { scale: 1, duration: 0.5, ease: "back.out(2.4)" }
+    );
+  }, [totalItems, reducedMotion]);
 
   if (Platform.OS !== "web") {
     return null;
   }
 
-  const { totalItems } = useCart();
-  const { isAuthenticated } = useAuth();
-
-  const go = (name, requiresAuth = false) => {
-    const dest = requiresAuth && !isAuthenticated ? "Login" : name;
-    if (currentRouteName !== dest && navigationRef?.isReady?.()) {
-      navigationRef.navigate(dest);
-    }
-  };
-
-  const items = [
-    { key: "Home", label: "Home", icon: "home-outline", iconActive: "home", onPress: () => go("Home") },
-    {
-      key: "Cart",
-      label: "Cart",
-      icon: "bag-outline",
-      iconActive: "bag",
-      onPress: () => go("Cart", true),
-      badge: totalItems > 0 ? String(totalItems) : "",
-    },
-    {
-      key: "Settings",
-      label: "Settings",
-      icon: "settings-outline",
-      iconActive: "settings",
-      onPress: () => go("Settings", true),
-    },
-    {
-      key: "Profile",
-      label: "Account",
-      icon: "person-outline",
-      iconActive: "person",
-      onPress: () => go("Profile", true),
-    },
-  ];
-
   return (
-    <View style={styles.shell} accessibilityRole="navigation">
+    <View ref={shellRef} style={styles.shell} accessibilityRole="navigation">
       <View
         style={[
           styles.glassInner,
           {
-            backgroundColor: isDark ? "rgba(20,18,16,0.96)" : "rgba(255,252,248,0.94)",
-            borderBottomColor: colors.border,
+            backgroundColor: isDark ? colors.surfaceOverlay : "rgba(255,255,255,0.88)",
+            borderBottomColor: isDark ? semantic.border.divider || semantic.border.subtle : colors.border,
           },
-          shadowLift,
+          compact ? styles.glassInnerCompact : null,
+          Platform.OS === "web" ? shadowPremium : shadowLift,
         ]}
       >
         <LinearGradient
-          colors={[ALCHEMY.gold, "#D4AF37", ALCHEMY.brown]}
+          colors={[colors.primaryBright, colors.primary, colors.primaryDark, colors.navy]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
-          style={styles.chromeTopAccent}
-          pointerEvents="none"
+          style={[styles.chromeTopAccent, styles.peNone]}
         />
-        <View style={styles.inner}>
-          <View style={styles.brandCluster}>
-            <BrandHeaderMark navigationRef={navigationRef} compact={false} />
-            <LocationIconButton navigationRef={navigationRef} size={20} />
+        <LinearGradient
+          colors={
+            isDark
+              ? ["rgba(255,255,255,0.05)", "transparent"]
+              : ["rgba(255,255,255,0.8)", "rgba(255,255,255,0.08)"]
+          }
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[StyleSheet.absoluteFillObject, styles.peNone]}
+        />
+        <View style={[styles.inner, compact ? styles.innerCompact : null]}>
+          <View ref={brandRef} style={styles.brandCluster}>
+            <BrandHeaderMark
+              navigationRef={navigationRef}
+              compact={isPhoneWeb || compact}
+              showSubline={!isPhoneWeb && !compact}
+            />
+            {!isPhoneWeb ? <LocationIconButton navigationRef={navigationRef} size={icon.webNav} /> : null}
           </View>
 
-          <Pressable
-            onPress={() => go("Home")}
-            style={({ hovered, pressed }) => [
-              styles.searchFake,
-              {
-                borderColor: colors.searchBarBorder,
-                backgroundColor: colors.searchBarFill,
-              },
-              hovered && { borderColor: colors.primaryBorder, backgroundColor: colors.surface },
-              pressed && { opacity: 0.92 },
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel="Search products"
-          >
-            <Ionicons name="search" size={15} color={colors.textMuted} />
-            <Text style={[styles.searchFakeText, { color: colors.textMuted, fontFamily: fonts.medium }]} numberOfLines={1}>
-              {SEARCH_PLACEHOLDER}
-            </Text>
-          </Pressable>
+          {!isPhoneWeb ? (
+            <Pressable
+              onPress={() => go("Home")}
+              style={({ hovered, pressed }) => [
+                styles.searchFake,
+                {
+                  borderColor: colors.searchBarBorder,
+                  backgroundColor: colors.searchBarFill,
+                },
+                compact ? styles.searchFakeCompact : null,
+                hovered && { borderColor: semantic.border.focus, backgroundColor: semantic.bg.surface },
+                hovered && Platform.OS === "web" ? { transform: [{ translateY: -1 }], boxShadow: "0 10px 20px rgba(15, 23, 42, 0.08)" } : null,
+                pressed && { opacity: 0.92 },
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel="Search products"
+              ref={searchRef}
+            >
+              <Ionicons name="search-outline" size={icon.sm} color={colors.textSecondary} />
+              <Text style={[styles.searchFakeText, { color: colors.textMuted, fontFamily: fonts.medium }]} numberOfLines={1}>
+                {SEARCH_PLACEHOLDER}
+              </Text>
+            </Pressable>
+          ) : null}
 
-          <View style={styles.navRow}>
-            {items.map((item) => {
+          <View style={[styles.navRow, isPhoneWeb ? styles.navRowPhone : null]}>
+            {items.map((item, index) => {
               const active = routeMatchesNav(item.key, currentRouteName);
-              return (
-                <Pressable
-                  key={item.key}
-                  onPress={item.onPress}
-                  style={({ hovered, pressed }) => [
-                    styles.navItem,
-                    active && {
-                      backgroundColor: colors.primarySoft,
-                      borderWidth: 1,
-                      borderColor: colors.primaryBorder,
-                    },
-                    !active && hovered && { backgroundColor: colors.surfaceMuted },
-                    pressed && { opacity: 0.9 },
-                  ]}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: active }}
-                >
+              const itemStyle = ({ hovered, pressed }) => [
+                styles.navItem,
+                isPhoneWeb ? styles.navItemPhone : null,
+                compact ? styles.navItemCompact : null,
+                active && {
+                  backgroundColor: isDark ? colors.primarySoft : "rgba(220, 38, 38, 0.08)",
+                  borderWidth: 1,
+                  borderTopWidth: 2,
+                  borderColor: isDark ? semantic.border.accent : colors.border,
+                  borderTopColor: isDark ? semantic.border.accent : colors.primary,
+                },
+                !active && hovered && { backgroundColor: semantic.bg.muted, transform: [{ translateY: -1 }] },
+                !active && hovered && Platform.OS === "web" ? { boxShadow: "0 8px 18px rgba(15, 23, 42, 0.06)" } : null,
+                pressed && { opacity: 0.9 },
+              ];
+
+              const iconLabel = (
+                <>
                   <View style={styles.navIconWrap}>
                     <Ionicons
                       name={active && item.iconActive ? item.iconActive : item.icon}
-                      size={16}
+                      size={icon.webNav}
                       color={active ? colors.primary : colors.textSecondary}
                     />
                     {item.badge ? (
-                      <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                      <View
+                        ref={item.key === "Cart" ? cartBadgeRef : undefined}
+                        style={[styles.badge, { backgroundColor: colors.primary }]}
+                      >
                         <Text style={[styles.badgeText, { fontFamily: fonts.extrabold, color: colors.onPrimary }]}>{item.badge}</Text>
                       </View>
                     ) : null}
                   </View>
-                  {!compactNav ? (
+                  {!compactNav && !isPhoneWeb && !compact ? (
                     <Text
                       style={[
                         styles.navLabel,
@@ -168,11 +365,102 @@ export default function WebAppHeader({ currentRouteName, navigationRef }) {
                       {item.label}
                     </Text>
                   ) : null}
+                </>
+              );
+
+              if (item.adminMenu) {
+                return (
+                  <View
+                    key={item.key}
+                    ref={adminWrapRef}
+                    style={[styles.adminNavWrap, adminMenuOpen ? { zIndex: WEB_Z_INDEX.dropdown } : null]}
+                  >
+                    <Pressable
+                      ref={(el) => {
+                        navRefs.current[index] = el;
+                      }}
+                      onPress={item.onPress}
+                      style={itemStyle}
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected: active, expanded: adminMenuOpen }}
+                      accessibilityLabel="Admin menu"
+                    >
+                      {iconLabel}
+                    </Pressable>
+                    {adminMenuOpen ? (
+                      <View
+                        style={[
+                          styles.adminDropdown,
+                          {
+                            backgroundColor: colors.surface,
+                            borderColor: semantic.border.subtle,
+                          },
+                        ]}
+                      >
+                        <ScrollView
+                          nestedScrollEnabled
+                          keyboardShouldPersistTaps="handled"
+                          style={styles.adminDropdownScroll}
+                          showsVerticalScrollIndicator
+                        >
+                          {adminFlatLinks.map((link) => {
+                            const linkActive = currentRouteName === link.route;
+                            return (
+                              <Pressable
+                                key={link.route}
+                                onPress={() => goAdmin(link.route)}
+                                style={({ hovered, pressed }) => [
+                                  styles.adminDropdownRow,
+                                  linkActive && { backgroundColor: colors.primarySoft },
+                                  hovered && !linkActive && { backgroundColor: semantic.bg.muted },
+                                  pressed && { opacity: 0.92 },
+                                ]}
+                                accessibilityRole="menuitem"
+                              >
+                                <Ionicons name={link.icon} size={18} color={colors.primary} />
+                                <Text
+                                  style={[styles.adminDropdownLabel, { color: colors.textPrimary, fontFamily: fonts.semibold }]}
+                                  numberOfLines={2}
+                                >
+                                  {link.label}
+                                </Text>
+                              </Pressable>
+                            );
+                          })}
+                        </ScrollView>
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              }
+
+              return (
+                <Pressable
+                  key={item.key}
+                  ref={(el) => {
+                    navRefs.current[index] = el;
+                  }}
+                  onPress={item.onPress}
+                  style={itemStyle}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: active }}
+                >
+                  {iconLabel}
                 </Pressable>
               );
             })}
           </View>
         </View>
+        <View
+          ref={progressRef}
+          style={[
+            styles.scrollProgress,
+            {
+              backgroundColor: colors.primary,
+            },
+          ]}
+          accessibilityElementsHidden
+        />
       </View>
     </View>
   );
@@ -184,10 +472,10 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 1000,
+    zIndex: WEB_Z_INDEX.header,
     height: WEB_HEADER_HEIGHT,
     ...Platform.select({
-      web: { backdropFilter: "blur(16px)" },
+      web: { backdropFilter: "blur(24px) saturate(1.15)" },
       default: {},
     }),
   },
@@ -203,38 +491,70 @@ const styles = StyleSheet.create({
   glassInner: {
     flex: 1,
     position: "relative",
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: 1,
+    overflow: Platform.OS === "web" ? "visible" : "hidden",
+    ...Platform.select({
+      web: {
+        transition: "background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, padding 0.18s ease",
+      },
+      default: {},
+    }),
+  },
+  glassInnerCompact: {
+    ...Platform.select({
+      web: {
+        backdropFilter: "blur(34px) saturate(1.4)",
+      },
+      default: {},
+    }),
   },
   inner: {
     flex: 1,
-    maxWidth: layout.maxContentWidth,
+    maxWidth: layout.maxContentWidth + 48,
     width: "100%",
     alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: 2,
-    gap: spacing.sm,
+    paddingHorizontal: Platform.select({ web: spacing.xl + 8, default: spacing.md }),
+    paddingVertical: 12,
+    gap: spacing.md,
+    ...Platform.select({
+      web: { transition: "padding 0.2s ease" },
+      default: {},
+    }),
+  },
+  innerCompact: {
+    paddingVertical: 7,
   },
   brandCluster: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 10,
     flexShrink: 0,
   },
   searchFake: {
     flex: 1,
-    maxWidth: 400,
+    maxWidth: 600,
     minWidth: 100,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    paddingVertical: 4,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.lg,
+    gap: 10,
+    paddingVertical: 13,
+    paddingHorizontal: spacing.lg,
+    borderRadius: semanticRadius.full,
     borderWidth: 1,
-    ...Platform.select({ web: { cursor: "pointer", transition: "border-color 0.2s ease, background 0.2s ease" }, default: {} }),
+    ...Platform.select({
+      web: {
+        cursor: "pointer",
+        transition: "border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, padding 0.18s ease",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.78), 0 8px 18px rgba(15, 23, 42, 0.05)",
+      },
+      default: {},
+    }),
+  },
+  searchFakeCompact: {
+    paddingVertical: 10,
   },
   searchFakeText: {
     flex: 1,
@@ -243,24 +563,45 @@ const styles = StyleSheet.create({
   navRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: 8,
     flexShrink: 0,
+  },
+  navRowPhone: {
+    gap: 4,
   },
   navItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 5,
-    paddingHorizontal: spacing.xs,
-    borderRadius: radius.sm,
-    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+    paddingVertical: 10,
+    paddingHorizontal: spacing.md + 4,
+    minHeight: 44,
+    borderRadius: semanticRadius.full,
+    ...Platform.select({
+      web: {
+        cursor: "pointer",
+        transition:
+          "background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease, padding 0.18s ease",
+      },
+      default: {},
+    }),
+  },
+  navItemPhone: {
+    paddingVertical: 7,
+    paddingHorizontal: 7,
+    minHeight: 36,
+  },
+  navItemCompact: {
+    paddingVertical: 8,
+    paddingHorizontal: spacing.sm + 6,
+    minHeight: 38,
   },
   navIconWrap: {
     position: "relative",
   },
   navLabel: {
     fontSize: typography.bodySmall,
-    letterSpacing: 0.12,
+    letterSpacing: 0.08,
   },
   badge: {
     position: "absolute",
@@ -275,5 +616,65 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontSize: 10,
+  },
+  scrollProgress: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 2,
+    transformOrigin: "left center",
+    transform: [{ scaleX: 0 }],
+    opacity: 0.85,
+    ...Platform.select({
+      web: { transition: "transform 0.08s linear" },
+      default: {},
+    }),
+  },
+  peNone: {
+    pointerEvents: "none",
+  },
+  adminNavWrap: {
+    position: "relative",
+    alignSelf: "stretch",
+  },
+  adminDropdown: {
+    position: "absolute",
+    top: "100%",
+    right: 0,
+    marginTop: 8,
+    minWidth: 268,
+    maxHeight: 400,
+    borderRadius: semanticRadius.card,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: "hidden",
+    zIndex: WEB_Z_INDEX.dropdown,
+    ...Platform.select({
+      web: {
+        boxShadow: "0 18px 34px rgba(15, 23, 42, 0.16), 0 6px 14px rgba(15, 23, 42, 0.08)",
+      },
+      default: {},
+    }),
+  },
+  adminDropdownScroll: {
+    maxHeight: 380,
+  },
+  adminDropdownRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 11,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(148, 163, 184, 0.2)",
+    ...Platform.select({
+      web: { cursor: "pointer" },
+      default: {},
+    }),
+  },
+  adminDropdownLabel: {
+    flex: 1,
+    fontSize: typography.bodySmall,
+    letterSpacing: 0.05,
   },
 });

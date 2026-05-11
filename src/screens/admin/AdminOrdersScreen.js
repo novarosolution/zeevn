@@ -1,37 +1,124 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
+import Animated, {
+  Easing as ReanimatedEasing,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
+import MotionScrollView from "../../components/motion/MotionScrollView";
+import SectionReveal from "../../components/motion/SectionReveal";
+import useReducedMotion from "../../hooks/useReducedMotion";
 import AppFooter from "../../components/AppFooter";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
 import AdminBackLink from "../../components/admin/AdminBackLink";
+import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
 import {
   deleteAdminOrder,
   fetchAdminOrders,
+  fetchAdminUsers,
   updateAdminOrderDetails,
   updateOrderStatus,
 } from "../../services/adminService";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
 import { adminPanel } from "../../theme/adminLayout";
-import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
+import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
+import { layout, radius, spacing } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
+import {
+  ALL_ORDER_STATUSES,
+  ORDER_ADMIN_NEXT_STATUS,
+  getOrderStatusLabel,
+  getAdminNextStatusLabel,
+} from "../../utils/orderStatus";
+import PremiumInput from "../../components/ui/PremiumInput";
+import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
+import PremiumButton from "../../components/ui/PremiumButton";
+import PremiumCard from "../../components/ui/PremiumCard";
+import PremiumChip from "../../components/ui/PremiumChip";
 
-const STATUSES = ["all", "pending", "paid", "shipped", "delivered", "cancelled"];
-const NEXT_STATUS = {
-  pending: "paid",
-  paid: "shipped",
-  shipped: "delivered",
-};
+const STATUSES = ["all", ...ALL_ORDER_STATUSES];
+
+function AdminPaymentStatusChip({ paymentStatus, c, styles }) {
+  const ps = String(paymentStatus || "pending").toLowerCase();
+  const label =
+    ps === "paid"
+      ? "Paid"
+      : ps === "pending"
+        ? "Payment pending"
+        : ps === "failed"
+          ? "Payment failed"
+          : ps === "refunded"
+            ? "Refunded"
+            : String(paymentStatus || "—");
+  const bg =
+    ps === "paid"
+      ? c.secondarySoft
+      : ps === "failed"
+        ? "rgba(220, 38, 38, 0.08)"
+        : ps === "refunded"
+          ? c.surfaceMuted
+          : c.primarySoft;
+  const border =
+    ps === "paid" ? c.secondaryBorder : ps === "failed" ? c.danger : ps === "refunded" ? c.border : c.primaryBorder;
+  const textColor =
+    ps === "paid" ? c.secondaryDark : ps === "failed" ? c.danger : ps === "refunded" ? c.textMuted : c.primaryDark;
+  return (
+    <View style={[styles.paymentStatusBadge, { backgroundColor: bg, borderColor: border }]}>
+      <Text style={[styles.paymentStatusBadgeText, { color: textColor }]}>{label}</Text>
+    </View>
+  );
+}
+
+function AdminOrderStatusBadge({ status, c, styles, reducedMotion }) {
+  const s = String(status || "");
+  let target = 1;
+  if (s === "cancelled") target = 0;
+  else if (s === "delivered") target = 3;
+  else if (["shipped", "out_for_delivery", "ready_for_pickup"].includes(s)) target = 2;
+  else if (["pending", "pending_payment", "confirmed", "preparing", "paid"].includes(s)) target = 1;
+  const anim = useSharedValue(reducedMotion ? target : 0);
+  useEffect(() => {
+    if (reducedMotion) {
+      anim.value = target;
+      return;
+    }
+    anim.value = withTiming(target, {
+      duration: 360,
+      easing: ReanimatedEasing.bezier(0.22, 1, 0.36, 1),
+    });
+  }, [target, reducedMotion, anim]);
+  const pillStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(
+      anim.value,
+      [0, 1, 2, 3],
+      [c.surfaceMuted, c.primarySoft, c.secondarySoft, c.secondarySoft],
+    ),
+    borderColor: interpolateColor(
+      anim.value,
+      [0, 1, 2, 3],
+      [c.danger, c.primaryBorder, c.secondaryBorder, c.secondaryBorder],
+    ),
+  }));
+  return (
+    <Animated.View style={[styles.statusBadge, pillStyle]}>
+      <Text style={styles.statusBadgeText}>{getOrderStatusLabel(s)}</Text>
+    </Animated.View>
+  );
+}
 
 export default function AdminOrdersScreen({ navigation, route }) {
   const { token, user } = useAuth();
@@ -43,19 +130,27 @@ export default function AdminOrdersScreen({ navigation, route }) {
   const [expandedOrderId, setExpandedOrderId] = useState("");
   const [busyOrderId, setBusyOrderId] = useState("");
   const [editFormsByOrder, setEditFormsByOrder] = useState({});
+  const [deliveryPartners, setDeliveryPartners] = useState([]);
+  const [renderCount, setRenderCount] = useState(30);
 
   const { colors: c, shadowPremium } = useTheme();
   const styles = useMemo(() => createAdminOrdersStyles(c, shadowPremium), [c, shadowPremium]);
+  const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
 
-  async function loadOrders() {
+  const loadOrders = useCallback(async () => {
     try {
       setError("");
-      const response = await fetchAdminOrders(token);
+      const [response, users] = await Promise.all([
+        fetchAdminOrders(token),
+        fetchAdminUsers(token).catch(() => []),
+      ]);
       setOrders(response);
+      setDeliveryPartners((users || []).filter((u) => u.isDeliveryPartner));
     } catch (err) {
       setError(err.message || "Failed to load orders.");
     }
-  }
+  }, [token]);
 
   useEffect(() => {
     if (!user) {
@@ -63,7 +158,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
     }
     if (!user.isAdmin) return;
     loadOrders();
-  }, [user?.isAdmin]);
+  }, [user, loadOrders]);
 
   useEffect(() => {
     const incomingQuery = String(route?.params?.query || "").trim();
@@ -86,27 +181,54 @@ export default function AdminOrdersScreen({ navigation, route }) {
       return idPart.includes(query) || name.includes(query) || email.includes(query);
     });
   }, [orders, search, statusFilter]);
+  const renderedOrders = useMemo(
+    () => visibleOrders.slice(0, renderCount),
+    [visibleOrders, renderCount]
+  );
+
+  useEffect(() => {
+    setRenderCount(30);
+  }, [search, statusFilter]);
 
   const stats = useMemo(() => {
     const total = orders.length;
-    const pending = orders.filter((order) => order.status === "pending").length;
-    const inTransit = orders.filter((order) => order.status === "shipped").length;
+    const newOrders = orders.filter((order) => order.status === "pending").length;
+    const inKitchen = orders.filter((order) =>
+      ["confirmed", "preparing", "paid"].includes(order.status)
+    ).length;
+    const outForDelivery = orders.filter((order) =>
+      ["ready_for_pickup", "shipped", "out_for_delivery"].includes(order.status)
+    ).length;
     const delivered = orders.filter((order) => order.status === "delivered").length;
-    return { total, pending, inTransit, delivered };
+    return { total, newOrders, inKitchen, outForDelivery, delivered };
   }, [orders]);
 
   if (user && !user.isAdmin) {
     return (
-      <CustomerScreenShell style={styles.screen}>
-        <ScrollView style={customerScrollFill} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.panel}>
-            <Text style={styles.title}>Admin Access Required</Text>
-            <Text style={styles.subtitle}>This account does not have admin privileges.</Text>
-            <TouchableOpacity style={styles.refreshBtn} onPress={() => navigation.navigate("Home")}>
-              <Text style={styles.refreshBtnText}>Back to Home</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+      <CustomerScreenShell style={styles.screen} variant="admin">
+        <MotionScrollView
+          style={customerScrollFill}
+          contentContainerStyle={adminInnerPageScrollContent(insets)}
+          showsVerticalScrollIndicator={false}
+        >
+          <SectionReveal delay={40} preset="fade-up">
+            <View style={styles.panel}>
+              <PremiumErrorBanner
+                severity="warning"
+                title="Admin access required"
+                message="This account does not have admin privileges."
+              />
+              <PremiumButton
+                label="Back to home"
+                iconLeft="home-outline"
+                variant="primary"
+                size="md"
+                onPress={() => navigation.navigate("Home")}
+                style={styles.gateCta}
+              />
+            </View>
+          </SectionReveal>
+        </MotionScrollView>
       </CustomerScreenShell>
     );
   }
@@ -152,6 +274,13 @@ export default function AdminOrdersScreen({ navigation, route }) {
 
   const getOrderEditForm = (order) => {
     if (editFormsByOrder[order._id]) return editFormsByOrder[order._id];
+    const aid = order.assignedDeliveryUser;
+    const assignedDeliveryUserId =
+      aid && typeof aid === "object" && aid._id
+        ? String(aid._id)
+        : aid
+          ? String(aid)
+          : "";
     return {
       paymentMethod: order.paymentMethod || "",
       fullName: order.shippingAddress?.fullName || "",
@@ -162,6 +291,13 @@ export default function AdminOrdersScreen({ navigation, route }) {
       postalCode: order.shippingAddress?.postalCode || "",
       country: order.shippingAddress?.country || "",
       note: order.shippingAddress?.note || "",
+      assignedDeliveryUserId,
+      invoiceNumber: order.invoice?.number || "",
+      invoiceIssueDate: order.invoice?.issueDate ? String(order.invoice.issueDate).slice(0, 10) : "",
+      invoiceDueDate: order.invoice?.dueDate ? String(order.invoice.dueDate).slice(0, 10) : "",
+      invoiceTaxRatePercent: String(Number(order.invoice?.taxRatePercent || 0)),
+      invoiceStatus: order.invoice?.status || "draft",
+      invoiceNotes: order.invoice?.notes || "",
     };
   };
 
@@ -186,6 +322,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
       setSuccess("");
       await updateAdminOrderDetails(token, order._id, {
         paymentMethod: form.paymentMethod,
+        assignedDeliveryUser: form.assignedDeliveryUserId || null,
         shippingAddress: {
           fullName: form.fullName,
           phone: form.phone,
@@ -196,11 +333,38 @@ export default function AdminOrdersScreen({ navigation, route }) {
           country: form.country,
           note: form.note,
         },
+        invoice: {
+          number: form.invoiceNumber,
+          issueDate: form.invoiceIssueDate || null,
+          dueDate: form.invoiceDueDate || null,
+          taxRatePercent: Number(form.invoiceTaxRatePercent || 0),
+          status: form.invoiceStatus,
+          notes: form.invoiceNotes,
+        },
       });
       setSuccess("Order details updated successfully.");
       await loadOrders();
     } catch (err) {
       setError(err.message || "Unable to update order details.");
+    } finally {
+      setBusyOrderId("");
+    }
+  };
+
+  const handleAssignDeliveryPartner = async (order, deliveryUserId) => {
+    try {
+      const nextId = deliveryUserId ? String(deliveryUserId) : "";
+      updateOrderFormField(order._id, "assignedDeliveryUserId", nextId, order);
+      setBusyOrderId(order._id);
+      setError("");
+      setSuccess("");
+      await updateAdminOrderDetails(token, order._id, {
+        assignedDeliveryUser: nextId || null,
+      });
+      setSuccess(nextId ? "Delivery partner assigned." : "Delivery partner unassigned.");
+      await loadOrders();
+    } catch (err) {
+      setError(err.message || "Unable to assign delivery partner.");
     } finally {
       setBusyOrderId("");
     }
@@ -224,73 +388,101 @@ export default function AdminOrdersScreen({ navigation, route }) {
     );
   }
 
-  function StatusBadge({ status }) {
-    const isDelivered = status === "delivered";
-    const isCancelled = status === "cancelled";
-    const isShipped = status === "shipped";
-    return (
-      <View
-        style={[
-          styles.statusBadge,
-          isDelivered ? styles.statusDelivered : null,
-          isCancelled ? styles.statusCancelled : null,
-          isShipped ? styles.statusShipped : null,
-        ]}
-      >
-        <Text style={styles.statusBadgeText}>{status}</Text>
-      </View>
-    );
-  }
-
   return (
-    <CustomerScreenShell style={styles.screen}>
-      <ScrollView style={customerScrollFill} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <CustomerScreenShell style={styles.screen} variant="admin">
+      <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <MotionScrollView
+        style={customerScrollFill}
+        contentContainerStyle={adminInnerPageScrollContent(insets)}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.panel}>
+          <SectionReveal preset="fade-up" delay={0}>
           <AdminBackLink navigation={navigation} />
-          <Text style={styles.title}>Manage Orders</Text>
-          <Text style={styles.subtitle}>Clear order timeline, full detail view, and quick action controls.</Text>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          {success ? <Text style={styles.successText}>{success}</Text> : null}
+          <AdminPageHeading
+            title="Manage orders"
+            subtitle="Track statuses, assign delivery, and move orders forward."
+          />
+          {error ? (
+            <View style={styles.bannerSpacer}>
+              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+            </View>
+          ) : null}
+          {success ? (
+            <View style={styles.bannerSpacer}>
+              <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
+            </View>
+          ) : null}
 
           <View style={styles.statsGrid}>
             <MetricCard label="Total" value={stats.total} />
-            <MetricCard label="Pending" value={stats.pending} />
-            <MetricCard label="Shipped" value={stats.inTransit} />
+            <MetricCard label="New" value={stats.newOrders} />
+            <MetricCard label="In kitchen" value={stats.inKitchen} />
+            <MetricCard label="Out / pickup" value={stats.outForDelivery} />
             <MetricCard label="Delivered" value={stats.delivered} />
           </View>
 
           <View style={styles.actionsRow}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by order id / user..."
-              placeholderTextColor={c.textMuted}
-              value={search}
-              onChangeText={setSearch}
+            <View style={styles.searchInputWrap}>
+              <PremiumInput
+                label="Search orders"
+                value={search}
+                onChangeText={setSearch}
+                placeholder="Order id, name, or email"
+                iconLeft="search-outline"
+                iconRight={search ? "close-circle" : undefined}
+                onIconRightPress={search ? () => setSearch("") : undefined}
+                autoCapitalize="none"
+              />
+            </View>
+            <PremiumButton
+              label="Refresh"
+              iconLeft="refresh-outline"
+              variant="secondary"
+              size="sm"
+              onPress={loadOrders}
+              style={styles.refreshBtn}
             />
-            <TouchableOpacity style={styles.refreshBtn} onPress={loadOrders}>
-              <Text style={styles.refreshBtnText}>Refresh</Text>
-            </TouchableOpacity>
           </View>
 
-          <View style={styles.filtersRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filtersRow}
+          >
             {STATUSES.map((status) => (
-              <TouchableOpacity
+              <PremiumChip
                 key={status}
-                style={[styles.filterPill, statusFilter === status ? styles.filterPillActive : null]}
+                label={status === "all" ? "All" : getOrderStatusLabel(status)}
+                tone="gold"
+                size="sm"
+                selected={statusFilter === status}
                 onPress={() => setStatusFilter(status)}
-              >
-                <Text
-                  style={[styles.filterText, statusFilter === status ? styles.filterTextActive : null]}
-                >
-                  {status}
-                </Text>
-              </TouchableOpacity>
+              />
             ))}
-          </View>
+          </ScrollView>
+          </SectionReveal>
 
+          <SectionReveal preset="fade-up" delay={60}>
           <View style={styles.listContent}>
-            {visibleOrders.map((item) => (
-              <View key={item._id} style={styles.card}>
+            {renderedOrders.map((item) => {
+              const accentBorder =
+                item.status === "delivered"
+                  ? c.secondary
+                  : item.status === "cancelled"
+                    ? c.danger
+                    : ["shipped", "out_for_delivery"].includes(item.status)
+                      ? c.primary
+                      : c.border;
+              return (
+              <PremiumCard
+                key={item._id}
+                variant="muted"
+                padding="md"
+                goldAccent={["shipped", "out_for_delivery"].includes(item.status)}
+                style={[styles.orderCardShell, { borderLeftWidth: 4, borderLeftColor: accentBorder }]}
+              >
                 <View style={styles.orderTopRow}>
                   <View style={styles.orderMain}>
                     <Text style={styles.cardTitle}>Order #{item._id.slice(-6).toUpperCase()}</Text>
@@ -298,7 +490,15 @@ export default function AdminOrdersScreen({ navigation, route }) {
                       {item.user?.name || "User"} • {item.user?.email || "N/A"}
                     </Text>
                   </View>
-                  <StatusBadge status={item.status} />
+                  <View style={styles.badgeCluster}>
+                    <AdminOrderStatusBadge
+                      status={item.status}
+                      c={c}
+                      styles={styles}
+                      reducedMotion={reducedMotion}
+                    />
+                    <AdminPaymentStatusChip paymentStatus={item.paymentStatus} c={c} styles={styles} />
+                  </View>
                 </View>
                 <Text style={styles.amountText}>{formatINR(Number(item.totalPrice || 0))}</Text>
                 <Text style={styles.cardMeta}>
@@ -308,37 +508,40 @@ export default function AdminOrdersScreen({ navigation, route }) {
                 <Text style={styles.cardMeta}>
                   Placed: {item.createdAt ? new Date(item.createdAt).toLocaleString() : "N/A"}
                 </Text>
+                {item.assignedDeliveryUser?.name ? (
+                  <Text style={styles.cardMeta}>
+                    Delivery partner: {item.assignedDeliveryUser.name}
+                    {item.assignedDeliveryUser.phone ? ` • ${item.assignedDeliveryUser.phone}` : ""}
+                  </Text>
+                ) : (
+                  <Text style={styles.cardMeta}>Delivery partner: not assigned</Text>
+                )}
 
                 <View style={styles.quickActionsRow}>
-                  {NEXT_STATUS[item.status] ? (
-                    <TouchableOpacity
-                      style={styles.primaryActionBtn}
-                      onPress={() => handleStatus(item._id, NEXT_STATUS[item.status])}
+                  {ORDER_ADMIN_NEXT_STATUS[item.status] ? (
+                    <PremiumButton
+                      label={
+                        busyOrderId === item._id
+                          ? "Updating…"
+                          : `Next: ${getAdminNextStatusLabel(item.status)}`
+                      }
+                      iconLeft="arrow-forward-outline"
+                      variant="primary"
+                      size="sm"
+                      loading={busyOrderId === item._id}
                       disabled={busyOrderId === item._id}
-                    >
-                      <Ionicons name="arrow-forward-outline" size={14} color={c.onPrimary} />
-                      <Text style={styles.primaryActionText}>
-                        {busyOrderId === item._id
-                          ? "Updating..."
-                          : `Move to ${NEXT_STATUS[item.status]}`}
-                      </Text>
-                    </TouchableOpacity>
+                      onPress={() => handleStatus(item._id, ORDER_ADMIN_NEXT_STATUS[item.status])}
+                    />
                   ) : null}
-                  <TouchableOpacity
-                    style={styles.secondaryActionBtn}
+                  <PremiumButton
+                    label={expandedOrderId === item._id ? "Hide details" : "View full details"}
+                    iconLeft={expandedOrderId === item._id ? "chevron-up-outline" : "chevron-down-outline"}
+                    variant="ghost"
+                    size="sm"
                     onPress={() =>
                       setExpandedOrderId((current) => (current === item._id ? "" : item._id))
                     }
-                  >
-                    <Ionicons
-                      name={expandedOrderId === item._id ? "chevron-up" : "chevron-down"}
-                      size={14}
-                      color={c.textPrimary}
-                    />
-                    <Text style={styles.secondaryActionText}>
-                      {expandedOrderId === item._id ? "Hide details" : "View full details"}
-                    </Text>
-                  </TouchableOpacity>
+                  />
                 </View>
 
                 {expandedOrderId === item._id ? (
@@ -386,128 +589,250 @@ export default function AdminOrdersScreen({ navigation, route }) {
                     <Text style={styles.cardMeta}>{item.shippingAddress?.country || "N/A"}</Text>
 
                     <Text style={styles.cardMeta}>Payment Method: {item.paymentMethod || "N/A"}</Text>
+                    {item.razorpay?.orderId ? (
+                      <Text style={styles.cardMeta}>Razorpay order ID: {item.razorpay.orderId}</Text>
+                    ) : null}
+                    {item.razorpay?.paymentId ? (
+                      <Text style={styles.cardMeta}>Razorpay payment ID: {item.razorpay.paymentId}</Text>
+                    ) : null}
+
+                    <SectionTitle icon="bicycle-outline" label="Assign delivery partner" />
+                    <Text style={styles.cardMeta}>
+                      {item.assignedDeliveryUser?.name
+                        ? `Current: ${item.assignedDeliveryUser.name}`
+                        : "No one assigned — pick a partner and save order details."}
+                    </Text>
+                    {deliveryPartners.length === 0 ? (
+                      <Text style={styles.cardMeta}>
+                        No delivery partners yet. Enable delivery on a user in Manage Users.
+                      </Text>
+                    ) : (
+                      <View style={styles.assigneeChips}>
+                        <PremiumChip
+                          label="Unassign"
+                          tone="neutral"
+                          size="sm"
+                          selected={!getOrderEditForm(item).assignedDeliveryUserId}
+                          onPress={() => handleAssignDeliveryPartner(item, "")}
+                        />
+                        {deliveryPartners.map((dp) => {
+                          const sel = getOrderEditForm(item).assignedDeliveryUserId === String(dp._id);
+                          return (
+                            <PremiumChip
+                              key={dp._id}
+                              label={dp.name}
+                              tone="gold"
+                              size="sm"
+                              selected={sel}
+                              style={styles.assigneeChipMax}
+                              onPress={() => handleAssignDeliveryPartner(item, String(dp._id))}
+                            />
+                          );
+                        })}
+                      </View>
+                    )}
 
                     <SectionTitle icon="create-outline" label="Edit Order Details (Admin)" />
-                    <TextInput
-                      style={styles.editInput}
-                      placeholder="Payment Method"
-                      value={getOrderEditForm(item).paymentMethod}
-                      onChangeText={(value) =>
-                        updateOrderFormField(item._id, "paymentMethod", value, item)
-                      }
-                    />
-                    <TextInput
-                      style={styles.editInput}
-                      placeholder="Full Name"
-                      value={getOrderEditForm(item).fullName}
-                      onChangeText={(value) => updateOrderFormField(item._id, "fullName", value, item)}
-                    />
-                    <TextInput
-                      style={styles.editInput}
-                      placeholder="Phone"
-                      value={getOrderEditForm(item).phone}
-                      onChangeText={(value) => updateOrderFormField(item._id, "phone", value, item)}
-                    />
-                    <TextInput
-                      style={styles.editInput}
-                      placeholder="Address Line"
-                      value={getOrderEditForm(item).line1}
-                      onChangeText={(value) => updateOrderFormField(item._id, "line1", value, item)}
-                    />
-                    <View style={styles.editSplitRow}>
-                      <TextInput
-                        style={[styles.editInput, styles.editHalfInput]}
-                        placeholder="City"
-                        value={getOrderEditForm(item).city}
-                        onChangeText={(value) => updateOrderFormField(item._id, "city", value, item)}
-                      />
-                      <TextInput
-                        style={[styles.editInput, styles.editHalfInput]}
-                        placeholder="State"
-                        value={getOrderEditForm(item).state}
-                        onChangeText={(value) => updateOrderFormField(item._id, "state", value, item)}
-                      />
-                    </View>
-                    <View style={styles.editSplitRow}>
-                      <TextInput
-                        style={[styles.editInput, styles.editHalfInput]}
-                        placeholder="Postal Code"
-                        value={getOrderEditForm(item).postalCode}
+                    <View style={styles.orderFieldGap}>
+                      <PremiumInput
+                        label="Payment method"
+                        value={getOrderEditForm(item).paymentMethod}
                         onChangeText={(value) =>
-                          updateOrderFormField(item._id, "postalCode", value, item)
+                          updateOrderFormField(item._id, "paymentMethod", value, item)
                         }
-                      />
-                      <TextInput
-                        style={[styles.editInput, styles.editHalfInput]}
-                        placeholder="Country"
-                        value={getOrderEditForm(item).country}
-                        onChangeText={(value) => updateOrderFormField(item._id, "country", value, item)}
+                        iconLeft="card-outline"
                       />
                     </View>
-                    <TextInput
-                      style={styles.editInput}
-                      placeholder="Order Note"
-                      value={getOrderEditForm(item).note}
-                      onChangeText={(value) => updateOrderFormField(item._id, "note", value, item)}
-                    />
-                    <TouchableOpacity
-                      style={styles.saveEditBtn}
-                      onPress={() => handleSaveOrderDetails(item)}
+                    <View style={styles.orderFieldGap}>
+                      <PremiumInput
+                        label="Full name"
+                        value={getOrderEditForm(item).fullName}
+                        onChangeText={(value) => updateOrderFormField(item._id, "fullName", value, item)}
+                        iconLeft="person-outline"
+                      />
+                    </View>
+                    <View style={styles.orderFieldGap}>
+                      <PremiumInput
+                        label="Phone"
+                        value={getOrderEditForm(item).phone}
+                        onChangeText={(value) => updateOrderFormField(item._id, "phone", value, item)}
+                        keyboardType="phone-pad"
+                        iconLeft="call-outline"
+                      />
+                    </View>
+                    <View style={styles.orderFieldGap}>
+                      <PremiumInput
+                        label="Address line"
+                        value={getOrderEditForm(item).line1}
+                        onChangeText={(value) => updateOrderFormField(item._id, "line1", value, item)}
+                        iconLeft="home-outline"
+                      />
+                    </View>
+                    <View style={styles.editSplitRow}>
+                      <View style={[styles.orderFieldGap, styles.orderHalfField]}>
+                        <PremiumInput
+                          label="City"
+                          value={getOrderEditForm(item).city}
+                          onChangeText={(value) => updateOrderFormField(item._id, "city", value, item)}
+                        />
+                      </View>
+                      <View style={[styles.orderFieldGap, styles.orderHalfField]}>
+                        <PremiumInput
+                          label="State"
+                          value={getOrderEditForm(item).state}
+                          onChangeText={(value) => updateOrderFormField(item._id, "state", value, item)}
+                        />
+                      </View>
+                    </View>
+                    <View style={styles.editSplitRow}>
+                      <View style={[styles.orderFieldGap, styles.orderHalfField]}>
+                        <PremiumInput
+                          label="Postal code"
+                          value={getOrderEditForm(item).postalCode}
+                          onChangeText={(value) =>
+                            updateOrderFormField(item._id, "postalCode", value, item)
+                          }
+                          keyboardType="number-pad"
+                        />
+                      </View>
+                      <View style={[styles.orderFieldGap, styles.orderHalfField]}>
+                        <PremiumInput
+                          label="Country"
+                          value={getOrderEditForm(item).country}
+                          onChangeText={(value) => updateOrderFormField(item._id, "country", value, item)}
+                        />
+                      </View>
+                    </View>
+                    <View style={styles.orderFieldGap}>
+                      <PremiumInput
+                        label="Order note"
+                        value={getOrderEditForm(item).note}
+                        onChangeText={(value) => updateOrderFormField(item._id, "note", value, item)}
+                        iconLeft="document-outline"
+                      />
+                    </View>
+                    <SectionTitle icon="document-text-outline" label="Invoice (Admin update)" />
+                    <View style={styles.orderFieldGap}>
+                      <PremiumInput
+                        label="Invoice number"
+                        value={getOrderEditForm(item).invoiceNumber}
+                        onChangeText={(value) => updateOrderFormField(item._id, "invoiceNumber", value, item)}
+                        iconLeft="receipt-outline"
+                      />
+                    </View>
+                    <View style={styles.editSplitRow}>
+                      <View style={[styles.orderFieldGap, styles.orderHalfField]}>
+                        <PremiumInput
+                          label="Issue date (YYYY-MM-DD)"
+                          value={getOrderEditForm(item).invoiceIssueDate}
+                          onChangeText={(value) => updateOrderFormField(item._id, "invoiceIssueDate", value, item)}
+                          autoCapitalize="none"
+                        />
+                      </View>
+                      <View style={[styles.orderFieldGap, styles.orderHalfField]}>
+                        <PremiumInput
+                          label="Due date (YYYY-MM-DD)"
+                          value={getOrderEditForm(item).invoiceDueDate}
+                          onChangeText={(value) => updateOrderFormField(item._id, "invoiceDueDate", value, item)}
+                          autoCapitalize="none"
+                        />
+                      </View>
+                    </View>
+                    <View style={styles.editSplitRow}>
+                      <View style={[styles.orderFieldGap, styles.orderHalfField]}>
+                        <PremiumInput
+                          label="Tax %"
+                          value={getOrderEditForm(item).invoiceTaxRatePercent}
+                          onChangeText={(value) => updateOrderFormField(item._id, "invoiceTaxRatePercent", value, item)}
+                          keyboardType="decimal-pad"
+                        />
+                      </View>
+                      <View style={[styles.orderFieldGap, styles.orderHalfField]}>
+                        <PremiumInput
+                          label="Invoice status"
+                          value={getOrderEditForm(item).invoiceStatus}
+                          onChangeText={(value) => updateOrderFormField(item._id, "invoiceStatus", value, item)}
+                          placeholder="draft / final / paid / void"
+                          autoCapitalize="none"
+                        />
+                      </View>
+                    </View>
+                    <View style={styles.orderFieldGap}>
+                      <PremiumInput
+                        label="Invoice notes"
+                        value={getOrderEditForm(item).invoiceNotes}
+                        onChangeText={(value) => updateOrderFormField(item._id, "invoiceNotes", value, item)}
+                        multiline
+                        numberOfLines={2}
+                      />
+                    </View>
+                    <PremiumButton
+                      label={busyOrderId === item._id ? "Saving…" : "Save order details"}
+                      iconLeft="save-outline"
+                      variant="secondary"
+                      size="sm"
+                      loading={busyOrderId === item._id}
                       disabled={busyOrderId === item._id}
-                    >
-                      <Text style={styles.saveEditBtnText}>
-                        {busyOrderId === item._id ? "Saving..." : "Save Order Details"}
-                      </Text>
-                    </TouchableOpacity>
+                      onPress={() => handleSaveOrderDetails(item)}
+                      fullWidth
+                      style={styles.saveEditBtn}
+                    />
 
-                    <View style={styles.statusButtonsWrap}>
+                    <Text style={styles.cardMeta}>Set status (any stage)</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statusButtonsWrap}>
                       {STATUSES.filter((status) => status !== "all").map((status) => (
-                        <TouchableOpacity
+                        <PremiumChip
                           key={status}
-                          style={[
-                            styles.smallBtn,
-                            item.status === status ? styles.smallBtnActive : null,
-                          ]}
-                          onPress={() => handleStatus(item._id, status)}
-                          disabled={busyOrderId === item._id}
-                        >
-                          <Text
-                            style={[
-                              styles.smallBtnText,
-                              item.status === status ? styles.smallBtnTextActive : null,
-                            ]}
-                          >
-                            {status}
-                          </Text>
-                        </TouchableOpacity>
+                          label={getOrderStatusLabel(status)}
+                          tone="gold"
+                          size="sm"
+                          selected={item.status === status}
+                          onPress={
+                            busyOrderId === item._id ? undefined : () => handleStatus(item._id, status)
+                          }
+                        />
                       ))}
-                    </View>
+                    </ScrollView>
                   </View>
                 ) : null}
 
                 <View style={styles.actionsWrap}>
-                  <TouchableOpacity
-                    style={styles.dangerBtn}
-                    onPress={() => handleDelete(item._id)}
+                  <PremiumButton
+                    label={busyOrderId === item._id ? "Deleting…" : "Delete order"}
+                    iconLeft="trash-outline"
+                    variant="danger"
+                    size="sm"
+                    loading={busyOrderId === item._id}
                     disabled={busyOrderId === item._id}
-                  >
-                    <Ionicons name="trash-outline" size={14} color={c.primary} />
-                    <Text style={styles.dangerBtnText}>
-                      {busyOrderId === item._id ? "Deleting..." : "Delete Order"}
-                    </Text>
-                  </TouchableOpacity>
+                    onPress={() => handleDelete(item._id)}
+                  />
                 </View>
-              </View>
-            ))}
+              </PremiumCard>
+            );
+            })}
+            {renderedOrders.length < visibleOrders.length ? (
+              <PremiumButton
+                label={`Load more (${visibleOrders.length - renderedOrders.length} remaining)`}
+                variant="ghost"
+                size="sm"
+                onPress={() => setRenderCount((prev) => prev + 30)}
+                style={styles.loadMoreBtn}
+              />
+            ) : null}
             {visibleOrders.length === 0 ? (
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyText}>No orders match this filter.</Text>
-              </View>
+              <PremiumEmptyState
+                iconName="receipt-outline"
+                title="No orders match this filter"
+                description="Try another status chip or clear your search."
+                compact
+              />
             ) : null}
           </View>
+          </SectionReveal>
         </View>
         <AppFooter />
-      </ScrollView>
+      </MotionScrollView>
+      </KeyboardAvoidingView>
     </CustomerScreenShell>
   );
 }
@@ -518,29 +843,19 @@ function createAdminOrdersStyles(c, shadowPremium) {
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth, default: "100%" }),
-  },
-  scrollContent: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+    maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
   },
   panel: {
     ...adminPanel(c, shadowPremium),
   },
-  title: {
-    fontSize: typography.h2,
-    fontFamily: fonts.extrabold,
-    letterSpacing: -0.35,
-    color: c.textPrimary,
+  gateCta: {
+    marginTop: spacing.md,
+    alignSelf: "flex-start",
   },
-  subtitle: {
-    marginTop: spacing.xs,
-    color: c.textSecondary,
-    marginBottom: spacing.md,
+  orderCardShell: {
+    width: "100%",
   },
-  successText: {
-    color: c.success,
-    fontWeight: "600",
+  bannerSpacer: {
     marginBottom: spacing.sm,
   },
   statsGrid: {
@@ -569,77 +884,31 @@ function createAdminOrdersStyles(c, shadowPremium) {
     fontSize: 11,
     fontWeight: "700",
   },
-  errorText: {
-    color: c.danger,
-    fontWeight: "600",
-    marginBottom: spacing.sm,
-  },
   actionsRow: {
     flexDirection: "row",
-    alignItems: "center",
+    flexWrap: "wrap",
+    alignItems: "flex-end",
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
-  searchInput: {
+  searchInputWrap: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    backgroundColor: c.surfaceMuted,
-    color: c.textPrimary,
-    minHeight: 42,
+    minWidth: 0,
   },
   refreshBtn: {
-    paddingHorizontal: spacing.md,
-    borderWidth: 1,
-    borderColor: c.primaryBorder,
-    borderRadius: radius.md,
-    backgroundColor: c.primarySoft,
-    justifyContent: "center",
-  },
-  refreshBtnText: {
-    color: c.primary,
-    fontSize: 12,
-    fontWeight: "700",
+    alignSelf: "flex-end",
   },
   filtersRow: {
     flexDirection: "row",
     flexWrap: "wrap",
+    alignItems: "center",
     gap: spacing.xs,
     marginBottom: spacing.sm,
-  },
-  filterPill: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    backgroundColor: c.surface,
-  },
-  filterPillActive: {
-    backgroundColor: c.primarySoft,
-    borderColor: c.primaryBorder,
-  },
-  filterText: {
-    color: c.textPrimary,
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "capitalize",
-  },
-  filterTextActive: {
-    color: c.primary,
+    paddingRight: spacing.md,
   },
   listContent: {
     gap: spacing.sm,
     paddingBottom: spacing.xl,
-  },
-  card: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    backgroundColor: c.surfaceMuted,
   },
   orderTopRow: {
     flexDirection: "row",
@@ -649,6 +918,14 @@ function createAdminOrdersStyles(c, shadowPremium) {
   },
   orderMain: {
     flex: 1,
+  },
+  badgeCluster: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 8,
+    maxWidth: "100%",
   },
   cardTitle: {
     color: c.textPrimary,
@@ -677,6 +954,10 @@ function createAdminOrdersStyles(c, shadowPremium) {
     backgroundColor: c.surfaceMuted,
   },
   statusShipped: {
+    borderColor: c.secondaryBorder,
+    backgroundColor: c.secondarySoft,
+  },
+  statusEarly: {
     borderColor: c.primaryBorder,
     backgroundColor: c.primarySoft,
   },
@@ -684,7 +965,16 @@ function createAdminOrdersStyles(c, shadowPremium) {
     color: c.textPrimary,
     fontSize: 10,
     fontWeight: "700",
-    textTransform: "capitalize",
+  },
+  paymentStatusBadge: {
+    borderWidth: 1,
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  paymentStatusBadgeText: {
+    fontSize: 10,
+    fontWeight: "700",
   },
   cardMeta: {
     marginTop: 4,
@@ -697,70 +987,19 @@ function createAdminOrdersStyles(c, shadowPremium) {
     flexWrap: "wrap",
     gap: spacing.xs,
   },
-  primaryActionBtn: {
-    borderWidth: 1,
-    borderColor: c.primary,
-    borderRadius: radius.pill,
-    backgroundColor: c.primary,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+  orderFieldGap: {
+    marginBottom: spacing.sm,
   },
-  primaryActionText: {
-    color: c.onPrimary,
-    fontSize: 12,
-    fontWeight: "700",
-    textTransform: "capitalize",
-  },
-  secondaryActionBtn: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.pill,
-    backgroundColor: c.surface,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  secondaryActionText: {
-    color: c.textPrimary,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  editInput: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.md,
-    backgroundColor: c.surface,
-    color: c.textPrimary,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 9,
-    fontSize: 12,
-    marginTop: spacing.xs,
+  orderHalfField: {
+    flex: 1,
+    minWidth: 0,
   },
   editSplitRow: {
     flexDirection: "row",
-    gap: spacing.xs,
-  },
-  editHalfInput: {
-    flex: 1,
+    gap: spacing.sm,
   },
   saveEditBtn: {
-    marginTop: spacing.xs,
-    borderWidth: 1,
-    borderColor: c.primary,
-    borderRadius: radius.pill,
-    backgroundColor: c.primary,
-    alignItems: "center",
-    paddingVertical: 9,
-  },
-  saveEditBtnText: {
-    color: c.onPrimary,
-    fontSize: 12,
-    fontWeight: "700",
+    marginTop: spacing.sm,
   },
   detailsWrap: {
     marginTop: spacing.sm,
@@ -805,10 +1044,11 @@ function createAdminOrdersStyles(c, shadowPremium) {
     fontWeight: "700",
   },
   statusButtonsWrap: {
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
     flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
     gap: spacing.xs,
+    paddingBottom: spacing.xs,
   },
   actionsWrap: {
     marginTop: spacing.sm,
@@ -816,55 +1056,18 @@ function createAdminOrdersStyles(c, shadowPremium) {
     flexWrap: "wrap",
     gap: spacing.xs,
   },
-  smallBtn: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: c.surface,
+  loadMoreBtn: {
+    marginTop: spacing.sm,
+    alignSelf: "center",
   },
-  smallBtnActive: {
-    borderColor: c.primaryBorder,
-    backgroundColor: c.primarySoft,
-  },
-  smallBtnText: {
-    color: c.textPrimary,
-    fontSize: 11,
-    fontWeight: "700",
-    textTransform: "capitalize",
-  },
-  smallBtnTextActive: {
-    color: c.primary,
-  },
-  dangerBtn: {
-    borderWidth: 1,
-    borderColor: c.primaryBorder,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    backgroundColor: c.primarySoft,
+  assigneeChips: {
     flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+    flexWrap: "wrap",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
-  dangerBtnText: {
-    color: c.primary,
-    fontWeight: "700",
-    fontSize: 12,
-  },
-  emptyCard: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.md,
-    backgroundColor: c.surfaceMuted,
-    paddingVertical: spacing.lg,
-    alignItems: "center",
-  },
-  emptyText: {
-    color: c.textSecondary,
-    fontSize: 13,
-    fontWeight: "600",
+  assigneeChipMax: {
+    maxWidth: 160,
   },
   });
 }

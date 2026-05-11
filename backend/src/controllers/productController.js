@@ -254,7 +254,7 @@ async function uploadProductImage(req, res, next) {
       : `data:${safeMime};base64,${imageBase64}`;
 
     const uploaded = await cloudinary.uploader.upload(uploadSource, {
-      folder: "kankreg/products",
+      folder: "zeevan/products",
       resource_type: "image",
     });
 
@@ -272,10 +272,82 @@ async function uploadProductImage(req, res, next) {
   }
 }
 
+async function getProductReviews(req, res, next) {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id).select("name ratingAverage reviewCount reviews");
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+    const reviews = [...(product.reviews || [])].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+    res.json({
+      productId: product._id,
+      productName: product.name,
+      ratingAverage: Number(product.ratingAverage || 0),
+      reviewCount: Number(product.reviewCount || 0),
+      reviews,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createOrUpdateProductReview(req, res, next) {
+  try {
+    const { id } = req.params;
+    const ratingNum = Number(req.body?.rating);
+    const comment = String(req.body?.comment || "").trim();
+    if (!Number.isFinite(ratingNum) || ratingNum < 1 || ratingNum > 5) {
+      return res.status(400).json({ message: "Rating must be between 1 and 5." });
+    }
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    const userId = String(req.user._id);
+    const existing = (product.reviews || []).find((r) => String(r.user) === userId);
+    if (existing) {
+      existing.rating = ratingNum;
+      existing.comment = comment;
+      existing.userName = String(req.user.name || "User").trim() || "User";
+    } else {
+      product.reviews.push({
+        user: req.user._id,
+        userName: String(req.user.name || "User").trim() || "User",
+        rating: ratingNum,
+        comment,
+      });
+    }
+
+    const all = product.reviews || [];
+    const reviewCount = all.length;
+    const sum = all.reduce((acc, r) => acc + Number(r.rating || 0), 0);
+    product.reviewCount = reviewCount;
+    product.ratingAverage = reviewCount > 0 ? Number((sum / reviewCount).toFixed(2)) : 0;
+    await product.save();
+
+    const reviews = [...all].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    res.status(201).json({
+      productId: product._id,
+      ratingAverage: product.ratingAverage,
+      reviewCount: product.reviewCount,
+      reviews,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getProducts,
   createProduct,
   updateProduct,
   deleteProduct,
   uploadProductImage,
+  getProductReviews,
+  createOrUpdateProductReview,
 };

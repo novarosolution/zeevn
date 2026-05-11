@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   useWindowDimensions,
   View,
@@ -27,15 +27,38 @@ import {
 } from "../services/orderService";
 import { getCurrentAddressFromGPS } from "../services/locationService";
 import { useTheme } from "../context/ThemeContext";
-import { customerPageScrollBase, customerPanel, customerScrollFill } from "../theme/screenLayout";
-import { fonts, layout, radius, spacing, typography } from "../theme/tokens";
+import {
+  customerInnerPageScrollContent,
+  customerPanel,
+  customerScrollFill,
+  customerWebStickyTop,
+} from "../theme/screenLayout";
+import { fonts, icon, layout, radius, semanticRadius, spacing, typography } from "../theme/tokens";
 import { formatINR } from "../utils/currency";
 import { getImageUriCandidates } from "../utils/image";
 import { HOME_CATALOG_ALL, matchesShelfProduct } from "../utils/shelfMatch";
 import { getProducts } from "../services/productService";
-import { BRAND_LOGO_SIZE } from "../constants/brand";
-import BrandLogo from "../components/BrandLogo";
+import { BRAND_HEADER_ROW_MIN_HEIGHT } from "../constants/brand";
+import BrandWordmark from "../components/BrandWordmark";
 import { ALCHEMY, FONT_DISPLAY } from "../theme/customerAlchemy";
+import PremiumEmptyState from "../components/ui/PremiumEmptyState";
+import PremiumInput from "../components/ui/PremiumInput";
+import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
+import PremiumButton from "../components/ui/PremiumButton";
+import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
+import PremiumCard from "../components/ui/PremiumCard";
+import GoldHairline from "../components/ui/GoldHairline";
+import MotionScrollView from "../components/motion/MotionScrollView";
+import SectionReveal from "../components/motion/SectionReveal";
+import { staggerDelay } from "../theme/motion";
+import { CART_ADDRESS, CART_UI } from "../content/appContent";
+import PaymentMethodSelector from "../components/payments/PaymentMethodSelector";
+import {
+  getPublicRazorpayKeyId,
+  loadRazorpayWebSdk,
+  openRazorpayCheckout,
+  verifyOrderPayment,
+} from "../services/paymentService";
 
 /** Same required fields as ManageAddressScreen save. */
 function getProfileAddressCompletion(defaultAddress) {
@@ -50,12 +73,14 @@ function getProfileAddressCompletion(defaultAddress) {
   return { complete, partial: any && !complete };
 }
 
-export default function CartScreen({ navigation }) {
+export default function CartScreen({ navigation, route }) {
   const { cartItems, totalAmount, totalItems, addToCart, removeFromCart, removeLineFromCart, clearCart } = useCart();
   const { isAuthenticated, token, user } = useAuth();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isCompact = width < 420;
+  const isDesktop = Platform.OS === "web" && width >= 1180;
+  const stackCouponRow = width < 640;
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [line1, setLine1] = useState("");
@@ -74,6 +99,8 @@ export default function CartScreen({ navigation }) {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [availableCoupons, setAvailableCoupons] = useState([]);
   const [catalogProducts, setCatalogProducts] = useState([]);
+  /** `"Razorpay"` | `"Cash on Delivery"` — must match backend `Order.paymentMethod`. */
+  const [paymentMethod, setPaymentMethod] = useState("Razorpay");
 
   useEffect(() => {
     let cancelled = false;
@@ -111,21 +138,66 @@ export default function CartScreen({ navigation }) {
   }, [user]);
 
   useEffect(() => {
-    setAppliedCoupon(null);
-  }, [totalAmount, cartItems.length]);
+    if (!appliedCoupon) return;
+    const minSubtotal = Number(appliedCoupon.minSubtotal || 0);
+    if (minSubtotal > 0 && totalAmount < minSubtotal) {
+      setAppliedCoupon(null);
+    }
+  }, [appliedCoupon, totalAmount]);
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;
-    async function loadCoupons() {
+    let cancelled = false;
+    const timer = setTimeout(async () => {
       try {
-        const data = await fetchAvailableCouponsRequest(token);
-        setAvailableCoupons(Array.isArray(data?.coupons) ? data.coupons : []);
+        const data = await fetchAvailableCouponsRequest(token, totalAmount);
+        if (!cancelled) {
+          setAvailableCoupons(Array.isArray(data?.coupons) ? data.coupons : []);
+        }
       } catch {
-        setAvailableCoupons([]);
+        if (!cancelled) {
+          setAvailableCoupons([]);
+        }
       }
-    }
-    loadCoupons();
-  }, [isAuthenticated, token, totalAmount, cartItems.length]);
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [isAuthenticated, token, totalAmount]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const raw = route?.params?.prefillCoupon;
+      if (!raw || !isAuthenticated || !token) {
+        return undefined;
+      }
+      const normalized = String(raw).trim().toUpperCase();
+      let cancelled = false;
+      (async () => {
+        try {
+          setError("");
+          const result = await validateCouponRequest(token, normalized, totalAmount);
+          if (cancelled) return;
+          setAppliedCoupon(result.coupon || null);
+          setCouponCode(normalized);
+          setSuccess(result.message || "Coupon applied.");
+          setAvailableCoupons((current) => current.filter((coupon) => coupon.code !== normalized));
+          navigation.setParams({ prefillCoupon: undefined });
+        } catch (err) {
+          if (!cancelled) {
+            setCouponCode(normalized);
+            setAppliedCoupon(null);
+            setError(err.message || "Unable to apply coupon.");
+            navigation.setParams({ prefillCoupon: undefined });
+          }
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [route?.params?.prefillCoupon, isAuthenticated, token, totalAmount, navigation])
+  );
 
   const { colors: c, shadowLift, shadowPremium, isDark } = useTheme();
   const styles = useMemo(() => createCartStyles(c, shadowLift, shadowPremium, isDark), [c, shadowLift, shadowPremium, isDark]);
@@ -144,26 +216,27 @@ export default function CartScreen({ navigation }) {
       <CustomerScreenShell style={styles.screen}>
         <ScrollView
           style={customerScrollFill}
-          contentContainerStyle={[
-            customerPageScrollBase,
-            { paddingTop: Math.max(insets.top, Platform.OS === "web" ? spacing.md : spacing.sm) },
-          ]}
+          contentContainerStyle={customerInnerPageScrollContent(insets)}
           showsVerticalScrollIndicator={false}
         >
-          <ScreenPageHeader navigation={navigation} title="Cart" subtitle="Sign in to checkout" showBack={false} />
+          <ScreenPageHeader
+            navigation={navigation}
+            title={CART_UI.pageTitle}
+            subtitle={CART_UI.pageEyebrow}
+            showBack={false}
+          />
           <View style={styles.loginCard}>
-            <BrandLogo width={BRAND_LOGO_SIZE.footerCompact} height={BRAND_LOGO_SIZE.footerCompact} style={styles.loginBrandLogo} />
-            <View style={styles.loginIconWrap}>
-              <Ionicons name="bag-handle-outline" size={26} color={c.primary} />
-            </View>
-            <Text style={styles.loginPromptTitle}>Sign in to continue</Text>
-            <Text style={styles.loginPromptText}>Sign in to shop and checkout.</Text>
-            <TouchableOpacity style={styles.checkoutButton} onPress={() => navigation.navigate("Login")}>
-              <View style={styles.checkoutContent}>
-                <Ionicons name="log-in-outline" size={18} color={c.onPrimary} />
-                <Text style={styles.checkoutButtonText}>Go to login</Text>
-              </View>
-            </TouchableOpacity>
+            <BrandWordmark sizeKey="footerCompact" style={styles.loginBrandLogo} />
+            <PremiumEmptyState
+              iconName="bag-handle-outline"
+              title="Sign in to continue"
+              description="Sign in to use your cart."
+              ctaLabel="Go to login"
+              ctaIconLeft="log-in-outline"
+              onCtaPress={() => navigation.navigate("Login")}
+              secondaryCtaLabel="Browse store"
+              onSecondaryCtaPress={() => navigation.navigate("Home")}
+            />
           </View>
           <AppFooter />
         </ScrollView>
@@ -180,25 +253,19 @@ export default function CartScreen({ navigation }) {
     }
   };
 
-  const renderCartItem = (item) => {
-    const uris = getImageUriCandidates(item.image || "");
-    const src = uris[0] || "";
+  const renderCartItem = (item, index = 0) => {
     const lineTotal = item.price * item.quantity;
+    const revealDelay = staggerDelay(index);
     return (
-      <View key={item.id} style={styles.selectionCard}>
+      <SectionReveal key={item.id} delay={revealDelay} style={styles.selectionCard}>
         <View style={[styles.selectionCardRow, isCompact ? styles.selectionCardRowStack : null]}>
-          {src ? (
-            <Image
-              source={{ uri: src }}
-              style={[styles.selectionThumb, isCompact ? styles.selectionThumbStack : null]}
-              contentFit="cover"
-              transition={200}
-            />
-          ) : (
-            <View style={[styles.selectionThumb, styles.selectionImagePlaceholder, isCompact ? styles.selectionThumbStack : null]}>
-              <Ionicons name="image-outline" size={26} color={c.textMuted} />
-            </View>
-          )}
+          <RetryCartImage
+            sourceUri={item.image || ""}
+            style={[styles.selectionThumb, isCompact ? styles.selectionThumbStack : null]}
+            placeholderStyle={styles.selectionImagePlaceholder}
+            iconSize={icon.xxl}
+            c={c}
+          />
           <View style={[styles.selectionBody, isCompact ? styles.selectionBodyStack : null]}>
             <View style={styles.selectionTitleRow}>
             <Text style={styles.selectionName} numberOfLines={2}>
@@ -223,7 +290,7 @@ export default function CartScreen({ navigation }) {
                   onPress={() => removeFromCart(item.id, item.variantLabel)}
                   accessibilityLabel="Decrease quantity"
                 >
-                  <Ionicons name="remove" size={18} color={isDark ? c.textPrimary : ALCHEMY.brown} />
+                  <Ionicons name="remove" size={icon.sm} color={isDark ? c.textPrimary : ALCHEMY.brown} />
                 </TouchableOpacity>
                 <Text style={styles.qtyPillNum}>{item.quantity}</Text>
                 <TouchableOpacity
@@ -231,7 +298,7 @@ export default function CartScreen({ navigation }) {
                   onPress={() => addToCart(item)}
                   accessibilityLabel="Increase quantity"
                 >
-                  <Ionicons name="add" size={18} color={isDark ? c.textPrimary : ALCHEMY.brown} />
+                  <Ionicons name="add" size={icon.sm} color={isDark ? c.textPrimary : ALCHEMY.brown} />
                 </TouchableOpacity>
               </View>
               <TouchableOpacity
@@ -239,13 +306,13 @@ export default function CartScreen({ navigation }) {
                 onPress={() => removeLineFromCart(item.id, item.variantLabel)}
                 activeOpacity={0.75}
               >
-                <Ionicons name="trash-outline" size={17} color={isDark ? c.textMuted : ALCHEMY.brownMuted} />
+                <Ionicons name="trash-outline" size={icon.xs} color={isDark ? c.textMuted : ALCHEMY.brownMuted} />
                 <Text style={styles.removeRowText}>REMOVE</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
-      </View>
+      </SectionReveal>
     );
   };
 
@@ -279,7 +346,7 @@ export default function CartScreen({ navigation }) {
       setError("");
       setSuccess("");
 
-      await createOrderRequest(token, {
+      const created = await createOrderRequest(token, {
         products: cartItems.map((item) => ({
           product: item.id,
           id: item.id,
@@ -301,13 +368,52 @@ export default function CartScreen({ navigation }) {
           longitude,
           note: note.trim(),
         },
-        paymentMethod: "Cash on Delivery",
+        paymentMethod,
         couponCode: appliedCoupon?.code || "",
       });
 
       clearCart();
-      setSuccess("Order placed successfully. You can track it in your profile.");
-      navigation.navigate("Profile");
+
+      if (paymentMethod === "Cash on Delivery") {
+        setSuccess("Order placed—track it in Profile.");
+        navigation.navigate("Profile");
+        return;
+      }
+
+      const orderId = created?._id || created?.id;
+      const keyId = created?.razorpayKeyId || getPublicRazorpayKeyId();
+      if (!orderId) {
+        throw new Error("Order created but response was incomplete. Check My Orders.");
+      }
+      if (Platform.OS === "web") {
+        await loadRazorpayWebSdk();
+      }
+
+      const checkout = await openRazorpayCheckout({
+        order: created,
+        razorpayKeyId: keyId,
+        user,
+        themeColor: c.primary,
+      });
+
+      if (checkout.status === "success" && checkout.payload) {
+        const p = checkout.payload;
+        await verifyOrderPayment(token, orderId, {
+          razorpay_order_id: p.razorpay_order_id,
+          razorpay_payment_id: p.razorpay_payment_id,
+          razorpay_signature: p.razorpay_signature,
+        });
+        setSuccess("Payment confirmed.");
+        navigation.navigate("MyOrders");
+        return;
+      }
+
+      if (checkout.status === "fallback") {
+        setSuccess("Finish payment on Razorpay—then check My Orders.");
+      } else {
+        setSuccess("Resume payment from My Orders within 30 minutes.");
+      }
+      navigation.navigate("MyOrders");
     } catch (err) {
       setError(err.message || "Unable to place order.");
     } finally {
@@ -324,7 +430,7 @@ export default function CartScreen({ navigation }) {
         setError("Enter coupon code.");
         return;
       }
-      const result = await validateCouponRequest(token, normalized);
+      const result = await validateCouponRequest(token, normalized, totalAmount);
       setAppliedCoupon(result.coupon || null);
       setCouponCode(normalized);
       setSuccess(result.message || "Coupon applied.");
@@ -339,6 +445,19 @@ export default function CartScreen({ navigation }) {
   const platformFee = 1.2;
   const discountAmount = Number(appliedCoupon?.discountAmount || 0);
   const payableAmount = Math.max(0, totalAmount + deliveryFee + platformFee - discountAmount);
+  const isRazorpayMethod = paymentMethod === "Razorpay";
+  const addressReady = Boolean(
+    fullName.trim() &&
+      phone.trim() &&
+      line1.trim() &&
+      city.trim() &&
+      state.trim() &&
+      postalCode.trim() &&
+      country.trim()
+  );
+  const primaryCtaLabel = isRazorpayMethod
+    ? `PROCEED TO PAY · ${formatINR(payableAmount)}`
+    : "PLACE ORDER · COD";
 
   const handleUseCurrentLocation = async () => {
     try {
@@ -352,7 +471,7 @@ export default function CartScreen({ navigation }) {
       if (address.country) setCountry(address.country);
       if (Number.isFinite(Number(address.latitude))) setLatitude(Number(address.latitude));
       if (Number.isFinite(Number(address.longitude))) setLongitude(Number(address.longitude));
-      setSuccess("Current location detected and address auto-filled.");
+      setSuccess(CART_ADDRESS.gpsFillSuccess);
     } catch (err) {
       setError(err.message || "Unable to get current location.");
     } finally {
@@ -362,83 +481,148 @@ export default function CartScreen({ navigation }) {
 
   return (
     <CustomerScreenShell style={styles.screen}>
-      <ScrollView
+      <MotionScrollView
         style={styles.scrollFill}
-        contentContainerStyle={[
-          customerPageScrollBase,
-          { paddingTop: Math.max(insets.top, Platform.OS === "web" ? spacing.md : spacing.sm) },
-        ]}
+        contentContainerStyle={customerInnerPageScrollContent(insets)}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <View
-          style={[
-            styles.cartTopShell,
-            isDark
-              ? { backgroundColor: "rgba(28, 25, 23, 0.52)", borderColor: c.border, borderTopColor: c.primaryBorder }
-              : { backgroundColor: "rgba(255, 252, 248, 0.92)", borderColor: ALCHEMY.pillInactive, borderTopColor: ALCHEMY.gold },
-          ]}
-        >
-          <View style={styles.cartTopBar}>
-            <Pressable onPress={goBackOrHome} style={styles.cartTopIcon} hitSlop={10} accessibilityRole="button" accessibilityLabel="Back">
-              <Ionicons name="chevron-back" size={22} color={isDark ? c.textPrimary : ALCHEMY.brown} />
-            </Pressable>
-            <View style={styles.cartLogoWrap}>
-              <BrandLogo width={BRAND_LOGO_SIZE.headerCompact} height={BRAND_LOGO_SIZE.headerCompact} />
+        {Platform.OS !== "web" ? (
+          <View
+            style={[
+              styles.cartTopShell,
+              isDark
+                ? { backgroundColor: "rgba(28, 25, 23, 0.52)", borderColor: c.border, borderTopColor: c.primaryBorder }
+                : {
+                    backgroundColor: "rgba(255, 252, 248, 0.92)",
+                    borderColor: ALCHEMY.pillInactive,
+                    borderTopColor: ALCHEMY.gold,
+                  },
+            ]}
+          >
+            <View style={styles.cartTopBar}>
+              <Pressable
+                onPress={goBackOrHome}
+                style={styles.cartTopIcon}
+                hitSlop={10}
+                accessibilityRole="button"
+                accessibilityLabel="Back"
+              >
+                <Ionicons name="chevron-back" size={icon.lg} color={isDark ? c.textPrimary : ALCHEMY.brown} />
+              </Pressable>
+              <View style={styles.cartLogoWrap}>
+                <BrandWordmark sizeKey="headerCompact" />
+              </View>
+              <Pressable
+                onPress={() => navigation.navigate("Home")}
+                style={styles.cartTopIcon}
+                hitSlop={10}
+                accessibilityLabel="Shop"
+              >
+                <Ionicons name="bag-handle-outline" size={icon.lg} color={isDark ? c.textPrimary : ALCHEMY.brown} />
+              </Pressable>
             </View>
-            <Pressable onPress={() => navigation.navigate("Home")} style={styles.cartTopIcon} hitSlop={10} accessibilityLabel="Shop">
-              <Ionicons name="bag-handle-outline" size={22} color={isDark ? c.textPrimary : ALCHEMY.brown} />
-            </Pressable>
           </View>
-        </View>
+        ) : (
+          <View style={styles.webTopSpacer} />
+        )}
 
-        <Text style={[styles.pageTitle, { color: isDark ? c.textPrimary : ALCHEMY.brown }]}>Your Selection</Text>
-        <Text style={styles.pageSubtitle}>
-          {cartItems.length === 0
-            ? "Add treasures from the boutique to begin."
-            : `${totalItems} artisanal treasure${totalItems === 1 ? "" : "s"} curated for your kitchen.`}
-        </Text>
+        <PremiumSectionHeader
+          compact
+          overline={CART_UI.pageEyebrow}
+          title={CART_UI.pageTitle}
+          subtitle={
+            cartItems.length === 0
+              ? "Add items from the shop."
+              : `${totalItems} item${totalItems === 1 ? "" : "s"}`
+          }
+        />
+
+        {cartItems.length > 0 ? (
+          <SectionReveal delay={40} preset="fade-up">
+            <View style={[styles.cartHero, isCompact ? styles.cartHeroStack : null]}>
+              <View style={styles.cartHeroTextBlock}>
+                <Text style={styles.cartHeroEyebrow}>{CART_UI.pageEyebrow}</Text>
+                <Text style={styles.cartHeroTitle}>
+                  {`${totalItems} item${totalItems === 1 ? "" : "s"} ready for checkout`}
+                </Text>
+                <LinearGradient
+                  colors={[c.primaryBright, c.primary, c.primaryDark]}
+                  start={{ x: 0, y: 0.5 }}
+                  end={{ x: 1, y: 0.5 }}
+                  style={styles.cartHeroAccent}
+                />
+                <Text style={styles.cartHeroSubtitle}>
+                  Review items, apply savings, and check out with a clearer delivery summary.
+                </Text>
+              </View>
+              <View style={styles.cartHeroIcon}>
+                <Ionicons
+                  name={isRazorpayMethod ? "card-outline" : "bag-check-outline"}
+                  size={icon.lg}
+                  color={c.primary}
+                />
+              </View>
+            </View>
+          </SectionReveal>
+        ) : null}
+
+        <View style={isDesktop ? styles.cartGridRow : null}>
+        <View style={isDesktop ? styles.cartLeftCol : null}>
 
         {cartItems.length === 0 ? (
           <View style={styles.emptyCard}>
-            <BrandLogo width={BRAND_LOGO_SIZE.footerCompact} height={BRAND_LOGO_SIZE.footerCompact} style={styles.emptyBrandLogo} />
-            <View style={styles.emptyIconWrap}>
-              <Ionicons name="cart-outline" size={30} color={isDark ? c.primary : ALCHEMY.brown} />
-            </View>
-            <Text style={styles.emptyTitle}>Your cart is empty</Text>
-            <Text style={styles.emptyText}>Browse the collection and tap Add on items you love — they will appear here.</Text>
-            <TouchableOpacity style={styles.browseHomeBtn} onPress={() => navigation.navigate("Home")}>
-              <Ionicons name="storefront-outline" size={18} color={c.onSecondary} />
-              <Text style={styles.browseHomeBtnText}>Browse products</Text>
-            </TouchableOpacity>
+            <BrandWordmark sizeKey="footerCompact" style={styles.emptyBrandLogo} />
+            <PremiumEmptyState
+              iconName="cart-outline"
+              title={CART_UI.emptyTitle}
+              description={CART_UI.emptyDescription}
+              ctaLabel={CART_UI.browseCta}
+              ctaIconLeft="storefront-outline"
+              onCtaPress={() => navigation.navigate("Home")}
+            />
           </View>
         ) : (
-          <View style={styles.listSection}>{cartItems.map(renderCartItem)}</View>
+          <>
+            <PremiumSectionHeader
+              compact
+              overline={CART_UI.itemsOverline}
+              title={CART_UI.itemsTitle}
+            />
+            <View style={styles.listSection}>{cartItems.map((item, idx) => renderCartItem(item, idx))}</View>
+          </>
         )}
 
         {cartItems.length > 0 && upsellProducts.length > 0 ? (
           <View style={styles.upsellSection}>
-            <Text style={[styles.upsellTitle, { color: isDark ? c.textPrimary : ALCHEMY.brown }]}>Enhance Your Ritual</Text>
+            <PremiumSectionHeader
+              compact
+              overline={CART_UI.pairOverline}
+              title={CART_UI.pairTitle}
+            />
             {upsellProducts.map((p) => {
-              const uris = getImageUriCandidates(p.image || "");
-              const src = uris[0] || "";
               return (
                 <View key={p.id} style={styles.upsellRow}>
-                  {src ? (
-                    <Image source={{ uri: src }} style={styles.upsellThumb} contentFit="cover" />
-                  ) : (
-                    <View style={[styles.upsellThumb, styles.selectionImagePlaceholder]}>
-                      <Ionicons name="image-outline" size={20} color={c.textMuted} />
-                    </View>
-                  )}
+                  <RetryCartImage
+                    sourceUri={p.image || ""}
+                    style={styles.upsellThumb}
+                    placeholderStyle={styles.selectionImagePlaceholder}
+                    iconSize={icon.md}
+                    c={c}
+                  />
                   <View style={styles.upsellMeta}>
                     <Text style={styles.upsellName} numberOfLines={2}>
                       {p.name}
                     </Text>
                     <Text style={styles.upsellPrice}>{formatINR(p.price)}</Text>
-                    <TouchableOpacity onPress={() => addToCart(p)} style={styles.upsellAdd} activeOpacity={0.85}>
-                      <Text style={styles.upsellAddText}>ADD TO CART</Text>
-                    </TouchableOpacity>
+                    <PremiumButton
+                      label="Add"
+                      iconLeft="add-outline"
+                      variant="secondary"
+                      size="sm"
+                      onPress={() => addToCart(p)}
+                      style={styles.upsellAdd}
+                    />
                   </View>
                 </View>
               );
@@ -446,13 +630,10 @@ export default function CartScreen({ navigation }) {
           </View>
         ) : null}
 
+        {cartItems.length > 0 ? <GoldHairline marginVertical={spacing.md} /> : null}
+
         <View style={styles.couponBox}>
-          <View style={styles.panelSectionHeader}>
-            <View style={[styles.panelSectionIcon, { backgroundColor: c.primarySoft, borderColor: c.primaryBorder }]}>
-              <Ionicons name="pricetag-outline" size={18} color={c.primaryDark} />
-            </View>
-            <Text style={styles.panelSectionTitle}>Coupon</Text>
-          </View>
+          <PremiumSectionHeader compact overline={CART_UI.couponOverline} title={CART_UI.couponTitle} />
           {availableCoupons.length > 0 ? (
             <View style={styles.availableCouponsWrap}>
               {availableCoupons.slice(0, 6).map((coupon) => (
@@ -471,18 +652,26 @@ export default function CartScreen({ navigation }) {
           ) : (
             <Text style={styles.noCouponText}>No eligible coupons for current cart.</Text>
           )}
-          <View style={styles.couponRow}>
-            <TextInput
-              style={[styles.input, styles.couponInput]}
-              placeholder="Enter coupon code"
-              placeholderTextColor={c.textMuted}
-              value={couponCode}
-              onChangeText={setCouponCode}
-              autoCapitalize="characters"
+          <View style={[styles.couponRow, stackCouponRow ? styles.couponRowStack : null]}>
+            <View style={styles.couponInputWrap}>
+              <PremiumInput
+                label="Coupon code"
+                value={couponCode}
+                onChangeText={setCouponCode}
+                autoCapitalize="characters"
+                iconLeft="pricetag-outline"
+                returnKeyType="done"
+                onSubmitEditing={handleApplyCoupon}
+              />
+            </View>
+            <PremiumButton
+              label="Apply"
+              variant="subtle"
+              size="sm"
+              fullWidth={stackCouponRow}
+              onPress={handleApplyCoupon}
+              style={styles.applyCouponBtn}
             />
-            <TouchableOpacity style={styles.applyCouponBtn} onPress={handleApplyCoupon}>
-              <Text style={styles.applyCouponBtnText}>Apply</Text>
-            </TouchableOpacity>
           </View>
           {appliedCoupon ? (
             <Text style={styles.couponSuccessText}>
@@ -500,105 +689,166 @@ export default function CartScreen({ navigation }) {
             accessibilityLabel="Open delivery address settings"
           >
             <View style={styles.addressProfileBannerIconWrap}>
-              <Ionicons name="location-outline" size={22} color={c.secondary} />
+              <Ionicons name="location-outline" size={icon.lg} color={c.secondary} />
             </View>
             <View style={styles.addressProfileBannerTextCol}>
               <Text style={styles.addressProfileBannerTitle}>
-                {profileAddress.partial ? "Saved address incomplete" : "Save your delivery address"}
+                {profileAddress.partial ? CART_ADDRESS.profileIncompleteTitle : CART_ADDRESS.profileEmptyTitle}
               </Text>
               <Text style={styles.addressProfileBannerSub}>
-                {profileAddress.partial
-                  ? "Finish line, city, state, postal code, and country in your profile—we’ll pre-fill checkout."
-                  : "Add your address once on your profile for faster checkout next time."}
+                {profileAddress.partial ? CART_ADDRESS.profileIncompleteSub : CART_ADDRESS.profileEmptySub}
               </Text>
             </View>
             <Text style={styles.addressProfileBannerCta}>Add</Text>
           </TouchableOpacity>
         ) : null}
 
+        {cartItems.length > 0 ? <GoldHairline marginVertical={spacing.md} /> : null}
+
         <View style={styles.addressBox}>
-          <View style={styles.panelSectionHeader}>
-            <View style={[styles.panelSectionIcon, { backgroundColor: c.secondarySoft, borderColor: c.secondaryBorder }]}>
-              <Ionicons name="location-outline" size={18} color={c.secondaryDark} />
+          <PremiumSectionHeader
+            compact
+            overline={CART_UI.addressOverline}
+            title={CART_ADDRESS.panelTitle}
+          />
+          {error ? (
+            <View style={styles.bannerSpacer}>
+              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
             </View>
-            <Text style={styles.panelSectionTitle}>Deliver to</Text>
+          ) : null}
+          {success ? (
+            <View style={styles.bannerSpacer}>
+              <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
+            </View>
+          ) : null}
+          <PremiumButton
+            label={isDetectingLocation ? CART_ADDRESS.useGpsLoading : CART_ADDRESS.useGps}
+            iconLeft="locate-outline"
+            variant="ghost"
+            size="sm"
+            loading={isDetectingLocation}
+            disabled={isDetectingLocation}
+            onPress={handleUseCurrentLocation}
+            style={styles.savedAddressBtn}
+          />
+          <View style={styles.addressFieldGap}>
+            <PremiumInput
+              label="Full name"
+              value={fullName}
+              onChangeText={setFullName}
+              iconLeft="person-outline"
+              autoCapitalize="words"
+              autoComplete="name"
+              textContentType="name"
+            />
           </View>
-          <Text style={styles.addressHint}>We’ll ship to this address for this order.</Text>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          {success ? <Text style={styles.successText}>{success}</Text> : null}
-          <TouchableOpacity style={styles.savedAddressBtn} onPress={handleUseCurrentLocation}>
-            <Ionicons name="locate-outline" size={14} color={c.primary} />
-            <Text style={styles.savedAddressBtnText}>
-              {isDetectingLocation ? "Detecting location..." : "Use Current GPS Location"}
-            </Text>
-          </TouchableOpacity>
-          <TextInput
-            style={styles.input}
-            placeholder="Full Name"
-            placeholderTextColor={c.textMuted}
-            value={fullName}
-            onChangeText={setFullName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Phone"
-            placeholderTextColor={c.textMuted}
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Address Line"
-            placeholderTextColor={c.textMuted}
-            value={line1}
-            onChangeText={setLine1}
-          />
+          <View style={styles.addressFieldGap}>
+            <PremiumInput
+              label="Phone"
+              value={phone}
+              onChangeText={setPhone}
+              iconLeft="call-outline"
+              keyboardType="phone-pad"
+              autoComplete="tel"
+              textContentType="telephoneNumber"
+            />
+          </View>
+          <View style={styles.addressFieldGap}>
+            <PremiumInput
+              label="Address line"
+              value={line1}
+              onChangeText={setLine1}
+              iconLeft="home-outline"
+              autoCapitalize="sentences"
+              autoComplete="street-address"
+              textContentType="streetAddressLine1"
+            />
+          </View>
           <View style={[styles.addressRow, isCompact ? styles.addressRowCompact : null]}>
-            <TextInput
-              style={[styles.input, styles.halfInput]}
-              placeholder="City"
-              placeholderTextColor={c.textMuted}
-              value={city}
-              onChangeText={setCity}
-            />
-            <TextInput
-              style={[styles.input, styles.halfInput]}
-              placeholder="State"
-              placeholderTextColor={c.textMuted}
-              value={state}
-              onChangeText={setState}
-            />
+            <View style={[styles.addressFieldGap, styles.halfField]}>
+              <PremiumInput
+                label="City"
+                value={city}
+                onChangeText={setCity}
+                autoCapitalize="words"
+                autoComplete="address-level2"
+                textContentType="addressCity"
+              />
+            </View>
+            <View style={[styles.addressFieldGap, styles.halfField]}>
+              <PremiumInput
+                label="State"
+                value={state}
+                onChangeText={setState}
+                autoCapitalize="words"
+                autoComplete="address-level1"
+                textContentType="addressState"
+              />
+            </View>
           </View>
           <View style={[styles.addressRow, isCompact ? styles.addressRowCompact : null]}>
-            <TextInput
-              style={[styles.input, styles.halfInput]}
-              placeholder="Postal Code"
-              placeholderTextColor={c.textMuted}
-              value={postalCode}
-              onChangeText={setPostalCode}
-            />
-            <TextInput
-              style={[styles.input, styles.halfInput]}
-              placeholder="Country"
-              placeholderTextColor={c.textMuted}
-              value={country}
-              onChangeText={setCountry}
+            <View style={[styles.addressFieldGap, styles.halfField]}>
+              <PremiumInput
+                label="Postal code"
+                value={postalCode}
+                onChangeText={setPostalCode}
+                keyboardType="number-pad"
+                autoComplete="postal-code"
+                textContentType="postalCode"
+              />
+            </View>
+            <View style={[styles.addressFieldGap, styles.halfField]}>
+              <PremiumInput
+                label="Country"
+                value={country}
+                onChangeText={setCountry}
+                autoCapitalize="words"
+                autoComplete="country"
+                textContentType="countryName"
+              />
+            </View>
+          </View>
+          <View style={styles.addressFieldGap}>
+            <PremiumInput
+              label="Delivery note (optional)"
+              value={note}
+              onChangeText={setNote}
+              multiline
+              numberOfLines={3}
+              iconLeft="chatbubbles-outline"
             />
           </View>
-          <TextInput
-            style={[styles.input, styles.noteInput]}
-            placeholder="Delivery note (optional)"
-            placeholderTextColor={c.textMuted}
-            value={note}
-            onChangeText={setNote}
-            multiline
-          />
 
         </View>
 
-        <View style={styles.summaryAlchemy}>
-          <Text style={[styles.summaryAlchemyTitle, { color: isDark ? c.textPrimary : ALCHEMY.brown }]}>Summary</Text>
+        </View>
+        <View style={isDesktop ? styles.cartRightCol : null}>
+
+        {cartItems.length > 0 ? (
+          <View style={styles.checkoutProgress}>
+            {[
+              { key: "bag", label: "Bag", active: cartItems.length > 0 },
+              { key: "address", label: "Address", active: addressReady },
+              {
+                key: "payment",
+                label: "Payment",
+                active: Boolean(paymentMethod),
+              },
+            ].map((step) => (
+              <View key={step.key} style={styles.progressStep}>
+                <View
+                  style={[styles.progressTrackSeg, step.active ? styles.progressTrackSegActive : null]}
+                />
+                <Text style={[styles.progressLabel, step.active ? styles.progressLabelActive : null]}>
+                  {step.label}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        <PremiumCard variant="panel" padding="md" style={styles.summaryCardWrap}>
+          <PremiumSectionHeader compact overline={CART_UI.summaryOverline} title={CART_UI.summaryTitle} />
           <View style={styles.summaryInner}>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Subtotal</Text>
@@ -619,60 +869,94 @@ export default function CartScreen({ navigation }) {
               </View>
             ) : null}
             <View style={[styles.summaryDivider, { backgroundColor: c.border }]} />
-            <Text style={styles.totalAmountLabel}>TOTAL AMOUNT</Text>
+            <Text style={styles.totalAmountLabel}>Total</Text>
             <View style={styles.totalAmountRow}>
               <Text style={[styles.totalAmountSerif, { color: isDark ? c.textPrimary : ALCHEMY.brown }]}>{formatINR(payableAmount)}</Text>
               <View style={styles.inrBadge}>
                 <Text style={styles.inrBadgeText}>INR</Text>
               </View>
             </View>
+            <Text style={[styles.summaryPaymentHint, isRazorpayMethod ? styles.summaryPaymentHintOnline : styles.summaryPaymentHintCod]}>
+              {isRazorpayMethod
+                ? `Pay ${formatINR(payableAmount)} via Razorpay`
+                : "Pay cash when your order arrives"}
+            </Text>
             <View style={styles.summaryTrustRow}>
               <View style={styles.summaryTrustItem}>
-                <Ionicons name="flame-outline" size={14} color={ALCHEMY.brownMuted} />
-                <Text style={styles.summaryTrustText}>100% PURE</Text>
+                <Ionicons name="flame-outline" size={icon.micro} color={ALCHEMY.brownMuted} />
+                <Text style={styles.summaryTrustText}>{CART_UI.trustPure}</Text>
               </View>
               <View style={styles.summaryTrustItem}>
-                <Ionicons name="shield-checkmark-outline" size={14} color={ALCHEMY.brownMuted} />
-                <Text style={styles.summaryTrustText}>SECURE PAY</Text>
+                <Ionicons name="shield-checkmark-outline" size={icon.micro} color={ALCHEMY.brownMuted} />
+                <Text style={styles.summaryTrustText}>{CART_UI.trustPay}</Text>
               </View>
               <View style={styles.summaryTrustItem}>
-                <Ionicons name="leaf-outline" size={14} color={ALCHEMY.brownMuted} />
-                <Text style={styles.summaryTrustText}>ORGANIC</Text>
+                <Ionicons name="leaf-outline" size={icon.micro} color={ALCHEMY.brownMuted} />
+                <Text style={styles.summaryTrustText}>{CART_UI.trustOrganic}</Text>
               </View>
             </View>
           </View>
+        </PremiumCard>
+
+        <PaymentMethodSelector
+          value={paymentMethod}
+          onChange={setPaymentMethod}
+          disabled={cartItems.length === 0 || isPlacingOrder}
+        />
+
+        {cartItems.length > 0 ? (
+          <View style={styles.trustStrip}>
+            <View style={styles.trustRow}>
+              <View style={styles.trustItem}>
+                <Ionicons name="shield-checkmark-outline" size={icon.xs} color={c.primary} />
+                <Text style={styles.trustText}>Secure checkout</Text>
+              </View>
+              <View style={styles.trustItem}>
+                <Ionicons name="flash-outline" size={icon.xs} color={c.primary} />
+                <Text style={styles.trustText}>Fast confirmation</Text>
+              </View>
+              <View style={styles.trustItem}>
+                <Ionicons name="location-outline" size={icon.xs} color={c.primary} />
+                <Text style={styles.trustText}>Address review before order</Text>
+              </View>
+            </View>
+          </View>
+        ) : null}
+
+        <View style={styles.cartCtaDock}>
+          <View style={styles.checkoutCtaWrap}>
+            <PremiumButton
+              label={cartItems.length === 0 ? "Add items to continue" : primaryCtaLabel}
+              iconRight={cartItems.length > 0 && !isPlacingOrder ? "arrow-forward" : undefined}
+              variant="primary"
+              size="lg"
+              fullWidth
+              pulse={cartItems.length > 0 && !isPlacingOrder}
+              loading={isPlacingOrder}
+              onPress={handlePlaceOrder}
+              disabled={cartItems.length === 0 || isPlacingOrder}
+              style={styles.checkoutPrimaryBtn}
+              accessibilityLabel={primaryCtaLabel}
+            />
+          </View>
+
+          <PremiumButton
+            label="Continue exploring"
+            iconLeft="chevron-back"
+            variant="ghost"
+            size="md"
+            fullWidth
+            onPress={() => navigation.navigate("Home")}
+            style={styles.continueExploreBtn}
+            accessibilityLabel="Continue exploring the store"
+          />
         </View>
 
-        <TouchableOpacity
-          activeOpacity={0.92}
-          onPress={handlePlaceOrder}
-          disabled={cartItems.length === 0 || isPlacingOrder}
-          style={styles.checkoutGradientWrap}
-        >
-          {cartItems.length === 0 || isPlacingOrder ? (
-            <View style={[styles.checkoutGradientBtn, styles.checkoutGradientMuted]}>
-              <Text style={styles.checkoutGradientText}>
-                {cartItems.length === 0 ? "ADD ITEMS TO CONTINUE" : "PLACING ORDER…"}
-              </Text>
-            </View>
-          ) : (
-            <LinearGradient
-              colors={["#D4A84B", "#744F1C"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.checkoutGradientBtn}
-            >
-              <Text style={styles.checkoutGradientText}>PROCEED TO CHECKOUT</Text>
-            </LinearGradient>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => navigation.navigate("Home")} style={styles.continueExploreWrap} activeOpacity={0.8}>
-          <Text style={styles.continueExploreText}>CONTINUE EXPLORING</Text>
-        </TouchableOpacity>
+        </View>
+        </View>
 
         <AppFooter />
-      </ScrollView>
+      </MotionScrollView>
       <BottomNavBar />
     </CustomerScreenShell>
   );
@@ -684,22 +968,43 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth, default: "100%" }),
+    maxWidth: Platform.select({ web: layout.maxContentWidth + 96, default: "100%" }),
   },
   scrollFill: {
     flex: 1,
     width: "100%",
   },
+  cartGridRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.xl + 8,
+  },
+  cartLeftCol: {
+    flex: 1,
+    minWidth: 0,
+  },
+  cartRightCol: {
+    width: 360,
+    flexShrink: 0,
+    ...Platform.select({
+      web: {
+        position: "sticky",
+        top: customerWebStickyTop(spacing.xl + 2),
+        alignSelf: "flex-start",
+      },
+      default: {},
+    }),
+  },
   cartTopShell: {
-    borderRadius: radius.xl,
+    borderRadius: radius.xxl,
     borderWidth: StyleSheet.hairlineWidth,
-    borderTopWidth: 2,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.xs,
+    borderTopWidth: 3,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
     marginBottom: spacing.md,
     ...Platform.select({
       ios: {
-        shadowColor: "#3D2A12",
+        shadowColor: "#18181B",
         shadowOffset: { width: 0, height: 6 },
         shadowOpacity: isDark ? 0.22 : 0.08,
         shadowRadius: 14,
@@ -708,7 +1013,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
       web: {
         boxShadow: isDark
           ? "0 8px 28px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.04)"
-          : "0 10px 28px rgba(61, 42, 18, 0.08), inset 0 1px 0 rgba(255, 253, 251, 0.9)",
+          : "0 10px 28px rgba(24, 24, 27, 0.08), inset 0 1px 0 rgba(255, 253, 251, 0.9)",
       },
       default: {},
     }),
@@ -731,39 +1036,37 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    minHeight: BRAND_LOGO_SIZE.headerCompact,
+    minHeight: BRAND_HEADER_ROW_MIN_HEIGHT,
   },
-  pageTitle: {
-    fontFamily: FONT_DISPLAY,
-    fontSize: 28,
-    lineHeight: 34,
-    letterSpacing: -0.4,
+  webTopSpacer: {
+    height: spacing.xs,
     marginBottom: spacing.xs,
-  },
-  pageSubtitle: {
-    fontSize: typography.bodySmall,
-    fontFamily: fonts.regular,
-    color: c.textSecondary,
-    lineHeight: 20,
-    marginBottom: spacing.lg,
-    maxWidth: 400,
   },
   selectionCard: {
     backgroundColor: isDark ? c.surface : ALCHEMY.cardBg,
-    borderRadius: radius.xl,
+    borderRadius: radius.xxl,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.border : ALCHEMY.pillInactive,
-    borderTopWidth: 2,
+    borderColor: isDark ? "rgba(220, 38, 38, 0.14)" : ALCHEMY.pillInactive,
+    borderTopWidth: 3,
     borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
     marginBottom: spacing.md,
     overflow: "hidden",
     ...shadowPremium,
+    ...Platform.select({
+      ios: {
+        shadowColor: isDark ? c.primaryBright : "#18181B",
+        shadowOpacity: isDark ? 0.12 : 0.08,
+        shadowRadius: isDark ? 16 : 14,
+      },
+      android: { elevation: isDark ? 4 : 3 },
+      default: {},
+    }),
   },
   selectionCardRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: spacing.sm,
-    padding: spacing.sm,
+    gap: spacing.md,
+    padding: spacing.md + 2,
   },
   selectionCardRowStack: {
     flexDirection: "column",
@@ -771,18 +1074,20 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     padding: 0,
   },
   selectionThumb: {
-    width: 100,
-    height: 100,
+    width: 108,
+    height: 108,
     borderRadius: radius.lg,
     backgroundColor: isDark ? c.surfaceMuted : "#FFFFFF",
     overflow: "hidden",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
   },
   selectionThumbStack: {
     width: "100%",
     height: 148,
     borderRadius: 0,
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
+    borderTopLeftRadius: radius.xxl,
+    borderTopRightRadius: radius.xxl,
   },
   selectionImagePlaceholder: {
     alignItems: "center",
@@ -811,14 +1116,15 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   selectionName: {
     flex: 1,
     fontFamily: FONT_DISPLAY,
-    fontSize: typography.body,
+    fontSize: typography.h3,
     color: c.textPrimary,
-    lineHeight: 22,
+    lineHeight: 26,
   },
   selectionPrice: {
     fontFamily: FONT_DISPLAY,
-    fontSize: typography.body,
+    fontSize: typography.h3,
     color: isDark ? c.textPrimary : ALCHEMY.brown,
+    fontVariant: ["tabular-nums"],
   },
   selectionDesc: {
     fontSize: typography.caption,
@@ -847,19 +1153,20 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: spacing.sm,
   },
   qtyPillBar: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: isDark ? c.surfaceMuted : "#FFF",
-    borderRadius: radius.pill,
+    borderRadius: semanticRadius.full,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: c.border,
     paddingHorizontal: 4,
   },
   qtyPillHit: {
-    width: 36,
-    height: 36,
+    width: 38,
+    height: 38,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -874,8 +1181,12 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 8,
-    paddingLeft: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: semanticRadius.full,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: c.border,
+    backgroundColor: isDark ? "rgba(255,255,255,0.02)" : "rgba(255,255,255,0.72)",
   },
   removeRowText: {
     fontSize: 11,
@@ -893,12 +1204,6 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     padding: spacing.md,
     marginBottom: spacing.lg,
     ...shadowLift,
-  },
-  upsellTitle: {
-    fontFamily: FONT_DISPLAY,
-    fontSize: typography.h3,
-    marginBottom: spacing.md,
-    letterSpacing: -0.2,
   },
   upsellRow: {
     flexDirection: "row",
@@ -937,33 +1242,15 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     marginTop: spacing.sm,
     alignSelf: "flex-start",
   },
-  upsellAddText: {
-    fontSize: 11,
-    fontFamily: fonts.extrabold,
-    letterSpacing: 1,
-    color: isDark ? c.primaryBright : ALCHEMY.brown,
-    textDecorationLine: "underline",
-  },
-  summaryAlchemy: {
-    backgroundColor: isDark ? c.surface : ALCHEMY.cardBg,
-    borderRadius: radius.xl,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.border : ALCHEMY.pillInactive,
-    borderTopWidth: 2,
-    borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
-    padding: spacing.md,
+  summaryCardWrap: {
     marginBottom: spacing.lg,
-    ...shadowPremium,
-  },
-  summaryAlchemyTitle: {
-    fontFamily: FONT_DISPLAY,
-    fontSize: typography.h3,
-    marginBottom: spacing.md,
+    alignSelf: "stretch",
+    overflow: "hidden",
   },
   shippingFree: {
     fontFamily: fonts.bold,
     fontSize: typography.bodySmall,
-    color: isDark ? c.primaryBright : "#C9A227",
+    color: isDark ? c.primaryBright : c.primaryDark,
   },
   totalAmountLabel: {
     fontSize: 10,
@@ -983,6 +1270,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     fontFamily: FONT_DISPLAY,
     fontSize: 28,
     letterSpacing: -0.3,
+    fontVariant: ["tabular-nums"],
   },
   inrBadge: {
     paddingHorizontal: 8,
@@ -997,6 +1285,18 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     fontFamily: fonts.bold,
     color: c.textMuted,
     letterSpacing: 0.5,
+  },
+  summaryPaymentHint: {
+    marginTop: spacing.sm,
+    fontFamily: fonts.semibold,
+    fontSize: typography.caption,
+    lineHeight: 18,
+  },
+  summaryPaymentHintOnline: {
+    color: c.primary,
+  },
+  summaryPaymentHintCod: {
+    color: c.secondaryDark,
   },
   summaryTrustRow: {
     flexDirection: "row",
@@ -1018,37 +1318,166 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     letterSpacing: 0.5,
     color: c.textMuted,
   },
-  checkoutGradientWrap: {
-    marginBottom: spacing.md,
-    borderRadius: 14,
+  cartCtaDock: {
+    marginTop: spacing.md,
+    paddingTop: spacing.lg + 4,
+    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.xxl,
     overflow: "hidden",
+    borderWidth: isDark ? StyleSheet.hairlineWidth : StyleSheet.hairlineWidth * 2,
+    borderTopWidth: isDark ? StyleSheet.hairlineWidth : 3,
+    borderColor: isDark ? "rgba(220, 38, 38, 0.18)" : "rgba(82, 82, 91, 0.18)",
+    borderTopColor: isDark ? "rgba(220, 38, 38, 0.18)" : ALCHEMY.gold,
+    backgroundColor: isDark ? "rgba(14, 12, 10, 0.88)" : "rgba(255, 251, 244, 0.96)",
+    ...Platform.select({
+      ios: {
+        shadowColor: isDark ? "#000" : "#18181B",
+        shadowOffset: { width: 0, height: 14 },
+        shadowOpacity: isDark ? 0.4 : 0.12,
+        shadowRadius: 22,
+      },
+      android: { elevation: isDark ? 10 : 6 },
+      web: {
+        boxShadow: isDark
+          ? "0 24px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255, 230, 170, 0.08)"
+          : "0 24px 48px rgba(24, 24, 27, 0.14), inset 0 1px 0 rgba(255, 253, 251, 0.9)",
+      },
+      default: {},
+    }),
+    gap: spacing.sm + 4,
+  },
+  checkoutCtaWrap: {
+    position: "relative",
+    marginTop: 0,
+  },
+  checkoutPrimaryBtn: {
+    alignSelf: "stretch",
+  },
+  checkoutPulseGlow: {
+    position: "absolute",
+    top: -8,
+    left: -4,
+    right: -4,
+    bottom: -8,
+    borderRadius: semanticRadius.full,
+    backgroundColor: isDark ? "rgba(220, 38, 38, 0.42)" : "rgba(220, 38, 38, 0.4)",
+    ...Platform.select({
+      web: { filter: "blur(22px)" },
+      default: {},
+    }),
+    zIndex: -1,
+  },
+  checkoutGradientWrap: {
+    marginBottom: 0,
+    borderRadius: semanticRadius.full,
+    overflow: "hidden",
+    ...Platform.select({
+      web: {
+        boxShadow: isDark
+          ? "0 16px 36px rgba(0,0,0,0.55), 0 4px 12px rgba(220, 38, 38, 0.12)"
+          : "0 14px 28px rgba(63, 63, 70, 0.22)",
+      },
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: isDark ? 0.4 : 0.18,
+        shadowRadius: 18,
+      },
+      android: { elevation: isDark ? 8 : 6 },
+      default: {},
+    }),
   },
   checkoutGradientBtn: {
+    minHeight: 54,
     paddingVertical: 16,
+    paddingHorizontal: spacing.lg + 2,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 14,
+    borderRadius: semanticRadius.full,
+    borderWidth: 1,
+    borderColor: isDark ? "rgba(255, 240, 200, 0.35)" : "rgba(255, 252, 248, 0.5)",
+  },
+  checkoutCtaInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.sm,
+    width: "100%",
+    paddingHorizontal: 4,
+  },
+  checkoutArrowCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: c.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.15,
+        shadowRadius: 2,
+      },
+      android: { elevation: 2 },
+      default: {},
+    }),
   },
   checkoutGradientMuted: {
     backgroundColor: c.textMuted,
   },
   checkoutGradientText: {
-    color: "#FFFCF8",
+    color: c.onPrimary,
     fontFamily: fonts.extrabold,
+    fontSize: typography.bodySmall + 1,
+    letterSpacing: 1.35,
+  },
+  checkoutGradientTextShrink: {
+    flexShrink: 1,
+    textAlign: "center",
     fontSize: typography.bodySmall,
-    letterSpacing: 1.2,
+    letterSpacing: 0.8,
   },
   continueExploreWrap: {
+    alignSelf: "stretch",
     alignItems: "center",
-    marginBottom: spacing.xl,
-    paddingVertical: spacing.sm,
+    marginBottom: 0,
+    paddingVertical: 2,
   },
+  continueExploreBtn: {
+    alignSelf: "stretch",
+  },
+  continueExploreWrapPressed: {
+    opacity: 0.88,
+    transform: [{ scale: 0.992 }],
+  },
+  continueExploreInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    minHeight: 48,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
+    alignSelf: "stretch",
+    borderRadius: semanticRadius.full,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderColor: isDark ? "rgba(220, 38, 38, 0.62)" : "rgba(82, 82, 91, 0.5)",
+    backgroundColor: isDark ? "rgba(220, 38, 38, 0.08)" : "rgba(255, 251, 244, 1)",
+  },
+  continueExploreInnerHover: Platform.select({
+    web: {
+      backgroundColor: isDark ? "rgba(220, 38, 38, 0.14)" : "rgba(255, 244, 224, 1)",
+    },
+    default: {},
+  }),
   continueExploreText: {
-    fontSize: 11,
-    fontFamily: fonts.bold,
-    letterSpacing: 1.2,
-    color: isDark ? c.primaryBright : ALCHEMY.brownMuted,
-    textDecorationLine: "underline",
+    fontSize: 12,
+    fontFamily: fonts.extrabold,
+    letterSpacing: 1.35,
+    color: isDark ? ALCHEMY.gold : ALCHEMY.brown,
+    textDecorationLine: "none",
   },
   checkoutProgress: {
     flexDirection: "row",
@@ -1062,7 +1491,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     borderColor: c.border,
     borderTopWidth: 2,
     borderTopColor: c.primaryBorder,
-    backgroundColor: c.surface,
+    backgroundColor: isDark ? c.surface : "rgba(255,255,255,0.88)",
     gap: spacing.xs,
     ...shadowLift,
   },
@@ -1096,9 +1525,10 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     borderRadius: radius.xxl,
     borderWidth: 1,
     borderColor: c.border,
-    backgroundColor: c.surfaceMuted,
+    backgroundColor: isDark ? c.surfaceMuted : "rgba(255, 250, 244, 0.98)",
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
+    ...shadowLift,
   },
   trustRow: {
     flexDirection: "row",
@@ -1118,7 +1548,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     color: c.textSecondary,
   },
   loginCard: {
-    ...customerPanel(c, shadowPremium),
+    ...customerPanel(c, shadowPremium, isDark),
     padding: spacing.xl,
     alignItems: "center",
   },
@@ -1137,22 +1567,27 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     marginBottom: spacing.md,
   },
   cartHeroIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.pill,
-    backgroundColor: c.surface,
+    width: 56,
+    height: 56,
+    borderRadius: semanticRadius.full,
+    backgroundColor: isDark ? c.surfaceMuted : "#FFFFFF",
     borderWidth: 1,
     borderColor: c.primaryBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   cartHero: {
-    ...customerPanel(c, shadowPremium),
+    ...customerPanel(c, shadowPremium, isDark),
     marginBottom: spacing.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: spacing.md,
+    overflow: "hidden",
+  },
+  cartHeroStack: {
+    flexDirection: "column",
+    alignItems: "flex-start",
   },
   cartHeroTextBlock: {
     flex: 1,
@@ -1167,7 +1602,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   },
   cartHeroTitle: {
     color: c.primaryDark,
-    fontSize: typography.h3,
+    fontSize: typography.h2,
     fontFamily: fonts.extrabold,
   },
   cartHeroAccent: {
@@ -1182,7 +1617,8 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     color: c.textSecondary,
     fontSize: typography.bodySmall,
     fontFamily: fonts.semibold,
-    lineHeight: 20,
+    lineHeight: 21,
+    maxWidth: 540,
   },
   itemsSectionLabel: {
     fontSize: typography.overline,
@@ -1202,9 +1638,9 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     backgroundColor: c.surface,
     borderWidth: 1,
     borderColor: c.border,
-    borderTopWidth: 2,
+    borderTopWidth: 3,
     borderTopColor: c.primaryBorder,
-    borderRadius: radius.xl,
+    borderRadius: radius.xxl,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     ...shadowPremium,
@@ -1265,7 +1701,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     fontSize: typography.bodySmall,
   },
   emptyCard: {
-    ...customerPanel(c, shadowPremium),
+    ...customerPanel(c, shadowPremium, isDark),
     marginBottom: spacing.md,
     padding: spacing.xl,
     alignItems: "center",
@@ -1286,9 +1722,10 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   },
   emptyTitle: {
     fontSize: typography.h3,
-    fontFamily: fonts.extrabold,
+    fontFamily: FONT_DISPLAY,
     color: c.textPrimary,
     textAlign: "center",
+    letterSpacing: -0.3,
   },
   emptyText: {
     marginTop: spacing.sm,
@@ -1301,13 +1738,9 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   },
   browseHomeBtn: {
     marginTop: spacing.lg,
-    flexDirection: "row",
-    alignItems: "center",
     gap: 8,
     backgroundColor: c.secondary,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: 12,
+    borderColor: c.secondary,
   },
   browseHomeBtnText: {
     color: c.onSecondary,
@@ -1315,7 +1748,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     fontSize: typography.body,
   },
   footer: {
-    ...customerPanel(c, shadowPremium),
+    ...customerPanel(c, shadowPremium, isDark),
     marginBottom: spacing.md,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1356,8 +1789,8 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     color: c.primaryDark,
   },
   summaryInner: {
+    marginTop: spacing.sm,
     gap: spacing.xs,
-    marginTop: spacing.xs,
   },
   summaryRow: {
     flexDirection: "row",
@@ -1374,11 +1807,13 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     color: c.textPrimary,
     fontSize: typography.bodySmall,
     fontFamily: fonts.semibold,
+    fontVariant: ["tabular-nums"],
   },
   summaryDiscountValue: {
     color: c.success,
     fontSize: typography.bodySmall,
     fontFamily: fonts.bold,
+    fontVariant: ["tabular-nums"],
   },
   summaryDivider: {
     height: StyleSheet.hairlineWidth,
@@ -1400,6 +1835,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     color: c.primary,
     fontSize: typography.h3,
     fontFamily: fonts.extrabold,
+    fontVariant: ["tabular-nums"],
   },
   addressProfileBanner: {
     flexDirection: "row",
@@ -1445,44 +1881,38 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     color: c.secondaryDark,
   },
   addressBox: {
-    ...customerPanel(c, shadowPremium),
+    ...customerPanel(c, shadowPremium, isDark),
     marginBottom: spacing.md,
-  },
-  panelSectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  panelSectionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  panelSectionTitle: {
-    flex: 1,
-    fontSize: typography.body,
-    fontFamily: fonts.extrabold,
-    color: c.textPrimary,
-  },
-  addressHint: {
-    fontSize: typography.caption,
-    fontFamily: fonts.regular,
-    color: c.textSecondary,
-    marginBottom: spacing.md,
-    lineHeight: 18,
+    paddingTop: spacing.md + 2,
   },
   couponBox: {
-    ...customerPanel(c, shadowPremium),
+    ...customerPanel(c, shadowPremium, isDark),
     marginBottom: spacing.md,
+    paddingTop: spacing.md + 2,
   },
   couponRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-end",
     gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  couponRowStack: {
+    flexDirection: "column",
+    alignItems: "stretch",
+  },
+  couponInputWrap: {
+    flex: 1,
+    minWidth: 0,
+  },
+  bannerSpacer: {
+    marginBottom: spacing.sm,
+  },
+  addressFieldGap: {
+    marginBottom: spacing.sm,
+  },
+  halfField: {
+    flex: 1,
+    minWidth: 0,
   },
   availableCouponsWrap: {
     flexDirection: "row",
@@ -1493,10 +1923,10 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   availableCouponChip: {
     borderWidth: 1,
     borderColor: c.primaryBorder,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     backgroundColor: c.primarySoft,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 8,
+    paddingVertical: 10,
   },
   availableCouponCode: {
     color: c.primary,
@@ -1520,9 +1950,8 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   },
   applyCouponBtn: {
     backgroundColor: c.secondary,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 10,
+    borderColor: c.secondaryBorder,
+    minWidth: 112,
   },
   applyCouponBtnText: {
     color: c.onSecondary,
@@ -1534,18 +1963,13 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     color: c.success,
     fontSize: typography.caption,
     fontFamily: fonts.bold,
+    lineHeight: 18,
   },
   savedAddressBtn: {
     alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
     gap: 6,
     backgroundColor: c.primarySoft,
-    borderWidth: 1,
     borderColor: c.primaryBorder,
-    borderRadius: radius.pill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 7,
     marginBottom: spacing.sm,
   },
   savedAddressBtnText: {
@@ -1599,30 +2023,13 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     fontFamily: fonts.bold,
   },
   totalValue: {
-    fontSize: 28,
+    fontSize: typography.h1,
     color: c.primaryDark,
-    fontFamily: fonts.extrabold,
+    fontFamily: FONT_DISPLAY,
+    letterSpacing: -0.4,
   },
   checkoutButton: {
     marginBottom: spacing.lg,
-    backgroundColor: c.primary,
-    borderRadius: radius.pill,
-    alignItems: "center",
-    paddingVertical: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 6,
-      },
-      web: {
-        boxShadow: "0 8px 24px rgba(184, 134, 11, 0.35)",
-      },
-    }),
   },
   checkoutButtonDisabled: {
     backgroundColor: c.textMuted,
@@ -1645,9 +2052,10 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   },
   loginPromptTitle: {
     fontSize: typography.h2,
-    fontFamily: fonts.extrabold,
+    fontFamily: FONT_DISPLAY,
     color: c.textPrimary,
     textAlign: "center",
+    letterSpacing: -0.35,
   },
   loginPromptText: {
     marginTop: spacing.sm,
@@ -1658,5 +2066,37 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     lineHeight: 22,
     marginBottom: spacing.lg,
   },
+  peNone: {
+    pointerEvents: "none",
+  },
 });
+}
+
+function RetryCartImage({ sourceUri, style, placeholderStyle, iconSize, c }) {
+  const candidates = useMemo(() => getImageUriCandidates(sourceUri), [sourceUri]);
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    setIndex(0);
+  }, [sourceUri]);
+
+  const currentUri = candidates[index] || "";
+  if (!currentUri) {
+    return (
+      <View style={[style, placeholderStyle]}>
+        <Ionicons name="image-outline" size={iconSize} color={c.textMuted} />
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={{ uri: currentUri }}
+      style={style}
+      contentFit="cover"
+      transition={200}
+      recyclingKey={currentUri}
+      onError={() => setIndex((prev) => prev + 1)}
+    />
+  );
 }

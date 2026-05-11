@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { getApiBaseUrl } from "../services/apiBase";
 
 function isLocalHost(hostname) {
@@ -31,14 +32,23 @@ function hostVariants(urlString) {
     const url = new URL(urlString);
     const currentHost = url.hostname;
     const devHost = getDevHostFromApiBase();
-    const candidates = [urlString];
+    const candidates = [];
+
     if (isLocalHost(currentHost)) {
-      if (devHost) candidates.push(withHost(urlString, devHost));
-      candidates.push(withHost(urlString, "10.0.2.2"));
-    } else if (devHost && currentHost !== devHost) {
-      candidates.push(withHost(urlString, devHost));
+      // Images served from local API — emulator / device need host variants.
+      if (Platform.OS === "android") {
+        candidates.push(withHost(urlString, "10.0.2.2"));
+      }
+      if (devHost && !isLocalHost(devHost)) {
+        candidates.push(withHost(urlString, devHost));
+      }
+      candidates.push(urlString);
+    } else {
+      // CDN / Cloudinary / remote URLs — never rewrite hostname to the API dev host (that breaks loads on Android).
+      candidates.push(urlString);
     }
-    // For non-local remote hosts, prefer HTTPS on Android/iOS.
+
+    // Prefer HTTPS for remote http URLs (e.g. misconfigured API).
     if (!isLocalHost(url.hostname) && url.protocol === "http:") {
       const httpsUrl = new URL(urlString);
       httpsUrl.protocol = "https:";
@@ -90,3 +100,6 @@ export function getImageUriCandidates(rawUri) {
   }
   return hostVariants(resolveImageUri(uri));
 }
+
+/** Shared expo-image placeholder while remote heroes / catalog images resolve. */
+export const PRODUCT_HERO_BLURHASH = "LEHV6nWB2yk8pyo0adR*.7kCMdnj";

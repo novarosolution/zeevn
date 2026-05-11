@@ -6,6 +6,13 @@ function apiUrl(path) {
   return `${getApiBaseUrl()}${path}`;
 }
 
+const PRODUCTS_CACHE_TTL_MS = 60 * 1000;
+let productsCache = {
+  data: null,
+  fetchedAt: 0,
+  promise: null,
+};
+
 function normalizeProduct(raw) {
   const primaryImage =
     raw.image || (Array.isArray(raw.images) && raw.images.length ? raw.images[0] : "");
@@ -99,21 +106,85 @@ function normalizeProduct(raw) {
 }
 
 export async function getProducts() {
-  const response = await fetch(apiUrl("/products"));
-  const data = await response.json().catch(() => []);
-  if (!response.ok) {
-    const msg =
-      typeof data?.message === "string" && data.message.trim()
-        ? data.message.trim()
-        : "Unable to load products.";
-    throw new Error(msg);
+  const now = Date.now();
+  if (productsCache.data && now - productsCache.fetchedAt < PRODUCTS_CACHE_TTL_MS) {
+    return productsCache.data;
   }
-  return data.map(normalizeProduct);
+  if (productsCache.promise) {
+    return productsCache.promise;
+  }
+
+  productsCache.promise = (async () => {
+    const response = await fetch(apiUrl("/products"));
+    const data = await response.json().catch(() => []);
+    if (!response.ok) {
+      const msg =
+        typeof data?.message === "string" && data.message.trim()
+          ? data.message.trim()
+          : "Unable to load products.";
+      throw new Error(msg);
+    }
+    const normalized = data.map(normalizeProduct);
+    productsCache = {
+      data: normalized,
+      fetchedAt: Date.now(),
+      promise: null,
+    };
+    return normalized;
+  })();
+
+  try {
+    return await productsCache.promise;
+  } catch (error) {
+    productsCache.promise = null;
+    throw error;
+  }
+}
+
+export function invalidateProductsCache() {
+  productsCache = {
+    data: null,
+    fetchedAt: 0,
+    promise: null,
+  };
 }
 
 export async function getProductById(id) {
   const allProducts = await getProducts();
   return allProducts.find((item) => item.id === id) || null;
+}
+
+export async function getProductReviews(productId) {
+  const response = await fetch(apiUrl(`/products/${productId}/reviews`));
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || "Unable to load reviews.");
+  }
+  return {
+    ratingAverage: Number(data.ratingAverage || 0),
+    reviewCount: Number(data.reviewCount || 0),
+    reviews: Array.isArray(data.reviews) ? data.reviews : [],
+  };
+}
+
+export async function submitProductReview(token, productId, payload) {
+  const response = await fetch(apiUrl(`/products/${productId}/reviews`), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || "Unable to submit review.");
+  }
+  return {
+    ratingAverage: Number(data.ratingAverage || 0),
+    reviewCount: Number(data.reviewCount || 0),
+    reviews: Array.isArray(data.reviews) ? data.reviews : [],
+  };
 }
 
 const DEFAULT_HOME_VIEW = { ...HOME_VIEW_DEFAULTS };

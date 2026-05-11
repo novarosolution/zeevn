@@ -5,9 +5,9 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { Easing, FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import { fonts, radius, spacing, typography } from "../theme/tokens";
-import { BRAND_LOGO_SIZE, APP_TAGLINE } from "../constants/brand";
+import { APP_TAGLINE, APP_WORDMARK_SUBLINE } from "../constants/brand";
 import { ALCHEMY, CUSTOMER_SHELL_GRADIENT_LOCATIONS, FONT_DISPLAY_SEMI, getCustomerShellGradient } from "../theme/customerAlchemy";
-import BrandLogo from "./BrandLogo";
+import BrandWordmark from "./BrandWordmark";
 
 const SHELL_AXIS = { start: { x: 0.06, y: 0 }, end: { x: 0.94, y: 1 } };
 
@@ -33,12 +33,11 @@ export default function AppStartupScreen({ colors: c, useAppFonts = true, footno
         <View style={[styles.blob, styles.blobB, { backgroundColor: c.secondary }]} />
         <View style={[styles.blob, styles.blobC, { backgroundColor: ALCHEMY.gold }]} />
         <LinearGradient
-          colors={["rgba(201, 162, 39, 0.08)", "transparent", isDark ? "rgba(0,0,0,0.22)" : "rgba(201, 162, 39, 0.04)"]}
+          colors={["rgba(185, 28, 28, 0.08)", "transparent", isDark ? "rgba(0,0,0,0.22)" : "rgba(185, 28, 28, 0.04)"]}
           locations={[0, 0.45, 1]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, styles.peNone]}
         />
 
         <Animated.View entering={FadeIn.duration(480)} style={styles.center}>
@@ -47,8 +46,8 @@ export default function AppStartupScreen({ colors: c, useAppFonts = true, footno
               style={[
                 styles.logoCardClip,
                 {
-                  backgroundColor: isDark ? c.surface : "rgba(255, 252, 248, 0.95)",
-                  borderColor: isDark ? c.border : "rgba(116, 79, 28, 0.12)",
+                  backgroundColor: isDark ? c.surfaceElevated || c.surface : "rgba(255, 252, 248, 0.95)",
+                  borderColor: isDark ? c.border : "rgba(63, 63, 70, 0.12)",
                 },
               ]}
             >
@@ -59,7 +58,12 @@ export default function AppStartupScreen({ colors: c, useAppFonts = true, footno
                 style={styles.cardGoldEdge}
               />
               <View style={styles.logoCardInner}>
-                <BrandLogo width={BRAND_LOGO_SIZE.startup} height={BRAND_LOGO_SIZE.startup} />
+                <View style={styles.kickerPill}>
+                  <Text style={styles.kickerText} numberOfLines={1}>
+                    {APP_WORDMARK_SUBLINE}
+                  </Text>
+                </View>
+                <BrandWordmark sizeKey="startup" />
                 {useAppFonts ? (
                   <Text style={[styles.tagline, { color: c.textSecondary }, displayFont]} numberOfLines={2}>
                     {APP_TAGLINE}
@@ -76,7 +80,7 @@ export default function AppStartupScreen({ colors: c, useAppFonts = true, footno
               {
                 backgroundColor: c.primarySoft,
                 borderColor: c.primaryBorder,
-                shadowColor: isDark ? "#000" : "#3D2A12",
+                shadowColor: isDark ? "#000" : "#18181B",
               },
             ]}
           >
@@ -174,14 +178,14 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     ...Platform.select({
       ios: {
-        shadowColor: "#3D2A12",
+        shadowColor: "#18181B",
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.12,
         shadowRadius: 24,
       },
       android: { elevation: 6 },
       web: {
-        boxShadow: "0 20px 48px rgba(61, 42, 18, 0.1), 0 6px 16px rgba(28, 25, 23, 0.05), inset 0 1px 0 rgba(255, 253, 251, 0.9)",
+        boxShadow: "0 20px 48px rgba(24, 24, 27, 0.1), 0 6px 16px rgba(28, 25, 23, 0.05), inset 0 1px 0 rgba(255, 253, 251, 0.9)",
       },
       default: {},
     }),
@@ -196,6 +200,22 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     paddingHorizontal: spacing.xl,
     alignItems: "center",
+  },
+  kickerPill: {
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 236, 191, 0.68)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(185, 28, 28, 0.18)",
+    marginBottom: spacing.md,
+  },
+  kickerText: {
+    color: ALCHEMY.brown,
+    fontSize: typography.overline + 1,
+    fontFamily: fonts.extrabold,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
   },
   tagline: {
     marginTop: spacing.md,
@@ -218,7 +238,7 @@ const styles = StyleSheet.create({
   ornamentLineFaint: {
     flex: 1,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "rgba(201, 162, 39, 0.35)",
+    backgroundColor: "rgba(185, 28, 28, 0.35)",
     borderRadius: 1,
   },
   spinnerWell: {
@@ -238,7 +258,7 @@ const styles = StyleSheet.create({
       },
       android: { elevation: 2 },
       web: {
-        boxShadow: "0 8px 20px rgba(61, 42, 18, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)",
+        boxShadow: "0 8px 20px rgba(24, 24, 27, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)",
       },
       default: {},
     }),
@@ -246,5 +266,8 @@ const styles = StyleSheet.create({
   footnote: {
     fontSize: typography.caption,
     letterSpacing: 0.3,
+  },
+  peNone: {
+    pointerEvents: "none",
   },
 });

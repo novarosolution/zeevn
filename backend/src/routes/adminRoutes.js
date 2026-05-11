@@ -12,7 +12,12 @@ const {
   deleteOrder,
   updateAdminOrderDetails,
 } = require("../controllers/orderController");
-const { getAllUsers, updateUserAdminStatus, deleteUser } = require("../controllers/userController");
+const {
+  getAllUsers,
+  updateUserAdminStatus,
+  updateUserDeliveryPartnerStatus,
+  deleteUser,
+} = require("../controllers/userController");
 const {
   createBroadcastNotification,
   getAdminNotifications,
@@ -23,6 +28,11 @@ const {
   createAdminCoupon,
   updateAdminCoupon,
 } = require("../controllers/couponController");
+const {
+  getAdminRewards,
+  createAdminReward,
+  updateAdminReward,
+} = require("../controllers/rewardController");
 const {
   getAdminSupportThreads,
   replyToSupportThread,
@@ -51,6 +61,7 @@ router.delete("/orders/:id", deleteOrder);
 
 router.get("/users", getAllUsers);
 router.patch("/users/:id/role", updateUserAdminStatus);
+router.patch("/users/:id/delivery-role", updateUserDeliveryPartnerStatus);
 router.delete("/users/:id", deleteUser);
 
 router.get("/notifications", getAdminNotifications);
@@ -59,6 +70,9 @@ router.get("/analytics", getAdminAnalytics);
 router.get("/coupons", getAdminCoupons);
 router.post("/coupons", createAdminCoupon);
 router.put("/coupons/:id", updateAdminCoupon);
+router.get("/rewards", getAdminRewards);
+router.post("/rewards", createAdminReward);
+router.put("/rewards/:id", updateAdminReward);
 router.get("/support-threads", getAdminSupportThreads);
 router.post("/support-threads/:id/reply", replyToSupportThread);
 router.patch("/support-threads/:id/status", updateSupportThreadStatus);

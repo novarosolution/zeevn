@@ -1,24 +1,20 @@
 import React, { useMemo, useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import AppFooter from "../components/AppFooter";
-import CustomerScreenShell from "../components/CustomerScreenShell";
+import { StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-import { BRAND_LOGO_SIZE } from "../constants/brand";
-import BrandLogo from "../components/BrandLogo";
-import { fonts, radius, spacing, typography } from "../theme/tokens";
-import { authScrollContent, customerPanel, customerScrollFill, inputOutlineWeb } from "../theme/screenLayout";
-import { ALCHEMY, FONT_DISPLAY } from "../theme/customerAlchemy";
+import { fonts, spacing, typography } from "../theme/tokens";
+import {
+  isValidEmail,
+  normalizeEmail,
+  validateRegisterName,
+  validateRegisterPassword,
+} from "../utils/authValidation";
+import PremiumButton from "../components/ui/PremiumButton";
+import PremiumInput from "../components/ui/PremiumInput";
+import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
+import SectionReveal from "../components/motion/SectionReveal";
+import { REGISTER_SCREEN } from "../content/appContent";
+import AuthPageScaffold from "../components/AuthPageScaffold";
 
 export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState("");
@@ -28,263 +24,207 @@ export default function RegisterScreen({ navigation }) {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { registerWithCredentials } = useAuth();
-  const { colors: c, shadowPremium: sp, isDark } = useTheme();
-  const styles = useMemo(() => createRegisterStyles(c, sp, isDark), [c, sp, isDark]);
+  const { colors: c } = useTheme();
+  const styles = useMemo(() => createRegisterStyles(c), [c]);
 
   const handleRegister = async () => {
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      setError("Please fill all required fields.");
+    const nameErr = validateRegisterName(name);
+    if (nameErr) {
+      setError(nameErr);
       return;
     }
 
-    if (!email.includes("@")) {
-      setError("Please enter a valid email address.");
+    const em = normalizeEmail(email);
+    if (!em) {
+      setError(REGISTER_SCREEN.emailRequired);
+      return;
+    }
+    if (!isValidEmail(em)) {
+      setError(REGISTER_SCREEN.emailInvalid);
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    const passErr = validateRegisterPassword(password);
+    if (passErr) {
+      setError(passErr);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError(REGISTER_SCREEN.credentialMismatch);
       return;
     }
 
     try {
       setIsSubmitting(true);
       setError("");
-      await registerWithCredentials({ name: name.trim(), email: email.trim(), password });
+      await registerWithCredentials({ name: name.trim().replace(/\s+/g, " "), email: em, password });
       navigation.navigate("Home");
     } catch (err) {
-      setError(err.message || "Unable to register. Please try again.");
+      setError(err.message || REGISTER_SCREEN.genericError);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <CustomerScreenShell style={styles.screen}>
-    <KeyboardAvoidingView
-      style={customerScrollFill}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    <AuthPageScaffold
+      heroBannerA11y={REGISTER_SCREEN.heroBannerA11y}
+      heroKicker={REGISTER_SCREEN.heroKicker}
+      heroTitle={REGISTER_SCREEN.heroTitle}
+      heroSubtitle={REGISTER_SCREEN.heroSubtitle}
+      heroHighlights={REGISTER_SCREEN.heroHighlights}
+      authEyebrow={REGISTER_SCREEN.authEyebrow}
+      authTitle={REGISTER_SCREEN.authTitle}
+      authSubtitle={REGISTER_SCREEN.authSubtitle}
+      assuranceNote={REGISTER_SCREEN.assuranceNote}
     >
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[authScrollContent, styles.scrollContentExtra]}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.hero}>
-          <View style={styles.heroBrandStack}>
-            <BrandLogo width={BRAND_LOGO_SIZE.authHero} height={BRAND_LOGO_SIZE.authHero} style={styles.heroLogo} />
-          </View>
-          <Text style={styles.heroTitle}>Create your account</Text>
-          <Text style={styles.heroSubtitle}>Save your address, reorder favourites, and get order updates.</Text>
-        </View>
+            <View style={styles.fieldStack}>
+              <SectionReveal delay={80}>
+                <PremiumInput
+                  label={REGISTER_SCREEN.labelFullName}
+                  value={name}
+                  onChangeText={(t) => {
+                    setName(t);
+                    if (error) setError("");
+                  }}
+                  iconLeft="person-outline"
+                  autoCapitalize="words"
+                  autoCorrect={false}
+                  textContentType="name"
+                />
+              </SectionReveal>
 
-        <View style={styles.card}>
-          <Text style={styles.title}>Register</Text>
-          <Text style={styles.subtitle}>Quick signup—same trusted checkout as always.</Text>
+              <SectionReveal delay={140}>
+                <PremiumInput
+                  label={REGISTER_SCREEN.labelEmail}
+                  value={email}
+                  onChangeText={(t) => {
+                    setEmail(t);
+                    if (error) setError("");
+                  }}
+                  iconLeft="mail-outline"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="email"
+                  textContentType="emailAddress"
+                />
+              </SectionReveal>
 
-          <View style={styles.inputWrap}>
-            <Ionicons name="person-outline" size={16} color={c.textSecondary} />
-            <TextInput
-              style={styles.input}
-              placeholder="Full name"
-              placeholderTextColor={c.textMuted}
-              value={name}
-              onChangeText={setName}
-            />
-          </View>
+              <SectionReveal delay={200}>
+                <PremiumInput
+                  label={REGISTER_SCREEN.labelSecret}
+                  value={password}
+                  onChangeText={(t) => {
+                    setPassword(t);
+                    if (error) setError("");
+                  }}
+                  iconLeft="lock-closed-outline"
+                  secureTextEntry
+                  passwordToggle
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="new-password"
+                  textContentType="newPassword"
+                  helperText={REGISTER_SCREEN.credentialHelper}
+                />
+              </SectionReveal>
 
-          <View style={styles.inputWrap}>
-            <Ionicons name="mail-outline" size={16} color={c.textSecondary} />
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              placeholderTextColor={c.textMuted}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </View>
-
-          <View style={styles.inputWrap}>
-            <Ionicons name="lock-closed-outline" size={16} color={c.textSecondary} />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor={c.textMuted}
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
-          </View>
-
-          <View style={styles.inputWrap}>
-            <Ionicons name="checkmark-done-outline" size={16} color={c.textSecondary} />
-            <TextInput
-              style={styles.input}
-              placeholder="Confirm password"
-              placeholderTextColor={c.textMuted}
-              secureTextEntry
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-            />
-          </View>
-
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-          <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={isSubmitting}>
-            <View style={styles.buttonContent}>
-              <Ionicons name="person-add-outline" size={16} color={c.onPrimary} />
-              <Text style={styles.buttonText}>{isSubmitting ? "Please wait..." : "Create Account"}</Text>
+              <SectionReveal delay={260}>
+                <PremiumInput
+                  label={REGISTER_SCREEN.labelConfirmSecret}
+                  value={confirmPassword}
+                  onChangeText={(t) => {
+                    setConfirmPassword(t);
+                    if (error) setError("");
+                  }}
+                  iconLeft="checkmark-done-outline"
+                  secureTextEntry
+                  passwordToggle
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="new-password"
+                  textContentType="newPassword"
+                  returnKeyType="done"
+                  onSubmitEditing={handleRegister}
+                />
+              </SectionReveal>
             </View>
-          </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => navigation.navigate("Login")} style={styles.loginButton}>
-            <Text style={styles.loginButtonText}>Already have an account? Login</Text>
-          </TouchableOpacity>
-        </View>
+            {error ? (
+              <View style={styles.errorWrap}>
+                <PremiumErrorBanner severity="error" message={error} compact />
+              </View>
+            ) : null}
 
-        <View style={styles.footerWrap}>
-          <AppFooter />
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
-    </CustomerScreenShell>
+            <SectionReveal delay={320}>
+              <PremiumButton
+                label={isSubmitting ? REGISTER_SCREEN.submitLoading : REGISTER_SCREEN.submitCta}
+                onPress={handleRegister}
+                iconLeft="person-add-outline"
+                loading={isSubmitting}
+                disabled={isSubmitting}
+                size="lg"
+                fullWidth
+                pulse={!isSubmitting && !error && Boolean(name || email || password || confirmPassword)}
+                style={styles.primaryCta}
+              />
+            </SectionReveal>
+
+            <View style={styles.secondaryDivider}>
+              <View style={styles.secondaryDividerLine} />
+              <Text style={styles.secondaryDividerLabel}>{REGISTER_SCREEN.dividerExisting}</Text>
+              <View style={styles.secondaryDividerLine} />
+            </View>
+
+            <PremiumButton
+              label={REGISTER_SCREEN.signInInsteadCta}
+              variant="subtle"
+              size="md"
+              fullWidth
+              iconLeft="log-in-outline"
+              style={styles.secondaryActionBtn}
+              onPress={() => navigation.navigate("Login")}
+            />
+    </AuthPageScaffold>
   );
 }
 
-function createRegisterStyles(c, shadowPremium, isDark) {
+function createRegisterStyles(c) {
   return StyleSheet.create({
-  screen: {
-    flex: 1,
+  fieldStack: {
+    gap: spacing.sm + 2,
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm + 2,
   },
-  scrollContentExtra: {
-    width: "100%",
-  },
-  hero: {
-    width: "100%",
-    maxWidth: 420,
-    backgroundColor: isDark ? c.heroBackground : ALCHEMY.cardBg,
-    borderRadius: radius.xxl,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? "rgba(184, 134, 11, 0.4)" : ALCHEMY.pillInactive,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
-    marginBottom: spacing.md,
-    marginTop: spacing.md,
-    ...shadowPremium,
-  },
-  heroBrandStack: {
-    alignSelf: "stretch",
-  },
-  heroLogo: {
-    alignSelf: "center",
-  },
-  heroTitle: {
-    marginTop: spacing.xs,
-    color: isDark ? c.heroForeground : ALCHEMY.brown,
-    fontSize: typography.h1,
-    fontFamily: FONT_DISPLAY,
-    lineHeight: 32,
-    letterSpacing: -0.5,
-  },
-  heroSubtitle: {
-    marginTop: spacing.xs,
-    color: isDark ? c.onPrimaryMuted : c.textSecondary,
-    fontSize: typography.bodySmall,
-    lineHeight: 20,
-    fontFamily: fonts.regular,
-  },
-  card: {
-    width: "100%",
-    maxWidth: 420,
-    ...customerPanel(c, shadowPremium),
-    padding: spacing.xl,
-    ...(isDark
-      ? {}
-      : {
-          backgroundColor: ALCHEMY.cardBg,
-          borderColor: ALCHEMY.pillInactive,
-          borderTopColor: ALCHEMY.pillInactive,
-        }),
-  },
-  title: {
-    fontSize: 24,
-    fontFamily: FONT_DISPLAY,
-    color: c.textPrimary,
-    letterSpacing: -0.3,
-  },
-  subtitle: {
-    fontSize: typography.body,
-    marginTop: spacing.xs,
-    marginBottom: spacing.lg,
-    color: c.textSecondary,
-    lineHeight: 22,
-    fontFamily: fonts.regular,
-  },
-  inputWrap: {
-    borderWidth: 1,
-    borderColor: c.border,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: spacing.md,
-    backgroundColor: c.surfaceMuted,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: 12,
-    fontSize: typography.body,
-    fontFamily: fonts.regular,
-    color: c.textPrimary,
-    ...inputOutlineWeb,
-  },
-  button: {
-    marginTop: spacing.xs,
-    backgroundColor: c.primary,
-    borderRadius: radius.pill,
-    alignItems: "center",
-    paddingVertical: 14,
-  },
-  buttonText: {
-    color: c.onPrimary,
-    fontFamily: fonts.bold,
-    fontSize: 16,
-  },
-  buttonContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  errorText: {
-    color: c.danger,
-    marginTop: -2,
+  errorWrap: {
     marginBottom: spacing.sm,
-    fontSize: typography.bodySmall,
-    fontFamily: fonts.semibold,
   },
-  loginButton: {
+  primaryCta: {
     marginTop: spacing.md,
+  },
+  secondaryDivider: {
+    flexDirection: "row",
     alignItems: "center",
+    gap: spacing.sm,
+    marginTop: spacing.md + 2,
+    marginBottom: spacing.sm,
   },
-  loginButtonText: {
-    color: c.primary,
-    fontSize: typography.bodySmall,
+  secondaryDividerLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: c.border,
+  },
+  secondaryDividerLabel: {
     fontFamily: fonts.bold,
+    fontSize: typography.overline,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    color: c.textMuted,
   },
-  footerWrap: {
-    marginTop: spacing.md,
-    width: "100%",
-    maxWidth: 420,
-    alignSelf: "center",
+  secondaryActionBtn: {
+    opacity: 0.94,
   },
-});
+  });
 }

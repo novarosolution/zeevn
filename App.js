@@ -1,8 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Appearance, Platform, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
+import * as ExpoLinking from "expo-linking";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold } from "@expo-google-fonts/inter";
 import {
@@ -11,7 +12,6 @@ import {
   PlayfairDisplay_400Regular_Italic,
 } from "@expo-google-fonts/playfair-display";
 import * as SplashScreen from "expo-splash-screen";
-import Constants from "expo-constants";
 import { isRunningInExpoGo } from "expo";
 import { CartProvider } from "./src/context/CartContext";
 import { AuthProvider } from "./src/context/AuthContext";
@@ -20,30 +20,56 @@ import AppStartupScreen from "./src/components/AppStartupScreen";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { darkColors, lightColors } from "./src/theme/tokens";
 import { applyWebPremiumChrome, webRootStyle } from "./src/theme/web";
+import {
+  LEGACY_JEEVAN_STARTUP_WELCOME_KEY,
+  LEGACY_STARTUP_WELCOME_KEY,
+} from "./src/constants/migrationKeys";
 
-const STARTUP_WELCOME_KEY = "@kankreg_startup_welcome_shown";
+const STARTUP_WELCOME_KEY = "@zeevan_startup_welcome_shown";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const safeAreaRootStyle = { flex: 1, width: "100%" };
 
 const navigationRef = createNavigationContainerRef();
-
-function getActiveRouteName() {
-  return navigationRef.getCurrentRoute()?.name;
-}
+const linking = {
+  prefixes: [ExpoLinking.createURL("/")],
+  config: {
+    screens: {
+      Home: "",
+      Product: "product/:productId",
+      Cart: "cart",
+      Login: "login",
+      Register: "register",
+      Profile: "profile",
+      EditProfile: "profile/edit",
+      MyOrders: "orders",
+      Notifications: "notifications",
+      Settings: "settings",
+      ManageAddress: "address",
+      Support: "support",
+      DeliveryDashboard: "delivery/dashboard",
+      AdminDashboard: "admin",
+      AdminProducts: "admin/products",
+      AdminInventory: "admin/inventory",
+      AdminAddProduct: "admin/products/new",
+      AdminOrders: "admin/orders",
+      AdminUsers: "admin/users",
+      AdminNotifications: "admin/notifications",
+      AdminAnalytics: "admin/analytics",
+      AdminCoupons: "admin/coupons",
+      AdminSupport: "admin/support",
+      AdminHomeView: "admin/home-view",
+    },
+  },
+};
 
 function setupNotificationHandlerIfSupported() {
   if (Platform.OS === "web") {
     return;
   }
-  const isUnsupportedEnv =
-    isRunningInExpoGo() ||
-    (Platform.OS === "android" &&
-      (Constants?.appOwnership === "expo" ||
-        Constants?.executionEnvironment === "storeClient" ||
-        Constants?.appOwnership !== "standalone"));
-  if (isUnsupportedEnv) return;
+  // Avoid duplicate/conflicting handlers in Expo Go only (supported on standalone Android/iOS).
+  if (isRunningInExpoGo()) return;
 
   try {
     const Notifications = require("expo-notifications");
@@ -76,18 +102,15 @@ function ThemedStatusBar() {
 }
 
 function AppNavigationShell() {
-  const [currentRouteName, setCurrentRouteName] = useState(undefined);
-
-  const syncActiveRoute = useCallback(() => {
-    setCurrentRouteName(getActiveRouteName());
-  }, []);
-
   return (
     <>
       <WebBodySync />
       <ThemedStatusBar />
-      <NavigationContainer ref={navigationRef} onReady={syncActiveRoute} onStateChange={syncActiveRoute}>
-        <AppNavigator currentRouteName={currentRouteName} navigationRef={navigationRef} />
+      <NavigationContainer
+        ref={navigationRef}
+        linking={linking}
+      >
+        <AppNavigator navigationRef={navigationRef} />
       </NavigationContainer>
     </>
   );
@@ -112,7 +135,21 @@ export default function App() {
     let cancelled = false;
     (async () => {
       try {
-        const seen = await AsyncStorage.getItem(STARTUP_WELCOME_KEY);
+        let seen = await AsyncStorage.getItem(STARTUP_WELCOME_KEY);
+        if (seen == null) {
+          seen = await AsyncStorage.getItem(LEGACY_JEEVAN_STARTUP_WELCOME_KEY);
+          if (seen === "1") {
+            await AsyncStorage.setItem(STARTUP_WELCOME_KEY, "1");
+            await AsyncStorage.removeItem(LEGACY_JEEVAN_STARTUP_WELCOME_KEY);
+          }
+        }
+        if (seen == null) {
+          seen = await AsyncStorage.getItem(LEGACY_STARTUP_WELCOME_KEY);
+          if (seen === "1") {
+            await AsyncStorage.setItem(STARTUP_WELCOME_KEY, "1");
+            await AsyncStorage.removeItem(LEGACY_STARTUP_WELCOME_KEY);
+          }
+        }
         if (cancelled) return;
         if (seen === "1") {
           setBootFootnote("Opening…");

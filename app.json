@@ -1,7 +1,8 @@
 {
   "expo": {
-    "name": "KankreG",
-    "slug": "kankreg",
+    "name": "Zeevan",
+    "slug": "zeevan",
+    "scheme": "zeevan",
     "version": "1.0.0",
     "orientation": "portrait",
     "platforms": [
@@ -9,22 +10,29 @@
       "android",
       "web"
     ],
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "icon": "./assets/icon.png",
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "ios": {
+      "bundleIdentifier": "com.zeevan.app",
+      "buildNumber": "1",
+      "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Allow KankreG to access your location to auto-fill delivery address.",
-        "NSUserNotificationUsageDescription": "Allow KankreG to send order updates and important announcements."
+        "NSLocationWhenInUseUsageDescription": "Zeevan uses your location for delivery addresses and optional live location sharing while you deliver orders.",
+        "NSUserNotificationUsageDescription": "Allow Zeevan to send order updates and important announcements.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
+      "package": "com.zeevan.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFCF8"
+        "backgroundColor": "#F8FAFC"
       },
+      "softwareKeyboardLayoutMode": "resize",
       "permissions": [
         "INTERNET",
         "POST_NOTIFICATIONS",
@@ -36,12 +44,26 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Allow KankreG to use your location to auto-fill delivery address."
+          "locationWhenInUsePermission": "Allow Zeevan to use your location to auto-fill delivery address."
         }
       ],
       "expo-notifications",
       "expo-asset",
-      "expo-font"
-    ]
+      "expo-font",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c8f6a8ba-4547-4e67-abba-8911b03d9a55"
+      }
+    },
+    "owner": "novarosolution"
   }
 }

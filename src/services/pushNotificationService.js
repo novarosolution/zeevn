@@ -28,16 +28,9 @@ export async function registerForPushNotifications(token) {
     return { enabled: false };
   }
 
-  // Expo Go / non-standalone Android environments do not support remote push reliably.
-  // Skip registration to avoid runtime errors and noisy logs.
-  const isUnsupportedEnv =
-    isRunningInExpoGo() ||
-    (Platform.OS === "android" &&
-      (Constants?.appOwnership === "expo" ||
-        Constants?.executionEnvironment === "storeClient" ||
-        Constants?.appOwnership !== "standalone"));
-  if (isUnsupportedEnv) {
-    return { enabled: false, reason: "expo-go-android-not-supported" };
+  // Expo Go does not support full remote push; dev/production standalone builds do.
+  if (isRunningInExpoGo()) {
+    return { enabled: false, reason: "expo-go-not-supported" };
   }
 
   const Notifications = getNotificationsModule();

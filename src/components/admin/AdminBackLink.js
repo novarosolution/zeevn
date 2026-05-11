@@ -1,32 +1,36 @@
 import React, { useMemo } from "react";
-import { Platform, StyleSheet, Text, TouchableOpacity } from "react-native";
+import { Platform, Pressable, StyleSheet, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { ALCHEMY } from "../../theme/customerAlchemy";
-import { fonts, radius, spacing, typography } from "../../theme/tokens";
+import { fonts, getSemanticColors, icon, semanticRadius, spacing, typography } from "../../theme/tokens";
 
 /**
- * Gold-accent back link to the admin dashboard (shared across admin tools).
+ * Brand-accent back link to the admin dashboard (shared across admin tools).
  */
 export default function AdminBackLink({ navigation, label = "Dashboard", target = "AdminDashboard" }) {
   const { colors: c, isDark } = useTheme();
-  const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
+  const semantic = getSemanticColors(c);
+  const styles = useMemo(() => createStyles(c, isDark, semantic), [c, isDark, semantic]);
 
   return (
-    <TouchableOpacity
-      style={styles.row}
+    <Pressable
+      style={({ hovered, pressed }) => [
+        styles.row,
+        hovered && Platform.OS === "web" ? styles.rowHover : null,
+        pressed ? { opacity: 0.86 } : null,
+      ]}
       onPress={() => navigation.navigate(target)}
-      activeOpacity={0.86}
       accessibilityRole="button"
       accessibilityLabel={`Back to ${label}`}
     >
-      <Ionicons name="chevron-back" size={20} color={isDark ? c.primary : ALCHEMY.brown} />
+      <Ionicons name="chevron-back" size={icon.md} color={c.primary} />
       <Text style={styles.text}>{label}</Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
-function createStyles(c, isDark) {
+function createStyles(c, isDark, semantic) {
   return StyleSheet.create({
     row: {
       flexDirection: "row",
@@ -36,17 +40,34 @@ function createStyles(c, isDark) {
       paddingVertical: 8,
       paddingRight: spacing.md,
       paddingLeft: spacing.sm,
-      borderRadius: radius.pill,
+      borderRadius: semanticRadius.full,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? c.primaryBorder : ALCHEMY.pillInactive,
+      borderColor: isDark ? semantic.border.accent : ALCHEMY.pillInactive,
       backgroundColor: isDark ? c.primarySoft : ALCHEMY.creamDeep,
       gap: 4,
-      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+      ...Platform.select({
+        web: {
+          cursor: "pointer",
+          transition: "background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease",
+        },
+        default: {},
+      }),
+    },
+    rowHover: {
+      backgroundColor: isDark ? "rgba(185, 28, 28, 0.14)" : c.primarySoft,
+      borderColor: isDark ? semantic.border.accent : ALCHEMY.lineStrong,
+      ...Platform.select({
+        web: {
+          transform: [{ translateY: -1 }],
+          boxShadow: "0 8px 18px rgba(24, 24, 27, 0.1)",
+        },
+        default: {},
+      }),
     },
     text: {
       fontFamily: fonts.bold,
       fontSize: typography.bodySmall,
-      color: isDark ? c.textPrimary : ALCHEMY.brown,
+      color: isDark ? c.textPrimary : c.primaryDark,
       letterSpacing: 0.1,
     },
   });

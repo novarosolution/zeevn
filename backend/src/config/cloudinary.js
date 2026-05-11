@@ -5,6 +5,7 @@ const apiKey = process.env.CLOUDINARY_API_KEY;
 const apiSecret = process.env.CLOUDINARY_API_SECRET;
 const cloudinaryUrl = process.env.CLOUDINARY_URL;
 
+
 if (cloudName && apiKey && apiSecret) {
   cloudinary.config({
     cloud_name: cloudName,

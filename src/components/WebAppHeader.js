@@ -27,7 +27,7 @@ import { getAdminMenuFlatLinks, isAdminRouteName } from "../constants/adminNav";
 
 const COMPACT_SCROLL_THRESHOLD = 80;
 
-/** Sticky desktop nav (web). Compacts on scroll, animates cart badge bumps, shows scroll progress hairline. */
+/** Sticky desktop nav (web). Kept intentionally calmer so pages carry the visual weight. */
 function routeMatchesNav(navKey, routeName) {
   if (!routeName) return false;
   if (navKey === routeName) return true;
@@ -258,7 +258,7 @@ export default function WebAppHeader({ navigationRef }) {
         style={[
           styles.glassInner,
           {
-            backgroundColor: isDark ? colors.surfaceOverlay : "rgba(255,255,255,0.88)",
+            backgroundColor: isDark ? colors.surfaceOverlay : "rgba(255,255,255,0.94)",
             borderBottomColor: isDark ? semantic.border.divider || semantic.border.subtle : colors.border,
           },
           compact ? styles.glassInnerCompact : null,
@@ -302,7 +302,7 @@ export default function WebAppHeader({ navigationRef }) {
                 },
                 compact ? styles.searchFakeCompact : null,
                 hovered && { borderColor: semantic.border.focus, backgroundColor: semantic.bg.surface },
-                hovered && Platform.OS === "web" ? { transform: [{ translateY: -1 }], boxShadow: "0 10px 20px rgba(15, 23, 42, 0.08)" } : null,
+                hovered && Platform.OS === "web" ? { boxShadow: "0 8px 16px rgba(15, 23, 42, 0.06)" } : null,
                 pressed && { opacity: 0.92 },
               ]}
               accessibilityRole="button"
@@ -330,8 +330,8 @@ export default function WebAppHeader({ navigationRef }) {
                   borderColor: isDark ? semantic.border.accent : colors.border,
                   borderTopColor: isDark ? semantic.border.accent : colors.primary,
                 },
-                !active && hovered && { backgroundColor: semantic.bg.muted, transform: [{ translateY: -1 }] },
-                !active && hovered && Platform.OS === "web" ? { boxShadow: "0 8px 18px rgba(15, 23, 42, 0.06)" } : null,
+                !active && hovered && { backgroundColor: semantic.bg.muted },
+                !active && hovered && Platform.OS === "web" ? { boxShadow: "0 6px 14px rgba(15, 23, 42, 0.05)" } : null,
                 pressed && { opacity: 0.9 },
               ];
 
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
     zIndex: WEB_Z_INDEX.header,
     height: WEB_HEADER_HEIGHT,
     ...Platform.select({
-      web: { backdropFilter: "blur(24px) saturate(1.15)" },
+      web: { backdropFilter: "blur(14px) saturate(1.05)" },
       default: {},
     }),
   },
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
   glassInnerCompact: {
     ...Platform.select({
       web: {
-        backdropFilter: "blur(34px) saturate(1.4)",
+        backdropFilter: "blur(18px) saturate(1.08)",
       },
       default: {},
     }),
@@ -516,8 +516,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: Platform.select({ web: spacing.xl + 8, default: spacing.md }),
-    paddingVertical: 12,
+    paddingHorizontal: Platform.select({ web: spacing.xl, default: spacing.md }),
+    paddingVertical: 10,
     gap: spacing.md,
     ...Platform.select({
       web: { transition: "padding 0.2s ease" },
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
     }),
   },
   innerCompact: {
-    paddingVertical: 7,
+    paddingVertical: 6,
   },
   brandCluster: {
     flexDirection: "row",
@@ -535,12 +535,12 @@ const styles = StyleSheet.create({
   },
   searchFake: {
     flex: 1,
-    maxWidth: 600,
+    maxWidth: 520,
     minWidth: 100,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingVertical: 13,
+    paddingVertical: 11,
     paddingHorizontal: spacing.lg,
     borderRadius: semanticRadius.full,
     borderWidth: 1,
@@ -548,13 +548,13 @@ const styles = StyleSheet.create({
       web: {
         cursor: "pointer",
         transition: "border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, padding 0.18s ease",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.78), 0 8px 18px rgba(15, 23, 42, 0.05)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.78), 0 4px 12px rgba(15, 23, 42, 0.04)",
       },
       default: {},
     }),
   },
   searchFakeCompact: {
-    paddingVertical: 10,
+    paddingVertical: 9,
   },
   searchFakeText: {
     flex: 1,
@@ -563,7 +563,7 @@ const styles = StyleSheet.create({
   navRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
     flexShrink: 0,
   },
   navRowPhone: {
@@ -573,8 +573,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: spacing.md + 4,
+    paddingVertical: 8,
+    paddingHorizontal: spacing.md,
     minHeight: 44,
     borderRadius: semanticRadius.full,
     ...Platform.select({
@@ -592,8 +592,8 @@ const styles = StyleSheet.create({
     minHeight: 36,
   },
   navItemCompact: {
-    paddingVertical: 8,
-    paddingHorizontal: spacing.sm + 6,
+    paddingVertical: 7,
+    paddingHorizontal: spacing.sm + 4,
     minHeight: 38,
   },
   navIconWrap: {
@@ -651,7 +651,7 @@ const styles = StyleSheet.create({
     zIndex: WEB_Z_INDEX.dropdown,
     ...Platform.select({
       web: {
-        boxShadow: "0 18px 34px rgba(15, 23, 42, 0.16), 0 6px 14px rgba(15, 23, 42, 0.08)",
+        boxShadow: "0 14px 28px rgba(15, 23, 42, 0.12), 0 4px 10px rgba(15, 23, 42, 0.06)",
       },
       default: {},
     }),

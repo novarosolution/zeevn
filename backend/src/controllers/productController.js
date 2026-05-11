@@ -1,5 +1,8 @@
 const Product = require("../models/Product");
 const cloudinary = require("../config/cloudinary");
+const CLOUDINARY_PRODUCT_FOLDER =
+  String(process.env.CLOUDINARY_PRODUCT_FOLDER || process.env.CLOUDINARY_UPLOAD_PREFIX || "").trim() ||
+  "zeevan/products";
 
 function sanitizeVariants(raw) {
   if (!Array.isArray(raw)) return [];
@@ -254,7 +257,7 @@ async function uploadProductImage(req, res, next) {
       : `data:${safeMime};base64,${imageBase64}`;
 
     const uploaded = await cloudinary.uploader.upload(uploadSource, {
-      folder: "zeevan/products",
+      folder: CLOUDINARY_PRODUCT_FOLDER,
       resource_type: "image",
     });
 

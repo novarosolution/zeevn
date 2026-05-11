@@ -615,8 +615,8 @@ function createStyles(c, isDark) {
   const cardLiftShadow = platformShadow({
     web: {
       boxShadow: isDark
-        ? "0 12px 36px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05)"
-        : "0 8px 22px rgba(15, 23, 42, 0.06), 0 1px 4px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255,255,255,0.92)",
+        ? "0 10px 26px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.05)"
+        : "0 6px 16px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255,255,255,0.92)",
     },
     ios: {
       shadowColor: "#18181B",
@@ -640,7 +640,7 @@ function createStyles(c, isDark) {
       marginBottom: spacing.sm,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: isDark ? c.border : "rgba(100, 116, 139, 0.12)",
-      borderTopWidth: 2,
+      borderTopWidth: 1,
       borderTopColor: isDark ? "rgba(220, 38, 38, 0.5)" : "rgba(185, 28, 28, 0.65)",
       ...cardLiftShadow,
       ...Platform.select({
@@ -664,7 +664,7 @@ function createStyles(c, isDark) {
       borderRadius: semanticRadius.card,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: isDark ? c.border : "rgba(100, 116, 139, 0.12)",
-      borderTopWidth: 2,
+      borderTopWidth: 1,
       borderTopColor: isDark ? "rgba(220, 38, 38, 0.5)" : "rgba(185, 28, 28, 0.65)",
       overflow: "hidden",
       ...cardLiftShadow,
@@ -823,7 +823,7 @@ function createStyles(c, isDark) {
       justifyContent: "center",
       ...Platform.select({
         web: {
-          boxShadow: "0 12px 20px rgba(62, 40, 12, 0.22), inset 0 1px 0 rgba(255,255,255,0.2)",
+          boxShadow: "0 8px 16px rgba(62, 40, 12, 0.16), inset 0 1px 0 rgba(255,255,255,0.2)",
           transitionProperty: "transform, box-shadow, background-color, border-color",
           transitionDuration: "180ms",
         },
@@ -1154,8 +1154,8 @@ function createStyles(c, isDark) {
       ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 8px 18px rgba(0,0,0,0.35)"
-            : "0 6px 16px rgba(62, 40, 12, 0.14), inset 0 1px 0 rgba(255,255,255,0.15)",
+            ? "0 6px 14px rgba(0,0,0,0.28)"
+            : "0 4px 10px rgba(62, 40, 12, 0.1), inset 0 1px 0 rgba(255,255,255,0.15)",
         },
         default: {},
       }),
@@ -1174,7 +1174,7 @@ function createStyles(c, isDark) {
       minWidth: 78,
       justifyContent: "space-between",
       ...Platform.select({
-        web: { boxShadow: "0 4px 12px rgba(15, 23, 42, 0.1)" },
+        web: { boxShadow: "0 3px 8px rgba(15, 23, 42, 0.08)" },
         default: {},
       }),
     },

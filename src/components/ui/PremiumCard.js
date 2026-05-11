@@ -174,7 +174,7 @@ function createStyles(c, isDark, pad, variant, borderless) {
           : c.border,
       overflow: Platform.OS === "web" ? "visible" : "hidden",
       position: "relative",
-      borderTopWidth: borderless ? 0 : list ? 1 : hero ? 3 : 2,
+      borderTopWidth: borderless ? 0 : list ? 1 : hero ? 2 : 1,
       borderTopColor: danger
         ? isDark
           ? "rgba(248, 113, 113, 0.42)"
@@ -201,11 +201,11 @@ function createStyles(c, isDark, pad, variant, borderless) {
           : {
               boxShadow: isDark
                 ? hero || elevated
-                  ? "0 24px 52px rgba(0,0,0,0.34), 0 10px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)"
-                  : "0 20px 40px rgba(0,0,0,0.32), 0 6px 18px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)"
+                  ? "0 16px 34px rgba(0,0,0,0.28), 0 6px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.05)"
+                  : "0 12px 24px rgba(0,0,0,0.24), 0 4px 12px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.05)"
                 : hero || elevated
-                  ? "0 22px 44px rgba(15, 23, 42, 0.09), 0 8px 18px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255,255,255,0.96)"
-                  : "0 18px 34px rgba(15, 23, 42, 0.08), 0 6px 14px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255,255,255,0.96)",
+                  ? "0 14px 28px rgba(15, 23, 42, 0.07), 0 4px 12px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255,255,255,0.96)"
+                  : "0 10px 20px rgba(15, 23, 42, 0.06), 0 3px 8px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255,255,255,0.96)",
               transition: "transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease",
             },
         default: {},
@@ -220,7 +220,7 @@ function createStyles(c, isDark, pad, variant, borderless) {
       opacity: 0.95,
     },
     content: {
-      padding: hero ? pad + 4 : panel ? pad + 2 : pad,
+      padding: hero ? pad + 2 : panel ? pad + 1 : pad,
       ...(variant === "muted" ? { backgroundColor: "transparent" } : {}),
       borderRadius: list ? radius.xl : radius.xxl,
       overflow: "hidden",
@@ -229,8 +229,8 @@ function createStyles(c, isDark, pad, variant, borderless) {
       ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 22px 42px rgba(0,0,0,0.36), 0 8px 18px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.05)"
-            : "0 18px 38px rgba(15, 23, 42, 0.1), 0 6px 16px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255,255,255,0.95)",
+            ? "0 16px 30px rgba(0,0,0,0.28), 0 6px 14px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.05)"
+            : "0 12px 24px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255,255,255,0.95)",
         },
         default: {},
       }),

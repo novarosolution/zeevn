@@ -17,10 +17,10 @@ import { useTheme } from "../../context/ThemeContext";
 import useReducedMotion from "../../hooks/useReducedMotion";
 
 const SIZE_TOKENS = {
-  sm: { padV: 8, padH: 14, fs: typography.caption, gap: 6, iconSize: icon.xs, height: 38 },
-  md: { padV: 11, padH: 20, fs: typography.bodySmall, gap: 8, iconSize: icon.sm, height: 46 },
-  lg: { padV: 13, padH: 24, fs: typography.bodySmall + 1, gap: 9, iconSize: icon.md, height: 52 },
-  xl: { padV: 16, padH: 28, fs: typography.body + 1, gap: 10, iconSize: icon.md, height: 56 },
+  sm: { padV: 8, padH: 14, fs: typography.caption, gap: 6, iconSize: icon.xs, height: 36 },
+  md: { padV: 10, padH: 18, fs: typography.bodySmall, gap: 8, iconSize: icon.sm, height: 44 },
+  lg: { padV: 12, padH: 22, fs: typography.bodySmall + 1, gap: 8, iconSize: icon.md, height: 48 },
+  xl: { padV: 14, padH: 26, fs: typography.body + 1, gap: 9, iconSize: icon.md, height: 52 },
 };
 
 /**
@@ -282,7 +282,7 @@ function createStyles(c, isDark, t, fullWidth) {
       bottom: -6,
       borderRadius: radius.pill,
       ...Platform.select({
-        web: { filter: "blur(14px)" },
+        web: { filter: "blur(10px)" },
         default: {},
       }),
       zIndex: -1,
@@ -314,15 +314,15 @@ function createStyles(c, isDark, t, fullWidth) {
       ...Platform.select({
         ios: {
           shadowColor: "#1a1208",
-          shadowOffset: { width: 0, height: 7 },
+          shadowOffset: { width: 0, height: 5 },
           shadowOpacity: isDark ? 0.2 : 0.12,
-          shadowRadius: 10,
+          shadowRadius: 8,
         },
         android: { elevation: 2 },
         web: {
           boxShadow: isDark
-            ? "0 12px 24px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.12)"
-            : "0 14px 28px rgba(15, 23, 42, 0.14), inset 0 1px 0 rgba(255,255,255,0.24)",
+            ? "0 8px 18px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.12)"
+            : "0 10px 22px rgba(15, 23, 42, 0.1), inset 0 1px 0 rgba(255,255,255,0.24)",
         },
         default: {},
       }),
@@ -338,8 +338,8 @@ function createStyles(c, isDark, t, fullWidth) {
       ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 10px 18px rgba(0,0,0,0.18)"
-            : "0 8px 16px rgba(15, 23, 42, 0.06)",
+            ? "0 6px 14px rgba(0,0,0,0.16)"
+            : "0 4px 10px rgba(15, 23, 42, 0.05)",
         },
         default: {},
       }),
@@ -354,8 +354,8 @@ function createStyles(c, isDark, t, fullWidth) {
       ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 8px 14px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255, 255, 255, 0.04)"
-            : "0 6px 12px rgba(15, 23, 42, 0.05), inset 0 1px 0 rgba(255,255,255,0.92)",
+            ? "0 6px 12px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255, 255, 255, 0.04)"
+            : "0 4px 10px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255,255,255,0.92)",
         },
         default: {},
       }),
@@ -366,7 +366,7 @@ function createStyles(c, isDark, t, fullWidth) {
       backgroundColor: isDark ? c.surfaceMuted : "#F8F6F3",
       ...Platform.select({
         web: {
-          boxShadow: "0 6px 12px rgba(15, 23, 42, 0.04)",
+          boxShadow: "0 3px 8px rgba(15, 23, 42, 0.04)",
         },
         default: {},
       }),

@@ -1,6 +1,10 @@
 import { Linking, Platform } from "react-native";
 import { getApiBaseUrl } from "./apiBase";
 import { APP_DISPLAY_NAME, RAZORPAY_PAY_URL } from "../content/appContent";
+import {
+  RUNTIME_RAZORPAY_KEY_ID,
+  RUNTIME_RAZORPAY_PAYMENT_LINK,
+} from "../constants/runtimeConfig";
 
 /**
  * Razorpay payment service (client-side).
@@ -24,7 +28,7 @@ function apiUrl(path) {
  * client/server keys in sync).
  */
 export function getPublicRazorpayKeyId() {
-  return String(process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || "").trim();
+  return String(process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || RUNTIME_RAZORPAY_KEY_ID || "").trim();
 }
 
 async function paymentRequest(path, token, options = {}) {
@@ -197,7 +201,7 @@ export async function openRazorpayCheckout({ order, razorpayKeyId, user, themeCo
     }
   }
 
-  const fallbackUrl = String(RAZORPAY_PAY_URL || "").trim();
+  const fallbackUrl = String(RUNTIME_RAZORPAY_PAYMENT_LINK || RAZORPAY_PAY_URL || "").trim();
   if (fallbackUrl) {
     try {
       await Linking.openURL(fallbackUrl);

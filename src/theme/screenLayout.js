@@ -13,8 +13,8 @@ export function customerPanel(c, shadowPremium, isDark) {
   return {
     ...admin,
     borderRadius: semanticRadius.panel,
-    borderTopWidth: 2,
-    padding: spacing.lg + 10,
+    borderTopWidth: 1,
+    padding: spacing.lg,
     ...(isDark
       ? {
           backgroundColor: c.surfaceElevated || c.surface,
@@ -32,8 +32,8 @@ export function customerPanel(c, shadowPremium, isDark) {
           ? undefined
           : "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,248,244,0.98))",
         boxShadow: isDark
-          ? "0 20px 44px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)"
-          : "0 18px 36px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255,255,255,0.94)",
+          ? "0 14px 30px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.04)"
+          : "0 10px 22px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255,255,255,0.94)",
         transition: "box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease",
       },
       default: {},
@@ -83,7 +83,7 @@ export function customerPanelVariant(c, shadowPremium, isDark, variant = "defaul
 export const customerContentWidth = {
   width: "100%",
   alignSelf: "center",
-  maxWidth: Platform.select({ web: layout.maxContentWidth + 40, default: "100%" }),
+  maxWidth: Platform.select({ web: layout.maxContentWidth + 24, default: "100%" }),
 };
 
 /** Inner height of floating `BottomNavBar` row (paddingVertical 10×2 + min tab ~44). */
@@ -147,16 +147,16 @@ export function customerWebStickyTop(extra = 0) {
 export const customerPageScrollBase = {
   /** Balanced gutters: generous on web for an editorial, premium layout. */
   paddingHorizontal: Platform.select({
-    web: container.gutter.desktop,
-    default: spacing.lg + 2,
+    web: Math.max(spacing.lg, container.gutter.desktop - 8),
+    default: spacing.lg,
   }),
   width: "100%",
   alignSelf: "center",
-  maxWidth: Platform.select({ web: layout.maxContentWidth + 40, default: "100%" }),
+  maxWidth: Platform.select({ web: layout.maxContentWidth + 24, default: "100%" }),
 };
 
 /** Vertical rhythm between major blocks on inner pages (pairs with `ScreenPageHeader` flush bottom margin). */
-export const CUSTOMER_INNER_PAGE_GAP = spacing.lg + 8;
+export const CUSTOMER_INNER_PAGE_GAP = spacing.lg;
 
 /**
  * Standard `MotionScrollView` / `ScrollView` content for logged-in inner pages: gutters, safe padding,
@@ -205,10 +205,10 @@ export const authScrollContent = {
   ...Platform.select({
     web: {
       width: "100%",
-      maxWidth: layout.maxContentWidth + 40,
+      maxWidth: layout.maxContentWidth + 24,
       alignSelf: "center",
-      paddingHorizontal: container.gutter.desktop,
-      paddingTop: spacing.xl - 4,
+      paddingHorizontal: Math.max(spacing.lg, container.gutter.desktop - 8),
+      paddingTop: spacing.lg + 4,
       paddingBottom: spacing.xxl,
       flexGrow: 1,
       minHeight: `calc(100dvh - ${WEB_HEADER_HEIGHT}px)`,

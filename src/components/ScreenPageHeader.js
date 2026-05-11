@@ -141,8 +141,8 @@ function createStyles(rowMinH, isDark) {
       width: "100%",
       borderRadius: semanticRadius.panel,
       borderWidth: StyleSheet.hairlineWidth,
-      paddingHorizontal: spacing.lg + 2,
-      paddingBottom: 14,
+      paddingHorizontal: spacing.lg,
+      paddingBottom: 12,
       overflow: Platform.OS === "web" ? "visible" : "hidden",
       position: "relative",
       ...Platform.select({
@@ -150,8 +150,8 @@ function createStyles(rowMinH, isDark) {
           boxSizing: "border-box",
           cursor: "default",
           boxShadow: isDark
-            ? "0 16px 34px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.04)"
-            : "0 12px 24px rgba(15, 23, 42, 0.07), inset 0 1px 0 rgba(255,255,255,0.94)",
+            ? "0 12px 24px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.04)"
+            : "0 8px 18px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255,255,255,0.94)",
         },
         default: {},
       }),
@@ -162,12 +162,12 @@ function createStyles(rowMinH, isDark) {
       opacity: 0.96,
     },
     rowBelowAccent: {
-      paddingTop: 14,
+      paddingTop: 12,
     },
     row: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: 10,
+      gap: 8,
       minHeight: rowMinH,
       ...Platform.select({
         web: {
@@ -179,8 +179,8 @@ function createStyles(rowMinH, isDark) {
     },
     backBtn: {
       marginLeft: -2,
-      width: 40,
-      height: 40,
+      width: 38,
+      height: 38,
       borderRadius: semanticRadius.full,
       alignItems: "center",
       justifyContent: "center",
@@ -214,11 +214,11 @@ function createStyles(rowMinH, isDark) {
       paddingTop: 1,
     },
     title: {
-      fontSize: typography.h3 + 1,
+      fontSize: typography.h3,
       letterSpacing: -0.48,
       lineHeight: lineHeight.h3,
       ...Platform.select({
-        web: { fontSize: typography.h2 },
+        web: { fontSize: typography.h2 - 2 },
         default: {},
       }),
     },
@@ -230,12 +230,12 @@ function createStyles(rowMinH, isDark) {
       opacity: 0.92,
     },
     subtitlePill: {
-      marginTop: 9,
+      marginTop: 7,
       alignSelf: "flex-start",
       borderRadius: semanticRadius.control,
       borderWidth: StyleSheet.hairlineWidth,
-      paddingHorizontal: spacing.sm + 3,
-      paddingVertical: 7,
+      paddingHorizontal: spacing.sm + 2,
+      paddingVertical: 6,
       maxWidth: "100%",
     },
     rightCluster: {

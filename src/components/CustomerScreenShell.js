@@ -50,7 +50,7 @@ export default function CustomerScreenShell({
   const scrollY = useScrollOffsetValue();
   const isAdminVariant = variant === "admin";
   const isAuthVariant = variant === "auth";
-  const showCursorSpotlight = Platform.OS === "web" && !reducedMotion && !isAdminVariant;
+  const showCursorSpotlight = false;
 
   const cursorX = useSharedValue(-1000);
   const cursorY = useSharedValue(-1000);
@@ -143,28 +143,28 @@ export default function CustomerScreenShell({
   const ambientWashColors = isDark
     ? isAdminVariant
       ? ["rgba(248,113,113,0.04)", "rgba(59,130,246,0.02)", semantic.bg.overlay, "rgba(0, 0, 0, 0.18)"]
-      : ["rgba(220,38,38,0.08)", "rgba(248,113,113,0.025)", semantic.bg.overlay, "rgba(0, 0, 0, 0.28)"]
+      : ["rgba(220,38,38,0.05)", "rgba(248,113,113,0.015)", semantic.bg.overlay, "rgba(0, 0, 0, 0.16)"]
     : isAdminVariant
       ? ["rgba(255,255,255,0.72)", "rgba(59,130,246,0.025)", semantic.bg.overlay, "rgba(15, 23, 42, 0.03)"]
-      : ["rgba(220,38,38,0.1)", "rgba(255,255,255,0.08)", semantic.bg.overlay, "rgba(63, 63, 70, 0.035)"];
+      : ["rgba(220,38,38,0.05)", "rgba(255,255,255,0.05)", semantic.bg.overlay, "rgba(63, 63, 70, 0.02)"];
 
   const edgeVignetteColors = isDark
     ? isAdminVariant
       ? ["rgba(15,23,42,0.12)", "transparent", "transparent", "rgba(0,0,0,0.26)"]
-      : ["rgba(0,0,0,0.12)", "transparent", "transparent", "rgba(0,0,0,0.34)"]
+      : ["rgba(0,0,0,0.08)", "transparent", "transparent", "rgba(0,0,0,0.22)"]
     : isAdminVariant
       ? ["rgba(37,99,235,0.03)", "transparent", "transparent", "rgba(15,23,42,0.04)"]
-      : ["rgba(63, 63, 70, 0.02)", "transparent", "transparent", "rgba(90, 62, 22, 0.035)"];
+      : ["rgba(63, 63, 70, 0.015)", "transparent", "transparent", "rgba(90, 62, 22, 0.025)"];
 
   const topSheenColors = isDark
     ? isAdminVariant
       ? ["rgba(96, 165, 250, 0.06)", "transparent", "rgba(0,0,0,0.08)"]
-      : ["rgba(220, 38, 38, 0.09)", "transparent", "rgba(0,0,0,0.08)"]
+      : ["rgba(220, 38, 38, 0.05)", "transparent", "rgba(0,0,0,0.04)"]
     : isAuthVariant
       ? ["rgba(255,255,255,0.68)", "transparent", "rgba(37,99,235,0.035)"]
       : isAdminVariant
         ? ["rgba(255,255,255,0.58)", "transparent", "rgba(15,23,42,0.03)"]
-        : ["rgba(255,255,255,0.42)", "transparent", "rgba(63, 63, 70, 0.03)"];
+        : ["rgba(255,255,255,0.26)", "transparent", "rgba(63, 63, 70, 0.02)"];
 
   return (
     <View style={[styles.base, { backgroundColor: c.background }]}>
@@ -246,19 +246,6 @@ export default function CustomerScreenShell({
           ]}
         />
       ) : null}
-      {Platform.OS === "web" ? (
-        <LinearGradient
-          colors={
-            isDark
-              ? ["rgba(255,255,255,0.04)", "transparent", "rgba(0,0,0,0.12)"]
-              : ["rgba(255,255,255,0.62)", "transparent", "rgba(63, 63, 70, 0.05)"]
-          }
-          locations={[0, 0.5, 1]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={[styles.webSheet, styles.peNone]}
-        />
-      ) : null}
       {topAccent ? (
         <LinearGradient
           colors={topSheenColors}
@@ -268,17 +255,6 @@ export default function CustomerScreenShell({
           style={[styles.topSheen, styles.peNone]}
         />
       ) : null}
-      <LinearGradient
-        colors={
-          isDark
-            ? ["rgba(255,255,255,0.04)", "transparent", "rgba(255,255,255,0.02)"]
-            : ["rgba(255,255,255,0.34)", "transparent", "rgba(255,255,255,0.12)"]
-        }
-        locations={[0, 0.42, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.innerGlow, styles.peNone]}
-      />
       <View style={[styles.content, style]}>{children}</View>
     </View>
   );
@@ -299,27 +275,27 @@ const styles = StyleSheet.create({
   },
   orbTop: {
     position: "absolute",
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    top: -86,
-    right: -74,
-    opacity: 0.72,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    top: -72,
+    right: -58,
+    opacity: 0.4,
     ...Platform.select({
-      web: { filter: "blur(44px)" },
+      web: { filter: "blur(34px)" },
       default: {},
     }),
   },
   orbBottom: {
     position: "absolute",
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    left: -146,
-    bottom: -146,
-    opacity: 0.68,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    left: -110,
+    bottom: -110,
+    opacity: 0.32,
     ...Platform.select({
-      web: { filter: "blur(54px)" },
+      web: { filter: "blur(40px)" },
       default: {},
     }),
   },
@@ -367,36 +343,18 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
-  innerGlow: {
-    position: "absolute",
-    top: "20%",
-    left: "10%",
-    right: "10%",
-    height: 180,
-    borderRadius: 999,
-  },
   content: {
     flex: 1,
     width: "100%",
     minHeight: Platform.OS === "web" ? "100dvh" : undefined,
-  },
-  webSheet: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.92,
-    ...Platform.select({
-      web: {
-        backdropFilter: "blur(1px)",
-      },
-      default: {},
-    }),
   },
   topSheen: {
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
-    height: 150,
-    opacity: 0.74,
+    height: 116,
+    opacity: 0.42,
   },
   peNone: {
     pointerEvents: "none",

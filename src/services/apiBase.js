@@ -1,10 +1,10 @@
 import { Platform } from "react-native";
 import Constants from "expo-constants";
+import { RUNTIME_API_URL } from "../constants/runtimeConfig";
 
 // Production app calls this host + paths like /products. Static sites on the same domain
 // usually proxy the API under /api — we mount both /products and /api/products on the server.
 // Override with EXPO_PUBLIC_API_URL if your API lives elsewhere (e.g. https://api.example.com).
-const PRODUCTION_API_URL = "https://novarosolution.com/api";
 const DEV_API_PORT = 5001;
 
 /**
@@ -33,7 +33,7 @@ function sanitizeConfiguredBase(raw) {
 }
 
 export function getApiBaseUrl() {
-  const configured = sanitizeConfiguredBase(process.env.EXPO_PUBLIC_API_URL);
+  const configured = sanitizeConfiguredBase(process.env.EXPO_PUBLIC_API_URL || RUNTIME_API_URL);
   if (configured) {
     return configured;
   }
@@ -42,7 +42,12 @@ export function getApiBaseUrl() {
   // If __DEV__ is missing (some embedded/minified bundles), default to production API.
   const isDev = typeof __DEV__ !== "undefined" && __DEV__;
   if (!isDev) {
-    return PRODUCTION_API_URL;
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      return sanitizeConfiguredBase(`${window.location.origin}/api`);
+    }
+    // Native production builds should set EXPO_PUBLIC_API_URL. Fall back to the
+    // local backend only so development shells keep working when envs are absent.
+    return `http://127.0.0.1:${DEV_API_PORT}`;
   }
 
   // Web: use 127.0.0.1 so we don't hit IPv6 ::1 with no server (broken fetch / 404 from wrong host).

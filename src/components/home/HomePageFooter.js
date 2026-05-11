@@ -3,6 +3,7 @@ import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-nati
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import {
+  APP_DISPLAY_NAME,
   APP_ENGINEER_NAME,
   APP_ENGINEER_URL,
   APP_TAGLINE,
@@ -116,7 +117,7 @@ export default function HomePageFooter({ colors: c }) {
       <View style={styles.divider} />
 
       <View style={styles.bottomRow}>
-        <Text style={styles.copy}>© {new Date().getFullYear()} Zeevan. All rights reserved.</Text>
+        <Text style={styles.copy}>© {new Date().getFullYear()} {APP_DISPLAY_NAME}. All rights reserved.</Text>
         {footerMeta ? <Text style={styles.meta}>{footerMeta}</Text> : null}
       </View>
       {engineerName && engineerUrl ? (

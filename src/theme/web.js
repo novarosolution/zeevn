@@ -1,10 +1,10 @@
 import { Platform } from "react-native";
 import { ALCHEMY, HERITAGE } from "./customerAlchemy";
 
-/** Fixed top bar height on web — minimal vertical padding around the logo. */
-export const WEB_HEADER_HEIGHT = 72;
+/** Fixed top bar height on web — slimmer so content starts sooner. */
+export const WEB_HEADER_HEIGHT = 64;
 /** Shared top offset for sticky page chrome below fixed header. */
-export const WEB_STICKY_TOP_OFFSET = WEB_HEADER_HEIGHT + 18;
+export const WEB_STICKY_TOP_OFFSET = WEB_HEADER_HEIGHT + 14;
 /** Shared z-index ladder to prevent header/dropdown overlap bugs. */
 export const WEB_Z_INDEX = {
   header: 1000,
@@ -30,7 +30,7 @@ export const webRootStyle = Platform.select({
 let premiumChromeInjected = false;
 
 /**
- * Web-only: fixed gradient page backdrop, font smoothing, selection & focus rings.
+ * Web-only: calm page backdrop, font smoothing, selection & focus rings.
  * Call when theme (light/dark) changes.
  */
 export function applyWebPremiumChrome(isDark, backgroundSolid) {
@@ -43,13 +43,13 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
   html.style.minHeight = "100%";
 
   if (isDark) {
-    const darkGradient = `radial-gradient(ellipse 120% 90% at 90% 0%, rgba(239,68,68,0.09) 0%, transparent 36%), radial-gradient(ellipse 100% 80% at 8% 4%, rgba(96,165,250,0.08) 0%, transparent 40%), linear-gradient(180deg, #060A12 0%, #0B1120 40%, #141B2B 100%)`;
+    const darkGradient = `radial-gradient(ellipse 120% 90% at 88% 0%, rgba(239,68,68,0.06) 0%, transparent 34%), radial-gradient(ellipse 100% 80% at 10% 4%, rgba(96,165,250,0.05) 0%, transparent 38%), linear-gradient(180deg, #060A12 0%, #0B1120 44%, #141B2B 100%)`;
     body.style.background = backgroundSolid || darkGradient;
     body.style.backgroundAttachment = "fixed";
     html.style.background = backgroundSolid || darkGradient;
     html.style.colorScheme = "dark";
   } else {
-    const g = `radial-gradient(ellipse 120% 80% at 88% 0%, ${ALCHEMY.goldMist} 0%, transparent 34%), radial-gradient(ellipse 100% 70% at 10% 8%, rgba(37,99,235,0.08) 0%, transparent 42%), radial-gradient(ellipse 90% 70% at 10% 100%, ${HERITAGE.mist} 0%, transparent 38%), linear-gradient(180deg, #FFFDFC 0%, ${ALCHEMY.creamHighlight} 18%, ${ALCHEMY.cream} 48%, ${ALCHEMY.pearl} 76%, ${ALCHEMY.creamDeep} 100%)`;
+    const g = `radial-gradient(ellipse 120% 80% at 88% 0%, ${ALCHEMY.goldMist} 0%, transparent 30%), radial-gradient(ellipse 100% 70% at 10% 8%, rgba(37,99,235,0.05) 0%, transparent 38%), radial-gradient(ellipse 90% 70% at 10% 100%, ${HERITAGE.mist} 0%, transparent 34%), linear-gradient(180deg, #FFFDFC 0%, ${ALCHEMY.creamHighlight} 20%, ${ALCHEMY.cream} 54%, ${ALCHEMY.pearl} 100%)`;
     body.style.background = g;
     body.style.backgroundAttachment = "fixed";
     html.style.background = g;
@@ -59,8 +59,7 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
   body.style.webkitFontSmoothing = "antialiased";
   // @ts-ignore
   body.style.MozOsxFontSmoothing = "grayscale";
-  body.style.textRendering = "geometricPrecision";
-  body.style.letterSpacing = "0.01em";
+  body.style.textRendering = "optimizeLegibility";
   body.style.fontFeatureSettings = '"cv11","ss01","ss03"';
 
   if (!premiumChromeInjected) {
@@ -98,13 +97,7 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
         outline-offset: 3px;
       }
       a, button, [role="button"], [role="tab"] {
-        transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease, background-color 180ms ease, border-color 180ms ease;
-      }
-      a:hover, button:hover, [role="button"]:hover, [role="tab"]:hover {
-        transform: translateY(-1px);
-      }
-      a:active, button:active, [role="button"]:active, [role="tab"]:active {
-        transform: translateY(0);
+        transition: box-shadow 180ms ease, opacity 180ms ease, background-color 180ms ease, border-color 180ms ease;
       }
       @media (max-width: 760px) {
         ::-webkit-scrollbar {

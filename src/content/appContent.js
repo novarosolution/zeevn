@@ -15,8 +15,20 @@
  * Keep `backend/src/models/HomeViewConfig.js` defaults aligned with `HOME_VIEW_DEFAULTS`.
  */
 
+import {
+  RUNTIME_BRAND_NAME,
+  RUNTIME_BRAND_SUBLINE,
+  RUNTIME_BRAND_TAGLINE,
+  RUNTIME_ENGINEER_NAME,
+  RUNTIME_ENGINEER_URL,
+  RUNTIME_RAZORPAY_PAYMENT_LINK,
+  RUNTIME_SEARCH_PLACEHOLDER,
+  RUNTIME_SUPPORT_EMAIL,
+  RUNTIME_SUPPORT_WHATSAPP_URL,
+} from "../constants/runtimeConfig";
+
 /** @type {string} */
-export const APP_DISPLAY_NAME = "Zeevan";
+export const APP_DISPLAY_NAME = RUNTIME_BRAND_NAME;
 /**
  * Typographic scale for [`BrandWordmark`](src/components/BrandWordmark.js) (`fontSize`, dp).
  * Alias `BRAND_LOGO_SIZE` kept for older imports.
@@ -43,18 +55,18 @@ export const BRAND_HOME_TOP_BAR_LAYOUT_HEIGHT = 56;
 
 /** Layout: minimum touch row height next to back/cart icons. */
 export const BRAND_HEADER_ROW_MIN_HEIGHT = 44;
-export const APP_TAGLINE = "Heritage pantry essentials, delivered beautifully";
-export const APP_WORDMARK_SUBLINE = "Heritage pantry";
+export const APP_TAGLINE = RUNTIME_BRAND_TAGLINE;
+export const APP_WORDMARK_SUBLINE = RUNTIME_BRAND_SUBLINE;
 export const APP_HERO_KICKER = `${APP_DISPLAY_NAME} · ${APP_WORDMARK_SUBLINE}`;
-export const SEARCH_PLACEHOLDER = "Search ghee, staples, and pantry picks…";
-export const SUPPORT_EMAIL_DISPLAY = "support@zeevan.app";
+export const SEARCH_PLACEHOLDER = RUNTIME_SEARCH_PLACEHOLDER;
+export const SUPPORT_EMAIL_DISPLAY = RUNTIME_SUPPORT_EMAIL;
 
 /** Digital product partner — linked from customer footers. */
-export const APP_ENGINEER_NAME = "NovaRo Solution";
-export const APP_ENGINEER_URL = "https://novarosolution.com/";
+export const APP_ENGINEER_NAME = RUNTIME_ENGINEER_NAME;
+export const APP_ENGINEER_URL = RUNTIME_ENGINEER_URL;
 
 /** Razorpay payment page (UPI, cards, wallet) — used as a hosted-page fallback. */
-export const RAZORPAY_PAY_URL = "https://razorpay.me/@chaudharydhirajpadmabhai";
+export const RAZORPAY_PAY_URL = RUNTIME_RAZORPAY_PAYMENT_LINK;
 
 /** How long the order stays in `pending_payment` before the server sweep cancels it. */
 export const RAZORPAY_PAYMENT_TIMEOUT_MIN = 30;
@@ -284,7 +296,7 @@ export const SUPPORT_SCREEN = {
   contactChatSub: "Usually within minutes",
   contactEmailSub: SUPPORT_EMAIL_DISPLAY,
   contactWhatsAppSub: "Anytime",
-  whatsappUrl: "https://wa.me/919999999999",
+  whatsappUrl: RUNTIME_SUPPORT_WHATSAPP_URL,
   refreshCta: "Refresh",
   openChatCta: "Open chat",
   reachOutCta: "Reach out",
@@ -412,8 +424,8 @@ const PASSWORD_MISMATCH_TEXT = `${PASSWORD_LABEL}s do not match.`;
 
 /** Login — [`LoginScreen.js`](../screens/LoginScreen.js). */
 export const LOGIN_SCREEN = {
-  heroBannerA11y: "Zeevan sign in",
-  heroKicker: "Zeevan member sign in",
+  heroBannerA11y: `${APP_DISPLAY_NAME} sign in`,
+  heroKicker: `${APP_DISPLAY_NAME} member sign in`,
   heroTitle: "Welcome back",
   heroSubtitle: "Sign in for quicker checkout, saved addresses, and live delivery updates.",
   authEyebrow: "Account access",
@@ -437,8 +449,8 @@ export const LOGIN_SCREEN = {
 
 /** Register — [`RegisterScreen.js`](../screens/RegisterScreen.js). Validation lines mirror client checks. */
 export const REGISTER_SCREEN = {
-  heroBannerA11y: "Create your Zeevan account",
-  heroKicker: "Create your Zeevan account",
+  heroBannerA11y: `Create your ${APP_DISPLAY_NAME} account`,
+  heroKicker: `Create your ${APP_DISPLAY_NAME} account`,
   heroTitle: "Create your account",
   heroSubtitle: "Save addresses, reorder faster, and keep every delivery in view.",
   authEyebrow: "New account",
@@ -662,7 +674,7 @@ export const PRODUCT_SCREEN = {
   storyTitle: "Why you'll love it",
   /** Empty = no subtitle under section header (see ProductScreen). */
   storySubtitle: "",
-  defaultDescription: "From Zeevan.",
+  defaultDescription: `From ${APP_DISPLAY_NAME}.`,
   variantOverline: "Choose",
   variantTitle: "Choose your size",
   variantSubtitle: "",

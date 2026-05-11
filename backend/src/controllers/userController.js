@@ -10,6 +10,9 @@ const generateToken = generateTokenModule;
 const generateRefreshToken =
   generateTokenModule.generateRefreshToken || generateTokenModule;
 const verifyRefreshToken = generateTokenModule.verifyRefreshToken;
+const CLOUDINARY_AVATAR_FOLDER =
+  String(process.env.CLOUDINARY_AVATAR_FOLDER || process.env.CLOUDINARY_UPLOAD_PREFIX || "").trim() ||
+  "zeevan/avatars";
 
 function serializePublicUser(user) {
   return {
@@ -184,7 +187,7 @@ async function uploadUserAvatar(req, res, next) {
       : `data:${safeMime};base64,${imageBase64}`;
 
     const uploaded = await cloudinary.uploader.upload(uploadSource, {
-      folder: "zeevan/avatars",
+      folder: CLOUDINARY_AVATAR_FOLDER,
       resource_type: "image",
     });
 

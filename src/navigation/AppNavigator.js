@@ -119,7 +119,7 @@ const ProtectedAdminRewards = withRoleGuard(AdminRewardsScreen, (user) => Boolea
 const ProtectedAdminSupport = withRoleGuard(AdminSupportScreen, (user) => Boolean(user?.isAdmin));
 const ProtectedAdminHomeView = withRoleGuard(AdminHomeViewScreen, (user) => Boolean(user?.isAdmin));
 
-export default function AppNavigator({ navigationRef }) {
+export default function AppNavigator({ navigationRef, navigationReady = false }) {
   const { isAuthLoading } = useAuth();
   const { colors, isDark } = useTheme();
 
@@ -136,7 +136,7 @@ export default function AppNavigator({ navigationRef }) {
 
   return (
     <View style={styles.navRoot}>
-      {Platform.OS === "web" ? (
+      {Platform.OS === "web" && navigationReady && !isAuthLoading ? (
         <WebAppHeader navigationRef={navigationRef} />
       ) : null}
       <View style={styles.stackFill}>

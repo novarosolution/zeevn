@@ -38,9 +38,25 @@ const configuredOrigins = String(process.env.CORS_ORIGINS || "")
 
 const allowedOrigins = [...new Set([...defaultAllowedOrigins, ...configuredOrigins])];
 
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function originMatches(pattern, origin) {
+  if (!pattern || !origin) return false;
+  if (pattern === origin) return true;
+  if (!pattern.includes("*")) return false;
+  const regex = new RegExp(`^${escapeRegex(pattern).replace(/\\\*/g, ".*")}$`);
+  return regex.test(origin);
+}
+
+function isAllowedOrigin(origin) {
+  return allowedOrigins.some((pattern) => originMatches(pattern, origin));
+}
+
 const corsOptions = {
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || isAllowedOrigin(origin)) {
       return callback(null, true);
     }
     return callback(new Error("Not allowed by CORS"));

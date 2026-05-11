@@ -102,6 +102,8 @@ function ThemedStatusBar() {
 }
 
 function AppNavigationShell() {
+  const [navigationReady, setNavigationReady] = useState(false);
+
   return (
     <>
       <WebBodySync />
@@ -109,8 +111,9 @@ function AppNavigationShell() {
       <NavigationContainer
         ref={navigationRef}
         linking={linking}
+        onReady={() => setNavigationReady(true)}
       >
-        <AppNavigator navigationRef={navigationRef} />
+        <AppNavigator navigationRef={navigationRef} navigationReady={navigationReady} />
       </NavigationContainer>
     </>
   );

@@ -38,6 +38,7 @@ function PremiumCardBase({
 }) {
   const { colors: c, isDark } = useTheme();
   const reducedMotion = useReducedMotion();
+  const isWeb = Platform.OS === "web";
   const isInteractive = interactive ?? Boolean(onPress);
 
   const padTokens =
@@ -73,7 +74,7 @@ function PremiumCardBase({
 
   const inner = (
     <>
-      {gradient ? (
+      {gradient && isWeb ? (
         <LinearGradient
           colors={
             isDark
@@ -86,7 +87,7 @@ function PremiumCardBase({
           style={[StyleSheet.absoluteFillObject, styles.peNone]}
         />
       ) : null}
-      {goldAccent ? (
+      {goldAccent && isWeb ? (
         <LinearGradient
           colors={heritageBrandTrimGradientShort()}
           start={{ x: 0, y: 0.5 }}
@@ -136,7 +137,6 @@ function createStyles(c, isDark, pad, variant, borderless) {
   const muted = variant === "muted";
   const elevated = variant === "elevated";
   const flat = variant === "flat";
-  const list = variant === "list";
   const danger = variant === "danger";
   const hero = variant === "hero";
   const panel = variant === "panel";
@@ -148,7 +148,7 @@ function createStyles(c, isDark, pad, variant, borderless) {
       width: "100%",
     },
     card: {
-      borderRadius: list ? radius.xl : radius.xl,
+      borderRadius: Platform.OS === "web" ? radius.xl : radius.lg,
       backgroundColor: danger
         ? isDark
           ? "rgba(127, 29, 29, 0.12)"
@@ -174,7 +174,7 @@ function createStyles(c, isDark, pad, variant, borderless) {
           : c.border,
       overflow: Platform.OS === "web" ? "visible" : "hidden",
       position: "relative",
-      borderTopWidth: borderless ? 0 : hero ? 2 : 1,
+      borderTopWidth: borderless ? 0 : Platform.OS === "web" ? (hero ? 2 : 1) : 1,
       borderTopColor: danger
         ? isDark
           ? "rgba(248, 113, 113, 0.42)"
@@ -191,11 +191,11 @@ function createStyles(c, isDark, pad, variant, borderless) {
           ? {}
           : {
               shadowColor: isDark ? "#000000" : "#18181B",
-              shadowOffset: { width: 0, height: hero || elevated ? 18 : 10 },
-              shadowOpacity: isDark ? 0.24 : 0.08,
-              shadowRadius: hero || elevated ? 28 : 16,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.04,
+              shadowRadius: 8,
             },
-        android: flat ? { elevation: 0 } : { elevation: isDark ? 5 : hero || elevated ? 5 : 3 },
+        android: flat ? { elevation: 0 } : { elevation: 1 },
         web: flat
           ? {}
           : {
@@ -223,7 +223,7 @@ function createStyles(c, isDark, pad, variant, borderless) {
       width: "100%",
       padding: hero ? pad + 2 : panel ? pad + 1 : pad,
       ...(variant === "muted" ? { backgroundColor: "transparent" } : {}),
-      borderRadius: list ? radius.xl : radius.xl,
+      borderRadius: Platform.OS === "web" ? radius.xl : radius.lg,
       overflow: "hidden",
       ...Platform.select({
         web: {

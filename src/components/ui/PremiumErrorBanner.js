@@ -22,6 +22,8 @@ function PremiumErrorBannerBase({
   severity = "error",
   title,
   message,
+  titleLines,
+  messageLines,
   onClose,
   onActionPress,
   actionLabel,
@@ -50,12 +52,12 @@ function PremiumErrorBannerBase({
       </View>
       <View style={styles.body}>
         {title ? (
-          <Text style={styles.title} numberOfLines={2}>
+          <Text style={styles.title} numberOfLines={titleLines}>
             {title}
           </Text>
         ) : null}
         {message ? (
-          <Text style={styles.message} numberOfLines={4}>
+          <Text style={styles.message} numberOfLines={messageLines}>
             {message}
           </Text>
         ) : null}

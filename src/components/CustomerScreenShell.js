@@ -48,6 +48,7 @@ export default function CustomerScreenShell({
   const semantic = getSemanticColors(c);
   const alchemy = getAlchemyPalette(c, isDark);
   const scrollY = useScrollOffsetValue();
+  const isWeb = Platform.OS === "web";
   const isAdminVariant = variant === "admin";
   const isAuthVariant = variant === "auth";
   const showCursorSpotlight = false;
@@ -175,51 +176,55 @@ export default function CustomerScreenShell({
         end={{ x: 0.94, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      <LinearGradient
-        colors={ambientWashColors}
-        locations={[0, 0.24, 0.52, 1]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.ambientWash, styles.peNone]}
-      />
-      <LinearGradient
-        colors={edgeVignetteColors}
-        locations={[0, 0.2, 0.62, 1]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={[styles.edgeVignette, styles.peNone]}
-      />
-      <AnimatedView
-        style={[
-          styles.orbTop,
-          {
-            backgroundColor: isAdminVariant
-              ? semantic.accent.info
-                ? `${semantic.accent.info}14`
-                : alchemy.glowPrimary
-              : alchemy.glowPrimary,
-          },
-          styles.peNone,
-          isAdminVariant ? styles.orbTopAdmin : null,
-          isAuthVariant ? styles.orbTopAuth : null,
-          orbTopStyle,
-        ]}
-      />
-      <AnimatedView
-        style={[
-          styles.orbBottom,
-          {
-            backgroundColor: isAdminVariant
-              ? "rgba(148, 163, 184, 0.12)"
-              : alchemy.glowSecondary,
-          },
-          styles.peNone,
-          isAdminVariant ? styles.orbBottomAdmin : null,
-          isAuthVariant ? styles.orbBottomAuth : null,
-          orbBottomStyle,
-        ]}
-      />
-      {isAuthVariant ? (
+      {isWeb ? (
+        <>
+          <LinearGradient
+            colors={ambientWashColors}
+            locations={[0, 0.24, 0.52, 1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.ambientWash, styles.peNone]}
+          />
+          <LinearGradient
+            colors={edgeVignetteColors}
+            locations={[0, 0.2, 0.62, 1]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={[styles.edgeVignette, styles.peNone]}
+          />
+          <AnimatedView
+            style={[
+              styles.orbTop,
+              {
+                backgroundColor: isAdminVariant
+                  ? semantic.accent.info
+                    ? `${semantic.accent.info}14`
+                    : alchemy.glowPrimary
+                  : alchemy.glowPrimary,
+              },
+              styles.peNone,
+              isAdminVariant ? styles.orbTopAdmin : null,
+              isAuthVariant ? styles.orbTopAuth : null,
+              orbTopStyle,
+            ]}
+          />
+          <AnimatedView
+            style={[
+              styles.orbBottom,
+              {
+                backgroundColor: isAdminVariant
+                  ? "rgba(148, 163, 184, 0.12)"
+                  : alchemy.glowSecondary,
+              },
+              styles.peNone,
+              isAdminVariant ? styles.orbBottomAdmin : null,
+              isAuthVariant ? styles.orbBottomAuth : null,
+              orbBottomStyle,
+            ]}
+          />
+        </>
+      ) : null}
+      {isWeb && isAuthVariant ? (
         <LinearGradient
           colors={
             isDark
@@ -246,7 +251,7 @@ export default function CustomerScreenShell({
           ]}
         />
       ) : null}
-      {topAccent ? (
+      {isWeb && topAccent ? (
         <LinearGradient
           colors={topSheenColors}
           locations={[0, 0.36, 1]}

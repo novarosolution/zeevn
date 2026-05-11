@@ -682,9 +682,8 @@ export default function HomeScreen({ navigation }) {
           ) : (
             <View
               style={[
-                styles.headerAmbientCard,
-                styles.webSearchCard,
-                isDark ? styles.headerAmbientCardDark : styles.headerAmbientCardLight,
+                styles.webSearchRail,
+                isAuthenticated ? styles.webSearchRailWithLocation : null,
               ]}
             >
               <View style={[styles.searchWrap, styles.searchWrapWeb]}>
@@ -1108,7 +1107,12 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
             ? "0 16px 44px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.05)"
             : "0 18px 48px rgba(9, 9, 11, 0.09), 0 5px 16px rgba(24, 24, 27, 0.04), inset 0 1px 0 rgba(255, 253, 251, 0.95), inset 0 0 0 1px rgba(255,255,255,0.45)",
         },
-        default: {},
+        default: {
+          borderRadius: 0,
+          borderWidth: 0,
+          borderTopWidth: 0,
+          marginBottom: spacing.sm,
+        },
       }),
     },
     headerAmbientCardLight: {
@@ -1118,12 +1122,14 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
         web: {
           backdropFilter: "blur(20px)",
         },
-        default: {},
+        default: {
+          backgroundColor: "transparent",
+        },
       }),
     },
     headerAmbientCardDark: {
       borderColor: "rgba(185, 28, 28, 0.2)",
-      backgroundColor: "rgba(28, 25, 23, 0.58)",
+      backgroundColor: Platform.OS === "web" ? "rgba(28, 25, 23, 0.58)" : "transparent",
     },
     headerAmbientSheen: {
       position: "absolute",
@@ -1239,6 +1245,8 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     searchWrapWeb: {
       marginBottom: 0,
       paddingHorizontal: 0,
+      flex: 1,
+      minWidth: 280,
     },
     homeLocationWrap: {
       paddingHorizontal: spacing.sm,
@@ -1247,12 +1255,21 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     homeLocationWrapWeb: {
       paddingHorizontal: 0,
       marginBottom: 0,
-      marginTop: spacing.sm,
+      marginTop: 0,
+      flexBasis: 280,
+      flexGrow: 1,
+      minWidth: 220,
+      maxWidth: 360,
     },
-    webSearchCard: {
-      paddingHorizontal: spacing.md + 2,
-      paddingVertical: spacing.md + 2,
+    webSearchRail: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      alignItems: "flex-start",
+      gap: spacing.sm + 2,
       marginBottom: spacing.md + 2,
+    },
+    webSearchRailWithLocation: {
+      alignItems: "stretch",
     },
     searchGradientFrame: {
       borderRadius: 999,
@@ -1270,7 +1287,9 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
             ? "0 12px 40px rgba(0,0,0,0.35)"
             : "0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.05)",
         },
-        default: {},
+        default: {
+          padding: 0,
+        },
       }),
     },
     searchInner: {

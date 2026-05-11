@@ -141,7 +141,9 @@ export default function ProductScreen({ route, navigation }) {
 
   if (loading) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <CustomerScreenShell
+        style={[styles.screen, Platform.OS === "web" ? { paddingTop: customerScrollPaddingTop(insets) } : null]}
+      >
         <LinearGradient
           colors={
             isDark
@@ -183,7 +185,9 @@ export default function ProductScreen({ route, navigation }) {
 
   if (!product) {
     return (
-      <CustomerScreenShell style={styles.screen}>
+      <CustomerScreenShell
+        style={[styles.screen, Platform.OS === "web" ? { paddingTop: customerScrollPaddingTop(insets) } : null]}
+      >
         <View style={styles.centered}>
           <PremiumEmptyState
             iconName="alert-circle-outline"

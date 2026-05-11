@@ -40,6 +40,7 @@ import {
   customerInnerPageScrollContent,
   customerPanel,
   customerScrollFill,
+  customerScrollPaddingTop,
 } from "../theme/screenLayout";
 import { fonts, icon, layout, semanticRadius, spacing, typography } from "../theme/tokens";
 import { formatINR } from "../utils/currency";
@@ -348,7 +349,10 @@ export default function DeliveryDashboardScreen({ navigation }) {
 
   if (!profileHydrated) {
     return (
-      <CustomerScreenShell style={styles.screen} variant="admin">
+      <CustomerScreenShell
+        style={[styles.screen, Platform.OS === "web" ? { paddingTop: customerScrollPaddingTop(insets) } : null]}
+        variant="admin"
+      >
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: spacing.lg }}>
           <PremiumLoader size="md" caption="Loading your account…" />
         </View>

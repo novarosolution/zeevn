@@ -22,7 +22,6 @@ import { fonts, icon as glyphSize, radius, spacing, typography } from "../theme/
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import PremiumCard from "../components/ui/PremiumCard";
 import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
-import GoldHairline from "../components/ui/GoldHairline";
 import PremiumSwitch from "../components/ui/PremiumSwitch";
 import CollapsibleSection from "../components/ui/CollapsibleSection";
 import { SETTINGS_SCREEN } from "../content/appContent";
@@ -114,7 +113,6 @@ export default function SettingsScreen({ navigation }) {
           subtitle={SETTINGS_SCREEN.pageSubtitle}
           showBack={false}
         />
-        <GoldHairline marginVertical={spacing.sm} />
         <SectionReveal preset="fade-up" delay={40}>
         <View style={styles.panel}>
           {error ? (

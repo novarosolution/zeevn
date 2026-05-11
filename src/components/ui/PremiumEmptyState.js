@@ -15,6 +15,8 @@ function PremiumEmptyStateBase({
   iconName = "leaf-outline",
   title,
   description,
+  titleLines,
+  descriptionLines,
   ctaLabel,
   onCtaPress,
   ctaVariant = "primary",
@@ -37,12 +39,12 @@ function PremiumEmptyStateBase({
         />
       </View>
       {title ? (
-        <Text style={styles.title} numberOfLines={2}>
+        <Text style={styles.title} numberOfLines={titleLines}>
           {title}
         </Text>
       ) : null}
       {description ? (
-        <Text style={styles.description} numberOfLines={4}>
+        <Text style={styles.description} numberOfLines={descriptionLines}>
           {description}
         </Text>
       ) : null}
@@ -75,6 +77,8 @@ function createStyles(c, isDark, compact) {
   return StyleSheet.create({
     wrap: {
       width: "100%",
+      maxWidth: 560,
+      alignSelf: "center",
       paddingVertical: compact ? spacing.lg : spacing.xl,
       paddingHorizontal: spacing.lg,
       alignItems: "center",

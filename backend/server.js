@@ -3,7 +3,10 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 
+// Prefer backend-local env, but also accept the workspace root `.env` when the
+// user keeps shared config there.
 dotenv.config({ path: path.join(__dirname, ".env") });
+dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
 const connectDB = require("./src/config/db");
 const { getProducts } = require("./src/controllers/productController");

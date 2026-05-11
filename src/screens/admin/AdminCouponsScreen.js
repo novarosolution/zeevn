@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppFooter from "../../components/AppFooter";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
@@ -24,6 +24,8 @@ import PremiumSwitch from "../../components/ui/PremiumSwitch";
 import { ADMIN_SCREEN_COPY } from "../../content/appContent";
 
 export default function AdminCouponsScreen({ navigation }) {
+  const { width } = useWindowDimensions();
+  const isWideWeb = Platform.OS === "web" && width >= 1180;
   const { colors: c, shadowPremium } = useTheme();
   const styles = useMemo(() => createAdminCouponsStyles(c, shadowPremium), [c, shadowPremium]);
   const insets = useSafeAreaInsets();
@@ -186,7 +188,11 @@ export default function AdminCouponsScreen({ navigation }) {
               <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
             </View>
           ) : null}
+          </SectionReveal>
 
+          <View style={isWideWeb ? styles.workspaceGrid : null}>
+          <View style={isWideWeb ? styles.workspacePrimary : null}>
+          <SectionReveal preset="fade-up" delay={20}>
           <PremiumCard padding="lg" style={styles.formCard}>
             <Text style={[styles.formTitle, { color: c.textPrimary }]}>{ADMIN_SCREEN_COPY.coupons.createTitle}</Text>
             <View style={styles.fieldGap}>
@@ -312,7 +318,9 @@ export default function AdminCouponsScreen({ navigation }) {
             />
           </PremiumCard>
           </SectionReveal>
+          </View>
 
+          <View style={isWideWeb ? styles.workspaceSecondary : null}>
           <SectionReveal preset="fade-up" delay={60}>
           <Text style={[styles.listTitle, { color: c.textPrimary }]}>{ADMIN_SCREEN_COPY.coupons.listTitle}</Text>
           {loading ? (
@@ -376,6 +384,8 @@ export default function AdminCouponsScreen({ navigation }) {
             ))
           )}
           </SectionReveal>
+          </View>
+          </View>
         </View>
         <AppFooter />
       </MotionScrollView>
@@ -447,6 +457,19 @@ function createAdminCouponsStyles(c, shadowPremium) {
       marginBottom: spacing.sm,
       fontSize: 16,
       fontWeight: "800",
+    },
+    workspaceGrid: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.md,
+    },
+    workspacePrimary: {
+      flex: 0.96,
+      minWidth: 0,
+    },
+    workspaceSecondary: {
+      flex: 1.04,
+      minWidth: 0,
     },
     couponCard: {
       marginBottom: spacing.sm,

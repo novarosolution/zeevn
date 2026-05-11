@@ -40,7 +40,8 @@ export default function AuthPageScaffold({
 }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
   const { width } = useWindowDimensions();
-  const isWebWide = Platform.OS === "web" && width >= 1080;
+  const isWeb = Platform.OS === "web";
+  const isWebWide = Platform.OS === "web" && width >= 980;
   const isCompactMobile = width < 430;
   const styles = useMemo(
     () => createStyles(c, shadowPremium, isDark, { isWebWide, isCompactMobile }),
@@ -67,60 +68,68 @@ export default function AuthPageScaffold({
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.contentGrid}>
-            <HeroParallax strength="medium" maxScroll={320} dim style={styles.hero}>
-              <View
-                style={styles.heroImageWrap}
-                accessibilityRole="image"
-                accessibilityLabel={heroBannerA11y}
-              >
-                <LinearGradient
-                  colors={["#0F172A", "#1E293B", "#DC2626"]}
-                  locations={[0, 0.45, 1]}
-                  start={{ x: 0.2, y: 0 }}
-                  end={{ x: 0.85, y: 1 }}
-                  style={StyleSheet.absoluteFillObject}
-                />
-                <LinearGradient
-                  colors={["rgba(15, 23, 42, 0.12)", "rgba(15, 23, 42, 0.5)", "rgba(15, 23, 42, 0.82)"]}
-                  locations={[0, 0.38, 1]}
-                  start={{ x: 0.5, y: 0 }}
-                  end={{ x: 0.5, y: 1 }}
-                  style={StyleSheet.absoluteFillObject}
-                />
-                <LinearGradient
-                  colors={["rgba(255,255,255,0.18)", "rgba(255,255,255,0.04)", "rgba(96,165,250,0.1)"]}
-                  locations={[0, 0.28, 1]}
-                  start={{ x: 0.08, y: 0 }}
-                  end={{ x: 0.92, y: 1 }}
-                  style={StyleSheet.absoluteFillObject}
-                />
-                <View style={styles.heroInner}>
-                  <View style={styles.heroBrandStack}>
-                    {heroKickerText ? (
-                      <View style={styles.heroKickerPill}>
-                        <Text style={styles.heroKickerText}>{heroKickerText}</Text>
+            {isWeb ? (
+              <HeroParallax strength="medium" maxScroll={320} dim style={styles.hero}>
+                <View
+                  style={styles.heroImageWrap}
+                  accessibilityRole="image"
+                  accessibilityLabel={heroBannerA11y}
+                >
+                  <LinearGradient
+                    colors={["#0F172A", "#1E293B", "#DC2626"]}
+                    locations={[0, 0.45, 1]}
+                    start={{ x: 0.2, y: 0 }}
+                    end={{ x: 0.85, y: 1 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <LinearGradient
+                    colors={["rgba(15, 23, 42, 0.12)", "rgba(15, 23, 42, 0.5)", "rgba(15, 23, 42, 0.82)"]}
+                    locations={[0, 0.38, 1]}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <LinearGradient
+                    colors={["rgba(255,255,255,0.18)", "rgba(255,255,255,0.04)", "rgba(96,165,250,0.1)"]}
+                    locations={[0, 0.28, 1]}
+                    start={{ x: 0.08, y: 0 }}
+                    end={{ x: 0.92, y: 1 }}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <View style={styles.heroInner}>
+                    <View style={styles.heroBrandStack}>
+                      {heroKickerText ? (
+                        <View style={styles.heroKickerPill}>
+                          <Text style={styles.heroKickerText}>{heroKickerText}</Text>
+                        </View>
+                      ) : null}
+                      <BrandWordmark sizeKey="authHero" color={c.heroForeground} style={styles.heroLogo} />
+                    </View>
+                    <Text style={styles.heroTitle}>{heroTitle}</Text>
+                    <Text style={styles.heroSubtitle}>{heroSubtitle}</Text>
+                    {heroHighlights.length > 0 ? (
+                      <View style={styles.heroHighlightsRow}>
+                        {heroHighlights.map((item) => (
+                          <View key={item.key} style={styles.heroHighlightChip}>
+                            <Ionicons name={item.icon} size={15} color={c.heroForeground} />
+                            <Text style={styles.heroHighlightText}>{item.label}</Text>
+                          </View>
+                        ))}
                       </View>
                     ) : null}
-                    <BrandWordmark sizeKey="authHero" color={c.heroForeground} style={styles.heroLogo} />
                   </View>
-                  <Text style={styles.heroTitle}>{heroTitle}</Text>
-                  <Text style={styles.heroSubtitle}>{heroSubtitle}</Text>
-                  {heroHighlights.length > 0 ? (
-                    <View style={styles.heroHighlightsRow}>
-                      {heroHighlights.map((item) => (
-                        <View key={item.key} style={styles.heroHighlightChip}>
-                          <Ionicons name={item.icon} size={15} color={c.heroForeground} />
-                          <Text style={styles.heroHighlightText}>{item.label}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  ) : null}
                 </View>
-              </View>
-            </HeroParallax>
+              </HeroParallax>
+            ) : null}
 
             <SectionReveal delay={60} preset="fade-up" style={styles.cardReveal}>
               <View style={styles.card}>
+                {!isWeb ? (
+                  <View style={styles.mobileBrandLockup}>
+                    {heroKickerText ? <Text style={styles.mobileHeroKicker}>{heroKickerText}</Text> : null}
+                    <BrandWordmark sizeKey="headerCompact" style={styles.mobileBrandWordmark} />
+                  </View>
+                ) : null}
                 <Text style={styles.authEyebrow}>{authEyebrow}</Text>
                 <Text style={styles.authTitle}>{authTitle}</Text>
                 {authSubtitleText ? <Text style={styles.authSubtitle}>{authSubtitleText}</Text> : null}
@@ -155,16 +164,16 @@ function createStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     },
     contentGrid: {
       width: "100%",
-      maxWidth: isWebWide ? 1140 : 520,
+      maxWidth: isWebWide ? 1160 : 540,
       alignSelf: "center",
       flexDirection: isWebWide ? "row" : "column",
       alignItems: isWebWide ? "stretch" : "center",
       justifyContent: "center",
-      gap: isWebWide ? spacing.xl : spacing.sm + 4,
+      gap: isWebWide ? spacing.xl + 4 : spacing.sm + 4,
     },
     hero: {
       width: "100%",
-      maxWidth: isWebWide ? 540 : 500,
+      maxWidth: isWebWide ? 560 : 500,
       flex: isWebWide ? 1 : undefined,
       borderRadius: semanticRadius.panel,
       borderWidth: StyleSheet.hairlineWidth,
@@ -268,18 +277,34 @@ function createStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     },
     cardReveal: {
       width: "100%",
-      maxWidth: isWebWide ? 540 : 500,
+      maxWidth: isWebWide ? 520 : 500,
       flex: isWebWide ? 1 : undefined,
     },
     card: {
       width: "100%",
-      maxWidth: isWebWide ? 540 : 500,
+      maxWidth: isWebWide ? 520 : 500,
       ...customerPanel(c, shadowPremium, isDark),
       paddingHorizontal: isCompactMobile ? spacing.lg : spacing.lg + 2,
       paddingVertical: isCompactMobile ? spacing.lg : spacing.lg + 2,
       borderTopWidth: 1,
       borderTopColor: isDark ? "rgba(248, 113, 113, 0.38)" : "rgba(220, 38, 38, 0.24)",
       minHeight: isWebWide ? 100 : undefined,
+    },
+    mobileBrandLockup: {
+      alignItems: "center",
+      marginBottom: spacing.md,
+    },
+    mobileHeroKicker: {
+      marginBottom: spacing.xs,
+      fontFamily: fonts.extrabold,
+      fontSize: typography.overline,
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
+      color: isDark ? c.primaryBright : c.primaryDark,
+      textAlign: "center",
+    },
+    mobileBrandWordmark: {
+      textAlign: "center",
     },
     authEyebrow: {
       fontFamily: fonts.extrabold,

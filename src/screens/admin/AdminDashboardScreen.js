@@ -352,36 +352,64 @@ export default function AdminDashboardScreen({ navigation }) {
               )}
 
               <Text style={[styles.quickOverline, !isDark ? styles.sectionOverlineLight : null]}>Quick open</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.quickScrollInner}
-                style={styles.quickScroll}
-              >
-                {quickActions.map((qa) => (
-                  <PremiumCard
-                    key={qa.route}
-                    interactive
-                    padding="md"
-                    variant="muted"
-                    onPress={() => navigation.navigate(qa.route)}
-                    accessibilityLabel={`Open ${qa.label}`}
-                    style={[styles.quickTileCard, !isDark ? styles.quickTileCardLight : null]}
-                  >
-                    <View style={[styles.quickIconWrap, !isDark ? styles.quickIconWrapLight : null]}>
-                      <Ionicons name={qa.icon} size={22} color={isDark ? c.primary : ALCHEMY.brown} />
-                      {qa.badge != null && qa.badge > 0 ? (
-                        <View style={styles.quickBadge}>
-                          <Text style={styles.quickBadgeText}>{qa.badge > 99 ? "99+" : qa.badge}</Text>
-                        </View>
-                      ) : null}
-                    </View>
-                    <Text style={[styles.quickLabel, !isDark ? styles.quickLabelLight : null]} numberOfLines={1}>
-                      {qa.label}
-                    </Text>
-                  </PremiumCard>
-                ))}
-              </ScrollView>
+              {Platform.OS === "web" ? (
+                <View style={styles.quickGrid}>
+                  {quickActions.map((qa) => (
+                    <PremiumCard
+                      key={qa.route}
+                      interactive
+                      padding="md"
+                      variant="muted"
+                      onPress={() => navigation.navigate(qa.route)}
+                      accessibilityLabel={`Open ${qa.label}`}
+                      style={[styles.quickTileCard, styles.quickTileCardWeb, !isDark ? styles.quickTileCardLight : null]}
+                    >
+                      <View style={[styles.quickIconWrap, !isDark ? styles.quickIconWrapLight : null]}>
+                        <Ionicons name={qa.icon} size={22} color={isDark ? c.primary : ALCHEMY.brown} />
+                        {qa.badge != null && qa.badge > 0 ? (
+                          <View style={styles.quickBadge}>
+                            <Text style={styles.quickBadgeText}>{qa.badge > 99 ? "99+" : qa.badge}</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <Text style={[styles.quickLabel, !isDark ? styles.quickLabelLight : null]} numberOfLines={1}>
+                        {qa.label}
+                      </Text>
+                    </PremiumCard>
+                  ))}
+                </View>
+              ) : (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.quickScrollInner}
+                  style={styles.quickScroll}
+                >
+                  {quickActions.map((qa) => (
+                    <PremiumCard
+                      key={qa.route}
+                      interactive
+                      padding="md"
+                      variant="muted"
+                      onPress={() => navigation.navigate(qa.route)}
+                      accessibilityLabel={`Open ${qa.label}`}
+                      style={[styles.quickTileCard, !isDark ? styles.quickTileCardLight : null]}
+                    >
+                      <View style={[styles.quickIconWrap, !isDark ? styles.quickIconWrapLight : null]}>
+                        <Ionicons name={qa.icon} size={22} color={isDark ? c.primary : ALCHEMY.brown} />
+                        {qa.badge != null && qa.badge > 0 ? (
+                          <View style={styles.quickBadge}>
+                            <Text style={styles.quickBadgeText}>{qa.badge > 99 ? "99+" : qa.badge}</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <Text style={[styles.quickLabel, !isDark ? styles.quickLabelLight : null]} numberOfLines={1}>
+                        {qa.label}
+                      </Text>
+                    </PremiumCard>
+                  ))}
+                </ScrollView>
+              )}
 
               <Text style={[styles.modulesOverline, !isDark ? styles.sectionOverlineLight : null]}>All tools by area</Text>
               <Text style={styles.modulesHint}>Tap a section header to expand or collapse.</Text>
@@ -618,6 +646,11 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
       alignItems: "center",
       justifyContent: "center",
     },
+    quickTileCardWeb: {
+      width: "auto",
+      minWidth: 150,
+      flex: 1,
+    },
     quickTileCardLight: {
       opacity: 1,
     },
@@ -665,6 +698,12 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
     quickLabelLight: {
       color: ALCHEMY.brown,
       fontFamily: FONT_DISPLAY_SEMI,
+    },
+    quickGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.sm,
+      marginBottom: spacing.lg,
     },
     modulesOverline: {
       fontSize: typography.overline,

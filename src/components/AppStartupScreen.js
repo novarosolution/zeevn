@@ -10,6 +10,11 @@ import { ALCHEMY, CUSTOMER_SHELL_GRADIENT_LOCATIONS, FONT_DISPLAY_SEMI, getCusto
 import BrandWordmark from "./BrandWordmark";
 
 const SHELL_AXIS = { start: { x: 0.06, y: 0 }, end: { x: 0.94, y: 1 } };
+const STARTUP_PREP_ITEMS = [
+  { key: "theme", icon: "color-palette-outline", label: "Theme" },
+  { key: "session", icon: "person-circle-outline", label: "Session" },
+  { key: "catalog", icon: "bag-handle-outline", label: "Catalog" },
+];
 
 /**
  * Full-screen branded splash while fonts load or session restores.
@@ -86,7 +91,38 @@ export default function AppStartupScreen({ colors: c, useAppFonts = true, footno
           >
             <ActivityIndicator size="large" color={c.primary} />
           </View>
-          <Text style={[styles.footnote, { color: c.textMuted }, footFont]}>{footnote}</Text>
+          <View
+            style={[
+              styles.statusCard,
+              {
+                backgroundColor: isDark ? "rgba(17, 26, 42, 0.88)" : "rgba(255, 255, 255, 0.82)",
+                borderColor: isDark ? c.border : "rgba(15, 23, 42, 0.08)",
+                shadowColor: isDark ? "#000" : "#18181B",
+              },
+            ]}
+          >
+            <Text style={[styles.statusEyebrow, { color: isDark ? c.primaryBright : c.primaryDark }, footFont]}>
+              Preparing your experience
+            </Text>
+            <Text style={[styles.footnote, { color: c.textPrimary }, footFont]}>{footnote}</Text>
+            <View style={styles.statusRail}>
+              {STARTUP_PREP_ITEMS.map((item) => (
+                <View
+                  key={item.key}
+                  style={[
+                    styles.statusPill,
+                    {
+                      backgroundColor: isDark ? "rgba(239, 68, 68, 0.08)" : "rgba(220, 38, 38, 0.06)",
+                      borderColor: isDark ? "rgba(248, 113, 113, 0.24)" : "rgba(220, 38, 38, 0.12)",
+                    },
+                  ]}
+                >
+                  <Ionicons name={item.icon} size={14} color={isDark ? c.primaryBright : c.primaryDark} />
+                  <Text style={[styles.statusPillText, { color: c.textSecondary }, footFont]}>{item.label}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
         </Animated.View>
       </LinearGradient>
     </SafeAreaView>
@@ -264,8 +300,60 @@ const styles = StyleSheet.create({
     }),
   },
   footnote: {
+    fontSize: typography.bodySmall,
+    lineHeight: 21,
+    letterSpacing: 0.2,
+    textAlign: "center",
+  },
+  statusCard: {
+    width: "100%",
+    maxWidth: 360,
+    paddingHorizontal: spacing.md + 2,
+    paddingVertical: spacing.md,
+    borderRadius: radius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    gap: spacing.xs + 2,
+    ...Platform.select({
+      ios: {
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.12,
+        shadowRadius: 18,
+      },
+      android: { elevation: 2 },
+      web: {
+        boxShadow: "0 12px 32px rgba(24, 24, 27, 0.08), inset 0 1px 0 rgba(255,255,255,0.65)",
+        backdropFilter: "blur(14px)",
+      },
+      default: {},
+    }),
+  },
+  statusEyebrow: {
+    fontSize: typography.overline,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+    fontFamily: fonts.extrabold,
+  },
+  statusRail: {
+    width: "100%",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: spacing.xs,
+    marginTop: 2,
+  },
+  statusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  statusPillText: {
     fontSize: typography.caption,
-    letterSpacing: 0.3,
+    fontFamily: fonts.medium,
   },
   peNone: {
     pointerEvents: "none",

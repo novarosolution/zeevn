@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import * as Clipboard from "expo-clipboard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,7 +27,6 @@ import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import PremiumLoader from "../components/ui/PremiumLoader";
 import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
-import GoldHairline from "../components/ui/GoldHairline";
 import PremiumStatCard from "../components/ui/PremiumStatCard";
 import MotionScrollView from "../components/motion/MotionScrollView";
 import SectionReveal from "../components/motion/SectionReveal";
@@ -128,11 +126,6 @@ export default function RedeemRewardsScreen({ navigation }) {
     navigation.navigate("Cart", { prefillCoupon: String(code || "").trim().toUpperCase() });
   };
 
-  const heroColors = useMemo(
-    () => (isDark ? [c.background, c.surfaceMuted] : [ALCHEMY.creamAlt, c.surface]),
-    [isDark, c]
-  );
-
   if (isAuthLoading || !isAuthenticated) {
     return <AuthGateShell />;
   }
@@ -144,15 +137,11 @@ export default function RedeemRewardsScreen({ navigation }) {
         contentContainerStyle={customerInnerPageScrollContent(insets)}
         showsVerticalScrollIndicator={false}
       >
-        <LinearGradient colors={heroColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
-          {!isDark ? <View style={styles.heroHairline} /> : null}
-          <ScreenPageHeader
-            navigation={navigation}
-            title={REDEEM_REWARDS_SCREEN.pageTitle}
-            subtitle={REDEEM_REWARDS_SCREEN.pageSubtitle}
-          />
-        </LinearGradient>
-        <GoldHairline marginVertical={spacing.sm} />
+        <ScreenPageHeader
+          navigation={navigation}
+          title={REDEEM_REWARDS_SCREEN.pageTitle}
+          subtitle={REDEEM_REWARDS_SCREEN.pageSubtitle}
+        />
 
         <SectionReveal delay={40} preset="fade-up">
           <PremiumStatCard

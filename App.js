@@ -130,7 +130,7 @@ export default function App() {
     PlayfairDisplay_700Bold,
     PlayfairDisplay_400Regular_Italic,
   });
-  const [bootFootnote, setBootFootnote] = useState("Loading…");
+  const [bootFootnote, setBootFootnote] = useState("Loading your storefront…");
 
   const bootstrapColors = Appearance.getColorScheme() === "dark" ? darkColors : lightColors;
 
@@ -155,13 +155,13 @@ export default function App() {
         }
         if (cancelled) return;
         if (seen === "1") {
-          setBootFootnote("Opening…");
+          setBootFootnote("Restoring your shop…");
         } else {
-          setBootFootnote("Welcome — preparing your shop…");
+          setBootFootnote("Welcome. Setting up your first visit…");
           await AsyncStorage.setItem(STARTUP_WELCOME_KEY, "1");
         }
       } catch {
-        if (!cancelled) setBootFootnote("Opening…");
+        if (!cancelled) setBootFootnote("Opening your shop…");
       }
     })();
     return () => {

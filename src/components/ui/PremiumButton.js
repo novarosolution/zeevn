@@ -52,6 +52,7 @@ function PremiumButtonBase({
 }) {
   const { colors: c, isDark } = useTheme();
   const reducedMotion = useReducedMotion();
+  const isWeb = Platform.OS === "web";
   const tokens = SIZE_TOKENS[size] || SIZE_TOKENS.md;
   const isPrimary = variant === "primary";
   const isSecondary = variant === "secondary";
@@ -178,7 +179,7 @@ function PremiumButtonBase({
 
   return (
     <Animated.View style={[styles.outer, motionStyle, outerStyle]}>
-      {pulse && !reducedMotion && !disabled && !loading ? (
+      {pulse && isWeb && !reducedMotion && !disabled && !loading ? (
         <Animated.View
           style={[styles.pulseGlow, { backgroundColor: pulseColor }, pulseStyle, styles.peNone]}
         />
@@ -202,7 +203,7 @@ function PremiumButtonBase({
           pressed ? styles.pressed : null,
         ]}
       >
-        {isPrimary ? (
+        {isPrimary && isWeb ? (
           <LinearGradient
             colors={gradientColors}
             start={{ x: 0, y: 0 }}
@@ -215,6 +216,7 @@ function PremiumButtonBase({
           <View
             style={[
               styles.surfaceShell,
+              isPrimary ? styles.primarySolid : null,
               isSecondary ? styles.secondary : null,
               isGhost ? styles.ghost : null,
               isSubtle ? styles.subtle : null,
@@ -281,7 +283,7 @@ function createStyles(c, isDark, t, fullWidth) {
       left: -5,
       right: -5,
       bottom: -5,
-      borderRadius: radius.pill,
+      borderRadius: Platform.OS === "web" ? radius.pill : radius.lg,
       ...Platform.select({
         web: { filter: "blur(8px)" },
         default: {},
@@ -292,7 +294,7 @@ function createStyles(c, isDark, t, fullWidth) {
       pointerEvents: "none",
     },
     press: {
-      borderRadius: radius.pill,
+      borderRadius: Platform.OS === "web" ? radius.pill : radius.lg,
       overflow: "visible",
       minHeight: t.height,
       minWidth: 0,
@@ -305,7 +307,7 @@ function createStyles(c, isDark, t, fullWidth) {
       }),
     },
     gradient: {
-      borderRadius: radius.pill,
+      borderRadius: Platform.OS === "web" ? radius.pill : radius.lg,
       paddingVertical: t.padV,
       paddingHorizontal: t.padH,
       borderWidth: 1,
@@ -330,7 +332,7 @@ function createStyles(c, isDark, t, fullWidth) {
       }),
     },
     surfaceShell: {
-      borderRadius: radius.pill,
+      borderRadius: Platform.OS === "web" ? radius.pill : radius.lg,
       paddingVertical: t.padV,
       paddingHorizontal: t.padH,
       borderWidth: 1,
@@ -345,6 +347,10 @@ function createStyles(c, isDark, t, fullWidth) {
         },
         default: {},
       }),
+    },
+    primarySolid: {
+      backgroundColor: isDark ? c.primary : c.primary,
+      borderColor: isDark ? c.primaryDark : c.primaryDark,
     },
     secondary: {
       backgroundColor: isDark ? c.surfaceElevated || c.surface : "#FFFDFC",

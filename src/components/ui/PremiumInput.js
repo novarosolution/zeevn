@@ -237,7 +237,11 @@ function createStyles(c, isDark, multiline) {
         web: {
           transition: "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease",
         },
-        default: {},
+        default: {
+          borderRadius: radius.md,
+          backgroundColor: isDark ? c.surface : c.surfaceMuted,
+          minHeight: multiline ? 92 : 50,
+        },
       }),
     },
     fieldFocused: {
@@ -298,7 +302,9 @@ function createStyles(c, isDark, multiline) {
       includeFontPadding: false,
       ...Platform.select({
         web: { outlineStyle: "none" },
-        default: {},
+        default: {
+          paddingVertical: spacing.sm,
+        },
       }),
     },
     inputWithLabel: {

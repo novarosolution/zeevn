@@ -350,30 +350,57 @@ export default function AdminAnalyticsScreen({ navigation }) {
 
       <PremiumCard variant="muted" padding="md" style={styles.filterCard}>
         <Text style={[styles.filterTitle, { color: c.textSecondary }]}>Date range</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipScroll}>
-          {[
-            { key: "today", label: "Today" },
-            { key: "7d", label: "7d" },
-            { key: "30d", label: "30d" },
-            { key: "90d", label: "90d" },
-            { key: "1y", label: "1y" },
-            { key: "mtd", label: "MTD" },
-            { key: "ytd", label: "YTD" },
-            { key: "all", label: "All" },
-            { key: "legacy", label: "Full history" },
-            { key: "custom", label: "Custom" },
-          ].map((item) => (
-            <PremiumChip
-              key={item.key}
-              label={item.label}
-              tone="gold"
-              size="sm"
-              selected={rangePreset === item.key}
-              onPress={() => setRangePreset(item.key)}
-              style={styles.filterChip}
-            />
-          ))}
-        </ScrollView>
+        {Platform.OS === "web" ? (
+          <View style={styles.filterChipScroll}>
+            {[
+              { key: "today", label: "Today" },
+              { key: "7d", label: "7d" },
+              { key: "30d", label: "30d" },
+              { key: "90d", label: "90d" },
+              { key: "1y", label: "1y" },
+              { key: "mtd", label: "MTD" },
+              { key: "ytd", label: "YTD" },
+              { key: "all", label: "All" },
+              { key: "legacy", label: "Full history" },
+              { key: "custom", label: "Custom" },
+            ].map((item) => (
+              <PremiumChip
+                key={item.key}
+                label={item.label}
+                tone="gold"
+                size="sm"
+                selected={rangePreset === item.key}
+                onPress={() => setRangePreset(item.key)}
+                style={styles.filterChip}
+              />
+            ))}
+          </View>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterChipScroll}>
+            {[
+              { key: "today", label: "Today" },
+              { key: "7d", label: "7d" },
+              { key: "30d", label: "30d" },
+              { key: "90d", label: "90d" },
+              { key: "1y", label: "1y" },
+              { key: "mtd", label: "MTD" },
+              { key: "ytd", label: "YTD" },
+              { key: "all", label: "All" },
+              { key: "legacy", label: "Full history" },
+              { key: "custom", label: "Custom" },
+            ].map((item) => (
+              <PremiumChip
+                key={item.key}
+                label={item.label}
+                tone="gold"
+                size="sm"
+                selected={rangePreset === item.key}
+                onPress={() => setRangePreset(item.key)}
+                style={styles.filterChip}
+              />
+            ))}
+          </ScrollView>
+        )}
         <Text style={[styles.filterTitle, { color: c.textSecondary, marginTop: spacing.sm }]}>Chart buckets</Text>
         <View style={styles.bucketRow}>
           {[

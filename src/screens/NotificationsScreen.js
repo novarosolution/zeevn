@@ -32,7 +32,6 @@ import PremiumChip from "../components/ui/PremiumChip";
 import SkeletonBlock from "../components/ui/SkeletonBlock";
 import PremiumButton from "../components/ui/PremiumButton";
 import PremiumCard from "../components/ui/PremiumCard";
-import GoldHairline from "../components/ui/GoldHairline";
 import { NOTIFICATIONS_SCREEN, fillPlaceholders } from "../content/appContent";
 
 function UnreadDot({ color }) {
@@ -222,16 +221,13 @@ export default function NotificationsScreen({ navigation }) {
             ) : undefined
           }
         />
-        <GoldHairline marginVertical={spacing.sm} />
-        <SectionReveal preset="fade-up" delay={40}>
-        <View style={styles.panel}>
-          {error ? (
+        {error ? (
+          <SectionReveal preset="fade-up" delay={40}>
             <View style={styles.bannerWrap}>
               <PremiumErrorBanner severity="error" message={error} compact />
             </View>
-          ) : null}
-        </View>
-        </SectionReveal>
+          </SectionReveal>
+        ) : null}
 
         {loading ? (
           <View style={styles.loaderWrap}>

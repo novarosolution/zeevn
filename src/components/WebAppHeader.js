@@ -532,11 +532,10 @@ const styles = StyleSheet.create({
     }),
   },
   innerPhone: {
-    alignItems: "flex-start",
+    alignItems: "center",
     ...Platform.select({
       web: {
-        flexWrap: "wrap",
-        rowGap: spacing.xs,
+        gap: spacing.xs,
       },
       default: {},
     }),
@@ -585,9 +584,11 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   navRowPhone: {
-    gap: 4,
-    width: "100%",
-    justifyContent: "space-between",
+    flex: 1,
+    minWidth: 0,
+    marginLeft: "auto",
+    gap: 2,
+    justifyContent: "flex-end",
   },
   navItem: {
     flexDirection: "row",

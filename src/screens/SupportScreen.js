@@ -12,7 +12,6 @@ import BottomNavBar from "../components/BottomNavBar";
 import AuthGateShell from "../components/AuthGateShell";
 import CustomerScreenShell from "../components/CustomerScreenShell";
 import ScreenPageHeader from "../components/ScreenPageHeader";
-import GoldHairline from "../components/ui/GoldHairline";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { fetchMySupportThread, sendMySupportMessage } from "../services/userService";
@@ -187,7 +186,6 @@ export default function SupportScreen({ navigation }) {
             ) : undefined
           }
         />
-        <GoldHairline marginVertical={spacing.sm} />
         <SectionReveal preset="fade-up" delay={20}>
           <View style={styles.contactGrid}>
             {buildSupportContactLinks().map((link) => {
@@ -218,31 +216,13 @@ export default function SupportScreen({ navigation }) {
             })}
           </View>
         </SectionReveal>
-        <SectionReveal preset="fade-up" delay={40}>
-        <View style={styles.panel}>
-          {error ? (
+        {error ? (
+          <SectionReveal preset="fade-up" delay={40}>
             <View style={styles.bannerWrap}>
               <PremiumErrorBanner severity="error" message={error} compact />
             </View>
-          ) : null}
-          {thread ? (
-            <View style={styles.threadMetaRow}>
-              <View style={[styles.metaPill, styles.metaPillPrimary]}>
-                <Ionicons name="pulse-outline" size={14} color={c.primary} />
-                <Text style={[styles.metaPillText, { color: c.primary }]}>Status: {thread.status || "open"}</Text>
-              </View>
-              <View style={styles.metaPill}>
-                <Ionicons name="time-outline" size={14} color={c.textSecondary} />
-                <Text style={styles.metaPillText}>
-                  {thread.lastMessageAt
-                    ? new Date(thread.lastMessageAt).toLocaleString()
-                    : SUPPORT_SCREEN.lastUpdateUnavailable}
-                </Text>
-              </View>
-            </View>
-          ) : null}
-        </View>
-        </SectionReveal>
+          </SectionReveal>
+        ) : null}
         {loading ? (
           <View style={styles.panel}>
             <SkeletonBlock height={18} width="38%" style={{ marginBottom: spacing.sm }} />
@@ -260,6 +240,22 @@ export default function SupportScreen({ navigation }) {
               chatSectionYRef.current = event.nativeEvent.layout.y;
             }}
           >
+            {thread ? (
+              <View style={styles.threadMetaRow}>
+                <View style={[styles.metaPill, styles.metaPillPrimary]}>
+                  <Ionicons name="pulse-outline" size={14} color={c.primary} />
+                  <Text style={[styles.metaPillText, { color: c.primary }]}>Status: {thread.status || "open"}</Text>
+                </View>
+                <View style={styles.metaPill}>
+                  <Ionicons name="time-outline" size={14} color={c.textSecondary} />
+                  <Text style={styles.metaPillText}>
+                    {thread.lastMessageAt
+                      ? new Date(thread.lastMessageAt).toLocaleString()
+                      : SUPPORT_SCREEN.lastUpdateUnavailable}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
             {(thread?.messages || []).length === 0 ? (
               <PremiumEmptyState
                 iconName="chatbubbles-outline"

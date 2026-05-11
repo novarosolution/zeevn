@@ -4,7 +4,7 @@ import { useTheme } from "../context/ThemeContext";
 import { resetNavigationToHome } from "../navigation/resetToHome";
 import { Ionicons } from "@expo/vector-icons";
 import { ALCHEMY } from "../theme/customerAlchemy";
-import { customerPanel } from "../theme/screenLayout";
+import { customerPanel, customerScrollPaddingTop } from "../theme/screenLayout";
 import { fonts, spacing, typography } from "../theme/tokens";
 import BottomNavBar from "./BottomNavBar";
 import CustomerScreenShell from "./CustomerScreenShell";
@@ -70,12 +70,20 @@ export default function AuthGateShell({ navigation, signedOut = false }) {
 function createStyles(c, isDark, shadowPremium) {
   const cardBg = isDark ? c.surface : ALCHEMY.cardBg;
   return StyleSheet.create({
-    shell: { flex: 1 },
+    shell: {
+      flex: 1,
+      ...Platform.select({
+        web: {
+          paddingTop: customerScrollPaddingTop(),
+        },
+        default: {},
+      }),
+    },
     fill: { flex: 1 },
     signedOutInner: {
       flex: 1,
       paddingHorizontal: spacing.lg,
-      paddingTop: spacing.xl + 6,
+      paddingTop: spacing.lg,
       paddingBottom: spacing.lg,
       justifyContent: "center",
       alignItems: "center",

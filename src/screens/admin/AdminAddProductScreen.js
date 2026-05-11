@@ -884,6 +884,7 @@ function createAdminAddProductStyles(c, shadowPremium) {
   },
   manualUrlRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.sm,
     alignItems: "flex-end",
     marginBottom: spacing.sm,
@@ -951,10 +952,12 @@ function createAdminAddProductStyles(c, shadowPremium) {
   },
   row: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing.sm,
   },
   halfInput: {
     flex: 1,
+    minWidth: 220,
   },
   blockCard: {
     borderWidth: 1,

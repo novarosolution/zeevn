@@ -13,7 +13,6 @@ import BottomNavBar from "../components/BottomNavBar";
 import AuthGateShell from "../components/AuthGateShell";
 import CustomerScreenShell from "../components/CustomerScreenShell";
 import ScreenPageHeader from "../components/ScreenPageHeader";
-import GoldHairline from "../components/ui/GoldHairline";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import { getCurrentAddressFromGPS } from "../services/locationService";
@@ -177,6 +176,14 @@ export default function ManageAddressScreen({ navigation }) {
     return <AuthGateShell />;
   }
 
+  const hasAddressPreview = Boolean(
+    String(line1 || "").trim() ||
+    String(city || "").trim() ||
+    String(state || "").trim() ||
+    String(postalCode || "").trim() ||
+    String(country || "").trim()
+  );
+
   return (
     <CustomerScreenShell style={styles.screen}>
       <MotionScrollView
@@ -191,10 +198,9 @@ export default function ManageAddressScreen({ navigation }) {
           subtitle={MANAGE_ADDRESS_SCREEN.pageSubtitle}
           showLocation={false}
         />
-        <GoldHairline marginVertical={spacing.sm} />
-        <View style={isWide ? styles.desktopGrid : null}>
-          <View style={isWide ? styles.desktopColPreview : null}>
-            {(line1 || city) ? (
+        <View style={isWide && hasAddressPreview ? styles.desktopGrid : null}>
+          {isWide && hasAddressPreview ? (
+            <View style={styles.desktopColPreview}>
               <SectionReveal delay={40} preset="fade-up">
                 <View style={styles.previewWrap}>
                   <PremiumCard goldAccent variant="accent" padding="lg">
@@ -225,10 +231,10 @@ export default function ManageAddressScreen({ navigation }) {
                   </PremiumCard>
                 </View>
               </SectionReveal>
-            ) : null}
-          </View>
+            </View>
+          ) : null}
 
-          <View style={isWide ? styles.desktopColForm : null}>
+          <View style={isWide && hasAddressPreview ? styles.desktopColForm : null}>
             <SectionReveal delay={60} preset="fade-up">
               <View style={styles.panel}>
             <SectionReveal delay={100}>

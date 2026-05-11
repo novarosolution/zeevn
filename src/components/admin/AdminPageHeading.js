@@ -12,6 +12,7 @@ export default function AdminPageHeading({ title, subtitle, right }) {
   const { colors: c, isDark } = useTheme();
   const { width } = useWindowDimensions();
   const isCompact = width < 720;
+  const isWeb = Platform.OS === "web";
   const styles = useMemo(() => createStyles(c, isDark, { isCompact }), [c, isDark, isCompact]);
 
   return (
@@ -25,15 +26,17 @@ export default function AdminPageHeading({ title, subtitle, right }) {
         </View>
         {right ? <View style={styles.right}>{right}</View> : null}
       </View>
-      <View style={styles.hairlineRow}>
-        <LinearGradient
-          colors={heritageHairlineGradient(isDark)}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={styles.hairline}
-        />
-        <View style={[styles.hairlineDot, { backgroundColor: isDark ? HERITAGE.amberBright : HERITAGE.amberMid }]} />
-      </View>
+      {isWeb ? (
+        <View style={styles.hairlineRow}>
+          <LinearGradient
+            colors={heritageHairlineGradient(isDark)}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.hairline}
+          />
+          <View style={[styles.hairlineDot, { backgroundColor: isDark ? HERITAGE.amberBright : HERITAGE.amberMid }]} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -56,7 +59,7 @@ function createStyles(_c, isDark, layoutFlags = {}) {
       minWidth: 0,
     },
     title: {
-      fontSize: isCompact ? typography.h2 - 3 : typography.h2 - 1,
+      fontSize: Platform.OS === "web" ? (isCompact ? typography.h2 - 3 : typography.h2 - 1) : typography.h3,
       letterSpacing: -0.38,
     },
     subtitle: {

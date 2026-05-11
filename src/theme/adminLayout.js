@@ -18,10 +18,10 @@ export function adminPanel(c, shadowPremium, isDark) {
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: dark ? semantic.border.subtle : ALCHEMY.pillInactive,
     borderRadius: semanticRadius.panel,
-    borderTopWidth: 2,
+    borderTopWidth: Platform.OS === "web" ? 2 : 1,
     borderTopColor: dark ? semantic.border.accent : HERITAGE.amberMid,
-    padding: Platform.OS === "web" ? spacing.lg + 2 : spacing.lg,
-    ...shadowPremium,
+    padding: Platform.OS === "web" ? spacing.lg + 2 : spacing.md + 2,
+    ...(Platform.OS === "web" ? shadowPremium : {}),
   };
   if (Platform.OS !== "web" || !shadowPremium?.boxShadow) {
     return base;

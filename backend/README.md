@@ -46,7 +46,9 @@ cp .env.example .env
 
 3. Update `.env` values:
 - `PORT` (default set to `5001`)
-- `MONGO_URI` — example local DB: `mongodb://127.0.0.1:27017/zeevan`
+- Mongo connection string: `MONGO_URI` (preferred), or `MONGODB_URI`, `DATABASE_URL`, `DB_URI`
+- Optional DB name override: `MONGO_DB_NAME` or `DB_NAME`
+- Example local DB: `mongodb://127.0.0.1:27017/zeevan`
 - `JWT_SECRET`
 - `RAZORPAY_KEY_ID` — public key id from the Razorpay dashboard (test or live).
 - `RAZORPAY_KEY_SECRET` — secret key, **server-only**.

@@ -31,6 +31,7 @@ export default function ScreenPageHeader({
   const { colors: c, shadowPremium, isDark } = useTheme();
   const semantic = getSemanticColors(c);
   const styles = useMemo(() => createStyles(ROW_MIN_H, isDark), [isDark]);
+  const isWeb = Platform.OS === "web";
 
   const canGoBack = typeof navigation?.canGoBack === "function" && navigation.canGoBack();
   const backVisible = showBack !== undefined ? showBack : canGoBack;
@@ -51,11 +52,11 @@ export default function ScreenPageHeader({
         style={[
           styles.headerCard,
           {
-            backgroundColor: isDark ? c.surfaceOverlay || c.surface : ALCHEMY.cardBg,
-            borderColor: isDark ? semantic.border.divider || semantic.border.subtle : c.border,
+            backgroundColor: isWeb ? (isDark ? c.surfaceOverlay || c.surface : ALCHEMY.cardBg) : "transparent",
+            borderColor: isWeb ? (isDark ? semantic.border.divider || semantic.border.subtle : c.border) : "transparent",
           },
-          shadowPremium,
-          Platform.OS === "web" && shadowPremium?.boxShadow
+          isWeb ? shadowPremium : null,
+          isWeb && shadowPremium?.boxShadow
             ? {
                 boxShadow: `${shadowPremium.boxShadow}, ${
                   isDark
@@ -66,22 +67,26 @@ export default function ScreenPageHeader({
             : null,
         ]}
       >
-        <LinearGradient
-          colors={heritageBrandTrimGradient()}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={[styles.headerGoldAccent, styles.peNone]}
-        />
-        <LinearGradient
-          colors={
-            isDark
-              ? ["rgba(255,255,255,0.045)", "transparent"]
-              : ["rgba(255,255,255,0.82)", "rgba(255,255,255,0.18)"]
-          }
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[StyleSheet.absoluteFillObject, styles.peNone]}
-        />
+        {isWeb ? (
+          <>
+            <LinearGradient
+              colors={heritageBrandTrimGradient()}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={[styles.headerGoldAccent, styles.peNone]}
+            />
+            <LinearGradient
+              colors={
+                isDark
+                  ? ["rgba(255,255,255,0.045)", "transparent"]
+                  : ["rgba(255,255,255,0.82)", "rgba(255,255,255,0.18)"]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[StyleSheet.absoluteFillObject, styles.peNone]}
+            />
+          </>
+        ) : null}
         <View style={[styles.row, styles.rowBelowAccent]}>
           {backVisible ? (
             <Pressable
@@ -98,13 +103,13 @@ export default function ScreenPageHeader({
               <Ionicons name="chevron-back" size={icon.lg} color={isDark ? c.primaryBright : ALCHEMY.brown} />
             </Pressable>
           ) : null}
-          {showBrand ? <BrandHeaderMark navigation={navigation} compact /> : null}
-          {!backVisible && !showBrand ? <View style={[styles.leadSpacer, styles.leadSpacerCompact]} /> : null}
+          {showBrand && isWeb ? <BrandHeaderMark navigation={navigation} compact /> : null}
+          {!backVisible && !(showBrand && isWeb) ? <View style={[styles.leadSpacer, styles.leadSpacerCompact]} /> : null}
           <View style={styles.titleCol}>
             <Text style={[styles.title, { color: c.textPrimary, fontFamily: FONT_DISPLAY }]} numberOfLines={2}>
               {title}
             </Text>
-            {subtitle ? (
+            {subtitle ? isWeb ? (
               <View
                 style={[
                   styles.subtitlePill,
@@ -118,10 +123,14 @@ export default function ScreenPageHeader({
                   {subtitle}
                 </Text>
               </View>
+            ) : (
+              <Text style={[styles.sub, styles.subPlain, { color: c.textSecondary, fontFamily: FONT_DISPLAY_SEMI }]} numberOfLines={2}>
+                {subtitle}
+              </Text>
             ) : null}
           </View>
           <View style={styles.rightCluster}>
-            {showLocation ? <LocationIconButton navigation={navigation} size={icon.webNav} /> : null}
+            {showLocation && isWeb ? <LocationIconButton navigation={navigation} size={icon.webNav} /> : null}
             {right ? <View style={styles.rightSlot}>{right}</View> : null}
           </View>
         </View>
@@ -153,7 +162,13 @@ function createStyles(rowMinH, isDark) {
             ? "0 12px 24px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.04)"
             : "0 8px 18px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255,255,255,0.94)",
         },
-        default: {},
+        default: {
+          borderRadius: 0,
+          borderWidth: 0,
+          backgroundColor: "transparent",
+          paddingHorizontal: 0,
+          paddingBottom: spacing.xs,
+        },
       }),
     },
     headerGoldAccent: {
@@ -162,7 +177,7 @@ function createStyles(rowMinH, isDark) {
       opacity: 0.96,
     },
     rowBelowAccent: {
-      paddingTop: 12,
+      paddingTop: Platform.OS === "web" ? 12 : 0,
     },
     row: {
       flexDirection: "row",
@@ -189,7 +204,13 @@ function createStyles(rowMinH, isDark) {
       backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.84)",
       ...Platform.select({
         web: { cursor: "pointer", transition: "background 0.2s ease, border-color 0.2s ease, transform 0.2s ease" },
-        default: {},
+        default: {
+          marginLeft: 0,
+          width: 34,
+          height: 34,
+          borderColor: "transparent",
+          backgroundColor: "transparent",
+        },
       }),
     },
     backBtnHover: {
@@ -230,6 +251,9 @@ function createStyles(rowMinH, isDark) {
       letterSpacing: 0.04,
       opacity: 0.92,
     },
+    subPlain: {
+      marginTop: spacing.xs,
+    },
     subtitlePill: {
       marginTop: spacing.xs,
       alignSelf: "flex-start",
@@ -248,7 +272,9 @@ function createStyles(rowMinH, isDark) {
         web: {
           marginLeft: "auto",
         },
-        default: {},
+        default: {
+          marginLeft: spacing.xs,
+        },
       }),
     },
     rightSlot: {

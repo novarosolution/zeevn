@@ -28,6 +28,7 @@ function PremiumSectionHeaderBase({
   compact = false,
 }) {
   const { colors: c, isDark } = useTheme();
+  const isWeb = Platform.OS === "web";
   const styles = useMemo(() => createStyles(c, isDark, align, compact), [c, isDark, align, compact]);
   const showCount = count != null && count > 0;
   const overlineText = String(overline || "").trim();
@@ -87,21 +88,23 @@ function PremiumSectionHeaderBase({
         ) : null}
       </View>
 
-      <View style={[styles.hairlineWrap, styles.peNone]}>
-        <LinearGradient
-          colors={heritageHairlineGradient(isDark)}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={styles.hairline}
-        />
-        <View style={[styles.hairlineDot, { backgroundColor: isDark ? HERITAGE.amberBright : HERITAGE.amberMid }]} />
-      </View>
+      {isWeb ? (
+        <View style={[styles.hairlineWrap, styles.peNone]}>
+          <LinearGradient
+            colors={heritageHairlineGradient(isDark)}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.hairline}
+          />
+          <View style={[styles.hairlineDot, { backgroundColor: isDark ? HERITAGE.amberBright : HERITAGE.amberMid }]} />
+        </View>
+      ) : null}
     </View>
   );
 }
 
 function createStyles(c, isDark, align, compact) {
-  const titleSize = compact ? typography.h3 - 1 : typography.h2;
+  const titleSize = Platform.OS === "web" ? (compact ? typography.h3 - 1 : typography.h2) : (compact ? typography.h3 - 2 : typography.h3);
   const titleSizeWeb = compact ? typography.h3 : typography.h2 + 2;
   const titleLine = compact ? lineHeight.h3 - 1 : lineHeight.h2;
   const titleLineWeb = compact ? lineHeight.h3 : lineHeight.h2 + 2;
@@ -113,7 +116,7 @@ function createStyles(c, isDark, align, compact) {
   return StyleSheet.create({
     wrap: {
       width: "100%",
-      marginBottom: compact ? spacing.sm + 2 : spacing.md,
+      marginBottom: Platform.OS === "web" ? (compact ? spacing.sm + 2 : spacing.md) : spacing.sm + 2,
     },
     row: {
       flexDirection: "row",

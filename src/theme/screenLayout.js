@@ -221,10 +221,10 @@ export const authScrollContent = {
       maxWidth: CUSTOMER_PAGE_MAX_WIDTH,
       alignSelf: "center",
       paddingHorizontal: Math.max(spacing.md + 4, container.gutter.desktop - 20),
-      paddingTop: spacing.md + 6,
+      paddingTop: customerScrollPaddingTop(),
       paddingBottom: spacing.xxl,
       flexGrow: 1,
-      minHeight: `calc(100dvh - ${WEB_HEADER_HEIGHT}px)`,
+      minHeight: `calc(100dvh - ${customerScrollPaddingTop()}px)`,
       justifyContent: "center",
     },
     default: {

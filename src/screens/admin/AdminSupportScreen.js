@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppFooter from "../../components/AppFooter";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
@@ -25,6 +25,8 @@ import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 
 export default function AdminSupportScreen({ navigation }) {
+  const { width } = useWindowDimensions();
+  const isWideWeb = Platform.OS === "web" && width >= 1120;
   const { colors: c, shadowPremium } = useTheme();
   const styles = useMemo(() => createAdminSupportStyles(c, shadowPremium), [c, shadowPremium]);
   const insets = useSafeAreaInsets();
@@ -152,105 +154,109 @@ export default function AdminSupportScreen({ navigation }) {
           </View>
           </SectionReveal>
         ) : (
-          <>
-            <SectionReveal preset="fade-up" delay={40}>
-            <View style={styles.panel}>
-              <Text style={styles.sectionTitle}>Conversations</Text>
-              {(threads || []).length === 0 ? (
-                <PremiumEmptyState
-                  iconName="chatbubbles-outline"
-                  title="No support messages yet"
-                  description="Customer threads will appear here."
-                  compact
-                />
-              ) : (
-                (threads || []).map((thread) => (
-                  <PremiumCard
-                    key={thread._id}
-                    padding="md"
-                    interactive
-                    onPress={() => setSelectedThreadId(thread._id)}
-                    goldAccent={selectedThreadId === thread._id}
-                    style={styles.threadCard}
-                    accessibilityLabel={`Open conversation with ${thread.user?.name || "user"}`}
-                  >
-                    <Text style={[styles.threadTitle, { color: c.textPrimary }]}>{thread.user?.name || "User"}</Text>
-                    <Text style={[styles.threadMeta, { color: c.textSecondary }]}>{thread.user?.email || "N/A"}</Text>
-                    <Text style={[styles.threadMeta, { color: c.textSecondary }]}>
-                      Status: {thread.status} • Messages: {(thread.messages || []).length}
-                    </Text>
-                  </PremiumCard>
-                ))
-              )}
-            </View>
-            </SectionReveal>
-            <SectionReveal preset="fade-up" delay={100}>
-            <View style={styles.panel}>
-              <View style={styles.rowBetween}>
-                <Text style={styles.sectionTitle}>Thread Details</Text>
-                {selectedThread ? (
-                  <PremiumButton
-                    label={`Mark ${selectedThread.status === "closed" ? "Open" : "Closed"}`}
-                    variant="secondary"
-                    size="sm"
-                    onPress={handleToggleStatus}
-                  />
-                ) : null}
-              </View>
-              {!selectedThread ? (
-                <PremiumEmptyState
-                  iconName="hand-left-outline"
-                  title="Select a conversation"
-                  description="Choose a thread to read and reply."
-                  compact
-                />
-              ) : (
-                <>
-                  <Text style={styles.threadMeta}>
-                    User: {selectedThread.user?.name || "User"} ({selectedThread.user?.email || "N/A"})
-                  </Text>
-                  {(selectedThread.messages || []).map((item, index) => (
-                    <View
-                      key={`${index}-${item.createdAt || ""}`}
-                      style={[
-                        styles.messageBubble,
-                        item.senderRole === "admin" ? styles.adminBubble : styles.userBubble,
-                      ]}
-                    >
-                      <Text style={styles.messageAuthor}>
-                        {item.senderRole === "admin" ? "Admin" : selectedThread.user?.name || "User"} •{" "}
-                        {item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}
-                      </Text>
-                      <Text style={styles.messageText}>{item.message}</Text>
-                    </View>
-                  ))}
-                  <View style={styles.replyInputWrap}>
-                    <PremiumInput
-                      label="Reply"
-                      value={message}
-                      onChangeText={setMessage}
-                      placeholder="Type your message…"
-                      multiline
-                      numberOfLines={3}
-                      iconLeft="chatbubble-ellipses-outline"
+          <View style={isWideWeb ? styles.workspaceGrid : null}>
+            <View style={isWideWeb ? styles.workspaceRail : null}>
+              <SectionReveal preset="fade-up" delay={40}>
+                <View style={styles.panel}>
+                  <Text style={styles.sectionTitle}>Conversations</Text>
+                  {(threads || []).length === 0 ? (
+                    <PremiumEmptyState
+                      iconName="chatbubbles-outline"
+                      title="No support messages yet"
+                      description="Customer threads will appear here."
+                      compact
                     />
-                  </View>
-                  <PremiumButton
-                    label={sending ? "Sending..." : "Send Reply"}
-                    iconLeft="send-outline"
-                    variant="primary"
-                    size="md"
-                    onPress={handleReply}
-                    disabled={sending}
-                    loading={sending}
-                    fullWidth
-                    style={styles.sendBtnMargin}
-                  />
-                </>
-              )}
+                  ) : (
+                    (threads || []).map((thread) => (
+                      <PremiumCard
+                        key={thread._id}
+                        padding="md"
+                        interactive
+                        onPress={() => setSelectedThreadId(thread._id)}
+                        goldAccent={selectedThreadId === thread._id}
+                        style={styles.threadCard}
+                        accessibilityLabel={`Open conversation with ${thread.user?.name || "user"}`}
+                      >
+                        <Text style={[styles.threadTitle, { color: c.textPrimary }]}>{thread.user?.name || "User"}</Text>
+                        <Text style={[styles.threadMeta, { color: c.textSecondary }]}>{thread.user?.email || "N/A"}</Text>
+                        <Text style={[styles.threadMeta, { color: c.textSecondary }]}>
+                          Status: {thread.status} • Messages: {(thread.messages || []).length}
+                        </Text>
+                      </PremiumCard>
+                    ))
+                  )}
+                </View>
+              </SectionReveal>
             </View>
-            </SectionReveal>
-          </>
+            <View style={isWideWeb ? styles.workspaceMain : null}>
+              <SectionReveal preset="fade-up" delay={100}>
+                <View style={styles.panel}>
+                  <View style={styles.rowBetween}>
+                    <Text style={styles.sectionTitle}>Thread Details</Text>
+                    {selectedThread ? (
+                      <PremiumButton
+                        label={`Mark ${selectedThread.status === "closed" ? "Open" : "Closed"}`}
+                        variant="secondary"
+                        size="sm"
+                        onPress={handleToggleStatus}
+                      />
+                    ) : null}
+                  </View>
+                  {!selectedThread ? (
+                    <PremiumEmptyState
+                      iconName="hand-left-outline"
+                      title="Select a conversation"
+                      description="Choose a thread to read and reply."
+                      compact
+                    />
+                  ) : (
+                    <>
+                      <Text style={styles.threadMeta}>
+                        User: {selectedThread.user?.name || "User"} ({selectedThread.user?.email || "N/A"})
+                      </Text>
+                      {(selectedThread.messages || []).map((item, index) => (
+                        <View
+                          key={`${index}-${item.createdAt || ""}`}
+                          style={[
+                            styles.messageBubble,
+                            item.senderRole === "admin" ? styles.adminBubble : styles.userBubble,
+                          ]}
+                        >
+                          <Text style={styles.messageAuthor}>
+                            {item.senderRole === "admin" ? "Admin" : selectedThread.user?.name || "User"} •{" "}
+                            {item.createdAt ? new Date(item.createdAt).toLocaleString() : ""}
+                          </Text>
+                          <Text style={styles.messageText}>{item.message}</Text>
+                        </View>
+                      ))}
+                      <View style={styles.replyInputWrap}>
+                        <PremiumInput
+                          label="Reply"
+                          value={message}
+                          onChangeText={setMessage}
+                          placeholder="Type your message…"
+                          multiline
+                          numberOfLines={3}
+                          iconLeft="chatbubble-ellipses-outline"
+                        />
+                      </View>
+                      <PremiumButton
+                        label={sending ? "Sending..." : "Send Reply"}
+                        iconLeft="send-outline"
+                        variant="primary"
+                        size="md"
+                        onPress={handleReply}
+                        disabled={sending}
+                        loading={sending}
+                        fullWidth
+                        style={styles.sendBtnMargin}
+                      />
+                    </>
+                  )}
+                </View>
+              </SectionReveal>
+            </View>
+          </View>
         )}
         <AppFooter />
       </MotionScrollView>
@@ -332,6 +338,19 @@ function createAdminSupportStyles(c, shadowPremium) {
     },
     sendBtnMargin: {
       marginTop: spacing.sm,
+    },
+    workspaceGrid: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.md,
+    },
+    workspaceRail: {
+      flex: 0.92,
+      minWidth: 280,
+    },
+    workspaceMain: {
+      flex: 1.4,
+      minWidth: 0,
     },
   });
 }

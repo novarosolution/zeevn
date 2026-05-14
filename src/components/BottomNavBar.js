@@ -183,7 +183,7 @@ export default function BottomNavBar() {
           borderTopWidth: 1,
           borderTopColor: isDark ? semantic.border.accent : HERITAGE.amberMid,
           borderColor: isDark ? semantic.border.subtle : colors.border,
-          backgroundColor: isDark ? colors.surfaceOverlay : "rgba(255,255,255,0.9)",
+          backgroundColor: isDark ? semantic.bg.overlay : semantic.commerce.premium.frost,
           paddingVertical: 7,
           paddingHorizontal: spacing.xs + 2,
           justifyContent: "space-around",
@@ -210,7 +210,7 @@ export default function BottomNavBar() {
           borderColor: isDark ? semantic.border.accent : "rgba(220, 38, 38, 0.14)",
         },
       }),
-    [colors, isDark, semantic.border.accent, semantic.border.subtle]
+    [colors, isDark, semantic.bg.overlay, semantic.commerce.premium.frost, semantic.border.accent, semantic.border.subtle]
   );
 
   if (Platform.OS === "web") {
@@ -234,8 +234,8 @@ export default function BottomNavBar() {
         <LinearGradient
           colors={
             isDark
-              ? ["rgba(248, 113, 113, 0.12)", "transparent", "transparent"]
-              : ["rgba(220, 38, 38, 0.18)", "transparent", "transparent"]
+              ? ["rgba(248, 113, 113, 0.14)", "transparent", "transparent"]
+              : ["rgba(220, 38, 38, 0.2)", "transparent", "transparent"]
           }
           locations={[0, 0.45, 1]}
           start={{ x: 0.5, y: 0 }}

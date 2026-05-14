@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import {
   fonts,
+  getSemanticColors,
   icon,
   lineHeight,
   radius,
@@ -28,8 +29,9 @@ function PremiumSectionHeaderBase({
   compact = false,
 }) {
   const { colors: c, isDark } = useTheme();
+  const semantic = getSemanticColors(c);
   const isWeb = Platform.OS === "web";
-  const styles = useMemo(() => createStyles(c, isDark, align, compact), [c, isDark, align, compact]);
+  const styles = useMemo(() => createStyles(c, semantic, isDark, align, compact), [c, semantic, isDark, align, compact]);
   const showCount = count != null && count > 0;
   const overlineText = String(overline || "").trim();
 
@@ -103,7 +105,7 @@ function PremiumSectionHeaderBase({
   );
 }
 
-function createStyles(c, isDark, align, compact) {
+function createStyles(c, semantic, isDark, align, compact) {
   const titleSize = Platform.OS === "web" ? (compact ? typography.h3 - 1 : typography.h2) : (compact ? typography.h3 - 2 : typography.h3);
   const titleSizeWeb = compact ? typography.h3 : typography.h2 + 2;
   const titleLine = compact ? lineHeight.h3 - 1 : lineHeight.h2;
@@ -216,7 +218,7 @@ function createStyles(c, isDark, align, compact) {
         : "rgba(220, 38, 38, 0.18)",
       backgroundColor: isDark
         ? "rgba(239, 68, 68, 0.1)"
-        : "rgba(255,255,255,0.82)",
+        : semantic.bg.glass,
       ...Platform.select({
         web: {
           transition: "transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease",

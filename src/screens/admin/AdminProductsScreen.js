@@ -12,7 +12,7 @@ import { deleteAdminProduct, fetchAdminProducts } from "../../services/adminServ
 import { adminPanel } from "../../theme/adminLayout";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
 import { ALCHEMY } from "../../theme/customerAlchemy";
-import { layout, radius, spacing, typography } from "../../theme/tokens";
+import { getSemanticColors, layout, radius, spacing, typography } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
 import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
@@ -58,8 +58,12 @@ function coverUri(p) {
 }
 
 export default function AdminProductsScreen({ navigation }) {
-  const { colors: c, shadowPremium } = useTheme();
-  const styles = useMemo(() => createAdminProductsStyles(c, shadowPremium), [c, shadowPremium]);
+  const { colors: c, shadowPremium, isDark } = useTheme();
+  const semantic = useMemo(() => getSemanticColors(c), [c]);
+  const styles = useMemo(
+    () => createAdminProductsStyles(c, shadowPremium, isDark, semantic),
+    [c, shadowPremium, isDark, semantic]
+  );
   const insets = useSafeAreaInsets();
   const { user, token } = useAuth();
   const [products, setProducts] = useState([]);
@@ -329,7 +333,7 @@ export default function AdminProductsScreen({ navigation }) {
   );
 }
 
-function createAdminProductsStyles(c, shadowPremium) {
+function createAdminProductsStyles(c, shadowPremium, isDark, semantic) {
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -349,6 +353,8 @@ function createAdminProductsStyles(c, shadowPremium) {
     },
     summaryCard: {
       marginBottom: spacing.md,
+      borderTopWidth: 2,
+      borderTopColor: isDark ? "rgba(248, 113, 113, 0.32)" : "rgba(220, 38, 38, 0.4)",
     },
     summaryEyebrow: {
       fontSize: 11,
@@ -394,6 +400,8 @@ function createAdminProductsStyles(c, shadowPremium) {
     },
     productCard: {
       width: "100%",
+      borderTopWidth: 1,
+      borderTopColor: semantic.border.accent,
       ...Platform.select({
         web: shadowPremium,
         default: {},
@@ -408,7 +416,7 @@ function createAdminProductsStyles(c, shadowPremium) {
       width: 56,
       height: 56,
       borderRadius: radius.md,
-      backgroundColor: c.surfaceMuted,
+      backgroundColor: semantic.bg.muted,
     },
     thumbPlaceholder: {
       alignItems: "center",

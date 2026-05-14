@@ -771,8 +771,8 @@ function ProfileSkeleton({ styles: ps }) {
 function createProfileStyles(c, isDark, layoutFlags = {}) {
   const { isDesktop = false, useStickyHeroCol = false } = layoutFlags;
   const surfaceCard = isDark ? c.surface : ALCHEMY.cardBg;
-  const goldRing = isDark ? "rgba(220, 38, 38, 0.55)" : ALCHEMY.gold;
-  const goldRingMuted = isDark ? "rgba(220, 38, 38, 0.32)" : "rgba(220, 38, 38, 0.5)";
+  const goldRing = isDark ? "rgba(248, 113, 113, 0.5)" : ALCHEMY.gold;
+  const goldRingMuted = isDark ? "rgba(248, 113, 113, 0.28)" : "rgba(220, 38, 38, 0.42)";
   const cardLift = Platform.select({
     web: {
       boxShadow: isDark
@@ -841,7 +841,7 @@ function createProfileStyles(c, isDark, layoutFlags = {}) {
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: isDark ? c.border : "rgba(100, 116, 139, 0.12)",
       borderTopWidth: 2,
-      borderTopColor: isDark ? "rgba(220, 38, 38, 0.55)" : "rgba(185, 28, 28, 0.52)",
+      borderTopColor: isDark ? "rgba(248, 113, 113, 0.44)" : "rgba(220, 38, 38, 0.46)",
       ...cardLift,
       ...Platform.select({
         web: {
@@ -985,7 +985,7 @@ function createProfileStyles(c, isDark, layoutFlags = {}) {
 
     heroEyebrow: {
       textAlign: "center",
-      color: ALCHEMY.gold,
+      color: isDark ? c.primaryBright : ALCHEMY.gold,
       fontSize: typography.overline,
       fontFamily: fonts.extrabold,
       letterSpacing: 1.7,
@@ -1045,7 +1045,7 @@ function createProfileStyles(c, isDark, layoutFlags = {}) {
       borderRadius: radius.pill,
       backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(255,255,255,0.72)",
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(220, 38, 38, 0.18)" : "rgba(63, 63, 70, 0.1)",
+      borderColor: isDark ? "rgba(248, 113, 113, 0.16)" : "rgba(63, 63, 70, 0.1)",
       maxWidth: "100%",
       flexShrink: 1,
     },

@@ -51,7 +51,7 @@ export default function CustomerScreenShell({
   const isWeb = Platform.OS === "web";
   const isAdminVariant = variant === "admin";
   const isAuthVariant = variant === "auth";
-  const showCursorSpotlight = false;
+  const showCursorSpotlight = isWeb && !reducedMotion && !isAuthVariant;
 
   const cursorX = useSharedValue(-1000);
   const cursorY = useSharedValue(-1000);
@@ -243,8 +243,8 @@ export default function CustomerScreenShell({
             styles.cursorSpotlight,
             {
               backgroundColor: isDark
-                ? "rgba(255, 234, 170, 0.05)"
-                : "rgba(255, 234, 170, 0.14)",
+                ? "rgba(248, 113, 113, 0.08)"
+                : "rgba(220, 38, 38, 0.12)",
             },
             styles.peNone,
             cursorStyle,

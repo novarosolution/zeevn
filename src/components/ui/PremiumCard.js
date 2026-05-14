@@ -2,7 +2,7 @@ import React, { memo, useMemo } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
-import { radius, spacing } from "../../theme/tokens";
+import { getSemanticColors, radius, spacing } from "../../theme/tokens";
 import { ALCHEMY, heritageBrandTrimGradientShort } from "../../theme/customerAlchemy";
 import { useTheme } from "../../context/ThemeContext";
 import useReducedMotion from "../../hooks/useReducedMotion";
@@ -40,13 +40,14 @@ function PremiumCardBase({
   const reducedMotion = useReducedMotion();
   const isWeb = Platform.OS === "web";
   const isInteractive = interactive ?? Boolean(onPress);
+  const semantic = getSemanticColors(c);
 
   const padTokens =
     typeof padding === "number" ? padding : PADDING_TOKENS[padding] ?? PADDING_TOKENS.lg;
 
   const styles = useMemo(
-    () => createStyles(c, isDark, padTokens, variant, borderless),
-    [c, isDark, padTokens, variant, borderless]
+    () => createStyles(c, semantic, isDark, padTokens, variant, borderless),
+    [c, semantic, isDark, padTokens, variant, borderless]
   );
 
   const lift = useSharedValue(0);
@@ -133,7 +134,7 @@ function PremiumCardBase({
   );
 }
 
-function createStyles(c, isDark, pad, variant, borderless) {
+function createStyles(c, semantic, isDark, pad, variant, borderless) {
   const muted = variant === "muted";
   const elevated = variant === "elevated";
   const flat = variant === "flat";
@@ -141,7 +142,7 @@ function createStyles(c, isDark, pad, variant, borderless) {
   const hero = variant === "hero";
   const panel = variant === "panel";
   const accent = variant === "accent";
-  const premiumSurface = isDark ? c.surfaceElevated || c.surface : c.surfaceElevated || ALCHEMY.cardBg;
+  const premiumSurface = semantic.bg.elevated || c.surfaceElevated || c.surface || ALCHEMY.cardBg;
 
   return StyleSheet.create({
     outer: {
@@ -169,9 +170,7 @@ function createStyles(c, isDark, pad, variant, borderless) {
         ? isDark
           ? "rgba(248, 113, 113, 0.35)"
           : "rgba(220, 38, 38, 0.2)"
-        : isDark
-          ? c.border
-          : c.border,
+        : semantic.border.subtle,
       overflow: Platform.OS === "web" ? "visible" : "hidden",
       position: "relative",
       borderTopWidth: borderless ? 0 : Platform.OS === "web" ? (hero ? 2 : 1) : 1,

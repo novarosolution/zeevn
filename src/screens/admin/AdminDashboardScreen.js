@@ -460,7 +460,7 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
       left: 0,
       right: 0,
       height: 3,
-      backgroundColor: ALCHEMY.gold,
+      backgroundColor: c.primary,
       opacity: 0.95,
       zIndex: 2,
     },
@@ -469,7 +469,7 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
       width: 140,
       height: 140,
       borderRadius: 70,
-      backgroundColor: "rgba(212,175,55,0.12)",
+      backgroundColor: isDark ? "rgba(248,113,113,0.14)" : "rgba(220,38,38,0.12)",
       top: -36,
       right: -24,
     },
@@ -478,7 +478,7 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
       width: 100,
       height: 100,
       borderRadius: 50,
-      backgroundColor: "rgba(52,211,153,0.14)",
+      backgroundColor: isDark ? "rgba(96,165,250,0.12)" : "rgba(37,99,235,0.1)",
       bottom: 20,
       left: -16,
     },
@@ -512,7 +512,7 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
     },
     heroBackLight: {
       borderColor: ALCHEMY.pillInactive,
-      backgroundColor: ALCHEMY.creamAlt,
+      backgroundColor: c.frostTint || ALCHEMY.creamAlt,
     },
     heroBackTextLight: {
       color: ALCHEMY.brown,
@@ -579,7 +579,7 @@ function createAdminDashboardStyles(c, shadowLift, shadowPremium, isDark) {
     mainCardLight: {
       backgroundColor: ALCHEMY.cardBg,
       borderColor: ALCHEMY.pillInactive,
-      borderTopColor: ALCHEMY.gold,
+      borderTopColor: c.primary,
     },
     sectionOverline: {
       fontSize: typography.overline,

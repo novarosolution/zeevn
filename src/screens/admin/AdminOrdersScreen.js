@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -35,7 +34,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
 import { adminPanel } from "../../theme/adminLayout";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
-import { layout, radius, spacing } from "../../theme/tokens";
+import { getSemanticColors, layout, radius, spacing } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
 import {
   ALL_ORDER_STATUSES,
@@ -49,6 +48,7 @@ import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumChip from "../../components/ui/PremiumChip";
+import PremiumConfirmDialog from "../../components/ui/PremiumConfirmDialog";
 
 const STATUSES = ["all", ...ALL_ORDER_STATUSES];
 
@@ -131,10 +131,15 @@ export default function AdminOrdersScreen({ navigation, route }) {
   const [busyOrderId, setBusyOrderId] = useState("");
   const [editFormsByOrder, setEditFormsByOrder] = useState({});
   const [deliveryPartners, setDeliveryPartners] = useState([]);
+  const [confirmDeleteOrderId, setConfirmDeleteOrderId] = useState("");
   const [renderCount, setRenderCount] = useState(30);
 
   const { colors: c, shadowPremium } = useTheme();
-  const styles = useMemo(() => createAdminOrdersStyles(c, shadowPremium), [c, shadowPremium]);
+  const semantic = useMemo(() => getSemanticColors(c), [c]);
+  const styles = useMemo(
+    () => createAdminOrdersStyles(c, shadowPremium, semantic),
+    [c, shadowPremium, semantic]
+  );
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
 
@@ -249,27 +254,19 @@ export default function AdminOrdersScreen({ navigation, route }) {
   };
 
   const handleDelete = async (orderId) => {
-    Alert.alert("Delete Order", "This action will remove the order permanently.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            setBusyOrderId(orderId);
-            setError("");
-            setSuccess("");
-            await deleteAdminOrder(token, orderId);
-            setSuccess("Order deleted successfully.");
-            await loadOrders();
-          } catch (err) {
-            setError(err.message || "Unable to delete order.");
-          } finally {
-            setBusyOrderId("");
-          }
-        },
-      },
-    ]);
+    try {
+      setBusyOrderId(orderId);
+      setError("");
+      setSuccess("");
+      await deleteAdminOrder(token, orderId);
+      setSuccess("Order deleted successfully.");
+      await loadOrders();
+    } catch (err) {
+      setError(err.message || "Unable to delete order.");
+    } finally {
+      setBusyOrderId("");
+      setConfirmDeleteOrderId("");
+    }
   };
 
   const getOrderEditForm = (order) => {
@@ -785,7 +782,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                     size="sm"
                     loading={busyOrderId === item._id}
                     disabled={busyOrderId === item._id}
-                    onPress={() => handleDelete(item._id)}
+                    onPress={() => setConfirmDeleteOrderId(item._id)}
                   />
                 </View>
               </PremiumCard>
@@ -814,11 +811,21 @@ export default function AdminOrdersScreen({ navigation, route }) {
         <AppFooter />
       </MotionScrollView>
       </KeyboardAvoidingView>
+      <PremiumConfirmDialog
+        visible={Boolean(confirmDeleteOrderId)}
+        title="Delete this order?"
+        message="This permanently deletes the order record. This action cannot be undone."
+        confirmLabel="Delete order"
+        confirmVariant="danger"
+        busy={busyOrderId === confirmDeleteOrderId}
+        onCancel={() => setConfirmDeleteOrderId("")}
+        onConfirm={() => handleDelete(confirmDeleteOrderId)}
+      />
     </CustomerScreenShell>
   );
 }
 
-function createAdminOrdersStyles(c, shadowPremium) {
+function createAdminOrdersStyles(c, shadowPremium, semantic) {
   return StyleSheet.create({
   screen: {
     flex: 1,
@@ -835,6 +842,8 @@ function createAdminOrdersStyles(c, shadowPremium) {
   },
   orderCardShell: {
     width: "100%",
+    borderTopWidth: 1,
+    borderTopColor: semantic.border.accent,
   },
   bannerSpacer: {
     marginBottom: spacing.sm,
@@ -849,9 +858,9 @@ function createAdminOrdersStyles(c, shadowPremium) {
     flex: 1,
     minWidth: 90,
     borderWidth: 1,
-    borderColor: c.border,
+    borderColor: semantic.border.subtle,
     borderRadius: radius.md,
-    backgroundColor: c.surfaceMuted,
+    backgroundColor: semantic.bg.muted,
     paddingVertical: spacing.sm,
     alignItems: "center",
   },
@@ -986,7 +995,7 @@ function createAdminOrdersStyles(c, shadowPremium) {
     marginTop: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: c.border,
+    borderTopColor: semantic.border.divider,
     gap: spacing.xs,
   },
   sectionTitleRow: {

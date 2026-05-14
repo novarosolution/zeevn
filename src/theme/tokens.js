@@ -137,6 +137,15 @@ export const lightColors = {
   heroGlow: "rgba(220, 38, 38, 0.12)",
   heroGlowSecondary: "rgba(37, 99, 235, 0.08)",
   dividerSoft: "rgba(15, 23, 42, 0.08)",
+  frostTint: "rgba(255,255,255,0.76)",
+  premiumScrim: "rgba(15,23,42,0.04)",
+  price: "#0F172A",
+  priceMuted: "#475569",
+  discount: "#B91C1C",
+  trust: "#166534",
+  rating: "#B45309",
+  ctaStart: "#EF4444",
+  ctaEnd: "#B91C1C",
 };
 
 /** Dark — red accent on elevated zinc surfaces */
@@ -186,6 +195,15 @@ export const darkColors = {
   heroGlow: "rgba(239, 68, 68, 0.13)",
   heroGlowSecondary: "rgba(96, 165, 250, 0.08)",
   dividerSoft: "rgba(248,250,252,0.1)",
+  frostTint: "rgba(11,17,32,0.74)",
+  premiumScrim: "rgba(0,0,0,0.24)",
+  price: "#F8FAFC",
+  priceMuted: "#CBD5E1",
+  discount: "#F87171",
+  trust: "#4ADE80",
+  rating: "#FDBA74",
+  ctaStart: "#F87171",
+  ctaEnd: "#DC2626",
 };
 
 export const colors = lightColors;
@@ -317,7 +335,33 @@ export const semanticText = {
   },
 };
 
+/** Shared commerce-specific semantic roles for product/order UI. */
+export function getCommerceSemantic(c) {
+  return {
+    pricing: {
+      price: c.price ?? c.textPrimary,
+      muted: c.priceMuted ?? c.textSecondary,
+      discount: c.discount ?? c.danger,
+    },
+    trust: {
+      positive: c.trust ?? c.success,
+      rating: c.rating ?? c.accentGold,
+      info: c.info,
+    },
+    cta: {
+      start: c.ctaStart ?? c.primaryBright,
+      end: c.ctaEnd ?? c.primaryDark,
+      text: c.onPrimary,
+    },
+    premium: {
+      frost: c.frostTint ?? c.surfaceGlass,
+      scrim: c.premiumScrim ?? c.surfaceOverlay,
+    },
+  };
+}
+
 export function getSemanticColors(c) {
+  const commerce = getCommerceSemantic(c);
   return {
     bg: {
       page: c.background,
@@ -353,6 +397,7 @@ export function getSemanticColors(c) {
       heroGlow: c.heroGlow ?? c.primarySoft,
       heroGlowSecondary: c.heroGlowSecondary ?? c.secondarySoft,
     },
+    commerce,
   };
 }
 

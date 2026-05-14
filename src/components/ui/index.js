@@ -14,3 +14,4 @@ export { default as PremiumStickyBar } from "./PremiumStickyBar";
 export { default as PremiumSwitch } from "./PremiumSwitch";
 export { default as CollapsibleSection } from "./CollapsibleSection";
 export { default as InteractiveListRow } from "./InteractiveListRow";
+export { default as PremiumConfirmDialog } from "./PremiumConfirmDialog";

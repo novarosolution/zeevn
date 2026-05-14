@@ -3,17 +3,18 @@ import { Platform, StyleSheet, Text, View, useWindowDimensions } from "react-nat
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
 import { FONT_DISPLAY, HERITAGE, heritageHairlineGradient } from "../../theme/customerAlchemy";
-import { spacing, typography } from "../../theme/tokens";
+import { getSemanticColors, spacing, typography } from "../../theme/tokens";
 
 /**
  * Shared title + subtitle for admin tool screens (matches customer display weight).
  */
 export default function AdminPageHeading({ title, subtitle, right }) {
   const { colors: c, isDark } = useTheme();
+  const semantic = getSemanticColors(c);
   const { width } = useWindowDimensions();
   const isCompact = width < 720;
   const isWeb = Platform.OS === "web";
-  const styles = useMemo(() => createStyles(c, isDark, { isCompact }), [c, isDark, isCompact]);
+  const styles = useMemo(() => createStyles(c, semantic, isDark, { isCompact }), [c, semantic, isDark, isCompact]);
 
   return (
     <View style={styles.wrap}>
@@ -41,7 +42,7 @@ export default function AdminPageHeading({ title, subtitle, right }) {
   );
 }
 
-function createStyles(_c, isDark, layoutFlags = {}) {
+function createStyles(_c, semantic, isDark, layoutFlags = {}) {
   const { isCompact = false } = layoutFlags;
   return StyleSheet.create({
     wrap: {
@@ -66,6 +67,8 @@ function createStyles(_c, isDark, layoutFlags = {}) {
       marginTop: spacing.xs - 2,
       fontSize: typography.bodySmall,
       lineHeight: 20,
+      maxWidth: 720,
+      color: semantic.text.secondary,
     },
     right: {
       flexShrink: 0,

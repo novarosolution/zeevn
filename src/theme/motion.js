@@ -11,10 +11,11 @@ import { Easing } from "react-native-reanimated";
 
 /** Durations in milliseconds. Web/native both consume these. */
 export const motionDuration = {
+  instant: 120,
   fast: 180,
-  base: 320,
-  slow: 520,
-  cinematic: 720,
+  base: 280,
+  slow: 460,
+  cinematic: 660,
 };
 
 /**
@@ -23,6 +24,11 @@ export const motionDuration = {
  * - `gsap` is the matching GSAP token.
  */
 export const motionEasing = {
+  standard: {
+    bezier: [0.2, 0.8, 0.2, 1],
+    gsap: "power2.out",
+    reanimated: Easing.bezier(0.2, 0.8, 0.2, 1),
+  },
   outQuint: {
     bezier: [0.22, 1, 0.36, 1],
     gsap: "expo.out",
@@ -58,9 +64,9 @@ export const motionSpring = {
 /** Stagger choreography. */
 export const motionStagger = {
   /** Gap between consecutive child reveals (ms). */
-  gap: 52,
+  gap: 44,
   /** Initial delay before the first child reveals (ms). */
-  initialDelay: 48,
+  initialDelay: 36,
   /** Hard cap so 30-item lists don't take 2s to finish. */
   maxIndex: 10,
 };

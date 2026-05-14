@@ -1779,7 +1779,7 @@ export default function MyOrdersScreen({ navigation, route }) {
 
 function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
   const { isPhoneCompact = false } = layoutFlags;
-  const outlineBorder = isDark ? c.border : ALCHEMY.pillInactive;
+  const outlineBorder = isDark ? c.border : "rgba(148, 163, 184, 0.3)";
   return StyleSheet.create({
   screen: {
     flex: 1,
@@ -1850,7 +1850,7 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     padding: spacing.md,
     borderRadius: semanticRadius.card,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.border : ALCHEMY.pillInactive,
+    borderColor: outlineBorder,
     backgroundColor: isDark ? c.surface : ALCHEMY.cardBg,
     gap: 6,
     ...Platform.select({
@@ -1907,14 +1907,14 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     justifyContent: "center",
     backgroundColor: isDark ? c.surface : ALCHEMY.cardBg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.border : ALCHEMY.pillInactive,
+    borderColor: outlineBorder,
   },
   panel: {
     ...customerPanel(c, shadowPremium, isDark),
     marginBottom: spacing.lg,
     overflow: "hidden",
     borderLeftWidth: 3,
-    borderLeftColor: isDark ? c.primaryBorder : ALCHEMY.gold,
+    borderLeftColor: isDark ? "rgba(248, 113, 113, 0.44)" : "rgba(220, 38, 38, 0.52)",
   },
   emptyPanel: {
     padding: 0,

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppFooter from "../../components/AppFooter";
 import CustomerScreenShell from "../../components/CustomerScreenShell";
@@ -17,18 +17,23 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import { adminPanel } from "../../theme/adminLayout";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
-import { layout, radius, spacing } from "../../theme/tokens";
+import { getSemanticColors, layout, radius, spacing } from "../../theme/tokens";
 import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumChip from "../../components/ui/PremiumChip";
+import PremiumConfirmDialog from "../../components/ui/PremiumConfirmDialog";
 import { ADMIN_SCREEN_COPY } from "../../content/appContent";
 
 export default function AdminUsersScreen({ navigation }) {
   const { colors: c, shadowPremium } = useTheme();
-  const styles = useMemo(() => createAdminUsersStyles(c, shadowPremium), [c, shadowPremium]);
+  const semantic = useMemo(() => getSemanticColors(c), [c]);
+  const styles = useMemo(
+    () => createAdminUsersStyles(c, shadowPremium, semantic),
+    [c, shadowPremium, semantic]
+  );
   const insets = useSafeAreaInsets();
   const { token, user } = useAuth();
   const [users, setUsers] = useState([]);
@@ -38,6 +43,7 @@ export default function AdminUsersScreen({ navigation }) {
   const [success, setSuccess] = useState("");
   const [expandedUserId, setExpandedUserId] = useState("");
   const [busyUserId, setBusyUserId] = useState("");
+  const [confirmDeleteUserId, setConfirmDeleteUserId] = useState("");
   const [renderCount, setRenderCount] = useState(40);
 
   const loadUsers = useCallback(async () => {
@@ -177,27 +183,19 @@ export default function AdminUsersScreen({ navigation }) {
   };
 
   const handleDelete = async (id) => {
-    Alert.alert("Delete User", "This account will be removed permanently.", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            setBusyUserId(id);
-            setError("");
-            setSuccess("");
-            await deleteAdminUser(token, id);
-            setSuccess("User deleted successfully.");
-            await loadUsers();
-          } catch (err) {
-            setError(err.message || "Unable to delete user.");
-          } finally {
-            setBusyUserId("");
-          }
-        },
-      },
-    ]);
+    try {
+      setBusyUserId(id);
+      setError("");
+      setSuccess("");
+      await deleteAdminUser(token, id);
+      setSuccess("User deleted successfully.");
+      await loadUsers();
+    } catch (err) {
+      setError(err.message || "Unable to delete user.");
+    } finally {
+      setBusyUserId("");
+      setConfirmDeleteUserId("");
+    }
   };
 
   return (
@@ -350,7 +348,7 @@ export default function AdminUsersScreen({ navigation }) {
                     iconLeft="trash-outline"
                     variant="danger"
                     size="sm"
-                    onPress={() => handleDelete(item._id)}
+                    onPress={() => setConfirmDeleteUserId(item._id)}
                     disabled={busyUserId === item._id}
                   />
                 </View>
@@ -409,11 +407,21 @@ export default function AdminUsersScreen({ navigation }) {
         </View>
         <AppFooter />
       </MotionScrollView>
+      <PremiumConfirmDialog
+        visible={Boolean(confirmDeleteUserId)}
+        title="Delete user account?"
+        message="This action permanently removes the user account and cannot be undone."
+        confirmLabel="Delete user"
+        confirmVariant="danger"
+        busy={busyUserId === confirmDeleteUserId}
+        onCancel={() => setConfirmDeleteUserId("")}
+        onConfirm={() => handleDelete(confirmDeleteUserId)}
+      />
     </CustomerScreenShell>
   );
 }
 
-function createAdminUsersStyles(c, shadowPremium) {
+function createAdminUsersStyles(c, shadowPremium, semantic) {
   return StyleSheet.create({
   screen: {
     flex: 1,
@@ -441,9 +449,9 @@ function createAdminUsersStyles(c, shadowPremium) {
     flex: 1,
     minWidth: 90,
     borderWidth: 1,
-    borderColor: c.border,
+    borderColor: semantic.border.subtle,
     borderRadius: radius.md,
-    backgroundColor: c.surfaceMuted,
+    backgroundColor: semantic.bg.muted,
     paddingVertical: spacing.sm,
     alignItems: "center",
   },
@@ -480,6 +488,8 @@ function createAdminUsersStyles(c, shadowPremium) {
   },
   cardWrap: {
     width: "100%",
+    borderTopWidth: 1,
+    borderTopColor: semantic.border.accent,
   },
   cardTopRow: {
     flexDirection: "row",
@@ -515,7 +525,7 @@ function createAdminUsersStyles(c, shadowPremium) {
     marginTop: spacing.sm,
     paddingTop: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: c.border,
+    borderTopColor: semantic.border.divider,
     gap: spacing.xs,
   },
   sectionTitleRow: {

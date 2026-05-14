@@ -70,11 +70,11 @@ export function heritageHairlineGradient(isDark) {
 export function getCustomerShellGradient(isDark, themeColors) {
   const c = themeColors;
   if (isDark) {
-    return ["#060A12", "#0B1120", "#141B2B", c.backgroundGradientEnd];
+    return ["#050B16", "#0B1120", "#131C2F", c.backgroundGradientEnd];
   }
   return [
-    "#FFFDFC",
-    ALCHEMY.creamHighlight,
+    "#FFFFFF",
+    c.frostTint || ALCHEMY.creamHighlight,
     ALCHEMY.cream,
     c.backgroundGradientEnd || ALCHEMY.creamDeep,
   ];

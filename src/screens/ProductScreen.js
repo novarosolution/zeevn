@@ -751,7 +751,7 @@ function createProductStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     overflow: "hidden",
     padding: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: isDark ? "rgba(220, 38, 38, 0.35)" : "rgba(185, 28, 28, 0.42)",
+    borderTopColor: isDark ? "rgba(248, 113, 113, 0.32)" : "rgba(220, 38, 38, 0.3)",
     ...panelLift,
   },
   /** Accent top edge when product matches home shelf (e.g. Ghee). */
@@ -762,7 +762,7 @@ function createProductStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: isDark ? "#1C1917" : ALCHEMY.creamAlt,
+    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
     position: "relative",
     ...Platform.select({
       web: {
@@ -781,7 +781,7 @@ function createProductStyles(c, shadowPremium, isDark, layoutFlags = {}) {
   },
   imageFallback: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: isDark ? "#1C1917" : ALCHEMY.creamAlt,
+    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
@@ -814,7 +814,7 @@ function createProductStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     paddingHorizontal: spacing.sm + 1,
     paddingVertical: 7,
     borderRadius: radius.pill,
-    backgroundColor: isDark ? "rgba(32, 28, 24, 0.88)" : "rgba(59, 37, 14, 0.74)",
+    backgroundColor: isDark ? "rgba(15, 23, 42, 0.82)" : "rgba(15, 23, 42, 0.74)",
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(255,232,184,0.28)",
     ...Platform.select({
@@ -826,7 +826,7 @@ function createProductStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     }),
   },
   heroTagText: {
-    color: "#FFF7E6",
+    color: "#F8FAFC",
     fontSize: typography.caption,
     fontFamily: fonts.extrabold,
     letterSpacing: 0.35,
@@ -857,7 +857,7 @@ function createProductStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: radius.pill,
-    backgroundColor: isDark ? "rgba(32, 28, 24, 0.88)" : "rgba(255,255,255,0.92)",
+    backgroundColor: isDark ? "rgba(11, 17, 32, 0.84)" : "rgba(255,255,255,0.92)",
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.95)",
     ...Platform.select({

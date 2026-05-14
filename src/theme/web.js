@@ -2,9 +2,9 @@ import { Platform } from "react-native";
 import { ALCHEMY, HERITAGE } from "./customerAlchemy";
 
 /** Fixed top bar height on web — slimmer so content starts sooner. */
-export const WEB_HEADER_HEIGHT = 64;
+export const WEB_HEADER_HEIGHT = 66;
 /** Shared top offset for sticky page chrome below fixed header. */
-export const WEB_STICKY_TOP_OFFSET = WEB_HEADER_HEIGHT + 14;
+export const WEB_STICKY_TOP_OFFSET = WEB_HEADER_HEIGHT + 16;
 /** Shared z-index ladder to prevent header/dropdown overlap bugs. */
 export const WEB_Z_INDEX = {
   header: 1000,
@@ -93,8 +93,9 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
         color: inherit;
       }
       *:focus-visible {
-        outline: 2px solid rgba(220, 38, 38, 0.45);
-        outline-offset: 3px;
+        outline: 2px solid rgba(220, 38, 38, 0.38);
+        outline-offset: 2px;
+        border-radius: 12px;
       }
       a, button, [role="button"], [role="tab"] {
         transition: box-shadow 180ms ease, opacity 180ms ease, background-color 180ms ease, border-color 180ms ease;

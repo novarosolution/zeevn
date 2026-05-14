@@ -266,14 +266,14 @@ export default function WebAppHeader({ navigationRef }) {
           styles.glassInner,
           {
             backgroundColor: isDark ? colors.surfaceOverlay : "rgba(255,255,255,0.94)",
-            borderBottomColor: isDark ? semantic.border.divider || semantic.border.subtle : colors.border,
+            borderBottomColor: isDark ? semantic.border.divider || semantic.border.subtle : semantic.border.subtle,
           },
           compact ? styles.glassInnerCompact : null,
           Platform.OS === "web" ? shadowPremium : shadowLift,
         ]}
       >
         <LinearGradient
-          colors={[colors.primaryBright, colors.primary, colors.primaryDark, colors.navy]}
+          colors={[semantic.commerce.cta.start, colors.primary, semantic.commerce.cta.end, colors.navy]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
           style={[styles.chromeTopAccent, styles.peNone]}

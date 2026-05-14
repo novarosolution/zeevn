@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -156,7 +156,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
     try {
       await exportAnalyticsReport(analytics);
     } catch (err) {
-      Alert.alert("Export failed", err.message || "Could not export report.");
+      setError(err.message || "Could not export report.");
     }
   }, [analytics]);
 
@@ -165,7 +165,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
     try {
       await exportAnalyticsCsv(analytics);
     } catch (err) {
-      Alert.alert("Export failed", err.message || "Could not export CSV.");
+      setError(err.message || "Could not export CSV.");
     }
   }, [analytics]);
 
@@ -955,7 +955,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     left: 0,
     right: 0,
     height: 3,
-    backgroundColor: ALCHEMY.gold,
+    backgroundColor: c.primary,
     opacity: 0.95,
     zIndex: 2,
   },
@@ -964,7 +964,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     marginBottom: spacing.md,
     backgroundColor: cardBg,
     borderColor: hairline,
-    borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
+    borderTopColor: isDark ? c.primaryBorder : c.primary,
     ...Platform.select({
       web: {
         padding: spacing.lg + 6,
@@ -1059,7 +1059,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     alignItems: "center",
     gap: spacing.sm,
     borderTopWidth: 2,
-    borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
+    borderTopColor: isDark ? c.primaryBorder : c.primary,
     ...themeShadowLift,
   },
   summaryPillSecondary: {
@@ -1109,7 +1109,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
   },
   heroIconWrapLight: {
     borderColor: ALCHEMY.pillInactive,
-    backgroundColor: ALCHEMY.creamAlt,
+    backgroundColor: c.frostTint || ALCHEMY.creamAlt,
   },
   heroTextCol: {
     flex: 1,

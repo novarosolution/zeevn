@@ -12,7 +12,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { fonts, icon, radius, typography } from "../../theme/tokens";
+import { fonts, getSemanticColors, icon, radius, semanticRadius, typography } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import useReducedMotion from "../../hooks/useReducedMotion";
 
@@ -59,6 +59,7 @@ function PremiumButtonBase({
   const isGhost = variant === "ghost";
   const isDanger = variant === "danger";
   const isSubtle = variant === "subtle";
+  const semantic = getSemanticColors(c);
 
   const scale = useSharedValue(1);
   const lift = useSharedValue(0);
@@ -132,10 +133,8 @@ function PremiumButtonBase({
 
   const gradientColors = useMemo(() => {
     if (disabled || loading) return isDark ? ["#71717A", "#52525B", "#3F3F46"] : ["#A1A1AA", "#71717A", "#52525B"];
-    return isDark
-      ? [c.primaryBright, c.primary, c.primaryDark]
-      : ["#D94444", c.primary, c.primaryDark];
-  }, [disabled, loading, isDark, c.primary, c.primaryBright, c.primaryDark]);
+    return [semantic.commerce.cta.start, c.primary, semantic.commerce.cta.end];
+  }, [disabled, loading, semantic.commerce.cta.start, semantic.commerce.cta.end, c.primary, isDark]);
 
   const textNode = resolvedLabel != null
     ? <Text style={[styles.text, { color: variantTextColor }, textStyle]} numberOfLines={1}>{resolvedLabel}</Text>
@@ -283,7 +282,7 @@ function createStyles(c, isDark, t, fullWidth) {
       left: -5,
       right: -5,
       bottom: -5,
-      borderRadius: Platform.OS === "web" ? radius.pill : radius.lg,
+      borderRadius: Platform.OS === "web" ? radius.pill : semanticRadius.control,
       ...Platform.select({
         web: { filter: "blur(8px)" },
         default: {},
@@ -294,7 +293,7 @@ function createStyles(c, isDark, t, fullWidth) {
       pointerEvents: "none",
     },
     press: {
-      borderRadius: Platform.OS === "web" ? radius.pill : radius.lg,
+      borderRadius: Platform.OS === "web" ? radius.pill : semanticRadius.control,
       overflow: "visible",
       minHeight: t.height,
       minWidth: 0,
@@ -307,7 +306,7 @@ function createStyles(c, isDark, t, fullWidth) {
       }),
     },
     gradient: {
-      borderRadius: Platform.OS === "web" ? radius.pill : radius.lg,
+      borderRadius: Platform.OS === "web" ? radius.pill : semanticRadius.control,
       paddingVertical: t.padV,
       paddingHorizontal: t.padH,
       borderWidth: 1,
@@ -332,7 +331,7 @@ function createStyles(c, isDark, t, fullWidth) {
       }),
     },
     surfaceShell: {
-      borderRadius: Platform.OS === "web" ? radius.pill : radius.lg,
+      borderRadius: Platform.OS === "web" ? radius.pill : semanticRadius.control,
       paddingVertical: t.padV,
       paddingHorizontal: t.padH,
       borderWidth: 1,

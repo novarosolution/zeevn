@@ -49,6 +49,7 @@ function createStyles(c, isDark, semantic) {
         web: {
           cursor: "pointer",
           transition: "background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease",
+          backdropFilter: "blur(8px)",
         },
         default: {},
       }),

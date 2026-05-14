@@ -170,6 +170,7 @@ export const adminPageScrollBase = {
 
 /** Vertical rhythm between major blocks on inner pages (pairs with `ScreenPageHeader` flush bottom margin). */
 export const CUSTOMER_INNER_PAGE_GAP = spacing.md + 2;
+export const CUSTOMER_PREMIUM_SECTION_GAP = spacing.lg;
 
 /**
  * Standard `MotionScrollView` / `ScrollView` content for logged-in inner pages: gutters, safe padding,
@@ -183,7 +184,7 @@ export function customerInnerPageScrollContent(insets, extra = {}) {
     {
       paddingTop: customerScrollPaddingTop(insets),
       paddingBottom: customerScrollPaddingBottom(insets),
-      gap: CUSTOMER_INNER_PAGE_GAP,
+      gap: CUSTOMER_PREMIUM_SECTION_GAP,
       ...Platform.select({
         web: { flexGrow: 1 },
         default: {},
@@ -200,7 +201,7 @@ export function adminInnerPageScrollContent(insets, extra = {}) {
     {
       paddingTop: customerScrollPaddingTop(insets),
       paddingBottom: adminScrollPaddingBottom(insets),
-      gap: CUSTOMER_INNER_PAGE_GAP,
+      gap: CUSTOMER_PREMIUM_SECTION_GAP,
       ...Platform.select({
         web: { flexGrow: 1 },
         default: {},

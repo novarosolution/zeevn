@@ -1092,7 +1092,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       overflow: "hidden",
       borderWidth: StyleSheet.hairlineWidth,
       borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: isDark ? "rgba(248, 113, 113, 0.42)" : "rgba(220, 38, 38, 0.38)",
+      borderTopColor: isDark ? "rgba(248, 113, 113, 0.36)" : "rgba(220, 38, 38, 0.3)",
       marginBottom: spacing.md,
       ...Platform.select({
         ios: {
@@ -1116,8 +1116,8 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       }),
     },
     headerAmbientCardLight: {
-      borderColor: "rgba(100, 116, 139, 0.16)",
-      backgroundColor: "rgba(255, 255, 255, 0.95)",
+      borderColor: "rgba(100, 116, 139, 0.14)",
+      backgroundColor: c.frostTint || "rgba(255, 255, 255, 0.95)",
       ...Platform.select({
         web: {
           backdropFilter: "blur(20px)",
@@ -1128,8 +1128,8 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       }),
     },
     headerAmbientCardDark: {
-      borderColor: "rgba(185, 28, 28, 0.2)",
-      backgroundColor: Platform.OS === "web" ? "rgba(28, 25, 23, 0.58)" : "transparent",
+      borderColor: "rgba(185, 28, 28, 0.14)",
+      backgroundColor: Platform.OS === "web" ? "rgba(11, 17, 32, 0.62)" : "transparent",
     },
     headerAmbientSheen: {
       position: "absolute",
@@ -1303,7 +1303,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(100, 116, 139, 0.14)",
       borderTopWidth: 3,
-      borderTopColor: isDark ? "rgba(185, 28, 28, 0.55)" : "rgba(185, 28, 28, 0.75)",
+      borderTopColor: isDark ? "rgba(248, 113, 113, 0.44)" : "rgba(220, 38, 38, 0.62)",
       ...Platform.select({
         web: {
           width: "100%",
@@ -1330,7 +1330,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       position: "relative",
       width: "100%",
       justifyContent: "flex-end",
-      backgroundColor: "#141210",
+      backgroundColor: isDark ? "#0B1120" : "#111827",
       overflow: "hidden",
       padding: Platform.select({ web: spacing.md, default: spacing.sm }),
     },

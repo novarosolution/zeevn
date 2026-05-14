@@ -1,7 +1,7 @@
 import React, { memo, useMemo } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
+import { fonts, getSemanticColors, icon, radius, spacing, typography } from "../../theme/tokens";
 import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { useTheme } from "../../context/ThemeContext";
 import PremiumButton from "./PremiumButton";
@@ -27,7 +27,8 @@ function PremiumEmptyStateBase({
   style,
 }) {
   const { colors: c, isDark } = useTheme();
-  const styles = useMemo(() => createStyles(c, isDark, compact), [c, isDark, compact]);
+  const semantic = getSemanticColors(c);
+  const styles = useMemo(() => createStyles(c, semantic, isDark, compact), [c, semantic, isDark, compact]);
 
   return (
     <View style={[styles.wrap, style]}>
@@ -73,7 +74,7 @@ function PremiumEmptyStateBase({
   );
 }
 
-function createStyles(c, isDark, compact) {
+function createStyles(c, semantic, isDark, compact) {
   return StyleSheet.create({
     wrap: {
       width: "100%",
@@ -90,7 +91,7 @@ function createStyles(c, isDark, compact) {
       borderRadius: radius.pill,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: isDark ? "rgba(185, 28, 28, 0.16)" : ALCHEMY.goldSoft,
+      backgroundColor: isDark ? "rgba(185, 28, 28, 0.16)" : semantic.accent.heroGlow,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: isDark ? "rgba(220, 38, 38, 0.32)" : "rgba(185, 28, 28, 0.32)",
       marginBottom: spacing.xs,

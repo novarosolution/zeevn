@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { fonts, icon, lineHeight, radius, spacing, typography } from "../../theme/tokens";
+import { fonts, getSemanticColors, icon, lineHeight, radius, spacing, typography } from "../../theme/tokens";
 import { inputOutlineWeb } from "../../theme/screenLayout";
 import { useTheme } from "../../context/ThemeContext";
 import useReducedMotion from "../../hooks/useReducedMotion";
@@ -49,6 +49,7 @@ function PremiumInputBase({
   passwordToggle = false,
 }) {
   const { colors: c, isDark } = useTheme();
+  const semantic = getSemanticColors(c);
   const reducedMotion = useReducedMotion();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(Boolean(secureTextEntry));
@@ -80,7 +81,7 @@ function PremiumInputBase({
     ? c.danger
     : focused
       ? isDark ? c.primaryBright : c.primary
-      : c.border;
+      : semantic.border.subtle;
 
   const labelTopBase = multiline ? spacing.md : spacing.md;
   const labelTopFloated = multiline ? spacing.xs + 2 : spacing.xs + 4;
@@ -95,7 +96,7 @@ function PremiumInputBase({
     inputRange: [0, 1],
     outputRange: [labelCollapsedSize, labelFloatedSize],
   });
-  const labelColor = hasError ? c.danger : focused ? (isDark ? c.primaryBright : c.primaryDark) : c.textMuted;
+  const labelColor = hasError ? c.danger : focused ? (isDark ? c.primaryBright : c.primaryDark) : semantic.text.muted;
 
   const handleFocus = (e) => {
     setFocused(true);

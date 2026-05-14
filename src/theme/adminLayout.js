@@ -20,15 +20,15 @@ export function adminPanel(c, shadowPremium, isDark) {
     borderRadius: semanticRadius.panel,
     borderTopWidth: Platform.OS === "web" ? 2 : 1,
     borderTopColor: dark ? semantic.border.accent : HERITAGE.amberMid,
-    padding: Platform.OS === "web" ? spacing.lg + 2 : spacing.md + 2,
+    padding: Platform.OS === "web" ? spacing.lg + 4 : spacing.md + 2,
     ...(Platform.OS === "web" ? shadowPremium : {}),
   };
   if (Platform.OS !== "web" || !shadowPremium?.boxShadow) {
     return base;
   }
   const inset = dark
-    ? "inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.04)"
-    : "inset 0 0 0 1px rgba(226,232,240,0.85), inset 0 1px 0 rgba(255,255,255,0.95)";
+      ? "inset 0 0 0 1px rgba(255,255,255,0.05), inset 0 1px 0 rgba(255,255,255,0.04)"
+      : "inset 0 0 0 1px rgba(226,232,240,0.82), inset 0 1px 0 rgba(255,255,255,0.95)";
   return {
     ...base,
     boxShadow: `${shadowPremium.boxShadow}, ${inset}`,

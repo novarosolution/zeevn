@@ -7,6 +7,9 @@ import WebAppHeader from "../components/WebAppHeader";
 import PageTransition from "../components/motion/PageTransition";
 import HomeScreen from "../screens/HomeScreen";
 import ProductScreen from "../screens/ProductScreen";
+import CategoriesScreen from "../screens/CategoriesScreen";
+import TrustInfoScreen from "../screens/TrustInfoScreen";
+import ReviewsScreen from "../screens/ReviewsScreen";
 import CartScreen from "../screens/CartScreen";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
@@ -94,6 +97,11 @@ const WrappedLogin = withPageTransition(LoginScreen);
 const WrappedRegister = withPageTransition(RegisterScreen);
 const WrappedHome = withPageTransition(HomeScreen);
 const WrappedProduct = withPageTransition(ProductScreen);
+const WrappedCategories = withPageTransition(CategoriesScreen);
+const WrappedReviews = withPageTransition(ReviewsScreen);
+const WrappedQualityInfo = withPageTransition((props) => <TrustInfoScreen {...props} topic="quality" />);
+const WrappedProcessInfo = withPageTransition((props) => <TrustInfoScreen {...props} topic="process" />);
+const WrappedDeliveryInfo = withPageTransition((props) => <TrustInfoScreen {...props} topic="delivery" />);
 
 const ProtectedCart = withAuthGuard(CartScreen);
 const ProtectedProfile = withAuthGuard(ProfileScreen);
@@ -157,6 +165,11 @@ export default function AppNavigator({ navigationRef, navigationReady = false })
       <Stack.Group>
         <Stack.Screen name="Home" component={WrappedHome} />
         <Stack.Screen name="Product" component={WrappedProduct} />
+        <Stack.Screen name="Categories" component={WrappedCategories} />
+        <Stack.Screen name="Reviews" component={WrappedReviews} />
+        <Stack.Screen name="QualityInfo" component={WrappedQualityInfo} />
+        <Stack.Screen name="ProcessInfo" component={WrappedProcessInfo} />
+        <Stack.Screen name="DeliveryInfo" component={WrappedDeliveryInfo} />
       </Stack.Group>
 
       <Stack.Group>

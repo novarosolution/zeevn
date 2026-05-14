@@ -1,16 +1,50 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
 import HomeAmbientOrbs from "./HomeAmbientOrbs";
 import BrandWordmark from "../BrandWordmark";
 import { HERO_GRADIENT_PRESETS } from "../../constants/marketingAssets";
 import { useTheme } from "../../context/ThemeContext";
 import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { icon } from "../../theme/tokens";
-import PremiumButton from "../ui/PremiumButton";
+
+const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
+
+function getSlideOverline(slide, index) {
+  if (index === 0 || slide?.key === "heritage") return "Signature collection";
+  if (slide?.key === "purity") return "New season";
+  return "Daily pantry";
+}
+
+function HeroKenBurnsImage({ slide, reducedMotion, style }) {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (reducedMotion) {
+      scale.value = 1;
+      return;
+    }
+    scale.value = withRepeat(withTiming(1.06, { duration: 8000 }), -1, true);
+  }, [reducedMotion, scale]);
+
+  const imageAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  if (!slide?.image) return null;
+
+  return (
+    <AnimatedExpoImage
+      source={slide.image}
+      contentFit="cover"
+      transition={reducedMotion ? 0 : 180}
+      style={[style, imageAnimStyle]}
+    />
+  );
+}
 
 /**
  * Full-bleed marketing hero with slider, or compact copy-only hero when the user is searching.
@@ -31,6 +65,8 @@ export default function HomeMarketingHero({
   setHeroSlideIndex,
   goToHeroSlide,
   handleHeroSlideAction,
+  onHeroPressIn,
+  onHeroPressOut,
 }) {
   const { colors: c } = useTheme();
 
@@ -51,6 +87,9 @@ export default function HomeMarketingHero({
             scrollEventThrottle={16}
             decelerationRate={Platform.OS === "ios" ? "fast" : 0.98}
             onLayout={(e) => setHeroSliderWidth(e.nativeEvent.layout.width)}
+            onTouchStart={onHeroPressIn}
+            onTouchEnd={onHeroPressOut}
+            onScrollEndDrag={onHeroPressOut}
             onMomentumScrollEnd={(e) => {
               const pageW = e.nativeEvent.layoutMeasurement.width || heroSliderWidth || 1;
               const current = Math.round(e.nativeEvent.contentOffset.x / pageW);
@@ -63,6 +102,8 @@ export default function HomeMarketingHero({
               return (
                 <View
                   key={slide.key}
+                  accessible
+                  accessibilityLabel={`${getSlideOverline(slide, slideIndex)}. ${slide.title}. ${slide.subtitle}`}
                   style={[
                     styles.heroPremiumFill,
                     {
@@ -72,14 +113,11 @@ export default function HomeMarketingHero({
                   ]}
                 >
                   <View style={styles.heroSlideFrame}>
-                    {slide.image ? (
-                      <Image
-                        source={slide.image}
-                        contentFit="cover"
-                        transition={reducedMotion ? 0 : 180}
-                        style={styles.heroSlideMedia}
-                      />
-                    ) : null}
+                    <HeroKenBurnsImage
+                      slide={slide}
+                      reducedMotion={reducedMotion}
+                      style={styles.heroSlideMedia}
+                    />
                     <LinearGradient
                       colors={slide.image ? ["rgba(12, 10, 10, 0.18)", "rgba(12, 10, 10, 0.08)"] : gp.colors}
                       locations={slide.image ? undefined : gp.locations}
@@ -115,6 +153,8 @@ export default function HomeMarketingHero({
                     {heroSlides.length > 1 ? (
                       <View style={styles.heroNavRail}>
                         <Pressable
+                          onPressIn={onHeroPressIn}
+                          onPressOut={onHeroPressOut}
                           onPress={() => goToHeroSlide((heroSlideIndex - 1 + heroSlides.length) % heroSlides.length)}
                           style={({ pressed }) => [styles.heroNavButton, pressed ? styles.heroNavButtonPressed : null]}
                           accessibilityRole="button"
@@ -123,6 +163,8 @@ export default function HomeMarketingHero({
                           <Ionicons name="chevron-back" size={icon.md} color={c.heroForeground} />
                         </Pressable>
                         <Pressable
+                          onPressIn={onHeroPressIn}
+                          onPressOut={onHeroPressOut}
                           onPress={() => goToHeroSlide((heroSlideIndex + 1) % heroSlides.length)}
                           style={({ pressed }) => [styles.heroNavButton, pressed ? styles.heroNavButtonPressed : null]}
                           accessibilityRole="button"
@@ -138,17 +180,24 @@ export default function HomeMarketingHero({
                         color={c.heroForeground}
                         style={[styles.heroBrandLogo, styles.heroBrandLogoOnPhoto]}
                       />
+                      <Text style={styles.heroOverline}>{getSlideOverline(slide, slideIndex)}</Text>
                       <Text style={[styles.heroDisplayTitle, styles.heroDisplayOnPhoto]}>{slide.title}</Text>
-                      <Text style={[styles.heroDisplaySub, styles.heroDisplaySubOnPhoto]}>{slide.subtitle}</Text>
-                      <PremiumButton
-                        label={slide.cta}
-                        iconRight="arrow-forward"
-                        variant="primary"
-                        size={Platform.OS === "web" ? "lg" : "md"}
+                      <Text style={[styles.heroDisplaySub, styles.heroDisplaySubOnPhoto]} numberOfLines={2}>
+                        {slide.subtitle}
+                      </Text>
+                      <Pressable
+                        onPressIn={onHeroPressIn}
+                        onPressOut={onHeroPressOut}
                         onPress={() => handleHeroSlideAction(slide.action)}
-                        style={styles.heroCtaButton}
+                        style={({ pressed }) => [
+                          styles.heroEditorialCta,
+                          pressed ? styles.heroEditorialCtaPressed : null,
+                        ]}
+                        accessibilityRole="button"
                         accessibilityLabel={slide.cta}
-                      />
+                      >
+                        <Text style={styles.heroEditorialCtaText}>{slide.cta}</Text>
+                      </Pressable>
                     </View>
                     <LinearGradient
                       colors={[c.primary, c.primaryDark]}
@@ -170,6 +219,8 @@ export default function HomeMarketingHero({
                 <View style={styles.heroDotRow} accessibilityRole="tablist">
                   {heroSlides.map((s, dotIdx) => (
                     <Pressable
+                      onPressIn={onHeroPressIn}
+                      onPressOut={onHeroPressOut}
                       key={s.key}
                       onPress={() => goToHeroSlide(dotIdx)}
                       hitSlop={{ top: 10, bottom: 10, left: 6, right: 6 }}
@@ -203,7 +254,9 @@ export default function HomeMarketingHero({
       ]}
     >
       <Text style={[styles.heroTitle, { fontFamily: FONT_DISPLAY }]}>{homeViewConfig.heroTitle}</Text>
-      <Text style={styles.heroSubtext}>{homeViewConfig.heroSubtitle}</Text>
+      <Text style={styles.heroSubtext} numberOfLines={2}>
+        {homeViewConfig.heroSubtitle}
+      </Text>
     </View>
   );
 }

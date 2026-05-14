@@ -162,13 +162,22 @@ export default function ProductCard({
                 </Text>
               </View>
             )}
-            {isList && editorial && offPct != null && offPct > 0 ? (
-              <View style={[styles.listSaveBadge, { backgroundColor: c.primary }]}>
-                <Text style={[styles.listSaveBadgeText, { fontFamily: fonts.extrabold, color: c.onPrimary }]}>
+            {offPct != null && offPct > 0 ? (
+              <View style={[styles.discountBadge, { backgroundColor: c.primary }]}>
+                <Text style={[styles.discountBadgeText, { fontFamily: fonts.extrabold, color: c.onPrimary }]}>
                   {offPct}% off
                 </Text>
               </View>
             ) : null}
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => {}}
+              style={styles.wishlistBtn}
+              accessibilityRole="button"
+              accessibilityLabel={`Save ${product.name} to wishlist`}
+            >
+              <Ionicons name="heart-outline" size={icon.xs + 1} color={c.textPrimary} />
+            </TouchableOpacity>
           </View>
           {!isList && showEtaBadge ? (
             <View style={styles.etaBadge}>
@@ -877,13 +886,13 @@ function createStyles(c, isDark, layoutFlags = {}) {
       borderRadius: radius.xl + 4,
       position: "relative",
     },
-    listSaveBadge: {
+    discountBadge: {
       position: "absolute",
-      top: 10,
-      left: 10,
+      top: spacing.xs,
+      left: spacing.xs,
       zIndex: 2,
-      paddingHorizontal: 10,
-      paddingVertical: 6,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
       borderRadius: radius.pill,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: "rgba(255,252,248,0.45)",
@@ -899,9 +908,23 @@ function createStyles(c, isDark, layoutFlags = {}) {
         default: {},
       }),
     },
-    listSaveBadgeText: {
-      fontSize: 10,
-      letterSpacing: 0.45,
+    discountBadgeText: {
+      fontSize: 9,
+      letterSpacing: 0.32,
+    },
+    wishlistBtn: {
+      position: "absolute",
+      top: spacing.xs,
+      right: spacing.xs,
+      zIndex: 2,
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? "rgba(255,255,255,0.18)" : "rgba(100,116,139,0.22)",
+      backgroundColor: isDark ? "rgba(24,24,27,0.78)" : "rgba(255,255,255,0.92)",
+      alignItems: "center",
+      justifyContent: "center",
     },
     cardListEditorial: {
       borderLeftWidth: 0,
@@ -1078,9 +1101,10 @@ function createStyles(c, isDark, layoutFlags = {}) {
       justifyContent: "flex-start",
     },
     category: {
-      fontSize: typography.caption,
+      fontSize: typography.overline + 1,
       textTransform: "none",
       marginBottom: 2,
+      opacity: 0.82,
     },
     categoryGridCompact: {
       marginBottom: 1,
@@ -1101,6 +1125,7 @@ function createStyles(c, isDark, layoutFlags = {}) {
         web: isWideWeb ? 50 : 42,
         default: 42,
       }),
+      fontWeight: "500",
     },
     nameListCompact: {
       fontSize: typography.body,
@@ -1177,6 +1202,7 @@ function createStyles(c, isDark, layoutFlags = {}) {
         web: isWideWeb ? typography.h3 : typography.body + 2,
         default: typography.body + 2,
       }),
+      color: isDark ? c.textPrimary : "#111827",
     },
     priceGridCompact: {
       fontSize: typography.body + 1,

@@ -1,5 +1,5 @@
-import React from "react";
-import { Platform, Pressable, StyleSheet, TextInput, TouchableOpacity } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { Animated, Platform, Pressable, StyleSheet, TextInput, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { SEARCH_PLACEHOLDER } from "../../constants/brand";
@@ -17,9 +17,32 @@ export default function QCommerceSearchField({
   placeholder = SEARCH_PLACEHOLDER,
   onClear,
   premium = false,
+  onFocus,
+  onBlur,
+  onSubmitEditing,
+  accessibilityLabel = "Search products",
+  containerStyle,
+  inputStyle,
 }) {
   const { colors: c } = useTheme();
   const semantic = getSemanticColors(c);
+  const placeholderOpacity = useRef(new Animated.Value(1)).current;
+  const didMountRef = useRef(false);
+
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      return;
+    }
+    if (String(value || "").trim().length > 0) return;
+    placeholderOpacity.setValue(0);
+    Animated.timing(placeholderOpacity, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [placeholder, placeholderOpacity, value]);
+
   return (
     <Pressable
       style={({ hovered }) => [
@@ -56,25 +79,32 @@ export default function QCommerceSearchField({
               },
               android: { elevation: 1 },
             }),
+        containerStyle,
       ]}
     >
       <Ionicons
-        name="search"
-        size={icon.md}
+        name="search-outline"
+        size={icon.sm + 2}
         color={premium ? ALCHEMY.brownMuted : semantic.text.secondary}
         style={styles.searchIcon}
       />
-      <TextInput
-        style={[styles.input, { color: c.textPrimary, fontFamily: fonts.regular }]}
-        placeholder={placeholder}
-        placeholderTextColor={c.textMuted}
-        value={value}
-        onChangeText={onChangeText}
-        returnKeyType="search"
-        autoCorrect={false}
-        autoCapitalize="none"
-        clearButtonMode={Platform.OS === "ios" ? "while-editing" : "never"}
-      />
+      <Animated.View style={[styles.inputWrap, { opacity: placeholderOpacity }]}>
+        <TextInput
+          style={[styles.input, { color: c.textPrimary, fontFamily: fonts.regular }, inputStyle]}
+          placeholder={placeholder}
+          placeholderTextColor={semantic.text.secondary}
+          value={value}
+          onChangeText={onChangeText}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          onSubmitEditing={onSubmitEditing}
+          returnKeyType="search"
+          autoCorrect={false}
+          autoCapitalize="none"
+          clearButtonMode={Platform.OS === "ios" ? "while-editing" : "never"}
+          accessibilityLabel={accessibilityLabel}
+        />
+      </Animated.View>
       {value?.trim() && onClear ? (
         <TouchableOpacity onPress={onClear} hitSlop={10} accessibilityLabel="Clear search" style={styles.clearBtn}>
           <Ionicons name="close-circle" size={icon.md} color={semantic.text.secondary} />
@@ -107,10 +137,13 @@ const styles = StyleSheet.create({
     opacity: 0.9,
   },
   input: {
-    flex: 1,
     fontSize: typography.body,
     paddingVertical: Platform.OS === "android" ? 5 : 6,
     minHeight: Platform.OS === "web" ? 22 : undefined,
+  },
+  inputWrap: {
+    flex: 1,
+    minWidth: 0,
   },
   clearBtn: {
     borderRadius: semanticRadius.full,

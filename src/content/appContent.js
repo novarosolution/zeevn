@@ -98,9 +98,9 @@ export const PAYMENT_METHODS = [
 ];
 
 /** Fallback hero when API is offline — also seed defaults for new HomeViewConfig documents. */
-export const HOME_HERO_TITLE_DEFAULT = "Curated pantry essentials, delivered well";
+export const HOME_HERO_TITLE_DEFAULT = "Classically crafted pantry essentials";
 export const HOME_HERO_SUBTITLE_DEFAULT =
-  "Pure staples, calmer shopping, and faster doorstep delivery.";
+  "Pure ingredients, elegant shopping, and reliable doorstep delivery.";
 
 export const HOME_VIEW_DEFAULTS = {
   heroTitle: HOME_HERO_TITLE_DEFAULT,
@@ -115,46 +115,64 @@ export const HOME_VIEW_DEFAULTS = {
 
 /** Hero image card (above-the-fold marketing, not the same fields as API hero title). */
 export const HOME_HERO_BANNER = {
-  kicker: "",
-  badge: "",
-  cta: "Explore collection",
-  editorialNote: "",
+  kicker: "Signature collection",
+  badge: "New season",
+  cta: "Shop collection",
+  editorialNote: "Crafted staples with timeless quality for modern kitchens.",
   highlights: [],
 };
 
 /** Shared hero slide copy; marketing assets choose only platform-specific imagery/layout. */
 export const HOME_HERO_SLIDE_COPY = [
   {
-    key: "tradition",
-    title: "Curated pantry staples",
-    subtitle: "Pure essentials for everyday cooking.",
-    cta: "Browse catalog",
+    key: "heritage",
+    title: "Tradition in every spoon",
+    subtitle: "Small-batch staples prepared for modern homes.",
+    cta: "Shop collection",
     action: "catalog",
   },
   {
     key: "purity",
-    title: "Delivered with care",
-    subtitle: "Fast fulfilment and smoother checkout.",
-    cta: "Shop now",
+    title: "Pure, traceable, trusted",
+    subtitle: "Clean sourcing, careful handling, uncompromised quality.",
+    cta: "View best sellers",
     action: "catalog",
   },
   {
-    key: "quality",
-    title: "A better everyday basket",
-    subtitle: "Premium picks without the clutter.",
+    key: "daily",
+    title: "Daily essentials, premium standard",
+    subtitle: "A refined basket for everyday cooking and wellness.",
     cta: "See highlights",
     action: "featured",
   },
 ];
 
-/** Light-mode tagline under the home top wordmark (same voice as `APP_TAGLINE`). */
-export const HOME_WORDMARK_TAGLINE = APP_TAGLINE;
+/** Light-mode tagline under the home top wordmark. */
+export const HOME_WORDMARK_TAGLINE = "Heritage pantry essentials, delivered";
 
 /** Trust strip under the hero image (icon = Ionicons name). */
 export const HOME_TRUST_STRIP = [
-  { key: "source", label: "Curated quality", icon: "shield-checkmark-outline" },
-  { key: "batch", label: "Small-batch sourcing", icon: "leaf-outline" },
-  { key: "cod", label: "Fast doorstep delivery", icon: "car-outline" },
+  {
+    key: "quality",
+    label: "Curated quality",
+    support: "Hand-selected from trusted sources",
+    icon: "shield-checkmark-outline",
+    route: "QualityInfo",
+  },
+  {
+    key: "process",
+    label: "Small-batch crafted",
+    support: "Prepared in small batches for freshness",
+    icon: "leaf-outline",
+    route: "ProcessInfo",
+  },
+  {
+    key: "delivery",
+    label: "Doorstep delivery",
+    support: "Same-day or next-day in most areas",
+    icon: "car-outline",
+    route: "DeliveryInfo",
+  },
 ];
 
 /**
@@ -162,7 +180,7 @@ export const HOME_TRUST_STRIP = [
  * `precision` controls decimals.
  */
 export const HOME_STATS_STRIP = {
-  overline: "Trusted in real kitchens",
+  overline: "Trusted by modern families",
   items: [
     {
       key: "orders",
@@ -183,12 +201,12 @@ export const HOME_STATS_STRIP = {
       icon: "star-outline",
     },
     {
-      key: "purity",
+      key: "quality",
       target: 100,
       prefix: "",
       suffix: "%",
       precision: 0,
-      label: "Pure A2 ghee",
+      label: "Quality assurance",
       icon: "shield-checkmark-outline",
     },
   ],
@@ -241,12 +259,40 @@ export const HOME_LIVE_ORDER_CARD = {
   fallbackHint: "Follow status updates in My Orders.",
   ctaPrimary: "Track now",
   ctaSecondary: "My orders",
+  ctaTrack: "Track order",
+  stepLabels: ["Placed", "Packed", "Out", "Delivered"],
+  etaPrefix: "Arrives by",
+  etaFallback: "Arrives soon",
 };
 
 /** Catalog section intro (when not searching). */
 export const HOME_CATALOG_INTRO = {
   starter: "Start with our best picks",
   all: "Shop the essentials",
+};
+
+/** Quick category shortcuts shown on Home and Categories screen. */
+export const HOME_CATEGORY_QUICK_NAV = [
+  { key: "staples", label: "Staples", icon: "basket-outline", filter: "staples", tint: "#E5E7EB" },
+  { key: "oils", label: "Oils", icon: "water-outline", filter: "oil", tint: "#E2E8F0" },
+  { key: "spices", label: "Spices", icon: "flame-outline", filter: "spice", tint: "#F1F5F9" },
+  { key: "dairy", label: "Dairy", icon: "cafe-outline", filter: "dairy", tint: "#E7E5E4" },
+  { key: "sweets", label: "Sweets", icon: "ice-cream-outline", filter: "sweet", tint: "#F3F4F6" },
+  { key: "dryfruits", label: "Dry Fruits", icon: "leaf-outline", filter: "dry", tint: "#E2E8F0" },
+  { key: "beverages", label: "Drinks", icon: "wine-outline", filter: "beverage", tint: "#E5E7EB" },
+  { key: "wellness", label: "Wellness", icon: "fitness-outline", filter: "wellness", tint: "#E7E5E4" },
+];
+
+export const HOME_CATEGORY_UI = {
+  overline: "Browse the pantry",
+  title: "Shop by category",
+  viewAllLabel: "View all",
+};
+
+export const HOME_REORDER_STRIP = {
+  overline: "Welcome back",
+  title: "Reorder your essentials",
+  emptyHidden: true,
 };
 
 /** Shared home search + catalog copy used across web/mobile. */
@@ -265,6 +311,8 @@ export const HOME_SEARCH_UI = {
   catalogSubtitleCompact: "Quick browsing with clear add-to-cart actions.",
   sectionEmptyTitle: 'No section named "{section}".',
   sectionEmptyDescription: "Pick another section or clear the filter.",
+  categoryEmptyTitle: 'No products found for "{section}".',
+  categoryEmptyDescription: "Try another category or clear the filter.",
   sectionEmptyCta: "Clear filter",
   sectionOverlineFirst: "Featured",
   sectionOverlineOther: "More to shop",
@@ -279,6 +327,16 @@ export const HOME_SEARCH_UI = {
   emptyCatalogDescription: "Add items or adjust filters to see the catalog.",
   clearSearchCta: "Clear search",
   loadErrorFallback: "Unable to load products.",
+  searchPlaceholders: [
+    "Search saffron, ghee, basmati...",
+    "Find your weekly essentials...",
+  ],
+  recentSearchesTitle: "Recent searches",
+  recentSearchesEmpty: "No recent searches yet.",
+  locationChipA11yPrefix: "Delivery location",
+  locationEmptyLabel: "Set delivery address",
+  locationCtaShort: "Set address",
+  notificationsA11y: "Open notifications",
 };
 
 /** Suffix for the side menu “starter” row (after dynamic counts). */
@@ -370,6 +428,69 @@ export const HOME_PAGE_TRUST_BADGES = [
 ];
 
 export const HOME_PAGE_FOOTER_META = "Curated pantry essentials for modern Indian homes";
+
+/** Premium editorial footer (desktop 4 cols, tablet 2, mobile accordion). */
+export const HOME_FOOTER = {
+  newsletter: {
+    title: "Stay in the pantry",
+    subtitle: "Seasonal staples, small-batch drops, and member-only offers.",
+    inputPlaceholder: "Enter your email",
+    cta: "Subscribe",
+    success: "Thanks. You're on the list.",
+  },
+  sections: [
+    {
+      key: "shop",
+      title: "Shop",
+      links: [
+        { label: "All products", route: CUSTOMER_NAV_LINKS.home.route },
+        { label: CUSTOMER_NAV_LINKS.cart.label, route: CUSTOMER_NAV_LINKS.cart.route },
+        { label: CUSTOMER_NAV_LINKS.orders.label, route: CUSTOMER_NAV_LINKS.orders.route },
+        { label: "Categories", route: "Categories" },
+      ],
+    },
+    {
+      key: "help",
+      title: "Help",
+      links: [
+        { label: CUSTOMER_NAV_LINKS.support.label, route: CUSTOMER_NAV_LINKS.support.route },
+        { label: "Delivery", route: "ManageAddress" },
+        { label: "Track order", route: CUSTOMER_NAV_LINKS.orders.route },
+        { label: "Contact us", route: CUSTOMER_NAV_LINKS.support.route },
+      ],
+    },
+    {
+      key: "company",
+      title: "Company",
+      links: [
+        { label: "About Zeevan", route: null },
+        { label: "Our process", route: "ProcessInfo" },
+        { label: "Quality promise", route: "QualityInfo" },
+        { label: "Stories", route: "Reviews" },
+      ],
+    },
+    {
+      key: "legal",
+      title: "Legal",
+      links: [
+        { label: "Privacy policy", route: null },
+        { label: "Terms of use", route: null },
+        { label: "Refund policy", route: null },
+        { label: "Shipping policy", route: null },
+      ],
+    },
+  ],
+  social: [
+    { key: "instagram", icon: "logo-instagram", url: null },
+    { key: "facebook", icon: "logo-facebook", url: null },
+    { key: "youtube", icon: "logo-youtube", url: null },
+    { key: "x", icon: "logo-twitter", url: null },
+  ],
+  bottom: {
+    madeWithCare: "Made with care in India",
+    paymentIcons: ["card-outline", "cash-outline", "wallet-outline"],
+  },
+};
 
 /** Support screen (customer). */
 export const SUPPORT_SCREEN = {

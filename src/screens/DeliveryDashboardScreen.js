@@ -54,7 +54,7 @@ import GoldHairline from "../components/ui/GoldHairline";
 import PremiumStatCard from "../components/ui/PremiumStatCard";
 import PremiumChip from "../components/ui/PremiumChip";
 import PremiumSwitch from "../components/ui/PremiumSwitch";
-import { DELIVERY_DASHBOARD_COPY, DELIVERY_LIVE_SHARE } from "../content/appContent";
+import { APP_LOADING_UI, DELIVERY_DASHBOARD_COPY, DELIVERY_LIVE_SHARE } from "../content/appContent";
 
 /** Strip weird API payloads so we never paint encoded polylines / blobs as “address”. */
 function sanitizeAddressPart(raw, maxLen = 200) {
@@ -354,7 +354,7 @@ export default function DeliveryDashboardScreen({ navigation }) {
         variant="admin"
       >
         <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: spacing.lg }}>
-          <PremiumLoader size="md" caption="Loading your account…" />
+          <PremiumLoader size="md" caption={APP_LOADING_UI.inline.admin} />
         </View>
       </CustomerScreenShell>
     );
@@ -499,7 +499,7 @@ export default function DeliveryDashboardScreen({ navigation }) {
 
           {loading && orders.length === 0 ? (
             <View style={{ paddingVertical: spacing.lg }}>
-              <PremiumLoader size="sm" caption="Loading deliveries…" />
+              <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} />
             </View>
           ) : null}
 

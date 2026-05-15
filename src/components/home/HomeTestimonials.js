@@ -3,11 +3,13 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions,
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { fonts, icon, layout, lineHeight, spacing, typography } from "../../theme/tokens";
+import { fonts, icon, layout, spacing } from "../../theme/tokens";
 import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { HOME_TESTIMONIALS } from "../../content/appContent";
 import useGsapReveal from "../../hooks/useGsapReveal";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import { homeType } from "../../styles/typography";
+import { spacing as homeSpacing } from "../../styles/spacing";
 
 function StarRow({ rating = 5, color }) {
   return (
@@ -82,7 +84,7 @@ function TestimonialCard({ item, c, isDark, webGrid = false }) {
   );
 }
 
-export default function HomeTestimonials({ c, isDark }) {
+export default function HomeTestimonials({ c, isDark, carouselBottomPadding = 24 }) {
   const reduced = useReducedMotion();
   const { width } = useWindowDimensions();
   const navigation = useNavigation();
@@ -90,11 +92,18 @@ export default function HomeTestimonials({ c, isDark }) {
   const items = HOME_TESTIMONIALS.items || [];
   const isWebGrid = Platform.OS === "web" && width >= 1024;
   const mobileCardWidth = useMemo(() => Math.max(280, Math.min(360, width - 72)), [width]);
+  const titleSize = width >= 1024 ? 44 : width >= 640 ? 36 : 28;
+  const titleLine = width >= 1024 ? 50 : width >= 640 ? 42 : 33;
 
   return (
     <View ref={revealRef} style={styles.section}>
-      <Text style={[styles.overline, { color: c.textMuted }]}>{HOME_TESTIMONIALS.overline}</Text>
-      <Text style={[styles.title, { color: c.textPrimary }]}>{HOME_TESTIMONIALS.title}</Text>
+      <View style={styles.overlineRow}>
+        <View style={[styles.overlineDot, { backgroundColor: c.rating }]} />
+        <Text style={[styles.overline, { color: c.textMuted }]}>{HOME_TESTIMONIALS.overline}</Text>
+      </View>
+      <Text style={[styles.title, { color: c.textPrimary, fontSize: titleSize, lineHeight: titleLine, letterSpacing: -(titleSize * 0.02) }]}>
+        {HOME_TESTIMONIALS.title}
+      </Text>
 
       {isWebGrid ? (
         <View style={styles.grid}>
@@ -109,7 +118,7 @@ export default function HomeTestimonials({ c, isDark }) {
           decelerationRate={Platform.OS === "ios" ? "fast" : 0.97}
           disableIntervalMomentum
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.mobileRow}
+          contentContainerStyle={[styles.mobileRow, { paddingBottom: carouselBottomPadding }]}
         >
           {items.map((item) => (
             <View key={item.key} style={{ width: mobileCardWidth }}>
@@ -123,9 +132,9 @@ export default function HomeTestimonials({ c, isDark }) {
         onPress={() => navigation.navigate("Reviews")}
         style={({ pressed }) => [styles.readMoreLink, pressed ? { opacity: 0.76 } : null]}
         accessibilityRole="button"
-        accessibilityLabel="Read more stories"
+        accessibilityLabel={HOME_TESTIMONIALS.readMoreCta}
       >
-        <Text style={[styles.readMoreText, { color: c.primary }]}>Read more stories</Text>
+        <Text style={[styles.readMoreText, { color: c.primary }]}>{HOME_TESTIMONIALS.readMoreCta}</Text>
         <Ionicons name="chevron-forward" size={icon.xs} color={c.primary} />
       </Pressable>
     </View>
@@ -137,31 +146,41 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: layout.maxContentWidth,
     alignSelf: "center",
-    marginBottom: spacing.xl,
+    marginBottom: Platform.OS === "web" ? 72 : 56,
+  },
+  overlineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: homeSpacing.xs,
+    marginBottom: homeSpacing.sm,
+  },
+  overlineDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
   overline: {
-    fontSize: typography.overline + 1,
-    fontFamily: fonts.extrabold,
-    letterSpacing: 1.5,
+    fontSize: 11,
+    fontFamily: homeType.overline.fontFamily,
+    letterSpacing: 1.4,
     textTransform: "uppercase",
     textAlign: "center",
-    marginBottom: spacing.xs,
+    marginBottom: 0,
   },
   title: {
-    fontSize: Platform.OS === "web" ? typography.h2 + 2 : typography.h2,
-    lineHeight: Platform.OS === "web" ? 36 : 32,
-    fontFamily: FONT_DISPLAY,
-    letterSpacing: -0.4,
+    fontFamily: homeType.display.fontFamily,
     textAlign: "center",
-    marginBottom: spacing.lg,
+    marginBottom: Platform.OS === "web" ? 24 : 20,
+    fontWeight: "500",
   },
   grid: {
     flexDirection: "row",
-    gap: spacing.md,
+    gap: homeSpacing.base,
   },
   mobileRow: {
-    paddingRight: spacing.md,
-    gap: spacing.sm,
+    paddingRight: homeSpacing.base,
+    gap: homeSpacing.md,
   },
   card: {
     borderRadius: 16,
@@ -199,13 +218,13 @@ const styles = StyleSheet.create({
     lineHeight: 42,
     color: ALCHEMY.gold,
     opacity: 0.4,
-    marginBottom: 8,
+    marginBottom: homeSpacing.sm,
   },
   quoteText: {
-    fontFamily: FONT_DISPLAY,
+    fontFamily: homeType.uiRegular.fontFamily,
     fontSize: 16,
-    lineHeight: Math.round(16 * 1.55),
-    letterSpacing: 0.05,
+    lineHeight: Math.round(16 * 1.5),
+    letterSpacing: 0,
     marginBottom: spacing.md,
   },
   divider: {
@@ -239,31 +258,32 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   name: {
-    fontFamily: fonts.medium,
+    fontFamily: homeType.uiMedium.fontFamily,
     fontSize: 14,
     lineHeight: 18,
   },
   city: {
-    fontFamily: fonts.medium,
+    fontFamily: homeType.uiRegular.fontFamily,
     fontSize: 12,
-    lineHeight: lineHeight.caption,
-    marginTop: 1,
+    lineHeight: 17,
+    marginTop: homeSpacing.xs,
   },
   starRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 1,
+    gap: homeSpacing.xs,
     flexShrink: 0,
   },
   readMoreLink: {
-    marginTop: spacing.md,
+    marginTop: homeSpacing.base,
     alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
-    gap: 2,
+    gap: homeSpacing.xs,
   },
   readMoreText: {
-    fontFamily: fonts.semibold,
-    fontSize: typography.bodySmall,
+    fontFamily: homeType.uiSemibold.fontFamily,
+    fontSize: 13,
+    lineHeight: Math.round(13 * 1.4),
   },
 });

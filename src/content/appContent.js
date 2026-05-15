@@ -60,6 +60,105 @@ export const APP_WORDMARK_SUBLINE = RUNTIME_BRAND_SUBLINE;
 export const APP_HERO_KICKER = `${APP_DISPLAY_NAME} · ${APP_WORDMARK_SUBLINE}`;
 export const SEARCH_PLACEHOLDER = RUNTIME_SEARCH_PLACEHOLDER;
 export const SUPPORT_EMAIL_DISPLAY = RUNTIME_SUPPORT_EMAIL;
+export const APP_META = {
+  brand: {
+    name: "Zeevan",
+    legalName: "Zeevan Pantry Private Limited",
+    logo: "/assets/seo/icon-512.png",
+    sameAs: [
+      "https://www.instagram.com/zeevan",
+      "https://www.facebook.com/zeevan",
+      "https://www.youtube.com/@zeevan",
+      "https://twitter.com/zeevan",
+    ],
+    contact: {
+      email: "support@zeevan.com",
+      phone: "+91-XXXXXXXXXX",
+      address: {
+        streetAddress: "...",
+        addressLocality: "Ahmedabad",
+        addressRegion: "GJ",
+        postalCode: "...",
+        addressCountry: "IN",
+      },
+    },
+    themeColor: "#0E1729",
+    siteUrl: "https://zeevan.com",
+  },
+  defaults: {
+    titleTemplate: "%s — Zeevan",
+    titleFallback: "Zeevan — Heritage Pantry Essentials, Delivered",
+    description:
+      "Small-batch staples, traceable sourcing, and reliable doorstep delivery from Zeevan — the premium pantry for modern Indian kitchens.",
+    ogImage: "/assets/seo/og-image.png",
+    ogImageAlt: "Zeevan — Heritage Pantry Essentials",
+    locale: "en_IN",
+    type: "website",
+  },
+  routes: {
+    home: {
+      title: "Zeevan — Heritage Pantry Essentials, Delivered",
+      description:
+        "Small-batch staples, traceable sourcing, and reliable doorstep delivery. The premium pantry, designed for modern Indian kitchens.",
+      canonical: "/",
+      keywords: ["heritage pantry", "premium grocery", "small batch staples", "ghee", "saffron", "basmati", "Indian kitchen essentials"],
+    },
+    shop: {
+      title: "Shop the Pantry — Zeevan",
+      description:
+        "Browse hand-selected pantry essentials: pure cow ghee, single-origin spices, aged basmati, cold-pressed oils, and more. Free delivery over ₹1,499.",
+      canonical: "/shop",
+    },
+    product: {
+      canonicalTemplate: "/product/%slug",
+    },
+    cart: {
+      title: "Your Bag",
+      description: "Review your selection and proceed to checkout.",
+      canonical: "/cart",
+      noindex: true,
+    },
+    checkout: { title: "Checkout", noindex: true, canonical: "/checkout" },
+    orders: { title: "Your Orders", noindex: true, canonical: "/orders" },
+    account: { title: "Your Account", noindex: true, canonical: "/account" },
+    about: {
+      title: "Our Story — Zeevan",
+      description:
+        "Built on the belief that everyday staples deserve heritage-grade care. Meet the makers, the sourcing, and the kitchens that shaped Zeevan.",
+      canonical: "/about",
+    },
+    contact: {
+      title: "Contact Us — Zeevan",
+      description: "Questions, feedback, or wholesale inquiries — the Zeevan team responds within one business day.",
+      canonical: "/contact",
+    },
+    faq: {
+      title: "Help & FAQ — Zeevan",
+      description:
+        "Answers on shipping, returns, sourcing, ingredients, and ordering. Can't find what you need? Write to us.",
+      canonical: "/faq",
+    },
+    privacy: { title: "Privacy Policy", canonical: "/privacy" },
+    terms: { title: "Terms of Service", canonical: "/terms" },
+    blog: {
+      title: "Journal — Zeevan",
+      description: "Recipes, sourcing stories, and the craft behind the pantry. Slow-read writing from the Zeevan team.",
+      canonical: "/blog",
+    },
+    blogPost: { titleTemplate: "%s — Journal", canonicalTemplate: "/blog/%slug" },
+    category: { canonicalTemplate: "/category/%slug" },
+    categoryTemplate: {
+      titleTemplate: "%s — Shop Pantry Essentials — Zeevan",
+      descriptionTemplate: "Hand-selected %s from trusted Indian makers. Reliable doorstep delivery, 30-day returns.",
+    },
+    productTemplate: {
+      titleTemplate: "%name (%size) — %category — Zeevan",
+      descriptionTemplate: "%shortDescription Free delivery over ₹1,499. 30-day returns.",
+    },
+    search: { titleTemplate: 'Search: "%s"', canonicalTemplate: "/search?q=%q", noindex: true },
+    notFound: { title: "Page Not Found", noindex: true },
+  },
+};
 
 /** Digital product partner — linked from customer footers. */
 export const APP_ENGINEER_NAME = RUNTIME_ENGINEER_NAME;
@@ -117,7 +216,7 @@ export const HOME_VIEW_DEFAULTS = {
 export const HOME_HERO_BANNER = {
   kicker: "Signature collection",
   badge: "New season",
-  cta: "Shop collection",
+  cta: "Shop the edit",
   editorialNote: "Crafted staples with timeless quality for modern kitchens.",
   highlights: [],
 };
@@ -141,7 +240,7 @@ export const HOME_HERO_SLIDE_COPY = [
   {
     key: "daily",
     title: "Daily essentials, premium standard",
-    subtitle: "A refined basket for everyday cooking and wellness.",
+    subtitle: "Curated for modern Indian kitchens.",
     cta: "See highlights",
     action: "featured",
   },
@@ -153,24 +252,24 @@ export const HOME_WORDMARK_TAGLINE = "Heritage pantry essentials, delivered";
 /** Trust strip under the hero image (icon = Ionicons name). */
 export const HOME_TRUST_STRIP = [
   {
-    key: "quality",
+    key: "source",
     label: "Curated quality",
-    support: "Hand-selected from trusted sources",
+    supporting: "Hand-selected sources",
     icon: "shield-checkmark-outline",
     route: "QualityInfo",
   },
   {
-    key: "process",
-    label: "Small-batch crafted",
-    support: "Prepared in small batches for freshness",
+    key: "batch",
+    label: "Small-batch",
+    supporting: "Crafted for freshness",
     icon: "leaf-outline",
     route: "ProcessInfo",
   },
   {
     key: "delivery",
     label: "Doorstep delivery",
-    support: "Same-day or next-day in most areas",
-    icon: "car-outline",
+    supporting: "Same or next-day",
+    icon: "bicycle-outline",
     route: "DeliveryInfo",
   },
 ];
@@ -195,7 +294,7 @@ export const HOME_STATS_STRIP = {
       key: "rating",
       target: 4.9,
       prefix: "",
-      suffix: "★",
+      suffix: "/5",
       precision: 1,
       label: "Average rating",
       icon: "star-outline",
@@ -219,6 +318,7 @@ export const HOME_STATS_STRIP = {
 export const HOME_TESTIMONIALS = {
   overline: "Customer love",
   title: "Why families choose Zeevan",
+  readMoreCta: "Read more stories",
   items: [
     {
       key: "rashmi",
@@ -267,7 +367,6 @@ export const HOME_LIVE_ORDER_CARD = {
 
 /** Catalog section intro (when not searching). */
 export const HOME_CATALOG_INTRO = {
-  starter: "Start with our best picks",
   all: "Shop the essentials",
 };
 
@@ -280,7 +379,7 @@ export const HOME_CATEGORY_QUICK_NAV = [
   { key: "sweets", label: "Sweets", icon: "ice-cream-outline", filter: "sweet", tint: "#F3F4F6" },
   { key: "dryfruits", label: "Dry Fruits", icon: "leaf-outline", filter: "dry", tint: "#E2E8F0" },
   { key: "beverages", label: "Drinks", icon: "wine-outline", filter: "beverage", tint: "#E5E7EB" },
-  { key: "wellness", label: "Wellness", icon: "fitness-outline", filter: "wellness", tint: "#E7E5E4" },
+  { key: "wellness", label: "Wellness", icon: "heart-outline", filter: "wellness", tint: "#E7E5E4" },
 ];
 
 export const HOME_CATEGORY_UI = {
@@ -295,6 +394,94 @@ export const HOME_REORDER_STRIP = {
   emptyHidden: true,
 };
 
+export const HOME_TOAST = {
+  addedToBag: "Added to bag",
+  viewBag: "View bag",
+  undo: "Undo",
+  closeMenu: "Close menu",
+};
+
+export const HOME_EMPTY_STATES = {
+  noSearchResults: {
+    icon: "search-outline",
+    title: "We couldn't find that",
+    body: "Try a different spelling, or browse the pantry below.",
+    clearCta: "Clear search",
+    bestsellersOverline: "Popular picks",
+    bestsellersTitle: "Bestsellers",
+  },
+  networkError: {
+    icon: "cloud-offline-outline",
+    title: "Couldn't load the pantry",
+    body: "Check your connection and try again.",
+    retryCta: "Retry",
+    cachedBanner: "Showing cached items",
+  },
+  outOfArea: {
+    icon: "location-outline",
+    message: "We don't deliver to your area yet. Browse anyway, and we'll notify you when we expand.",
+    notifyCta: "Notify me",
+    modalTitle: "Notify me when available",
+    modalBody: "Share your email and we will let you know when delivery opens in your area.",
+    emailPlaceholder: "you@example.com",
+    submitCta: "Notify me",
+    success: "Thanks. We will reach out as soon as we expand to your area.",
+    closeCta: "Close",
+  },
+};
+
+/**
+ * Global loading copy source of truth (startup + inline + recoverable timeout).
+ * Keep all loading labels/messages here instead of hard-coding in screens.
+ */
+export const APP_LOADING_UI = {
+  startup: {
+    badge: "HERITAGE PANTRY",
+    wordmark: "Zeevan",
+    primary: "Setting the table",
+    secondary: "Curating your pantry experience",
+    phases: [
+      { key: "theme", label: "Polishing the brass", icon: "color-palette-outline" },
+      { key: "session", label: "Greeting you", icon: "person-outline" },
+      { key: "catalog", label: "Stocking the shelves", icon: "basket-outline" },
+    ],
+    rotatingMessages: [
+      "Curating your pantry experience",
+      "Warming up the kitchen",
+      "Laying out today's essentials",
+      "Almost ready to serve",
+    ],
+    fallback: "Opening Zeevan",
+    a11yAnnouncement: "Zeevan is loading. Please wait.",
+    almostThere: "Almost there",
+    phaseA11yState: {
+      pending: "pending",
+      active: "in progress",
+      complete: "complete",
+    },
+    progressA11yValue: "Loading",
+  },
+  inline: {
+    default: "Loading",
+    products: "Loading products",
+    orders: "Loading orders",
+    notifications: "Loading notifications",
+    profile: "Loading profile",
+    admin: "Loading dashboard",
+    rewards: "Loading rewards",
+    checkout: "Preparing checkout",
+    addresses: "Loading addresses",
+    payments: "Loading payment methods",
+    search: "Searching",
+    empty: "Just a moment",
+  },
+  errors: {
+    timeoutTitle: "Taking longer than usual",
+    timeoutBody: "Tap retry or check your connection.",
+    retry: "Retry",
+  },
+};
+
 /** Shared home search + catalog copy used across web/mobile. */
 export const HOME_SEARCH_UI = {
   webOverline: "",
@@ -303,12 +490,21 @@ export const HOME_SEARCH_UI = {
   activeSearchOverline: "Search results",
   activeSectionOverline: "Shelf focus",
   activeFilterClear: "Clear",
-  catalogOverlineDefault: "Curated catalog",
+  catalogOverlineDefault: "Signature selection",
+  catalogSectionOverlineDefault: "Curated catalog",
   catalogOverlineSearch: "Search results",
   catalogOverlineSection: "Shelf focus",
+  catalogIntroEyebrow: "Signature selection",
+  catalogIntroStarterTitle: "Start with our best picks",
   catalogResultsTitle: '{count} results for "{query}"',
   catalogSubtitleComfortable: "Roomier cards with more product detail.",
   catalogSubtitleCompact: "Quick browsing with clear add-to-cart actions.",
+  viewToggle: {
+    comfortableLabel: "Comfortable card view",
+    compactLabel: "Compact card view",
+    comfortableTooltip: "Comfortable cards",
+    compactTooltip: "Compact cards",
+  },
   sectionEmptyTitle: 'No section named "{section}".',
   sectionEmptyDescription: "Pick another section or clear the filter.",
   categoryEmptyTitle: 'No products found for "{section}".',
@@ -330,13 +526,29 @@ export const HOME_SEARCH_UI = {
   searchPlaceholders: [
     "Search saffron, ghee, basmati...",
     "Find your weekly essentials...",
+    "Discover small-batch staples...",
+    "Search the premium pantry...",
   ],
   recentSearchesTitle: "Recent searches",
   recentSearchesEmpty: "No recent searches yet.",
+  recentSearchItemA11yPrefix: "Use recent search",
+  searchInputA11y: "Search products",
+  searchA11yLabel: "Search products",
+  openMenuA11y: "Open menu",
+  cartA11yLabel: "Cart",
+  cartA11yItemsSuffix: "items",
+  inlineSectionEmptyTitle: "No products in this section yet.",
+  filterByCategoryA11yPrefix: "Filter by",
+  menuTitle: "Menu",
+  menuAccountLabel: "Account",
   locationChipA11yPrefix: "Delivery location",
   locationEmptyLabel: "Set delivery address",
+  locationCta: "Set delivery address",
   locationCtaShort: "Set address",
+  locationCtaWithAddress: (address) => `Deliver to ${address}`,
   notificationsA11y: "Open notifications",
+  notificationsA11yLabel: "Notifications",
+  notificationsA11yLabelWithCount: (n) => `Notifications, ${n} unread`,
 };
 
 /** Suffix for the side menu “starter” row (after dynamic counts). */
@@ -1158,6 +1370,8 @@ export const APP_CONTENT_INDEX = {
     testimonials: HOME_TESTIMONIALS,
     catalogIntro: HOME_CATALOG_INTRO,
     searchUi: HOME_SEARCH_UI,
+    toast: HOME_TOAST,
+    loadingUi: APP_LOADING_UI,
     liveOrderCard: HOME_LIVE_ORDER_CARD,
     menuStarterTag: HOME_MENU_STARTER_TAG,
     menuLinks: HOME_MENU_LINKS,
@@ -1183,6 +1397,7 @@ export const APP_CONTENT_INDEX = {
   orders: MY_ORDERS_UI,
   liveOrder: ORDER_LIVE_TRACKING,
   payments: PAYMENT_METHODS,
+  loading: APP_LOADING_UI,
   location: LOCATION_BAR,
   delivery: { dashboard: DELIVERY_DASHBOARD_COPY, liveShare: DELIVERY_LIVE_SHARE },
   admin: ADMIN_SCREEN_COPY,

@@ -1,5 +1,5 @@
 import React from "react";
-import { Platform, Pressable, Text, View } from "react-native";
+import { Platform, Pressable, Text, useWindowDimensions, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -16,6 +16,8 @@ export default function HomeTrustStrip({
   reducedMotion,
 }) {
   const navigation = useNavigation();
+  const { width } = useWindowDimensions();
+  const isStacked = width < 360;
 
   return (
     <Animated.View
@@ -25,33 +27,45 @@ export default function HomeTrustStrip({
       entering={Platform.OS === "web" || reducedMotion ? undefined : FadeInDown.delay(100).duration(480)}
     >
       <View style={[styles.trustStrip, isDark ? styles.trustStripDark : null]}>
-        <View style={styles.trustStripInner}>
+        <View style={[styles.trustStripInner, isStacked ? styles.trustStripInnerStacked : null]}>
           {HOME_TRUST_STRIP.map((item, idx) => (
             <React.Fragment key={item.key}>
               {idx > 0 ? (
-                <View style={[styles.trustDivider, isDark ? styles.trustDividerDark : styles.trustDividerLight]} />
+                <View
+                  style={[
+                    styles.trustDivider,
+                    isStacked ? styles.trustDividerStacked : null,
+                    isDark ? styles.trustDividerDark : styles.trustDividerLight,
+                  ]}
+                />
               ) : null}
               <Pressable
                 onPress={item.route ? () => navigation.navigate(item.route) : undefined}
-                style={({ pressed }) => [styles.trustCell, pressed ? styles.trustCellPressed : null]}
+                style={({ pressed }) => [
+                  styles.trustCell,
+                  isStacked ? styles.trustCellStacked : null,
+                  pressed ? styles.trustCellPressed : null,
+                ]}
                 accessibilityRole={item.route ? "button" : undefined}
-                accessibilityLabel={item.route ? `Open ${item.label}` : item.label}
+                accessibilityLabel={`${item.label}. ${item.supporting || item.support || ""}`.trim()}
               >
                 <View style={styles.trustIconBadge}>
-                  <Ionicons name={item.icon} size={22} color={c.textPrimary} />
+                  <Ionicons name={item.icon} size={22} color={c.textSecondary} />
                 </View>
                 <Text
                   style={[styles.trustCellLabel, { color: c.textPrimary }]}
-                  numberOfLines={2}
+                  numberOfLines={1}
                   ellipsizeMode="tail"
+                  allowFontScaling={false}
                 >
                   {item.label}
                 </Text>
                 <Text
                   style={[styles.trustCellSupport, { color: c.textMuted }]}
-                  numberOfLines={3}
+                  numberOfLines={2}
+                  allowFontScaling={false}
                 >
-                  {item.support}
+                  {item.supporting || item.support}
                 </Text>
               </Pressable>
             </React.Fragment>

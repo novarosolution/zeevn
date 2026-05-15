@@ -48,6 +48,7 @@ import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import PremiumInput from "../components/ui/PremiumInput";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import PremiumButton from "../components/ui/PremiumButton";
+import { APP_LOADING_UI } from "../content/appContent";
 
 const TABS = {
   products: "Products",
@@ -471,13 +472,13 @@ export default function AdminScreen({ navigation }) {
 
         {actionLoading ? (
           <View style={styles.actionLoader}>
-            <PremiumLoader size="sm" inline />
+            <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} inline />
           </View>
         ) : null}
 
         {loading ? (
           <View style={styles.loadingWrap}>
-            <PremiumLoader size="md" caption="Loading admin data…" />
+            <PremiumLoader size="md" caption={APP_LOADING_UI.inline.admin} />
           </View>
         ) : (
           <>

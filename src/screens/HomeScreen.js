@@ -2,24 +2,32 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect, useRoute } from "@react-navigation/native";
 import {
-  LayoutAnimation,
   Modal,
   Platform,
   Pressable,
-  RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
-  UIManager,
   useWindowDimensions,
   View,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Haptics from "expo-haptics";
 import MotionScrollView from "../components/motion/MotionScrollView";
 import { LinearGradient } from "expo-linear-gradient";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
+import Animated, {
+  Easing,
+  FadeInDown,
+  FadeOutDown,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import HomePageFooter from "../components/home/HomePageFooter";
@@ -30,9 +38,8 @@ import HomeSectionHeader from "../components/home/HomeSectionHeader";
 import HomeStatsStrip from "../components/home/HomeStatsStrip";
 import HomeTestimonials from "../components/home/HomeTestimonials";
 import BottomNavBar from "../components/BottomNavBar";
-import QCommerceSearchField from "../components/qcommerce/QCommerceSearchField";
+import HomeSearchHeader from "../components/home/HomeSearchHeader";
 import BrandWordmark from "../components/BrandWordmark";
-import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import SkeletonBlock from "../components/ui/SkeletonBlock";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import useReducedMotion from "../hooks/useReducedMotion";
@@ -50,13 +57,14 @@ import {
   HOME_MENU_LINKS,
   HOME_REORDER_STRIP,
   HOME_SEARCH_UI,
+  HOME_EMPTY_STATES,
+  HOME_TOAST,
   HOME_VIEW_DEFAULTS,
   HOME_WORDMARK_TAGLINE,
   fillPlaceholders,
 } from "../content/appContent";
 import {
   BRAND_HOME_TOP_BAR_LAYOUT_HEIGHT,
-  SEARCH_PLACEHOLDER,
 } from "../constants/brand";
 import {
   HOME_HERO_MOBILE_SLIDER_SLIDES,
@@ -64,21 +72,30 @@ import {
 } from "../constants/marketingAssets";
 import { HOME_CATALOG_ALL, matchesShelfProduct } from "../utils/shelfMatch";
 import { productToCartLine } from "../utils/productCart";
+import { formatINRWhole } from "../utils/currency";
 import {
   ALCHEMY,
   CUSTOMER_SHELL_GRADIENT_LOCATIONS,
   FONT_DISPLAY,
   FONT_DISPLAY_SEMI,
+  HERITAGE,
   getCustomerShellGradient,
 } from "../theme/customerAlchemy";
-import { customerPageScrollBase, customerScrollPaddingBottom, customerScrollPaddingTop } from "../theme/screenLayout";
+import {
+  CUSTOMER_BOTTOM_NAV_BAR_HEIGHT,
+  customerPageScrollBase,
+  customerScrollPaddingTop,
+} from "../theme/screenLayout";
 import { WEB_HEADER_HEIGHT, WEB_Z_INDEX } from "../theme/web";
 import GoldHairline from "../components/ui/GoldHairline";
 import HomeMarketingHero from "../components/home/HomeMarketingHero";
 import HomeTrustStrip from "../components/home/HomeTrustStrip";
-import { HomeCatalogGridCard, HomeCatalogListRow } from "../components/home/HomeCatalogProductViews";
-import ProductCard from "../components/ProductCard";
+import { HomeCatalogResponsiveGrid } from "../components/home/HomeCatalogProductViews";
+import ProgressRing from "../components/feedback/ProgressRing";
+import SectionEnter from "../components/motion/SectionEnter";
 import { fetchMyNotifications, fetchMyOrders } from "../services/userService";
+import { spacing as homeSpacing } from "../styles/spacing";
+import { applyRouteMeta } from "../utils/webMeta";
 
 if (Platform.OS === "web") {
   gsap.registerPlugin(ScrollTrigger);
@@ -89,20 +106,80 @@ const HOME_TOPBAR_TAGLINE_ROOM = 4;
 /** Distance from top of screen to first row of menu (below home bar + gap). */
 const HOME_MENU_TOP_OFFSET =
   BRAND_HOME_TOP_BAR_LAYOUT_HEIGHT + HOME_TOPBAR_TAGLINE_ROOM + spacing.sm * 2 + spacing.xs;
-const HOME_RECENT_SEARCHES_STORAGE_KEY = "@zeevan/home/recent-searches";
+const HOME_HEADER_BG_LIGHT = "#FAFAF7";
+const HOME_HEADER_INK = "#0E0E0E";
+const HOME_LINE = "#E8E6E1";
+const HOME_CACHE_KEY = "@zeevan/home/cache-v1";
 
 /** Home lists the full catalog; `showOnHome` on each product still controls visibility. */
 function matchesHomeShelf(product) {
   return matchesShelfProduct(product, HOME_CATALOG_ALL);
 }
 
+function CatalogViewToggleButton({
+  isActive,
+  onPress,
+  onHoverIn,
+  onHoverOut,
+  accessibilityLabel,
+  iconName,
+  styles,
+  iconSize,
+  c,
+}) {
+  const progress = useSharedValue(isActive ? 1 : 0);
+
+  useEffect(() => {
+    progress.value = withTiming(isActive ? 1 : 0, { duration: 180 });
+  }, [isActive, progress]);
+
+  const animatedButtonStyle = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(progress.value, [0, 1], [c.surface, HOME_HEADER_INK]),
+    borderColor: interpolateColor(progress.value, [0, 1], [c.border, HOME_HEADER_INK]),
+  }));
+
+  const activeIconStyle = useAnimatedStyle(() => ({
+    opacity: progress.value,
+  }));
+
+  const inactiveIconStyle = useAnimatedStyle(() => ({
+    opacity: 1 - progress.value,
+  }));
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onHoverIn={onHoverIn}
+      onHoverOut={onHoverOut}
+      style={({ pressed }) => [styles.catalogViewToggleBtnTouch, pressed ? styles.catalogViewToggleBtnPressed : null]}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isActive }}
+      accessibilityLabel={accessibilityLabel}
+    >
+      <Animated.View style={[styles.catalogViewToggleBtn, animatedButtonStyle]}>
+        <Animated.View style={[styles.catalogViewToggleIconLayer, inactiveIconStyle]}>
+          <Ionicons name={iconName} size={iconSize} color={c.textSecondary} />
+        </Animated.View>
+        <Animated.View style={[styles.catalogViewToggleIconLayer, activeIconStyle]}>
+          <Ionicons name={iconName} size={iconSize} color="#FFFFFF" />
+        </Animated.View>
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 export default function HomeScreen({ navigation }) {
   const route = useRoute();
   const { colors: c, shadowLift, shadowPremium, isDark } = useTheme();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
+  const safeWindowWidth = Number.isFinite(Number(windowWidth)) ? Number(windowWidth) : 390;
+  const safeWindowHeight = Number.isFinite(Number(windowHeight)) ? Number(windowHeight) : 844;
+  const insets = useSafeAreaInsets();
+  const safeTopInset = Number(insets?.top || 0);
+  const safeBottomInset = Number(insets?.bottom || 0);
   const styles = useMemo(
-    () => createHomeStyles(c, shadowLift, shadowPremium, isDark),
-    [c, shadowLift, shadowPremium, isDark]
+    () => createHomeStyles(c, shadowLift, shadowPremium, isDark, safeWindowWidth, insets),
+    [c, shadowLift, shadowPremium, isDark, safeWindowWidth, insets]
   );
   const scrollRef = useRef(null);
   const featuredYRef = useRef(0);
@@ -113,189 +190,135 @@ export default function HomeScreen({ navigation }) {
   const webTrustRef = useRef(null);
   const webCatalogRefs = useRef([]);
   const webFooterRef = useRef(null);
-  const searchBlurTimeoutRef = useRef(null);
-  const reorderToastTimerRef = useRef(null);
+  const toastIdSeqRef = useRef(0);
+  const toastTimersRef = useRef(new Map());
+  const heroAutoResumeTimerRef = useRef(null);
 
-  const insets = useSafeAreaInsets();
-  const { addToCart, removeFromCart, getItemQuantity, totalItems } = useCart();
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS === "web") {
+        applyRouteMeta("home");
+      }
+      return undefined;
+    }, [])
+  );
+
+  const { addToCart, removeFromCart, getItemQuantity, totalItems, totalAmount } = useCart();
   const { isAuthenticated, token, user, refreshProfile } = useAuth();
   const [query, setQuery] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [searchPlaceholderIndex, setSearchPlaceholderIndex] = useState(0);
-  const [recentSearches, setRecentSearches] = useState([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const [viewToggleTooltip, setViewToggleTooltip] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showingCachedItems, setShowingCachedItems] = useState(false);
   const [sectionFilter, setSectionFilter] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState(null);
   const [pastOrders, setPastOrders] = useState([]);
-  const [reorderToast, setReorderToast] = useState("");
+  const [toastQueue, setToastQueue] = useState([]);
   const [homeViewConfig, setHomeViewConfig] = useState({ ...HOME_VIEW_DEFAULTS });
-  const [refreshing, setRefreshing] = useState(false);
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
   const [heroAutoPaused, setHeroAutoPaused] = useState(false);
   const [heroSliderWidth, setHeroSliderWidth] = useState(0);
   const [deliveryLine1, setDeliveryLine1] = useState("");
   const [deliveryCity, setDeliveryCity] = useState("");
+  const [outOfAreaNotifyOpen, setOutOfAreaNotifyOpen] = useState(false);
+  const [outOfAreaEmail, setOutOfAreaEmail] = useState("");
+  const [outOfAreaNotifySubmitted, setOutOfAreaNotifySubmitted] = useState(false);
   const [liveOrder, setLiveOrder] = useState(null);
+  const [headerScrolled, setHeaderScrolled] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+  const [pullProgress, setPullProgress] = useState(0);
+  const [showPullCheck, setShowPullCheck] = useState(false);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+  const [flyGhost, setFlyGhost] = useState(null);
+  const flyX = useSharedValue(0);
+  const flyY = useSharedValue(0);
+  const flyScale = useSharedValue(1);
+  const flyOpacity = useSharedValue(0);
+  const homeContentBottomPadding = useMemo(() => {
+    if (Platform.OS === "web") return 40;
+    return safeBottomInset + CUSTOMER_BOTTOM_NAV_BAR_HEIGHT + 24;
+  }, [safeBottomInset]);
+  const homeCarouselBottomPadding = useMemo(() => {
+    if (Platform.OS === "web") return 40;
+    return Math.max(24, safeBottomInset + 24);
+  }, [safeBottomInset]);
+  const homeOuterHorizontalPadding = useMemo(() => {
+    if (safeWindowWidth >= 1024) return homeSpacing["4xl"];
+    if (safeWindowWidth >= 600) return homeSpacing["2xl"];
+    return homeSpacing.lg;
+  }, [safeWindowWidth]);
+  const toastStackBottomOffset = useMemo(() => {
+    if (Platform.OS === "web") return 24;
+    return safeBottomInset + CUSTOMER_BOTTOM_NAV_BAR_HEIGHT + 16;
+  }, [safeBottomInset]);
   const showMarketing = !query.trim();
   const reducedMotion = useReducedMotion();
   const cartBounceScale = useSharedValue(1);
   const cartBounceStyle = useAnimatedStyle(() => ({
     transform: [{ scale: cartBounceScale.value }],
   }));
-  const searchPlaceholders = useMemo(
-    () =>
-      Array.isArray(HOME_SEARCH_UI.searchPlaceholders) && HOME_SEARCH_UI.searchPlaceholders.length > 0
-        ? HOME_SEARCH_UI.searchPlaceholders
-        : [SEARCH_PLACEHOLDER],
-    []
-  );
-  const activeSearchPlaceholder = reducedMotion
-    ? searchPlaceholders[0]
-    : searchPlaceholders[searchPlaceholderIndex % searchPlaceholders.length];
-  const mobilePeekCardWidth = useMemo(() => {
-    const inner = Math.max(280, windowWidth - customerPageScrollBase.paddingHorizontal * 2);
-    return Math.max(148, Math.floor((inner - spacing.sm * 3) / 3.35));
-  }, [windowWidth]);
-
-  useEffect(() => {
-    if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
-      UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      try {
-        const raw = await AsyncStorage.getItem(HOME_RECENT_SEARCHES_STORAGE_KEY);
-        const parsed = raw ? JSON.parse(raw) : [];
-        if (active && Array.isArray(parsed)) {
-          setRecentSearches(parsed.filter((item) => typeof item === "string").slice(0, 5));
-        }
-      } catch {
-        if (active) setRecentSearches([]);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (reducedMotion || searchPlaceholders.length < 2 || searchFocused || query.trim().length > 0) {
-      return undefined;
-    }
-    const timer = setInterval(() => {
-      setSearchPlaceholderIndex((prev) => (prev + 1) % searchPlaceholders.length);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [query, reducedMotion, searchFocused, searchPlaceholders.length]);
-
-  useEffect(() => {
-    if (reducedMotion) {
-      setSearchPlaceholderIndex(0);
-    }
-  }, [reducedMotion]);
-
+  const flyGhostStyle = useAnimatedStyle(() => ({
+    opacity: flyOpacity.value,
+    transform: [{ translateX: flyX.value }, { translateY: flyY.value }, { scale: flyScale.value }],
+  }));
   const saveRecentSearch = useCallback(async (nextQuery) => {
     const normalized = String(nextQuery || "").trim();
     if (!normalized) return;
-    setRecentSearches((prev) => {
+    try {
+      const raw = await AsyncStorage.getItem("@zeevan/home/recent-searches");
+      const parsed = raw ? JSON.parse(raw) : [];
+      const prev = Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string") : [];
       const next = [normalized, ...prev.filter((item) => item.toLowerCase() !== normalized.toLowerCase())].slice(0, 5);
-      AsyncStorage.setItem(HOME_RECENT_SEARCHES_STORAGE_KEY, JSON.stringify(next)).catch(() => {});
-      return next;
-    });
-  }, []);
-
-  const onSearchFocus = useCallback(() => {
-    if (searchBlurTimeoutRef.current) {
-      clearTimeout(searchBlurTimeoutRef.current);
-      searchBlurTimeoutRef.current = null;
+      await AsyncStorage.setItem("@zeevan/home/recent-searches", JSON.stringify(next));
+    } catch {
+      // non-blocking persistence only
     }
-    LayoutAnimation.configureNext({
-      duration: 220,
-      update: { type: LayoutAnimation.Types.easeInEaseOut },
-      create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
-      delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
-    });
-    setSearchFocused(true);
   }, []);
 
-  const onSearchBlur = useCallback(() => {
-    if (searchBlurTimeoutRef.current) {
-      clearTimeout(searchBlurTimeoutRef.current);
-    }
-    searchBlurTimeoutRef.current = setTimeout(() => {
-      LayoutAnimation.configureNext({
-        duration: 220,
-        update: { type: LayoutAnimation.Types.easeInEaseOut },
-        create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
-        delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
-      });
-      setSearchFocused(false);
-      searchBlurTimeoutRef.current = null;
-    }, 120);
-  }, []);
-
-  const onSearchSubmit = useCallback(() => {
-    saveRecentSearch(query);
-  }, [query, saveRecentSearch]);
-
-  const onPickRecentSearch = useCallback(
+  const onSearchSubmit = useCallback(
     (value) => {
-      setQuery(value);
-      saveRecentSearch(value);
-      if (searchBlurTimeoutRef.current) {
-        clearTimeout(searchBlurTimeoutRef.current);
-        searchBlurTimeoutRef.current = null;
+      const normalized = String(value || "").trim();
+      setQuery(normalized);
+      if (!normalized) return;
+      saveRecentSearch(normalized);
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        const url = `/search?q=${encodeURIComponent(normalized)}`;
+        window.history.replaceState({}, "", url);
       }
-      LayoutAnimation.configureNext({
-        duration: 220,
-        update: { type: LayoutAnimation.Types.easeInEaseOut },
-        create: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
-        delete: { type: LayoutAnimation.Types.easeInEaseOut, property: LayoutAnimation.Properties.opacity },
-      });
-      setSearchFocused(false);
     },
     [saveRecentSearch]
   );
 
   useEffect(
     () => () => {
-      if (searchBlurTimeoutRef.current) {
-        clearTimeout(searchBlurTimeoutRef.current);
-      }
-      if (reorderToastTimerRef.current) {
-        clearTimeout(reorderToastTimerRef.current);
+      toastTimersRef.current.forEach((meta) => {
+        if (meta?.timer) clearTimeout(meta.timer);
+      });
+      toastTimersRef.current.clear();
+      if (heroAutoResumeTimerRef.current) {
+        clearTimeout(heroAutoResumeTimerRef.current);
+        heroAutoResumeTimerRef.current = null;
       }
     },
     []
   );
 
-  const locationChipLabel = useMemo(() => {
+  const deliveryAddress = useMemo(() => {
     const line = String(deliveryLine1 || "").trim();
     const city = String(deliveryCity || "").trim();
-    if (city) return city;
-    if (line) return line;
-    return HOME_SEARCH_UI.locationEmptyLabel;
+    if (line && city) return `${line}, ${city}`;
+    return line || city || null;
   }, [deliveryCity, deliveryLine1]);
-  const hasDeliveryAddress = useMemo(
-    () => Boolean(String(deliveryLine1 || "").trim() || String(deliveryCity || "").trim()),
-    [deliveryCity, deliveryLine1]
-  );
-  const shouldStackConcierge = Platform.OS !== "web" && windowWidth < 390 && !hasDeliveryAddress;
-  const locationChipDisplayLabel = hasDeliveryAddress
-    ? locationChipLabel
-    : Platform.OS === "web"
-      ? HOME_SEARCH_UI.locationEmptyLabel
-    : shouldStackConcierge
-      ? HOME_SEARCH_UI.locationEmptyLabel
-      : HOME_SEARCH_UI.locationCtaShort || HOME_SEARCH_UI.locationEmptyLabel;
+  const isOutOfArea = useMemo(() => {
+    const a = user?.defaultAddress || {};
+    return Boolean(
+      a &&
+      (a.isServiceable === false || a.serviceable === false || a.inServiceArea === false || a.outOfArea === true)
+    );
+  }, [user?.defaultAddress]);
 
   const openAddressSelector = useCallback(() => {
     navigation.navigate("ManageAddress");
@@ -304,6 +327,18 @@ export default function HomeScreen({ navigation }) {
   const openNotifications = useCallback(() => {
     navigation.navigate("Notifications");
   }, [navigation]);
+  const openOutOfAreaNotify = useCallback(() => {
+    setOutOfAreaNotifySubmitted(false);
+    setOutOfAreaEmail("");
+    setOutOfAreaNotifyOpen(true);
+  }, []);
+  const submitOutOfAreaNotify = useCallback(() => {
+    const normalized = String(outOfAreaEmail || "").trim();
+    if (!normalized || !normalized.includes("@")) {
+      return;
+    }
+    setOutOfAreaNotifySubmitted(true);
+  }, [outOfAreaEmail]);
 
   const refreshDeliverySnippet = useCallback(async () => {
     if (!isAuthenticated || !token) {
@@ -370,31 +405,61 @@ export default function HomeScreen({ navigation }) {
 
   /** Width-derived hero height: web = wide band; phone = height from reference 1023×1537 JPEG aspect (+ screen cap). */
   const heroSlideHeight = useMemo(() => {
-    const w = heroSliderWidth > 0 ? heroSliderWidth : Math.min(windowWidth, layout.maxContentWidth);
+    const w = heroSliderWidth > 0 ? heroSliderWidth : Math.min(safeWindowWidth, layout.maxContentWidth);
     if (Platform.OS === "web") {
       return Math.min(420, Math.max(320, Math.round(w * 0.32)));
     }
     const ideal = Math.round(w * 0.78);
-    const maxFromScreen = Math.round(windowHeight * 0.52);
+    const maxFromScreen = Math.round(safeWindowHeight * 0.52);
     return Math.max(280, Math.min(ideal, 430, maxFromScreen));
-  }, [heroSliderWidth, windowWidth, windowHeight]);
+  }, [heroSliderWidth, safeWindowWidth, safeWindowHeight]);
 
   const loadHomeData = useCallback(async ({ isPullRefresh = false } = {}) => {
     if (isPullRefresh) {
-      setRefreshing(true);
+      setIsPullRefreshing(true);
     } else {
       setLoading(true);
     }
     setError("");
+    setShowingCachedItems(false);
     try {
       const [data, viewConfig] = await Promise.all([getProducts(), getHomeViewConfig()]);
       setProducts(data);
       setHomeViewConfig(viewConfig);
+      try {
+        await AsyncStorage.setItem(
+          HOME_CACHE_KEY,
+          JSON.stringify({
+            products: Array.isArray(data) ? data : [],
+            viewConfig: viewConfig && typeof viewConfig === "object" ? viewConfig : {},
+            updatedAt: Date.now(),
+          })
+        );
+      } catch {
+        // non-blocking cache write
+      }
     } catch (err) {
-      setError(err.message || HOME_SEARCH_UI.loadErrorFallback);
+      const nextError = err?.message || HOME_SEARCH_UI.loadErrorFallback;
+      setError(nextError);
+      try {
+        const rawCache = await AsyncStorage.getItem(HOME_CACHE_KEY);
+        const parsed = rawCache ? JSON.parse(rawCache) : null;
+        const cachedProducts = Array.isArray(parsed?.products) ? parsed.products : [];
+        const cachedViewConfig =
+          parsed?.viewConfig && typeof parsed.viewConfig === "object" ? parsed.viewConfig : null;
+        if (cachedProducts.length > 0) {
+          setProducts(cachedProducts);
+          if (cachedViewConfig) {
+            setHomeViewConfig((prev) => ({ ...prev, ...cachedViewConfig }));
+          }
+          setShowingCachedItems(true);
+        }
+      } catch {
+        // no cache available
+      }
     } finally {
       if (isPullRefresh) {
-        setRefreshing(false);
+        setIsPullRefreshing(false);
       } else {
         setLoading(false);
       }
@@ -460,46 +525,36 @@ export default function HomeScreen({ navigation }) {
   const productsForHome = useMemo(() => homeVisibleProducts, [homeVisibleProducts]);
 
   const totalMatches = productsForHome.length;
-  /** Two-column tiles on tablets / landscape — list stays for active search (easier to scan). */
-  const useProductGridLayout = windowWidth >= 560 && !query.trim();
-  const catalogGridMetrics = useMemo(() => {
-    if (!useProductGridLayout) return null;
-    const surfacePad = Platform.OS === "web" ? spacing.xl + 6 : spacing.md + 8;
-    const gap = Platform.OS === "web" ? spacing.lg : spacing.md;
-    const desiredColumnCount =
-      windowWidth >= 1500 ? 5 : windowWidth >= 1260 ? 4 : windowWidth >= 920 ? 3 : 2;
-    const contentW = Math.min(windowWidth, layout.maxContentWidth);
-    const innerWidth = Math.max(0, contentW - surfacePad * 2);
-    return { gap, desiredColumnCount, innerWidth };
-  }, [useProductGridLayout, windowWidth]);
-  const getCatalogGridColStyle = useCallback(
-    (itemCount = 1) => {
-      if (!catalogGridMetrics) return null;
-      const effectiveColumnCount = Math.max(1, Math.min(catalogGridMetrics.desiredColumnCount, itemCount));
-      const totalGap = catalogGridMetrics.gap * Math.max(0, effectiveColumnCount - 1);
-      const rawColumnWidth = Math.max(
-        176,
-        Math.floor((catalogGridMetrics.innerWidth - totalGap) / effectiveColumnCount)
-      );
-      const cappedColumnWidth = Platform.select({
-        web:
-          effectiveColumnCount <= 2
-            ? 420
-            : effectiveColumnCount === 3
-              ? 360
-              : 320,
-        default: rawColumnWidth,
-      });
-      const finalColumnWidth = Math.min(rawColumnWidth, cappedColumnWidth);
-      return {
-        width: finalColumnWidth,
-        minWidth: finalColumnWidth,
-        maxWidth: finalColumnWidth,
-        flexGrow: effectiveColumnCount > 1 ? 1 : 0,
-      };
-    },
-    [catalogGridMetrics]
-  );
+  const hasTypedQuery = query.trim().length > 0;
+  const noSearchResults = !loading && hasTypedQuery && totalMatches === 0;
+  const hasNetworkErrorWithoutCache = !loading && Boolean(error) && !showingCachedItems;
+  const bestSellersFallback = useMemo(() => {
+    return products
+      .filter((product) => matchesHomeShelf(product) && product.showOnHome !== false)
+      .sort((a, b) => {
+        const orderA = Number.isFinite(Number(a.homeOrder)) ? Number(a.homeOrder) : 0;
+        const orderB = Number.isFinite(Number(b.homeOrder)) ? Number(b.homeOrder) : 0;
+        if (orderA !== orderB) return orderA - orderB;
+        return String(a.name || "").localeCompare(String(b.name || ""));
+      })
+      .slice(0, 8);
+  }, [products]);
+  const homeGridNumColumns = useMemo(() => {
+    if (safeWindowWidth < 640) return 2;
+    if (safeWindowWidth < 1024) return 3;
+    return 4;
+  }, [safeWindowWidth]);
+  const homeGridGap = safeWindowWidth >= 600 ? homeSpacing.base : homeSpacing.md;
+  const homeGridHorizontalPadding = useMemo(() => {
+    const pagePad = Platform.select({ web: spacing.sm, default: customerPageScrollBase.paddingHorizontal });
+    const surfacePad = Platform.select({ web: homeSpacing["3xl"], default: homeSpacing.xl });
+    return pagePad + surfacePad;
+  }, []);
+  const homeGridCardWidth = useMemo(() => {
+    const safeScreenWidth = Math.max(320, Math.floor(safeWindowWidth));
+    const totalGap = homeGridGap * Math.max(0, homeGridNumColumns - 1);
+    return Math.floor((safeScreenWidth - homeGridHorizontalPadding * 2 - totalGap) / homeGridNumColumns);
+  }, [safeWindowWidth, homeGridGap, homeGridHorizontalPadding, homeGridNumColumns]);
 
   const adminManagedSections = useMemo(() => {
     const grouped = productsForHome.reduce((acc, item) => {
@@ -579,16 +634,126 @@ export default function HomeScreen({ navigation }) {
     );
   }, [cartBounceScale]);
 
-  const showAddedToBagToast = useCallback(() => {
-    setReorderToast("Added to bag");
-    if (reorderToastTimerRef.current) {
-      clearTimeout(reorderToastTimerRef.current);
+  const removeToast = useCallback((toastId) => {
+    const meta = toastTimersRef.current.get(toastId);
+    if (meta?.timer) {
+      clearTimeout(meta.timer);
     }
-    reorderToastTimerRef.current = setTimeout(() => {
-      setReorderToast("");
-      reorderToastTimerRef.current = null;
-    }, 1600);
+    toastTimersRef.current.delete(toastId);
+    setToastQueue((prev) => prev.filter((item) => item.id !== toastId));
   }, []);
+
+  const scheduleToastDismiss = useCallback(
+    (toastId, durationMs) => {
+      const nextDelay = Math.max(1, Number(durationMs) || 1);
+      const prevMeta = toastTimersRef.current.get(toastId);
+      if (prevMeta?.timer) clearTimeout(prevMeta.timer);
+      const meta = {
+        remaining: nextDelay,
+        startedAt: Date.now(),
+        paused: false,
+        timer: setTimeout(() => {
+          removeToast(toastId);
+        }, nextDelay),
+      };
+      toastTimersRef.current.set(toastId, meta);
+    },
+    [removeToast]
+  );
+
+  const pauseToastDismiss = useCallback((toastId) => {
+    const meta = toastTimersRef.current.get(toastId);
+    if (!meta || meta.paused) return;
+    if (meta.timer) clearTimeout(meta.timer);
+    const elapsed = Date.now() - meta.startedAt;
+    meta.remaining = Math.max(1, meta.remaining - elapsed);
+    meta.paused = true;
+    meta.timer = null;
+    toastTimersRef.current.set(toastId, meta);
+  }, []);
+
+  const resumeToastDismiss = useCallback(
+    (toastId) => {
+      const meta = toastTimersRef.current.get(toastId);
+      if (!meta || !meta.paused) return;
+      scheduleToastDismiss(toastId, meta.remaining);
+    },
+    [scheduleToastDismiss]
+  );
+
+  const showAddedToBagToast = useCallback(() => {
+    const toastId = `home-toast-${Date.now()}-${toastIdSeqRef.current++}`;
+    setToastQueue((prev) => [
+      ...prev,
+      {
+        id: toastId,
+        message: HOME_TOAST.addedToBag,
+        actionLabel: HOME_TOAST.viewBag,
+      },
+    ]);
+    scheduleToastDismiss(toastId, 3000);
+  }, [scheduleToastDismiss]);
+
+  const triggerAddToCartFeedback = useCallback(() => {
+    if (Platform.OS === "ios") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    }
+    triggerCartIconBounce();
+  }, [triggerCartIconBounce]);
+
+  const triggerFlyToCart = useCallback(
+    (meta) => {
+      if (reducedMotion || !meta?.sourceRect) {
+        triggerCartIconBounce();
+        return;
+      }
+      const fromX = Number(meta.sourceRect.x || 0);
+      const fromY = Number(meta.sourceRect.y || 0);
+      const fromW = Number(meta.sourceRect.width || 48);
+      const fromH = Number(meta.sourceRect.height || 60);
+      const startX = fromX + fromW * 0.5 - 24;
+      const startY = fromY + fromH * 0.5 - 30;
+      const targetX = safeWindowWidth * 0.5 - 20;
+      const targetY = safeWindowHeight - safeBottomInset - CUSTOMER_BOTTOM_NAV_BAR_HEIGHT - 8;
+
+      setFlyGhost({
+        imageUri: meta.imageUri || "",
+      });
+      flyX.value = startX;
+      flyY.value = startY;
+      flyScale.value = 1;
+      flyOpacity.value = 0.98;
+
+      const midX = (startX + targetX) / 2 + 18;
+      const midY = Math.min(startY, targetY) - 76;
+      flyX.value = withSequence(
+        withTiming(midX, { duration: 280, easing: Easing.bezier(0.2, 0.8, 0.2, 1) }),
+        withTiming(targetX, { duration: 200, easing: Easing.bezier(0.2, 0.8, 0.2, 1) })
+      );
+      flyY.value = withSequence(
+        withTiming(midY, { duration: 280, easing: Easing.bezier(0.2, 0.8, 0.2, 1) }),
+        withTiming(targetY, { duration: 200, easing: Easing.bezier(0.2, 0.8, 0.2, 1) })
+      );
+      flyScale.value = withSequence(
+        withTiming(0.92, { duration: 380, easing: Easing.out(Easing.cubic) }),
+        withTiming(0, { duration: 100, easing: Easing.in(Easing.cubic) })
+      );
+      flyOpacity.value = withSequence(withTiming(1, { duration: 380 }), withTiming(0, { duration: 100 }));
+      setTimeout(() => setFlyGhost(null), 520);
+      triggerCartIconBounce();
+    },
+    [
+      flyOpacity,
+      flyScale,
+      flyX,
+      flyY,
+      safeBottomInset,
+      reducedMotion,
+      triggerCartIconBounce,
+      safeWindowHeight,
+      safeWindowWidth,
+    ]
+  );
 
   const handleReorderAdd = useCallback(
     (item) => {
@@ -606,21 +771,24 @@ export default function HomeScreen({ navigation }) {
         variantLabel: item.variantLabel || "",
       });
       showAddedToBagToast();
-      triggerCartIconBounce();
+      triggerAddToCartFeedback();
     },
-    [addToCart, isAuthenticated, navigation, showAddedToBagToast, triggerCartIconBounce]
+    [addToCart, isAuthenticated, navigation, showAddedToBagToast, triggerAddToCartFeedback]
   );
 
   const handleCatalogAddToCart = useCallback(
-    (product) => {
+    (product, interactionMeta) => {
       if (product.inStock === false || Number(product.stockQty || 0) <= 0) return;
       if (!isAuthenticated) {
         navigation.navigate("Login");
         return;
       }
       addToCart(productToCartLine(product));
+      showAddedToBagToast();
+      triggerAddToCartFeedback();
+      triggerFlyToCart(interactionMeta);
     },
-    [addToCart, isAuthenticated, navigation]
+    [addToCart, isAuthenticated, navigation, showAddedToBagToast, triggerAddToCartFeedback, triggerFlyToCart]
   );
 
   const handleCatalogRemoveFromCart = useCallback(
@@ -629,34 +797,90 @@ export default function HomeScreen({ navigation }) {
         navigation.navigate("Login");
         return;
       }
+      if (Platform.OS === "ios") {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      }
       removeFromCart(productId);
     },
     [isAuthenticated, navigation, removeFromCart]
   );
 
-  const shellColors = useMemo(() => getCustomerShellGradient(isDark, c), [isDark, c]);
+  const shellColors = useMemo(
+    () =>
+      isDark
+        ? getCustomerShellGradient(isDark, c)
+        : [HOME_HEADER_BG_LIGHT, HOME_HEADER_BG_LIGHT, HOME_HEADER_BG_LIGHT, HOME_HEADER_BG_LIGHT],
+    [isDark, c]
+  );
+  const handleHomeScroll = useCallback((offsetY) => {
+    setScrollY(Number(offsetY || 0));
+    if (!isPullRefreshing) {
+      const progress = Math.max(0, Math.min(1, Math.abs(Math.min(0, Number(offsetY || 0))) / 74));
+      setPullProgress(progress);
+    }
+    const next = Number(offsetY || 0) > 8;
+    setHeaderScrolled((prev) => (prev === next ? prev : next));
+  }, [isPullRefreshing]);
   const heroSlides = useMemo(() => {
     const source = Platform.OS === "web" ? HOME_HERO_WEB_SLIDER_SLIDES : HOME_HERO_MOBILE_SLIDER_SLIDES;
     return source.map((slide, index) => ({
       ...slide,
       title: index === 0 ? homeViewConfig.heroTitle : slide.title,
-      subtitle: index === 0 ? homeViewConfig.heroSubtitle || slide.subtitle : slide.subtitle,
+      subtitle: slide.subtitle,
       cta: index === 0 ? HOME_HERO_BANNER.cta : slide.cta,
     }));
-  }, [homeViewConfig.heroTitle, homeViewConfig.heroSubtitle]);
+  }, [homeViewConfig.heroTitle]);
+  const safeHeroSlideHeight = Number.isFinite(Number(heroSlideHeight)) ? Number(heroSlideHeight) : 320;
+  const safeHomeGridGap = Number.isFinite(Number(homeGridGap)) ? Number(homeGridGap) : 12;
+  const safeHomeGridCardWidth = Number.isFinite(Number(homeGridCardWidth)) ? Number(homeGridCardWidth) : 140;
+
+  const performPullRefresh = useCallback(async () => {
+    if (isPullRefreshing) return;
+    setIsPullRefreshing(true);
+    setShowPullCheck(false);
+    setPullProgress(1);
+    try {
+      await loadHomeData({ isPullRefresh: true });
+      await refreshDeliverySnippet();
+      setShowPullCheck(true);
+      setTimeout(() => setShowPullCheck(false), 400);
+    } finally {
+      setIsPullRefreshing(false);
+      setPullProgress(0);
+    }
+  }, [isPullRefreshing, loadHomeData, refreshDeliverySnippet]);
 
   const scrollToFeatured = useCallback(() => {
     const y = Math.max(0, featuredYRef.current - 12);
     scrollRef.current?.scrollTo({ y, animated: true });
   }, []);
 
-  const goToHeroSlide = useCallback((index) => {
+  const pauseHeroAutoAdvance = useCallback(() => {
+    if (heroAutoResumeTimerRef.current) {
+      clearTimeout(heroAutoResumeTimerRef.current);
+      heroAutoResumeTimerRef.current = null;
+    }
+    setHeroAutoPaused(true);
+  }, []);
+
+  const resumeHeroAutoAdvance = useCallback(() => {
+    if (heroAutoResumeTimerRef.current) {
+      clearTimeout(heroAutoResumeTimerRef.current);
+    }
+    heroAutoResumeTimerRef.current = setTimeout(() => {
+      setHeroAutoPaused(false);
+      heroAutoResumeTimerRef.current = null;
+    }, 4000);
+  }, []);
+
+  const goToHeroSlide = useCallback((index, options = {}) => {
     const w = heroSliderWidth;
     if (w <= 0 || heroSlides.length === 0) return;
     const next = Math.max(0, Math.min(index, heroSlides.length - 1));
-    heroSliderRef.current?.scrollTo({ x: next * w, animated: true });
+    const animated = options?.animated ?? !reducedMotion;
+    heroSliderRef.current?.scrollTo({ x: next * w, animated });
     setHeroSlideIndex(next);
-  }, [heroSliderWidth, heroSlides.length]);
+  }, [heroSliderWidth, heroSlides.length, reducedMotion]);
 
   const focusCatalog = useCallback(() => {
     requestAnimationFrame(() => scrollToFeatured());
@@ -691,7 +915,9 @@ export default function HomeScreen({ navigation }) {
   }, []);
 
   useEffect(() => {
-    if (!showMarketing || heroAutoPaused || heroSlides.length < 2 || heroSliderWidth <= 0) return undefined;
+    if (reducedMotion || !showMarketing || heroAutoPaused || heroSlides.length < 2 || heroSliderWidth <= 0) {
+      return undefined;
+    }
     const timer = setInterval(() => {
       setHeroSlideIndex((prev) => {
         const next = (prev + 1) % heroSlides.length;
@@ -700,7 +926,7 @@ export default function HomeScreen({ navigation }) {
       });
     }, 6000);
     return () => clearInterval(timer);
-  }, [showMarketing, heroAutoPaused, heroSlides.length, heroSliderWidth]);
+  }, [reducedMotion, showMarketing, heroAutoPaused, heroSlides.length, heroSliderWidth]);
 
   const handleHeroSlideAction = useCallback(
     (action) => {
@@ -718,7 +944,7 @@ export default function HomeScreen({ navigation }) {
   }, []);
 
   useEffect(() => {
-    if (Platform.OS !== "web" || reducedMotion) return undefined;
+    if (Platform.OS !== "web" || reducedMotion || !showMarketing) return undefined;
     const root = webRootRef.current;
     if (!root) return undefined;
     const ctx = gsap.context(() => {
@@ -789,14 +1015,22 @@ export default function HomeScreen({ navigation }) {
     return () => {
       ctx.revert();
     };
-  }, [reducedMotion, showMarketing, sectionsForRender.length, totalMatches, query, loading]);
+  }, [reducedMotion, showMarketing]);
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || reducedMotion || typeof ScrollTrigger.refresh !== "function") return;
+    const frame = requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [reducedMotion, sectionsForRender.length, totalMatches, loading]);
 
   const renderCatalogItems = (items, listKeyPrefix = "cat") => {
     const outOfStock = (p) => p.inStock === false || Number(p.stockQty || 0) <= 0;
     if (!Array.isArray(items) || items.length === 0) {
       return (
         <View style={styles.inlineSectionEmpty}>
-          <Text style={styles.inlineSectionEmptyTitle}>No products in this section yet.</Text>
+          <Text style={styles.inlineSectionEmptyTitle}>{HOME_SEARCH_UI.inlineSectionEmptyTitle}</Text>
           <View style={styles.inlineSectionCategoryRow}>
             {HOME_CATEGORY_QUICK_NAV.slice(0, 4).map((cat) => (
               <Pressable
@@ -804,7 +1038,7 @@ export default function HomeScreen({ navigation }) {
                 onPress={() => onCategoryPress(cat)}
                 style={({ pressed }) => [styles.inlineSectionCategoryChip, pressed ? styles.inlineSectionCategoryChipPressed : null]}
                 accessibilityRole="button"
-                accessibilityLabel={`Filter by ${cat.label}`}
+                  accessibilityLabel={`${HOME_SEARCH_UI.filterByCategoryA11yPrefix} ${cat.label}`}
               >
                 <Text style={styles.inlineSectionCategoryChipText}>{cat.label}</Text>
               </Pressable>
@@ -813,161 +1047,103 @@ export default function HomeScreen({ navigation }) {
         </View>
       );
     }
-    const gridCellStyle = getCatalogGridColStyle(items.length);
-    if (useProductGridLayout && gridCellStyle && items.length > 0) {
-      return (
-        <View
-          style={[
-            styles.productGridWrap,
-            items.length < (catalogGridMetrics?.desiredColumnCount || 1) ? styles.productGridWrapCentered : null,
-          ]}
-        >
-          {items.map((item, idx) => (
-            <HomeCatalogGridCard
-              key={item.id ?? `${listKeyPrefix}-g-${idx}`}
-              catalogGridColStyle={gridCellStyle}
-              cardStyle={homeViewConfig.productCardStyle}
-              idx={idx}
-              isOutOfStock={outOfStock(item)}
-              item={item}
-              navigation={navigation}
-              quantity={getItemQuantity(item.id)}
-              styles={styles}
-              onAddToCart={() => handleCatalogAddToCart(item)}
-              onRemoveFromCart={() => handleCatalogRemoveFromCart(item.id)}
-            />
-          ))}
-        </View>
-      );
-    }
-    if (Platform.OS !== "web") {
-      return (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.mobilePeekRow}
-          style={styles.mobilePeekScroll}
-        >
-          {items.map((item, idx) => (
-            <View
-              key={item.id ?? `${listKeyPrefix}-m-${idx}`}
-              style={[
-                styles.mobilePeekItem,
-                {
-                  width: mobilePeekCardWidth,
-                },
-              ]}
-            >
-              <ProductCard
-                index={idx}
-                isOutOfStock={outOfStock(item)}
-                product={item}
-                onPress={() => navigation.navigate("Product", { productId: item.id })}
-                quantity={getItemQuantity(item.id)}
-                onAddToCart={() => handleCatalogAddToCart(item)}
-                onRemoveFromCart={() => handleCatalogRemoveFromCart(item.id)}
-                variant="grid"
-                compact={homeViewConfig.productCardStyle !== "comfortable"}
-                editorial={homeViewConfig.productCardStyle === "comfortable"}
-                showEta={homeViewConfig.productCardStyle === "comfortable"}
-              />
-            </View>
-          ))}
-        </ScrollView>
-      );
-    }
-    return items.map((item, idx) => (
-      <HomeCatalogListRow
-        key={item.id ?? `${listKeyPrefix}-r-${idx}`}
-        index={idx}
-        isOutOfStock={outOfStock(item)}
-        item={item}
-        navigation={navigation}
-        quantity={getItemQuantity(item.id)}
-        cardStyle={homeViewConfig.productCardStyle}
+    return (
+      <HomeCatalogResponsiveGrid
+        items={items}
         styles={styles}
-        totalInGroup={items.length}
-        onAddToCart={() => handleCatalogAddToCart(item)}
-        onRemoveFromCart={() => handleCatalogRemoveFromCart(item.id)}
+        navigation={navigation}
+        getItemQuantity={getItemQuantity}
+        onAddToCart={handleCatalogAddToCart}
+        onRemoveFromCart={handleCatalogRemoveFromCart}
+        isOutOfStock={outOfStock}
+        cardStyle={homeViewConfig.productCardStyle}
+        numColumns={homeGridNumColumns}
+        gridGap={safeHomeGridGap}
+        cardWidth={safeHomeGridCardWidth}
+        listKeyPrefix={listKeyPrefix}
       />
-    ));
+    );
   };
   return (
     <View ref={webRootRef} style={styles.screen}>
-      <LinearGradient
-        colors={shellColors}
-        locations={CUSTOMER_SHELL_GRADIENT_LOCATIONS}
-        start={{ x: 0.06, y: 0 }}
-        end={{ x: 0.94, y: 1 }}
-        style={styles.gradientFill}
-      >
-        <LinearGradient
-          colors={
-            isDark
-              ? ["rgba(0,0,0,0.2)", "transparent", "transparent", "rgba(0,0,0,0.48)"]
-              : ["rgba(63, 63, 70, 0.035)", "transparent", "transparent", "rgba(63, 63, 70, 0.075)"]
-          }
-          locations={[0, 0.18, 0.65, 1]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={[StyleSheet.absoluteFillObject, styles.peNone]}
-        />
+      <View style={[styles.gradientFill, Platform.OS !== "web" ? { backgroundColor: shellColors[0] || HOME_HEADER_BG_LIGHT } : null]}>
+        {Platform.OS === "web" ? (
+          <LinearGradient
+            colors={shellColors}
+            locations={CUSTOMER_SHELL_GRADIENT_LOCATIONS}
+            start={{ x: 0.06, y: 0 }}
+            end={{ x: 0.94, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+        ) : null}
+        {Platform.OS === "web" ? (
+          <LinearGradient
+            colors={
+              isDark
+                ? ["rgba(0,0,0,0.2)", "transparent", "transparent", "rgba(0,0,0,0.48)"]
+                : ["rgba(63, 63, 70, 0.035)", "transparent", "transparent", "rgba(63, 63, 70, 0.075)"]
+            }
+            locations={[0, 0.18, 0.65, 1]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={[StyleSheet.absoluteFillObject, styles.peNone]}
+          />
+        ) : null}
+        {Platform.OS !== "web" ? (
+          <View style={styles.pullRefreshOverlay} pointerEvents="none">
+            {showPullCheck ? (
+              <Ionicons name="checkmark" size={16} color={c.accent || "#C8A97E"} />
+            ) : (
+              <ProgressRing
+                size={20}
+                reducedMotion={reducedMotion}
+                progress={isPullRefreshing ? 1 : pullProgress}
+                spinning={isPullRefreshing}
+                accessible={false}
+                style={{ opacity: isPullRefreshing || pullProgress > 0.02 ? 1 : 0 }}
+              />
+            )}
+          </View>
+        ) : null}
         <MotionScrollView
         ref={scrollRef}
         style={styles.scrollMain}
         scrollEventThrottle={16}
+        onScrollJS={handleHomeScroll}
+        onScrollEndDrag={(event) => {
+          const y = Number(event?.nativeEvent?.contentOffset?.y || 0);
+          if (y < -74 && !isPullRefreshing) {
+            performPullRefresh();
+          }
+        }}
         contentContainerStyle={[
           customerPageScrollBase,
           {
             paddingTop:
               Platform.OS === "web"
                 ? customerScrollPaddingTop(insets, { webMin: spacing.md })
-                : spacing.xl + 6,
-            paddingBottom: customerScrollPaddingBottom(insets),
-            paddingHorizontal:
-              Platform.OS === "web"
-                ? windowWidth < 720
-                  ? spacing.sm
-                  : windowWidth < 980
-                    ? spacing.md
-                    : customerPageScrollBase.paddingHorizontal
-                : customerPageScrollBase.paddingHorizontal,
+                : homeSpacing["3xl"],
+            paddingBottom: homeContentBottomPadding,
+            paddingHorizontal: homeOuterHorizontalPadding,
+            maxWidth: safeWindowWidth >= 1024 ? 1200 : undefined,
+            alignSelf: "center",
+            width: "100%",
           },
         ]}
         showsVerticalScrollIndicator={false}
-        refreshControl={
-          Platform.OS === "web" ? undefined : (
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={async () => {
-                await loadHomeData({ isPullRefresh: true });
-                await refreshDeliverySnippet();
-              }}
-              tintColor={c.primary}
-              colors={[c.primary]}
-              progressBackgroundColor={c.surface}
-            />
-          )
-        }
       >
         <View
           ref={webHeaderRef}
           nativeID="home-hero"
-          style={[styles.headerWrap, { paddingTop: Math.max(insets.top, spacing.md) }]}
+          style={[styles.headerWrap, { paddingTop: Math.max(safeTopInset, spacing.md) }]}
         >
-          {Platform.OS !== "web" ? (
-            <View
-              style={[
-                styles.headerAmbientCard,
-                isDark ? styles.headerAmbientCardDark : styles.headerAmbientCardLight,
-              ]}
-            >
-              <LinearGradient
-                colors={[ALCHEMY.gold, "rgba(220, 38, 38, 0.35)", "transparent"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.headerAmbientSheen, styles.peNone]}
-              />
+          <View
+            style={[
+              styles.headerAmbientCard,
+              headerScrolled ? styles.headerAmbientCardScrolled : null,
+              isDark ? styles.headerAmbientCardDark : styles.headerAmbientCardLight,
+            ]}
+          >
               <View style={styles.topBarShellNested}>
                 <View style={styles.alchemyTopBar}>
                   <Pressable
@@ -975,15 +1151,15 @@ export default function HomeScreen({ navigation }) {
                     style={({ pressed }) => [styles.alchemyIconBtn, pressed && { opacity: 0.75 }]}
                     hitSlop={10}
                     accessibilityRole="button"
-                    accessibilityLabel="Open menu"
+                    accessibilityLabel={HOME_SEARCH_UI.openMenuA11y}
                   >
-                    <Ionicons name="menu" size={icon.nav} color={isDark ? c.textPrimary : ALCHEMY.brown} />
+                    <Ionicons name="menu-outline" size={22} color={HOME_HEADER_INK} />
                   </Pressable>
                   <View style={styles.wordmarkBlock}>
-                    <BrandWordmark sizeKey="homeTopBar" style={styles.topBarLogo} />
+                    <BrandWordmark sizeKey="homeTopBar" style={styles.topBarLogo} color={HOME_HEADER_INK} />
                     {HOME_WORDMARK_TAGLINE ? (
                       <Text
-                        style={[styles.topBarTagline, { color: c.textMuted }]}
+                        style={styles.topBarTagline}
                         numberOfLines={2}
                         ellipsizeMode="tail"
                       >
@@ -996,10 +1172,14 @@ export default function HomeScreen({ navigation }) {
                     style={({ pressed }) => [styles.alchemyIconBtn, pressed && { opacity: 0.75 }]}
                     hitSlop={10}
                     accessibilityRole="button"
-                    accessibilityLabel={totalItems > 0 ? `Cart, ${totalItems} items` : "Cart"}
+                    accessibilityLabel={
+                      totalItems > 0
+                        ? `${HOME_SEARCH_UI.cartA11yLabel}, ${totalItems} ${HOME_SEARCH_UI.cartA11yItemsSuffix}`
+                        : HOME_SEARCH_UI.cartA11yLabel
+                    }
                   >
                     <Animated.View style={[styles.cartBtnInner, cartBounceStyle]}>
-                      <Ionicons name="bag-handle-outline" size={icon.nav} color={isDark ? c.textPrimary : ALCHEMY.brown} />
+                      <Ionicons name="bag-outline" size={22} color={HOME_HEADER_INK} />
                       {totalItems > 0 ? (
                         <View
                           style={[
@@ -1019,195 +1199,76 @@ export default function HomeScreen({ navigation }) {
               </View>
               <View style={[styles.headerInnerDivider, isDark ? styles.headerInnerDividerDark : null]} />
               <View style={styles.searchWrap}>
-                <View style={[styles.conciergeBar, shouldStackConcierge ? styles.conciergeBarStacked : null, isDark ? styles.conciergeBarDark : null]}>
-                  {shouldStackConcierge ? (
-                    <View style={styles.conciergeTopRow}>
-                      <Pressable
-                        onPress={openAddressSelector}
-                        style={({ pressed }) => [
-                          styles.conciergeLocationChip,
-                          styles.conciergeLocationChipStacked,
-                          pressed ? styles.conciergePressed : null,
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityLabel={`${HOME_SEARCH_UI.locationChipA11yPrefix}. ${locationChipLabel}`}
-                      >
-                        <Ionicons name="location-outline" size={icon.xs + 1} color={c.textSecondary} />
-                        <Text style={styles.conciergeLocationText} numberOfLines={1} ellipsizeMode="tail">
-                          {locationChipDisplayLabel}
-                        </Text>
-                        <Ionicons name="chevron-down" size={icon.xs} color={c.textMuted} />
-                      </Pressable>
-                      <Pressable
-                        onPress={openNotifications}
-                        style={({ pressed }) => [styles.conciergeIconBtn, pressed ? styles.conciergePressed : null]}
-                        accessibilityRole="button"
-                        accessibilityLabel={HOME_SEARCH_UI.notificationsA11y}
-                      >
-                        <Ionicons name="notifications-outline" size={icon.md} color={c.textPrimary} />
-                        {unreadNotificationCount > 0 ? <View style={styles.conciergeUnreadDot} /> : null}
-                      </Pressable>
-                    </View>
-                  ) : (
-                    <React.Fragment>
-                      <Pressable
-                        onPress={openAddressSelector}
-                        style={({ pressed }) => [styles.conciergeLocationChip, pressed ? styles.conciergePressed : null]}
-                        accessibilityRole="button"
-                        accessibilityLabel={`${HOME_SEARCH_UI.locationChipA11yPrefix}. ${locationChipLabel}`}
-                      >
-                        <Ionicons name="location-outline" size={icon.xs + 1} color={c.textSecondary} />
-                        <Text style={styles.conciergeLocationText} numberOfLines={1} ellipsizeMode="tail">
-                          {locationChipDisplayLabel}
-                        </Text>
-                        <Ionicons name="chevron-down" size={icon.xs} color={c.textMuted} />
-                      </Pressable>
-                    </React.Fragment>
-                  )}
-                  <View
-                    style={[
-                      styles.conciergeSearchWrap,
-                      searchFocused ? styles.conciergeSearchWrapFocused : null,
-                      shouldStackConcierge ? styles.conciergeSearchWrapStacked : null,
-                    ]}
-                  >
-                    <QCommerceSearchField
-                      premium
-                      value={query}
-                      onChangeText={setQuery}
-                      onClear={() => setQuery("")}
-                      placeholder={activeSearchPlaceholder}
-                      onFocus={onSearchFocus}
-                      onBlur={onSearchBlur}
-                      onSubmitEditing={onSearchSubmit}
-                      accessibilityLabel="Search products"
-                      containerStyle={styles.conciergeSearchInputShell}
-                      inputStyle={styles.conciergeSearchInput}
-                    />
-                    {searchFocused ? (
-                      <View style={styles.recentSearchDropdown}>
-                        <Text style={styles.recentSearchTitle}>{HOME_SEARCH_UI.recentSearchesTitle}</Text>
-                        {recentSearches.length > 0 ? (
-                          recentSearches.map((item) => (
-                            <Pressable
-                              key={item}
-                              onPress={() => onPickRecentSearch(item)}
-                              style={({ pressed }) => [styles.recentSearchItem, pressed ? styles.conciergePressed : null]}
-                              accessibilityRole="button"
-                              accessibilityLabel={`Use recent search ${item}`}
-                            >
-                              <Ionicons name="time-outline" size={icon.xs} color={c.textMuted} />
-                              <Text style={styles.recentSearchItemText} numberOfLines={1}>
-                                {item}
-                              </Text>
-                            </Pressable>
-                          ))
-                        ) : (
-                          <Text style={styles.recentSearchEmpty}>{HOME_SEARCH_UI.recentSearchesEmpty}</Text>
-                        )}
-                      </View>
-                    ) : null}
-                  </View>
-                  {!shouldStackConcierge ? (
-                    <Pressable
-                      onPress={openNotifications}
-                      style={({ pressed }) => [styles.conciergeIconBtn, pressed ? styles.conciergePressed : null]}
-                      accessibilityRole="button"
-                      accessibilityLabel={HOME_SEARCH_UI.notificationsA11y}
-                    >
-                      <Ionicons name="notifications-outline" size={icon.md} color={c.textPrimary} />
-                      {unreadNotificationCount > 0 ? <View style={styles.conciergeUnreadDot} /> : null}
-                    </Pressable>
-                  ) : null}
-                </View>
-              </View>
-            </View>
-          ) : (
-            <View style={[styles.webSearchRail, isDark ? styles.conciergeBarDark : null]}>
-              <Pressable
-                onPress={openAddressSelector}
-                style={({ pressed }) => [styles.conciergeLocationChip, styles.conciergeLocationChipWeb, pressed ? styles.conciergePressed : null]}
-                accessibilityRole="button"
-                accessibilityLabel={`${HOME_SEARCH_UI.locationChipA11yPrefix}. ${locationChipLabel}`}
-              >
-                <Ionicons name="location-outline" size={icon.xs + 1} color={c.textSecondary} />
-                <Text style={styles.conciergeLocationText} numberOfLines={1} ellipsizeMode="tail">
-                  {locationChipDisplayLabel}
-                </Text>
-                <Ionicons name="chevron-down" size={icon.xs} color={c.textMuted} />
-              </Pressable>
-              <View style={[styles.searchWrap, styles.searchWrapWeb, styles.conciergeSearchWrap, searchFocused ? styles.conciergeSearchWrapFocused : null]}>
-                <QCommerceSearchField
-                  premium
+                <HomeSearchHeader
+                  colors={c}
+                  isDark={isDark}
+                  deliveryAddress={deliveryAddress}
+                  unreadCount={unreadNotificationCount}
+                  onPressAddress={openAddressSelector}
+                  onPressBell={openNotifications}
+                  onSubmitSearch={onSearchSubmit}
                   value={query}
-                  onChangeText={setQuery}
-                  onClear={() => setQuery("")}
-                  placeholder={activeSearchPlaceholder}
-                  onFocus={onSearchFocus}
-                  onBlur={onSearchBlur}
-                  onSubmitEditing={onSearchSubmit}
-                  accessibilityLabel="Search products"
-                  containerStyle={styles.conciergeSearchInputShell}
-                  inputStyle={styles.conciergeSearchInput}
+                  onChangeSearch={setQuery}
                 />
-                {searchFocused ? (
-                  <View style={styles.recentSearchDropdown}>
-                    <Text style={styles.recentSearchTitle}>{HOME_SEARCH_UI.recentSearchesTitle}</Text>
-                    {recentSearches.length > 0 ? (
-                      recentSearches.map((item) => (
-                        <Pressable
-                          key={item}
-                          onPress={() => onPickRecentSearch(item)}
-                          style={({ pressed }) => [styles.recentSearchItem, pressed ? styles.conciergePressed : null]}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Use recent search ${item}`}
-                        >
-                          <Ionicons name="time-outline" size={icon.xs} color={c.textMuted} />
-                          <Text style={styles.recentSearchItemText} numberOfLines={1}>
-                            {item}
-                          </Text>
-                        </Pressable>
-                      ))
-                    ) : (
-                      <Text style={styles.recentSearchEmpty}>{HOME_SEARCH_UI.recentSearchesEmpty}</Text>
-                    )}
-                  </View>
-                ) : null}
               </View>
+          </View>
+          {showMarketing && isOutOfArea ? (
+            <View
+              style={[
+                styles.outOfAreaBanner,
+                {
+                  borderColor: c.accent || "#C8A97E",
+                  backgroundColor: c.accentSoft || "rgba(200,169,126,0.14)",
+                },
+              ]}
+            >
+              <Ionicons
+                name={HOME_EMPTY_STATES.outOfArea.icon}
+                size={18}
+                color={c.accent || "#C8A97E"}
+                style={styles.outOfAreaIcon}
+              />
+              <Text style={[styles.outOfAreaText, { color: c.textPrimary }]}>
+                {HOME_EMPTY_STATES.outOfArea.message}
+              </Text>
               <Pressable
-                onPress={openNotifications}
-                style={({ pressed }) => [styles.conciergeIconBtn, styles.conciergeIconBtnWeb, pressed ? styles.conciergePressed : null]}
+                onPress={openOutOfAreaNotify}
+                style={({ pressed }) => [styles.outOfAreaLinkBtn, pressed ? styles.outOfAreaLinkBtnPressed : null]}
                 accessibilityRole="button"
-                accessibilityLabel={HOME_SEARCH_UI.notificationsA11y}
+                accessibilityLabel={HOME_EMPTY_STATES.outOfArea.notifyCta}
               >
-                <Ionicons name="notifications-outline" size={icon.md} color={c.textPrimary} />
-                {unreadNotificationCount > 0 ? <View style={styles.conciergeUnreadDot} /> : null}
+                <Text style={[styles.outOfAreaLinkText, { color: c.accent || "#C8A97E" }]}>
+                  {HOME_EMPTY_STATES.outOfArea.notifyCta}
+                </Text>
               </Pressable>
             </View>
-          )}
+          ) : null}
 
-          <HomeMarketingHero
-            onHeroPressIn={() => setHeroAutoPaused(true)}
-            onHeroPressOut={() => setHeroAutoPaused(false)}
-            goToHeroSlide={goToHeroSlide}
-            handleHeroSlideAction={handleHeroSlideAction}
-            heroSlideHeight={heroSlideHeight}
-            heroSlideIndex={heroSlideIndex}
-            heroSliderRef={heroSliderRef}
-            heroSliderWidth={heroSliderWidth}
-            heroSlides={heroSlides}
-            homeViewConfig={homeViewConfig}
-            isDark={isDark}
-            reducedMotion={reducedMotion}
-            setHeroSlideIndex={setHeroSlideIndex}
-            setHeroSliderWidth={setHeroSliderWidth}
-            showMarketing={showMarketing}
-            styles={styles}
-            webHeroRef={webHeroRef}
-          />
+          <SectionEnter sectionKey="home-hero" scrollY={scrollY} windowHeight={safeWindowHeight}>
+            <HomeMarketingHero
+              onHeroPressIn={pauseHeroAutoAdvance}
+              onHeroPressOut={resumeHeroAutoAdvance}
+              goToHeroSlide={goToHeroSlide}
+              handleHeroSlideAction={handleHeroSlideAction}
+              heroSlideHeight={safeHeroSlideHeight}
+              heroSlideIndex={heroSlideIndex}
+              heroSliderRef={heroSliderRef}
+              heroSliderWidth={heroSliderWidth}
+              heroSlides={heroSlides}
+              homeViewConfig={homeViewConfig}
+              isDark={isDark}
+              windowWidth={safeWindowWidth}
+              reducedMotion={reducedMotion}
+              setHeroSlideIndex={setHeroSlideIndex}
+              setHeroSliderWidth={setHeroSliderWidth}
+              showMarketing={showMarketing}
+              styles={styles}
+              webHeroRef={webHeroRef}
+            />
+          </SectionEnter>
 
           {showMarketing && !query.trim() ? (
-            <View style={styles.categoryQuickNavWrap}>
+            <SectionEnter sectionKey="home-categories" scrollY={scrollY} windowHeight={safeWindowHeight} style={styles.categoryQuickNavWrap}>
               <HomeCategoryGrid
                 categories={HOME_CATEGORY_QUICK_NAV}
                 overline={HOME_CATEGORY_UI.overline}
@@ -1216,29 +1277,35 @@ export default function HomeScreen({ navigation }) {
                 onPressCategory={onCategoryPress}
                 onPressViewAll={openAllCategories}
               />
-            </View>
+            </SectionEnter>
           ) : null}
-          {isAuthenticated && showMarketing && !query.trim() ? (
-            <HomeReorderStrip
-              items={reorderItems}
-              overline={HOME_REORDER_STRIP.overline}
-              title={HOME_REORDER_STRIP.title}
-              onAdd={handleReorderAdd}
-            />
-          ) : null}
-          {reorderToast ? (
-            <View style={styles.reorderToastWrap}>
-              <PremiumErrorBanner severity="success" message={reorderToast} compact />
-            </View>
+          {isAuthenticated && showMarketing && !query.trim() && reorderItems.length > 0 ? (
+            <SectionEnter sectionKey="home-reorder" scrollY={scrollY} windowHeight={safeWindowHeight}>
+              <HomeReorderStrip
+                items={reorderItems}
+                overline={HOME_REORDER_STRIP.overline}
+                title={HOME_REORDER_STRIP.title}
+                onAdd={handleReorderAdd}
+                carouselBottomPadding={homeCarouselBottomPadding}
+              />
+            </SectionEnter>
           ) : null}
           {isAuthenticated && liveOrder ? (
-            <View style={styles.liveOrderPinnedWrap}>
-              <HomeLiveOrderPinnedCard order={liveOrder} onPress={() => navigation.navigate("MyOrders")} />
-            </View>
+            <SectionEnter sectionKey="home-live-order" scrollY={scrollY} windowHeight={safeWindowHeight}>
+              <View style={styles.liveOrderPinnedWrap}>
+                <HomeLiveOrderPinnedCard order={liveOrder} onPress={() => navigation.navigate("MyOrders")} />
+              </View>
+            </SectionEnter>
           ) : null}
 
           {query.trim() ? (
-            <TouchableOpacity style={styles.activeFilterBar} onPress={() => setQuery("")} activeOpacity={0.85}>
+            <TouchableOpacity
+              style={styles.activeFilterBar}
+              onPress={() => setQuery("")}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={HOME_SEARCH_UI.clearSearchCta}
+            >
               <Ionicons name="search-outline" size={icon.xs} color={c.primary} />
               <Text style={styles.activeFilterText} numberOfLines={1}>
                 {fillPlaceholders(HOME_SEARCH_UI.catalogResultsTitle, {
@@ -1250,7 +1317,13 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
           ) : null}
           {sectionFilter ? (
-            <TouchableOpacity style={styles.sectionFilterBar} onPress={clearSectionFilter} activeOpacity={0.85}>
+            <TouchableOpacity
+              style={styles.sectionFilterBar}
+              onPress={clearSectionFilter}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={HOME_SEARCH_UI.sectionEmptyCta}
+            >
               <Ionicons name="layers-outline" size={icon.xs} color={c.secondary} />
               <Text style={styles.activeFilterText} numberOfLines={1}>
                 {sectionFilter}
@@ -1259,7 +1332,13 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
           ) : null}
           {categoryFilter ? (
-            <TouchableOpacity style={styles.sectionFilterBar} onPress={clearCategoryFilter} activeOpacity={0.85}>
+            <TouchableOpacity
+              style={styles.sectionFilterBar}
+              onPress={clearCategoryFilter}
+              activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel={HOME_SEARCH_UI.sectionEmptyCta}
+            >
               <Ionicons name="grid-outline" size={icon.xs} color={c.secondary} />
               <Text style={styles.activeFilterText} numberOfLines={1}>
                 {categoryFilter}
@@ -1267,18 +1346,18 @@ export default function HomeScreen({ navigation }) {
               <Text style={styles.sectionFilterClear}>{HOME_SEARCH_UI.activeFilterClear}</Text>
             </TouchableOpacity>
           ) : null}
-          {error ? (
+          {error && showingCachedItems ? (
             <View
               style={[
                 styles.homeErrorBanner,
                 {
-                  borderColor: isDark ? "rgba(248, 113, 113, 0.35)" : "rgba(220, 38, 38, 0.28)",
-                  backgroundColor: isDark ? "rgba(220, 38, 38, 0.14)" : "rgba(220, 38, 38, 0.07)",
+                  borderColor: c.accent || "#C8A97E",
+                  backgroundColor: c.accentSoft || "rgba(200,169,126,0.14)",
                 },
               ]}
             >
-              <Ionicons name="alert-circle-outline" size={icon.md} color={c.danger} style={styles.homeErrorIcon} />
-              <Text style={[styles.errorText, { color: c.textPrimary }]}>{error}</Text>
+              <Ionicons name={HOME_EMPTY_STATES.networkError.icon} size={icon.md} color={c.textMuted} style={styles.homeErrorIcon} />
+              <Text style={[styles.errorText, { color: c.textPrimary }]}>{HOME_EMPTY_STATES.networkError.cachedBanner}</Text>
             </View>
           ) : null}
         </View>
@@ -1292,40 +1371,38 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.catalogIntroCard}>
               <View style={styles.catalogIntroBanner}>
                 <View style={styles.catalogIntroLeft}>
-                  <Text style={styles.catalogIntroEyebrow}>Signature selection</Text>
+                  <Text style={styles.catalogIntroEyebrow}>{HOME_SEARCH_UI.catalogOverlineDefault}</Text>
                   <Text style={styles.catalogIntroTitle}>
-                    {showMarketing ? HOME_CATALOG_INTRO.starter : HOME_CATALOG_INTRO.all}
+                    {showMarketing ? HOME_SEARCH_UI.catalogIntroStarterTitle : HOME_CATALOG_INTRO.all}
                   </Text>
                 </View>
                 <View style={styles.catalogViewToggleWrap}>
-                  <Pressable
+                  <CatalogViewToggleButton
                     onPress={() => setCatalogCardStyle("comfortable")}
-                    onHoverIn={() => (Platform.OS === "web" ? setViewToggleTooltip("Comfortable cards") : null)}
+                    onHoverIn={() =>
+                      Platform.OS === "web" ? setViewToggleTooltip(HOME_SEARCH_UI.viewToggle.comfortableTooltip) : null
+                    }
                     onHoverOut={() => (Platform.OS === "web" ? setViewToggleTooltip("") : null)}
-                    style={({ pressed }) => [
-                      styles.catalogViewToggleBtn,
-                      homeViewConfig.productCardStyle === "comfortable" ? styles.catalogViewToggleBtnActive : null,
-                      pressed ? styles.catalogViewToggleBtnPressed : null,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Comfortable card view"
-                  >
-                    <Ionicons name="albums-outline" size={icon.sm} color={c.textPrimary} />
-                  </Pressable>
-                  <Pressable
+                    isActive={homeViewConfig.productCardStyle === "comfortable"}
+                    accessibilityLabel={HOME_SEARCH_UI.viewToggle.comfortableLabel}
+                    iconName="albums-outline"
+                    styles={styles}
+                    iconSize={icon.sm}
+                    c={c}
+                  />
+                  <CatalogViewToggleButton
                     onPress={() => setCatalogCardStyle("compact")}
-                    onHoverIn={() => (Platform.OS === "web" ? setViewToggleTooltip("Compact cards") : null)}
+                    onHoverIn={() =>
+                      Platform.OS === "web" ? setViewToggleTooltip(HOME_SEARCH_UI.viewToggle.compactTooltip) : null
+                    }
                     onHoverOut={() => (Platform.OS === "web" ? setViewToggleTooltip("") : null)}
-                    style={({ pressed }) => [
-                      styles.catalogViewToggleBtn,
-                      homeViewConfig.productCardStyle === "compact" ? styles.catalogViewToggleBtnActive : null,
-                      pressed ? styles.catalogViewToggleBtnPressed : null,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Compact card view"
-                  >
-                    <Ionicons name="grid-outline" size={icon.sm} color={c.textPrimary} />
-                  </Pressable>
+                    isActive={homeViewConfig.productCardStyle === "compact"}
+                    accessibilityLabel={HOME_SEARCH_UI.viewToggle.compactLabel}
+                    iconName="grid-outline"
+                    styles={styles}
+                    iconSize={icon.sm}
+                    c={c}
+                  />
                   {Platform.OS === "web" && viewToggleTooltip ? (
                     <View style={styles.catalogViewToggleTooltip}>
                       <Text style={styles.catalogViewToggleTooltipText}>{viewToggleTooltip}</Text>
@@ -1354,6 +1431,33 @@ export default function HomeScreen({ navigation }) {
               </View>
             </View>
           </View>
+        ) : hasNetworkErrorWithoutCache ? (
+          <View style={[styles.catalogSurface, styles.emptyWrap, styles.networkErrorWrap]}>
+            <Ionicons
+              name={HOME_EMPTY_STATES.networkError.icon}
+              size={48}
+              color={c.textMuted}
+              style={styles.networkErrorIcon}
+            />
+            <Text style={[styles.networkErrorTitle, { color: c.textPrimary }]}>
+              {HOME_EMPTY_STATES.networkError.title}
+            </Text>
+            <Text style={[styles.networkErrorBody, { color: c.textSecondary }]}>
+              {HOME_EMPTY_STATES.networkError.body}
+            </Text>
+            <Pressable
+              onPress={() => loadHomeData()}
+              style={({ pressed }) => [
+                styles.networkRetryBtn,
+                { backgroundColor: c.ink || "#0E1729" },
+                pressed ? styles.networkRetryBtnPressed : null,
+              ]}
+              accessibilityRole="button"
+              accessibilityLabel={HOME_EMPTY_STATES.networkError.retryCta}
+            >
+              <Text style={styles.networkRetryBtnText}>{HOME_EMPTY_STATES.networkError.retryCta}</Text>
+            </Pressable>
+          </View>
         ) : totalMatches > 0 ? (
           <View
             onLayout={(e) => {
@@ -1363,40 +1467,38 @@ export default function HomeScreen({ navigation }) {
             <View style={styles.catalogIntroCard}>
               <View style={styles.catalogIntroBanner}>
                 <View style={styles.catalogIntroLeft}>
-                  <Text style={styles.catalogIntroEyebrow}>Signature selection</Text>
+                  <Text style={styles.catalogIntroEyebrow}>{HOME_SEARCH_UI.catalogOverlineDefault}</Text>
                   <Text style={styles.catalogIntroTitle}>
-                    {showMarketing ? HOME_CATALOG_INTRO.starter : HOME_CATALOG_INTRO.all}
+                    {showMarketing ? HOME_SEARCH_UI.catalogIntroStarterTitle : HOME_CATALOG_INTRO.all}
                   </Text>
                 </View>
                 <View style={styles.catalogViewToggleWrap}>
-                  <Pressable
+                  <CatalogViewToggleButton
                     onPress={() => setCatalogCardStyle("comfortable")}
-                    onHoverIn={() => (Platform.OS === "web" ? setViewToggleTooltip("Comfortable cards") : null)}
+                    onHoverIn={() =>
+                      Platform.OS === "web" ? setViewToggleTooltip(HOME_SEARCH_UI.viewToggle.comfortableTooltip) : null
+                    }
                     onHoverOut={() => (Platform.OS === "web" ? setViewToggleTooltip("") : null)}
-                    style={({ pressed }) => [
-                      styles.catalogViewToggleBtn,
-                      homeViewConfig.productCardStyle === "comfortable" ? styles.catalogViewToggleBtnActive : null,
-                      pressed ? styles.catalogViewToggleBtnPressed : null,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Comfortable card view"
-                  >
-                    <Ionicons name="albums-outline" size={icon.sm} color={c.textPrimary} />
-                  </Pressable>
-                  <Pressable
+                    isActive={homeViewConfig.productCardStyle === "comfortable"}
+                    accessibilityLabel={HOME_SEARCH_UI.viewToggle.comfortableLabel}
+                    iconName="albums-outline"
+                    styles={styles}
+                    iconSize={icon.sm}
+                    c={c}
+                  />
+                  <CatalogViewToggleButton
                     onPress={() => setCatalogCardStyle("compact")}
-                    onHoverIn={() => (Platform.OS === "web" ? setViewToggleTooltip("Compact cards") : null)}
+                    onHoverIn={() =>
+                      Platform.OS === "web" ? setViewToggleTooltip(HOME_SEARCH_UI.viewToggle.compactTooltip) : null
+                    }
                     onHoverOut={() => (Platform.OS === "web" ? setViewToggleTooltip("") : null)}
-                    style={({ pressed }) => [
-                      styles.catalogViewToggleBtn,
-                      homeViewConfig.productCardStyle === "compact" ? styles.catalogViewToggleBtnActive : null,
-                      pressed ? styles.catalogViewToggleBtnPressed : null,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Compact card view"
-                  >
-                    <Ionicons name="grid-outline" size={icon.sm} color={c.textPrimary} />
-                  </Pressable>
+                    isActive={homeViewConfig.productCardStyle === "compact"}
+                    accessibilityLabel={HOME_SEARCH_UI.viewToggle.compactLabel}
+                    iconName="grid-outline"
+                    styles={styles}
+                    iconSize={icon.sm}
+                    c={c}
+                  />
                   {Platform.OS === "web" && viewToggleTooltip ? (
                     <View style={styles.catalogViewToggleTooltip}>
                       <Text style={styles.catalogViewToggleTooltipText}>{viewToggleTooltip}</Text>
@@ -1423,16 +1525,17 @@ export default function HomeScreen({ navigation }) {
             ) : homeViewConfig.showHomeSections && sectionsForRender.length > 0 ? (
               <View nativeID="home-sections">
               {sectionsForRender.map((section, sIdx) => (
-                <Animated.View
+                <SectionEnter
                   key={section.title}
+                  sectionKey={`home-section-${String(section.title).toLowerCase()}`}
+                  scrollY={scrollY}
+                  windowHeight={safeWindowHeight}
                   style={styles.listSection}
-                  entering={
-                    Platform.OS === "web" || reducedMotion
-                      ? undefined
-                      : FadeInDown.delay(Math.min(sIdx * 72, 400)).duration(420)
-                  }
                 >
-                  <View ref={(node) => setWebCatalogRef(sIdx, node)} style={styles.catalogSurface}>
+                  <View
+                    ref={(node) => setWebCatalogRef(sIdx, node)}
+                    style={styles.catalogSurface}
+                  >
                     <HomeSectionHeader
                       overline={sIdx === 0 ? HOME_SEARCH_UI.sectionOverlineFirst : HOME_SEARCH_UI.sectionOverlineOther}
                       title={section.title}
@@ -1450,26 +1553,85 @@ export default function HomeScreen({ navigation }) {
                     />
                     {renderCatalogItems(section.items, `sec-${section.title}`)}
                   </View>
-                </Animated.View>
+                </SectionEnter>
               ))}
               </View>
             ) : (
-              <Animated.View
+              <SectionEnter
                 nativeID="home-sections"
                 collapsable={false}
+                sectionKey="home-section-catalog"
+                scrollY={scrollY}
+                windowHeight={safeWindowHeight}
                 style={styles.listSection}
-                entering={Platform.OS === "web" || reducedMotion ? undefined : FadeInDown.delay(80).duration(440)}
               >
                 <View ref={(node) => setWebCatalogRef(0, node)} style={styles.catalogSurface}>
                   <HomeSectionHeader
-                    overline={homeViewConfig.showPrimeSection ? HOME_SEARCH_UI.primeOverline : HOME_SEARCH_UI.catalogOverlineDefault}
+                    overline={
+                      homeViewConfig.showPrimeSection ? HOME_SEARCH_UI.primeOverline : HOME_SEARCH_UI.catalogSectionOverlineDefault
+                    }
                     title={homeViewConfig.showPrimeSection ? homeViewConfig.primeSectionTitle : HOME_SEARCH_UI.allProductsTitle}
                     count={productsForHome.length}
                   />
                   {renderCatalogItems(productsForHome, "shop")}
                 </View>
-              </Animated.View>
+              </SectionEnter>
             )}
+          </View>
+        ) : noSearchResults ? (
+          <View
+            onLayout={(e) => {
+              featuredYRef.current = e.nativeEvent.layout.y;
+            }}
+          >
+            <View style={[styles.catalogSurface, styles.emptyWrap, styles.searchEmptyWrap]}>
+              <Ionicons name={HOME_EMPTY_STATES.noSearchResults.icon} size={48} color={c.textMuted} />
+              <Text style={[styles.searchEmptyTitle, { color: c.textPrimary }]}>
+                {HOME_EMPTY_STATES.noSearchResults.title}
+              </Text>
+              <Text style={[styles.searchEmptyBody, { color: c.textSecondary }]}>
+                {HOME_EMPTY_STATES.noSearchResults.body}
+              </Text>
+              <Pressable
+                onPress={() => setQuery("")}
+                style={({ pressed }) => [
+                  styles.searchEmptyClearBtn,
+                  {
+                    borderColor: c.border,
+                    backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.9)",
+                  },
+                  pressed ? styles.searchEmptyClearBtnPressed : null,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={HOME_EMPTY_STATES.noSearchResults.clearCta}
+              >
+                <Text style={[styles.searchEmptyClearBtnText, { color: c.textPrimary }]}>
+                  {HOME_EMPTY_STATES.noSearchResults.clearCta}
+                </Text>
+              </Pressable>
+            </View>
+            <SectionEnter sectionKey="home-categories-no-search" scrollY={scrollY} windowHeight={safeWindowHeight} style={styles.categoryQuickNavWrap}>
+              <HomeCategoryGrid
+                categories={HOME_CATEGORY_QUICK_NAV}
+                overline={HOME_CATEGORY_UI.overline}
+                title={HOME_CATEGORY_UI.title}
+                viewAllLabel={HOME_CATEGORY_UI.viewAllLabel}
+                onPressCategory={onCategoryPress}
+                onPressViewAll={openAllCategories}
+              />
+            </SectionEnter>
+            {bestSellersFallback.length > 0 ? (
+              <SectionEnter sectionKey="home-bestsellers-no-search" scrollY={scrollY} windowHeight={safeWindowHeight} style={styles.listSection}>
+                <View ref={(node) => setWebCatalogRef(0, node)} style={styles.catalogSurface}>
+                  <HomeSectionHeader
+                    overline={HOME_EMPTY_STATES.noSearchResults.bestsellersOverline}
+                    title={HOME_EMPTY_STATES.noSearchResults.bestsellersTitle}
+                    count={bestSellersFallback.length}
+                  />
+                  {renderCatalogItems(bestSellersFallback, "no-search-bestsellers")}
+                </View>
+              </SectionEnter>
+            ) : null}
           </View>
         ) : (
           <View ref={(node) => setWebCatalogRef(0, node)} style={[styles.catalogSurface, styles.emptyWrap]}>
@@ -1497,25 +1659,31 @@ export default function HomeScreen({ navigation }) {
         )}
 
         {showMarketing && !query.trim() ? (
-          <HomeTrustStrip
-            c={c}
-            forwardedRef={webTrustRef}
-            isDark={isDark}
-            reducedMotion={reducedMotion}
-            styles={styles}
-          />
+          <SectionEnter sectionKey="home-trust" scrollY={scrollY} windowHeight={safeWindowHeight}>
+            <HomeTrustStrip
+              c={c}
+              forwardedRef={webTrustRef}
+              isDark={isDark}
+              reducedMotion={reducedMotion}
+              styles={styles}
+            />
+          </SectionEnter>
         ) : null}
 
         {showMarketing && !query.trim() ? (
-          <GoldHairline marginVertical={spacing.md} withDot />
+          <GoldHairline marginVertical={spacing.md} withDot={false} />
         ) : null}
 
         {showMarketing && !query.trim() ? (
-          <HomeStatsStrip c={c} isDark={isDark} />
+          <SectionEnter sectionKey="home-stats" scrollY={scrollY} windowHeight={safeWindowHeight}>
+            <HomeStatsStrip c={c} isDark={isDark} />
+          </SectionEnter>
         ) : null}
 
         {showMarketing && !query.trim() ? (
-          <HomeTestimonials c={c} isDark={isDark} />
+          <SectionEnter sectionKey="home-testimonials" scrollY={scrollY} windowHeight={safeWindowHeight}>
+            <HomeTestimonials c={c} isDark={isDark} carouselBottomPadding={homeCarouselBottomPadding} />
+          </SectionEnter>
         ) : null}
 
         {Platform.OS === "web" ? (
@@ -1536,8 +1704,142 @@ export default function HomeScreen({ navigation }) {
           <HomePageFooter colors={c} />
         </View>
         </MotionScrollView>
+        {totalItems > 0 && scrollY > safeHeroSlideHeight ? (
+          <Animated.View entering={FadeInDown.duration(260)} exiting={FadeOutDown.duration(220)} style={styles.stickyBagBar}>
+            <Text style={styles.stickyBagText}>{`${totalItems} items · ${formatINRWhole(totalAmount)}`}</Text>
+            <Pressable
+              onPress={() => (isAuthenticated ? navigation.navigate("Cart") : navigation.navigate("Login"))}
+              style={({ pressed }) => [styles.stickyBagCta, pressed ? styles.stickyBagCtaPressed : null]}
+              accessibilityRole="button"
+              accessibilityLabel="View bag"
+            >
+              <Text style={styles.stickyBagCtaText}>View Bag</Text>
+              <Ionicons name="arrow-forward" size={14} color={c.accent || "#C8A97E"} />
+            </Pressable>
+          </Animated.View>
+        ) : null}
         <BottomNavBar />
-      </LinearGradient>
+        {flyGhost ? (
+          <Animated.View pointerEvents="none" style={[styles.flyGhost, flyGhostStyle]}>
+            {flyGhost.imageUri ? (
+              <Image source={{ uri: flyGhost.imageUri }} style={styles.flyGhostImage} contentFit="cover" transition={0} />
+            ) : (
+              <View style={[styles.flyGhostImage, { backgroundColor: c.surfaceAlt }]} />
+            )}
+          </Animated.View>
+        ) : null}
+        {toastQueue.length > 0 ? (
+          <View style={[styles.toastStackRoot, { bottom: toastStackBottomOffset }]} pointerEvents="box-none">
+            <View style={styles.toastStackColumn} pointerEvents="box-none">
+              {toastQueue.map((toastItem) => (
+                <Animated.View
+                  key={toastItem.id}
+                  entering={FadeInDown.duration(240).easing(Easing.bezier(0.2, 0.8, 0.2, 1))}
+                  exiting={FadeOutDown.duration(220).easing(Easing.bezier(0.2, 0.8, 0.2, 1))}
+                  style={styles.toastCard}
+                >
+                  <Pressable
+                    onHoverIn={() => (Platform.OS === "web" ? pauseToastDismiss(toastItem.id) : null)}
+                    onHoverOut={() => (Platform.OS === "web" ? resumeToastDismiss(toastItem.id) : null)}
+                    onPressIn={() => (Platform.OS !== "web" ? pauseToastDismiss(toastItem.id) : null)}
+                    onPressOut={() => (Platform.OS !== "web" ? resumeToastDismiss(toastItem.id) : null)}
+                    style={styles.toastCardInner}
+                  >
+                    <Ionicons name="checkmark-circle" size={18} color={HERITAGE.amberBright} />
+                    <Text style={styles.toastText} numberOfLines={1}>
+                      {toastItem.message}
+                    </Text>
+                    <Pressable
+                      onPressIn={() => pauseToastDismiss(toastItem.id)}
+                      onPressOut={() => resumeToastDismiss(toastItem.id)}
+                      onPress={() => {
+                        removeToast(toastItem.id);
+                        if (isAuthenticated) {
+                          navigation.navigate("Cart");
+                        } else {
+                          navigation.navigate("Login");
+                        }
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={HOME_TOAST.viewBag}
+                      style={({ pressed }) => [styles.toastActionBtn, pressed ? styles.toastActionBtnPressed : null]}
+                    >
+                      <Text style={styles.toastActionText}>{toastItem.actionLabel || HOME_TOAST.viewBag}</Text>
+                    </Pressable>
+                  </Pressable>
+                </Animated.View>
+              ))}
+            </View>
+          </View>
+        ) : null}
+      </View>
+
+      <Modal
+        visible={outOfAreaNotifyOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setOutOfAreaNotifyOpen(false)}
+      >
+        <View style={styles.notifyModalRoot}>
+          <Pressable style={styles.notifyModalBackdrop} onPress={() => setOutOfAreaNotifyOpen(false)} />
+          <View style={[styles.notifyModalCard, { backgroundColor: c.surface, borderColor: c.border }]}>
+            <Text style={[styles.notifyModalTitle, { color: c.textPrimary }]}>
+              {HOME_EMPTY_STATES.outOfArea.modalTitle}
+            </Text>
+            <Text style={[styles.notifyModalBody, { color: c.textSecondary }]}>
+              {HOME_EMPTY_STATES.outOfArea.modalBody}
+            </Text>
+            {outOfAreaNotifySubmitted ? (
+              <Text style={[styles.notifyModalSuccess, { color: c.secondary || c.accent || "#16A34A" }]}>
+                {HOME_EMPTY_STATES.outOfArea.success}
+              </Text>
+            ) : (
+              <TextInput
+                value={outOfAreaEmail}
+                onChangeText={setOutOfAreaEmail}
+                placeholder={HOME_EMPTY_STATES.outOfArea.emailPlaceholder}
+                placeholderTextColor={c.textMuted}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                style={[
+                  styles.notifyModalInput,
+                  {
+                    color: c.textPrimary,
+                    borderColor: c.border,
+                    backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#FFFFFF",
+                  },
+                ]}
+              />
+            )}
+            <View style={styles.notifyModalActions}>
+              {!outOfAreaNotifySubmitted ? (
+                <Pressable
+                  onPress={submitOutOfAreaNotify}
+                  style={({ pressed }) => [
+                    styles.notifyModalPrimaryBtn,
+                    { backgroundColor: c.ink || "#0E1729" },
+                    pressed ? styles.notifyModalBtnPressed : null,
+                  ]}
+                >
+                  <Text style={styles.notifyModalPrimaryText}>{HOME_EMPTY_STATES.outOfArea.submitCta}</Text>
+                </Pressable>
+              ) : null}
+              <Pressable
+                onPress={() => setOutOfAreaNotifyOpen(false)}
+                style={({ pressed }) => [
+                  styles.notifyModalGhostBtn,
+                  { borderColor: c.border },
+                  pressed ? styles.notifyModalBtnPressed : null,
+                ]}
+              >
+                <Text style={[styles.notifyModalGhostText, { color: c.textPrimary }]}>
+                  {HOME_EMPTY_STATES.outOfArea.closeCta}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal
         visible={menuOpen}
@@ -1551,7 +1853,7 @@ export default function HomeScreen({ navigation }) {
           <Pressable
             style={styles.menuBackdrop}
             onPress={() => setMenuOpen(false)}
-            accessibilityLabel="Close menu"
+            accessibilityLabel={HOME_TOAST.closeMenu}
           />
           <View style={[styles.menuLayer, styles.peBoxNone]}>
             <View
@@ -1559,7 +1861,7 @@ export default function HomeScreen({ navigation }) {
                 styles.menuDropdown,
                 {
                   top:
-                    Math.max(insets.top, Platform.OS === "web" ? spacing.md : spacing.sm) + HOME_MENU_TOP_OFFSET,
+                    Math.max(safeTopInset, Platform.OS === "web" ? spacing.md : spacing.sm) + HOME_MENU_TOP_OFFSET,
                   left: spacing.lg,
                   backgroundColor: isDark ? c.surface : ALCHEMY.cardBg,
                   borderColor: isDark ? c.border : ALCHEMY.pillInactive,
@@ -1567,25 +1869,29 @@ export default function HomeScreen({ navigation }) {
               ]}
               collapsable={false}
             >
-              <LinearGradient
-                colors={[ALCHEMY.gold, ALCHEMY.brown]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.menuGoldAccent}
-              />
+              {Platform.OS === "web" ? (
+                <LinearGradient
+                  colors={[ALCHEMY.gold, ALCHEMY.brown]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.menuGoldAccent}
+                />
+              ) : (
+                <View style={[styles.menuGoldAccent, { backgroundColor: ALCHEMY.gold }]} />
+              )}
               <View style={styles.menuHeaderRow}>
-                <Text style={[styles.menuHeaderTitle, { color: c.textPrimary }]}>Menu</Text>
+                <Text style={[styles.menuHeaderTitle, { color: c.textPrimary }]}>{HOME_SEARCH_UI.menuTitle}</Text>
                 <Pressable
                   onPress={() => setMenuOpen(false)}
                   style={({ pressed }) => [styles.menuCloseBtn, pressed && { opacity: 0.7 }]}
                   hitSlop={12}
                   accessibilityRole="button"
-                  accessibilityLabel="Close menu"
+                  accessibilityLabel={HOME_TOAST.closeMenu}
                 >
                   <Ionicons name="close" size={icon.lg} color={c.textSecondary} />
                 </Pressable>
               </View>
-              <Text style={[styles.menuSectionLabel, { color: c.textMuted }]}>Account</Text>
+              <Text style={[styles.menuSectionLabel, { color: c.textMuted }]}>{HOME_SEARCH_UI.menuAccountLabel}</Text>
               {HOME_MENU_LINKS.map((item) => (
                 <Pressable
                   key={item.key}
@@ -1598,6 +1904,8 @@ export default function HomeScreen({ navigation }) {
                     setMenuOpen(false);
                     navigation.navigate(item.route);
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.label}
                 >
                   <View style={[styles.menuIconCircle, { backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt }]}>
                     <Ionicons name={item.icon} size={icon.md} color={isDark ? c.textPrimary : ALCHEMY.brown} />
@@ -1617,7 +1925,12 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
+function createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth = 0, insets = { top: 0, bottom: 0 }) {
+  const sectionGap = windowWidth >= 600 ? homeSpacing["5xl"] : homeSpacing["4xl"];
+  const cardPadding = windowWidth >= 600 ? homeSpacing.lg : homeSpacing.base;
+  const productGridGap = windowWidth >= 600 ? homeSpacing.base : homeSpacing.md;
+  const safeTopInset = Number(insets?.top || 0);
+  const safeBottomInset = Number(insets?.bottom || 0);
   return StyleSheet.create({
     screen: {
       flex: 1,
@@ -1634,15 +1947,13 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       width: "100%",
     },
     headerWrap: {
-      paddingBottom: Platform.select({ web: spacing.md + 4, default: spacing.sm + 4 }),
+      paddingBottom: Platform.select({ web: homeSpacing.lg, default: homeSpacing.base }),
     },
     headerAmbientCard: {
       position: "relative",
       borderRadius: radius.xxl,
       overflow: "hidden",
-      borderWidth: StyleSheet.hairlineWidth,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: isDark ? "rgba(248, 113, 113, 0.36)" : "rgba(220, 38, 38, 0.3)",
+      borderWidth: 0,
       marginBottom: spacing.md,
       ...Platform.select({
         ios: {
@@ -1666,32 +1977,28 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       }),
     },
     headerAmbientCardLight: {
-      borderColor: "rgba(100, 116, 139, 0.14)",
-      backgroundColor: c.frostTint || "rgba(255, 255, 255, 0.95)",
+      borderColor: HOME_LINE,
+      backgroundColor: HOME_HEADER_BG_LIGHT,
       ...Platform.select({
         web: {
-          backdropFilter: "blur(20px)",
+          backdropFilter: "none",
         },
         default: {
-          backgroundColor: "transparent",
+          backgroundColor: HOME_HEADER_BG_LIGHT,
         },
       }),
     },
-    headerAmbientCardDark: {
-      borderColor: "rgba(185, 28, 28, 0.14)",
-      backgroundColor: Platform.OS === "web" ? "rgba(11, 17, 32, 0.62)" : "transparent",
+    headerAmbientCardScrolled: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: HOME_LINE,
     },
-    headerAmbientSheen: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 112,
-      opacity: isDark ? 0.12 : 0.2,
+    headerAmbientCardDark: {
+      borderColor: HOME_LINE,
+      backgroundColor: HOME_HEADER_BG_LIGHT,
     },
     topBarShellNested: {
       paddingTop: 4,
-      paddingBottom: 2,
+      paddingBottom: 4,
       paddingHorizontal: spacing.xs,
     },
     headerInnerDivider: {
@@ -1699,7 +2006,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       marginHorizontal: spacing.lg,
       marginTop: spacing.xs,
       marginBottom: spacing.sm,
-      backgroundColor: "rgba(63, 63, 70, 0.12)",
+      backgroundColor: HOME_LINE,
     },
     headerInnerDividerDark: {
       backgroundColor: "rgba(255, 255, 255, 0.1)",
@@ -1717,7 +2024,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       right: 0,
       minWidth: 18,
       height: 18,
-      paddingHorizontal: 5,
+      paddingHorizontal: 4,
       borderRadius: 9,
       alignItems: "center",
       justifyContent: "center",
@@ -1726,14 +2033,14 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     cartBadgeText: {
       color: c.onPrimary,
       fontSize: 10,
-      fontFamily: fonts.extrabold,
+      fontFamily: fonts.semibold,
       lineHeight: 12,
     },
     alchemyTopBar: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: spacing.xs + 2,
+      paddingHorizontal: homeSpacing.md,
       minHeight: BRAND_HOME_TOP_BAR_LAYOUT_HEIGHT + spacing.sm,
     },
     wordmarkBlock: {
@@ -1744,16 +2051,17 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       alignSelf: "stretch",
       paddingHorizontal: spacing.xs,
       minWidth: 0,
-      minHeight: BRAND_HOME_TOP_BAR_LAYOUT_HEIGHT + spacing.sm + 14,
+      minHeight: BRAND_HOME_TOP_BAR_LAYOUT_HEIGHT + spacing.sm + homeSpacing.md,
       overflow: "visible",
     },
     topBarTagline: {
       marginTop: -2,
       fontSize: Platform.OS === "web" ? typography.overline : 12,
-      fontFamily: fonts.semibold,
+      fontFamily: fonts.regular,
       letterSpacing: 0.6,
       textAlign: "center",
       lineHeight: Platform.OS === "web" ? lineHeight.overline : 16,
+      color: c.textMuted,
     },
     topBarLogo: {
       flexShrink: 1,
@@ -1781,36 +2089,17 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       alignSelf: "center",
       borderRadius: radius.md,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(100, 116, 139, 0.16)",
-      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(255, 255, 255, 0.88)",
+      borderColor: "rgba(100, 116, 139, 0.16)",
+      backgroundColor: "rgba(255, 255, 255, 0.88)",
       ...Platform.select({
         web: { cursor: "pointer" },
         default: {},
       }),
     },
     searchWrap: {
-      marginTop: 0,
-      marginBottom: spacing.sm + 2,
+      marginTop: 16,
+      marginBottom: homeSpacing.md,
       paddingHorizontal: spacing.sm,
-    },
-    searchWrapWeb: {
-      marginBottom: 0,
-      paddingHorizontal: 0,
-      width: "100%",
-      minWidth: 0,
-    },
-    homeLocationWrap: {
-      paddingHorizontal: spacing.sm,
-      marginBottom: spacing.sm + 2,
-    },
-    homeLocationWrapWeb: {
-      paddingHorizontal: 0,
-      marginBottom: 0,
-      marginTop: 0,
-      flexBasis: 280,
-      flexGrow: 1,
-      minWidth: 220,
-      maxWidth: 360,
     },
     webSearchRail: {
       flexDirection: "column",
@@ -1818,7 +2107,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       gap: spacing.sm,
       width: "100%",
       maxWidth: 520,
-      marginBottom: spacing.md + 2,
+      marginBottom: homeSpacing.lg,
       padding: spacing.sm,
       borderRadius: 14,
       borderWidth: StyleSheet.hairlineWidth,
@@ -1836,12 +2125,12 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       flexDirection: "row",
       alignItems: "center",
       flexWrap: "nowrap",
-      gap: spacing.xs + 2,
+      gap: homeSpacing.md,
       borderRadius: 14,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(63,63,70,0.2)",
       backgroundColor: c.surface,
-      padding: spacing.xs + 2,
+      padding: homeSpacing.md,
       ...Platform.select({
         web: { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" },
         ios: {
@@ -1863,14 +2152,14 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     conciergeTopRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: spacing.xs + 2,
+      gap: homeSpacing.md,
     },
     conciergeLocationChip: {
       minHeight: 44,
       maxWidth: Platform.OS === "web" ? "100%" : "60%",
       flexDirection: "row",
       alignItems: "center",
-      gap: spacing.xs - 2,
+      gap: homeSpacing.xs,
       borderRadius: radius.pill,
       paddingHorizontal: spacing.sm,
       backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(248,250,252,0.92)",
@@ -1937,12 +2226,12 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     conciergeUnreadDot: {
       position: "absolute",
-      top: 9,
-      right: 9,
-      width: 8,
-      height: 8,
+      top: 10,
+      right: 10,
+      width: 6,
+      height: 6,
       borderRadius: 999,
-      backgroundColor: "#EF4444",
+      backgroundColor: c.rating,
       borderWidth: 1,
       borderColor: c.surface,
     },
@@ -1973,7 +2262,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     recentSearchTitle: {
       paddingHorizontal: spacing.sm,
-      paddingBottom: spacing.xs - 2,
+      paddingBottom: homeSpacing.xs,
       fontSize: typography.caption,
       fontFamily: fonts.semibold,
       color: c.textMuted,
@@ -2001,7 +2290,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     searchGradientFrame: {
       borderRadius: 999,
-      padding: 2,
+      padding: 4,
       ...Platform.select({
         ios: {
           shadowColor: ALCHEMY.brown,
@@ -2025,13 +2314,11 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       overflow: "hidden",
     },
     heroImageOuter: {
-      marginBottom: Platform.select({ web: spacing.xl, default: spacing.xl + 4 }),
+      marginBottom: 32,
       borderRadius: radius.xxl + 2,
       overflow: "hidden",
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(100, 116, 139, 0.14)",
-      borderTopWidth: 3,
-      borderTopColor: isDark ? "rgba(248, 113, 113, 0.44)" : "rgba(220, 38, 38, 0.62)",
       ...Platform.select({
         web: {
           width: "100%",
@@ -2075,23 +2362,23 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     heroDotsPill: {
       position: "absolute",
-      bottom: Platform.select({ web: 20, default: 16 }),
+      bottom: 16,
       left: 0,
       right: 0,
       alignItems: "center",
       zIndex: 4,
     },
     heroDotBackdrop: {
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.xs + 4,
+      paddingHorizontal: 4,
+      paddingVertical: 4,
       borderRadius: radius.pill,
-      backgroundColor: "rgba(10, 8, 6, 0.42)",
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(255, 252, 248, 0.14)",
+      backgroundColor: "transparent",
+      borderWidth: 0,
+      borderColor: "transparent",
       ...Platform.select({
         web: {
-          backdropFilter: "blur(10px)",
-          WebkitBackdropFilter: "blur(10px)",
+          backdropFilter: "none",
+          WebkitBackdropFilter: "none",
         },
         default: {},
       }),
@@ -2100,10 +2387,11 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: 7,
+      gap: 8,
     },
     heroDotHit: {
-      paddingVertical: 6,
+      minHeight: 12,
+      paddingVertical: 4,
       paddingHorizontal: 4,
       ...Platform.select({
         web: { cursor: "pointer" },
@@ -2111,21 +2399,14 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       }),
     },
     heroDot: {
-      width: 16,
       height: 4,
-      borderRadius: 999,
+      borderRadius: 9999,
     },
     heroDotIdle: {
-      backgroundColor: "rgba(255, 252, 248, 0.26)",
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(255, 252, 248, 0.2)",
+      backgroundColor: "rgba(255,255,255,0.32)",
     },
     heroDotActive: {
-      backgroundColor: c.primaryBright,
-      width: 34,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(255, 252, 248, 0.55)",
-      transform: [{ scale: 1 }],
+      backgroundColor: "rgba(255,255,255,0.95)",
     },
     heroBrandLogo: {
       alignSelf: "flex-start",
@@ -2138,34 +2419,25 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     heroImageInner: {
       position: "relative",
       zIndex: 2,
-      paddingTop: Platform.select({ web: spacing.xxl + 2, default: spacing.xl }),
+      paddingTop: Platform.select({ web: homeSpacing["2xl"], default: homeSpacing.xl }),
       paddingHorizontal: Platform.select({ web: 30, default: 26 }),
-      paddingBottom: Platform.select({ web: 82, default: 72 }),
+      paddingBottom: Platform.select({ web: 66, default: 60 }),
     },
     heroOverline: {
-      color: "rgba(255, 252, 248, 0.86)",
+      color: "rgba(255,255,255,0.65)",
       fontSize: 11,
-      fontFamily: fonts.extrabold,
-      letterSpacing: 1.2,
+      fontFamily: fonts.semibold,
+      letterSpacing: 1.8,
       textTransform: "uppercase",
       marginBottom: spacing.xs,
     },
-    heroGoldHairline: {
-      position: "absolute",
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: 3,
-      opacity: 0.95,
-      zIndex: 3,
-    },
     heroSlideCounter: {
       position: "absolute",
-      top: Platform.select({ web: spacing.lg + 4, default: spacing.md + 4 }),
-      right: spacing.md + 4,
+      top: 16,
+      right: 16,
       zIndex: 4,
-      paddingHorizontal: spacing.sm + 4,
-      paddingVertical: spacing.xs + 2,
+      paddingHorizontal: spacing.sm,
+      paddingVertical: homeSpacing.xs,
       borderRadius: radius.pill,
       backgroundColor: "rgba(8, 6, 4, 0.52)",
       borderWidth: StyleSheet.hairlineWidth,
@@ -2181,7 +2453,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     heroSlideCounterText: {
       color: c.heroForeground,
       fontSize: typography.caption,
-      fontFamily: fonts.extrabold,
+      fontFamily: fonts.semibold,
       letterSpacing: 1.2,
       fontVariant: ["tabular-nums"],
     },
@@ -2195,13 +2467,13 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       alignItems: "center",
       flexWrap: "wrap",
       gap: spacing.sm,
-      marginBottom: spacing.sm + 2,
+      marginBottom: homeSpacing.md,
       maxWidth: 560,
     },
     heroKickerText: {
       color: "rgba(255, 252, 248, 0.92)",
       fontSize: typography.overline + 1,
-      fontFamily: fonts.extrabold,
+      fontFamily: fonts.semibold,
       letterSpacing: 2,
       textTransform: "uppercase",
       ...Platform.select({
@@ -2215,21 +2487,24 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     heroNavRail: {
       position: "absolute",
-      top: Platform.select({ web: spacing.lg + 4, default: spacing.md + 4 }),
-      left: spacing.md + 4,
+      top: "50%",
+      left: 12,
+      right: 12,
+      marginTop: -20,
       zIndex: 4,
       flexDirection: "row",
-      gap: spacing.xs,
+      alignItems: "center",
+      justifyContent: "space-between",
     },
     heroNavButton: {
-      width: 38,
-      height: 38,
+      width: 40,
+      height: 40,
       borderRadius: semanticRadius.full,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: "rgba(8, 6, 4, 0.48)",
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(255, 252, 248, 0.18)",
+      backgroundColor: "rgba(255,255,255,0.10)",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.16)",
       ...Platform.select({
         web: {
           cursor: "pointer",
@@ -2239,30 +2514,34 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
         default: {},
       }),
     },
+    heroNavButtonHover: {
+      backgroundColor: "rgba(255,255,255,0.18)",
+    },
     heroNavButtonPressed: {
-      opacity: 0.88,
+      opacity: 1,
+      backgroundColor: "rgba(255,255,255,0.18)",
       transform: [{ scale: 0.98 }],
     },
     heroBadgePill: {
-      paddingHorizontal: spacing.sm + 2,
-      paddingVertical: 5,
+      paddingHorizontal: homeSpacing.md,
+      paddingVertical: homeSpacing.xs,
       borderRadius: radius.pill,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(248, 113, 113, 0.45)" : "rgba(220, 38, 38, 0.45)",
-      backgroundColor: isDark ? "rgba(239, 68, 68, 0.14)" : "rgba(220, 38, 38, 0.12)",
+      borderColor: isDark ? "rgba(255,255,255,0.24)" : "rgba(255,255,255,0.28)",
+      backgroundColor: "rgba(8, 6, 4, 0.34)",
     },
     heroBadgePillText: {
       color: "#FEF2F2",
       fontSize: typography.overline,
-      fontFamily: fonts.extrabold,
+      fontFamily: fonts.semibold,
       letterSpacing: 1.2,
     },
     heroDisplayTitle: {
       fontFamily: FONT_DISPLAY,
-      fontSize: Platform.OS === "web" ? 44 : 34,
-      lineHeight: Platform.OS === "web" ? 50 : 40,
-      letterSpacing: Platform.OS === "web" ? -0.72 : -0.52,
-      marginBottom: spacing.xs + 2,
+      fontSize: Platform.OS === "web" ? 36 : 32,
+      lineHeight: Platform.OS === "web" ? 42 : 37,
+      letterSpacing: Platform.OS === "web" ? -0.55 : -0.4,
+      marginBottom: 0,
       maxWidth: 640,
       ...Platform.select({
         web: {
@@ -2341,8 +2620,8 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     heroPromiseChip: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
-      paddingHorizontal: spacing.sm + 2,
+      gap: homeSpacing.sm,
+      paddingHorizontal: homeSpacing.md,
       paddingVertical: 8,
       borderRadius: radius.pill,
       borderWidth: StyleSheet.hairlineWidth,
@@ -2367,14 +2646,14 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     heroEditorialCta: {
       alignSelf: "flex-start",
-      marginTop: spacing.lg,
+      marginTop: 12,
       minHeight: 46,
       borderRadius: 999,
-      paddingHorizontal: spacing.lg + 2,
+      paddingHorizontal: homeSpacing.xl,
       paddingVertical: spacing.sm,
-      backgroundColor: "rgba(15, 23, 42, 0.92)",
-      borderWidth: 1,
-      borderColor: "rgba(255, 255, 255, 0.16)",
+      backgroundColor: "rgba(255,255,255,0.98)",
+      borderWidth: 0,
+      borderColor: "transparent",
       ...Platform.select({
         web: {
           cursor: "pointer",
@@ -2389,23 +2668,23 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       transform: [{ scale: 0.99 }],
     },
     heroEditorialCtaText: {
-      color: "#FFFFFF",
-      fontSize: typography.caption,
-      fontFamily: fonts.extrabold,
-      letterSpacing: 1.4,
+      color: "#0E1729",
+      fontSize: 14,
+      fontFamily: fonts.semibold,
+      letterSpacing: 1.1,
       textTransform: "uppercase",
     },
     promoVideoWrap: {
       width: "100%",
       maxWidth: layout.maxContentWidth,
       alignSelf: "center",
-      marginBottom: spacing.xl + 8,
+      marginBottom: homeSpacing["3xl"],
       borderRadius: radius.xxl,
       overflow: "hidden",
       borderWidth: 1,
       borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(100, 116, 139, 0.14)",
-      borderTopWidth: 3,
-      borderTopColor: isDark ? "rgba(185, 28, 28, 0.55)" : "rgba(185, 28, 28, 0.75)",
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: isDark ? "rgba(255,255,255,0.12)" : "#E8E6E1",
       backgroundColor: "#110B07",
       padding: Platform.OS === "web" ? 10 : 8,
       ...Platform.select({
@@ -2453,11 +2732,11 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       bottom: spacing.md,
       zIndex: 3,
       minHeight: 44,
-      paddingHorizontal: spacing.sm + 2,
+      paddingHorizontal: homeSpacing.md,
       alignItems: "center",
       justifyContent: "center",
       flexDirection: "row",
-      gap: 6,
+      gap: homeSpacing.sm,
       borderRadius: 22,
       borderWidth: 1,
       borderColor: "rgba(255, 252, 248, 0.48)",
@@ -2475,7 +2754,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     promoMuteText: {
       color: c.heroForeground,
       fontSize: typography.overline + 1,
-      fontFamily: fonts.extrabold,
+      fontFamily: fonts.semibold,
       letterSpacing: 0.35,
       textTransform: "uppercase",
     },
@@ -2504,12 +2783,12 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     jumpNavInner: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
-      paddingVertical: 6,
+      gap: homeSpacing.sm,
+      paddingVertical: homeSpacing.sm,
       paddingHorizontal: 8,
       borderRadius: 9999,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(220, 38, 38, 0.22)" : "rgba(63, 63, 70, 0.16)",
+      borderColor: isDark ? "rgba(255,255,255,0.22)" : "rgba(63, 63, 70, 0.16)",
       backgroundColor: isDark ? "rgba(15, 12, 10, 0.72)" : "rgba(255, 252, 247, 0.86)",
       ...Platform.select({
         web: {
@@ -2525,9 +2804,9 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     jumpNavChip: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
+      gap: homeSpacing.sm,
       paddingHorizontal: spacing.md,
-      paddingVertical: 7,
+      paddingVertical: homeSpacing.sm,
       borderRadius: 9999,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: "transparent",
@@ -2542,12 +2821,12 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       }),
     },
     jumpNavChipActive: {
-      backgroundColor: isDark ? "rgba(220, 38, 38, 0.16)" : c.primarySoft,
-      borderColor: isDark ? "rgba(220, 38, 38, 0.42)" : c.primaryBorder,
+      backgroundColor: isDark ? "rgba(148,163,184,0.16)" : c.secondarySoft,
+      borderColor: isDark ? "rgba(148,163,184,0.42)" : c.secondaryBorder,
       ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 6px 14px rgba(220, 38, 38, 0.16)"
+            ? "0 6px 14px rgba(148,163,184,0.16)"
             : "0 6px 14px rgba(63, 63, 70, 0.14)",
         },
         default: {},
@@ -2557,10 +2836,10 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       width: 6,
       height: 6,
       borderRadius: 3,
-      backgroundColor: isDark ? ALCHEMY.goldBright : c.primary,
+      backgroundColor: c.accentGreen || c.secondary,
     },
     jumpNavChipTextActive: {
-      color: isDark ? ALCHEMY.goldBright : c.primaryDark,
+      color: c.accentGreen || c.secondaryDark,
     },
     jumpNavChipText: {
       fontSize: typography.caption,
@@ -2570,8 +2849,8 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     trustSectionWrap: {
       width: "100%",
-      marginTop: spacing.md,
-      marginBottom: Platform.OS === "web" ? spacing.xl : spacing.xxl,
+      marginTop: 0,
+      marginBottom: sectionGap,
       alignItems: "stretch",
       ...Platform.select({
         web: {
@@ -2594,18 +2873,18 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     liveOrderCard: {
       borderRadius: radius.xxl,
-      paddingVertical: spacing.md + 2,
+      paddingVertical: homeSpacing.lg,
       paddingHorizontal: spacing.lg,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(220, 38, 38, 0.3)" : "rgba(63, 63, 70, 0.14)",
+      borderColor: isDark ? "rgba(255,255,255,0.2)" : "rgba(63, 63, 70, 0.14)",
     },
     liveOrderOverline: {
       fontSize: typography.overline + 1,
-      fontFamily: fonts.extrabold,
+      fontFamily: fonts.semibold,
       letterSpacing: 1.4,
       textTransform: "uppercase",
       color: isDark ? ALCHEMY.goldBright : ALCHEMY.brown,
-      marginBottom: 4,
+      marginBottom: homeSpacing.xs,
     },
     liveOrderTitle: {
       fontSize: typography.body,
@@ -2622,10 +2901,10 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     liveOrderStatusPill: {
       paddingHorizontal: spacing.sm,
-      paddingVertical: 6,
+      paddingVertical: homeSpacing.sm,
       borderRadius: radius.pill,
       borderWidth: StyleSheet.hairlineWidth,
-      backgroundColor: c.primarySoft,
+      backgroundColor: c.secondarySoft,
     },
     liveOrderStatusText: {
       fontSize: typography.caption,
@@ -2633,7 +2912,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     liveOrderAmount: {
       fontSize: typography.body,
-      fontFamily: fonts.extrabold,
+      fontFamily: fonts.semibold,
       color: c.textPrimary,
     },
     liveOrderActions: {
@@ -2667,16 +2946,16 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     trustSectionEyebrow: {
       fontSize: typography.overline + 1,
-      fontFamily: fonts.extrabold,
+      fontFamily: fonts.semibold,
       letterSpacing: 2,
       textTransform: "uppercase",
       textAlign: "center",
-      marginBottom: spacing.sm + 4,
+      marginBottom: homeSpacing.base,
       width: "100%",
     },
     homeSectionOverline: {
       fontSize: typography.overline + 1,
-      fontFamily: fonts.extrabold,
+      fontFamily: fonts.semibold,
       letterSpacing: 1.65,
       textTransform: "uppercase",
       textAlign: "center",
@@ -2684,7 +2963,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       width: "100%",
     },
     homeShopOverline: {
-      marginBottom: spacing.xs + 2,
+      marginBottom: homeSpacing.md,
     },
     shopDiscoveryHint: {
       fontSize: typography.caption,
@@ -2700,7 +2979,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       fontFamily: FONT_DISPLAY_SEMI,
       lineHeight: lineHeight.body + 4,
       textAlign: "center",
-      marginBottom: spacing.md + 2,
+      marginBottom: homeSpacing.lg,
       paddingHorizontal: spacing.sm,
       letterSpacing: -0.2,
     },
@@ -2713,7 +2992,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
         },
         default: {},
       }),
-      marginBottom: spacing.xl + 4,
+      marginBottom: homeSpacing["3xl"],
     },
     trustStripAmbient: {
       ...StyleSheet.absoluteFillObject,
@@ -2724,17 +3003,52 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       flexDirection: "row",
       alignItems: "flex-start",
       gap: spacing.sm,
-      paddingVertical: spacing.sm + 4,
-      paddingHorizontal: spacing.md + 4,
-      marginBottom: spacing.md + 2,
+      paddingVertical: homeSpacing.base,
+      paddingHorizontal: homeSpacing.lg,
+      marginBottom: homeSpacing.lg,
       borderRadius: radius.lg + 2,
       borderWidth: StyleSheet.hairlineWidth,
       maxWidth: layout.maxContentWidth,
       width: "100%",
       alignSelf: "center",
     },
+    outOfAreaBanner: {
+      width: "100%",
+      maxWidth: layout.maxContentWidth,
+      alignSelf: "center",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: homeSpacing.sm,
+      borderWidth: 1,
+      borderRadius: 12,
+      paddingVertical: homeSpacing.md,
+      paddingHorizontal: homeSpacing.base,
+      marginBottom: homeSpacing.base,
+    },
+    outOfAreaIcon: {
+      flexShrink: 0,
+    },
+    outOfAreaText: {
+      flex: 1,
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: Math.round(14 * 1.45),
+    },
+    outOfAreaLinkBtn: {
+      paddingVertical: homeSpacing.xs,
+      paddingHorizontal: homeSpacing.sm,
+      borderRadius: radius.pill,
+    },
+    outOfAreaLinkBtnPressed: {
+      opacity: 0.8,
+    },
+    outOfAreaLinkText: {
+      fontSize: 13,
+      fontFamily: fonts.semibold,
+      lineHeight: Math.round(13 * 1.4),
+    },
     homeErrorIcon: {
-      marginTop: 2,
+      marginTop: homeSpacing.xs,
       flexShrink: 0,
     },
     trustStrip: {
@@ -2750,11 +3064,11 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
         default: {},
       }),
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(255,255,255,0.14)" : "rgba(63, 63, 70, 0.18)",
+      borderColor: c.border,
       backgroundColor: c.surface,
     },
     trustStripDark: {
-      borderColor: "rgba(255,255,255,0.16)",
+      borderColor: c.border,
     },
     trustStripInner: {
       flexDirection: "row",
@@ -2763,6 +3077,9 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       width: "100%",
       zIndex: 1,
     },
+    trustStripInnerStacked: {
+      flexDirection: "column",
+    },
     trustDivider: {
       width: StyleSheet.hairlineWidth,
       alignSelf: "stretch",
@@ -2770,34 +3087,40 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       flexShrink: 0,
       opacity: 1,
     },
+    trustDividerStacked: {
+      width: "100%",
+      height: StyleSheet.hairlineWidth,
+    },
     trustDividerLight: {
-      backgroundColor: "rgba(63, 63, 70, 0.18)",
+      backgroundColor: c.border,
     },
     trustDividerDark: {
-      backgroundColor: "rgba(255,255,255,0.18)",
+      backgroundColor: c.border,
     },
     trustCell: {
       flex: 1,
       minWidth: 0,
       alignItems: "flex-start",
-      justifyContent: "center",
-      gap: 6,
-      paddingHorizontal: spacing.sm + 2,
-      paddingVertical: spacing.md,
+      justifyContent: "flex-start",
+      paddingHorizontal: 16,
+      paddingVertical: 16,
       ...Platform.select({
         web: { cursor: "pointer" },
         default: {},
       }),
     },
+    trustCellStacked: {
+      width: "100%",
+    },
     trustCellPressed: {
       opacity: 0.86,
     },
     trustIconBadge: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
+      width: 22,
+      height: 22,
       alignItems: "center",
       justifyContent: "center",
+      marginBottom: 8,
     },
     trustIconBadgeLight: {
       backgroundColor: ALCHEMY.goldSoft,
@@ -2814,23 +3137,24 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       }),
     },
     trustIconBadgeDark: {
-      backgroundColor: "rgba(185, 28, 28, 0.12)",
+      backgroundColor: "rgba(134, 239, 172, 0.12)",
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(220, 38, 38, 0.18)",
+      borderColor: "rgba(134, 239, 172, 0.24)",
     },
     trustCellLabel: {
-      fontSize: Platform.OS === "web" ? typography.bodySmall : 13,
-      fontFamily: fonts.medium,
+      fontSize: 14,
+      fontFamily: fonts.semibold,
       textAlign: "left",
-      lineHeight: Platform.OS === "web" ? lineHeight.bodySmall : 18,
-      letterSpacing: 0.05,
+      lineHeight: 19,
+      letterSpacing: 0,
       maxWidth: "100%",
       flexShrink: 1,
+      marginBottom: homeSpacing.xs,
     },
     trustCellSupport: {
-      fontSize: 11,
+      fontSize: 12,
       fontFamily: fonts.regular,
-      lineHeight: 15,
+      lineHeight: 17,
       textAlign: "left",
       maxWidth: "100%",
     },
@@ -2870,13 +3194,13 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     heroCardCompact: {
       borderRadius: radius.xxl,
-      paddingHorizontal: spacing.xl + 2,
-      paddingVertical: spacing.xl + 2,
-      marginBottom: spacing.lg + 4,
+      paddingHorizontal: homeSpacing["2xl"],
+      paddingVertical: homeSpacing["2xl"],
+      marginBottom: homeSpacing.xl,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: c.border,
-      borderTopWidth: 3,
-      borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: isDark ? c.border : "#E8E6E1",
       backgroundColor: isDark ? c.surface : ALCHEMY.cardBg,
       ...shadowPremium,
     },
@@ -2887,53 +3211,116 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       letterSpacing: -0.35,
     },
     heroSubtext: {
-      marginTop: 6,
+      marginTop: homeSpacing.sm,
       color: c.textSecondary,
       fontSize: typography.bodySmall,
       fontFamily: fonts.regular,
     },
     categoryQuickNavWrap: {
-      marginTop: spacing.md,
-      marginBottom: spacing.sm + 2,
+      marginTop: 0,
+      marginBottom: sectionGap,
     },
-    reorderToastWrap: {
-      marginBottom: spacing.sm + 2,
+    toastStackRoot: {
+      position: "absolute",
+      left: spacing.md,
+      right: spacing.md,
+      alignItems: "center",
+      zIndex: WEB_Z_INDEX.overlay + 10,
+      elevation: 24,
+    },
+    toastStackColumn: {
+      width: "100%",
+      maxWidth: 520,
+      alignItems: "stretch",
+      gap: 8,
+    },
+    toastCard: {
+      width: "100%",
+      borderRadius: 14,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: "rgba(255,255,255,0.2)",
+      backgroundColor: ALCHEMY.brownInk,
+      ...Platform.select({
+        web: {
+          boxShadow: "0 12px 24px rgba(15,23,42,0.28)",
+        },
+        ios: {
+          shadowColor: "#000000",
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.24,
+          shadowRadius: 16,
+        },
+        android: {
+          elevation: 10,
+        },
+        default: {},
+      }),
+    },
+    toastCardInner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: homeSpacing.md,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+    },
+    toastText: {
+      flex: 1,
+      color: "#FFFFFF",
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: Math.round(13 * 1.5),
+    },
+    toastActionBtn: {
+      borderRadius: 8,
+      paddingHorizontal: homeSpacing.xs,
+      paddingVertical: homeSpacing.xs,
+    },
+    toastActionBtnPressed: {
+      opacity: 0.72,
+    },
+    toastActionText: {
+      color: HERITAGE.amberBright,
+      fontFamily: fonts.semibold,
+      fontSize: 13,
+      lineHeight: Math.round(13 * 1.4),
     },
     liveOrderPinnedWrap: {
-      marginBottom: spacing.sm + 2,
+      marginBottom: sectionGap,
     },
     activeFilterBar: {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.sm,
-      marginBottom: spacing.md + 2,
-      paddingVertical: 13,
+      marginBottom: homeSpacing.lg,
+      paddingVertical: homeSpacing.md,
       paddingHorizontal: spacing.lg,
-      backgroundColor: c.primarySoft,
+      backgroundColor: c.secondarySoft,
       borderRadius: radius.xl + 2,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.primaryBorder,
-      borderTopWidth: 2,
-      borderTopColor: c.primary,
+      borderColor: c.secondaryBorder,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.secondaryBorder,
       ...shadowLift,
     },
     activeFilterText: {
       flex: 1,
       color: c.textPrimary,
-      fontSize: typography.bodySmall,
-      fontFamily: fonts.semibold,
+      fontSize: 13,
+      lineHeight: Math.round(13 * 1.5),
+      fontFamily: fonts.regular,
     },
     activeFilterClear: {
-      color: c.primary,
-      fontSize: typography.caption,
-      fontFamily: fonts.extrabold,
+      color: c.secondaryDark,
+      fontSize: 12,
+      lineHeight: Math.round(12 * 1.4),
+      fontFamily: fonts.semibold,
     },
     sectionFilterBar: {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.sm,
-      marginBottom: spacing.md + 2,
-      paddingVertical: 13,
+      marginBottom: homeSpacing.lg,
+      paddingVertical: homeSpacing.md,
       paddingHorizontal: spacing.lg,
       backgroundColor: c.secondarySoft,
       borderRadius: radius.xl + 2,
@@ -2945,14 +3332,15 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     sectionFilterClear: {
       color: c.secondary,
-      fontSize: typography.caption,
-      fontFamily: fonts.extrabold,
+      fontSize: 12,
+      lineHeight: Math.round(12 * 1.4),
+      fontFamily: fonts.semibold,
     },
     catalogBrowseBar: {
       flexDirection: "row",
       gap: spacing.sm,
       marginBottom: 0,
-      padding: Platform.select({ web: 10, default: 9 }),
+      padding: Platform.select({ web: homeSpacing.md, default: homeSpacing.sm }),
       borderRadius: radius.xl + 6,
       borderWidth: StyleSheet.hairlineWidth,
       ...shadowLift,
@@ -2982,20 +3370,20 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       minWidth: 0,
       alignItems: "center",
       justifyContent: "center",
-      paddingVertical: Platform.select({ web: spacing.md + 2, default: spacing.md }),
+      paddingVertical: Platform.select({ web: homeSpacing.lg, default: homeSpacing.base }),
       paddingHorizontal: spacing.sm,
       borderRadius: radius.lg + 2,
-      gap: 5,
+      gap: homeSpacing.sm,
     },
     catalogBrowseOptionActive: {
-      backgroundColor: isDark ? "rgba(185, 28, 28, 0.16)" : "#FFFFFF",
+      backgroundColor: isDark ? "rgba(148,163,184,0.16)" : "#FFFFFF",
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? c.primaryBorder : ALCHEMY.pillInactive,
+      borderColor: c.secondaryBorder,
       borderTopWidth: 1,
-      borderTopColor: isDark ? "rgba(220, 38, 38, 0.65)" : ALCHEMY.gold,
+      borderTopColor: c.secondaryBorder,
     },
     catalogBrowseOptionHover: {
-      backgroundColor: isDark ? "rgba(185, 28, 28, 0.1)" : "rgba(255,255,255,0.75)",
+      backgroundColor: isDark ? "rgba(148,163,184,0.1)" : "rgba(255,255,255,0.75)",
       ...Platform.select({
         web: {
           boxShadow: isDark
@@ -3033,9 +3421,9 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     sectionChip: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: homeSpacing.sm,
       paddingHorizontal: 16,
-      paddingVertical: 10,
+      paddingVertical: homeSpacing.sm,
       borderRadius: radius.pill,
       borderWidth: StyleSheet.hairlineWidth,
       ...Platform.select({
@@ -3044,10 +3432,10 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       }),
     },
     sectionChipActive: {
-      borderColor: c.primaryBorder,
-      backgroundColor: c.primarySoft,
-      borderTopWidth: 2,
-      borderTopColor: c.primary,
+      borderColor: c.secondaryBorder,
+      backgroundColor: c.secondarySoft,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.secondaryBorder,
     },
     sectionChipLabel: {
       fontFamily: fonts.bold,
@@ -3056,22 +3444,21 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     sectionChipCount: {
       fontSize: 11,
-      fontFamily: fonts.extrabold,
+      fontFamily: fonts.semibold,
     },
     catalogIntroCard: {
-      marginBottom: spacing.md + 4,
-      borderRadius: radius.xl + 2,
+      marginBottom: homeSpacing.lg,
+      borderRadius: 14,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(255,255,255,0.14)" : "rgba(63,63,70,0.18)",
+      borderColor: c.border,
       backgroundColor: c.surface,
-      paddingHorizontal: spacing.md,
-      paddingVertical: Math.max(8, Math.round((spacing.md + 2) * 0.7)),
+      paddingHorizontal: cardPadding,
+      paddingVertical: cardPadding,
       ...Platform.select({
         web: {
           width: "100%",
           maxWidth: layout.maxContentWidth,
           alignSelf: "center",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
         },
         default: {},
       }),
@@ -3086,21 +3473,22 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     catalogIntroLeft: {
       flex: 1,
       minWidth: 0,
-      gap: 2,
+      gap: homeSpacing.xs,
     },
     catalogIntroEyebrow: {
-      fontFamily: fonts.extrabold,
-      fontSize: typography.overline,
-      letterSpacing: 1.2,
+      fontFamily: fonts.semibold,
+      fontSize: 11,
+      letterSpacing: 1.4,
       textTransform: "uppercase",
       color: isDark ? c.textMuted : ALCHEMY.brownMuted,
     },
     catalogIntroTitle: {
       color: c.textPrimary,
-      fontFamily: fonts.semibold,
-      fontSize: Platform.select({ web: typography.h4 + 1, default: typography.h4 }),
-      lineHeight: Platform.select({ web: lineHeight.h4 + 2, default: lineHeight.h4 + 2 }),
-      letterSpacing: -0.22,
+      fontFamily: FONT_DISPLAY,
+      fontSize: windowWidth >= 1024 ? 40 : windowWidth >= 768 ? 32 : 28,
+      lineHeight: Math.round((windowWidth >= 1024 ? 40 : windowWidth >= 768 ? 32 : 28) * 1.1),
+      letterSpacing: -0.7,
+      fontWeight: "500",
     },
     catalogIntroSubtitle: {
       color: c.textSecondary,
@@ -3113,26 +3501,35 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       position: "relative",
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
+      gap: homeSpacing.sm,
       flexShrink: 0,
     },
-    catalogViewToggleBtn: {
-      width: 34,
-      height: 34,
-      borderRadius: radius.pill,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(255,255,255,0.16)" : "rgba(100,116,139,0.22)",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.92)",
+    catalogViewToggleBtnTouch: {
+      borderRadius: 10,
       ...Platform.select({
         web: { cursor: "pointer" },
         default: {},
       }),
     },
-    catalogViewToggleBtnActive: {
-      borderColor: isDark ? "rgba(248,113,113,0.45)" : "rgba(220,38,38,0.32)",
-      backgroundColor: isDark ? "rgba(220,38,38,0.16)" : "rgba(220,38,38,0.08)",
+    catalogViewToggleBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.surface,
+      overflow: "hidden",
+    },
+    catalogViewToggleIconLayer: {
+      position: "absolute",
+      top: 0,
+      right: 0,
+      bottom: 0,
+      left: 0,
+      alignItems: "center",
+      justifyContent: "center",
     },
     catalogViewToggleBtnPressed: {
       opacity: 0.82,
@@ -3169,10 +3566,10 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(100,116,139,0.18)",
       backgroundColor: c.surface,
-      padding: spacing.xs + 2,
+      padding: homeSpacing.md,
     },
     catalogSkeletonMeta: {
-      paddingTop: spacing.xs + 2,
+      paddingTop: homeSpacing.md,
       gap: spacing.xs,
     },
     mobilePeekScroll: {
@@ -3192,12 +3589,13 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       borderColor: isDark ? "rgba(255,255,255,0.14)" : "rgba(100,116,139,0.2)",
       backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(248,250,252,0.72)",
       paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm + 2,
-      gap: spacing.xs + 2,
+      paddingVertical: homeSpacing.md,
+      gap: homeSpacing.md,
     },
     inlineSectionEmptyTitle: {
-      fontSize: typography.bodySmall,
-      fontFamily: fonts.medium,
+      fontSize: 14,
+      lineHeight: Math.round(14 * 1.5),
+      fontFamily: fonts.regular,
       color: c.textSecondary,
     },
     inlineSectionCategoryRow: {
@@ -3228,19 +3626,19 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       color: c.textPrimary,
     },
     listSection: {
-      marginBottom: Platform.select({ web: spacing.xl + 8, default: spacing.xxl }),
+      marginBottom: sectionGap,
     },
     catalogSurface: {
       overflow: "hidden",
       backgroundColor: isDark ? c.surface : ALCHEMY.cardBg,
       borderRadius: radius.xxl,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? c.border : "rgba(100, 116, 139, 0.12)",
-      borderTopWidth: 3,
-      borderTopColor: isDark ? "rgba(220, 38, 38, 0.55)" : "rgba(185, 28, 28, 0.72)",
-      paddingHorizontal: Platform.select({ web: spacing.xl + 6, default: spacing.md + 8 }),
-      paddingTop: Platform.select({ web: spacing.lg + 4, default: spacing.lg + 8 }),
-      paddingBottom: Platform.select({ web: spacing.lg + 6, default: spacing.xl + 6 }),
+      borderColor: isDark ? c.border : "#E8E6E1",
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: isDark ? c.border : "#E8E6E1",
+      paddingHorizontal: Platform.select({ web: homeSpacing["3xl"], default: homeSpacing.xl }),
+      paddingTop: Platform.select({ web: homeSpacing.xl, default: homeSpacing["2xl"] }),
+      paddingBottom: Platform.select({ web: homeSpacing["2xl"], default: homeSpacing["3xl"] }),
       ...Platform.select({
         web: {
           width: "100%",
@@ -3272,7 +3670,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       gap: spacing.md,
       marginBottom: spacing.md,
       paddingTop: 0,
-      paddingBottom: Platform.select({ web: spacing.md + 4, default: spacing.md + 4 }),
+      paddingBottom: Platform.select({ web: homeSpacing.lg, default: homeSpacing.lg }),
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(63, 63, 70, 0.08)",
     },
@@ -3300,18 +3698,18 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     sectionCountInline: {
       fontSize: typography.caption,
-      fontFamily: fonts.extrabold,
-      paddingHorizontal: 12,
+      fontFamily: fonts.semibold,
+      paddingHorizontal: homeSpacing.md,
       paddingVertical: 4,
       borderRadius: radius.pill,
       overflow: "hidden",
-      backgroundColor: isDark ? "rgba(220, 38, 38, 0.18)" : c.primarySoft,
-      color: isDark ? ALCHEMY.goldBright : c.primaryDark,
+      backgroundColor: isDark ? "rgba(148,163,184,0.18)" : c.secondarySoft,
+      color: c.secondaryDark,
     },
     sectionSeeAllBtn: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
+      gap: homeSpacing.sm,
       paddingVertical: 12,
       paddingHorizontal: 16,
       borderRadius: radius.pill,
@@ -3332,7 +3730,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       }),
     },
     sectionSeeAllBtnHover: {
-      backgroundColor: isDark ? "rgba(185, 28, 28, 0.16)" : "rgba(255,255,255,0.95)",
+      backgroundColor: isDark ? "rgba(148,163,184,0.16)" : "rgba(255,255,255,0.95)",
       ...Platform.select({
         web: {
           boxShadow: "0 10px 22px rgba(24, 24, 27, 0.12)",
@@ -3343,7 +3741,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     sectionSeeAll: {
       fontSize: typography.caption,
-      fontFamily: fonts.extrabold,
+      fontFamily: fonts.semibold,
       letterSpacing: 0.2,
     },
     emptyLoader: {
@@ -3352,7 +3750,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     productGrid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      gap: 10,
+      gap: homeSpacing.md,
       alignItems: "flex-start",
       alignContent: "flex-start",
       justifyContent: "flex-start",
@@ -3366,13 +3764,79 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     footerWrapper: {
       marginTop: spacing.lg,
+      marginBottom: homeSpacing["3xl"],
+    },
+    pullRefreshOverlay: {
+      position: "absolute",
+      top: Math.max(safeTopInset, spacing.md) - 10,
+      alignSelf: "center",
+      width: 28,
+      height: 28,
+      borderRadius: 999,
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: WEB_Z_INDEX.sticky + 5,
+      backgroundColor: isDark ? "rgba(10,10,10,0.55)" : "rgba(255,255,255,0.85)",
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: HOME_LINE,
+    },
+    stickyBagBar: {
+      position: "absolute",
+      left: spacing.md,
+      right: spacing.md,
+      bottom: CUSTOMER_BOTTOM_NAV_BAR_HEIGHT + Math.max(safeBottomInset, 10) + 16,
+      borderRadius: 12,
+      backgroundColor: c.ink || "#0E1729",
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      zIndex: WEB_Z_INDEX.sticky + 8,
+    },
+    stickyBagText: {
+      color: "#FFFFFF",
+      fontSize: 13,
+      lineHeight: Math.round(13 * 1.4),
+      fontFamily: fonts.regular,
+    },
+    stickyBagCta: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: homeSpacing.xs,
+      paddingVertical: homeSpacing.xs,
+    },
+    stickyBagCtaPressed: {
+      opacity: 0.84,
+    },
+    stickyBagCtaText: {
+      color: c.accent || "#C8A97E",
+      fontSize: 13,
+      lineHeight: Math.round(13 * 1.4),
+      fontFamily: fonts.semibold,
+    },
+    flyGhost: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: 48,
+      height: 60,
+      borderRadius: 8,
+      overflow: "hidden",
+      zIndex: WEB_Z_INDEX.sticky + 12,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: "rgba(255,255,255,0.55)",
+    },
+    flyGhostImage: {
+      width: "100%",
+      height: "100%",
     },
     productGridWrap: {
       flexDirection: "row",
       flexWrap: "wrap",
       justifyContent: "flex-start",
-      columnGap: Platform.OS === "web" ? spacing.lg : spacing.md,
-      rowGap: Platform.OS === "web" ? spacing.lg + 4 : spacing.md + 4,
+      columnGap: productGridGap,
+      rowGap: productGridGap,
       alignItems: "stretch",
     },
     productGridWrapCentered: {
@@ -3382,11 +3846,14 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       marginBottom: 0,
       alignSelf: "stretch",
     },
+    productGridListContent: {
+      paddingBottom: homeSpacing.sm,
+    },
     gridCell: {
       marginBottom: 0,
     },
     emptyWrap: {
-      paddingVertical: spacing.xxl + 4,
+      paddingVertical: homeSpacing["3xl"],
       alignItems: "center",
       paddingHorizontal: spacing.lg,
       ...Platform.select({
@@ -3398,13 +3865,87 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
         default: {},
       }),
     },
+    networkErrorWrap: {
+      minHeight: 280,
+      justifyContent: "center",
+      gap: homeSpacing.sm,
+    },
+    networkErrorIcon: {
+      marginBottom: homeSpacing.xs,
+    },
+    networkErrorTitle: {
+      fontFamily: FONT_DISPLAY_SEMI,
+      fontSize: 20,
+      lineHeight: 24,
+      textAlign: "center",
+    },
+    networkErrorBody: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: Math.round(14 * 1.45),
+      textAlign: "center",
+      maxWidth: 360,
+    },
+    networkRetryBtn: {
+      marginTop: homeSpacing.sm,
+      borderRadius: radius.pill,
+      minHeight: 44,
+      paddingHorizontal: homeSpacing.lg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    networkRetryBtnPressed: {
+      opacity: 0.9,
+      transform: [{ scale: 0.98 }],
+    },
+    networkRetryBtnText: {
+      color: "#FFFFFF",
+      fontFamily: fonts.semibold,
+      fontSize: 14,
+      lineHeight: Math.round(14 * 1.4),
+    },
+    searchEmptyWrap: {
+      gap: homeSpacing.sm,
+      marginBottom: sectionGap,
+    },
+    searchEmptyTitle: {
+      fontFamily: FONT_DISPLAY_SEMI,
+      fontSize: 20,
+      lineHeight: 24,
+      textAlign: "center",
+    },
+    searchEmptyBody: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: Math.round(14 * 1.45),
+      textAlign: "center",
+      maxWidth: 380,
+    },
+    searchEmptyClearBtn: {
+      marginTop: homeSpacing.sm,
+      borderRadius: radius.pill,
+      borderWidth: StyleSheet.hairlineWidth,
+      minHeight: 42,
+      paddingHorizontal: homeSpacing.lg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    searchEmptyClearBtnPressed: {
+      opacity: 0.85,
+    },
+    searchEmptyClearBtnText: {
+      fontFamily: fonts.semibold,
+      fontSize: 13,
+      lineHeight: Math.round(13 * 1.4),
+      letterSpacing: 0.2,
+    },
     emptyIconCircle: {
       width: 96,
       height: 96,
       borderRadius: radius.xxl,
-      backgroundColor: c.primarySoft,
+      backgroundColor: c.secondarySoft,
       borderWidth: 1.5,
-      borderColor: c.primaryBorder,
+      borderColor: c.secondaryBorder,
       alignItems: "center",
       justifyContent: "center",
       marginBottom: spacing.lg,
@@ -3420,14 +3961,14 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     errorText: {
       flex: 1,
-      fontSize: typography.bodySmall,
+      fontSize: 14,
+      lineHeight: Math.round(14 * 1.5),
       fontFamily: fonts.semibold,
-      lineHeight: lineHeight.bodySmall + 2,
     },
     emptySectionHint: {
       alignItems: "center",
       gap: spacing.sm,
-      marginBottom: spacing.md + 4,
+      marginBottom: homeSpacing.lg,
       paddingVertical: spacing.md,
     },
     emptySectionText: {
@@ -3438,7 +3979,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     emptySectionClear: {
       fontSize: typography.bodySmall,
-      fontFamily: fonts.extrabold,
+      fontFamily: fonts.semibold,
       color: c.secondary,
     },
     menuModalRoot: {
@@ -3486,34 +4027,36 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      paddingHorizontal: spacing.md + 2,
-      paddingTop: spacing.sm + 2,
-      paddingBottom: spacing.xs + 2,
+      paddingHorizontal: homeSpacing.lg,
+      paddingTop: homeSpacing.md,
+      paddingBottom: homeSpacing.md,
     },
     menuHeaderTitle: {
       fontFamily: FONT_DISPLAY,
       fontSize: typography.h2,
-      letterSpacing: -0.35,
+      lineHeight: Math.round(typography.h2 * 1.1),
+      letterSpacing: -(typography.h2 * 0.025),
+      fontWeight: "500",
     },
     menuCloseBtn: {
-      padding: 4,
+      padding: homeSpacing.xs,
       borderRadius: radius.sm,
     },
     menuSectionLabel: {
       fontSize: 11,
-      fontFamily: fonts.extrabold,
-      letterSpacing: 1.2,
+      fontFamily: fonts.semibold,
+      letterSpacing: 1.4,
       textTransform: "uppercase",
       paddingHorizontal: spacing.md,
       paddingTop: spacing.xs,
-      paddingBottom: 6,
+      paddingBottom: homeSpacing.sm,
     },
     menuRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: spacing.sm,
       marginHorizontal: spacing.sm,
-      marginBottom: 4,
+      marginBottom: homeSpacing.xs,
       paddingVertical: 12,
       paddingHorizontal: spacing.sm,
       borderRadius: 16,
@@ -3521,7 +4064,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(63, 63, 70, 0.08)",
     },
     menuRowHover: {
-      backgroundColor: isDark ? "rgba(185, 28, 28, 0.08)" : "rgba(185, 28, 28, 0.1)",
+      backgroundColor: isDark ? "rgba(148,163,184,0.08)" : "rgba(100, 116, 139, 0.08)",
     },
     menuRowSelected: {
       borderWidth: 1,
@@ -3543,25 +4086,26 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
       minWidth: 0,
     },
     menuRowTitle: {
-      fontSize: typography.bodySmall,
-      fontFamily: fonts.bold,
+      fontSize: 14,
+      lineHeight: Math.round(14 * 1.5),
+      fontFamily: fonts.medium,
       letterSpacing: 0.1,
     },
     menuRowValue: {
-      marginTop: 2,
+      marginTop: homeSpacing.xs,
       fontSize: typography.caption,
-      fontFamily: fonts.medium,
-      lineHeight: 18,
+      fontFamily: fonts.regular,
+      lineHeight: Math.round(12 * 1.4),
     },
     menuPillActive: {
       paddingHorizontal: 8,
-      paddingVertical: 4,
+      paddingVertical: homeSpacing.xs,
       borderRadius: radius.pill,
       borderWidth: 1,
     },
     menuPillActiveText: {
       fontSize: 10,
-      fontFamily: fonts.extrabold,
+      fontFamily: fonts.semibold,
       letterSpacing: 0.4,
       textTransform: "uppercase",
     },
@@ -3574,6 +4118,85 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark) {
     },
     peBoxNone: {
       pointerEvents: "box-none",
+    },
+    notifyModalRoot: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: homeSpacing.lg,
+      paddingVertical: homeSpacing["2xl"],
+    },
+    notifyModalBackdrop: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: "rgba(0,0,0,0.4)",
+    },
+    notifyModalCard: {
+      width: "100%",
+      maxWidth: 420,
+      borderRadius: radius.xl,
+      borderWidth: StyleSheet.hairlineWidth,
+      paddingHorizontal: homeSpacing.lg,
+      paddingVertical: homeSpacing.lg,
+      gap: homeSpacing.sm,
+    },
+    notifyModalTitle: {
+      fontFamily: FONT_DISPLAY_SEMI,
+      fontSize: 22,
+      lineHeight: 26,
+    },
+    notifyModalBody: {
+      fontFamily: fonts.regular,
+      fontSize: 14,
+      lineHeight: Math.round(14 * 1.45),
+    },
+    notifyModalInput: {
+      minHeight: 44,
+      borderRadius: radius.md,
+      borderWidth: StyleSheet.hairlineWidth,
+      paddingHorizontal: homeSpacing.md,
+      fontFamily: fonts.regular,
+      fontSize: 14,
+    },
+    notifyModalSuccess: {
+      fontFamily: fonts.medium,
+      fontSize: 14,
+      lineHeight: Math.round(14 * 1.4),
+    },
+    notifyModalActions: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-end",
+      gap: homeSpacing.sm,
+      marginTop: homeSpacing.xs,
+    },
+    notifyModalPrimaryBtn: {
+      borderRadius: radius.pill,
+      minHeight: 40,
+      paddingHorizontal: homeSpacing.base,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    notifyModalPrimaryText: {
+      color: "#FFFFFF",
+      fontFamily: fonts.semibold,
+      fontSize: 13,
+      lineHeight: Math.round(13 * 1.4),
+    },
+    notifyModalGhostBtn: {
+      borderRadius: radius.pill,
+      borderWidth: StyleSheet.hairlineWidth,
+      minHeight: 40,
+      paddingHorizontal: homeSpacing.base,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    notifyModalGhostText: {
+      fontFamily: fonts.semibold,
+      fontSize: 13,
+      lineHeight: Math.round(13 * 1.4),
+    },
+    notifyModalBtnPressed: {
+      opacity: 0.85,
     },
   });
 }

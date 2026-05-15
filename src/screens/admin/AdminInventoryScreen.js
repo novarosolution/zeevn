@@ -29,7 +29,7 @@ import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumCard from "../../components/ui/PremiumCard";
-import { ADMIN_SCREEN_COPY } from "../../content/appContent";
+import { ADMIN_SCREEN_COPY, APP_LOADING_UI } from "../../content/appContent";
 
 /** Counts as “low stock” when qty is 1..LOW_STOCK_MAX and still sellable. */
 const LOW_STOCK_MAX = 5;
@@ -269,7 +269,7 @@ export default function AdminInventoryScreen({ navigation }) {
 
             {loading ? (
               <View style={styles.loadRow}>
-                <PremiumLoader size="sm" caption="Loading inventory…" inline />
+                <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} inline />
               </View>
             ) : null}
             <Text style={styles.listCount}>
@@ -358,7 +358,7 @@ export default function AdminInventoryScreen({ navigation }) {
               <View style={styles.rowFoot}>
                 {busy ? (
                   <View style={styles.busyInline}>
-                    <PremiumLoader size="sm" inline />
+                    <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} inline />
                   </View>
                 ) : null}
                 <PremiumButton

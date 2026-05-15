@@ -64,12 +64,17 @@ function PremiumButtonBase({
   const scale = useSharedValue(1);
   const lift = useSharedValue(0);
   const pulseValue = useSharedValue(0);
+  const shineTranslate = useSharedValue(-140);
   const motionStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }, { translateY: lift.value }],
   }));
   const pulseStyle = useAnimatedStyle(() => ({
     opacity: pulseValue.value,
     transform: [{ scale: 1 + pulseValue.value * 0.04 }],
+  }));
+  const shineStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shineTranslate.value }, { skewX: "-18deg" }],
+    opacity: shineTranslate.value > -120 ? 0.9 : 0,
   }));
 
   useEffect(() => {
@@ -106,6 +111,10 @@ function PremiumButtonBase({
   const handleHoverIn = () => {
     if (Platform.OS !== "web" || reducedMotion || disabled || loading) return;
     lift.value = withSpring(-1.5, { damping: 22, stiffness: 220 });
+    if (isPrimary) {
+      shineTranslate.value = -140;
+      shineTranslate.value = withTiming(180, { duration: 600, easing: Easing.bezier(0.2, 0.8, 0.2, 1) });
+    }
   };
   const handleHoverOut = () => {
     if (Platform.OS !== "web" || reducedMotion) return;
@@ -195,11 +204,12 @@ function PremiumButtonBase({
         accessibilityHint={accessibilityHint}
         accessibilityState={{ disabled: disabled || loading, busy: loading }}
         testID={testID}
-        style={({ pressed, hovered }) => [
+        style={({ pressed, hovered, focused }) => [
           styles.press,
           disabled || loading ? styles.disabled : null,
           hovered && Platform.OS === "web" && !disabled && !loading ? styles.hover : null,
           pressed ? styles.pressed : null,
+          focused && Platform.OS === "web" ? styles.focused : null,
         ]}
       >
         {isPrimary && isWeb ? (
@@ -209,6 +219,16 @@ function PremiumButtonBase({
             end={{ x: 1, y: 1 }}
             style={[styles.gradient, surfaceStyle]}
           >
+            {Platform.OS === "web" && !reducedMotion ? (
+              <Animated.View style={[styles.shineSweep, shineStyle]}>
+                <LinearGradient
+                  colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.5)", "rgba(255,255,255,0)"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={StyleSheet.absoluteFillObject}
+                />
+              </Animated.View>
+            ) : null}
             {innerRow}
           </LinearGradient>
         ) : (
@@ -294,13 +314,26 @@ function createStyles(c, isDark, t, fullWidth) {
     },
     press: {
       borderRadius: Platform.OS === "web" ? radius.pill : semanticRadius.control,
-      overflow: "visible",
+      overflow: "hidden",
       minHeight: t.height,
       minWidth: 0,
       ...Platform.select({
         web: {
           transition: "transform 0.2s ease, opacity 0.2s ease",
           cursor: "pointer",
+        },
+        default: {},
+      }),
+    },
+    focused: {
+      ...Platform.select({
+        web: {
+          boxShadow: `0 0 0 2px ${c.accent || c.primary}`,
+          outlineWidth: 2,
+          outlineColor: c.accent || c.primary,
+          outlineStyle: "solid",
+          outlineOffset: 2,
+          borderRadius: 12,
         },
         default: {},
       }),
@@ -411,10 +444,29 @@ function createStyles(c, isDark, t, fullWidth) {
       }),
     },
     pressed: {
-      opacity: 0.96,
+      opacity: 0.92,
+      ...Platform.select({
+        web: {
+          filter: "brightness(0.92)",
+          transform: [{ scale: 0.97 }],
+        },
+        default: { transform: [{ scale: 0.97 }] },
+      }),
     },
     disabled: {
-      opacity: 0.56,
+      opacity: 0.5,
+      ...Platform.select({
+        web: { cursor: "default" },
+        default: {},
+      }),
+    },
+    shineSweep: {
+      position: "absolute",
+      top: -10,
+      bottom: -10,
+      width: 80,
+      zIndex: 2,
+      pointerEvents: "none",
     },
   });
 }

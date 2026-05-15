@@ -30,7 +30,7 @@ import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
 import PremiumStatCard from "../components/ui/PremiumStatCard";
 import MotionScrollView from "../components/motion/MotionScrollView";
 import SectionReveal from "../components/motion/SectionReveal";
-import { REDEEM_REWARDS_SCREEN, fillPlaceholders } from "../content/appContent";
+import { APP_LOADING_UI, REDEEM_REWARDS_SCREEN, fillPlaceholders } from "../content/appContent";
 
 function formatExpiryShort(iso) {
   if (!iso) return "—";
@@ -220,7 +220,7 @@ export default function RedeemRewardsScreen({ navigation }) {
           compact
         />
         {loading ? (
-          <PremiumLoader size="sm" caption={REDEEM_REWARDS_SCREEN.loadingCodesCaption} />
+          <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.rewards} />
         ) : wallet.length === 0 ? (
           <Text style={[styles.walletEmpty, { color: c.textMuted }]}>{REDEEM_REWARDS_SCREEN.walletEmpty}</Text>
         ) : (
@@ -263,7 +263,7 @@ export default function RedeemRewardsScreen({ navigation }) {
         />
 
         {loading ? (
-          <PremiumLoader size="sm" caption={REDEEM_REWARDS_SCREEN.loadingCatalogCaption} />
+          <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.rewards} />
         ) : catalog.length === 0 ? (
           <PremiumEmptyState
             iconName="gift-outline"

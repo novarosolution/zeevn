@@ -208,6 +208,36 @@ export const darkColors = {
 
 export const colors = lightColors;
 
+/**
+ * Loading foundation tokens (premium navy + brass system).
+ * Keep these isolated so loaders can migrate without disturbing existing theme keys.
+ */
+export const loadingColors = {
+  bgDeep: "#0E1729",
+  bgWell: "#14203A",
+  inkInverse: "#FFFFFF",
+  inkInverseSoft: "rgba(255,255,255,0.72)",
+  inkInverseMuted: "rgba(255,255,255,0.46)",
+  line: "rgba(255,255,255,0.08)",
+  accent: "#C8A97E",
+  accentSoft: "rgba(200,169,126,0.16)",
+  success: "#6EE7A6",
+};
+
+/** Loader-only radii. */
+export const loadingRadius = {
+  sm: 12,
+  md: 18,
+  pill: 999,
+};
+
+/** Loader motion timings (ms). */
+export const loadingMotion = {
+  enter: 220,
+  breathCycle: 1400,
+  phaseAdvance: 1800,
+};
+
 export const layout = {
   maxContentWidth: Platform.select({ web: 1240, default: 980 }),
 };

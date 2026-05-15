@@ -22,6 +22,7 @@ import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 import MotionScrollView from "../../components/motion/MotionScrollView";
 import SectionReveal from "../../components/motion/SectionReveal";
+import { APP_LOADING_UI } from "../../content/appContent";
 
 export default function AdminNotificationsScreen({ navigation }) {
   const { colors: c, shadowPremium } = useTheme();
@@ -185,7 +186,7 @@ export default function AdminNotificationsScreen({ navigation }) {
             <Text style={[styles.sectionTitle, { color: c.textPrimary }]}>Sent notifications</Text>
             {loading ? (
               <View style={styles.loaderWrap}>
-                <PremiumLoader size="sm" caption="Loading sent notifications…" />
+                <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} />
               </View>
             ) : items.length === 0 ? (
               <PremiumEmptyState

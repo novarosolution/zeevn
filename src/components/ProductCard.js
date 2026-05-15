@@ -1,8 +1,29 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from "react-native";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import Animated, { FadeInDown, useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import Animated, {
+  Easing,
+  FadeInDown,
+  interpolateColor,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSpring,
+  withTiming,
+} from "react-native-reanimated";
+import * as Haptics from "expo-haptics";
 import { fonts, getSemanticColors, icon, radius, semanticRadius, spacing, typography } from "../theme/tokens";
 import { platformShadow } from "../theme/shadowPlatform";
 import { formatINR, formatINRWhole } from "../utils/currency";
@@ -11,6 +32,7 @@ import { matchesShelfProduct } from "../utils/shelfMatch";
 import { APP_DISPLAY_NAME } from "../constants/brand";
 import { useTheme } from "../context/ThemeContext";
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
+import { usePrefersReducedMotion } from "../utils/motion";
 
 export default function ProductCard({
   product,
@@ -45,7 +67,26 @@ export default function ProductCard({
   const isList = variant === "list";
   const isWeb = Platform.OS === "web";
   const isWebGrid = isWeb && !isList;
+  const reducedMotion = usePrefersReducedMotion();
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
+  const [secondaryImageIndex, setSecondaryImageIndex] = useState(0);
+  const [isSaved, setIsSaved] = useState(false);
+  const [showNotifyModal, setShowNotifyModal] = useState(false);
+  const [notifyEmail, setNotifyEmail] = useState("");
+  const [showSecondaryImage, setShowSecondaryImage] = useState(false);
+  const [longPressRaised, setLongPressRaised] = useState(false);
+  const previewTimerRef = useRef(null);
+  const imageAreaRef = useRef(null);
+  const burstProgress = useSharedValue(0);
+  const imageOpacity = useSharedValue(0);
+  const secondaryOpacity = useSharedValue(0);
+  const hoverImageScale = useSharedValue(1);
+  const heartScale = useSharedValue(1);
+  const heartOpacity = useSharedValue(1);
+  const cardPress = useSharedValue(0);
+  const shimmerX = useSharedValue(-140);
+  const stepperY = useSharedValue(-24);
+  const [primaryLoaded, setPrimaryLoaded] = useState(false);
   const primaryImage = useMemo(() => {
     if (String(product?.image || "").trim()) return product.image;
     if (Array.isArray(product?.images) && product.images.length) {
@@ -55,6 +96,13 @@ export default function ProductCard({
   }, [product?.image, product?.images]);
   const imageUris = useMemo(() => getImageUriCandidates(primaryImage), [primaryImage]);
   const imageUri = imageUris[imageCandidateIndex] || "";
+  const secondaryImage = useMemo(() => {
+    if (!Array.isArray(product?.images) || product.images.length < 2) return "";
+    return String(product.images[1] || "");
+  }, [product?.images]);
+  const secondaryUris = useMemo(() => getImageUriCandidates(secondaryImage), [secondaryImage]);
+  const secondaryUri = secondaryUris[secondaryImageIndex] || "";
+  const hasSecondaryImage = Boolean(secondaryUri);
   const imageFailed = imageUris.length === 0 || imageCandidateIndex >= imageUris.length;
   const imageFallbackLabel = imageUris.length > 0 ? "Image unavailable" : "No image";
   const categoryTone = useMemo(
@@ -62,25 +110,189 @@ export default function ProductCard({
     [product?.category, isDark, editorial, c]
   );
   const shelfMatch = useMemo(() => matchesShelfProduct(product), [product]);
-  const animatedCardStyle = useAnimatedStyle(() => ({
+  const listScaleStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
+  }));
+  const imageFadeStyle = useAnimatedStyle(() => ({
+    opacity: imageOpacity.value,
+  }));
+  const secondaryFadeStyle = useAnimatedStyle(() => ({
+    opacity: secondaryOpacity.value,
+  }));
+  const hoverImageScaleStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: hoverImageScale.value }],
+  }));
+  const heartIconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: heartScale.value }],
+    opacity: heartOpacity.value,
+  }));
+  const burstDotStyleA = useAnimatedStyle(() => ({
+    opacity: 1 - burstProgress.value,
+    transform: [{ translateX: burstProgress.value * -12 }, { translateY: burstProgress.value * -6 }],
+  }));
+  const burstDotStyleB = useAnimatedStyle(() => ({
+    opacity: 1 - burstProgress.value,
+    transform: [{ translateX: burstProgress.value * 12 }, { translateY: burstProgress.value * -6 }],
+  }));
+  const burstDotStyleC = useAnimatedStyle(() => ({
+    opacity: 1 - burstProgress.value,
+    transform: [{ translateX: 0 }, { translateY: burstProgress.value * 12 }],
+  }));
+  const animatedCardStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 - cardPress.value * 0.02 }],
+    borderColor: interpolateColor(cardPress.value, [0, 1], [c.line || c.border || "#E8E6E1", c.ink || c.textPrimary || "#111827"]),
+  }));
+  const shimmerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shimmerX.value }],
+    opacity: primaryLoaded ? 0 : 1,
+  }));
+  const stepperStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: stepperY.value }],
+    opacity: quantity > 0 ? 1 : 0,
   }));
 
   const hasEtaCopy = Boolean(String(product?.eta || "").trim());
   const showEtaBadge = showEta && hasEtaCopy;
   const showUnitRow = showUnit !== undefined ? showUnit : isList || !compact;
   const handleImageError = () => setImageCandidateIndex((index) => index + 1);
+  const handleSecondaryError = () => setSecondaryImageIndex((index) => index + 1);
 
   useEffect(() => {
     setImageCandidateIndex(0);
-  }, [primaryImage]);
+    setPrimaryLoaded(false);
+    imageOpacity.value = 0;
+  }, [imageOpacity, primaryImage, setPrimaryLoaded]);
+
+  useEffect(() => {
+    setSecondaryImageIndex(0);
+    secondaryOpacity.value = 0;
+  }, [secondaryImage, secondaryOpacity]);
+
+  useEffect(() => {
+    hoverImageScale.value = withTiming(showSecondaryImage && isWeb ? 1.03 : 1, {
+      duration: 320,
+      easing: Easing.out(Easing.cubic),
+    });
+    if (showSecondaryImage && hasSecondaryImage) {
+      secondaryOpacity.value = withTiming(1, { duration: 200 });
+      return;
+    }
+    secondaryOpacity.value = withTiming(0, { duration: 200 });
+  }, [hasSecondaryImage, hoverImageScale, isWeb, secondaryOpacity, showSecondaryImage]);
+
+  useEffect(() => {
+    if (reducedMotion || primaryLoaded) {
+      shimmerX.value = -140;
+      return;
+    }
+    shimmerX.value = -140;
+    shimmerX.value = withRepeat(withTiming(220, { duration: 1400, easing: Easing.linear }), -1, false);
+  }, [primaryLoaded, reducedMotion, shimmerX]);
+
+  useEffect(() => {
+    stepperY.value = withTiming(quantity > 0 ? 0 : -24, { duration: 220, easing: Easing.out(Easing.cubic) });
+  }, [quantity, stepperY]);
+
+  useEffect(
+    () => () => {
+      if (previewTimerRef.current) {
+        clearTimeout(previewTimerRef.current);
+      }
+    },
+    []
+  );
 
   const handlePressIn = () => {
-    scale.value = withSpring(0.985, { damping: 18, stiffness: 280 });
+    scale.value = withTiming(0.98, { duration: 120 });
   };
 
   const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 18, stiffness: 280 });
+    scale.value = withTiming(1, { duration: 120 });
+  };
+  const triggerLightHaptic = () => {
+    if (Platform.OS !== "ios") return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  };
+  const handleGridAdd = (meta) => {
+    triggerLightHaptic();
+    onAddToCart?.(meta);
+  };
+  const handleGridRemove = () => {
+    if (Platform.OS === "ios") {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    }
+    onRemoveFromCart?.();
+  };
+  const onCardPressIn = () => {
+    cardPress.value = withTiming(1, { duration: 240, easing: Easing.out(Easing.cubic) });
+    if (!isWeb && hasSecondaryImage) {
+      previewTimerRef.current = setTimeout(() => {
+        setShowSecondaryImage(true);
+      }, 1500);
+    }
+  };
+  const onCardPressOut = () => {
+    cardPress.value = withTiming(0, { duration: 240, easing: Easing.out(Easing.cubic) });
+    setLongPressRaised(false);
+    if (previewTimerRef.current) {
+      clearTimeout(previewTimerRef.current);
+      previewTimerRef.current = null;
+    }
+    if (!isWeb) {
+      setShowSecondaryImage(false);
+    }
+  };
+  const onHoverInImage = () => {
+    if (isWeb) {
+      setLongPressRaised(true);
+      setShowSecondaryImage(true);
+    }
+  };
+  const onHoverOutImage = () => {
+    if (isWeb) {
+      setLongPressRaised(false);
+      setShowSecondaryImage(false);
+    }
+  };
+  const toggleWishlist = (event) => {
+    event?.stopPropagation?.();
+    triggerLightHaptic();
+    setIsSaved((prev) => !prev);
+    heartScale.value = 1.2;
+    heartOpacity.value = 0.6;
+    heartScale.value = withSpring(1, { damping: 10, stiffness: 220 });
+    heartOpacity.value = withTiming(1, { duration: 200 });
+    if (!reducedMotion) {
+      burstProgress.value = 0;
+      burstProgress.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.cubic) });
+    }
+  };
+
+  const onAddPress = (event) => {
+    event?.stopPropagation?.();
+    if (isOutOfStock) {
+      setShowNotifyModal(true);
+      return;
+    }
+    const imageRectCallback = (x, y, width, height) => {
+      handleGridAdd({
+        sourceRect: { x, y, width, height },
+        imageUri: imageUri || secondaryUri || primaryImage,
+      });
+    };
+    if (imageAreaRef.current?.measureInWindow) {
+      imageAreaRef.current.measureInWindow(imageRectCallback);
+    } else {
+      handleGridAdd();
+    }
+  };
+  const onStepperRemove = (event) => {
+    event?.stopPropagation?.();
+    handleGridRemove();
+  };
+  const onStepperAdd = (event) => {
+    event?.stopPropagation?.();
+    handleGridAdd();
   };
 
   const CardInner = isWeb ? View : Animated.View;
@@ -99,10 +311,249 @@ export default function ProductCard({
   const mrpNum = product?.mrp != null ? Number(product.mrp) : NaN;
   const listMrp = Number.isFinite(mrpNum) && mrpNum > safePrice ? mrpNum : null;
   const offPct = listMrp ? Math.round((1 - safePrice / listMrp) * 100) : null;
+  const saleColor = c.sale || "#B23A3A";
+  const inkColor = c.ink || c.textPrimary || "#111827";
+  const mutedColor = c.muted || c.textMuted || "#6B7280";
+  const ratingInfo = getRatingMeta(product);
+  const displayName = getProductDisplayName(product);
+  const isNewArrival = isWithinDays(product?.createdAt, 21) && !(offPct > 0);
+  const cardA11yLabel = getCardA11yLabel({
+    brand: String(product?.category || "Groceries"),
+    name: displayName,
+    rating: ratingInfo.rating,
+    price: formatINRWhole(safePrice),
+    mrp: listMrp ? formatINRWhole(listMrp) : "",
+    outOfStock: isOutOfStock,
+  });
+
+  if (!isList) {
+    return (
+      <Root style={styles.cardEntryWrap} {...(rootEntering ? { entering: rootEntering } : {})}>
+        <Animated.View
+          style={[
+            styles.premiumGridCard,
+            animatedCardStyle,
+            longPressRaised ? styles.premiumGridCardRaised : null,
+          ]}
+        >
+          <Pressable
+            onPress={() => {
+              if (Platform.OS === "ios") {
+                Haptics.selectionAsync().catch(() => {});
+              }
+              onPress?.();
+            }}
+            onPressIn={onCardPressIn}
+            onPressOut={onCardPressOut}
+            onLongPress={() => {
+              setLongPressRaised(true);
+              if (!isWeb && hasSecondaryImage) {
+                setShowSecondaryImage(true);
+              }
+            }}
+            delayLongPress={1500}
+            onHoverIn={onHoverInImage}
+            onHoverOut={onHoverOutImage}
+            accessibilityRole="button"
+            accessibilityLabel={cardA11yLabel}
+            style={styles.premiumCardPressable}
+          >
+            <View ref={imageAreaRef} style={styles.premiumImageArea}>
+              <Animated.View style={[styles.premiumImageScaleWrap, hoverImageScaleStyle]}>
+                <View style={styles.premiumImageFrame}>
+                  <View style={styles.premiumImageBackground} />
+                  {!reducedMotion && !primaryLoaded ? (
+                    <Animated.View style={[styles.shimmerSweep, shimmerStyle]} pointerEvents="none">
+                      <LinearGradient
+                        colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.45)", "rgba(255,255,255,0)"]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1, y: 0 }}
+                        style={StyleSheet.absoluteFillObject}
+                      />
+                    </Animated.View>
+                  ) : null}
+                  {imageUri && !imageFailed ? (
+                    <Animated.View style={[styles.imageFadeWrap, imageFadeStyle]}>
+                      <Image
+                        source={{ uri: imageUri }}
+                        style={styles.premiumImage}
+                        contentFit="cover"
+                        transition={0}
+                        recyclingKey={`${product?.id || "product"}:${imageUri}`}
+                        onError={handleImageError}
+                        onLoad={() => {
+                          setPrimaryLoaded(true);
+                          imageOpacity.value = withTiming(1, { duration: 200 });
+                        }}
+                      />
+                    </Animated.View>
+                  ) : (
+                    <View style={styles.imageFallback}>
+                      <View style={[styles.imageFallbackIconWrap, { backgroundColor: isDark ? c.surface : ALCHEMY.goldSoft }]}>
+                        <Ionicons name="image-outline" size={icon.sm} color={c.textMuted} />
+                      </View>
+                      <Text style={[styles.imageFallbackText, { color: c.textMuted, fontFamily: fonts.semibold }]}>
+                        {imageFallbackLabel}
+                      </Text>
+                    </View>
+                  )}
+                  {hasSecondaryImage ? (
+                    <Animated.View style={[styles.premiumSecondaryImageLayer, secondaryFadeStyle]} pointerEvents="none">
+                      <Image
+                        source={{ uri: secondaryUri }}
+                        style={styles.premiumImage}
+                        contentFit="cover"
+                        transition={0}
+                        recyclingKey={`${product?.id || "product"}:${secondaryUri}`}
+                        onError={handleSecondaryError}
+                      />
+                    </Animated.View>
+                  ) : null}
+                </View>
+              </Animated.View>
+
+              {offPct != null && offPct > 0 ? (
+                <View style={[styles.discountBadge, { backgroundColor: saleColor }]}>
+                  <Ionicons name="flash" size={10} color="#FFFFFF" />
+                  <Text style={styles.discountBadgeText}>{`${offPct}% OFF`}</Text>
+                </View>
+              ) : isNewArrival ? (
+                <View style={[styles.newBadge, { backgroundColor: c.accent || "#C8A97E" }]}>
+                  <Text style={[styles.newBadgeText, { color: inkColor }]}>NEW</Text>
+                </View>
+              ) : null}
+
+              <Pressable
+                onPress={toggleWishlist}
+                style={styles.wishlistBtn}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSaved }}
+                accessibilityLabel={isSaved ? `Remove ${product.name} from wishlist` : `Save ${product.name} to wishlist`}
+              >
+                {!reducedMotion ? (
+                  <>
+                    <Animated.View style={[styles.heartBurstDot, burstDotStyleA]} />
+                    <Animated.View style={[styles.heartBurstDot, burstDotStyleB]} />
+                    <Animated.View style={[styles.heartBurstDot, burstDotStyleC]} />
+                  </>
+                ) : null}
+                <Animated.View style={heartIconStyle}>
+                  <Ionicons name={isSaved ? "heart" : "heart-outline"} size={17} color={isSaved ? saleColor : inkColor} />
+                </Animated.View>
+              </Pressable>
+
+              {isOutOfStock ? (
+                <>
+                  <View style={[styles.oosOverlay, { backgroundColor: c.surfaceAlt || "rgba(241,245,249,0.6)" }]} />
+                  <View style={styles.oosRibbon}>
+                    <Text style={styles.oosRibbonText}>OUT OF STOCK</Text>
+                  </View>
+                </>
+              ) : null}
+
+              {quantity > 0 ? null : (
+                <Pressable
+                  onPress={onAddPress}
+                  style={({ pressed }) => [
+                    styles.gridFloatingAdd,
+                    isOutOfStock ? styles.notifyGhost : null,
+                    pressed ? styles.gridFloatingAddPressed : null,
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={isOutOfStock ? `Notify me when ${product.name} is back in stock` : `Add ${product.name} to cart`}
+                >
+                  {isOutOfStock ? (
+                    <Text style={[styles.notifyGhostText, { color: inkColor }]}>Notify me</Text>
+                  ) : (
+                    <Ionicons name="add" size={18} color="#FFFFFF" />
+                  )}
+                </Pressable>
+              )}
+            </View>
+
+            <View style={styles.premiumContent}>
+              {showCategory ? (
+                <Text style={[styles.categoryPremium, { color: mutedColor }]} numberOfLines={1}>
+                  {String(product.category || "Groceries").toUpperCase()}
+                </Text>
+              ) : null}
+              <Text numberOfLines={1} style={[styles.namePremium, { color: inkColor }]}>
+                {displayName}
+              </Text>
+              <View style={styles.ratingRow}>
+                {ratingInfo.rating ? (
+                  <>
+                    <Ionicons name="star" size={10} color={c.accent || "#C8A97E"} />
+                    <Text style={[styles.ratingValue, { color: inkColor }]}>{ratingInfo.rating}</Text>
+                    <Text style={[styles.reviewCount, { color: mutedColor }]}>{`(${ratingInfo.reviewCount || 0})`}</Text>
+                  </>
+                ) : (
+                  <View style={[styles.newPill, { backgroundColor: "rgba(200,169,126,0.14)" }]}>
+                    <Text style={[styles.newPillText, { color: c.accent || "#C8A97E" }]}>NEW</Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.premiumBottomRow}>
+                <View style={styles.gridPriceRow}>
+                  <Text style={[styles.gridPriceCurrent, { color: inkColor }]}>{formatINRWhole(safePrice)}</Text>
+                  {listMrp ? (
+                    <Text style={[styles.gridPriceMrp, { color: mutedColor }]}>{formatINRWhole(listMrp)}</Text>
+                  ) : null}
+                </View>
+                {quantity > 0 ? (
+                  <Animated.View style={[styles.inlineStepper, stepperStyle]}>
+                    <Pressable style={styles.inlineStepHit} onPress={onStepperRemove} accessibilityRole="button" accessibilityLabel="Decrease quantity">
+                      <Ionicons name="remove" size={14} color="#FFFFFF" />
+                    </Pressable>
+                    <Text style={styles.inlineQty}>{quantity}</Text>
+                    <Pressable style={styles.inlineStepHit} onPress={onStepperAdd} accessibilityRole="button" accessibilityLabel="Increase quantity">
+                      <Ionicons name="add" size={14} color="#FFFFFF" />
+                    </Pressable>
+                  </Animated.View>
+                ) : null}
+              </View>
+            </View>
+          </Pressable>
+        </Animated.View>
+        <Modal transparent visible={showNotifyModal} animationType="fade" onRequestClose={() => setShowNotifyModal(false)}>
+          <Pressable style={styles.notifyBackdrop} onPress={() => setShowNotifyModal(false)}>
+            <View style={styles.notifyModal}>
+              <Text style={[styles.notifyTitle, { color: inkColor }]}>Notify me when available</Text>
+              <Text style={[styles.notifyBody, { color: mutedColor }]}>We&apos;ll alert you when this item is back in stock.</Text>
+              <TextInput
+                value={notifyEmail}
+                onChangeText={setNotifyEmail}
+                placeholder="Email address"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                style={[styles.notifyInput, { borderColor: c.line || c.border || "#E8E6E1", color: inkColor }]}
+                placeholderTextColor={mutedColor}
+              />
+              <View style={styles.notifyActions}>
+                <Pressable onPress={() => setShowNotifyModal(false)} style={styles.notifyActionGhost}>
+                  <Text style={[styles.notifyActionGhostText, { color: mutedColor }]}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    triggerLightHaptic();
+                    setShowNotifyModal(false);
+                  }}
+                  style={[styles.notifyActionPrimary, { backgroundColor: inkColor }]}
+                >
+                  <Text style={styles.notifyActionPrimaryText}>Notify me</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Pressable>
+        </Modal>
+      </Root>
+    );
+  }
   const legacyBody = (
     <CardInner
       style={[
         styles.card,
+        !isList ? styles.cardGridRest : null,
         isWebGrid ? styles.cardGridWeb : null,
         compactGridLayout ? styles.cardGridCompact : null,
         shelfMatch ? styles.cardShelfAccent : null,
@@ -115,7 +566,7 @@ export default function ProductCard({
             }
           : null,
         isList && shelfMatch && !editorial ? styles.cardListShelfAccent : null,
-        !isWeb ? animatedCardStyle : null,
+        !isWeb ? listScaleStyle : null,
       ]}
     >
       <TouchableOpacity
@@ -128,6 +579,7 @@ export default function ProductCard({
         <View
           style={[
             styles.imageWrap,
+            !isList ? styles.imageWrapGridHome : null,
             isWebGrid ? styles.imageWrapGridWeb : null,
             isList ? styles.imageWrapList : null,
             compactGridLayout ? styles.imageWrapGridCompact : null,
@@ -137,6 +589,7 @@ export default function ProductCard({
           <View
             style={[
               styles.imageBox,
+              !isList ? styles.imageBoxGridHome : null,
               isWebGrid ? styles.imageBoxGridWeb : null,
               isList ? styles.imageBoxList : null,
               compactGridLayout ? styles.imageBoxGridCompact : null,
@@ -144,14 +597,19 @@ export default function ProductCard({
             ]}
           >
             {imageUri && !imageFailed ? (
-              <Image
-                source={{ uri: imageUri }}
-                style={[styles.image, isWebGrid ? styles.imageGridWeb : null]}
-                contentFit={isWebGrid ? "contain" : "cover"}
-                transition={240}
-                recyclingKey={`${product?.id || "product"}:${imageUri}`}
-                onError={handleImageError}
-              />
+              <Animated.View style={[styles.imageFadeWrap, imageFadeStyle]}>
+                <Image
+                  source={{ uri: imageUri }}
+                  style={[styles.image, isWebGrid ? styles.imageGridWeb : null]}
+                  contentFit="cover"
+                  transition={0}
+                  recyclingKey={`${product?.id || "product"}:${imageUri}`}
+                  onError={handleImageError}
+                  onLoad={() => {
+                    imageOpacity.value = withTiming(1, { duration: 200 });
+                  }}
+                />
+              </Animated.View>
             ) : (
               <View style={styles.imageFallback}>
                 <View style={[styles.imageFallbackIconWrap, { backgroundColor: isDark ? c.surface : ALCHEMY.goldSoft }]}>
@@ -164,19 +622,19 @@ export default function ProductCard({
             )}
             {offPct != null && offPct > 0 ? (
               <View style={[styles.discountBadge, { backgroundColor: c.primary }]}>
-                <Text style={[styles.discountBadgeText, { fontFamily: fonts.extrabold, color: c.onPrimary }]}>
+                <Text style={[styles.discountBadgeText, { fontFamily: fonts.bold, color: c.onPrimary }]}>
                   {offPct}% off
                 </Text>
               </View>
             ) : null}
             <TouchableOpacity
               activeOpacity={0.85}
-              onPress={() => {}}
+              onPress={() => setIsSaved((prev) => !prev)}
               style={styles.wishlistBtn}
               accessibilityRole="button"
               accessibilityLabel={`Save ${product.name} to wishlist`}
             >
-              <Ionicons name="heart-outline" size={icon.xs + 1} color={c.textPrimary} />
+              <Ionicons name={isSaved ? "heart" : "heart-outline"} size={17} color={isSaved ? c.discount : c.textPrimary} />
             </TouchableOpacity>
           </View>
           {!isList && showEtaBadge ? (
@@ -193,10 +651,33 @@ export default function ProductCard({
               <Text style={[styles.badgeText, { fontFamily: fonts.bold }]}>Special</Text>
             </View>
           ) : null}
+          {!isList ? (
+            quantity > 0 ? (
+              <View style={styles.gridFloatingStepper}>
+                <TouchableOpacity style={styles.gridFloatingStepHit} activeOpacity={0.85} onPress={handleGridRemove}>
+                  <Ionicons name="remove" size={icon.sm} color={c.onPrimary} />
+                </TouchableOpacity>
+                <Text style={[styles.gridFloatingQty, { color: c.onPrimary }]}>{quantity}</Text>
+                <TouchableOpacity style={styles.gridFloatingStepHit} activeOpacity={0.85} onPress={handleGridAdd}>
+                  <Ionicons name="add" size={icon.sm} color={c.onPrimary} />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={[styles.gridFloatingAdd, isOutOfStock ? styles.gridFloatingAddDisabled : null]}
+                activeOpacity={0.85}
+                onPress={handleGridAdd}
+                disabled={isOutOfStock}
+              >
+                <Ionicons name={isOutOfStock ? "close" : "add"} size={18} color={c.onPrimary} />
+              </TouchableOpacity>
+            )
+          ) : null}
         </View>
         <View
           style={[
             styles.content,
+            !isList ? styles.contentGridHome : null,
             isList ? styles.contentList : null,
             compactGridLayout ? styles.contentGridCompact : null,
             isWebGrid ? styles.contentGridWeb : null,
@@ -207,6 +688,7 @@ export default function ProductCard({
             <Text
               style={[
                 styles.category,
+                !isList ? styles.categoryGridHome : null,
                 compactGridLayout ? styles.categoryGridCompact : null,
                 isWebGrid ? styles.categoryGridWeb : null,
                 { color: c.textMuted, fontFamily: fonts.semibold },
@@ -217,9 +699,10 @@ export default function ProductCard({
             </Text>
           ) : null}
           <Text
-            numberOfLines={isList ? 2 : compact ? 2 : 2}
+            numberOfLines={isList ? 2 : 1}
             style={[
               styles.name,
+              !isList ? styles.nameGridHome : null,
               compactListLayout ? styles.nameListCompact : null,
               compactGridLayout ? styles.nameGridCompact : null,
               isWebGrid ? styles.nameGridWeb : null,
@@ -335,7 +818,7 @@ export default function ProductCard({
                       styles.priceList,
                       compactListLayout ? styles.priceListCompact : null,
                       editorial ? styles.priceListEditorial : null,
-                      { color: c.textPrimary, fontFamily: fonts.extrabold },
+                      { color: c.textPrimary, fontFamily: fonts.semibold },
                     ]}
                   >
                     {formatINRWhole(safePrice)}
@@ -398,63 +881,11 @@ export default function ProductCard({
               </View>
             </View>
           ) : (
-            <View
-              style={[
-                styles.bottomRow,
-                compactGridLayout ? styles.bottomRowGridCompact : null,
-                isWebGrid ? styles.bottomRowGridWeb : null,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.price,
-                  compactGridLayout ? styles.priceGridCompact : null,
-                  isWebGrid ? styles.priceGridWeb : null,
-                  { color: c.textPrimary, fontFamily: fonts.extrabold },
-                ]}
-              >
-                {formatINR(safePrice)}
-              </Text>
-              {quantity > 0 ? (
-                <View
-                  style={[
-                    styles.stepper,
-                    compactGridLayout ? styles.stepperGridCompact : null,
-                    isWebGrid ? styles.stepperGridWeb : null,
-                    { backgroundColor: c.primaryDark },
-                  ]}
-                >
-                  <TouchableOpacity style={styles.stepButton} activeOpacity={0.85} onPress={onRemoveFromCart}>
-                    <Ionicons name="remove" size={icon.sm} color={c.onPrimary} />
-                  </TouchableOpacity>
-                  <Text style={[styles.quantityText, { color: c.onPrimary, fontFamily: fonts.bold }]}>{quantity}</Text>
-                  <TouchableOpacity style={styles.stepButton} activeOpacity={0.85} onPress={onAddToCart}>
-                    <Ionicons name="add" size={icon.sm} color={c.onPrimary} />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <TouchableOpacity
-                  style={[
-                    styles.button,
-                    compactGridLayout ? styles.buttonGridCompact : null,
-                    isWebGrid ? styles.buttonGridWeb : null,
-                    isOutOfStock ? styles.buttonDisabled : null,
-                    { backgroundColor: isOutOfStock ? c.textMuted : c.primary },
-                  ]}
-                  activeOpacity={0.85}
-                  onPress={onAddToCart}
-                  disabled={isOutOfStock}
-                >
-                  <Ionicons
-                    name="bag-add-outline"
-                    size={compact && !isList ? icon.micro : icon.xs}
-                    color={semantic.text.onPrimary}
-                  />
-                  <Text style={[styles.buttonText, { fontFamily: fonts.bold, color: semantic.text.onPrimary }]}>
-                    {isOutOfStock ? "Out of Stock" : compact ? "Add" : "ADD"}
-                  </Text>
-                </TouchableOpacity>
-              )}
+            <View style={styles.gridPriceRow}>
+              <Text style={[styles.gridPriceCurrent, { color: c.textPrimary }]}>{formatINR(safePrice)}</Text>
+              {listMrp ? (
+                <Text style={[styles.gridPriceMrp, { color: c.textMuted }]}>{formatINR(listMrp)}</Text>
+              ) : null}
             </View>
           )}
         </View>
@@ -467,6 +898,49 @@ export default function ProductCard({
       {legacyBody}
     </Root>
   );
+}
+
+function getRatingMeta(product) {
+  const rawRating = Number(product?.rating ?? product?.avgRating ?? product?.averageRating ?? product?.stars);
+  const rawReviews = Number(product?.reviewCount ?? product?.reviewsCount ?? product?.numReviews ?? product?.ratingsCount);
+  const hasRating = Number.isFinite(rawRating) && rawRating > 0;
+  return {
+    rating: hasRating ? rawRating.toFixed(1) : "",
+    reviewCount: Number.isFinite(rawReviews) && rawReviews > 0 ? Math.round(rawReviews) : 0,
+  };
+}
+
+function getProductDisplayName(product) {
+  const name = String(product?.name || "").trim() || "Product";
+  const unit = String(product?.unit || product?.size || "").trim();
+  if (!unit) return name;
+  const normalizedName = name.toLowerCase();
+  const normalizedUnit = unit.toLowerCase();
+  if (normalizedName.includes(normalizedUnit)) return name;
+  return `${name} ${unit}`;
+}
+
+function isWithinDays(value, days) {
+  if (!value) return false;
+  const created = new Date(value).getTime();
+  if (!Number.isFinite(created)) return false;
+  const now = Date.now();
+  return now - created <= days * 24 * 60 * 60 * 1000;
+}
+
+function getCardA11yLabel({ brand, name, rating, price, mrp, outOfStock }) {
+  const parts = [brand, name];
+  if (rating) {
+    parts.push(`${rating} stars`);
+  }
+  parts.push(price);
+  if (mrp) {
+    parts.push(`was ${mrp}`);
+  }
+  if (outOfStock) {
+    parts.push("out of stock");
+  }
+  return parts.filter(Boolean).join(", ");
 }
 
 function getCategoryTone(rawCategory, isDark, editorial, c) {
@@ -529,6 +1003,7 @@ function getCategoryTone(rawCategory, isDark, editorial, c) {
 
 function createStyles(c, isDark, layoutFlags = {}) {
   const { isWideWeb = false, isHugeWeb = false, isNarrowViewport = false } = layoutFlags;
+  const lineBorder = isDark ? c.border : "#E8E6E1";
   const cardLiftShadow = platformShadow({
     web: {
       boxShadow: isDark
@@ -559,9 +1034,7 @@ function createStyles(c, isDark, layoutFlags = {}) {
       overflow: "hidden",
       marginBottom: spacing.sm,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? c.border : "rgba(100, 116, 139, 0.12)",
-      borderTopWidth: 1,
-      borderTopColor: isDark ? "rgba(220, 38, 38, 0.5)" : "rgba(185, 28, 28, 0.65)",
+      borderColor: lineBorder,
       ...cardLiftShadow,
       ...Platform.select({
         web: {
@@ -570,6 +1043,25 @@ function createStyles(c, isDark, layoutFlags = {}) {
             : "linear-gradient(180deg, rgba(255,255,255,0.96), rgba(255,253,250,0.99))",
           transition: "box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease",
         },
+        default: {},
+      }),
+    },
+    cardGridRest: {
+      borderRadius: 14,
+      borderColor: lineBorder,
+      marginBottom: 0,
+      ...Platform.select({
+        web: {
+          boxShadow: "none",
+          backgroundImage: "none",
+        },
+        ios: {
+          shadowColor: "transparent",
+          shadowOpacity: 0,
+          shadowRadius: 0,
+          shadowOffset: { width: 0, height: 0 },
+        },
+        android: { elevation: 0 },
         default: {},
       }),
     },
@@ -583,9 +1075,7 @@ function createStyles(c, isDark, layoutFlags = {}) {
       padding: 0,
       borderRadius: semanticRadius.card,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? c.border : "rgba(100, 116, 139, 0.12)",
-      borderTopWidth: 1,
-      borderTopColor: isDark ? "rgba(220, 38, 38, 0.5)" : "rgba(185, 28, 28, 0.65)",
+      borderColor: lineBorder,
       overflow: "hidden",
       ...cardLiftShadow,
       ...Platform.select({
@@ -600,14 +1090,73 @@ function createStyles(c, isDark, layoutFlags = {}) {
       }),
     },
     cardQcShelfAccent: {
-      borderLeftWidth: 2,
-      borderLeftColor: c.secondary,
+      borderLeftWidth: 0,
     },
     cardGridWeb: {
       minHeight: 0,
     },
     cardGridCompact: {
       minHeight: 0,
+    },
+    premiumGridCard: {
+      width: "100%",
+      borderRadius: 14,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.line || lineBorder,
+      backgroundColor: c.surface,
+      overflow: "hidden",
+    },
+    premiumGridCardRaised: {
+      ...Platform.select({
+        web: { boxShadow: "0 8px 18px rgba(15,23,42,0.10)" },
+        ios: {
+          shadowColor: "#0F172A",
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.12,
+          shadowRadius: 10,
+        },
+        android: { elevation: 3 },
+        default: {},
+      }),
+    },
+    premiumCardPressable: {
+      width: "100%",
+    },
+    premiumImageArea: {
+      position: "relative",
+      width: "100%",
+      aspectRatio: 4 / 5,
+      backgroundColor: c.surfaceAlt || "rgba(0,0,0,0.03)",
+      overflow: "hidden",
+      borderTopLeftRadius: 14,
+      borderTopRightRadius: 14,
+    },
+    premiumImageScaleWrap: {
+      width: "100%",
+      height: "100%",
+    },
+    premiumImageFrame: {
+      width: "100%",
+      height: "100%",
+      overflow: "hidden",
+    },
+    premiumImageBackground: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: c.surfaceAlt || "rgba(0,0,0,0.03)",
+    },
+    premiumImage: {
+      width: "100%",
+      height: "100%",
+    },
+    premiumSecondaryImageLayer: {
+      ...StyleSheet.absoluteFillObject,
+    },
+    shimmerSweep: {
+      position: "absolute",
+      top: 0,
+      bottom: 0,
+      width: "48%",
+      zIndex: 2,
     },
     qcPress: {
       width: "100%",
@@ -783,8 +1332,7 @@ function createStyles(c, isDark, layoutFlags = {}) {
       textAlign: "center",
     },
     cardShelfAccent: {
-      borderLeftWidth: 3,
-      borderLeftColor: c.accentGold,
+      borderLeftWidth: 0,
     },
     cardList: {
       minHeight: Platform.select({
@@ -818,8 +1366,7 @@ function createStyles(c, isDark, layoutFlags = {}) {
       }),
     },
     cardListShelfAccent: {
-      borderLeftWidth: 3,
-      borderLeftColor: c.accentGreen,
+      borderLeftWidth: 0,
     },
     touchableList: {
       flexDirection: "row",
@@ -829,6 +1376,11 @@ function createStyles(c, isDark, layoutFlags = {}) {
       position: "relative",
       padding: spacing.sm,
       backgroundColor: isDark ? "rgba(255,255,255,0.04)" : ALCHEMY.creamAlt,
+    },
+    imageWrapGridHome: {
+      padding: 8,
+      paddingBottom: 0,
+      backgroundColor: "transparent",
     },
     imageWrapGridWeb: {
       paddingHorizontal: isWideWeb ? spacing.md : spacing.sm,
@@ -860,6 +1412,13 @@ function createStyles(c, isDark, layoutFlags = {}) {
       justifyContent: "center",
       overflow: "hidden",
     },
+    imageBoxGridHome: {
+      height: undefined,
+      aspectRatio: 4 / 5,
+      borderRadius: 12,
+      borderWidth: 0,
+      backgroundColor: c.surfaceMuted,
+    },
     imageBoxGridWeb: {
       height: isHugeWeb ? 214 : isWideWeb ? 190 : 166,
       borderRadius: radius.xl + 4,
@@ -888,14 +1447,17 @@ function createStyles(c, isDark, layoutFlags = {}) {
     },
     discountBadge: {
       position: "absolute",
-      top: spacing.xs,
-      left: spacing.xs,
+      top: 10,
+      left: 10,
       zIndex: 2,
       paddingHorizontal: 8,
       paddingVertical: 4,
       borderRadius: radius.pill,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(255,252,248,0.45)",
+      borderWidth: 0,
+      borderColor: "transparent",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
       ...Platform.select({
         web: { boxShadow: "0 6px 14px rgba(180, 83, 9, 0.22)" },
         ios: {
@@ -909,27 +1471,87 @@ function createStyles(c, isDark, layoutFlags = {}) {
       }),
     },
     discountBadgeText: {
-      fontSize: 9,
-      letterSpacing: 0.32,
+      fontSize: 10,
+      letterSpacing: 0.4,
+      color: "#FFFFFF",
+      fontFamily: fonts.semibold,
+      textTransform: "uppercase",
+    },
+    newBadge: {
+      position: "absolute",
+      top: 10,
+      left: 10,
+      zIndex: 2,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+      borderRadius: radius.pill,
+    },
+    newBadgeText: {
+      fontSize: 10,
+      letterSpacing: 0.4,
+      fontFamily: fonts.semibold,
+      textTransform: "uppercase",
     },
     wishlistBtn: {
       position: "absolute",
-      top: spacing.xs,
-      right: spacing.xs,
+      top: 10,
+      right: 10,
       zIndex: 2,
-      width: 26,
-      height: 26,
-      borderRadius: 13,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(255,255,255,0.18)" : "rgba(100,116,139,0.22)",
-      backgroundColor: isDark ? "rgba(24,24,27,0.78)" : "rgba(255,255,255,0.92)",
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: "rgba(0,0,0,0.06)",
+      backgroundColor: "#FFFFFF",
       alignItems: "center",
       justifyContent: "center",
+      ...Platform.select({
+        web: { boxShadow: "0 2px 10px rgba(15,23,42,0.14)" },
+        ios: {
+          shadowColor: "#0F172A",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.12,
+          shadowRadius: 6,
+        },
+        android: { elevation: 2 },
+        default: {},
+      }),
+    },
+    heartBurstDot: {
+      position: "absolute",
+      width: 4,
+      height: 4,
+      borderRadius: 999,
+      backgroundColor: c.accent || "#C8A97E",
+      zIndex: 1,
+    },
+    oosOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      opacity: 0.6,
+      zIndex: 3,
+    },
+    oosRibbon: {
+      position: "absolute",
+      left: -34,
+      top: 16,
+      width: 170,
+      paddingVertical: 4,
+      backgroundColor: "rgba(0,0,0,0.7)",
+      transform: [{ rotate: "-24deg" }],
+      zIndex: 4,
+      alignItems: "center",
+    },
+    oosRibbonText: {
+      color: "#FFFFFF",
+      fontSize: 11,
+      letterSpacing: 0.5,
+      fontFamily: fonts.semibold,
+      textTransform: "uppercase",
     },
     cardListEditorial: {
       borderLeftWidth: 0,
-      borderTopWidth: isDark ? StyleSheet.hairlineWidth : 2,
-      borderTopColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(185, 28, 28, 0.55)",
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: lineBorder,
       borderRadius: radius.xxl - 2,
       ...Platform.select({
         ios: {
@@ -1081,6 +1703,10 @@ function createStyles(c, isDark, layoutFlags = {}) {
         default: isNarrowViewport ? spacing.sm + 2 : spacing.md,
       }),
     },
+    contentGridHome: {
+      padding: 12,
+      paddingTop: 12,
+    },
     contentGridCompact: {
       paddingTop: spacing.sm,
       paddingBottom: spacing.sm,
@@ -1106,6 +1732,12 @@ function createStyles(c, isDark, layoutFlags = {}) {
       marginBottom: 2,
       opacity: 0.82,
     },
+    categoryGridHome: {
+      fontSize: 11,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: 2,
+    },
     categoryGridCompact: {
       marginBottom: 1,
     },
@@ -1126,6 +1758,228 @@ function createStyles(c, isDark, layoutFlags = {}) {
         default: 42,
       }),
       fontWeight: "500",
+    },
+    nameGridHome: {
+      fontSize: 14,
+      lineHeight: 18,
+      minHeight: 18,
+      fontWeight: "500",
+    },
+    imageFadeWrap: {
+      width: "100%",
+      height: "100%",
+    },
+    gridPriceRow: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      gap: 6,
+      marginTop: 0,
+    },
+    gridPriceCurrent: {
+      fontSize: 16,
+      lineHeight: 20,
+      fontFamily: fonts.semibold,
+    },
+    gridPriceMrp: {
+      fontSize: 12,
+      textDecorationLine: "line-through",
+      fontFamily: fonts.medium,
+    },
+    gridFloatingAdd: {
+      position: "absolute",
+      right: 10,
+      bottom: 10,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: c.ink || c.textPrimary || "#111827",
+      ...Platform.select({
+        web: { boxShadow: "0 4px 12px rgba(0,0,0,0.18)" },
+        ios: {
+          shadowColor: "#000000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.18,
+          shadowRadius: 12,
+        },
+        android: { elevation: 3 },
+        default: {},
+      }),
+    },
+    notifyGhost: {
+      width: "auto",
+      minWidth: 88,
+      paddingHorizontal: 12,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: c.line || lineBorder,
+      backgroundColor: "rgba(255,255,255,0.95)",
+    },
+    notifyGhostText: {
+      fontSize: 11,
+      fontFamily: fonts.semibold,
+      letterSpacing: 0.2,
+    },
+    gridFloatingAddDisabled: {
+      backgroundColor: c.textMuted,
+    },
+    gridFloatingAddPressed: {
+      transform: [{ scale: 0.92 }],
+    },
+    gridFloatingStepper: {
+      position: "absolute",
+      right: 8,
+      bottom: -12,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: c.accentGreen || c.secondaryDark,
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: 2,
+    },
+    gridFloatingStepHit: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    gridFloatingQty: {
+      minWidth: 20,
+      textAlign: "center",
+      fontFamily: fonts.bold,
+      fontSize: 13,
+    },
+    premiumContent: {
+      padding: 12,
+      gap: 4,
+    },
+    categoryPremium: {
+      fontSize: 10,
+      fontFamily: fonts.semibold,
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
+      marginBottom: 2,
+    },
+    namePremium: {
+      fontSize: 14,
+      lineHeight: 18,
+      fontFamily: fonts.medium,
+      fontWeight: "500",
+    },
+    ratingRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 2,
+      marginTop: 2,
+      minHeight: 14,
+    },
+    ratingValue: {
+      fontSize: 11,
+      fontFamily: fonts.semibold,
+    },
+    reviewCount: {
+      fontSize: 11,
+      fontFamily: fonts.medium,
+    },
+    newPill: {
+      alignSelf: "flex-start",
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 999,
+    },
+    newPillText: {
+      fontSize: 10,
+      fontFamily: fonts.semibold,
+      letterSpacing: 0.35,
+      textTransform: "uppercase",
+    },
+    premiumBottomRow: {
+      marginTop: 8,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
+    inlineStepper: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderRadius: 999,
+      backgroundColor: c.ink || c.textPrimary || "#111827",
+      paddingHorizontal: 2,
+      height: 30,
+    },
+    inlineStepHit: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    inlineQty: {
+      color: "#FFFFFF",
+      minWidth: 18,
+      textAlign: "center",
+      fontSize: 12,
+      fontFamily: fonts.semibold,
+    },
+    notifyBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.4)",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 20,
+    },
+    notifyModal: {
+      width: "100%",
+      maxWidth: 360,
+      borderRadius: 14,
+      backgroundColor: c.surface,
+      padding: 16,
+      gap: 10,
+    },
+    notifyTitle: {
+      fontSize: 16,
+      fontFamily: fonts.semibold,
+    },
+    notifyBody: {
+      fontSize: 13,
+      lineHeight: 18,
+      fontFamily: fonts.regular,
+    },
+    notifyInput: {
+      borderWidth: 1,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+      fontSize: 14,
+      fontFamily: fonts.regular,
+    },
+    notifyActions: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      gap: 8,
+      marginTop: 2,
+    },
+    notifyActionGhost: {
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+      borderRadius: 8,
+    },
+    notifyActionGhostText: {
+      fontSize: 13,
+      fontFamily: fonts.medium,
+    },
+    notifyActionPrimary: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+    },
+    notifyActionPrimaryText: {
+      color: "#FFFFFF",
+      fontSize: 13,
+      fontFamily: fonts.semibold,
     },
     nameListCompact: {
       fontSize: typography.body,

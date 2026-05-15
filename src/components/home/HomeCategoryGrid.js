@@ -5,7 +5,9 @@ import * as Haptics from "expo-haptics";
 import Svg, { Path } from "react-native-svg";
 import { useTheme } from "../../context/ThemeContext";
 import HomeSectionHeader from "./HomeSectionHeader";
-import { fonts, spacing } from "../../theme/tokens";
+import { spacing } from "../../theme/tokens";
+import { homeType } from "../../styles/typography";
+import { spacing as homeSpacing } from "../../styles/spacing";
 
 function MilkBottleIcon({ color }) {
   return (
@@ -139,13 +141,14 @@ export default function HomeCategoryGrid({
 }) {
   const { width } = useWindowDimensions();
   const compact = width < 420;
+  const isTablet = width >= 600;
   const isDesktop = width >= 1024;
   const columns = isDesktop ? 8 : 4;
   const { colors: c, isDark } = useTheme();
   const displayOverline = "EXPLORE THE PANTRY";
   const styles = useMemo(
-    () => createStyles(c, isDark, compact, columns, isDesktop),
-    [c, isDark, compact, columns, isDesktop]
+    () => createStyles(c, isDark, compact, columns, isDesktop, isTablet),
+    [c, isDark, compact, columns, isDesktop, isTablet]
   );
 
   return (
@@ -173,8 +176,8 @@ export default function HomeCategoryGrid({
   );
 }
 
-function createStyles(c, isDark, compact, columns, isDesktop) {
-  const gap = isDesktop ? 14 : compact ? 10 : 14;
+function createStyles(c, isDark, compact, columns, isDesktop, isTablet) {
+  const gap = isTablet ? 14 : 10;
   return StyleSheet.create({
     wrap: {
       marginBottom: spacing.lg,
@@ -182,8 +185,8 @@ function createStyles(c, isDark, compact, columns, isDesktop) {
     editorialOverlineRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
-      marginBottom: 10,
+      gap: homeSpacing.xs,
+      marginBottom: homeSpacing.md,
     },
     editorialSquare: {
       width: 4,
@@ -192,8 +195,8 @@ function createStyles(c, isDark, compact, columns, isDesktop) {
     },
     editorialOverline: {
       fontSize: 11,
-      fontFamily: fonts.semibold,
-      letterSpacing: 1.98,
+      fontFamily: homeType.overline.fontFamily,
+      letterSpacing: 1.4,
       color: c.accent || c.rating || "#C8A97E",
       textTransform: "uppercase",
     },
@@ -214,7 +217,7 @@ function createStyles(c, isDark, compact, columns, isDesktop) {
       borderColor: c.line || (isDark ? "rgba(255,255,255,0.14)" : "rgba(100,116,139,0.18)"),
       alignItems: "center",
       justifyContent: "center",
-      paddingVertical: spacing.sm + 2,
+      paddingVertical: homeSpacing.md,
       paddingHorizontal: spacing.xs,
       ...Platform.select({
         web: {
@@ -229,6 +232,12 @@ function createStyles(c, isDark, compact, columns, isDesktop) {
     },
     tileHovered: {
       opacity: 0.98,
+      ...Platform.select({
+        web: {
+          transform: [{ scale: 1.03 }],
+        },
+        default: {},
+      }),
     },
     iconCircle: {
       width: 48,
@@ -236,14 +245,14 @@ function createStyles(c, isDark, compact, columns, isDesktop) {
       borderRadius: 999,
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: 10,
+      marginBottom: homeSpacing.md,
     },
     label: {
-      fontSize: 12,
-      fontFamily: fonts.medium,
+      fontSize: 13,
+      fontFamily: homeType.uiMedium.fontFamily,
       color: c.ink || c.textPrimary,
       textAlign: "center",
-      lineHeight: Math.round(12 * 1.3),
+      lineHeight: Math.round(13 * 1.4),
     },
   });
 }

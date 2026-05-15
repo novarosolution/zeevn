@@ -1,6 +1,6 @@
 import { Platform } from "react-native";
 import { adminPanel } from "./adminLayout";
-import { ALCHEMY, HERITAGE } from "./customerAlchemy";
+import { ALCHEMY } from "./customerAlchemy";
 import { container, layout, semanticRadius, spacing } from "./tokens";
 import { WEB_HEADER_HEIGHT, WEB_STICKY_TOP_OFFSET } from "./web";
 
@@ -22,12 +22,12 @@ export function customerPanel(c, shadowPremium, isDark) {
       ? {
           backgroundColor: c.surfaceElevated || c.surface,
           borderColor: c.border,
-          borderTopColor: "rgba(248, 113, 113, 0.4)",
+          borderTopColor: "rgba(255,255,255,0.16)",
         }
       : {
           backgroundColor: ALCHEMY.ivory,
           borderColor: ALCHEMY.pillInactive,
-          borderTopColor: HERITAGE.amberMid,
+          borderTopColor: ALCHEMY.lineStrong,
         }),
     ...Platform.select({
       web: {

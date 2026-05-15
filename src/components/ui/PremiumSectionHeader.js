@@ -1,18 +1,14 @@
 import React, { memo, useMemo } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import {
-  fonts,
-  getSemanticColors,
-  icon,
   lineHeight,
-  radius,
   spacing,
   typography,
 } from "../../theme/tokens";
-import { FONT_DISPLAY, HERITAGE, heritageHairlineGradient } from "../../theme/customerAlchemy";
 import { useTheme } from "../../context/ThemeContext";
+import { homeType } from "../../styles/typography";
+import { spacing as homeSpacing } from "../../styles/spacing";
 
 /**
  * Generic premium section header used across customer screens. Same look as
@@ -22,17 +18,19 @@ function PremiumSectionHeaderBase({
   overline,
   title,
   subtitle,
-  count,
   onSeeAll,
   seeAllLabel = "See all",
   align = "left",
   compact = false,
 }) {
   const { colors: c, isDark } = useTheme();
-  const semantic = getSemanticColors(c);
-  const isWeb = Platform.OS === "web";
-  const styles = useMemo(() => createStyles(c, semantic, isDark, align, compact), [c, semantic, isDark, align, compact]);
-  const showCount = count != null && count > 0;
+  const { width } = useWindowDimensions();
+  const titleSize = width >= 1024 ? 44 : width >= 640 ? 36 : 28;
+  const titleLine = width >= 1024 ? 50 : width >= 640 ? 42 : 33;
+  const styles = useMemo(
+    () => createStyles(c, isDark, align, compact, titleSize, titleLine),
+    [c, isDark, align, compact, titleSize, titleLine]
+  );
   const overlineText = String(overline || "").trim();
 
   return (
@@ -51,13 +49,6 @@ function PremiumSectionHeaderBase({
             <Text style={styles.title} numberOfLines={2}>
               {title}
             </Text>
-            {showCount ? (
-              <View style={styles.countChip}>
-                <Text style={styles.countText} numberOfLines={1}>
-                  {count}
-                </Text>
-              </View>
-            ) : null}
           </View>
           {subtitle ? (
             <Text style={styles.subtitle} numberOfLines={2}>
@@ -69,60 +60,41 @@ function PremiumSectionHeaderBase({
         {onSeeAll ? (
           <Pressable
             onPress={onSeeAll}
-            hitSlop={{ top: 8, bottom: 8, left: 6, right: 6 }}
+            hitSlop={{ top: homeSpacing.sm, bottom: homeSpacing.sm, left: homeSpacing.sm, right: homeSpacing.sm }}
             accessibilityRole="button"
             accessibilityLabel={`${seeAllLabel} ${title || ""}`.trim()}
-            style={({ pressed, hovered }) => [
-              styles.seeAllBtn,
-              hovered && Platform.OS === "web" ? styles.seeAllBtnHover : null,
-              pressed ? styles.seeAllBtnPressed : null,
-            ]}
+            style={({ pressed }) => [styles.seeAllBtn, pressed ? styles.seeAllBtnPressed : null]}
           >
-            <Text style={styles.seeAllText} numberOfLines={1}>
-              {seeAllLabel}
-            </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={icon.sm}
-              color={isDark ? c.primaryBright : c.primaryDark}
-            />
+            {({ pressed }) => (
+              <View style={styles.seeAllBtnInner}>
+                <Text style={[styles.seeAllText, pressed ? styles.seeAllTextActive : null]} numberOfLines={1}>
+                  {seeAllLabel}
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color={c.textPrimary} />
+              </View>
+            )}
           </Pressable>
         ) : null}
       </View>
 
-      {isWeb ? (
-        <View style={[styles.hairlineWrap, styles.peNone]}>
-          <LinearGradient
-            colors={heritageHairlineGradient(isDark)}
-            start={{ x: 0, y: 0.5 }}
-            end={{ x: 1, y: 0.5 }}
-            style={styles.hairline}
-          />
-          <View style={[styles.hairlineDot, { backgroundColor: isDark ? HERITAGE.amberBright : HERITAGE.amberMid }]} />
-        </View>
-      ) : null}
     </View>
   );
 }
 
-function createStyles(c, semantic, isDark, align, compact) {
-  const titleSize = Platform.OS === "web" ? (compact ? typography.h3 - 1 : typography.h2) : (compact ? typography.h3 - 2 : typography.h3);
-  const titleSizeWeb = compact ? typography.h3 : typography.h2 + 2;
-  const titleLine = compact ? lineHeight.h3 - 1 : lineHeight.h2;
-  const titleLineWeb = compact ? lineHeight.h3 : lineHeight.h2 + 2;
-  const metaTextSize = typography.caption;
-  const metaLineHeight = lineHeight.caption;
+function createStyles(c, isDark, align, compact, titleSize, titleLine) {
+  const metaTextSize = 12;
+  const metaLineHeight = 16;
   const subtitleSize = typography.bodySmall;
   const subtitleLineHeight = lineHeight.bodySmall;
 
   return StyleSheet.create({
     wrap: {
       width: "100%",
-      marginBottom: Platform.OS === "web" ? (compact ? spacing.sm + 2 : spacing.md) : spacing.sm + 2,
+      marginBottom: Platform.OS === "web" ? 24 : 20,
     },
     row: {
       flexDirection: "row",
-      alignItems: "flex-start",
+      alignItems: "center",
       justifyContent: "space-between",
       gap: spacing.md,
       ...Platform.select({
@@ -135,35 +107,36 @@ function createStyles(c, semantic, isDark, align, compact) {
     left: {
       flex: 1,
       minWidth: 0,
-      gap: 6,
+      gap: 8,
       alignItems: align === "center" ? "center" : "flex-start",
     },
     overlineRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
-      marginBottom: 2,
+      gap: homeSpacing.xs,
+      marginBottom: 0,
     },
     overlineDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
-      backgroundColor: isDark ? HERITAGE.amberBright : HERITAGE.amberMid,
+      width: 4,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: c.rating,
       ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 0 12px rgba(251, 146, 60, 0.4)"
-            : "0 0 10px rgba(217, 119, 6, 0.25)",
+            ? "0 0 12px rgba(253,186,116,0.34)"
+            : "0 0 10px rgba(180, 83, 9, 0.18)",
         },
         default: {},
       }),
     },
     overline: {
-      fontFamily: fonts.extrabold,
-      fontSize: typography.overline,
+      fontFamily: homeType.overline.fontFamily,
+      fontSize: homeType.overline.fontSize,
       lineHeight: lineHeight.overline,
-      letterSpacing: 1.8,
-      color: isDark ? HERITAGE.amberBright : HERITAGE.amber,
+      letterSpacing: 1.4,
+      color: c.textMuted,
+      textTransform: "uppercase",
     },
     titleRow: {
       flexDirection: "row",
@@ -172,102 +145,56 @@ function createStyles(c, semantic, isDark, align, compact) {
       flexWrap: "wrap",
     },
     title: {
-      fontFamily: FONT_DISPLAY,
+      fontFamily: compact ? homeType.uiSemibold.fontFamily : homeType.display.fontFamily,
       fontSize: titleSize,
       lineHeight: titleLine,
-      letterSpacing: -0.55,
+      letterSpacing: -(titleSize * 0.02),
       color: c.textPrimary,
-      ...Platform.select({
-        web: { fontSize: titleSizeWeb, lineHeight: titleLineWeb },
-        default: {},
-      }),
-    },
-    countChip: {
-      paddingHorizontal: 10,
-      paddingVertical: 3,
-      borderRadius: radius.pill,
-      backgroundColor: isDark
-        ? "rgba(248, 113, 113, 0.16)"
-        : c.primarySoft,
-    },
-    countText: {
-      fontFamily: fonts.extrabold,
-      fontSize: metaTextSize,
-      lineHeight: metaLineHeight,
-      letterSpacing: 0.4,
-      color: isDark ? c.primaryBright : c.primaryDark,
+      fontWeight: compact ? "600" : "500",
     },
     subtitle: {
-      fontFamily: fonts.medium,
+      fontFamily: homeType.uiRegular.fontFamily,
       fontSize: subtitleSize,
       lineHeight: subtitleLineHeight,
       color: c.textMuted,
-      marginTop: 2,
+      marginTop: homeSpacing.xs,
       maxWidth: Platform.select({ web: 760, default: "100%" }),
     },
     seeAllBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-      paddingHorizontal: spacing.md - 2,
-      paddingVertical: 8,
-      borderRadius: radius.pill,
-      borderWidth: 1,
-      borderColor: isDark
-        ? "rgba(248, 113, 113, 0.32)"
-        : "rgba(220, 38, 38, 0.18)",
-      backgroundColor: isDark
-        ? "rgba(239, 68, 68, 0.1)"
-        : semantic.bg.glass,
+      paddingHorizontal: 0,
+      paddingVertical: 0,
+      borderRadius: 0,
+      borderWidth: 0,
+      borderColor: "transparent",
+      backgroundColor: "transparent",
       ...Platform.select({
         web: {
-          transition: "transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease",
+          transition: "opacity 0.18s ease",
           cursor: "pointer",
           marginLeft: "auto",
         },
         default: {},
       }),
     },
-    seeAllBtnHover: {
-      ...Platform.select({
-        web: {
-          transform: [{ translateY: -1 }],
-          boxShadow: isDark
-            ? "0 10px 22px rgba(0,0,0,0.4), inset 0 1px 0 rgba(220, 38, 38, 0.18)"
-            : "0 10px 22px rgba(63, 63, 70, 0.14), inset 0 1px 0 rgba(255,255,255,0.95)",
-        },
-        default: {},
-      }),
-    },
-    seeAllBtnPressed: {
-      opacity: 0.86,
-    },
-    seeAllText: {
-      fontFamily: fonts.extrabold,
-      fontSize: metaTextSize,
-      lineHeight: metaLineHeight,
-      letterSpacing: 0.4,
-      color: isDark ? c.primaryBright : c.primaryDark,
-    },
-    hairlineWrap: {
-      marginTop: 10,
+    seeAllBtnInner: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
+      gap: 4,
+      marginLeft: "auto",
     },
-    hairline: {
-      flex: 1,
-      height: 1.25,
-      borderRadius: 1,
+    seeAllBtnPressed: {
+      opacity: 0.8,
     },
-    hairlineDot: {
-      width: 5,
-      height: 5,
-      borderRadius: 2.5,
-      opacity: 0.85,
+    seeAllText: {
+      fontFamily: homeType.uiSemibold.fontFamily,
+      fontSize: metaTextSize,
+      lineHeight: metaLineHeight,
+      letterSpacing: 0.9,
+      textTransform: "uppercase",
+      color: c.textPrimary,
     },
-    peNone: {
-      pointerEvents: "none",
+    seeAllTextActive: {
+      textDecorationLine: "underline",
     },
   });
 }

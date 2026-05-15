@@ -25,19 +25,29 @@ function SkeletonBlockBase({
   const { isDark } = useTheme();
   const reducedMotion = useReducedMotion();
   const opacity = useSharedValue(0.6);
+  const shimmerX = useSharedValue(-140);
 
   useEffect(() => {
     if (Platform.OS === "web" || reducedMotion) return undefined;
     opacity.value = withRepeat(withTiming(1, { duration: 800 }), -1, true);
-    return () => cancelAnimation(opacity);
-  }, [opacity, reducedMotion]);
+    shimmerX.value = -140;
+    shimmerX.value = withRepeat(withTiming(280, { duration: 1400 }), -1, false);
+    return () => {
+      cancelAnimation(opacity);
+      cancelAnimation(shimmerX);
+    };
+  }, [opacity, reducedMotion, shimmerX]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
   }));
+  const shimmerStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: shimmerX.value }],
+    opacity: reducedMotion ? 0 : 1,
+  }));
 
   const borderRadius = typeof rounded === "number" ? rounded : ROUNDED_TOKENS[rounded] ?? radius.md;
-  const baseColor = isDark ? "rgba(220, 38, 38, 0.08)" : "rgba(63, 63, 70, 0.08)";
+  const baseColor = isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)";
 
   const baseStyle = useMemo(
     () => [
@@ -55,8 +65,8 @@ function SkeletonBlockBase({
             animationIterationCount: "infinite",
             animationTimingFunction: "ease-in-out",
             backgroundImage: isDark
-              ? "linear-gradient(90deg, rgba(220, 38, 38, 0.06) 0%, rgba(220, 38, 38, 0.18) 50%, rgba(220, 38, 38, 0.06) 100%)"
-              : "linear-gradient(90deg, rgba(63, 63, 70, 0.06) 0%, rgba(185, 28, 28, 0.16) 50%, rgba(63, 63, 70, 0.06) 100%)",
+              ? "linear-gradient(90deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.02) 100%)"
+              : "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.7) 50%, rgba(255,255,255,0) 100%)",
             backgroundSize: "200% 100%",
           }
         : null,
@@ -69,7 +79,22 @@ function SkeletonBlockBase({
     return <View style={baseStyle} />;
   }
 
-  return <Animated.View style={[baseStyle, animatedStyle]} />;
+  return (
+    <Animated.View style={[baseStyle, animatedStyle]}>
+      {!reducedMotion ? (
+        <Animated.View style={[styles.nativeShimmerSweep, shimmerStyle]}>
+          <View
+            style={[
+              styles.nativeShimmerFill,
+              {
+                backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.7)",
+              },
+            ]}
+          />
+        </Animated.View>
+      ) : null}
+    </Animated.View>
+  );
 }
 
 const ROUNDED_TOKENS = {
@@ -79,6 +104,18 @@ const ROUNDED_TOKENS = {
   lg: radius.lg,
   xl: radius.xl,
   pill: radius.pill,
+};
+
+const styles = {
+  nativeShimmerSweep: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    width: "46%",
+  },
+  nativeShimmerFill: {
+    flex: 1,
+  },
 };
 
 if (Platform.OS === "web" && typeof document !== "undefined" && typeof document.head !== "undefined") {

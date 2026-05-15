@@ -8,7 +8,7 @@ import { useTheme } from "../context/ThemeContext";
 import { BRAND_LOGO_SIZE } from "../constants/brand";
 import { getSemanticColors, icon, lineHeight, semanticRadius, spacing, typography } from "../theme/tokens";
 import { customerContentWidth } from "../theme/screenLayout";
-import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI, heritageBrandTrimGradient } from "../theme/customerAlchemy";
+import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
 
 const HEADER_LOGO = BRAND_LOGO_SIZE.headerCompact;
 /** Row height follows logo only — extra space was making the bar feel tall. */
@@ -68,24 +68,12 @@ export default function ScreenPageHeader({
         ]}
       >
         {isWeb ? (
-          <>
-            <LinearGradient
-              colors={heritageBrandTrimGradient()}
-              start={{ x: 0, y: 0.5 }}
-              end={{ x: 1, y: 0.5 }}
-              style={[styles.headerGoldAccent, styles.peNone]}
-            />
-            <LinearGradient
-              colors={
-                isDark
-                  ? ["rgba(255,255,255,0.045)", "transparent"]
-                  : ["rgba(255,255,255,0.82)", "rgba(255,255,255,0.18)"]
-              }
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[StyleSheet.absoluteFillObject, styles.peNone]}
-            />
-          </>
+          <LinearGradient
+            colors={isDark ? ["rgba(255,255,255,0.045)", "transparent"] : ["rgba(255,255,255,0.82)", "rgba(255,255,255,0.18)"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[StyleSheet.absoluteFillObject, styles.peNone]}
+          />
         ) : null}
         <View style={[styles.row, styles.rowBelowAccent]}>
           {backVisible ? (
@@ -100,7 +88,7 @@ export default function ScreenPageHeader({
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <Ionicons name="chevron-back" size={icon.lg} color={isDark ? c.primaryBright : ALCHEMY.brown} />
+              <Ionicons name="chevron-back" size={icon.lg} color={isDark ? c.textPrimary : "#0E0E0E"} />
             </Pressable>
           ) : null}
           {showBrand && isWeb ? <BrandHeaderMark navigation={navigation} compact /> : null}
@@ -114,8 +102,8 @@ export default function ScreenPageHeader({
                 style={[
                   styles.subtitlePill,
                   {
-                    borderColor: isDark ? "rgba(248, 113, 113, 0.22)" : c.border,
-                    backgroundColor: isDark ? "rgba(239, 68, 68, 0.08)" : c.surfaceMuted,
+                    borderColor: isDark ? "rgba(255,255,255,0.16)" : c.border,
+                    backgroundColor: isDark ? "rgba(255,255,255,0.06)" : c.surfaceMuted,
                   },
                 ]}
               >
@@ -171,13 +159,8 @@ function createStyles(rowMinH, isDark) {
         },
       }),
     },
-    headerGoldAccent: {
-      width: "100%",
-      height: 3,
-      opacity: 0.96,
-    },
     rowBelowAccent: {
-      paddingTop: Platform.OS === "web" ? 12 : 0,
+      paddingTop: Platform.OS === "web" ? 10 : 0,
     },
     row: {
       flexDirection: "row",

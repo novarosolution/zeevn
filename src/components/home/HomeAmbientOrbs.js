@@ -11,7 +11,7 @@ import Animated, {
 import useReducedMotion from "../../hooks/useReducedMotion";
 
 /**
- * Soft floating orbs behind the hero — red + neutral depth, no imagery.
+ * Soft floating orbs behind the hero — navy/forest + neutral depth, no imagery.
  */
 export default function HomeAmbientOrbs({ isDark }) {
   const reduced = useReducedMotion();
@@ -106,7 +106,7 @@ export default function HomeAmbientOrbs({ isDark }) {
     opacity: orb2Op.value,
   }));
 
-  const redGlow = isDark ? "rgba(239, 68, 68, 0.14)" : "rgba(220, 38, 38, 0.22)";
+  const redGlow = isDark ? "rgba(34, 197, 94, 0.12)" : "rgba(15, 23, 42, 0.18)";
   const neutralGlow = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(24, 24, 27, 0.12)";
 
   return (

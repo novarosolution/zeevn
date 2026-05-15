@@ -156,8 +156,8 @@ function createStyles(c, semantic, isDark, pad, variant, borderless) {
           : "rgba(220, 38, 38, 0.05)"
         : accent
           ? isDark
-            ? "rgba(220, 38, 38, 0.1)"
-            : "rgba(255, 251, 245, 0.96)"
+            ? "rgba(200, 169, 126, 0.14)"
+            : "rgba(255, 252, 246, 0.96)"
         : muted
           ? isDark
             ? "rgba(255,255,255,0.035)"
@@ -180,11 +180,11 @@ function createStyles(c, semantic, isDark, pad, variant, borderless) {
           : "rgba(220, 38, 38, 0.24)"
         : accent
           ? isDark
-            ? "rgba(248, 113, 113, 0.5)"
-            : "rgba(185, 28, 28, 0.42)"
+            ? "rgba(200, 169, 126, 0.5)"
+            : "rgba(200, 169, 126, 0.42)"
         : isDark
-          ? "rgba(220, 38, 38, 0.18)"
-          : "rgba(185, 28, 28, 0.14)",
+          ? "rgba(255,255,255,0.14)"
+          : "rgba(15, 23, 42, 0.14)",
       ...Platform.select({
         ios: flat
           ? {}

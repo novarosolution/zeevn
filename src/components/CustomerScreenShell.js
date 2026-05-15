@@ -143,11 +143,11 @@ export default function CustomerScreenShell({
 
   const ambientWashColors = isDark
     ? isAdminVariant
-      ? ["rgba(248,113,113,0.04)", "rgba(59,130,246,0.02)", semantic.bg.overlay, "rgba(0, 0, 0, 0.18)"]
-      : ["rgba(220,38,38,0.05)", "rgba(248,113,113,0.015)", semantic.bg.overlay, "rgba(0, 0, 0, 0.16)"]
+      ? ["rgba(31,58,46,0.08)", "rgba(200,169,126,0.04)", semantic.bg.overlay, "rgba(0, 0, 0, 0.2)"]
+      : ["rgba(31,58,46,0.07)", "rgba(200,169,126,0.03)", semantic.bg.overlay, "rgba(0, 0, 0, 0.16)"]
     : isAdminVariant
-      ? ["rgba(255,255,255,0.72)", "rgba(59,130,246,0.025)", semantic.bg.overlay, "rgba(15, 23, 42, 0.03)"]
-      : ["rgba(220,38,38,0.05)", "rgba(255,255,255,0.05)", semantic.bg.overlay, "rgba(63, 63, 70, 0.02)"];
+      ? ["rgba(255,255,255,0.74)", "rgba(200,169,126,0.04)", semantic.bg.overlay, "rgba(15, 23, 42, 0.03)"]
+      : ["rgba(255,255,255,0.06)", "rgba(200,169,126,0.03)", semantic.bg.overlay, "rgba(63, 63, 70, 0.02)"];
 
   const edgeVignetteColors = isDark
     ? isAdminVariant
@@ -159,13 +159,13 @@ export default function CustomerScreenShell({
 
   const topSheenColors = isDark
     ? isAdminVariant
-      ? ["rgba(96, 165, 250, 0.06)", "transparent", "rgba(0,0,0,0.08)"]
-      : ["rgba(220, 38, 38, 0.05)", "transparent", "rgba(0,0,0,0.04)"]
+      ? ["rgba(200,169,126,0.08)", "transparent", "rgba(0,0,0,0.08)"]
+      : ["rgba(200,169,126,0.06)", "transparent", "rgba(0,0,0,0.04)"]
     : isAuthVariant
-      ? ["rgba(255,255,255,0.68)", "transparent", "rgba(37,99,235,0.035)"]
+      ? ["rgba(255,255,255,0.68)", "transparent", "rgba(200,169,126,0.04)"]
       : isAdminVariant
         ? ["rgba(255,255,255,0.58)", "transparent", "rgba(15,23,42,0.03)"]
-        : ["rgba(255,255,255,0.26)", "transparent", "rgba(63, 63, 70, 0.02)"];
+        : ["rgba(255,255,255,0.28)", "transparent", "rgba(63, 63, 70, 0.02)"];
 
   return (
     <View style={[styles.base, { backgroundColor: c.background }]}>
@@ -243,8 +243,8 @@ export default function CustomerScreenShell({
             styles.cursorSpotlight,
             {
               backgroundColor: isDark
-                ? "rgba(248, 113, 113, 0.08)"
-                : "rgba(220, 38, 38, 0.12)",
+                ? "rgba(200, 169, 126, 0.1)"
+                : "rgba(200, 169, 126, 0.12)",
             },
             styles.peNone,
             cursorStyle,

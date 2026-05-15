@@ -32,7 +32,7 @@ import PremiumChip from "../components/ui/PremiumChip";
 import SkeletonBlock from "../components/ui/SkeletonBlock";
 import PremiumButton from "../components/ui/PremiumButton";
 import PremiumCard from "../components/ui/PremiumCard";
-import { NOTIFICATIONS_SCREEN, fillPlaceholders } from "../content/appContent";
+import { APP_LOADING_UI, NOTIFICATIONS_SCREEN, fillPlaceholders } from "../content/appContent";
 
 function UnreadDot({ color }) {
   return (
@@ -238,7 +238,7 @@ export default function NotificationsScreen({ navigation }) {
             <SkeletonBlock width="100%" height={86} rounded="lg" />
             <SkeletonBlock width="100%" height={86} rounded="lg" />
             <SkeletonBlock width="100%" height={86} rounded="lg" />
-            <PremiumLoader size="sm" caption={NOTIFICATIONS_SCREEN.loadingCaption} />
+            <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.notifications} />
           </View>
         ) : notifications.length === 0 ? (
           <View style={styles.panel}>

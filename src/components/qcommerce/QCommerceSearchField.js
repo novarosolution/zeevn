@@ -49,11 +49,11 @@ export default function QCommerceSearchField({
         styles.wrap,
         premium ? styles.wrapPremium : null,
         {
-          backgroundColor: premium ? ALCHEMY.cardBg : c.searchBarFill,
-          borderColor: premium ? "rgba(185, 28, 28, 0.35)" : c.searchBarBorder,
+          backgroundColor: premium ? "#FAFAF7" : c.searchBarFill,
+          borderColor: premium ? "rgba(100, 116, 139, 0.2)" : c.searchBarBorder,
         },
         hovered && Platform.OS === "web"
-          ? { borderColor: premium ? "rgba(185, 28, 28, 0.5)" : semantic.border.accent, backgroundColor: c.surface }
+          ? { borderColor: premium ? "rgba(100, 116, 139, 0.3)" : semantic.border.accent, backgroundColor: c.surface }
           : null,
         premium
           ? platformShadow({
@@ -84,7 +84,7 @@ export default function QCommerceSearchField({
     >
       <Ionicons
         name="search-outline"
-        size={icon.sm + 2}
+        size={20}
         color={premium ? ALCHEMY.brownMuted : semantic.text.secondary}
         style={styles.searchIcon}
       />
@@ -107,7 +107,7 @@ export default function QCommerceSearchField({
       </Animated.View>
       {value?.trim() && onClear ? (
         <TouchableOpacity onPress={onClear} hitSlop={10} accessibilityLabel="Clear search" style={styles.clearBtn}>
-          <Ionicons name="close-circle" size={icon.md} color={semantic.text.secondary} />
+          <Ionicons name="close-circle-outline" size={icon.md} color={semantic.text.secondary} />
         </TouchableOpacity>
       ) : null}
     </Pressable>

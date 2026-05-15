@@ -69,7 +69,7 @@ import {
 } from "../utils/orderStatus";
 import PaymentStatusBanner from "../components/payments/PaymentStatusBanner";
 import OrderLiveMapCard from "../components/orders/OrderLiveMapCard";
-import { APP_DISPLAY_NAME, MY_ORDERS_UI, SUPPORT_EMAIL_DISPLAY, fillPlaceholders } from "../content/appContent";
+import { APP_DISPLAY_NAME, APP_LOADING_UI, MY_ORDERS_UI, SUPPORT_EMAIL_DISPLAY, fillPlaceholders } from "../content/appContent";
 import { formatCompactShippingLine } from "../utils/shippingAddressFormat";
 
 const ORDER_STATUSES_WITH_LIVE_MAP = new Set(["ready_for_pickup", "shipped", "out_for_delivery"]);
@@ -1270,7 +1270,7 @@ export default function MyOrdersScreen({ navigation, route }) {
             </View>
             <SkeletonBlock width="100%" height={140} rounded="xl" />
             <SkeletonBlock width="100%" height={140} rounded="xl" />
-            <PremiumLoader size="sm" caption={MY_ORDERS_UI.loadingCaption} />
+            <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.orders} />
           </View>
         ) : orders.length === 0 ? (
           <View style={[styles.panel, styles.emptyPanel]}>

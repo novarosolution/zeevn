@@ -29,6 +29,7 @@ import PremiumStatCard from "../../components/ui/PremiumStatCard";
 import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumInput from "../../components/ui/PremiumInput";
 import SectionReveal from "../../components/motion/SectionReveal";
+import { APP_LOADING_UI } from "../../content/appContent";
 
 function hexToRgb(hex) {
   const h = String(hex || "").replace("#", "");
@@ -458,7 +459,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
 
       {loading ? (
         <View style={styles.loaderWrap}>
-          <PremiumLoader size="md" caption="Loading metrics…" hint="Charts and revenue data will appear here." />
+          <PremiumLoader size="md" caption={APP_LOADING_UI.inline.admin} />
         </View>
       ) : analytics ? (
         <>

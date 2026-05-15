@@ -1,16 +1,18 @@
 import React, { memo, useMemo } from "react";
-import { FlatList, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import HomeSectionHeader from "./HomeSectionHeader";
 import PremiumCard from "../ui/PremiumCard";
 import { useTheme } from "../../context/ThemeContext";
-import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
+import { icon, radius, typography } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
+import { homeType } from "../../styles/typography";
+import { spacing as homeSpacing } from "../../styles/spacing";
 
 function ReorderCard({ item, onAdd }) {
   const { colors: c, isDark } = useTheme();
-  const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
+  const styles = useMemo(() => createStyles(c, 0, 0, isDark), [c, isDark]);
 
   return (
     <View style={styles.cardWrap}>
@@ -20,7 +22,7 @@ function ReorderCard({ item, onAdd }) {
             <Image source={{ uri: item.image }} style={styles.media} contentFit="cover" transition={120} />
           ) : (
             <View style={styles.mediaFallback}>
-              <Ionicons name="bag-handle-outline" size={icon.md} color={c.textMuted} />
+              <Ionicons name="bag-outline" size={icon.md} color={c.textMuted} />
             </View>
           )}
         </View>
@@ -43,10 +45,12 @@ function ReorderCard({ item, onAdd }) {
   );
 }
 
-function HomeReorderStripBase({ items = [], overline, title, onAdd, onSeeAll }) {
+function HomeReorderStripBase({ items = [], overline, title, onAdd, onSeeAll, carouselBottomPadding = 24 }) {
   const capped = useMemo(() => (Array.isArray(items) ? items.slice(0, 8) : []), [items]);
+  const { width } = useWindowDimensions();
   const { colors: c } = useTheme();
-  const styles = useMemo(() => createStyles(c), [c]);
+  const sectionGap = width >= 640 ? 72 : 56;
+  const styles = useMemo(() => createStyles(c, sectionGap, carouselBottomPadding, false), [c, sectionGap, carouselBottomPadding]);
 
   if (capped.length === 0) {
     return null;
@@ -67,15 +71,16 @@ function HomeReorderStripBase({ items = [], overline, title, onAdd, onSeeAll }) 
   );
 }
 
-function createStyles(c, isDark = false) {
+function createStyles(c, sectionGap, carouselBottomPadding, isDark = false) {
   return StyleSheet.create({
     wrap: {
-      marginBottom: spacing.md + 2,
+      marginBottom: sectionGap,
     },
     listContent: {
-      paddingVertical: spacing.xs,
-      paddingRight: spacing.sm,
-      gap: spacing.sm,
+      paddingVertical: homeSpacing.md,
+      paddingRight: homeSpacing.md,
+      paddingBottom: carouselBottomPadding,
+      gap: homeSpacing.md,
     },
     cardWrap: {
       width: 140,
@@ -110,33 +115,33 @@ function createStyles(c, isDark = false) {
     },
     meta: {
       flex: 1,
-      paddingHorizontal: spacing.sm,
-      paddingTop: spacing.sm - 1,
-      paddingBottom: spacing.lg + 8,
-      gap: 4,
+      paddingHorizontal: homeSpacing.base,
+      paddingTop: homeSpacing.md,
+      paddingBottom: homeSpacing["2xl"],
+      gap: homeSpacing.sm,
     },
     name: {
-      fontSize: typography.caption + 1,
-      lineHeight: 18,
-      fontFamily: fonts.medium,
+      fontSize: 14,
+      lineHeight: 21,
+      fontFamily: homeType.uiMedium.fontFamily,
       color: c.textPrimary,
       minHeight: 36,
     },
     price: {
-      fontSize: typography.bodySmall,
-      fontFamily: fonts.semibold,
+      fontSize: 16,
+      fontFamily: homeType.uiSemibold.fontFamily,
       color: c.textPrimary,
     },
     addPill: {
       position: "absolute",
-      right: spacing.sm - 1,
-      bottom: spacing.sm - 1,
+      right: homeSpacing.md,
+      bottom: homeSpacing.md,
       minHeight: 28,
       borderRadius: radius.pill,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(220,38,38,0.32)",
-      backgroundColor: c.primarySoft,
-      paddingHorizontal: spacing.sm,
+      borderColor: "rgba(100,116,139,0.24)",
+      backgroundColor: isDark ? "rgba(148,163,184,0.14)" : "rgba(241,245,249,0.9)",
+      paddingHorizontal: homeSpacing.md,
       alignItems: "center",
       justifyContent: "center",
       ...Platform.select({
@@ -150,9 +155,10 @@ function createStyles(c, isDark = false) {
     },
     addPillText: {
       fontSize: typography.caption,
-      fontFamily: fonts.extrabold,
-      color: c.primaryDark,
+      fontFamily: homeType.uiSemibold.fontFamily,
+      color: c.textPrimary,
       letterSpacing: 0.3,
+      textTransform: "uppercase",
     },
   });
 }

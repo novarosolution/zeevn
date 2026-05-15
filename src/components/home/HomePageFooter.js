@@ -7,8 +7,9 @@ import {
   HOME_FOOTER,
 } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
-import { FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { fonts, getSemanticColors, layout, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
+import { homeType } from "../../styles/typography";
+import { spacing as homeSpacing } from "../../styles/spacing";
 
 /**
  * Premium editorial footer:
@@ -177,10 +178,10 @@ export default function HomePageFooter({ colors: c }) {
 function createStyles(c, isDark, semantic) {
   return StyleSheet.create({
     shell: {
-      marginTop: spacing.xl + 6,
-      paddingVertical: spacing.xl - 2,
-      paddingHorizontal: Platform.select({ web: spacing.xl + 2, default: spacing.lg }),
-      paddingBottom: 36,
+      marginTop: homeSpacing["3xl"],
+      paddingVertical: homeSpacing["2xl"],
+      paddingHorizontal: Platform.select({ web: homeSpacing["2xl"], default: homeSpacing.xl }),
+      paddingBottom: homeSpacing["3xl"],
       borderRadius: semanticRadius.panel,
       backgroundColor: isDark ? "#09090B" : "#111827",
       borderTopWidth: StyleSheet.hairlineWidth,
@@ -200,41 +201,42 @@ function createStyles(c, isDark, semantic) {
       flexWrap: "wrap",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: spacing.md,
-      marginBottom: spacing.md + 2,
-      paddingBottom: spacing.md,
+      gap: homeSpacing.base,
+      marginBottom: homeSpacing.lg,
+      paddingBottom: homeSpacing.base,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: "rgba(226,232,240,0.16)",
     },
     newsletterTextCol: {
       flex: 1,
       minWidth: 240,
-      gap: 4,
+      gap: homeSpacing.xs,
     },
     newsletterTitle: {
-      fontFamily: FONT_DISPLAY,
-      fontSize: typography.h3,
-      lineHeight: typography.h3 + 6,
-      letterSpacing: -0.3,
+      fontFamily: homeType.display.fontFamily,
+      fontSize: 28,
+      lineHeight: Math.round(28 * 1.1),
+      letterSpacing: -(28 * 0.025),
       color: "#F8FAFC",
+      fontWeight: "500",
     },
     newsletterSub: {
       color: "rgba(203,213,225,0.92)",
-      fontSize: typography.caption,
-      fontFamily: fonts.medium,
-      lineHeight: 18,
+      fontSize: 14,
+      fontFamily: homeType.uiRegular.fontFamily,
+      lineHeight: Math.round(14 * 1.5),
     },
     newsletterToast: {
       color: "#A7F3D0",
       fontSize: typography.caption,
       fontFamily: fonts.semibold,
-      marginTop: 2,
+      marginTop: homeSpacing.xs,
     },
     newsletterFormRow: {
       minWidth: 260,
       flexDirection: "row",
       alignItems: "center",
-      gap: spacing.xs,
+      gap: homeSpacing.md,
       flex: 1,
       maxWidth: 460,
     },
@@ -245,10 +247,10 @@ function createStyles(c, isDark, semantic) {
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: "rgba(203,213,225,0.24)",
       backgroundColor: "rgba(15,23,42,0.45)",
-      paddingHorizontal: spacing.sm,
+      paddingHorizontal: homeSpacing.sm,
       color: "#F8FAFC",
-      fontFamily: fonts.medium,
-      fontSize: typography.bodySmall,
+      fontFamily: homeType.uiRegular.fontFamily,
+      fontSize: 14,
     },
     newsletterBtn: {
       minHeight: 42,
@@ -269,16 +271,17 @@ function createStyles(c, isDark, semantic) {
     },
     newsletterBtnText: {
       color: "#F8FAFC",
-      fontSize: typography.bodySmall,
-      fontFamily: fonts.semibold,
+      fontSize: 13,
+      fontFamily: homeType.uiSemibold.fontFamily,
+      lineHeight: Math.round(13 * 1.4),
     },
     socialBtn: {
-      width: 38,
-      height: 38,
+      width: 36,
+      height: 36,
       borderRadius: semanticRadius.full,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: "rgba(226,232,240,0.22)",
-      backgroundColor: "rgba(248,250,252,0.08)",
+      backgroundColor: "rgba(255,255,255,0.06)",
       alignItems: "center",
       justifyContent: "center",
       ...Platform.select({
@@ -298,14 +301,14 @@ function createStyles(c, isDark, semantic) {
     socialRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: spacing.xs + 2,
-      marginBottom: spacing.md + 2,
+      gap: homeSpacing.md,
+      marginBottom: homeSpacing.lg,
     },
     grid: {
       flexDirection: "row",
       flexWrap: "wrap",
-      columnGap: spacing.lg + 4,
-      rowGap: spacing.md + 2,
+      columnGap: homeSpacing.xl,
+      rowGap: homeSpacing.lg,
       justifyContent: "flex-start",
       marginBottom: spacing.lg,
     },
@@ -340,15 +343,15 @@ function createStyles(c, isDark, semantic) {
       paddingBottom: spacing.sm,
     },
     colTitle: {
-      fontSize: typography.overline + 1,
-      fontFamily: fonts.extrabold,
+      fontSize: 11,
+      fontFamily: homeType.overline.fontFamily,
       color: "#E2E8F0",
       textTransform: "uppercase",
-      letterSpacing: 1.2,
+      letterSpacing: 1.4,
       marginBottom: spacing.sm,
     },
     linkRow: {
-      paddingVertical: 6,
+      paddingVertical: homeSpacing.sm,
       borderRadius: semanticRadius.control,
       paddingHorizontal: 0,
     },
@@ -356,8 +359,9 @@ function createStyles(c, isDark, semantic) {
       backgroundColor: "rgba(248,250,252,0.08)",
     },
     linkText: {
-      fontSize: typography.bodySmall,
-      fontFamily: fonts.medium,
+      fontSize: 13,
+      fontFamily: homeType.uiRegular.fontFamily,
+      lineHeight: Math.round(13 * 1.5),
       color: "#F8FAFC",
     },
     bottomBar: {
@@ -371,8 +375,9 @@ function createStyles(c, isDark, semantic) {
       alignItems: "center",
     },
     copy: {
-      fontSize: typography.caption,
-      fontFamily: fonts.medium,
+      fontSize: 12,
+      fontFamily: homeType.uiRegular.fontFamily,
+      lineHeight: Math.round(12 * 1.4),
       color: "rgba(203,213,225,0.9)",
     },
     bottomRight: {
@@ -385,11 +390,12 @@ function createStyles(c, isDark, semantic) {
     paymentRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: spacing.xs,
+      gap: homeSpacing.sm,
     },
     meta: {
-      fontSize: typography.caption,
-      fontFamily: fonts.medium,
+      fontSize: 12,
+      fontFamily: homeType.uiRegular.fontFamily,
+      lineHeight: Math.round(12 * 1.4),
       color: "rgba(203,213,225,0.9)",
     },
   });

@@ -1,158 +1,273 @@
-import React, { useEffect } from "react";
-import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect, useRef, useState } from "react";
+import { AccessibilityInfo, Platform, Pressable, SafeAreaView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { Easing, FadeIn, FadeInDown, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from "react-native-reanimated";
-import { fonts, radius, spacing, typography } from "../theme/tokens";
-import { APP_TAGLINE, APP_WORDMARK_SUBLINE } from "../constants/brand";
-import { ALCHEMY, CUSTOMER_SHELL_GRADIENT_LOCATIONS, FONT_DISPLAY_SEMI, getCustomerShellGradient } from "../theme/customerAlchemy";
-import BrandWordmark from "./BrandWordmark";
+import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
+import Animated, {
+  Easing,
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
+import { APP_LOADING_UI } from "../content/appContent";
+import { fonts, loadingColors, loadingMotion, loadingRadius } from "../theme/tokens";
+import { FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
+import { usePrefersReducedMotion } from "../utils/motion";
+import ProgressRing from "./feedback/ProgressRing";
 
-const SHELL_AXIS = { start: { x: 0.06, y: 0 }, end: { x: 0.94, y: 1 } };
-const STARTUP_PREP_ITEMS = [
-  { key: "theme", icon: "color-palette-outline", label: "Theme" },
-  { key: "session", icon: "person-circle-outline", label: "Session" },
-  { key: "catalog", icon: "bag-handle-outline", label: "Catalog" },
-];
+const PHASE_STATES = {
+  pending: "pending",
+  active: "active",
+  complete: "complete",
+};
 
-/**
- * Full-screen branded splash while fonts load or session restores.
- * `useAppFonts`: false before Inter is ready (system title); true after.
- */
-export default function AppStartupScreen({ colors: c, useAppFonts = true, footnote = "Opening…", isDark = false }) {
-  const footFont = useAppFonts ? { fontFamily: fonts.medium } : {};
-  const displayFont = useAppFonts ? { fontFamily: FONT_DISPLAY_SEMI } : {};
-  const shell = getCustomerShellGradient(isDark, c);
+const STARTUP = APP_LOADING_UI.startup;
 
-  return (
-    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
-      <LinearGradient
-        colors={shell}
-        locations={CUSTOMER_SHELL_GRADIENT_LOCATIONS}
-        start={SHELL_AXIS.start}
-        end={SHELL_AXIS.end}
-        style={styles.root}
-      >
-        <View style={[styles.blob, styles.blobA, { backgroundColor: c.primary }]} />
-        <View style={[styles.blob, styles.blobB, { backgroundColor: c.secondary }]} />
-        <View style={[styles.blob, styles.blobC, { backgroundColor: ALCHEMY.gold }]} />
-        <LinearGradient
-          colors={["rgba(185, 28, 28, 0.08)", "transparent", isDark ? "rgba(0,0,0,0.22)" : "rgba(185, 28, 28, 0.04)"]}
-          locations={[0, 0.45, 1]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={[StyleSheet.absoluteFill, styles.peNone]}
-        />
+function BrassPillBadge({ label, reducedMotion }) {
+  const pulse = useSharedValue(1);
 
-        <Animated.View entering={FadeIn.duration(480)} style={styles.center}>
-          <Animated.View entering={FadeInDown.duration(520).delay(40)} style={styles.cardOuter}>
-            <View
-              style={[
-                styles.logoCardClip,
-                {
-                  backgroundColor: isDark ? c.surfaceElevated || c.surface : "rgba(255, 252, 248, 0.95)",
-                  borderColor: isDark ? c.border : "rgba(63, 63, 70, 0.12)",
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={[ALCHEMY.gold, "#D4AF37", ALCHEMY.brown]}
-                start={{ x: 0, y: 0.5 }}
-                end={{ x: 1, y: 0.5 }}
-                style={styles.cardGoldEdge}
-              />
-              <View style={styles.logoCardInner}>
-                <View style={styles.kickerPill}>
-                  <Text style={styles.kickerText} numberOfLines={1}>
-                    {APP_WORDMARK_SUBLINE}
-                  </Text>
-                </View>
-                <BrandWordmark sizeKey="startup" />
-                {useAppFonts ? (
-                  <Text style={[styles.tagline, { color: c.textSecondary }, displayFont]} numberOfLines={2}>
-                    {APP_TAGLINE}
-                  </Text>
-                ) : null}
-              </View>
-            </View>
-          </Animated.View>
-
-          <StartupLoaderOrnament isDark={isDark} colorPrimary={c.primary} colorTrack={c.primaryBorder} useAppFonts={useAppFonts} />
-          <View
-            style={[
-              styles.spinnerWell,
-              {
-                backgroundColor: c.primarySoft,
-                borderColor: c.primaryBorder,
-                shadowColor: isDark ? "#000" : "#18181B",
-              },
-            ]}
-          >
-            <ActivityIndicator size="large" color={c.primary} />
-          </View>
-          <View
-            style={[
-              styles.statusCard,
-              {
-                backgroundColor: isDark ? "rgba(17, 26, 42, 0.88)" : "rgba(255, 255, 255, 0.82)",
-                borderColor: isDark ? c.border : "rgba(15, 23, 42, 0.08)",
-                shadowColor: isDark ? "#000" : "#18181B",
-              },
-            ]}
-          >
-            <Text style={[styles.statusEyebrow, { color: isDark ? c.primaryBright : c.primaryDark }, footFont]}>
-              Preparing your experience
-            </Text>
-            <Text style={[styles.footnote, { color: c.textPrimary }, footFont]}>{footnote}</Text>
-            <View style={styles.statusRail}>
-              {STARTUP_PREP_ITEMS.map((item) => (
-                <View
-                  key={item.key}
-                  style={[
-                    styles.statusPill,
-                    {
-                      backgroundColor: isDark ? "rgba(239, 68, 68, 0.08)" : "rgba(220, 38, 38, 0.06)",
-                      borderColor: isDark ? "rgba(248, 113, 113, 0.24)" : "rgba(220, 38, 38, 0.12)",
-                    },
-                  ]}
-                >
-                  <Ionicons name={item.icon} size={14} color={isDark ? c.primaryBright : c.primaryDark} />
-                  <Text style={[styles.statusPillText, { color: c.textSecondary }, footFont]}>{item.label}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        </Animated.View>
-      </LinearGradient>
-    </SafeAreaView>
-  );
-}
-
-function StartupLoaderOrnament({ isDark, colorPrimary, colorTrack, useAppFonts }) {
-  const rot = useSharedValue(0);
   useEffect(() => {
-    rot.value = withRepeat(
-      withTiming(360, { duration: 4200, easing: Easing.linear }),
+    if (reducedMotion) return;
+    pulse.value = withRepeat(
+      withSequence(
+        withTiming(1.02, { duration: loadingMotion.breathCycle / 2, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: loadingMotion.breathCycle / 2, easing: Easing.inOut(Easing.ease) })
+      ),
       -1,
       false
     );
-  }, [rot]);
+  }, [pulse, reducedMotion]);
 
-  const ringStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: `${rot.value}deg` }],
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulse.value }],
   }));
 
-  if (!useAppFonts) return <View style={styles.ornamentSpacer} />;
+  return (
+    <Animated.View style={[styles.badge, animatedStyle]}>
+      <Text style={styles.badgeText} numberOfLines={1}>
+        {label}
+      </Text>
+    </Animated.View>
+  );
+}
+
+function PhasePill({ item, state, reducedMotion }) {
+  const scale = useSharedValue(1);
+  const isActive = state === PHASE_STATES.active;
+  const isComplete = state === PHASE_STATES.complete;
+
+  useEffect(() => {
+    if (reducedMotion || !isActive) {
+      scale.value = withTiming(1, { duration: loadingMotion.enter });
+      return;
+    }
+    scale.value = withRepeat(
+      withSequence(
+        withTiming(1.03, { duration: loadingMotion.breathCycle / 2, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: loadingMotion.breathCycle / 2, easing: Easing.inOut(Easing.ease) })
+      ),
+      -1,
+      false
+    );
+  }, [isActive, reducedMotion, scale]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const pillStyle = [
+    styles.phasePill,
+    isActive ? styles.phasePillActive : null,
+    isComplete ? styles.phasePillComplete : null,
+  ];
+  const iconColor = isComplete ? loadingColors.success : isActive ? loadingColors.accent : loadingColors.inkInverseMuted;
+  const labelColor = isActive
+    ? loadingColors.inkInverse
+    : isComplete
+      ? loadingColors.inkInverseSoft
+      : loadingColors.inkInverseMuted;
+  const a11yStateWord = STARTUP.phaseA11yState[state] || state;
 
   return (
-    <View style={styles.ornamentRow}>
-      <View style={styles.ornamentLineFaint} />
-      <Animated.View style={ringStyle}>
-        <Ionicons name="leaf-outline" size={20} color={isDark ? colorTrack : colorPrimary} />
-      </Animated.View>
-      <View style={styles.ornamentLineFaint} />
+    <Animated.View
+      style={animatedStyle}
+      accessibilityRole="text"
+      accessibilityLabel={`${item.label}, ${a11yStateWord}`}
+    >
+      <View style={pillStyle}>
+        <Ionicons name={isComplete ? "checkmark-circle" : item.icon} size={16} color={iconColor} />
+        <Text style={[styles.phaseText, { color: labelColor }]} numberOfLines={1}>
+          {item.label}
+        </Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+function PhasePills({ phases, phaseStates, reducedMotion }) {
+  return (
+    <View style={styles.phaseRow} accessibilityLiveRegion="polite">
+      {phases.map((item) => (
+        <PhasePill key={item.key} item={item} state={phaseStates[item.key] || PHASE_STATES.pending} reducedMotion={reducedMotion} />
+      ))}
     </View>
+  );
+}
+
+function RotatingTagline({ messages, reducedMotion }) {
+  const [index, setIndex] = useState(0);
+  const opacity = useSharedValue(1);
+  const innerTimerRef = useRef(null);
+
+  useEffect(() => {
+    if (reducedMotion || !Array.isArray(messages) || messages.length < 2) {
+      return undefined;
+    }
+
+    const timer = setInterval(() => {
+      opacity.value = withTiming(0, { duration: 200, easing: Easing.out(Easing.ease) });
+      if (innerTimerRef.current) clearTimeout(innerTimerRef.current);
+      innerTimerRef.current = setTimeout(() => {
+        setIndex((prev) => (prev + 1) % messages.length);
+        opacity.value = withTiming(1, { duration: 200, easing: Easing.in(Easing.ease) });
+      }, 210);
+    }, 2400);
+
+    return () => {
+      clearInterval(timer);
+      if (innerTimerRef.current) clearTimeout(innerTimerRef.current);
+    };
+  }, [messages, opacity, reducedMotion]);
+
+  const fadeStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
+
+  const activeMessage = reducedMotion ? messages[0] : messages[index % messages.length];
+
+  return (
+    <Animated.Text style={[styles.tagline, fadeStyle]} numberOfLines={2}>
+      {activeMessage}
+    </Animated.Text>
+  );
+}
+
+function buildTimedPhaseStates(phases, step) {
+  const out = {};
+  phases.forEach((phase, idx) => {
+    if (step > idx) out[phase.key] = PHASE_STATES.complete;
+    else if (step === idx) out[phase.key] = PHASE_STATES.active;
+    else out[phase.key] = PHASE_STATES.pending;
+  });
+  if (step >= phases.length) {
+    phases.forEach((phase) => {
+      out[phase.key] = PHASE_STATES.complete;
+    });
+  }
+  return out;
+}
+
+/**
+ * Premium startup loading screen. Uses APP_LOADING_UI + loading tokens only.
+ * Optional `phaseStates` lets callers wire real boot milestones.
+ */
+export default function AppStartupScreen({ phaseStates, onRetry }) {
+  const reducedMotion = usePrefersReducedMotion();
+  const { width } = useWindowDimensions();
+  const [phaseStep, setPhaseStep] = useState(0);
+  const [showAlmostThere, setShowAlmostThere] = useState(false);
+  const [showTimeout, setShowTimeout] = useState(false);
+  const announcedRef = useRef(false);
+  const phases = STARTUP.phases || [];
+  const cardWidth = Math.min(360, Math.round(width * 0.86));
+  const hasExternalPhases = phaseStates && typeof phaseStates === "object";
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowAlmostThere(true), 4000);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => setShowTimeout(true), 8000);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (announcedRef.current) return;
+    announcedRef.current = true;
+    AccessibilityInfo.announceForAccessibility?.(STARTUP.a11yAnnouncement);
+  }, []);
+
+  useEffect(() => {
+    if (hasExternalPhases || phases.length === 0) return undefined;
+    const timer = setInterval(() => {
+      setPhaseStep((prev) => (prev < phases.length ? prev + 1 : prev));
+    }, loadingMotion.phaseAdvance);
+    return () => clearInterval(timer);
+  }, [hasExternalPhases, phases.length]);
+
+  const resolvedPhaseStates = hasExternalPhases ? phaseStates : buildTimedPhaseStates(phases, phaseStep);
+  const rotatingMessages = STARTUP.rotatingMessages?.length ? STARTUP.rotatingMessages : [STARTUP.fallback];
+
+  return (
+    <SafeAreaView
+      style={styles.safe}
+      accessibilityRole="progressbar"
+      accessibilityLabel={STARTUP.a11yAnnouncement}
+    >
+      <View style={styles.root}>
+        <View style={styles.glowWrap} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+          <Svg width={600} height={600}>
+            <Defs>
+              <RadialGradient id="startup-accent-glow" cx="50%" cy="50%" r="50%">
+                <Stop offset="0%" stopColor={loadingColors.accentSoft} stopOpacity="1" />
+                <Stop offset="100%" stopColor={loadingColors.accentSoft} stopOpacity="0" />
+              </RadialGradient>
+            </Defs>
+            <Circle cx="300" cy="300" r="300" fill="url(#startup-accent-glow)" />
+          </Svg>
+        </View>
+
+        <View style={[styles.heroCard, { width: cardWidth }]}>
+          <BrassPillBadge label={STARTUP.badge} reducedMotion={reducedMotion} />
+
+          <View accessibilityRole="header">
+            <Text style={styles.wordmark}>{STARTUP.wordmark}</Text>
+            <RotatingTagline messages={rotatingMessages} reducedMotion={reducedMotion} />
+          </View>
+
+          <View style={styles.ringWrap}>
+            <ProgressRing
+              size={48}
+              reducedMotion={reducedMotion}
+              accessibilityValueText={STARTUP.progressA11yValue}
+              accessible={false}
+            />
+          </View>
+          <PhasePills phases={phases} phaseStates={resolvedPhaseStates} reducedMotion={reducedMotion} />
+        </View>
+
+        {showAlmostThere ? <Text style={styles.almostThere}>{STARTUP.almostThere}</Text> : null}
+        {showTimeout ? (
+          <Animated.View entering={FadeIn.duration(220)} style={styles.timeoutWrap}>
+            <Text style={styles.timeoutTitle}>{APP_LOADING_UI.errors.timeoutTitle}</Text>
+            <Text style={styles.timeoutBody}>{APP_LOADING_UI.errors.timeoutBody}</Text>
+            {onRetry ? (
+              <Pressable
+                onPress={onRetry}
+                accessibilityRole="button"
+                accessibilityLabel={APP_LOADING_UI.errors.retry}
+                style={({ pressed }) => [styles.retryBtn, pressed ? styles.retryPressed : null]}
+              >
+                <Text style={styles.retryText}>{APP_LOADING_UI.errors.retry}</Text>
+              </Pressable>
+            ) : null}
+          </Animated.View>
+        ) : null}
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -160,202 +275,150 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     width: "100%",
+    backgroundColor: loadingColors.bgDeep,
   },
   root: {
     flex: 1,
     width: "100%",
-    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: loadingColors.bgDeep,
+    paddingHorizontal: 20,
     ...Platform.select({
       web: { minHeight: "100vh" },
       default: {},
     }),
-    justifyContent: "center",
-    alignItems: "center",
   },
-  blob: {
+  glowWrap: {
     position: "absolute",
-    opacity: 0.1,
-    borderRadius: 999,
+    width: 600,
+    height: 600,
+    top: -180,
+    opacity: 0.5,
   },
-  blobA: {
-    width: 240,
-    height: 240,
-    top: "8%",
-    right: "-10%",
-  },
-  blobB: {
-    width: 180,
-    height: 180,
-    bottom: "14%",
-    left: "-8%",
-  },
-  blobC: {
-    width: 100,
-    height: 100,
-    opacity: 0.07,
-    top: "42%",
-    right: "6%",
-  },
-  center: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.lg,
-    maxWidth: 400,
-  },
-  cardOuter: {
-    width: "100%",
-    maxWidth: 360,
-    marginBottom: spacing.lg,
-  },
-  logoCardClip: {
-    borderRadius: radius.xxl,
+  heroCard: {
+    backgroundColor: loadingColors.bgWell,
     borderWidth: StyleSheet.hairlineWidth,
-    width: "100%",
-    overflow: "hidden",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#18181B",
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.12,
-        shadowRadius: 24,
-      },
-      android: { elevation: 6 },
-      web: {
-        boxShadow: "0 20px 48px rgba(24, 24, 27, 0.1), 0 6px 16px rgba(28, 25, 23, 0.05), inset 0 1px 0 rgba(255, 253, 251, 0.9)",
-      },
-      default: {},
-    }),
-  },
-  cardGoldEdge: {
-    height: 3,
-    width: "100%",
-    opacity: 0.95,
-  },
-  logoCardInner: {
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xl,
-    paddingHorizontal: spacing.xl,
+    borderColor: loadingColors.line,
+    borderRadius: loadingRadius.md,
+    paddingVertical: 32,
+    paddingHorizontal: 28,
     alignItems: "center",
   },
-  kickerPill: {
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: "rgba(255, 236, 191, 0.68)",
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: loadingRadius.pill,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(185, 28, 28, 0.18)",
-    marginBottom: spacing.md,
+    borderColor: "rgba(200,169,126,0.24)",
+    backgroundColor: loadingColors.accentSoft,
+    marginBottom: 20,
   },
-  kickerText: {
-    color: ALCHEMY.brown,
-    fontSize: typography.overline + 1,
-    fontFamily: fonts.extrabold,
-    letterSpacing: 1.2,
+  badgeText: {
+    color: loadingColors.accent,
+    fontFamily: fonts.semibold,
+    fontSize: 10,
+    letterSpacing: 1.8,
     textTransform: "uppercase",
+  },
+  wordmark: {
+    color: loadingColors.inkInverse,
+    fontFamily: FONT_DISPLAY_SEMI,
+    fontSize: 56,
+    lineHeight: 56,
+    letterSpacing: -1.12,
+    textAlign: "center",
   },
   tagline: {
-    marginTop: spacing.md,
-    fontSize: typography.bodySmall,
-    letterSpacing: 0.35,
-    textAlign: "center",
-    lineHeight: 20,
-  },
-  ornamentSpacer: {
-    height: spacing.md,
-  },
-  ornamentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    width: "100%",
-    maxWidth: 280,
-    marginBottom: spacing.md,
-    gap: spacing.sm,
-  },
-  ornamentLineFaint: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "rgba(185, 28, 28, 0.35)",
-    borderRadius: 1,
-  },
-  spinnerWell: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: StyleSheet.hairlineWidth,
-    marginTop: 2,
-    marginBottom: spacing.lg,
-    ...Platform.select({
-      ios: {
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-      },
-      android: { elevation: 2 },
-      web: {
-        boxShadow: "0 8px 20px rgba(24, 24, 27, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.5)",
-      },
-      default: {},
-    }),
-  },
-  footnote: {
-    fontSize: typography.bodySmall,
+    marginTop: 20,
+    color: loadingColors.inkInverseSoft,
+    fontFamily: fonts.regular,
+    fontSize: 14,
     lineHeight: 21,
-    letterSpacing: 0.2,
     textAlign: "center",
+    maxWidth: 280,
   },
-  statusCard: {
-    width: "100%",
-    maxWidth: 360,
-    paddingHorizontal: spacing.md + 2,
-    paddingVertical: spacing.md,
-    borderRadius: radius.xl,
-    borderWidth: StyleSheet.hairlineWidth,
+  ringWrap: {
+    marginTop: 20,
     alignItems: "center",
-    gap: spacing.xs + 2,
-    ...Platform.select({
-      ios: {
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.12,
-        shadowRadius: 18,
-      },
-      android: { elevation: 2 },
-      web: {
-        boxShadow: "0 12px 32px rgba(24, 24, 27, 0.08), inset 0 1px 0 rgba(255,255,255,0.65)",
-        backdropFilter: "blur(14px)",
-      },
-      default: {},
-    }),
+    justifyContent: "center",
   },
-  statusEyebrow: {
-    fontSize: typography.overline,
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
-    fontFamily: fonts.extrabold,
-  },
-  statusRail: {
+  phaseRow: {
+    marginTop: 20,
     width: "100%",
     flexDirection: "row",
-    flexWrap: "wrap",
     justifyContent: "center",
-    gap: spacing.xs,
-    marginTop: 2,
+    flexWrap: "wrap",
+    gap: 8,
   },
-  statusPill: {
+  phasePill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 7,
-    borderRadius: radius.pill,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: loadingRadius.pill,
     borderWidth: StyleSheet.hairlineWidth,
+    borderColor: loadingColors.line,
+    backgroundColor: "rgba(255,255,255,0.04)",
   },
-  statusPillText: {
-    fontSize: typography.caption,
-    fontFamily: fonts.medium,
+  phasePillActive: {
+    borderColor: "rgba(200,169,126,0.40)",
+    backgroundColor: loadingColors.accentSoft,
   },
-  peNone: {
-    pointerEvents: "none",
+  phasePillComplete: {
+    borderColor: loadingColors.line,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  phaseText: {
+    fontFamily: fonts.semibold,
+    fontSize: 11,
+    letterSpacing: 1.1,
+    textTransform: "uppercase",
+  },
+  almostThere: {
+    marginTop: 32,
+    color: loadingColors.inkInverseMuted,
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    textAlign: "center",
+  },
+  timeoutWrap: {
+    marginTop: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: loadingColors.line,
+    borderRadius: 10,
+    backgroundColor: loadingColors.bgWell,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    alignItems: "center",
+    maxWidth: 360,
+  },
+  timeoutTitle: {
+    color: loadingColors.inkInverse,
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    textAlign: "center",
+  },
+  timeoutBody: {
+    marginTop: 4,
+    color: loadingColors.inkInverseSoft,
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    textAlign: "center",
+  },
+  retryBtn: {
+    marginTop: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  retryPressed: {
+    opacity: 0.72,
+  },
+  retryText: {
+    color: loadingColors.accent,
+    fontFamily: fonts.semibold,
+    fontSize: 12,
   },
 });

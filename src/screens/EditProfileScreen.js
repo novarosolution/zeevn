@@ -31,7 +31,7 @@ import SectionReveal from "../components/motion/SectionReveal";
 import useReducedMotion from "../hooks/useReducedMotion";
 import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
 import PremiumStickyBar from "../components/ui/PremiumStickyBar";
-import { EDIT_PROFILE_SCREEN } from "../content/appContent";
+import { APP_LOADING_UI, EDIT_PROFILE_SCREEN } from "../content/appContent";
 
 export default function EditProfileScreen({ navigation }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
@@ -257,7 +257,7 @@ export default function EditProfileScreen({ navigation }) {
             <SkeletonBlock width="100%" height={56} rounded="lg" />
             <SkeletonBlock width="100%" height={48} rounded="pill" />
             <SkeletonBlock width="100%" height={50} rounded="pill" />
-            <PremiumLoader size="sm" caption="Loading profile…" />
+            <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.profile} />
           </View>
         ) : (
           <SectionReveal delay={60} preset="fade-up">

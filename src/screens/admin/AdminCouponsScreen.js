@@ -21,7 +21,7 @@ import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumSwitch from "../../components/ui/PremiumSwitch";
-import { ADMIN_SCREEN_COPY } from "../../content/appContent";
+import { ADMIN_SCREEN_COPY, APP_LOADING_UI } from "../../content/appContent";
 
 export default function AdminCouponsScreen({ navigation }) {
   const { width } = useWindowDimensions();
@@ -324,7 +324,7 @@ export default function AdminCouponsScreen({ navigation }) {
           <SectionReveal preset="fade-up" delay={60}>
           <Text style={[styles.listTitle, { color: c.textPrimary }]}>{ADMIN_SCREEN_COPY.coupons.listTitle}</Text>
           {loading ? (
-            <PremiumLoader size="sm" caption="Loading coupons…" />
+            <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} />
           ) : coupons.length === 0 ? (
             <PremiumEmptyState
               iconName="pricetag-outline"

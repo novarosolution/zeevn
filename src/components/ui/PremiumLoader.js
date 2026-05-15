@@ -1,107 +1,97 @@
-import React, { memo, useMemo } from "react";
-import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
-import { fonts, radius, spacing, typography } from "../../theme/tokens";
-import { ALCHEMY, FONT_DISPLAY_ITALIC } from "../../theme/customerAlchemy";
+import React, { memo, useEffect, useMemo, useState } from "react";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { APP_LOADING_UI } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
+import { fonts, spacing } from "../../theme/tokens";
+import ProgressRing from "../feedback/ProgressRing";
 
 const SIZE_TOKENS = {
-  sm: { spinner: "small", titleSize: typography.bodySmall, captionSize: typography.caption, well: 42, halo: 56 },
-  md: { spinner: "large", titleSize: typography.h3, captionSize: typography.bodySmall, well: 56, halo: 72 },
-  lg: { spinner: "large", titleSize: typography.h2, captionSize: typography.body, well: 68, halo: 86 },
+  sm: { ring: "sm", captionSize: 12, hintSize: 11, gap: 12 },
+  md: { ring: "md", captionSize: 14, hintSize: 11, gap: 12 },
+  lg: { ring: "lg", captionSize: 14, hintSize: 11, gap: 12 },
+  inline: { ring: "sm", captionSize: 13, hintSize: 11, gap: 8 },
 };
 
-/**
- * Themed activity indicator with optional caption. Used to replace bare
- * `<ActivityIndicator>` calls so the loading state matches the rest of the
- * customer UI (display-font caption, gold-tinted spinner color).
- */
+function TimeoutNotice({ title, body, retryLabel, onRetry, c }) {
+  return (
+    <Animated.View entering={FadeIn.duration(220)} style={[styles.timeoutWrap, { borderColor: c.border, backgroundColor: c.surface }]}>
+      <Text style={[styles.timeoutTitle, { color: c.textPrimary }]}>{title}</Text>
+      <Text style={[styles.timeoutBody, { color: c.textSecondary }]}>{body}</Text>
+      {onRetry ? (
+        <Pressable onPress={onRetry} accessibilityRole="button" accessibilityLabel={retryLabel} style={({ pressed }) => [styles.retryBtn, pressed ? styles.retryPressed : null]}>
+          <Text style={[styles.retryText, { color: c.primary }]}>{retryLabel}</Text>
+        </Pressable>
+      ) : null}
+    </Animated.View>
+  );
+}
+
 function PremiumLoaderBase({
   size = "md",
   caption,
-  hint,
+  hint = null,
   inline = false,
-  color,
+  fullscreen = false,
+  onRetry,
   style,
 }) {
-  const { colors: c, isDark } = useTheme();
-  const tokens = SIZE_TOKENS[size] || SIZE_TOKENS.md;
-  const spinnerColor = color || (isDark ? ALCHEMY.goldBright : ALCHEMY.gold);
-  const styles = useMemo(() => createStyles(c, isDark, inline), [c, isDark, inline]);
+  const { colors: c } = useTheme();
+  const effectiveSizeKey = inline ? "inline" : size;
+  const tokens = SIZE_TOKENS[effectiveSizeKey] || SIZE_TOKENS.md;
+  const resolvedCaption = caption || APP_LOADING_UI.inline.default;
+  const [showTimeout, setShowTimeout] = useState(false);
+
+  useEffect(() => {
+    if (!fullscreen) {
+      setShowTimeout(false);
+      return undefined;
+    }
+    const timer = setTimeout(() => setShowTimeout(true), 8000);
+    return () => clearTimeout(timer);
+  }, [fullscreen]);
+
+  const localStyles = useMemo(() => createStyles(c, inline), [c, inline]);
+
+  const loaderCore = (
+    <View
+      style={[localStyles.wrap, inline ? localStyles.wrapInline : localStyles.wrapBlock, style]}
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={resolvedCaption}
+      accessibilityHint={hint || undefined}
+      accessibilityValue={{ text: resolvedCaption }}
+    >
+      <ProgressRing size={tokens.ring} accessibilityValueText={resolvedCaption} accessible={false} />
+      <View style={[localStyles.copy, { marginTop: inline ? 0 : tokens.gap, marginLeft: inline ? tokens.gap : 0 }]}>
+        <Text style={[localStyles.caption, { color: c.textSecondary, fontSize: tokens.captionSize }]}>{resolvedCaption}</Text>
+        {hint ? <Text style={[localStyles.hint, { color: c.textMuted, fontSize: tokens.hintSize }]}>{hint}</Text> : null}
+      </View>
+    </View>
+  );
+
+  if (!fullscreen) return loaderCore;
 
   return (
-    <View
-      style={[styles.wrap, inline ? styles.wrapInline : styles.wrapBlock, style]}
-      accessibilityRole="progressbar"
-      accessibilityLabel={caption || hint || "Loading"}
-    >
-      <View
-        style={[
-          styles.visualShell,
-          inline ? styles.visualShellInline : null,
-          { width: tokens.halo, height: tokens.halo, borderRadius: tokens.halo / 2 },
-        ]}
-      >
-        {!inline ? (
-          <View
-            style={[
-              styles.visualGlow,
-              {
-                backgroundColor: isDark ? "rgba(239, 68, 68, 0.12)" : "rgba(220, 38, 38, 0.08)",
-              },
-            ]}
-          />
-        ) : null}
-        <View
-          style={[
-            styles.visualRing,
-            {
-              width: tokens.halo,
-              height: tokens.halo,
-              borderRadius: tokens.halo / 2,
-              borderColor: isDark ? "rgba(248, 113, 113, 0.22)" : "rgba(220, 38, 38, 0.14)",
-            },
-          ]}
+    <View style={[styles.fullscreenWrap, { backgroundColor: c.background }]}>
+      {loaderCore}
+      {showTimeout ? (
+        <TimeoutNotice
+          title={APP_LOADING_UI.errors.timeoutTitle}
+          body={APP_LOADING_UI.errors.timeoutBody}
+          retryLabel={APP_LOADING_UI.errors.retry}
+          onRetry={onRetry}
+          c={c}
         />
-        <View
-          style={[
-            styles.indicatorWell,
-            {
-              width: tokens.well,
-              height: tokens.well,
-              borderRadius: tokens.well / 2,
-              backgroundColor: isDark ? "rgba(17, 26, 42, 0.94)" : "rgba(255, 255, 255, 0.94)",
-              borderColor: isDark ? c.primaryBorder : "rgba(220, 38, 38, 0.14)",
-              shadowColor: isDark ? "#000" : "#18181B",
-            },
-          ]}
-        >
-          <ActivityIndicator size={tokens.spinner} color={spinnerColor} />
-        </View>
-      </View>
-
-      {caption || hint ? (
-        <View style={[styles.copy, inline ? styles.copyInline : null]}>
-          {caption ? (
-            <Text style={[styles.caption, { color: c.textPrimary, fontSize: tokens.titleSize }]}>
-              {caption}
-            </Text>
-          ) : null}
-          {hint ? (
-            <Text style={[styles.hint, { color: c.textMuted, fontSize: tokens.captionSize }]}>
-              {hint}
-            </Text>
-          ) : null}
-        </View>
       ) : null}
     </View>
   );
 }
 
-function createStyles(c, isDark, inline) {
+function createStyles(c, inline) {
   return StyleSheet.create({
     wrap: {
       justifyContent: "center",
-      gap: inline ? spacing.sm : spacing.sm + 2,
     },
     wrapInline: {
       flexDirection: "row",
@@ -112,75 +102,71 @@ function createStyles(c, isDark, inline) {
       alignItems: "center",
       alignSelf: "center",
       width: "100%",
-      maxWidth: 380,
+      maxWidth: 420,
       paddingVertical: spacing.lg,
     },
-    visualShell: {
-      alignItems: "center",
-      justifyContent: "center",
-      position: "relative",
-      flexShrink: 0,
-    },
-    visualShellInline: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-    },
-    visualGlow: {
-      position: "absolute",
-      top: 6,
-      right: 6,
-      bottom: 6,
-      left: 6,
-      borderRadius: radius.pill,
-      opacity: 0.95,
-    },
-    visualRing: {
-      position: "absolute",
-      borderWidth: StyleSheet.hairlineWidth,
-      opacity: 0.95,
-    },
-    indicatorWell: {
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: StyleSheet.hairlineWidth,
-      ...Platform.select({
-        web: {
-          boxShadow: isDark
-            ? "0 12px 30px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.05)"
-            : "0 10px 24px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255,255,255,0.95)",
-        },
-        ios: {
-          shadowOffset: { width: 0, height: 6 },
-          shadowOpacity: isDark ? 0.26 : 0.08,
-          shadowRadius: 14,
-        },
-        android: { elevation: inline ? 1 : 2 },
-        default: {},
-      }),
-    },
     copy: {
-      width: "100%",
       minWidth: 0,
-      alignItems: "center",
-      gap: spacing.xxs,
-    },
-    copyInline: {
-      flex: 1,
-      alignItems: "flex-start",
+      alignItems: inline ? "flex-start" : "center",
+      gap: 4,
     },
     caption: {
-      fontFamily: FONT_DISPLAY_ITALIC,
-      letterSpacing: -0.2,
+      fontFamily: fonts.medium,
       textAlign: inline ? "left" : "center",
     },
     hint: {
-      fontFamily: fonts.medium,
+      fontFamily: fonts.regular,
       textAlign: inline ? "left" : "center",
       maxWidth: inline ? undefined : 340,
     },
   });
 }
+
+const styles = StyleSheet.create({
+  fullscreenWrap: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+  },
+  timeoutWrap: {
+    marginTop: spacing.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    maxWidth: 360,
+    alignItems: "center",
+    ...Platform.select({
+      web: { boxShadow: "0 6px 16px rgba(0,0,0,0.06)" },
+      default: {},
+    }),
+  },
+  timeoutTitle: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+    textAlign: "center",
+  },
+  timeoutBody: {
+    marginTop: 4,
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    textAlign: "center",
+  },
+  retryBtn: {
+    marginTop: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  retryPressed: {
+    opacity: 0.72,
+  },
+  retryText: {
+    fontFamily: fonts.semibold,
+    fontSize: 12,
+  },
+});
 
 const PremiumLoader = memo(PremiumLoaderBase);
 

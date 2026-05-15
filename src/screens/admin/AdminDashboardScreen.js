@@ -30,6 +30,7 @@ import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumStatCard from "../../components/ui/PremiumStatCard";
 import AdminBackLink from "../../components/admin/AdminBackLink";
 import AdminPageHeading from "../../components/admin/AdminPageHeading";
+import { APP_LOADING_UI } from "../../content/appContent";
 
 /** Group icon shown on each collapsible admin module header. */
 const SECTION_GROUP_ICONS = {
@@ -294,7 +295,7 @@ export default function AdminDashboardScreen({ navigation }) {
 
           {loading ? (
             <View style={styles.loaderWrap}>
-              <PremiumLoader size="md" caption="Loading live stats…" hint="Pull to refresh." />
+              <PremiumLoader size="md" caption={APP_LOADING_UI.inline.admin} />
             </View>
           ) : (
             <>

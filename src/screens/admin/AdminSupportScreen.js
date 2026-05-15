@@ -23,6 +23,7 @@ import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
+import { APP_LOADING_UI } from "../../content/appContent";
 
 export default function AdminSupportScreen({ navigation }) {
   const { width } = useWindowDimensions();
@@ -150,7 +151,7 @@ export default function AdminSupportScreen({ navigation }) {
         {loading ? (
           <SectionReveal preset="fade-up" delay={40}>
           <View style={styles.panel}>
-            <PremiumLoader size="sm" caption="Loading conversations…" />
+            <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} />
           </View>
           </SectionReveal>
         ) : (

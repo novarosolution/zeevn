@@ -33,7 +33,7 @@ import { getImageUriCandidates, PRODUCT_HERO_BLURHASH } from "../utils/image";
 import { matchesShelfProduct } from "../utils/shelfMatch";
 import { productToCartLine } from "../utils/productCart";
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI, HERITAGE } from "../theme/customerAlchemy";
-import { PRODUCT_SCREEN, fillProductScreen } from "../content/appContent";
+import { APP_LOADING_UI, PRODUCT_SCREEN, fillProductScreen } from "../content/appContent";
 import PremiumLoader from "../components/ui/PremiumLoader";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import PremiumInput from "../components/ui/PremiumInput";
@@ -50,6 +50,7 @@ import HeroParallax from "../components/motion/HeroParallax";
 import SectionReveal from "../components/motion/SectionReveal";
 import Animated, { FadeInDown, FadeOutDown } from "react-native-reanimated";
 import useReducedMotion from "../hooks/useReducedMotion";
+import useRouteMeta from "../hooks/useRouteMeta";
 
 export default function ProductScreen({ route, navigation }) {
   const { productId } = route.params ?? {};
@@ -137,6 +138,29 @@ export default function ProductScreen({ route, navigation }) {
     () => (product ? productToCartLine(product, selectedVariantLabel) : null),
     [product, selectedVariantLabel]
   );
+  const productMetaOverrides = useMemo(() => {
+    const name = String(product?.name || "").trim();
+    const size = String(selectedVariantLabel || product?.unit || "").trim();
+    const category = String(product?.category || "").trim();
+    const shortDescription = String(product?.shortDescription || product?.description || "").trim();
+    const slug = String(product?.slug || product?.id || productId || "").trim();
+    const stockQty = Number(product?.stockQty || 0);
+    const inStock = product?.inStock !== false && stockQty > 0;
+    const priceAmount = cartLine?.price ?? product?.price;
+
+    return {
+      name,
+      size,
+      category,
+      shortDescription,
+      slug,
+      priceAmount: priceAmount != null && Number.isFinite(Number(priceAmount)) ? Number(priceAmount) : undefined,
+      priceCurrency: "INR",
+      availability: inStock ? "in stock" : "out of stock",
+    };
+  }, [cartLine?.price, product, productId, selectedVariantLabel]);
+
+  useRouteMeta("product", productMetaOverrides);
 
 
   if (loading) {
@@ -176,7 +200,7 @@ export default function ProductScreen({ route, navigation }) {
               <SkeletonBlock width={64} height={32} rounded="pill" />
             </View>
             <SkeletonBlock width="100%" height={50} rounded="pill" />
-            <PremiumLoader size="sm" caption={PRODUCT_SCREEN.loadingCaption} />
+            <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.products} />
           </View>
         </LinearGradient>
       </CustomerScreenShell>

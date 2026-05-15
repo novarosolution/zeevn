@@ -70,7 +70,7 @@ export function heritageHairlineGradient(isDark) {
 export function getCustomerShellGradient(isDark, themeColors) {
   const c = themeColors;
   if (isDark) {
-    return ["#050B16", "#0B1120", "#131C2F", c.backgroundGradientEnd];
+    return ["#050B16", "#0B1120", "#131C2F", c.backgroundGradientEnd || "#1D2940"];
   }
   return [
     "#FFFFFF",

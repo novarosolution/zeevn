@@ -4,9 +4,10 @@ import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, w
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { HOME_LIVE_ORDER_CARD } from "../../content/appContent";
-import { fonts, radius, spacing, typography } from "../../theme/tokens";
+import { fonts, radius, typography } from "../../theme/tokens";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import { getOrderStatusLabel } from "../../utils/orderStatus";
+import { spacing as homeSpacing } from "../../styles/spacing";
 
 function getStepIndex(status) {
   const s = String(status || "").toLowerCase();
@@ -115,10 +116,10 @@ function createStyles(c, isDark) {
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: isDark ? "rgba(255,255,255,0.14)" : "rgba(220,38,38,0.22)",
       backgroundColor: isDark ? "rgba(220,38,38,0.09)" : "rgba(220,38,38,0.06)",
-      paddingHorizontal: spacing.md,
-      paddingTop: spacing.sm + 2,
-      paddingBottom: spacing.sm,
-      gap: spacing.sm,
+      paddingHorizontal: homeSpacing.base,
+      paddingTop: homeSpacing.base,
+      paddingBottom: homeSpacing.base,
+      gap: homeSpacing.sm,
       ...Platform.select({
         web: { boxShadow: "0 2px 8px rgba(0,0,0,0.04)" },
         default: {},
@@ -132,15 +133,15 @@ function createStyles(c, isDark) {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: spacing.sm,
+      gap: homeSpacing.sm,
     },
     statusPill: {
       borderRadius: radius.pill,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: isDark ? "rgba(248,113,113,0.45)" : "rgba(220,38,38,0.28)",
       backgroundColor: isDark ? "rgba(220,38,38,0.14)" : "rgba(255,255,255,0.72)",
-      paddingHorizontal: spacing.sm,
-      paddingVertical: 5,
+      paddingHorizontal: homeSpacing.sm,
+      paddingVertical: homeSpacing.xs,
     },
     statusPillText: {
       fontFamily: fonts.semibold,
@@ -159,13 +160,13 @@ function createStyles(c, isDark) {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: spacing.xs,
+      gap: homeSpacing.xs,
     },
     stepCell: {
       flex: 1,
       minWidth: 0,
       alignItems: "center",
-      gap: 5,
+      gap: homeSpacing.xs,
     },
     stepDot: {
       width: 8,
@@ -192,7 +193,7 @@ function createStyles(c, isDark) {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: spacing.sm,
+      gap: homeSpacing.sm,
     },
     summaryText: {
       flex: 1,
@@ -204,7 +205,7 @@ function createStyles(c, isDark) {
     trackRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 2,
+      gap: homeSpacing.xs,
       flexShrink: 0,
     },
     trackLink: {

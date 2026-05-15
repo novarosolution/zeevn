@@ -25,7 +25,7 @@ import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumSwitch from "../../components/ui/PremiumSwitch";
-import { ADMIN_SCREEN_COPY } from "../../content/appContent";
+import { ADMIN_SCREEN_COPY, APP_LOADING_UI } from "../../content/appContent";
 
 export default function AdminRewardsScreen({ navigation }) {
   const { width } = useWindowDimensions();
@@ -337,7 +337,7 @@ export default function AdminRewardsScreen({ navigation }) {
             <SectionReveal preset="fade-up" delay={60}>
               <Text style={[styles.listTitle, { color: c.textPrimary }]}>{ADMIN_SCREEN_COPY.rewards.listTitle}</Text>
               {loading ? (
-                <PremiumLoader size="sm" caption="Loading rewards…" />
+                <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} />
               ) : rewards.length === 0 ? (
                 <PremiumEmptyState
                   iconName="gift-outline"

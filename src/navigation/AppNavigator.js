@@ -35,7 +35,6 @@ import AdminSupportScreen from "../screens/admin/AdminSupportScreen";
 import AdminHomeViewScreen from "../screens/admin/AdminHomeViewScreen";
 import AdminInventoryScreen from "../screens/admin/AdminInventoryScreen";
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
 
 const Stack = createNativeStackNavigator();
 
@@ -129,7 +128,6 @@ const ProtectedAdminHomeView = withRoleGuard(AdminHomeViewScreen, (user) => Bool
 
 export default function AppNavigator({ navigationRef, navigationReady = false }) {
   const { isAuthLoading } = useAuth();
-  const { colors, isDark } = useTheme();
 
   const screenOptions = useMemo(
     () => ({
@@ -149,12 +147,7 @@ export default function AppNavigator({ navigationRef, navigationReady = false })
       ) : null}
       <View style={styles.stackFill}>
         {isAuthLoading ? (
-          <AppStartupScreen
-            colors={colors}
-            isDark={isDark}
-            useAppFonts
-            footnote="Restoring your Zeevan session…"
-          />
+          <AppStartupScreen />
         ) : (
     <Stack.Navigator initialRouteName="Home" screenOptions={screenOptions}>
       <Stack.Group screenOptions={{ presentation: "card" }}>

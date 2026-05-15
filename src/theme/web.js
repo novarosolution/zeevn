@@ -8,6 +8,7 @@ export const WEB_STICKY_TOP_OFFSET = WEB_HEADER_HEIGHT + 16;
 /** Shared z-index ladder to prevent header/dropdown overlap bugs. */
 export const WEB_Z_INDEX = {
   header: 1000,
+  sticky: 1050,
   dropdown: 1200,
   overlay: 1100,
 };

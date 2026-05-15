@@ -13,12 +13,18 @@ import { useTheme } from "../context/ThemeContext";
 import { isAdminRouteName } from "../constants/adminNav";
 import { CUSTOMER_NAV_LINKS } from "../content/appContent";
 import { HERITAGE } from "../theme/customerAlchemy";
+import { spacing as homeSpacing } from "../styles/spacing";
 
 const useNativeDriver = Platform.OS !== "web";
 
-function TabItem({ label, icon, iconActive, active, onPress, badge, colors }) {
+function TabItem({ label, icon, iconActive, active, onPress, badge, colors, isCart }) {
   const scale = useRef(new Animated.Value(active ? 1.06 : 1)).current;
   const lift = useRef(new Animated.Value(active ? -2 : 0)).current;
+  const cartPulseScale = useRef(new Animated.Value(1)).current;
+  const badgeTranslateY = useRef(new Animated.Value(0)).current;
+  const badgeOpacity = useRef(new Animated.Value(1)).current;
+  const previousBadgeRef = useRef(badge);
+  const [displayBadge, setDisplayBadge] = useState(badge);
 
   useEffect(() => {
     Animated.parallel([
@@ -36,6 +42,46 @@ function TabItem({ label, icon, iconActive, active, onPress, badge, colors }) {
       }),
     ]).start();
   }, [active, lift, scale]);
+
+  useEffect(() => {
+    if (badge === previousBadgeRef.current) return;
+    const nextBadge = badge || "";
+    previousBadgeRef.current = badge;
+    setDisplayBadge(nextBadge);
+
+    if (isCart && nextBadge) {
+      cartPulseScale.setValue(1);
+      Animated.sequence([
+        Animated.timing(cartPulseScale, {
+          toValue: 1.18,
+          duration: 140,
+          useNativeDriver,
+        }),
+        Animated.timing(cartPulseScale, {
+          toValue: 1,
+          duration: 180,
+          useNativeDriver,
+        }),
+      ]).start();
+    }
+
+    if (nextBadge) {
+      badgeTranslateY.setValue(8);
+      badgeOpacity.setValue(0);
+      Animated.parallel([
+        Animated.timing(badgeTranslateY, {
+          toValue: 0,
+          duration: 220,
+          useNativeDriver,
+        }),
+        Animated.timing(badgeOpacity, {
+          toValue: 1,
+          duration: 220,
+          useNativeDriver,
+        }),
+      ]).start();
+    }
+  }, [badge, badgeOpacity, badgeTranslateY, cartPulseScale, isCart]);
 
   const handlePressIn = () => {
     Animated.spring(scale, {
@@ -64,14 +110,28 @@ function TabItem({ label, icon, iconActive, active, onPress, badge, colors }) {
         style={[styles.tabItem, active ? styles.tabItemActive : null]}
       >
         <View style={styles.iconWrap}>
-          <Ionicons
-            name={active && iconActive ? iconActive : icon}
-            size={glyphSize.tabBar}
-            color={active ? colors.primary : colors.textSecondary}
-          />
-          {badge ? (
+          <Animated.View style={isCart ? { transform: [{ scale: cartPulseScale }] } : null}>
+            <Ionicons
+              name={active && iconActive ? iconActive : icon}
+              size={glyphSize.tabBar}
+              color={active ? colors.primary : colors.textSecondary}
+            />
+          </Animated.View>
+          {displayBadge ? (
             <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-              <Text style={[styles.badgeText, { color: colors.onPrimary, fontFamily: fonts.extrabold }]}>{badge}</Text>
+              <Animated.Text
+                style={[
+                  styles.badgeText,
+                  {
+                    color: colors.onPrimary,
+                    fontFamily: fonts.extrabold,
+                    transform: [{ translateY: badgeTranslateY }],
+                    opacity: badgeOpacity,
+                  },
+                ]}
+              >
+                {displayBadge}
+              </Animated.Text>
             </View>
           ) : null}
         </View>
@@ -184,8 +244,8 @@ export default function BottomNavBar() {
           borderTopColor: isDark ? semantic.border.accent : HERITAGE.amberMid,
           borderColor: isDark ? semantic.border.subtle : colors.border,
           backgroundColor: isDark ? semantic.bg.overlay : semantic.commerce.premium.frost,
-          paddingVertical: 7,
-          paddingHorizontal: spacing.xs + 2,
+          paddingVertical: homeSpacing.sm,
+          paddingHorizontal: homeSpacing.md,
           justifyContent: "space-around",
           overflow: "hidden",
           ...platformShadow({
@@ -201,9 +261,9 @@ export default function BottomNavBar() {
         },
         activeIndicator: {
           position: "absolute",
-          top: 6,
-          bottom: 6,
-          left: spacing.sm + 2,
+          top: homeSpacing.sm,
+          bottom: homeSpacing.sm,
+          left: homeSpacing.md,
           borderRadius: semanticRadius.control,
           backgroundColor: isDark ? colors.primarySoft : "rgba(220, 38, 38, 0.14)",
           borderWidth: 1,
@@ -221,7 +281,7 @@ export default function BottomNavBar() {
     <View
       style={[
         styles.mobileContainer,
-        { bottom: Math.max(spacing.md, (insets.bottom || 0) + 6) },
+        { bottom: Math.max(spacing.md, (insets.bottom || 0) + homeSpacing.sm) },
       ]}
     >
       <BlurView
@@ -267,6 +327,7 @@ export default function BottomNavBar() {
             onPress={tab.onPress}
             active={currentRouteName === tab.key}
             badge={tab.badge}
+            isCart={tab.key === "Cart"}
             colors={colors}
           />
         ))}
@@ -278,15 +339,15 @@ export default function BottomNavBar() {
 const styles = StyleSheet.create({
   mobileContainer: {
     position: "absolute",
-    left: spacing.sm + 2,
-    right: spacing.sm + 2,
-    bottom: spacing.md + 2,
+    left: homeSpacing.md,
+    right: homeSpacing.md,
+    bottom: homeSpacing.base,
   },
   glassShine: {
     position: "absolute",
-    left: 10,
-    right: 10,
-    top: 4,
+    left: homeSpacing.md,
+    right: homeSpacing.md,
+    top: homeSpacing.xs,
     height: 8,
     borderRadius: semanticRadius.full,
     backgroundColor: "rgba(255,255,255,0.28)",
@@ -304,8 +365,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minWidth: 58,
     minHeight: 40,
-    paddingHorizontal: 7,
-    paddingVertical: 5,
+    paddingHorizontal: homeSpacing.sm,
+    paddingVertical: homeSpacing.xs,
     borderRadius: semanticRadius.control,
   },
   tabItemActive: {
@@ -316,7 +377,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   tabLabel: {
-    marginTop: 2,
+    marginTop: homeSpacing.xs,
     fontSize: typography.overline - 1,
     letterSpacing: 0.28,
   },
@@ -329,7 +390,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 3,
+    paddingHorizontal: homeSpacing.xs,
   },
   badgeText: {
     fontSize: typography.overline,

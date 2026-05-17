@@ -2,11 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import AppFooter from "../../components/AppFooter";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
-import AdminBackLink from "../../components/admin/AdminBackLink";
-import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
+import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminHomeView, updateAdminHomeView } from "../../services/adminService";
 import { adminPanel } from "../../theme/adminLayout";
@@ -115,31 +112,8 @@ export default function AdminHomeViewScreen({ navigation }) {
     }
   };
 
-  if (user && !user.isAdmin) {
-    return (
-      <CustomerScreenShell style={styles.screen} variant="admin">
-        <View style={[styles.panel, { margin: spacing.lg }]}>
-          <PremiumErrorBanner
-            severity="warning"
-            title="Admin access required"
-            message="This account does not have admin privileges."
-          />
-          <PremiumButton label="Back to Home" variant="primary" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
-        </View>
-      </CustomerScreenShell>
-    );
-  }
-
   return (
-    <CustomerScreenShell style={styles.screen} variant="admin">
-      <MotionScrollView
-        style={customerScrollFill}
-        contentContainerStyle={adminInnerPageScrollContent(insets)}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.panel}>
-          <AdminBackLink navigation={navigation} />
-          <AdminPageHeading title={copy.title} subtitle={copy.subtitle} />
+    <OpsAdminScreen navigation={navigation} activeRoute="AdminHomeView" sectionTitle="Manage storefront content">
           {error ? (
             <View style={styles.bannerSpacer}>
               <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
@@ -287,10 +261,7 @@ export default function AdminHomeViewScreen({ navigation }) {
             loading={saving}
             fullWidth
           />
-        </View>
-        <AppFooter />
-      </MotionScrollView>
-    </CustomerScreenShell>
+          </OpsAdminScreen>
   );
 }
 

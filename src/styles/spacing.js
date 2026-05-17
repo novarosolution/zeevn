@@ -1,13 +1,27 @@
-export const spacing = {
-  xs: 4,
-  sm: 8,
-  md: 12,
-  base: 16,
-  lg: 20,
-  xl: 24,
-  "2xl": 32,
-  "3xl": 40,
-  "4xl": 56,
-  "5xl": 72,
-  "6xl": 96,
+/**
+ * @deprecated Prefer `SPACING` from `./designSystem` or `useTheme().SPACING`.
+ * Preserved for existing imports: `import { spacing } from '../styles/spacing'`.
+ */
+import {
+  COLORS,
+  COLORS_DARK,
+  MOTION,
+  RADII,
+  SHADOWS,
+  SPACING,
+  TYPE,
+  getSemanticPalette,
+} from "./designSystem";
+
+export {
+  COLORS,
+  COLORS_DARK,
+  MOTION,
+  RADII,
+  SHADOWS,
+  SPACING,
+  TYPE,
+  getSemanticPalette,
 };
+
+export const spacing = SPACING;

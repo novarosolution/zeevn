@@ -27,8 +27,9 @@ function ProgressRingBase({
   style,
   progress,
   spinning,
+  accentColor,
 }) {
-  const { isDark } = useTheme();
+  const { isDark, semanticPalette } = useTheme();
   const systemReducedMotion = usePrefersReducedMotion();
   const reducedMotion = typeof reducedMotionProp === "boolean" ? reducedMotionProp : systemReducedMotion;
   const { size: resolvedSize, stroke } = resolveSizeConfig(size);
@@ -40,7 +41,7 @@ function ProgressRingBase({
       : null;
   const arcLength = resolvedProgress != null ? circumference * resolvedProgress : circumference * 0.25;
   const track = isDark ? "rgba(255,255,255,0.10)" : "rgba(14,14,14,0.08)";
-  const accent = isDark ? "#C8A97E" : "#1F3A2E";
+  const accent = accentColor || semanticPalette?.accent || (isDark ? "#C8A97E" : "#C8A97E");
 
   const spin = useSharedValue(0);
   const dotOpacity = useSharedValue(0.4);

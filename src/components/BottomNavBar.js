@@ -17,7 +17,7 @@ import { spacing as homeSpacing } from "../styles/spacing";
 
 const useNativeDriver = Platform.OS !== "web";
 
-function TabItem({ label, icon, iconActive, active, onPress, badge, colors, isCart }) {
+function TabItem({ label, icon, iconActive, active, onPress, badge, colors, isCart, bindCartBumpRef }) {
   const scale = useRef(new Animated.Value(active ? 1.06 : 1)).current;
   const lift = useRef(new Animated.Value(active ? -2 : 0)).current;
   const cartPulseScale = useRef(new Animated.Value(1)).current;
@@ -42,6 +42,21 @@ function TabItem({ label, icon, iconActive, active, onPress, badge, colors, isCa
       }),
     ]).start();
   }, [active, lift, scale]);
+
+  useEffect(() => {
+    if (!isCart || !bindCartBumpRef) return undefined;
+    const pulse = () => {
+      cartPulseScale.setValue(1);
+      Animated.sequence([
+        Animated.timing(cartPulseScale, { toValue: 1.18, duration: 140, useNativeDriver }),
+        Animated.timing(cartPulseScale, { toValue: 1, duration: 180, useNativeDriver }),
+      ]).start();
+    };
+    bindCartBumpRef.current = pulse;
+    return () => {
+      bindCartBumpRef.current = null;
+    };
+  }, [bindCartBumpRef, cartPulseScale, isCart]);
 
   useEffect(() => {
     if (badge === previousBadgeRef.current) return;
@@ -107,6 +122,9 @@ function TabItem({ label, icon, iconActive, active, onPress, badge, colors, isCa
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityState={{ selected: active }}
         style={[styles.tabItem, active ? styles.tabItemActive : null]}
       >
         <View style={styles.iconWrap}>
@@ -114,17 +132,17 @@ function TabItem({ label, icon, iconActive, active, onPress, badge, colors, isCa
             <Ionicons
               name={active && iconActive ? iconActive : icon}
               size={glyphSize.tabBar}
-              color={active ? colors.primary : colors.textSecondary}
+              color={active ? colors.accentGold || colors.primary : colors.textSecondary}
             />
           </Animated.View>
           {displayBadge ? (
-            <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+            <View style={[styles.badge, { backgroundColor: colors.textPrimary }]}>
               <Animated.Text
                 style={[
                   styles.badgeText,
                   {
                     color: colors.onPrimary,
-                    fontFamily: fonts.extrabold,
+                    fontFamily: fonts.bold,
                     transform: [{ translateY: badgeTranslateY }],
                     opacity: badgeOpacity,
                   },
@@ -139,7 +157,7 @@ function TabItem({ label, icon, iconActive, active, onPress, badge, colors, isCa
           style={[
             styles.tabLabel,
             {
-              color: active ? colors.primaryDark : colors.textSecondary,
+              color: active ? colors.accentGold || colors.primary : colors.textSecondary,
               fontFamily: active ? fonts.bold : fonts.semibold,
             },
           ]}
@@ -155,7 +173,10 @@ export default function BottomNavBar() {
   const { colors, isDark } = useTheme();
   const semantic = getSemanticColors(colors);
   const navigation = useNavigation();
-  const { totalItems } = useCart();
+  const { totalItems, registerCartBadgeBump } = useCart();
+  const cartBumpRef = useRef(null);
+
+  useEffect(() => registerCartBadgeBump(() => cartBumpRef.current?.()), [registerCartBadgeBump]);
   const { isAuthenticated, user } = useAuth();
   const currentRouteName = useNavigationState((state) => state.routes[state.index]?.name);
   const insets = useSafeAreaInsets();
@@ -241,7 +262,7 @@ export default function BottomNavBar() {
           borderRadius: semanticRadius.full,
           borderWidth: StyleSheet.hairlineWidth,
           borderTopWidth: 1,
-          borderTopColor: isDark ? semantic.border.accent : HERITAGE.amberMid,
+          borderTopColor: isDark ? colors.primaryBorder : HERITAGE.brass,
           borderColor: isDark ? semantic.border.subtle : colors.border,
           backgroundColor: isDark ? semantic.bg.overlay : semantic.commerce.premium.frost,
           paddingVertical: homeSpacing.sm,
@@ -265,9 +286,9 @@ export default function BottomNavBar() {
           bottom: homeSpacing.sm,
           left: homeSpacing.md,
           borderRadius: semanticRadius.control,
-          backgroundColor: isDark ? colors.primarySoft : "rgba(220, 38, 38, 0.14)",
+          backgroundColor: isDark ? colors.primarySoft : colors.primarySoft,
           borderWidth: 1,
-          borderColor: isDark ? semantic.border.accent : "rgba(220, 38, 38, 0.14)",
+          borderColor: isDark ? colors.primaryBorder : colors.primaryBorder,
         },
       }),
     [colors, isDark, semantic.bg.overlay, semantic.commerce.premium.frost, semantic.border.accent, semantic.border.subtle]
@@ -294,8 +315,8 @@ export default function BottomNavBar() {
         <LinearGradient
           colors={
             isDark
-              ? ["rgba(248, 113, 113, 0.14)", "transparent", "transparent"]
-              : ["rgba(220, 38, 38, 0.2)", "transparent", "transparent"]
+              ? ["rgba(200, 169, 126, 0.14)", "transparent", "transparent"]
+              : ["rgba(200, 169, 126, 0.18)", "transparent", "transparent"]
           }
           locations={[0, 0.45, 1]}
           start={{ x: 0.5, y: 0 }}
@@ -326,6 +347,7 @@ export default function BottomNavBar() {
             iconActive={tab.iconActive}
             onPress={tab.onPress}
             active={currentRouteName === tab.key}
+            bindCartBumpRef={tab.key === "Cart" ? cartBumpRef : undefined}
             badge={tab.badge}
             isCart={tab.key === "Cart"}
             colors={colors}

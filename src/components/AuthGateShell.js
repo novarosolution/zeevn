@@ -93,7 +93,7 @@ function createStyles(c, isDark, shadowPremium) {
       maxWidth: 400,
       alignSelf: "center",
       borderTopWidth: 3,
-      borderTopColor: isDark ? "rgba(220, 38, 38, 0.58)" : ALCHEMY.gold,
+      borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
       ...Platform.select({
         web: {
           boxShadow: isDark
@@ -105,7 +105,7 @@ function createStyles(c, isDark, shadowPremium) {
     },
     signedOutTitle: {
       fontSize: typography.h2,
-      fontFamily: fonts.extrabold,
+      fontFamily: fonts.bold,
       color: c.textPrimary,
       textAlign: "center",
       marginBottom: spacing.xs,
@@ -126,8 +126,8 @@ function createStyles(c, isDark, shadowPremium) {
       justifyContent: "center",
       marginBottom: spacing.sm,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(220, 38, 38, 0.35)" : ALCHEMY.pillInactive,
-      backgroundColor: isDark ? "rgba(220, 38, 38, 0.12)" : ALCHEMY.goldSoft,
+      borderColor: isDark ? c.primaryBorder : ALCHEMY.pillInactive,
+      backgroundColor: isDark ? c.primarySoft : ALCHEMY.goldSoft,
     },
     primaryBtn: {
       marginBottom: spacing.sm,

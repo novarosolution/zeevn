@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { Linking, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { navigateCustomerNav } from "../../navigation/accountRoutes";
 import {
   APP_DISPLAY_NAME,
   HOME_FOOTER,
@@ -17,7 +18,7 @@ import { spacing as homeSpacing } from "../../styles/spacing";
  * - tablet: 2 columns
  * - mobile: accordion columns
  */
-export default function HomePageFooter({ colors: c }) {
+export default function HomePageFooter({ colors: c, compact = false }) {
   const navigation = useNavigation();
   const { isDark } = useTheme();
   const { width } = useWindowDimensions();
@@ -25,7 +26,7 @@ export default function HomePageFooter({ colors: c }) {
   const [toast, setToast] = useState("");
   const [openKeys, setOpenKeys] = useState(() => new Set(["shop"]));
   const semantic = getSemanticColors(c);
-  const styles = useMemo(() => createStyles(c, isDark, semantic), [c, isDark, semantic]);
+  const styles = useMemo(() => createStyles(c, isDark, semantic, compact), [c, compact, isDark, semantic]);
   const isDesktop = width >= 1200;
   const isMobile = width < 768;
   const footerColumns = (HOME_FOOTER.sections || [])
@@ -121,7 +122,7 @@ export default function HomePageFooter({ colors: c }) {
                         key={`${column.key}-${link.label}`}
                         onPress={() => {
                           if (link.url) void Linking.openURL(link.url);
-                          else if (link.route) navigation.navigate(link.route);
+                          else if (link.route) navigateCustomerNav(navigation, link);
                         }}
                         style={({ pressed }) => [styles.linkRow, pressed ? { opacity: 0.7 } : null]}
                       >
@@ -144,7 +145,7 @@ export default function HomePageFooter({ colors: c }) {
                   key={`${column.key}-${link.label}`}
                   onPress={() => {
                     if (link.url) void Linking.openURL(link.url);
-                    else if (link.route) navigation.navigate(link.route);
+                    else if (link.route) navigateCustomerNav(navigation, link);
                   }}
                   style={({ hovered, pressed }) => [
                     styles.linkRow,
@@ -175,10 +176,10 @@ export default function HomePageFooter({ colors: c }) {
   );
 }
 
-function createStyles(c, isDark, semantic) {
+function createStyles(c, isDark, semantic, compact) {
   return StyleSheet.create({
     shell: {
-      marginTop: homeSpacing["3xl"],
+      marginTop: compact ? homeSpacing.xl : homeSpacing["3xl"],
       paddingVertical: homeSpacing["2xl"],
       paddingHorizontal: Platform.select({ web: homeSpacing["2xl"], default: homeSpacing.xl }),
       paddingBottom: homeSpacing["3xl"],

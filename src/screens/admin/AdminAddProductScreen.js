@@ -3,11 +3,8 @@ import { FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
-import AppFooter from "../../components/AppFooter";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
-import AdminBackLink from "../../components/admin/AdminBackLink";
-import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
+import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
 import {
   createAdminProduct,
   updateAdminProduct,
@@ -308,48 +305,8 @@ export default function AdminAddProductScreen({ navigation, route }) {
     }
   };
 
-  if (user && !user.isAdmin) {
-    return (
-      <CustomerScreenShell style={styles.screen} variant="admin">
-        <MotionScrollView
-          style={customerScrollFill}
-          contentContainerStyle={adminInnerPageScrollContent(insets)}
-          showsVerticalScrollIndicator={false}
-        >
-          <SectionReveal delay={40} preset="fade-up">
-            <View style={styles.panel}>
-              <PremiumErrorBanner
-                severity="warning"
-                title="Admin access required"
-                message="This account does not have admin privileges."
-              />
-              <PremiumButton
-                label="Back to home"
-                iconLeft="home-outline"
-                variant="primary"
-                size="md"
-                onPress={() => navigation.navigate("Home")}
-                style={styles.gateCta}
-              />
-            </View>
-          </SectionReveal>
-        </MotionScrollView>
-      </CustomerScreenShell>
-    );
-  }
-
   return (
-    <CustomerScreenShell style={styles.screen} variant="admin">
-    <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-    <MotionScrollView
-      style={customerScrollFill}
-      contentContainerStyle={adminInnerPageScrollContent(insets)}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={styles.panel}>
-        <AdminBackLink navigation={navigation} target="AdminProducts" label="Products" />
-        <AdminPageHeading title={title} subtitle="Create products and choose a cover image." />
+    <OpsAdminScreen navigation={navigation} activeRoute="AdminAddProduct" sectionTitle="Add product">
         {error ? (
           <View style={styles.fieldGap}>
             <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
@@ -445,7 +402,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
                 />
                 <PremiumButton
                   iconLeft="trash-outline"
-                  variant="danger"
+                  variant="destructive"
                   size="sm"
                   accessibilityLabel="Remove photo"
                   onPress={() => removePhoto(item)}
@@ -624,7 +581,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
             </View>
             <PremiumButton
               label="Remove variant"
-              variant="danger"
+              variant="destructive"
               size="sm"
               onPress={() => setVariantRows((rows) => rows.filter((_, i) => i !== idx))}
               style={styles.removeRowBtn}
@@ -676,7 +633,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
             </View>
             <PremiumButton
               label="Remove"
-              variant="danger"
+              variant="destructive"
               size="sm"
               onPress={() => setUspRows((rows) => rows.filter((_, i) => i !== idx))}
               style={styles.removeRowBtn}
@@ -756,7 +713,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
             </View>
             <PremiumButton
               label="Remove"
-              variant="danger"
+              variant="destructive"
               size="sm"
               onPress={() => setUsageRows((rows) => rows.filter((_, i) => i !== idx))}
               style={styles.removeRowBtn}
@@ -794,11 +751,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
           fullWidth
           style={styles.saveProductBtn}
         />
-      </View>
-      <AppFooter />
-    </MotionScrollView>
-    </KeyboardAvoidingView>
-    </CustomerScreenShell>
+            </OpsAdminScreen>
   );
 }
 

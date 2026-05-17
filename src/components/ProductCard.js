@@ -31,6 +31,7 @@ import { getImageUriCandidates } from "../utils/image";
 import { matchesShelfProduct } from "../utils/shelfMatch";
 import { APP_DISPLAY_NAME } from "../constants/brand";
 import { useTheme } from "../context/ThemeContext";
+import { useWishlistOptional } from "../context/WishlistContext";
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
 import { usePrefersReducedMotion } from "../utils/motion";
 
@@ -51,6 +52,10 @@ export default function ProductCard({
   showUnit,
   /** Warm editorial list styling (e.g. Home catalog) */
   editorial = false,
+  /** PDP rails: stronger hover lift on desktop */
+  railHover = false,
+  /** Called after wishlist heart toggle: `(productId, isNowSaved)`. */
+  onWishlistToggle,
 }) {
   const { width } = useWindowDimensions();
   const { colors: c, isDark } = useTheme();
@@ -68,9 +73,16 @@ export default function ProductCard({
   const isWeb = Platform.OS === "web";
   const isWebGrid = isWeb && !isList;
   const reducedMotion = usePrefersReducedMotion();
+  const wishlist = useWishlistOptional();
+  const wishlistProductId = useMemo(
+    () => String(product?.id ?? product?._id ?? "").trim(),
+    [product?.id, product?._id]
+  );
+  const [localWishlist, setLocalWishlist] = useState(false);
+  const isWishlistedRemote = Boolean(wishlist && wishlistProductId && wishlist.has(wishlistProductId));
+  const isSaved = wishlist ? isWishlistedRemote : localWishlist;
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
   const [secondaryImageIndex, setSecondaryImageIndex] = useState(0);
-  const [isSaved, setIsSaved] = useState(false);
   const [showNotifyModal, setShowNotifyModal] = useState(false);
   const [notifyEmail, setNotifyEmail] = useState("");
   const [showSecondaryImage, setShowSecondaryImage] = useState(false);
@@ -169,8 +181,10 @@ export default function ProductCard({
   }, [secondaryImage, secondaryOpacity]);
 
   useEffect(() => {
-    hoverImageScale.value = withTiming(showSecondaryImage && isWeb ? 1.03 : 1, {
-      duration: 320,
+    const hoverScale =
+      isWeb && (showSecondaryImage || (railHover && longPressRaised)) ? (railHover ? 1.04 : 1.03) : 1;
+    hoverImageScale.value = withTiming(hoverScale, {
+      duration: railHover ? 240 : 320,
       easing: Easing.out(Easing.cubic),
     });
     if (showSecondaryImage && hasSecondaryImage) {
@@ -178,7 +192,7 @@ export default function ProductCard({
       return;
     }
     secondaryOpacity.value = withTiming(0, { duration: 200 });
-  }, [hasSecondaryImage, hoverImageScale, isWeb, secondaryOpacity, showSecondaryImage]);
+  }, [hasSecondaryImage, hoverImageScale, isWeb, longPressRaised, railHover, secondaryOpacity, showSecondaryImage]);
 
   useEffect(() => {
     if (reducedMotion || primaryLoaded) {
@@ -245,19 +259,32 @@ export default function ProductCard({
   const onHoverInImage = () => {
     if (isWeb) {
       setLongPressRaised(true);
-      setShowSecondaryImage(true);
+      if (!railHover) setShowSecondaryImage(true);
+      if (railHover) {
+        cardPress.value = withTiming(1, { duration: 240, easing: Easing.out(Easing.cubic) });
+      }
     }
   };
   const onHoverOutImage = () => {
     if (isWeb) {
       setLongPressRaised(false);
       setShowSecondaryImage(false);
+      if (railHover) {
+        cardPress.value = withTiming(0, { duration: 240, easing: Easing.out(Easing.cubic) });
+      }
     }
   };
   const toggleWishlist = (event) => {
     event?.stopPropagation?.();
     triggerLightHaptic();
-    setIsSaved((prev) => !prev);
+    const wasSaved = isSaved;
+    if (wishlist && wishlistProductId) {
+      wishlist.toggle(wishlistProductId);
+      onWishlistToggle?.(wishlistProductId, !wasSaved);
+    } else {
+      setLocalWishlist((prev) => !prev);
+      if (wishlistProductId) onWishlistToggle?.(wishlistProductId, !wasSaved);
+    }
     heartScale.value = 1.2;
     heartOpacity.value = 0.6;
     heartScale.value = withSpring(1, { damping: 10, stiffness: 220 });
@@ -325,6 +352,12 @@ export default function ProductCard({
     mrp: listMrp ? formatINRWhole(listMrp) : "",
     outOfStock: isOutOfStock,
   });
+  const handleCardPress = () => {
+    if (Platform.OS === "ios") {
+      Haptics.selectionAsync().catch(() => {});
+    }
+    onPress?.();
+  };
 
   if (!isList) {
     return (
@@ -336,34 +369,30 @@ export default function ProductCard({
             longPressRaised ? styles.premiumGridCardRaised : null,
           ]}
         >
-          <Pressable
-            onPress={() => {
-              if (Platform.OS === "ios") {
-                Haptics.selectionAsync().catch(() => {});
-              }
-              onPress?.();
-            }}
-            onPressIn={onCardPressIn}
-            onPressOut={onCardPressOut}
-            onLongPress={() => {
-              setLongPressRaised(true);
-              if (!isWeb && hasSecondaryImage) {
-                setShowSecondaryImage(true);
-              }
-            }}
-            delayLongPress={1500}
-            onHoverIn={onHoverInImage}
-            onHoverOut={onHoverOutImage}
-            accessibilityRole="button"
-            accessibilityLabel={cardA11yLabel}
-            style={styles.premiumCardPressable}
-          >
+          <View style={styles.premiumCardPressable}>
             <View ref={imageAreaRef} style={styles.premiumImageArea}>
+              <Pressable
+                onPress={handleCardPress}
+                onPressIn={onCardPressIn}
+                onPressOut={onCardPressOut}
+                onLongPress={() => {
+                  setLongPressRaised(true);
+                  if (!isWeb && hasSecondaryImage) {
+                    setShowSecondaryImage(true);
+                  }
+                }}
+                delayLongPress={1500}
+                onHoverIn={onHoverInImage}
+                onHoverOut={onHoverOutImage}
+                accessibilityRole="button"
+                accessibilityLabel={cardA11yLabel}
+                style={styles.premiumImageHit}
+              >
               <Animated.View style={[styles.premiumImageScaleWrap, hoverImageScaleStyle]}>
                 <View style={styles.premiumImageFrame}>
                   <View style={styles.premiumImageBackground} />
                   {!reducedMotion && !primaryLoaded ? (
-                    <Animated.View style={[styles.shimmerSweep, shimmerStyle]} pointerEvents="none">
+                    <Animated.View style={[styles.shimmerSweep, shimmerStyle, { pointerEvents: "none" }]}>
                       <LinearGradient
                         colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.45)", "rgba(255,255,255,0)"]}
                         start={{ x: 0, y: 0 }}
@@ -398,7 +427,7 @@ export default function ProductCard({
                     </View>
                   )}
                   {hasSecondaryImage ? (
-                    <Animated.View style={[styles.premiumSecondaryImageLayer, secondaryFadeStyle]} pointerEvents="none">
+                    <Animated.View style={[styles.premiumSecondaryImageLayer, secondaryFadeStyle, { pointerEvents: "none" }]}>
                       <Image
                         source={{ uri: secondaryUri }}
                         style={styles.premiumImage}
@@ -411,6 +440,7 @@ export default function ProductCard({
                   ) : null}
                 </View>
               </Animated.View>
+              </Pressable>
 
               {offPct != null && offPct > 0 ? (
                 <View style={[styles.discountBadge, { backgroundColor: saleColor }]}>
@@ -472,34 +502,50 @@ export default function ProductCard({
             </View>
 
             <View style={styles.premiumContent}>
-              {showCategory ? (
-                <Text style={[styles.categoryPremium, { color: mutedColor }]} numberOfLines={1}>
-                  {String(product.category || "Groceries").toUpperCase()}
+              <Pressable
+                onPress={handleCardPress}
+                onPressIn={onCardPressIn}
+                onPressOut={onCardPressOut}
+                accessible={false}
+                importantForAccessibility="no-hide-descendants"
+                style={styles.premiumContentPressable}
+              >
+                {showCategory ? (
+                  <Text style={[styles.categoryPremium, { color: mutedColor }]} numberOfLines={1}>
+                    {String(product.category || "Groceries").toUpperCase()}
+                  </Text>
+                ) : null}
+                <Text numberOfLines={1} style={[styles.namePremium, { color: inkColor }]}>
+                  {displayName}
                 </Text>
-              ) : null}
-              <Text numberOfLines={1} style={[styles.namePremium, { color: inkColor }]}>
-                {displayName}
-              </Text>
-              <View style={styles.ratingRow}>
-                {ratingInfo.rating ? (
-                  <>
-                    <Ionicons name="star" size={10} color={c.accent || "#C8A97E"} />
-                    <Text style={[styles.ratingValue, { color: inkColor }]}>{ratingInfo.rating}</Text>
-                    <Text style={[styles.reviewCount, { color: mutedColor }]}>{`(${ratingInfo.reviewCount || 0})`}</Text>
-                  </>
-                ) : (
-                  <View style={[styles.newPill, { backgroundColor: "rgba(200,169,126,0.14)" }]}>
-                    <Text style={[styles.newPillText, { color: c.accent || "#C8A97E" }]}>NEW</Text>
-                  </View>
-                )}
-              </View>
-              <View style={styles.premiumBottomRow}>
-                <View style={styles.gridPriceRow}>
-                  <Text style={[styles.gridPriceCurrent, { color: inkColor }]}>{formatINRWhole(safePrice)}</Text>
-                  {listMrp ? (
-                    <Text style={[styles.gridPriceMrp, { color: mutedColor }]}>{formatINRWhole(listMrp)}</Text>
-                  ) : null}
+                <View style={styles.ratingRow}>
+                  {ratingInfo.rating ? (
+                    <>
+                      <Ionicons name="star" size={10} color={c.accent || "#C8A97E"} />
+                      <Text style={[styles.ratingValue, { color: inkColor }]}>{ratingInfo.rating}</Text>
+                      <Text style={[styles.reviewCount, { color: mutedColor }]}>{`(${ratingInfo.reviewCount || 0})`}</Text>
+                    </>
+                  ) : (
+                    <View style={[styles.newPill, { backgroundColor: "rgba(200,169,126,0.14)" }]}>
+                      <Text style={[styles.newPillText, { color: c.accent || "#C8A97E" }]}>NEW</Text>
+                    </View>
+                  )}
                 </View>
+              </Pressable>
+              <View style={styles.premiumBottomRow}>
+                <Pressable
+                  onPress={handleCardPress}
+                  accessible={false}
+                  importantForAccessibility="no-hide-descendants"
+                  style={styles.premiumPriceHit}
+                >
+                  <View style={styles.gridPriceRow}>
+                    <Text style={[styles.gridPriceCurrent, { color: inkColor }]}>{formatINRWhole(safePrice)}</Text>
+                    {listMrp ? (
+                      <Text style={[styles.gridPriceMrp, { color: mutedColor }]}>{formatINRWhole(listMrp)}</Text>
+                    ) : null}
+                  </View>
+                </Pressable>
                 {quantity > 0 ? (
                   <Animated.View style={[styles.inlineStepper, stepperStyle]}>
                     <Pressable style={styles.inlineStepHit} onPress={onStepperRemove} accessibilityRole="button" accessibilityLabel="Decrease quantity">
@@ -513,7 +559,7 @@ export default function ProductCard({
                 ) : null}
               </View>
             </View>
-          </Pressable>
+          </View>
         </Animated.View>
         <Modal transparent visible={showNotifyModal} animationType="fade" onRequestClose={() => setShowNotifyModal(false)}>
           <Pressable style={styles.notifyBackdrop} onPress={() => setShowNotifyModal(false)}>
@@ -569,13 +615,7 @@ export default function ProductCard({
         !isWeb ? listScaleStyle : null,
       ]}
     >
-      <TouchableOpacity
-        activeOpacity={0.94}
-        style={isList ? styles.touchableList : null}
-        onPress={onPress}
-        onPressIn={isWeb ? undefined : handlePressIn}
-        onPressOut={isWeb ? undefined : handlePressOut}
-      >
+      <View style={isList ? styles.touchableList : null}>
         <View
           style={[
             styles.imageWrap,
@@ -586,16 +626,24 @@ export default function ProductCard({
             isList ? { backgroundColor: categoryTone.imageWrapBg } : null,
           ]}
         >
-          <View
-            style={[
-              styles.imageBox,
-              !isList ? styles.imageBoxGridHome : null,
-              isWebGrid ? styles.imageBoxGridWeb : null,
-              isList ? styles.imageBoxList : null,
-              compactGridLayout ? styles.imageBoxGridCompact : null,
-              isList ? { backgroundColor: categoryTone.imageBoxBg, borderColor: categoryTone.imageBoxBorder } : null,
-            ]}
+          <TouchableOpacity
+            activeOpacity={0.94}
+            onPress={onPress}
+            onPressIn={isWeb ? undefined : handlePressIn}
+            onPressOut={isWeb ? undefined : handlePressOut}
+            accessibilityRole="button"
+            accessibilityLabel={isList ? `${product.name}, ${formatINRWhole(safePrice)}` : undefined}
           >
+            <View
+              style={[
+                styles.imageBox,
+                !isList ? styles.imageBoxGridHome : null,
+                isWebGrid ? styles.imageBoxGridWeb : null,
+                isList ? styles.imageBoxList : null,
+                compactGridLayout ? styles.imageBoxGridCompact : null,
+                isList ? { backgroundColor: categoryTone.imageBoxBg, borderColor: categoryTone.imageBoxBorder } : null,
+              ]}
+            >
             {imageUri && !imageFailed ? (
               <Animated.View style={[styles.imageFadeWrap, imageFadeStyle]}>
                 <Image
@@ -627,16 +675,18 @@ export default function ProductCard({
                 </Text>
               </View>
             ) : null}
-            <TouchableOpacity
-              activeOpacity={0.85}
-              onPress={() => setIsSaved((prev) => !prev)}
-              style={styles.wishlistBtn}
-              accessibilityRole="button"
-              accessibilityLabel={`Save ${product.name} to wishlist`}
-            >
-              <Ionicons name={isSaved ? "heart" : "heart-outline"} size={17} color={isSaved ? c.discount : c.textPrimary} />
-            </TouchableOpacity>
-          </View>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={toggleWishlist}
+            style={styles.wishlistBtn}
+            accessibilityRole="button"
+            accessibilityState={{ selected: isSaved }}
+            accessibilityLabel={isSaved ? `Remove ${product.name} from wishlist` : `Save ${product.name} to wishlist`}
+          >
+            <Ionicons name={isSaved ? "heart" : "heart-outline"} size={17} color={isSaved ? c.discount : c.textPrimary} />
+          </TouchableOpacity>
           {!isList && showEtaBadge ? (
             <View style={styles.etaBadge}>
               <Ionicons name="time-outline" size={icon.tiny} color={c.primary} />
@@ -674,46 +724,41 @@ export default function ProductCard({
             )
           ) : null}
         </View>
-        <View
-          style={[
-            styles.content,
-            !isList ? styles.contentGridHome : null,
-            isList ? styles.contentList : null,
-            compactGridLayout ? styles.contentGridCompact : null,
-            isWebGrid ? styles.contentGridWeb : null,
-            compact && isList ? styles.contentCompact : null,
-          ]}
-        >
-          {showCategory ? (
-            <Text
-              style={[
-                styles.category,
-                !isList ? styles.categoryGridHome : null,
-                compactGridLayout ? styles.categoryGridCompact : null,
-                isWebGrid ? styles.categoryGridWeb : null,
-                { color: c.textMuted, fontFamily: fonts.semibold },
-              ]}
-              numberOfLines={1}
-            >
-              {product.category || "Groceries"}
-            </Text>
-          ) : null}
-          <Text
-            numberOfLines={isList ? 2 : 1}
+        {isList ? (
+          <View
             style={[
-              styles.name,
-              !isList ? styles.nameGridHome : null,
-              compactListLayout ? styles.nameListCompact : null,
-              compactGridLayout ? styles.nameGridCompact : null,
-              isWebGrid ? styles.nameGridWeb : null,
-              editorial && isList ? styles.nameEditorial : null,
-              { color: c.textPrimary, fontFamily: editorial && isList ? FONT_DISPLAY : fonts.semibold },
+              styles.content,
+              styles.contentList,
+              compact && isList ? styles.contentCompact : null,
             ]}
           >
-            {product.name}
-          </Text>
-          {isList ? (
-            <>
+            <TouchableOpacity
+              activeOpacity={0.94}
+              onPress={onPress}
+              onPressIn={isWeb ? undefined : handlePressIn}
+              onPressOut={isWeb ? undefined : handlePressOut}
+              accessibilityRole="button"
+              accessibilityLabel={`${product.name}, ${formatINRWhole(safePrice)}`}
+            >
+              {showCategory ? (
+                <Text
+                  style={[styles.category, { color: c.textMuted, fontFamily: fonts.semibold }]}
+                  numberOfLines={1}
+                >
+                  {product.category || "Groceries"}
+                </Text>
+              ) : null}
+              <Text
+                numberOfLines={2}
+                style={[
+                  styles.name,
+                  compactListLayout ? styles.nameListCompact : null,
+                  editorial ? styles.nameEditorial : null,
+                  { color: c.textPrimary, fontFamily: editorial ? FONT_DISPLAY : fonts.semibold },
+                ]}
+              >
+                {product.name}
+              </Text>
               <View style={styles.metaRowList}>
                 <View
                   style={[
@@ -789,20 +834,40 @@ export default function ProductCard({
                   {`Trusted ${APP_DISPLAY_NAME} pick.`}
                 </Text>
               ) : null}
-            </>
-          ) : showUnitRow ? (
-            <Text
-              style={[
-                styles.unit,
-                compactGridLayout ? styles.unitGridCompact : null,
-                isWebGrid ? styles.unitGridWeb : null,
-                { color: c.textMuted, fontFamily: fonts.medium },
-              ]}
-            >
-              {product.unit || "1 pc"}
-            </Text>
-          ) : null}
-          {isList ? (
+              <View
+                style={[
+                  styles.bottomStackList,
+                  editorial ? styles.bottomStackListEditorial : null,
+                  compactListLayout ? styles.bottomStackListCompact : null,
+                ]}
+              >
+                <View style={[styles.priceBlockListFull, compactListLayout ? styles.priceBlockListCompact : null]}>
+                  <View style={styles.priceLineList}>
+                    <Text
+                      style={[
+                        styles.price,
+                        styles.priceList,
+                        compactListLayout ? styles.priceListCompact : null,
+                        editorial ? styles.priceListEditorial : null,
+                        { color: c.textPrimary, fontFamily: fonts.semibold },
+                      ]}
+                    >
+                      {formatINRWhole(safePrice)}
+                    </Text>
+                    {listMrp ? (
+                      <Text style={[styles.mrpList, { color: c.textMuted, fontFamily: fonts.medium }]}>
+                        {formatINRWhole(listMrp)}
+                      </Text>
+                    ) : null}
+                  </View>
+                  {editorial && listMrp ? (
+                    <Text style={[styles.youSaveText, { color: c.secondaryDark, fontFamily: fonts.semibold }]}>
+                      You save {formatINRWhole(listMrp - safePrice)}
+                    </Text>
+                  ) : null}
+                </View>
+              </View>
+            </TouchableOpacity>
             <View
               style={[
                 styles.bottomStackList,
@@ -810,38 +875,13 @@ export default function ProductCard({
                 compactListLayout ? styles.bottomStackListCompact : null,
               ]}
             >
-              <View style={[styles.priceBlockListFull, compactListLayout ? styles.priceBlockListCompact : null]}>
-                <View style={styles.priceLineList}>
-                  <Text
-                    style={[
-                      styles.price,
-                      styles.priceList,
-                      compactListLayout ? styles.priceListCompact : null,
-                      editorial ? styles.priceListEditorial : null,
-                      { color: c.textPrimary, fontFamily: fonts.semibold },
-                    ]}
-                  >
-                    {formatINRWhole(safePrice)}
-                  </Text>
-                  {listMrp ? (
-                    <Text style={[styles.mrpList, { color: c.textMuted, fontFamily: fonts.medium }]}>
-                      {formatINRWhole(listMrp)}
-                    </Text>
-                  ) : null}
-                </View>
-                {editorial && listMrp ? (
-                  <Text style={[styles.youSaveText, { color: c.secondaryDark, fontFamily: fonts.semibold }]}>
-                    You save {formatINRWhole(listMrp - safePrice)}
-                  </Text>
-                ) : null}
-              </View>
               <View style={[styles.listCtaRow, compactListLayout ? styles.listCtaRowCompact : null]}>
                 {quantity > 0 ? (
                   <View
                     style={[
                       styles.stepper,
                       compactListLayout ? styles.stepperListCompact : null,
-                      { backgroundColor: editorial && isList ? ALCHEMY.brown : c.primaryDark },
+                      { backgroundColor: editorial ? ALCHEMY.brown : c.primaryDark },
                     ]}
                   >
                     <TouchableOpacity style={styles.stepButton} activeOpacity={0.85} onPress={onRemoveFromCart}>
@@ -859,37 +899,88 @@ export default function ProductCard({
                       compactListLayout ? styles.buttonListCompact : null,
                       isOutOfStock ? styles.buttonDisabled : null,
                       {
-                        backgroundColor: isOutOfStock ? c.textMuted : editorial && isList ? ALCHEMY.brown : c.primary,
+                        backgroundColor: isOutOfStock ? c.textMuted : editorial ? ALCHEMY.brown : c.primary,
                       },
-                      editorial && isList && !isOutOfStock ? styles.buttonEditorialList : null,
-                      editorial && isList && !isOutOfStock && compactListLayout ? styles.buttonEditorialListCompact : null,
+                      editorial && !isOutOfStock ? styles.buttonEditorialList : null,
+                      editorial && !isOutOfStock && compactListLayout ? styles.buttonEditorialListCompact : null,
                     ]}
                     activeOpacity={0.85}
                     onPress={onAddToCart}
                     disabled={isOutOfStock}
                   >
-                    <Ionicons
-                      name="bag-add-outline"
-                      size={compact && !isList ? icon.micro : icon.xs}
-                      color={semantic.text.onPrimary}
-                    />
+                    <Ionicons name="bag-add-outline" size={icon.xs} color={semantic.text.onPrimary} />
                     <Text style={[styles.buttonText, { fontFamily: fonts.bold, color: semantic.text.onPrimary }]}>
-                      {isOutOfStock ? "Out of Stock" : isList ? "Add" : compact ? "Add" : "ADD"}
+                      {isOutOfStock ? "Out of Stock" : "Add"}
                     </Text>
                   </TouchableOpacity>
                 )}
               </View>
             </View>
-          ) : (
-            <View style={styles.gridPriceRow}>
-              <Text style={[styles.gridPriceCurrent, { color: c.textPrimary }]}>{formatINR(safePrice)}</Text>
-              {listMrp ? (
-                <Text style={[styles.gridPriceMrp, { color: c.textMuted }]}>{formatINR(listMrp)}</Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            activeOpacity={0.94}
+            onPress={onPress}
+            onPressIn={isWeb ? undefined : handlePressIn}
+            onPressOut={isWeb ? undefined : handlePressOut}
+            accessibilityRole="button"
+          >
+            <View
+              style={[
+                styles.content,
+                styles.contentGridHome,
+                compactGridLayout ? styles.contentGridCompact : null,
+                isWebGrid ? styles.contentGridWeb : null,
+              ]}
+            >
+              {showCategory ? (
+                <Text
+                  style={[
+                    styles.category,
+                    styles.categoryGridHome,
+                    compactGridLayout ? styles.categoryGridCompact : null,
+                    isWebGrid ? styles.categoryGridWeb : null,
+                    { color: c.textMuted, fontFamily: fonts.semibold },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {product.category || "Groceries"}
+                </Text>
               ) : null}
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.name,
+                  styles.nameGridHome,
+                  compactGridLayout ? styles.nameGridCompact : null,
+                  isWebGrid ? styles.nameGridWeb : null,
+                  { color: c.textPrimary, fontFamily: fonts.semibold },
+                ]}
+              >
+                {product.name}
+              </Text>
+              {showUnitRow ? (
+                <Text
+                  style={[
+                    styles.unit,
+                    compactGridLayout ? styles.unitGridCompact : null,
+                    isWebGrid ? styles.unitGridWeb : null,
+                    { color: c.textMuted, fontFamily: fonts.medium },
+                  ]}
+                >
+                  {product.unit || "1 pc"}
+                </Text>
+              ) : null}
+              <View style={styles.gridPriceRow}>
+                <Text style={[styles.gridPriceCurrent, { color: c.textPrimary }]}>{formatINR(safePrice)}</Text>
+                {listMrp ? (
+                  <Text style={[styles.gridPriceMrp, { color: c.textMuted }]}>{formatINR(listMrp)}</Text>
+                ) : null}
+              </View>
             </View>
-          )}
-        </View>
-      </TouchableOpacity>
+          </TouchableOpacity>
+        )}
+      </View>
     </CardInner>
   );
 
@@ -1121,6 +1212,16 @@ function createStyles(c, isDark, layoutFlags = {}) {
     },
     premiumCardPressable: {
       width: "100%",
+    },
+    premiumImageHit: {
+      ...StyleSheet.absoluteFillObject,
+      zIndex: 0,
+    },
+    premiumContentPressable: {
+      width: "100%",
+    },
+    premiumPriceHit: {
+      flex: 1,
     },
     premiumImageArea: {
       position: "relative",

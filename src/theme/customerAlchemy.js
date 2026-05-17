@@ -7,23 +7,23 @@ export const FONT_DISPLAY = "PlayfairDisplay_700Bold";
 export const FONT_DISPLAY_SEMI = "PlayfairDisplay_600SemiBold";
 export const FONT_DISPLAY_ITALIC = "PlayfairDisplay_400Regular_Italic";
 
-/** Legacy keys preserved for minimal churn; `gold*` maps to brand red (CTAs, ribbons). */
+/** Legacy keys preserved for minimal churn; `gold*` maps to brass accent (not sale red). */
 export const ALCHEMY = {
-  cream: "#F6F8FC",
-  creamDeep: "#E9EEF6",
+  cream: "#FAFAF7",
+  creamDeep: "#F4F2EC",
   creamAlt: "#FFFFFF",
-  creamAltDeep: "#DEE6F1",
+  creamAltDeep: "#E8E6E1",
   creamHighlight: "#FBFCFE",
   ivory: "#FFFFFF",
-  pearl: "#F2F5FA",
-  brown: "#172033",
-  brownMuted: "#475569",
-  brownInk: "#0F172A",
-  gold: "#DC2626",
-  goldDeep: "#B91C1C",
-  goldBright: "#EF4444",
-  goldSoft: "rgba(220, 38, 38, 0.12)",
-  goldMist: "rgba(220, 38, 38, 0.14)",
+  pearl: "#F4F2EC",
+  brown: "#0E0E0E",
+  brownMuted: "#4A4A4A",
+  brownInk: "#0E1729",
+  gold: "#C8A97E",
+  goldDeep: "#A8895E",
+  goldBright: "#D4B896",
+  goldSoft: "rgba(200, 169, 126, 0.16)",
+  goldMist: "rgba(200, 169, 126, 0.14)",
   pillInactive: "#DCE4EF",
   cardBeige: "#F7F9FC",
   cardBg: "#FFFFFF",
@@ -41,6 +41,9 @@ export const HERITAGE = {
   amberMid: "#D97706",
   amberBright: "#F59E0B",
   amberDeep: "#78350F",
+  /** Editorial heritage trim (subline, underline) — distinct from CTAs (`ALCHEMY.gold*`). */
+  brass: "#C8A97E",
+  brassSoft: "rgba(200, 169, 126, 0.18)",
   soft: "rgba(217, 119, 6, 0.12)",
   mist: "rgba(245, 158, 11, 0.14)",
   ring: "rgba(217, 119, 6, 0.28)",
@@ -92,7 +95,7 @@ export function getAlchemyPalette(themeColors, isDark) {
     lineStrong: isDark ? c.borderStrong : ALCHEMY.lineStrong,
     goldSoft: isDark ? c.primarySoft : ALCHEMY.goldSoft,
     goldRing: isDark ? c.primaryBorder : ALCHEMY.gold,
-    glowPrimary: c.heroGlow || (isDark ? "rgba(239, 68, 68, 0.12)" : "rgba(220, 38, 38, 0.14)"),
+    glowPrimary: c.heroGlow || (isDark ? "rgba(200, 169, 126, 0.14)" : "rgba(200, 169, 126, 0.14)"),
     glowSecondary:
       c.heroGlowSecondary || (isDark ? "rgba(96, 165, 250, 0.08)" : "rgba(37, 99, 235, 0.08)"),
   };

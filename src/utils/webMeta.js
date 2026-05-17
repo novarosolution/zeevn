@@ -21,6 +21,8 @@ const ROUTE_KEYS = new Set([
   "faq",
   "privacy",
   "terms",
+  "shipping",
+  "returns",
   "blog",
   "blogPost",
   "category",
@@ -176,27 +178,60 @@ function normalizeReviewNode(review) {
   if (!review) return null;
   const ratingValue = Number(review.rating || 0);
   if (!ratingValue) return null;
+  const title = String(review.title || "").trim();
+  const body = String(review.body || review.comment || "").trim();
   return {
     "@type": "Review",
+    name: title || undefined,
     author: {
       "@type": "Person",
       name: String(review.authorName || review.userName || "Customer").trim() || "Customer",
     },
     datePublished: review.createdAt,
-    reviewBody: String(review.body || review.comment || "").trim(),
+    reviewBody: body || undefined,
     reviewRating: { "@type": "Rating", ratingValue, bestRating: 5 },
   };
+}
+
+function buildProductWeight(product = {}) {
+  if (product.weight && typeof product.weight === "object" && product.weight.value != null) {
+    return {
+      "@type": "QuantitativeValue",
+      value: Number(product.weight.value),
+      unitCode: product.weight.unitCode || "GRM",
+    };
+  }
+  return undefined;
+}
+
+function sortImagesForSchema(images = []) {
+  return [...images]
+    .filter(Boolean)
+    .map((img) => String(img).trim())
+    .filter(Boolean)
+    .sort((a, b) => {
+      const score = (url) => {
+        let s = 0;
+        if (/1200|1280|1600|1920/.test(url)) s += 4;
+        if (/cloudinary|cdn/i.test(url)) s += 2;
+        if (/^https:/i.test(url)) s += 1;
+        return s;
+      };
+      return score(b) - score(a);
+    });
 }
 
 export function buildProductSchema(product = {}, options = {}) {
   const siteUrl = options.siteUrl || APP_META.brand?.siteUrl || "";
   const brandName = options.brandName || APP_META.brand?.name || "Zeevan";
+  const productBrand = String(product.brand || "").trim() || brandName;
   const slug = String(product.slug || product.id || "").trim();
   const resolvedUrl =
     product.url || (slug ? `${String(siteUrl).replace(/\/$/, "")}/product/${encodeURIComponent(slug)}` : siteUrl);
   const description = String(product.description || product.shortDescription || "").trim();
-  const imageList = Array.isArray(product.images) ? product.images : [product.image];
-  const images = imageList.filter(Boolean).map((img) => toAbsolute(siteUrl, img));
+  const imageList = Array.isArray(product.images) ? product.images : [];
+  if (product.image) imageList.unshift(product.image);
+  const images = sortImagesForSchema(imageList).map((img) => toAbsolute(siteUrl, img));
   const numericPrice = Number(product.price);
   const hasPrice = Number.isFinite(numericPrice);
   const inStock = product.inStock !== false && Number(product.stockQty ?? 1) > 0;
@@ -205,19 +240,21 @@ export function buildProductSchema(product = {}, options = {}) {
   const topReviews = Array.isArray(product.topReviews)
     ? product.topReviews
     : Array.isArray(product.reviews)
-      ? product.reviews.slice(0, 3)
+      ? product.reviews.slice(0, 5)
       : [];
   const reviewNodes = topReviews.map((r) => normalizeReviewNode(r)).filter(Boolean);
+  const weightNode = buildProductWeight(product);
 
   return {
     "@context": "https://schema.org",
     "@type": "Product",
     name: String(product.name || "").trim(),
-    description,
-    image: images,
-    sku: product.sku || undefined,
-    brand: { "@type": "Brand", name: brandName },
-    category: product.category || undefined,
+    description: description || undefined,
+    image: images.length ? images : undefined,
+    sku: product.sku ? String(product.sku).trim() : undefined,
+    brand: { "@type": "Brand", name: productBrand },
+    category: product.category ? String(product.category).trim() : undefined,
+    weight: weightNode,
     offers: hasPrice
       ? {
           "@type": "Offer",
@@ -232,8 +269,16 @@ export function buildProductSchema(product = {}, options = {}) {
           seller: { "@type": "Organization", name: brandName },
           shippingDetails: {
             "@type": "OfferShippingDetails",
-            shippingRate: { "@type": "MonetaryAmount", value: "0", currency: "INR" },
-            shippingDestination: { "@type": "DefinedRegion", addressCountry: "IN" },
+            shippingRate: {
+              "@type": "MonetaryAmount",
+              value: "0",
+              currency: "INR",
+            },
+            shippingDestination: {
+              "@type": "DefinedRegion",
+              addressCountry: "IN",
+            },
+            description: "Free shipping on orders over ₹1,499 across India",
             deliveryTime: {
               "@type": "ShippingDeliveryTime",
               handlingTime: { "@type": "QuantitativeValue", minValue: 0, maxValue: 1, unitCode: "DAY" },
@@ -251,8 +296,12 @@ export function buildProductSchema(product = {}, options = {}) {
         }
       : undefined,
     aggregateRating:
-      ratingValue > 0
-        ? { "@type": "AggregateRating", ratingValue, reviewCount: Math.max(reviewCount, 1) }
+      ratingValue > 0 && reviewCount > 0
+        ? {
+            "@type": "AggregateRating",
+            ratingValue,
+            reviewCount,
+          }
         : undefined,
     review: reviewNodes.length ? reviewNodes : undefined,
   };
@@ -459,6 +508,24 @@ export function applyRouteMeta(routeKey, dynamicOverrides = {}) {
     href: toAbsolute(siteUrl, APPLE_TOUCH_ICON_PATH),
   });
   appendLink({ rel: "icon", type: "image/png", sizes: "512x512", href: toAbsolute(siteUrl, PWA_ICON_512_PATH) });
+
+  const lcpImage = dynamicOverrides.lcpImage;
+  if (lcpImage) {
+    const lcpHref = toAbsolute(siteUrl, lcpImage);
+    const preloadAttrs = {
+      rel: "preload",
+      as: "image",
+      href: lcpHref,
+      fetchpriority: "high",
+    };
+    if (dynamicOverrides.lcpImageSrcSet) {
+      preloadAttrs.imagesrcset = String(dynamicOverrides.lcpImageSrcSet);
+    }
+    if (dynamicOverrides.lcpImageSizes) {
+      preloadAttrs.imagesizes = String(dynamicOverrides.lcpImageSizes);
+    }
+    appendLink(preloadAttrs);
+  }
 
   if (safeRouteKey === "home") {
     appendSchemaScript("organization", buildOrganizationSchema(brand, siteUrl));

@@ -5,7 +5,7 @@
  * **Home:** `HOME_VIEW_DEFAULTS`, `HOME_*` marketing blocks, stats, testimonials, catalog intros.
  * **Commerce:** `CART_*`, `PRODUCT_SCREEN`, `MY_ORDERS_UI`, `ORDER_LIVE_TRACKING`, `PAYMENT_METHODS`.
  * **Account:** `PROFILE_SCREEN`, `SETTINGS_SCREEN`, `SUPPORT_SCREEN`, `LOCATION_BAR`.
- * **Auth:** `LOGIN_SCREEN`, `REGISTER_SCREEN`.
+ * **Auth:** `AUTH_SCREEN` (`AuthShell`), `APP_CONTENT_AUTH` (legacy), aliases `LOGIN_SCREEN`, `REGISTER_SCREEN`.
  * **Inbox:** `NOTIFICATIONS_SCREEN`.
  * **Delivery:** `DELIVERY_*`.
  * **Admin content hints:** `ADMIN_HOME_VIEW_COPY`.
@@ -59,6 +59,53 @@ export const APP_TAGLINE = RUNTIME_BRAND_TAGLINE;
 export const APP_WORDMARK_SUBLINE = RUNTIME_BRAND_SUBLINE;
 export const APP_HERO_KICKER = `${APP_DISPLAY_NAME} · ${APP_WORDMARK_SUBLINE}`;
 export const SEARCH_PLACEHOLDER = RUNTIME_SEARCH_PLACEHOLDER;
+
+/** Rotating hero strings for web header search (premium shell). */
+export const SEARCH_PLACEHOLDERS = [
+  SEARCH_PLACEHOLDER,
+  "Search ghee, atta & oils…",
+  "Find spices, rice & pickles…",
+  "Discover small-batch staples…",
+];
+
+/** Accessibility + chrome copy for [`WebAppHeader`](src/components/WebAppHeader.js). */
+export const WEB_HEADER_UI = {
+  skipToContentLabel: "Skip to main content",
+  primaryNavigationLabel: "Primary",
+  searchShortcutApple: "⌘K",
+  searchShortcutWin: "Ctrl+K",
+  locationNoAddressHint: "Set your delivery location",
+  locationWithAddressHint: "Delivery address",
+  locationManageAction: "Manage addresses",
+};
+
+/** Full-screen / overlay search chrome. */
+export const SEARCH_OVERLAY_UI = {
+  placeholder: "Search the pantry…",
+  searchA11y: "Search products",
+  closeA11y: "Close search",
+  recentTitle: "Recent",
+  trendingTitle: "Trending",
+  productsTitle: "Products",
+};
+
+/** 404 / not found page. */
+export const NOT_FOUND_SCREEN = {
+  code: "404",
+  title: "This page took a detour.",
+  primaryCta: "Back to home",
+  secondaryCta: "Browse shop",
+  stripTitle: "While you're here…",
+};
+
+/** Suggested trending queries (header popover overlay). */
+export const TRENDING_SEARCHES = [
+  "A2 ghee",
+  "cold pressed oil",
+  "aged basmati",
+  "single origin spices",
+];
+
 export const SUPPORT_EMAIL_DISPLAY = RUNTIME_SUPPORT_EMAIL;
 export const APP_META = {
   brand: {
@@ -120,6 +167,7 @@ export const APP_META = {
     },
     checkout: { title: "Checkout", noindex: true, canonical: "/checkout" },
     orders: { title: "Your Orders", noindex: true, canonical: "/orders" },
+    notifications: { title: "Notifications", noindex: true, canonical: "/notifications" },
     account: { title: "Your Account", noindex: true, canonical: "/account" },
     about: {
       title: "Our Story — Zeevan",
@@ -140,6 +188,8 @@ export const APP_META = {
     },
     privacy: { title: "Privacy Policy", canonical: "/privacy" },
     terms: { title: "Terms of Service", canonical: "/terms" },
+    shipping: { title: "Shipping Policy", canonical: "/shipping" },
+    returns: { title: "Returns & Refunds", canonical: "/returns" },
     blog: {
       title: "Journal — Zeevan",
       description: "Recipes, sourcing stories, and the craft behind the pantry. Slow-read writing from the Zeevan team.",
@@ -551,6 +601,42 @@ export const HOME_SEARCH_UI = {
   notificationsA11yLabelWithCount: (n) => `Notifications, ${n} unread`,
 };
 
+/** Product listing (search / category browse) — filters, sort, empty states. */
+export const PLP_UI = {
+  breadcrumbHome: "Home",
+  breadcrumbCategories: "Categories",
+  breadcrumbSearch: "Search results",
+  breadcrumbJoiner: " › ",
+  categoryPageTitle: "Shop by category",
+  categoryHubBreadcrumb: "Home › Categories",
+  introTitle: "Find something delicious",
+  introBody: "Use the search field in the header to look up products, or browse by category from the grid below.",
+  introCta: "Go home",
+  filtersCta: "Filters",
+  filtersSheetTitle: "Filters",
+  sortCta: "Sort",
+  sortSheetTitle: "Sort by",
+  activeFiltersLabel: "Active filters",
+  sectionCategory: "Category",
+  sectionType: "Product type",
+  sectionAvailability: "Availability",
+  inStockOnly: "In stock only",
+  clearFiltersCta: "Clear filters",
+  noMatchesTitle: "No matches",
+  noMatchesBody: "Try adjusting filters or broaden your search.",
+  resultsForQuery: (q) => `Results for “${q}”`,
+  browseCategoryTitle: (label) => (label ? `Browse ${label}` : "Browse category"),
+  sortFeatured: "Featured",
+  sortPriceAsc: "Price · Low to high",
+  sortPriceDesc: "Price · High to low",
+  sortName: "Name A–Z",
+  chipRemoveA11y: "Remove filter",
+  filterSheetCloseA11y: "Close filters",
+  sortSheetCloseA11y: "Close sort options",
+  /** Stack header when no query/category context yet */
+  screenTitleDefault: "Search",
+};
+
 /** Suffix for the side menu “starter” row (after dynamic counts). */
 export const HOME_MENU_STARTER_TAG = "Starter picks";
 
@@ -558,9 +644,9 @@ export const HOME_MENU_STARTER_TAG = "Starter picks";
 export const CUSTOMER_NAV_LINKS = {
   home: { key: "home", label: "Home", route: "Home", icon: "home-outline" },
   cart: { key: "cart", label: "Cart", route: "Cart", icon: "bag-outline" },
-  orders: { key: "orders", label: "Orders", route: "MyOrders", icon: "receipt-outline" },
+  orders: { key: "orders", label: "Orders", route: "Profile", accountScreen: "Orders", icon: "receipt-outline" },
   profile: { key: "profile", label: "Profile", route: "Profile", icon: "person-outline" },
-  settings: { key: "settings", label: "Settings", route: "Settings", icon: "settings-outline" },
+  settings: { key: "settings", label: "Settings", route: "Profile", accountScreen: "AccountProfile", icon: "settings-outline" },
   support: { key: "support", label: "Support", route: "Support", icon: "chatbubble-ellipses-outline" },
   delivery: { key: "delivery", label: "Delivery", route: "DeliveryDashboard", icon: "bicycle-outline" },
   admin: { key: "admin", label: "Admin", route: "AdminDashboard", icon: "shield-checkmark-outline" },
@@ -598,9 +684,9 @@ export const FOOTER_COMPACT = {
 export const APP_FOOTER_NAV_LINKS = [
   { label: CUSTOMER_NAV_LINKS.home.label, route: CUSTOMER_NAV_LINKS.home.route },
   { label: CUSTOMER_NAV_LINKS.cart.label, route: CUSTOMER_NAV_LINKS.cart.route },
-  { label: CUSTOMER_NAV_LINKS.orders.label, route: CUSTOMER_NAV_LINKS.orders.route },
-  { label: CUSTOMER_NAV_LINKS.profile.label, route: CUSTOMER_NAV_LINKS.profile.route },
-  { label: CUSTOMER_NAV_LINKS.support.label, route: CUSTOMER_NAV_LINKS.support.route },
+  { ...CUSTOMER_NAV_LINKS.orders },
+  { ...CUSTOMER_NAV_LINKS.profile },
+  { ...CUSTOMER_NAV_LINKS.support },
 ];
 
 /** Wide home footer: column titles + links (`route` null = no navigation). */
@@ -610,14 +696,14 @@ export const HOME_PAGE_FOOTER_COLUMNS = [
     links: [
       { label: "All products", route: CUSTOMER_NAV_LINKS.home.route },
       { label: CUSTOMER_NAV_LINKS.cart.label, route: CUSTOMER_NAV_LINKS.cart.route },
-      { label: CUSTOMER_NAV_LINKS.orders.label, route: CUSTOMER_NAV_LINKS.orders.route },
+      { ...CUSTOMER_NAV_LINKS.orders },
     ],
   },
   {
     title: "Support",
     links: [
       { label: CUSTOMER_NAV_LINKS.support.label, route: CUSTOMER_NAV_LINKS.support.route },
-      { label: "Delivery", route: "ManageAddress" },
+      { label: "Delivery", route: "Profile", accountScreen: "Addresses" },
       { label: CUSTOMER_NAV_LINKS.profile.label, route: CUSTOMER_NAV_LINKS.profile.route },
       { label: "Online payment coming soon", route: null },
     ],
@@ -657,7 +743,7 @@ export const HOME_FOOTER = {
       links: [
         { label: "All products", route: CUSTOMER_NAV_LINKS.home.route },
         { label: CUSTOMER_NAV_LINKS.cart.label, route: CUSTOMER_NAV_LINKS.cart.route },
-        { label: CUSTOMER_NAV_LINKS.orders.label, route: CUSTOMER_NAV_LINKS.orders.route },
+        { ...CUSTOMER_NAV_LINKS.orders },
         { label: "Categories", route: "Categories" },
       ],
     },
@@ -666,29 +752,30 @@ export const HOME_FOOTER = {
       title: "Help",
       links: [
         { label: CUSTOMER_NAV_LINKS.support.label, route: CUSTOMER_NAV_LINKS.support.route },
-        { label: "Delivery", route: "ManageAddress" },
-        { label: "Track order", route: CUSTOMER_NAV_LINKS.orders.route },
-        { label: "Contact us", route: CUSTOMER_NAV_LINKS.support.route },
+        { label: "FAQ", route: "Faq" },
+        { label: "Contact", route: "Contact" },
+        { label: "Delivery", route: "Profile", accountScreen: "Addresses" },
+        { ...CUSTOMER_NAV_LINKS.orders, label: "Track order" },
       ],
     },
     {
       key: "company",
       title: "Company",
       links: [
-        { label: "About Zeevan", route: null },
+        { label: "About Zeevan", route: "About" },
         { label: "Our process", route: "ProcessInfo" },
         { label: "Quality promise", route: "QualityInfo" },
-        { label: "Stories", route: "Reviews" },
+        { label: "Journal", route: "Blog" },
       ],
     },
     {
       key: "legal",
       title: "Legal",
       links: [
-        { label: "Privacy policy", route: null },
-        { label: "Terms of use", route: null },
-        { label: "Refund policy", route: null },
-        { label: "Shipping policy", route: null },
+        { label: "Privacy policy", route: "Privacy" },
+        { label: "Terms of use", route: "Terms" },
+        { label: "Refund policy", route: "ReturnsPolicy" },
+        { label: "Shipping policy", route: "ShippingPolicy" },
       ],
     },
   ],
@@ -821,6 +908,558 @@ export const PROFILE_SCREEN = {
   signOutLabel: "Sign out",
 };
 
+/** Account overview dashboard (`AccountOverview` inside `AccountShell`). */
+export const ACCOUNT_OVERVIEW_SCREEN = {
+  pageTitle: "Overview",
+  greetingTemplate: "Good {time}, {firstName}.",
+  greetingMorning: "morning",
+  greetingAfternoon: "afternoon",
+  greetingEvening: "evening",
+  subline: "Here's everything from your account today.",
+
+  profileCompleteness: {
+    percentTemplate: "Your profile is {percent}% complete",
+    completeLine: "Profile complete · You're all set",
+    missingLinkTemplate: "Add {label} →",
+  },
+
+  stats: {
+    activeOrders: "Active orders",
+    wishlist: "Wishlist",
+    loyalty: "Loyalty points",
+    saved: "Saved this year",
+  },
+
+  activeOrder: {
+    trackCta: "Track order",
+    etaTemplate: "Arrives by {time}",
+    summaryTemplate: "{count} items · {total}",
+  },
+
+  progressSteps: ["Placed", "Packed", "Out", "Delivered"],
+
+  sections: {
+    recentOrders: { overline: "RECENT ORDERS", title: "Your latest", trailing: "View all" },
+    wishlist: { overline: "WISHLIST", title: "Saved for later", trailing: "View all" },
+    quickAccess: { addressLabel: "Default address", paymentLabel: "Default payment", change: "Change" },
+    support: {
+      title: "Need help?",
+      body: "We respond within one business day.",
+      whatsapp: "Chat on WhatsApp",
+      email: "Email us",
+    },
+  },
+
+  offer: {
+    headline: "Replenish your pantry — 15% off on repeats",
+    cta: "Shop now",
+    dismissA11y: "Dismiss offer",
+  },
+
+  loyaltyModal: {
+    title: "Your loyalty points",
+    bodyTemplate: "You have {points} points ready to redeem on your next order.",
+    redeemCta: "Redeem rewards",
+    closeCta: "Close",
+  },
+
+  empty: {
+    recentOrders: {
+      body: "Start shopping to see your orders here",
+      link: "Browse the shop",
+    },
+  },
+};
+
+/** Account orders list (`AccountOrdersScreen`). */
+export const MY_ORDERS_SCREEN = {
+  pageTitle: "Orders",
+  pageSubtitle: "Track your orders, returns, and replacements.",
+  searchPlaceholder: "Search by order ID or product",
+  filters: {
+    all: "All",
+    active: "Active",
+    delivered: "Delivered",
+    cancelled: "Cancelled",
+    returned: "Returned",
+  },
+  sort: {
+    label: "Sort",
+    newest: "Newest",
+    oldest: "Oldest",
+    valueHigh: "Highest value",
+    valueLow: "Lowest value",
+  },
+  orderIdTemplate: "Order #{id}",
+  placedOnTemplate: "Placed on {date}",
+  totalTemplate: "Total {amount}",
+  delivery: {
+    arrivingTemplate: "Arriving by {date} · {time}",
+    deliveredTemplate: "Delivered on {date}",
+    cancelledTemplate: "Cancelled on {date}",
+  },
+  actions: {
+    viewOrder: "View order",
+    track: "Track",
+    reorder: "Reorder",
+    returnItem: "Return",
+    loadMore: "Load more",
+  },
+  empty: {
+    title: "No orders yet",
+    description: "When you place an order, it will show up here.",
+    cta: "Start shopping",
+    whileHere: "While you're here…",
+  },
+  moreItemsTemplate: "+{count} more",
+};
+
+/** Account order detail (`AccountOrderDetailScreen`). */
+export const ORDER_DETAIL_SCREEN = {
+  breadcrumbOrders: "Orders",
+  orderTitleTemplate: "Order #{id}",
+  notFound: "Order not found",
+  backToOrders: "Back to orders",
+  timeline: {
+    placed: "Placed",
+    packed: "Packed",
+    out: "Out for delivery",
+    delivered: "Delivered",
+    returned: "Returned",
+    currentDescriptions: {
+      placed: "We've received your order.",
+      packed: "Your items are being packed.",
+      out: "Your order is on the way with our delivery partner.",
+      delivered: "Your order was delivered successfully.",
+      returned: "This order was returned.",
+    },
+  },
+  sections: {
+    shipping: { overline: "SHIPPING", title: "Delivery address" },
+    payment: { overline: "PAYMENT", title: "Order summary" },
+    help: { overline: "SUPPORT", title: "Need help?" },
+  },
+  payment: {
+    subtotal: "Subtotal",
+    shipping: "Shipping",
+    shippingFree: "Free",
+    discount: "Discount",
+    tax: "Tax",
+    total: "Total",
+    paidWithTemplate: "Paid with {method}",
+  },
+  actions: {
+    downloadInvoice: "Download invoice",
+    reorder: "Reorder",
+    returnItem: "Return",
+    track: "Track order",
+    getHelp: "Get help",
+    changeAddress: "Change",
+    whatsapp: "WhatsApp",
+    email: "Email",
+    call: "Call",
+  },
+  reorderModal: {
+    titleTemplate: "Add these {count} items to your bag?",
+    confirm: "Add to bag",
+    cancel: "Cancel",
+    adding: "Adding…",
+  },
+  invoiceSoon: "Invoice downloads are coming soon.",
+};
+
+/** Nested account profile (`AccountProfileScreen` inside `AccountShell`). */
+export const ACCOUNT_PROFILE_SCREEN = {
+  breadcrumbAccount: "Account",
+  breadcrumbProfile: "Profile",
+  pageTitle: "Profile",
+  pageSubtitle: "Manage your personal information, photo, and password.",
+
+  avatar: {
+    changePhoto: "Change photo",
+    remove: "Remove",
+    uploadingLabel: "Uploading…",
+  },
+
+  identity: {
+    verified: "Verified",
+    unverified: "Unverified",
+    verify: "Verify",
+    memberSinceTemplate: "Member since {month} {year} · {orderCount} orders",
+    editName: "Edit name",
+  },
+
+  sections: {
+    personalDetails: { overline: "PERSONAL DETAILS", title: "About you" },
+    security: { overline: "SECURITY", title: "Password & sign-in" },
+    addresses: { overline: "ADDRESSES", title: "Saved addresses", trailing: "Manage all" },
+    payment: { overline: "PAYMENT", title: "Saved payment methods", trailing: "Manage all" },
+    preferences: { overline: "PREFERENCES", title: "App preferences" },
+    dataPrivacy: { overline: "DATA & PRIVACY", title: "Your data" },
+  },
+
+  fields: {
+    fullName: { label: "Full name", placeholder: "Your full name" },
+    displayName: {
+      label: "Display name",
+      placeholder: "How you want to be seen",
+      helper: "Shown on your reviews and orders.",
+    },
+    email: { label: "Email", changeLink: "Change email" },
+    phone: { label: "Phone", verifyLink: "Verify" },
+    dob: { label: "Date of birth", helper: "We'll send you a small gift on your birthday." },
+    gender: { label: "Gender", options: ["Prefer not to say", "Female", "Male", "Other"] },
+  },
+
+  emailVerifyBanner: {
+    message: "Verify your email to unlock all features.",
+    cta: "Send verification",
+  },
+
+  avatarOptions: {
+    title: "Profile photo",
+    takePhoto: "Take photo",
+    chooseLibrary: "Choose from library",
+    removePhoto: "Remove photo",
+    cancel: "Cancel",
+    removeConfirmTitle: "Remove profile photo?",
+    removeConfirmBody: "Your photo will be removed from your account.",
+    removeConfirmCta: "Remove",
+  },
+
+  conflictModal: {
+    title: "Profile was updated elsewhere",
+    body: "Refresh to see the latest, or overwrite with your changes.",
+    cancel: "Cancel",
+    refresh: "Refresh",
+    overwrite: "Overwrite",
+  },
+
+  offlineSaveToast: "You're offline. Changes saved locally and will sync when you're back.",
+  offlineSyncToast: "Profile synced successfully.",
+
+  buttons: {
+    save: "Save changes",
+    saving: "Saving…",
+    saved: "Saved",
+    discard: "Discard",
+    changePassword: "Change password",
+    add: "Add",
+    manageAll: "Manage all",
+    downloadData: "Download my data",
+    privacyPrefs: "Privacy preferences",
+    deleteAccount: "Delete account",
+    signOut: "Sign out",
+  },
+
+  security: {
+    passwordLastChangedTemplate: "Last changed {time}",
+    passwordNever: "Never changed",
+    twoFactorEnabled: "Enabled",
+    twoFactorDisabled: "Disabled",
+    biometricLabel: "Biometric sign-in",
+    activeSessionsTemplate: "{count} devices signed in",
+    manageSessions: "Manage devices",
+    twoFactorManage: "Manage devices",
+    changePasswordTitle: "Change password",
+    changePasswordBody: "Enter your current password, then choose a new one.",
+    sessionsTitle: "Active sessions",
+    revokeSession: "Revoke",
+    thisDevice: "This device",
+    activityLink: "Recent account activity",
+  },
+
+  passwordChange: {
+    currentLabel: "Current password",
+    newLabel: "New password",
+    confirmLabel: "Confirm new password",
+    submit: "Update password",
+    mismatch: "New passwords do not match.",
+    success: "Password updated.",
+    wrongPassword: "Current password is incorrect.",
+  },
+
+  emailChange: {
+    title: "Change email",
+    newLabel: "New email address",
+    currentPasswordLabel: "Current password",
+    submit: "Request change",
+    success: "Check your current inbox for confirmation, then verify the new address.",
+  },
+
+  phoneChange: {
+    title: "Change phone",
+    newLabel: "New phone number",
+    otpLabel: "Verification code",
+    sendOtp: "Send code",
+    verify: "Verify & save",
+    success: "Phone number updated.",
+  },
+
+  activityScreen: {
+    title: "Account activity",
+    subtitle: "Sign-ins and sensitive changes from the last 90 days.",
+    empty: "No recent activity recorded.",
+  },
+
+  preferences: {
+    languageLabel: "Language",
+    currencyLabel: "Currency",
+    timezoneLabel: "Time zone",
+    themeLabel: "Theme",
+    themeOptions: ["Light", "Dark", "System"],
+    unitsLabel: "Measurement units",
+    unitsOptions: ["Metric (kg, ml)", "Imperial (lb, fl oz)"],
+  },
+
+  deleteFlow: {
+    title: "Delete your account?",
+    body: "All order history, addresses, payment methods, and personal data will be permanently removed within 30 days. This cannot be undone.",
+    confirmLabel: "Type DELETE to confirm",
+    reasonPrompt: "We're sad to see you go. Why are you leaving?",
+    reasonOptions: [
+      "Privacy concerns",
+      "Too expensive",
+      "Found an alternative",
+      "Didn't use it enough",
+      "Other",
+    ],
+    feedbackPlaceholder: "Anything else we should know? (optional)",
+    cancelCta: "Cancel",
+    confirmCta: "Delete my account",
+    confirmDisabledLabel: "Type DELETE to enable",
+    deleting: "Deleting…",
+  },
+
+  discardModal: {
+    title: "Discard changes?",
+    body: "You have unsaved changes. Leave without saving?",
+    stay: "Keep editing",
+    leave: "Discard",
+  },
+
+  toasts: {
+    profileSaved: "Profile updated",
+    photoUploaded: "Photo updated",
+    photoRemoved: "Photo removed",
+    saveError: "Couldn't save changes. Please try again.",
+    networkError: "Check your connection and try again.",
+    dataExportRequested: "We'll email your data export shortly.",
+    verifySoon: "Verification is coming soon.",
+    verifySent: "Verification email sent. Check your inbox.",
+    deletionRequested: "Account deletion requested. Signing you out.",
+  },
+
+  empty: {
+    noAddresses: {
+      title: "No saved addresses",
+      body: "Add an address to make checkout faster.",
+      cta: "Add address",
+    },
+    noPayment: {
+      title: "No saved methods",
+      body: "Add a card or UPI for one-tap checkout.",
+      cta: "Add method",
+    },
+  },
+};
+
+/** Saved addresses — [`AccountAddressesScreen.js`](../screens/account/AccountAddressesScreen.js). */
+export const ADDRESSES_SCREEN = {
+  breadcrumbAccount: "Account",
+  breadcrumbCurrent: "Addresses",
+  pageTitle: "Addresses",
+  pageSubtitle: "Delivery locations for checkout and order updates.",
+  addCardLabel: "Add new address",
+  addCardA11y: "Add a new delivery address",
+  defaultBadge: "Default",
+  setDefaultLink: "Set as default",
+  editA11y: "Edit address",
+  deleteA11y: "Delete address",
+  modalAddTitle: "Add address",
+  modalEditTitle: "Edit address",
+  fields: {
+    fullName: { label: "Full name", placeholder: "Full name" },
+    phone: { label: "Phone", placeholder: "Mobile number" },
+    countryCode: "+91",
+    pincode: { label: "Pincode", placeholder: "6-digit PIN" },
+    city: { label: "City", placeholder: "City" },
+    state: { label: "State", placeholder: "State" },
+    line1: { label: "Address line 1", placeholder: "House no., building name" },
+    line2: { label: "Address line 2", placeholder: "Street, area" },
+    landmark: {
+      label: "Landmark",
+      placeholder: "Optional",
+      helper: "E.g., near park, bus stop",
+    },
+    tag: { label: "Address tag" },
+    customTag: { label: "Custom label", placeholder: "e.g. Parents, Studio" },
+    makeDefault: "Make this my default address",
+  },
+  tagOptions: [
+    { id: "HOME", label: "Home" },
+    { id: "WORK", label: "Work" },
+    { id: "OTHER", label: "Other" },
+  ],
+  saveCta: "Save address",
+  savingCta: "Saving…",
+  cancelCta: "Cancel",
+  deleteModal: {
+    title: "Delete this address?",
+    body: "This address will be removed from your account. You can add it again anytime.",
+    cancel: "Cancel",
+    confirm: "Delete",
+    deleting: "Deleting…",
+  },
+  empty: {
+    title: "No saved addresses yet",
+    description: "Save a delivery address for faster checkout and accurate order updates.",
+    cta: "Add your first address",
+  },
+  errors: {
+    load: "Couldn't load addresses. Pull to refresh or try again.",
+    save: "Couldn't save this address. Check the fields and try again.",
+    delete: "Couldn't delete this address.",
+    missingFields: "Fill all required fields before saving.",
+  },
+};
+
+/**
+ * Saved payment methods — [`AccountPaymentScreen.js`](../screens/account/AccountPaymentScreen.js).
+ *
+ * **PCI:** Card/UPI capture must use the payment gateway hosted page only (`openPaymentGatewayHostedPage`).
+ * Never collect full card numbers in this app.
+ */
+export const PAYMENT_SCREEN = {
+  breadcrumbAccount: "Account",
+  breadcrumbCurrent: "Payment methods",
+  pageTitle: "Payment methods",
+  pageSubtitle: "Cards and UPI for faster checkout.",
+  securityBanner:
+    "Your payment info is stored securely with Razorpay/Stripe. Zeevan never sees your full card number.",
+  cardsSection: { overline: "CARDS", title: "Saved cards" },
+  upiSection: { overline: "UPI", title: "UPI IDs" },
+  addCardLabel: "Add payment method",
+  addCardA11y: "Add a card or UPI via secure payment page",
+  addCardHint: "You'll complete setup on our secure payment partner page.",
+  defaultBadge: "Default",
+  setDefaultLink: "Set as default",
+  deleteCardA11y: "Remove card",
+  deleteUpiA11y: "Remove UPI ID",
+  maskedCardTemplate: "•••• •••• •••• {last4}",
+  expiryTemplate: "Expires {expiry}",
+  maskedUpiTemplate: "{masked}",
+  gatewayRedirectTitle: "Continue on secure payment page",
+  gatewayRedirectBody:
+    "To protect your card details, we open Razorpay's hosted page. Zeevan never stores your full card number.",
+  gatewayContinueCta: "Continue securely",
+  gatewayCancelCta: "Not now",
+  gatewayMissingTitle: "Payment page unavailable",
+  gatewayMissingBody: "Set EXPO_PUBLIC_RAZORPAY_PAYMENT_LINK to enable adding payment methods.",
+  empty: {
+    title: "No payment methods saved",
+    description: "Add a card or UPI for one-tap checkout on your next order.",
+    cta: "Add a card or UPI",
+  },
+  deleteCard: {
+    title: "Remove this card?",
+    body: "It will be removed from saved methods on this device.",
+    cancel: "Cancel",
+    confirm: "Remove",
+  },
+  deleteUpi: {
+    title: "Remove this UPI ID?",
+    body: "It will be removed from saved methods on this device.",
+    cancel: "Cancel",
+    confirm: "Remove",
+  },
+};
+
+/** Wishlist — [`AccountWishlistScreen.js`](../screens/account/AccountWishlistScreen.js). */
+export const WISHLIST_SCREEN = {
+  breadcrumbAccount: "Account",
+  breadcrumbCurrent: "Wishlist",
+  pageTitle: "Wishlist",
+  subtitleTemplate: "{count} items saved",
+  subtitleOne: "1 item saved",
+  subtitleEmpty: "No items saved yet",
+  moveAllCta: "Move all to bag",
+  sortCta: "Sort by",
+  sortTitle: "Sort wishlist",
+  sortOptions: [
+    { id: "recent", label: "Recently added" },
+    { id: "priceAsc", label: "Price: low to high" },
+    { id: "priceDesc", label: "Price: high to low" },
+    { id: "nameAsc", label: "Name: A–Z" },
+  ],
+  empty: {
+    title: "Your wishlist is empty",
+    description: "Save pieces you love — they'll wait here until you're ready.",
+    cta: "Browse products",
+  },
+  trending: {
+    overline: "TRENDING",
+    title: "Trending now",
+  },
+  removedToast: "Removed",
+  undoToastAction: "Undo",
+  moveAllModal: {
+    title: "Move items to bag?",
+    bodyTemplate: "{inStock} of {total} items are in stock and will be added.",
+    outOfStockNote: "{count} out-of-stock items will be skipped.",
+    confirm: "Add to bag",
+    cancel: "Cancel",
+    adding: "Adding…",
+    allOutOfStock: "All saved items are currently out of stock.",
+  },
+  loading: "Loading wishlist…",
+};
+
+/** Notification preferences — [`AccountNotificationPrefsScreen.js`](../screens/account/AccountNotificationPrefsScreen.js). */
+export const NOTIFICATION_PREFS_SCREEN = {
+  breadcrumbAccount: "Account",
+  breadcrumbCurrent: "Notifications",
+  pageTitle: "Notifications",
+  pageSubtitle: "Choose what you want to hear from us, and how.",
+  channels: {
+    email: "Email",
+    sms: "SMS",
+    whatsapp: "WhatsApp",
+    push: "Push",
+  },
+  categories: {
+    orderUpdates: {
+      label: "Order updates",
+      helper: "Required for order status",
+      locked: true,
+    },
+    delivery: { label: "Delivery notifications" },
+    offers: { label: "Offers & promotions" },
+    memberDrops: { label: "Member-only drops" },
+    recipe: { label: "Recipe & inspiration" },
+    backInStock: { label: "Product back in stock" },
+    wishlistPriceDrops: { label: "Wishlist price drops" },
+    surveys: { label: "Surveys & feedback" },
+  },
+  privacy: {
+    overline: "DATA",
+    title: "Personal data",
+    personalized: {
+      label: "Personalized recommendations",
+      helper: "We use your order history to suggest products you might love.",
+    },
+    marketingPartners: {
+      label: "Share with marketing partners",
+    },
+    downloadData: "Download my data",
+    deleteAccount: "Delete my account",
+  },
+  saveCta: "Save preferences",
+  savingCta: "Saving…",
+  savedToast: "Preferences saved",
+  dataExportToast: "We'll email your data export shortly.",
+};
+
 /** Settings screen — short labels for density. */
 export const SETTINGS_SCREEN = {
   pageTitle: "Settings",
@@ -884,52 +1523,242 @@ const PASSWORD_LABEL = ["Pass", "word"].join("");
 const CONFIRM_PASSWORD_LABEL = `Confirm ${PASSWORD_LABEL.toLowerCase()}`;
 const PASSWORD_MISMATCH_TEXT = `${PASSWORD_LABEL}s do not match.`;
 
-/** Login — [`LoginScreen.js`](../screens/LoginScreen.js). */
-export const LOGIN_SCREEN = {
-  heroBannerA11y: `${APP_DISPLAY_NAME} sign in`,
-  heroKicker: "",
-  heroTitle: "Welcome back",
-  heroSubtitle: "Sign in for faster checkout and tracking.",
-  authEyebrow: "Account access",
-  authTitle: "Sign in",
-  authSubtitle: "Use your Zeevan account.",
-  heroHighlights: [],
-  labelEmail: "Email",
-  labelSecret: PASSWORD_LABEL,
-  submitLoading: "Please wait…",
-  submitCta: "Sign in",
-  dividerOr: "or",
-  createAccountCta: "Create new account",
-  guestCta: "Continue as guest",
-  assuranceNote: "",
-  genericError: "Unable to sign in. Please try again.",
+/** Editorial imagery + quote — auth split layout (tablet/desktop left rail). */
+export const AUTH_EDITORIAL_LAYOUT = {
+  heroBannerA11y: `${APP_DISPLAY_NAME} heritage storytelling imagery`,
+  heroImageUri:
+    "https://images.unsplash.com/photo-1556912173-671ae26ea723?auto=format&fit=crop&w=1600&q=80",
+  heroOverline: "HERITAGE",
+  heroQuote: "Crafted with intention — remembered long after the moment passes.",
+  heroQuoteAttribution: `— ${APP_DISPLAY_NAME}`,
 };
 
-/** Register — [`RegisterScreen.js`](../screens/RegisterScreen.js). Validation lines mirror client checks. */
-export const REGISTER_SCREEN = {
-  heroBannerA11y: `Create your ${APP_DISPLAY_NAME} account`,
-  heroKicker: "",
-  heroTitle: "Create your account",
-  heroSubtitle: "Save your details for quicker checkout.",
-  authEyebrow: "New account",
-  authTitle: "Register",
-  authSubtitle: "Create your Zeevan account.",
-  heroHighlights: [],
-  labelFullName: "Full name",
-  labelEmail: "Email",
-  labelSecret: PASSWORD_LABEL,
-  labelConfirmSecret: CONFIRM_PASSWORD_LABEL,
-  credentialHelper: "",
-  submitLoading: "Please wait…",
-  submitCta: "Create account",
-  dividerExisting: "Already have an account",
-  signInInsteadCta: "Sign in instead",
-  assuranceNote: "",
-  emailRequired: "Please enter your email.",
-  emailInvalid: "Please enter a valid email address.",
-  credentialMismatch: PASSWORD_MISMATCH_TEXT,
-  genericError: "Unable to register. Please try again.",
+/** Auth shell copy — login, register, forgot, reset (`AuthShell.js`). */
+export const AUTH_SCREEN = {
+  layout: {
+    heroImageUri: AUTH_EDITORIAL_LAYOUT.heroImageUri,
+    heroBannerA11y: AUTH_EDITORIAL_LAYOUT.heroBannerA11y,
+    wordmarkSubline: "HERITAGE PANTRY",
+  },
+  shared: {
+    backToHome: "Back to home",
+    requiredField: "Required",
+    invalidEmail: "Enter a valid email address",
+    passwordTooShort: "Password must be at least 8 characters",
+    passwordMismatch: "Passwords do not match",
+    serverError: "Something went wrong. Please try again.",
+    networkError: "Check your connection and try again.",
+    retryCta: "Retry",
+    sessionExpiredBanner: "Your session expired. Please sign in again.",
+    alreadySignedInToast: "You're already signed in.",
+    stillTrying: "Still trying…",
+    signInWithBiometric: "Sign in with {label}",
+  },
+  login: {
+    leftPane: {
+      overline: "WELCOME BACK",
+      headline: "Welcome back to the pantry.",
+      subline: "Pick up where you left off — your bag, addresses, and orders are waiting.",
+    },
+    formTitle: "Sign in",
+    formSubtitle: "Enter your details to continue.",
+    emailLabel: "Email",
+    emailPlaceholder: "you@example.com",
+    passwordLabel: "Password",
+    passwordPlaceholder: "Your password",
+    forgotLink: "Forgot password?",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
+    rememberMe: "Keep me signed in",
+    submitCta: "Sign in",
+    submitLoading: "Signing in…",
+    socialDivider: "or continue with",
+    socialGoogle: "Continue with Google",
+    socialApple: "Continue with Apple",
+    footerLabel: "New here?",
+    footerLink: "Create an account",
+    invalidCredentials: "Email or password is incorrect.",
+    accountDeletionPending:
+      "This account is being deleted. If you didn't request this, contact support.",
+    oauthUnavailableHint: "This sign-in option is not available yet.",
+  },
+  register: {
+    leftPane: {
+      overline: "JOIN THE PANTRY",
+      headline: "Begin a new ritual.",
+      subline: "Premium pantry essentials, member-only drops, and faster checkout.",
+    },
+    formTitle: "Create your account",
+    formSubtitle: "Takes less than a minute.",
+    nameLabel: "Full name",
+    namePlaceholder: "Your full name",
+    emailLabel: "Email",
+    emailPlaceholder: "you@example.com",
+    passwordLabel: "Password",
+    passwordPlaceholder: "Create a strong password",
+    passwordHint: "At least 8 characters with a mix of letters, numbers, and symbols.",
+    confirmPasswordLabel: "Confirm password",
+    strengthLabels: ["Too weak", "Weak", "Okay", "Strong", "Excellent"],
+    marketingOptIn: "Send me occasional updates, recipes, and member offers.",
+    termsPrefix: "By continuing you agree to our",
+    termsLink: "Terms",
+    termsAnd: "and",
+    privacyLink: "Privacy Policy",
+    submitCta: "Create account",
+    submitLoading: "Creating your account…",
+    socialDivider: "or continue with",
+    socialGoogle: "Continue with Google",
+    socialApple: "Continue with Apple",
+    footerLabel: "Already a member?",
+    footerLink: "Sign in",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
+    emailExists: "An account already exists with this email.",
+    emailExistsSignIn: "Sign in instead",
+    welcomeToast: "Welcome to {brand}.",
+    successTitle: "Check your email",
+    successBody: "We sent a verification link to {email}. Tap it to activate your account.",
+    openMailApp: "Open mail app",
+    resendEmail: "Resend email",
+    resendCooldown: "Resend in {seconds}s",
+    useDifferentEmail: "Use a different email",
+    oauthUnavailableHint: "This sign-in option is not available yet.",
+  },
+  forgot: {
+    leftPane: {
+      overline: "ACCOUNT RECOVERY",
+      headline: "Let's get you back in.",
+      subline: "Enter your email and we'll send you a secure reset link.",
+    },
+    formTitle: "Reset your password",
+    formSubtitle: "We'll email you a one-time link.",
+    emailLabel: "Email",
+    emailPlaceholder: "you@example.com",
+    submitCta: "Send reset link",
+    submitLoading: "Sending…",
+    successTitle: "Check your email",
+    successBody: "We sent a reset link to {email}.",
+    expiryNote: "The link expires in 30 minutes.",
+    openMailApp: "Open mail app",
+    useDifferentEmail: "Use a different email",
+    resendCta: "Resend",
+    resendCooldown: "Resend in {seconds}s",
+    footerLabel: "Remember your password?",
+    footerLink: "Sign in",
+    oauthUnavailableHint: "This sign-in option is not available yet.",
+  },
+  reset: {
+    leftPane: {
+      overline: "ALMOST DONE",
+      headline: "Set a new password.",
+      subline: "Choose something memorable and at least 8 characters long.",
+    },
+    formTitle: "New password",
+    formSubtitle: "You'll be signed in after saving.",
+    newPasswordLabel: "New password",
+    confirmPasswordLabel: "Confirm new password",
+    submitCta: "Save and sign in",
+    submitLoading: "Saving…",
+    successTitle: "Password updated",
+    successBody: "Your password was updated. Sign in with your new password.",
+    successSubtitle: "You're all set",
+    signInCta: "Sign in",
+    missingParams: "This reset link is incomplete. Request a new link from Forgot password.",
+    passwordTooShort: "Password must be at least 6 characters.",
+    passwordMismatch: "Passwords do not match.",
+    error: "Could not reset your password. The link may have expired.",
+  },
+  verifyEmail: {
+    title: "Verify your email",
+    subtitle: "Confirming your email address…",
+    verifying: "Verifying your link…",
+    successTitle: "Email verified",
+    success: "Your email is verified. You can use all account features.",
+    errorTitle: "Verification failed",
+    error: "This link is invalid or has expired.",
+    missingParams: "This verification link is incomplete. Request a new email from your profile.",
+    goToProfile: "Go to profile",
+    backToLogin: "Back to sign in",
+  },
 };
+
+/** Canonical auth copy (`APP_CONTENT.auth`). Aliases below preserve legacy imports. */
+export const APP_CONTENT_AUTH = {
+  layout: AUTH_EDITORIAL_LAYOUT,
+  signIn: {
+    title: "Welcome back",
+    subtitle: "Sign in to save addresses, track orders, and checkout faster.",
+    labelEmail: "Email",
+    labelEmailA11y: "Email address",
+    labelSecret: PASSWORD_LABEL,
+    labelSecretA11y: PASSWORD_LABEL,
+    submitCta: "Sign in",
+    submitLoading: "Please wait…",
+    dividerContinueWith: "or continue with",
+    googleCta: "Continue with Google",
+    appleCta: "Continue with Apple",
+    forgotPasswordLink: "Forgot password?",
+    footerLeadNew: "New here?",
+    footerLinkNew: "Create an account →",
+    footerNavigateRegisterHint: "Opens registration",
+    guestCta: "Continue as guest",
+    guestNavigateHint: "Browse the storefront without signing in",
+    oauthUnavailableHint: "This sign-in option is not available yet.",
+    genericError: "Unable to sign in. Please try again.",
+  },
+  signUp: {
+    title: "Create your account",
+    subtitle: "Save your details for quicker checkout and order tracking.",
+    labelFullName: "Full name",
+    labelFullNameA11y: "Full name",
+    labelEmail: "Email",
+    labelEmailA11y: "Email address",
+    labelSecret: PASSWORD_LABEL,
+    labelSecretA11y: PASSWORD_LABEL,
+    labelConfirmSecret: CONFIRM_PASSWORD_LABEL,
+    labelConfirmSecretA11y: CONFIRM_PASSWORD_LABEL,
+    credentialHelper: "Use at least 8 characters with letters and numbers.",
+    submitCta: "Create account",
+    submitLoading: "Please wait…",
+    dividerContinueWith: "or continue with",
+    googleCta: "Continue with Google",
+    appleCta: "Continue with Apple",
+    footerLeadExisting: "Already have an account?",
+    footerLinkExisting: "Sign in →",
+    footerNavigateLoginHint: "Go back to sign in",
+    oauthUnavailableHint: "This sign-in option is not available yet.",
+    emailRequired: "Please enter your email.",
+    emailInvalid: "Please enter a valid email address.",
+    credentialMismatch: PASSWORD_MISMATCH_TEXT,
+    genericError: "Unable to register. Please try again.",
+  },
+  forgot: {
+    title: "Reset your password",
+    subtitle: "Enter your email and we’ll send reset instructions if an account exists.",
+    labelEmail: "Email",
+    labelEmailA11y: "Email address",
+    submitCta: "Send reset link",
+    submitLoading: "Please wait…",
+    dividerContinueWith: "or continue with",
+    googleCta: "Continue with Google",
+    appleCta: "Continue with Apple",
+    successTitle: "Check your inbox",
+    successBody:
+      "If an account exists for that email, you’ll receive reset instructions shortly.",
+    footerLeadRemembered: "Remember your password?",
+    footerLinkSignIn: "Sign in →",
+    footerNavigateLoginHint: "Return to sign in",
+    oauthUnavailableHint: "This sign-in option is not available yet.",
+    genericError: "Something went wrong. Please try again.",
+    validationEmail: "Please enter a valid email address.",
+  },
+};
+
+/** @deprecated Prefer `AUTH_SCREEN.login` */
+export const LOGIN_SCREEN = AUTH_SCREEN.login;
+
+/** @deprecated Prefer `AUTH_SCREEN.register` */
+export const REGISTER_SCREEN = AUTH_SCREEN.register;
 
 /**
  * Notifications inbox — [`NotificationsScreen.js`](../screens/NotificationsScreen.js).
@@ -1045,6 +1874,104 @@ export const LOCATION_BAR = {
   emptyA11y: "Add delivery address",
 };
 
+/**
+ * Account hub nav — consumed by `AccountShell` (nested stack screen names in `screen`).
+ * `route` values are legacy / deep-link aliases (see AppNavigator redirects).
+ */
+export const ACCOUNT_NAV = [
+  { key: "overview", label: "Overview", icon: "home-outline", screen: "Overview", route: "AccountOverview" },
+  { key: "orders", label: "Orders", icon: "receipt-outline", screen: "Orders", route: "MyOrders" },
+  { key: "wishlist", label: "Wishlist", icon: "heart-outline", screen: "Wishlist", route: "Wishlist" },
+  { key: "addresses", label: "Addresses", icon: "location-outline", screen: "Addresses", route: "ManageAddress" },
+  { key: "payment", label: "Payment", icon: "card-outline", screen: "Payment", route: "PaymentMethods" },
+  { key: "profile", label: "Profile", icon: "person-outline", screen: "AccountProfile", route: "Profile" },
+  {
+    key: "notifications",
+    label: "Notifications",
+    icon: "notifications-outline",
+    screen: "NotificationPrefs",
+    route: "NotificationPreferences",
+  },
+  { key: "help", label: "Help", icon: "help-circle-outline", screen: null, route: "Help", rootRoute: "Support" },
+];
+
+/** Account hub copy — `AccountShell` / `AccountLayout` + nested `AccountNavigator` (`Profile`). */
+export const ACCOUNT_UI = {
+  kicker: "Account",
+  navOverview: "Overview",
+  navOrders: "Orders",
+  navWishlist: "Wishlist",
+  navAddresses: "Addresses",
+  navPayment: "Payment",
+  navProfile: "Profile",
+  navNotifications: "Notifications",
+  navSignOut: "Sign out",
+  verifiedBadge: "Verified",
+  editProfileA11y: "Edit profile",
+  signOutConfirmTitle: "Sign out of {brand}?",
+  signOutConfirmCta: "Sign out",
+  skipToContent: "Skip to account content",
+  sectionSubtitles: {
+    overview: "Here's everything from your account today.",
+    orders: "Track your orders, returns, and replacements.",
+    wishlist: "Items you've saved for later.",
+    addresses: "Delivery locations for checkout.",
+    payment: "Cards and payment options.",
+    profile: "Manage your personal information, photo, and password.",
+    notifications: "Choose how we reach you.",
+    help: "FAQs and support when you need it.",
+  },
+  greetingTemplate: "Good {time}, {firstName}",
+  greetingMorning: "morning",
+  greetingAfternoon: "afternoon",
+  greetingEvening: "evening",
+  statActiveOrders: "Active orders",
+  statWishlist: "Wishlist",
+  statLoyalty: "Loyalty points",
+  recentOrderTitle: "Recent order",
+  viewOrderCta: "View order",
+  noRecentOrder: "No orders yet",
+  ordersEmptyTitle: "No orders yet",
+  ordersEmptyBody: "When you place an order, it will show up here.",
+  orderOverline: "Order",
+  startShoppingCta: "Start shopping",
+  orderDatePrefix: "Placed",
+  orderDetailTitle: "Order detail",
+  reorderCta: "Reorder",
+  returnCta: "Return / exchange",
+  wishlistTitle: "Wishlist",
+  moveAllToBagCta: "Move all to bag",
+  wishlistEmptyTitle: "Nothing saved yet",
+  wishlistEmptyBody: "Tap the heart on a product to save it here.",
+  browseWishlistCta: "Browse products",
+  addressesTitle: "Addresses",
+  addressPrimaryLabel: "Primary delivery address",
+  addAddressCta: "+ Add new address",
+  saveAddressCta: "Save address",
+  cancelCta: "Cancel",
+  editAddressA11y: "Edit address",
+  deleteAddressA11y: "Remove address",
+  addressModalTitle: "Address details",
+  paymentTitle: "Payment methods",
+  paymentTrustLine: "Stored securely with {provider}",
+  cardEnding: "•••• {last4}",
+  profileEmailLabel: "Email",
+  profilePasswordCta: "Change password",
+  profileSaveCta: "Save profile",
+  notificationPrefsTitle: "Notification preferences",
+  topicOrders: "Orders & delivery",
+  topicPromos: "Offers & inspiration",
+  topicAccount: "Account & security",
+  channelEmail: "Email",
+  channelSms: "SMS",
+  channelWhatsApp: "WhatsApp",
+  inboxLink: "Open notification inbox",
+  timelinePlaced: "Placed",
+  timelinePacked: "Packed",
+  timelineOut: "Out for delivery",
+  timelineDelivered: "Delivered",
+};
+
 /** Cart screen section chrome — see `CartScreen.js`. */
 export const CART_UI = {
   pageEyebrow: "Checkout",
@@ -1090,6 +2017,57 @@ export const CART_UI = {
   couponRequired: "Enter coupon code.",
   couponApplyError: "Unable to apply coupon.",
   locationError: "Unable to get current location.",
+};
+
+/** Slide-over cart (web header / quick bag). */
+export const CART_DRAWER_UI = {
+  title: "Your bag",
+  closeA11y: "Close cart",
+  freeShippingDone: "You’ve unlocked free shipping on this order.",
+  freeShippingAway: "{amount} away from free shipping",
+  subtotal: "Subtotal",
+  checkoutCta: "Checkout",
+  viewBagCta: "View bag",
+  emptyTitle: "Your bag is empty",
+  emptyDescription: "Browse the shop and add items you love.",
+  browseCta: "Browse shop",
+  removeLineA11y: "Remove line",
+};
+
+/** Single-page checkout (Cart screen when `checkout` param is true). */
+export const CHECKOUT_UI = {
+  secureLine: "Secure checkout",
+  stepContact: "Contact & shipping",
+  stepDelivery: "Delivery method",
+  stepPayment: "Payment",
+  deliveryStandard: "Standard delivery",
+  deliveryStandardSub: "Typically 2–4 business days",
+  deliveryExpress: "Express",
+  deliveryExpressSub: "Where available · 1–2 business days",
+  placeOrderTemplate: "Place order · {total}",
+  editBag: "Edit bag",
+  trackOrderCta: "Track order",
+  continueShoppingCta: "Continue shopping",
+  successTitle: "Order placed",
+  successBody: "Order {id}. Estimated delivery: {eta}.",
+  paymentTabUpi: "UPI",
+  paymentTabCards: "Cards",
+  paymentTabNetbanking: "Net banking",
+  paymentTabWallet: "Wallet",
+  paymentTabCod: "COD",
+  paymentOnlineHint: "You’ll complete payment securely via Razorpay after tapping Place order.",
+  validationRequired: "Required",
+  invalidPhone: "Enter a valid phone number",
+  invalidPostal: "Enter a valid postal code",
+  invalidEmail: "Enter a valid email",
+  emailLabel: "Email",
+  summaryTaxes: "Taxes & fees",
+  summaryDiscount: "Discount",
+  summaryShipping: "Shipping",
+  summarySubtotal: "Subtotal",
+  summaryTotal: "Total",
+  addonsOverline: "Complete your order",
+  addonsTitle: "Recommended add-ons",
 };
 
 /** Cart — deliver-to panel and profile address prompts. */
@@ -1215,28 +2193,74 @@ export const PRODUCT_SCREEN = {
   variantSubtitle: "",
   reviewsOverline: "Ratings",
   reviewsTitle: "Customer reviews",
-  /** Kept for templates if needed; header uses count chip + empty-state line only. */
   reviewsSubtitleHasCount: "{rating} · {count} reviews",
   reviewsSubtitleOne: "{rating} · 1 review",
   reviewsEmptySubtitle: "No reviews yet",
-  reviewComposerNoteLabel: "",
-  reviewComposerA11y: "Review comment (optional)",
-  reviewComposerPlaceholder: "Optional",
-  reviewPost: "Post",
-  reviewPosting: "Posting…",
   reviewRatingError: "Pick 1–5 stars.",
-  reviewSubmitSuccess: "Posted.",
+  reviewSubmitSuccess: "Thanks — your review is live.",
   reviewSubmitErrorFallback: "Couldn’t post review.",
-  /** Empty = no list section label (see ProductScreen). */
   reviewListLatest: "",
   reviewNoWrittenNote: "—",
   reviewFirstHint: "",
+  /** Customer reviews section (ProductReviews). */
+  reviews: {
+    sectionOverline: "Ratings",
+    sectionTitle: "Customer reviews",
+    emptySubtitle: "No reviews yet — be the first to share your experience.",
+    basedOn: "Based on {count} reviews",
+    basedOnOne: "Based on 1 review",
+    verifiedPct: "{pct}% verified",
+    filterAll: "All",
+    filterStars: "{n}★",
+    filterStarsA11y: "Filter {n} star reviews",
+    filterPhotos: "With photos",
+    filterVerified: "Verified only",
+    sortTitle: "Sort reviews",
+    sortHelpful: "Most helpful",
+    sortRecent: "Most recent",
+    sortHigh: "Highest rated",
+    sortLow: "Lowest rated",
+    sortA11y: "Change review sort order",
+    verifiedPurchase: "Verified purchase",
+    noBody: "No written review.",
+    readMore: "Read more",
+    helpfulQuestion: "Was this helpful?",
+    writeReview: "Write a review",
+    writeReviewA11y: "Write a product review",
+    titleLabel: "Review title",
+    titlePlaceholder: "Sum it up in a few words",
+    titleCharCount: "{current}/{max}",
+    bodyLabel: "Your review",
+    bodyPlaceholder: "Share your experience",
+    bodyCharCount: "{current}/{max}",
+    cancel: "Cancel",
+    submit: "Submit review",
+    submitting: "Submitting…",
+    loadMore: "Load more reviews ({n} remaining)",
+    photoPermissionError: "Photo library access is required to add images.",
+    photoReadError: "Could not read that photo. Try another.",
+    photoUploadError: "Could not upload photo.",
+    removePhotoA11y: "Remove photo",
+    beFirstToReview: "Be the first to review",
+    beFirstToReviewA11y: "Write the first review for this product",
+    sectionTitleShort: "Reviews",
+  },
   stickyPriceLabel: "Price",
-  addToCart: "Add to cart",
+  dockThumbA11y: "Scroll to top of product",
+  galleryFabA11y: "Back to product gallery",
+  viewedRecentlyOverline: "VIEWED RECENTLY",
+  variantUnavailableMessage: "This size is unavailable.",
+  variantUnavailableNotify: "Notify me when back?",
+  lowStockAlert: "Only {count} left in stock — order soon.",
+  addedToBagToast: "Added — {price} added to your bag",
+  addedToBagToastAction: "View bag →",
+  wishlistSavedToast: "Saved to wishlist",
+  wishlistSavedToastAction: "View wishlist →",
+  addToCart: "Add to bag",
   /** Primary + sticky CTA when line is not purchasable */
   outOfStock: "Out of stock",
   productOutOfStockA11y: "Unavailable",
-  addToCartA11y: "Add to cart",
+  addToCartA11y: "Add to bag",
   /** `{count}` stepper label */
   inCartCount: "{count} in cart",
   /** `{count}` stock fact */
@@ -1246,6 +2270,109 @@ export const PRODUCT_SCREEN = {
   /** `{pct}` discount chip */
   savePctChip: "Save {pct}%",
   stickyInCart: "In cart ({count})",
+  /** Breadcrumb row under PageHeader (`{category}`) */
+  detailBreadcrumb: "Shop › {category}",
+  brandFallback: APP_DISPLAY_NAME,
+  trustFresh: "Fresh dispatch",
+  trustSecure: "Secure pay",
+  trustReturns: "Easy returns",
+  trustQuality: "QC passed",
+  trustFreeShipping: "Free shipping",
+  trustEasyReturns: "Easy 30-day returns",
+  trustCod: "COD available",
+  trustGenuine: "100% genuine",
+  verifiedBadge: "Verified",
+  reviewSingular: "review",
+  reviewPlural: "reviews",
+  priceTaxLine: "Inclusive of all taxes · Free shipping over ₹1,499",
+  savePctChipUpper: "SAVE {pct}%",
+  variantTitleWithSelection: "Choose your size: {selection}",
+  variantSoldPer: "Sold per {unit}",
+  addToCartWithPrice: "Add to bag · {price}",
+  addingToBag: "Adding…",
+  notifyWhenBack: "Notify me when back",
+  notifyWhenBackA11y: "Notify when back in stock",
+  saveLabel: "Save",
+  savedLabel: "Saved",
+  saveWishlistA11y: "Save to wishlist",
+  removeWishlistA11y: "Remove from wishlist",
+  shareLabel: "Share",
+  askLabel: "Ask",
+  askModalTitle: "Ask about this product",
+  askModalBody: "I have a question about {name}…",
+  askPrefill: "Hi, I have a question about {name}.",
+  askEmailSubject: "Question about {name}",
+  askWhatsApp: "WhatsApp",
+  askEmail: "Email us",
+  notifyModalTitle: "Notify me when available",
+  notifyModalBody: "We will email you when this item is back in stock.",
+  notifyEmailLabel: "Email",
+  notifyEmailPlaceholder: "you@example.com",
+  notifySubmit: "Notify me",
+  pincodeHeading: "DELIVERY",
+  pincodeLabel: "Delivery pincode",
+  pincodePlaceholder: "Enter pincode",
+  pincodeCheckCta: "Check",
+  pincodeDeliversBy: "Delivers by {date}",
+  pincodeDispatchNote: "Order in next {hours}h {minutes}m for same-day dispatch",
+  pincodeNotServiceable: "Not serviceable yet. Notify me?",
+  pincodeCheckMockShort: "Enter a valid 6-digit pincode.",
+  accordionDescription: "Description",
+  accordionMaterial: "Material & care",
+  accordionShipping: "Shipping & returns",
+  accordionFaq: "FAQ",
+  accordionMaterialBody:
+    "Store in a cool, dry place. Refer to the packaging for batch-specific guidance.",
+  accordionShippingBody:
+    "Standard delivery timelines apply. Returns accepted on eligible items within the policy window.",
+  accordionFaqBody: "Questions? Reach out via Support and we will help within one business day.",
+  detailsOverline: "Product info",
+  detailsTitle: "Specifications",
+  metaSku: "SKU {sku}",
+  metaCategory: "{category}",
+  metaType: "{type}",
+  metaEta: "Delivers {eta}",
+  metaRating: "{rating} · {count} reviews",
+  metaRatingOne: "{rating} · 1 review",
+  processTitleFallback: "How it's made",
+  usageTitle: "How to use",
+  rich: {
+    quoteAttributionFallback: "Master maker, sourcing notes",
+    uspsOverline: "WHY YOU'LL LOVE IT",
+    uspsTitle: "Crafted for everyday excellence",
+    uspsSubtitle: "",
+    processOverline: "THE CRAFT",
+    processTitleFallback: "How it's made",
+    usageOverline: "ENJOY DAILY",
+    usageTitle: "Rituals & recipes",
+    usageSubtitle: "",
+    ritualCta: "Try this →",
+    sourcingOverline: "TRACEABILITY",
+    sourcingTitle: "From source to shelf",
+    sourcingSubtitle: "Transparent origins and certifications.",
+    sourcingOrigin: "Sourced from {region}",
+    sourcingHarvest: "Harvested {date}",
+    sourcingCertsLabel: "Certifications",
+  },
+  completeLookOverline: "Pair it",
+  completeLookTitle: "Complete the look",
+  youMayAlsoLikeOverline: "Discover",
+  youMayAlsoLikeTitle: "You may also like",
+  recentlyViewedOverline: "Jump back",
+  recentlyViewedTitle: "Recently viewed",
+  zoomOpenA11y: "Enlarge image",
+  zoomCloseA11y: "Close enlarged image",
+  galleryRegionLabel: "Product gallery",
+  galleryA11y: "Product gallery, image {current} of {total}",
+  galleryThumbA11y: "View image {n}",
+  variantSelectedLive: "Selected: {variant}, price {price}",
+  addedToBagLive: "{name}, {variant}, added to bag",
+  pincodeSuccessLive: "Delivers by {date}",
+  zoomInA11y: "Open full-screen zoom",
+  swipeNextA11y: "Next image",
+  swipePrevA11y: "Previous image",
+  galleryVideoPlayA11y: "Play product video",
+  galleryVideoMuteA11y: "Unmute video",
 };
 
 /** Replace `{placeholders}` in any exported content template string. */
@@ -1313,6 +2440,46 @@ export const ADMIN_HOME_VIEW_COPY = {
   linkAddProductSubtitle: "Create a new product and assign its home section.",
 };
 
+/** Admin / delivery ops dashboard copy (design-system screens). */
+export const OPS_UI = {
+  adminKicker: "Admin",
+  deliveryKicker: "Delivery",
+  overviewTitle: "Overview",
+  accessTitle: "Admin access required",
+  accessDescription: "This account does not have admin privileges.",
+  backHomeCta: "Back to home",
+  refreshCta: "Refresh",
+  expandAll: "Expand all",
+  collapseAll: "Collapse all",
+  quickOpen: "Quick open",
+  allTools: "All tools",
+  allToolsHint: "Tap a section to expand shortcuts.",
+  stats: {
+    products: "Products",
+    productsCaption: "Catalog SKUs",
+    orders: "Orders",
+    ordersCaption: "All time",
+    users: "Users",
+    usersCaption: "Registered",
+    admins: "Admins",
+    adminsCaption: "With admin role",
+    pending: "Pending",
+    pendingAttention: "Needs attention",
+    pendingClear: "Queue clear",
+  },
+  delivery: {
+    routeMap: "Route map",
+    assignedOrders: "Assigned orders",
+    noDeliveriesTitle: "No active deliveries",
+    noDeliveriesDescription: "Assigned active orders will appear here.",
+    waitingAdvance:
+      "Waiting for admin to advance this order before you can mark delivered.",
+    activeDelivery: "Active delivery",
+    elapsed: "Elapsed",
+    openRoute: "Open route",
+  },
+};
+
 /** Admin operations copy — shared headings and frequent actions across admin screens. */
 export const ADMIN_SCREEN_COPY = {
   refreshCta: "Refresh",
@@ -1345,7 +2512,7 @@ export const ADMIN_SCREEN_COPY = {
 
 /**
  * Map of major copy blobs for discovery / CMS-style tooling. Screens should still import
- * named exports (`LOGIN_SCREEN`, etc.) so bundlers can tree-shake unused sections.
+ * named exports (`LOGIN_SCREEN`, `REGISTER_SCREEN`) or `APP_CONTENT_AUTH` (`layout`, `signIn`, `signUp`, `forgot`).
  */
 export const APP_CONTENT_INDEX = {
   shell: {
@@ -1384,10 +2551,15 @@ export const APP_CONTENT_INDEX = {
     trustBadges: HOME_PAGE_TRUST_BADGES,
     engineer: { name: APP_ENGINEER_NAME, url: APP_ENGINEER_URL },
   },
-  auth: { login: LOGIN_SCREEN, register: REGISTER_SCREEN },
+  auth: APP_CONTENT_AUTH,
+  authScreen: AUTH_SCREEN,
   notifications: NOTIFICATIONS_SCREEN,
   editProfile: EDIT_PROFILE_SCREEN,
   manageAddress: MANAGE_ADDRESS_SCREEN,
+  addressesScreen: ADDRESSES_SCREEN,
+  paymentScreen: PAYMENT_SCREEN,
+  wishlistScreen: WISHLIST_SCREEN,
+  notificationPrefsScreen: NOTIFICATION_PREFS_SCREEN,
   redeemRewards: REDEEM_REWARDS_SCREEN,
   profile: PROFILE_SCREEN,
   settings: SETTINGS_SCREEN,
@@ -1401,5 +2573,6 @@ export const APP_CONTENT_INDEX = {
   location: LOCATION_BAR,
   delivery: { dashboard: DELIVERY_DASHBOARD_COPY, liveShare: DELIVERY_LIVE_SHARE },
   admin: ADMIN_SCREEN_COPY,
+  ops: OPS_UI,
   adminHomeView: ADMIN_HOME_VIEW_COPY,
 };

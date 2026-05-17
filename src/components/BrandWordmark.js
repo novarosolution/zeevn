@@ -9,6 +9,7 @@ import { FONT_DISPLAY } from "../theme/customerAlchemy";
  */
 export default function BrandWordmark({
   sizeKey = "headerDefault",
+  fontSizeOverride,
   style,
   color,
   numberOfLines = 1,
@@ -17,7 +18,7 @@ export default function BrandWordmark({
   maxFontSizeMultiplier = 1.35,
 }) {
   const { colors: c } = useTheme();
-  const fontSize = BRAND_WORDMARK_SIZE[sizeKey] ?? BRAND_WORDMARK_SIZE.headerDefault;
+  const fontSize = fontSizeOverride ?? BRAND_WORDMARK_SIZE[sizeKey] ?? BRAND_WORDMARK_SIZE.headerDefault;
   const lineHeightPx = Math.round(fontSize * 1.12);
   return (
     <Text

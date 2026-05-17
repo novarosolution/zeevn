@@ -11,11 +11,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AppFooter from "../../components/AppFooter";
-import AdminBackLink from "../../components/admin/AdminBackLink";
-import AdminPageHeading from "../../components/admin/AdminPageHeading";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
 import { useAuth } from "../../context/AuthContext";
+import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminProducts, patchAdminProductStock } from "../../services/adminService";
 import { adminModuleSection } from "../../theme/adminLayout";
@@ -159,31 +156,16 @@ export default function AdminInventoryScreen({ navigation }) {
 
   if (!user) {
     return (
-      <CustomerScreenShell style={styles.screen} variant="admin">
-        <View style={[styles.denied, { padding: spacing.lg, paddingTop: insets.top + spacing.md, flex: 1 }]}>
-          <Text style={styles.deniedTitle}>Sign in</Text>
-          <Text style={styles.deniedSub}>Log in with an admin account to manage inventory.</Text>
-          <PremiumButton label="Go to login" variant="primary" onPress={() => navigation.navigate("Login")} style={styles.gateCta} />
-        </View>
-      </CustomerScreenShell>
-    );
-  }
-
-  if (!user.isAdmin) {
-    return (
-      <CustomerScreenShell style={styles.screen} variant="admin">
-        <View style={[styles.denied, customerScrollFill, { padding: spacing.lg, paddingTop: insets.top + spacing.md }]}>
-          <Ionicons name="shield-half-outline" size={44} color={c.primary} />
-          <Text style={styles.deniedTitle}>Admins only</Text>
-          <Text style={styles.deniedSub}>Sign in with an admin account to manage stock.</Text>
-          <PremiumButton label="Back to home" variant="primary" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
-        </View>
-      </CustomerScreenShell>
+      <OpsAdminScreen navigation={navigation} activeRoute="AdminInventory" sectionTitle="Inventory & stock">
+        <Text style={styles.deniedTitle}>Sign in</Text>
+        <Text style={styles.deniedSub}>Log in with an admin account to manage inventory.</Text>
+        <PremiumButton label="Go to login" variant="secondary" onPress={() => navigation.navigate("Login")} style={styles.gateCta} />
+      </OpsAdminScreen>
     );
   }
 
   return (
-    <CustomerScreenShell style={styles.screen} variant="admin">
+    <OpsAdminScreen navigation={navigation} activeRoute="AdminInventory" sectionTitle="Inventory & stock">
       <FlatList
         data={visible}
         keyExtractor={(i) => i._id}
@@ -191,16 +173,6 @@ export default function AdminInventoryScreen({ navigation }) {
         contentContainerStyle={adminInnerPageScrollContent(insets, { paddingBottom: spacing.xxl + 20 })}
         ListHeaderComponent={
           <View style={styles.headerBlock}>
-            <View style={styles.topHead}>
-              <AdminBackLink navigation={navigation} />
-            </View>
-            <View style={styles.titleBlock}>
-              <AdminPageHeading
-                title={ADMIN_SCREEN_COPY.inventory.title}
-                subtitle={ADMIN_SCREEN_COPY.inventory.subtitle}
-              />
-            </View>
-
             <View style={styles.statsRow}>
               {[
                 { icon: "cube-outline", label: "SKUs", value: String(stats.total), warn: false },
@@ -389,12 +361,11 @@ export default function AdminInventoryScreen({ navigation }) {
                 </View>
               </View>
             </PremiumCard>
-            <AppFooter />
           </View>
         }
         showsVerticalScrollIndicator={false}
       />
-    </CustomerScreenShell>
+    </OpsAdminScreen>
   );
 }
 

@@ -26,6 +26,7 @@ import { getApiBaseUrl } from "./apiBase";
 
 let getAccessToken = () => null;
 let getRefreshToken = () => null;
+let getSessionId = () => null;
 let onTokensRefreshed = null;
 let onSessionExpired = null;
 
@@ -40,6 +41,9 @@ export function configureApiClient(config = {}) {
   }
   if (typeof config.getRefreshToken === "function") {
     getRefreshToken = config.getRefreshToken;
+  }
+  if (typeof config.getSessionId === "function") {
+    getSessionId = config.getSessionId;
   }
   if (typeof config.onTokensRefreshed === "function") {
     onTokensRefreshed = config.onTokensRefreshed;
@@ -130,6 +134,10 @@ async function doFetch(path, options, token) {
   }
   if (token) {
     headers.Authorization = `Bearer ${token}`;
+  }
+  const sessionId = getSessionId();
+  if (sessionId) {
+    headers["X-Session-Id"] = sessionId;
   }
   return fetch(buildUrl(path), { ...options, headers });
 }

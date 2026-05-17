@@ -1,11 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AppFooter from "../../components/AppFooter";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
-import AdminBackLink from "../../components/admin/AdminBackLink";
-import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
+import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
 import { useTheme } from "../../context/ThemeContext";
 import { createAdminCoupon, fetchAdminCoupons, updateAdminCoupon } from "../../services/adminService";
 import { adminPanel } from "../../theme/adminLayout";
@@ -133,51 +130,8 @@ export default function AdminCouponsScreen({ navigation }) {
     }
   };
 
-  if (user && !user.isAdmin) {
-    return (
-      <CustomerScreenShell style={styles.screen} variant="admin">
-        <MotionScrollView
-          style={customerScrollFill}
-          contentContainerStyle={adminInnerPageScrollContent(insets)}
-          showsVerticalScrollIndicator={false}
-        >
-          <SectionReveal delay={40} preset="fade-up">
-            <View style={styles.panel}>
-              <PremiumErrorBanner
-                severity="warning"
-                title="Admin access required"
-                message="Sign in with an admin account to manage coupons."
-              />
-              <PremiumButton
-                label="Back to Home"
-                variant="primary"
-                onPress={() => navigation.navigate("Home")}
-                style={styles.gateCta}
-              />
-            </View>
-          </SectionReveal>
-        </MotionScrollView>
-      </CustomerScreenShell>
-    );
-  }
-
   return (
-    <CustomerScreenShell style={styles.screen} variant="admin">
-      <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <MotionScrollView
-        style={customerScrollFill}
-        contentContainerStyle={adminInnerPageScrollContent(insets)}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.panel}>
-          <SectionReveal preset="fade-up" delay={0}>
-          <AdminBackLink navigation={navigation} />
-          <AdminPageHeading
-            title={ADMIN_SCREEN_COPY.coupons.title}
-            subtitle={ADMIN_SCREEN_COPY.coupons.subtitle}
-          />
-
+    <OpsAdminScreen navigation={navigation} activeRoute="AdminCoupons" sectionTitle="Manage coupons">
           {error ? (
             <View style={styles.bannerSpacer}>
               <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
@@ -188,12 +142,10 @@ export default function AdminCouponsScreen({ navigation }) {
               <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
             </View>
           ) : null}
-          </SectionReveal>
-
+          
           <View style={isWideWeb ? styles.workspaceGrid : null}>
           <View style={isWideWeb ? styles.workspacePrimary : null}>
-          <SectionReveal preset="fade-up" delay={20}>
-          <PremiumCard padding="lg" style={styles.formCard}>
+                    <PremiumCard padding="lg" style={styles.formCard}>
             <Text style={[styles.formTitle, { color: c.textPrimary }]}>{ADMIN_SCREEN_COPY.coupons.createTitle}</Text>
             <View style={styles.fieldGap}>
               <PremiumInput
@@ -317,12 +269,10 @@ export default function AdminCouponsScreen({ navigation }) {
               style={styles.createBtnMargin}
             />
           </PremiumCard>
-          </SectionReveal>
-          </View>
+                    </View>
 
           <View style={isWideWeb ? styles.workspaceSecondary : null}>
-          <SectionReveal preset="fade-up" delay={60}>
-          <Text style={[styles.listTitle, { color: c.textPrimary }]}>{ADMIN_SCREEN_COPY.coupons.listTitle}</Text>
+                    <Text style={[styles.listTitle, { color: c.textPrimary }]}>{ADMIN_SCREEN_COPY.coupons.listTitle}</Text>
           {loading ? (
             <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} />
           ) : coupons.length === 0 ? (
@@ -383,14 +333,9 @@ export default function AdminCouponsScreen({ navigation }) {
               </PremiumCard>
             ))
           )}
-          </SectionReveal>
+                    </View>
           </View>
-          </View>
-        </View>
-        <AppFooter />
-      </MotionScrollView>
-      </KeyboardAvoidingView>
-    </CustomerScreenShell>
+                </OpsAdminScreen>
   );
 }
 

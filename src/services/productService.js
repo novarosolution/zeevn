@@ -7,11 +7,13 @@ function apiUrl(path) {
 }
 
 const PRODUCTS_CACHE_TTL_MS = 60 * 1000;
+const PRODUCT_DETAIL_CACHE_TTL_MS = 5 * 60 * 1000;
 let productsCache = {
   data: null,
   fetchedAt: 0,
   promise: null,
 };
+const productDetailCache = new Map();
 
 function normalizeProduct(raw) {
   const primaryImage =
@@ -54,12 +56,36 @@ function normalizeProduct(raw) {
           icon: String(b?.icon ?? "sunny-outline").trim() || "sunny-outline",
           title: String(b?.title ?? "").trim(),
           description: String(b?.description ?? "").trim(),
+          image: String(b?.image ?? "").trim(),
+          recipeUrl: String(b?.recipeUrl ?? b?.recipeLink ?? "").trim(),
         }))
         .filter((b) => b.title || b.description)
     : [];
 
+  const sourcingRaw = raw.sourcing;
+  const sourcing =
+    sourcingRaw && typeof sourcingRaw === "object"
+      ? {
+          originRegion: String(sourcingRaw.originRegion ?? "").trim(),
+          harvestDate: String(sourcingRaw.harvestDate ?? "").trim(),
+          certifications: Array.isArray(sourcingRaw.certifications)
+            ? sourcingRaw.certifications.map((c) => String(c ?? "").trim()).filter(Boolean)
+            : [],
+        }
+      : undefined;
+
   const processSteps = Array.isArray(raw.processSteps)
     ? raw.processSteps.map((s) => String(s ?? "").trim()).filter(Boolean)
+    : [];
+
+  const media = Array.isArray(raw.media)
+    ? raw.media
+        .map((m) => ({
+          type: String(m?.type || "image").toLowerCase() === "video" ? "video" : "image",
+          url: String(m?.url ?? "").trim(),
+          poster: String(m?.poster ?? "").trim(),
+        }))
+        .filter((m) => m.url)
     : [];
 
   const ratingAvg = Number(raw.ratingAverage);
@@ -100,8 +126,13 @@ function normalizeProduct(raw) {
     processTitle: String(raw.processTitle ?? "").trim(),
     processSteps,
     highlightQuote: String(raw.highlightQuote ?? "").trim(),
+    highlightQuoteAttribution: String(raw.highlightQuoteAttribution ?? "").trim(),
+    lifestyleCaption: String(raw.lifestyleCaption ?? "").trim(),
+    processImage: String(raw.processImage ?? "").trim(),
     usageRituals,
     richProductPage: raw.richProductPage === true,
+    media,
+    ...(sourcing ? { sourcing } : {}),
   };
 }
 
@@ -150,8 +181,37 @@ export function invalidateProductsCache() {
 }
 
 export async function getProductById(id) {
+  const key = String(id || "").trim();
+  if (!key) return null;
+
+  const cached = productDetailCache.get(key);
+  if (cached && Date.now() - cached.fetchedAt < PRODUCT_DETAIL_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  try {
+    const response = await fetch(apiUrl(`/products/${encodeURIComponent(key)}`));
+    const data = await response.json().catch(() => null);
+    if (response.ok && data) {
+      const normalized = normalizeProduct(data);
+      productDetailCache.set(key, { data: normalized, fetchedAt: Date.now() });
+      return normalized;
+    }
+  } catch {
+    /* fall through to catalog cache */
+  }
+
   const allProducts = await getProducts();
-  return allProducts.find((item) => item.id === id) || null;
+  const fromCatalog = allProducts.find((item) => String(item.id) === key) || null;
+  if (fromCatalog) {
+    productDetailCache.set(key, { data: fromCatalog, fetchedAt: Date.now() });
+  }
+  return fromCatalog;
+}
+
+export function invalidateProductDetailCache(id) {
+  if (id) productDetailCache.delete(String(id));
+  else productDetailCache.clear();
 }
 
 export async function getProductReviews(productId) {
@@ -184,6 +244,41 @@ export async function submitProductReview(token, productId, payload) {
     ratingAverage: Number(data.ratingAverage || 0),
     reviewCount: Number(data.reviewCount || 0),
     reviews: Array.isArray(data.reviews) ? data.reviews : [],
+  };
+}
+
+export async function uploadReviewPhoto(token, productId, { imageBase64, mimeType }) {
+  const response = await fetch(apiUrl(`/products/${productId}/reviews/photos`), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ imageBase64, mimeType }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || "Unable to upload review photo.");
+  }
+  return { url: String(data.url || "").trim() };
+}
+
+export async function voteProductReview(token, productId, reviewId, helpful = true) {
+  const response = await fetch(apiUrl(`/products/${productId}/reviews/${reviewId}/vote`), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ helpful }),
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.message || "Unable to register vote.");
+  }
+  return {
+    helpfulCount: Number(data.helpfulCount || 0),
+    notHelpfulCount: Number(data.notHelpfulCount || 0),
   };
 }
 

@@ -228,8 +228,8 @@ export default function CustomerScreenShell({
         <LinearGradient
           colors={
             isDark
-              ? ["rgba(220, 38, 38, 0.18)", "rgba(255, 224, 163, 0.08)", "transparent"]
-              : ["rgba(255, 255, 255, 0.54)", "rgba(255, 224, 163, 0.18)", "transparent"]
+              ? ["rgba(200, 169, 126, 0.14)", "rgba(200, 169, 126, 0.06)", "transparent"]
+              : ["rgba(255, 255, 255, 0.54)", "rgba(200, 169, 126, 0.12)", "transparent"]
           }
           locations={[0, 0.5, 1]}
           start={{ x: 0.5, y: 0 }}

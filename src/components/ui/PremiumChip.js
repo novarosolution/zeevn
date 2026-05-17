@@ -96,9 +96,9 @@ function resolveTone(tone, c, isDark) {
       };
     case "red":
       return {
-        bg: isDark ? "rgba(248, 113, 113, 0.18)" : "rgba(220, 38, 38, 0.1)",
-        border: isDark ? "rgba(248, 113, 113, 0.34)" : "rgba(220, 38, 38, 0.22)",
-        text: isDark ? "#FCA5A5" : "#B91C1C",
+        bg: isDark ? "rgba(248, 113, 113, 0.18)" : "rgba(178, 58, 58, 0.1)",
+        border: isDark ? "rgba(248, 113, 113, 0.34)" : "rgba(178, 58, 58, 0.22)",
+        text: c.danger,
       };
     case "info":
       return {

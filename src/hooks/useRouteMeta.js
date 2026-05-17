@@ -21,5 +21,5 @@ export default function useRouteMeta(routeKey, overrides = {}) {
 
   useEffect(() => {
     applyCurrentMeta();
-  }, [applyCurrentMeta, overrides]);
+  }, [applyCurrentMeta, overrides, JSON.stringify(overrides)]);
 }

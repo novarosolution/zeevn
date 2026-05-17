@@ -13,6 +13,17 @@ const labeledBlockSchema = new mongoose.Schema(
     icon: { type: String, default: "checkmark-circle-outline", trim: true },
     title: { type: String, default: "", trim: true },
     description: { type: String, default: "", trim: true },
+    image: { type: String, default: "", trim: true },
+    recipeUrl: { type: String, default: "", trim: true },
+  },
+  { _id: false }
+);
+
+const sourcingSchema = new mongoose.Schema(
+  {
+    originRegion: { type: String, default: "", trim: true },
+    harvestDate: { type: String, default: "", trim: true },
+    certifications: { type: [String], default: [] },
   },
   { _id: false }
 );
@@ -40,6 +51,30 @@ const reviewSchema = new mongoose.Schema(
       default: "",
       trim: true,
       maxlength: 800,
+    },
+    title: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 80,
+    },
+    photos: {
+      type: [String],
+      default: [],
+    },
+    helpfulCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    notHelpfulCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    verifiedPurchase: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }
@@ -183,14 +218,44 @@ const productSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    highlightQuoteAttribution: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    lifestyleCaption: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    processImage: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     usageRituals: {
       type: [labeledBlockSchema],
       default: [],
+    },
+    sourcing: {
+      type: sourcingSchema,
+      default: () => ({}),
     },
     /** When true, customer PDP shows rich sections when any rich field is set */
     richProductPage: {
       type: Boolean,
       default: false,
+    },
+    /** Optional gallery media (video first when type is video). */
+    media: {
+      type: [
+        {
+          type: { type: String, enum: ["image", "video"], default: "image" },
+          url: { type: String, default: "", trim: true },
+          poster: { type: String, default: "", trim: true },
+        },
+      ],
+      default: [],
     },
   },
   { timestamps: true }

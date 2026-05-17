@@ -95,7 +95,7 @@ function LiveLeafletMap({
 
   const partnerBikeIcon = useMemo(() => {
     const bg = isDark ? "rgba(28,25,23,0.96)" : "#FFFFFF";
-    const border = isDark ? "#F87171" : "#DC2626";
+    const border = isDark ? "#D4B896" : "#C8A97E";
     const shadow = isDark ? "0 4px 14px rgba(0,0,0,0.38)" : "0 3px 10px rgba(61,42,18,0.14)";
     const html = `<div style="width:42px;height:42px;border-radius:21px;background:${bg};border:2px solid ${border};box-shadow:${shadow};display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;">🚴</div>`;
     return L.divIcon({
@@ -134,7 +134,7 @@ function LiveLeafletMap({
         leafletChromeStyles.leafletWrap,
         {
           borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(63, 63, 70, 0.15)",
-          borderTopColor: isDark ? "rgba(220, 38, 38, 0.42)" : "rgba(185, 28, 28, 0.45)",
+          borderTopColor: isDark ? "rgba(200, 169, 126, 0.42)" : "rgba(200, 169, 126, 0.45)",
         },
       ]}
     >

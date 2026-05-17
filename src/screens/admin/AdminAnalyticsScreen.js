@@ -4,11 +4,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { BarChart, LineChart, PieChart } from "react-native-chart-kit";
-import AppFooter from "../../components/AppFooter";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
-import AdminBackLink from "../../components/admin/AdminBackLink";
-import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
+import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
 import { fetchAdminAnalytics } from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
@@ -263,35 +260,6 @@ export default function AdminAnalyticsScreen({ navigation }) {
     };
   }, [analytics]);
 
-  if (user && !user.isAdmin) {
-    return (
-      <CustomerScreenShell style={styles.screen} variant="admin">
-        <MotionScrollView
-          style={customerScrollFill}
-          contentContainerStyle={adminInnerPageScrollContent(insets)}
-          showsVerticalScrollIndicator={false}
-        >
-          <SectionReveal delay={40} preset="fade-up">
-            <View style={styles.deniedGate}>
-              <PremiumErrorBanner
-                severity="warning"
-                title="Admin access required"
-                message="This account does not have admin privileges."
-              />
-              <PremiumButton
-                label="Back to home"
-                iconLeft="home-outline"
-                variant="primary"
-                onPress={() => navigation.navigate("Home")}
-                style={styles.gateCta}
-              />
-            </View>
-          </SectionReveal>
-        </MotionScrollView>
-      </CustomerScreenShell>
-    );
-  }
-
   const hairline = isDark ? c.border : ALCHEMY.pillInactive;
   const heroColors = isDark
     ? [c.surfaceMuted, "#1a1714"]
@@ -299,55 +267,46 @@ export default function AdminAnalyticsScreen({ navigation }) {
   const isFiltered = Boolean(analytics?.range?.filtered);
 
   return (
-    <CustomerScreenShell style={styles.screen} variant="admin">
-      <MotionScrollView
-        style={customerScrollFill}
-        contentContainerStyle={adminInnerPageScrollContent(insets)}
-        showsVerticalScrollIndicator={false}
-      >
-      <LinearGradient colors={heroColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.heroGradient, { borderColor: hairline }]}>
-        {!isDark ? <View style={styles.heroGoldHairline} /> : null}
-        <AdminBackLink navigation={navigation} />
-        <AdminPageHeading
-          title="Analytics"
-          subtitle="Revenue, trends, catalog health, carts, and coupons. Filter by period or export PDF / CSV."
-          right={
-            <View style={styles.heroActionsRow}>
-              <PremiumButton
-                label="Refresh"
-                iconLeft="refresh-outline"
-                variant="primary"
-                size="sm"
-                onPress={loadAnalytics}
-                style={styles.heroActionBtn}
-              />
-              <PremiumButton
-                label="Export PDF"
-                iconLeft="document-text-outline"
-                variant="secondary"
-                size="sm"
-                onPress={handleExportPdf}
-                disabled={!analytics}
-                style={styles.heroActionBtn}
-              />
-              <PremiumButton
-                label="Export CSV"
-                iconLeft="download-outline"
-                variant="secondary"
+    <OpsAdminScreen
+      navigation={navigation}
+      activeRoute="AdminAnalytics"
+      sectionTitle="Analytics"
+      headerRight={
+        <View style={styles.heroActionsRow}>
+          <PremiumButton
+            label="Refresh"
+            iconLeft="refresh-outline"
+            variant="ghost"
+            size="sm"
+            onPress={loadAnalytics}
+            style={styles.heroActionBtn}
+          />
+          <PremiumButton
+            label="Export PDF"
+            iconLeft="document-text-outline"
+            variant="secondary"
+            size="sm"
+            onPress={handleExportPdf}
+            disabled={!analytics}
+            style={styles.heroActionBtn}
+          />
+          <PremiumButton
+            label="Export CSV"
+            iconLeft="download-outline"
+            variant="secondary"
                 size="sm"
                 onPress={handleExportCsv}
                 disabled={!analytics}
-                style={styles.heroActionBtn}
-              />
-            </View>
-          }
-        />
-        {error ? (
-          <View style={styles.bannerSpacer}>
-            <PremiumErrorBanner severity="error" message={error} compact />
-          </View>
-        ) : null}
-      </LinearGradient>
+            style={styles.heroActionBtn}
+          />
+        </View>
+      }
+    >
+      {error ? (
+        <View style={styles.bannerSpacer}>
+          <PremiumErrorBanner severity="error" message={error} compact />
+        </View>
+      ) : null}
 
       <PremiumCard variant="muted" padding="md" style={styles.filterCard}>
         <Text style={[styles.filterTitle, { color: c.textSecondary }]}>Date range</Text>
@@ -925,9 +884,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
           </PremiumCard>
         </>
       ) : null}
-      <AppFooter />
-      </MotionScrollView>
-    </CustomerScreenShell>
+    </OpsAdminScreen>
   );
 }
 

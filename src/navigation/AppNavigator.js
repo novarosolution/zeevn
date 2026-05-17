@@ -13,13 +13,14 @@ import ReviewsScreen from "../screens/ReviewsScreen";
 import CartScreen from "../screens/CartScreen";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
-import ProfileScreen from "../screens/ProfileScreen";
-import EditProfileScreen from "../screens/EditProfileScreen";
-import MyOrdersScreen from "../screens/MyOrdersScreen";
+import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
+import ResetPasswordScreen from "../screens/ResetPasswordScreen";
+import VerifyEmailScreen from "../screens/VerifyEmailScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
-import SettingsScreen from "../screens/SettingsScreen";
 import RedeemRewardsScreen from "../screens/RedeemRewardsScreen";
-import ManageAddressScreen from "../screens/ManageAddressScreen";
+import AccountNavigator from "./AccountNavigator";
+import { ACCOUNT_NESTED } from "./accountRoutes";
+import SearchScreen from "../screens/SearchScreen";
 import SupportScreen from "../screens/SupportScreen";
 import DeliveryDashboardScreen from "../screens/DeliveryDashboardScreen";
 import AdminDashboardScreen from "../screens/admin/AdminDashboardScreen";
@@ -34,7 +35,15 @@ import AdminRewardsScreen from "../screens/admin/AdminRewardsScreen";
 import AdminSupportScreen from "../screens/admin/AdminSupportScreen";
 import AdminHomeViewScreen from "../screens/admin/AdminHomeViewScreen";
 import AdminInventoryScreen from "../screens/admin/AdminInventoryScreen";
+import AboutScreen from "../screens/editorial/AboutScreen";
+import ContactScreen from "../screens/editorial/ContactScreen";
+import FaqScreen from "../screens/editorial/FaqScreen";
+import PolicyScreen from "../screens/editorial/PolicyScreen";
+import BlogIndexScreen from "../screens/editorial/BlogIndexScreen";
+import BlogPostScreen from "../screens/editorial/BlogPostScreen";
+import NotFoundScreen from "../screens/NotFoundScreen";
 import { useAuth } from "../context/AuthContext";
+import SessionExpiryRedirect from "./SessionExpiryRedirect";
 
 const Stack = createNativeStackNavigator();
 
@@ -53,9 +62,13 @@ function withAuthGuard(Component) {
     const { isAuthenticated, isAuthLoading } = useAuth();
     useEffect(() => {
       if (!isAuthLoading && !isAuthenticated) {
-        props.navigation.replace("Login");
+        const returnTo = {
+          name: props.route.name,
+          params: props.route.params,
+        };
+        props.navigation.replace("Login", { returnTo });
       }
-    }, [isAuthLoading, isAuthenticated, props.navigation]);
+    }, [isAuthLoading, isAuthenticated, props.navigation, props.route.name, props.route.params]);
     if (isAuthLoading) {
       return <AuthGateShell />;
     }
@@ -72,7 +85,9 @@ function withRoleGuard(Component, roleCheck) {
     useEffect(() => {
       if (isAuthLoading) return;
       if (!isAuthenticated) {
-        props.navigation.replace("Login");
+        props.navigation.replace("Login", {
+          returnTo: { name: props.route.name, params: props.route.params },
+        });
         return;
       }
       if (!roleCheck(user)) {
@@ -92,24 +107,57 @@ function withRoleGuard(Component, roleCheck) {
   });
 }
 
+function createAccountRedirect(screenName) {
+  return function AccountLegacyRedirect(props) {
+    useEffect(() => {
+      const params = props.route?.params;
+      props.navigation.replace("Profile", {
+        screen: screenName,
+        params,
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot legacy redirect; omit unstable route.params
+    }, [props.navigation, screenName]);
+    return null;
+  };
+}
+
+const RedirectMyOrders = createAccountRedirect(ACCOUNT_NESTED.Orders);
+const RedirectManageAddress = createAccountRedirect(ACCOUNT_NESTED.Addresses);
+const RedirectEditProfile = createAccountRedirect(ACCOUNT_NESTED.AccountProfile);
+const RedirectSettings = createAccountRedirect(ACCOUNT_NESTED.AccountProfile);
+
 const WrappedLogin = withPageTransition(LoginScreen);
 const WrappedRegister = withPageTransition(RegisterScreen);
+const WrappedForgotPassword = withPageTransition(ForgotPasswordScreen);
+const WrappedResetPassword = withPageTransition(ResetPasswordScreen);
+const WrappedVerifyEmail = withPageTransition(VerifyEmailScreen);
 const WrappedHome = withPageTransition(HomeScreen);
+const WrappedSearch = withPageTransition(SearchScreen);
 const WrappedProduct = withPageTransition(ProductScreen);
 const WrappedCategories = withPageTransition(CategoriesScreen);
 const WrappedReviews = withPageTransition(ReviewsScreen);
 const WrappedQualityInfo = withPageTransition((props) => <TrustInfoScreen {...props} topic="quality" />);
 const WrappedProcessInfo = withPageTransition((props) => <TrustInfoScreen {...props} topic="process" />);
 const WrappedDeliveryInfo = withPageTransition((props) => <TrustInfoScreen {...props} topic="delivery" />);
+const WrappedAbout = withPageTransition(AboutScreen);
+const WrappedContact = withPageTransition(ContactScreen);
+const WrappedFaq = withPageTransition(FaqScreen);
+const WrappedPrivacy = withPageTransition(PolicyScreen);
+const WrappedTerms = withPageTransition(PolicyScreen);
+const WrappedShippingPolicy = withPageTransition(PolicyScreen);
+const WrappedReturnsPolicy = withPageTransition(PolicyScreen);
+const WrappedBlog = withPageTransition(BlogIndexScreen);
+const WrappedBlogPost = withPageTransition(BlogPostScreen);
+const WrappedNotFound = withPageTransition(NotFoundScreen);
 
 const ProtectedCart = withAuthGuard(CartScreen);
-const ProtectedProfile = withAuthGuard(ProfileScreen);
-const ProtectedEditProfile = withAuthGuard(EditProfileScreen);
-const ProtectedMyOrders = withAuthGuard(MyOrdersScreen);
+const ProtectedProfile = withAuthGuard(AccountNavigator);
+const ProtectedRedirectMyOrders = withAuthGuard(RedirectMyOrders);
+const ProtectedRedirectManageAddress = withAuthGuard(RedirectManageAddress);
+const ProtectedRedirectEditProfile = withAuthGuard(RedirectEditProfile);
+const ProtectedRedirectSettings = withAuthGuard(RedirectSettings);
 const ProtectedNotifications = withAuthGuard(NotificationsScreen);
-const ProtectedSettings = withAuthGuard(SettingsScreen);
 const ProtectedRedeemRewards = withAuthGuard(RedeemRewardsScreen);
-const ProtectedManageAddress = withAuthGuard(ManageAddressScreen);
 const ProtectedSupport = withAuthGuard(SupportScreen);
 /** Auth only — role is checked inside the screen after a fresh profile fetch (avoids stale cache + wrong redirect). */
 const ProtectedDeliveryDashboard = withAuthGuard(DeliveryDashboardScreen);
@@ -145,35 +193,56 @@ export default function AppNavigator({ navigationRef, navigationReady = false })
       {Platform.OS === "web" && navigationReady && !isAuthLoading ? (
         <WebAppHeader navigationRef={navigationRef} />
       ) : null}
-      <View style={styles.stackFill}>
+      <View
+        nativeID="main-content"
+        style={styles.stackFill}
+        accessible={false}
+        {...Platform.select({ web: { tabIndex: -1 } })}
+      >
         {isAuthLoading ? (
           <AppStartupScreen />
         ) : (
+    <>
+      <SessionExpiryRedirect />
     <Stack.Navigator initialRouteName="Home" screenOptions={screenOptions}>
       <Stack.Group screenOptions={{ presentation: "card" }}>
         <Stack.Screen name="Login" component={WrappedLogin} />
         <Stack.Screen name="Register" component={WrappedRegister} />
+        <Stack.Screen name="ForgotPassword" component={WrappedForgotPassword} />
+        <Stack.Screen name="ResetPassword" component={WrappedResetPassword} />
+        <Stack.Screen name="VerifyEmail" component={WrappedVerifyEmail} />
       </Stack.Group>
 
       <Stack.Group>
         <Stack.Screen name="Home" component={WrappedHome} />
+        <Stack.Screen name="Search" component={WrappedSearch} />
         <Stack.Screen name="Product" component={WrappedProduct} />
         <Stack.Screen name="Categories" component={WrappedCategories} />
         <Stack.Screen name="Reviews" component={WrappedReviews} />
         <Stack.Screen name="QualityInfo" component={WrappedQualityInfo} />
         <Stack.Screen name="ProcessInfo" component={WrappedProcessInfo} />
         <Stack.Screen name="DeliveryInfo" component={WrappedDeliveryInfo} />
+        <Stack.Screen name="About" component={WrappedAbout} />
+        <Stack.Screen name="Contact" component={WrappedContact} />
+        <Stack.Screen name="Faq" component={WrappedFaq} />
+        <Stack.Screen name="Privacy" component={WrappedPrivacy} />
+        <Stack.Screen name="Terms" component={WrappedTerms} />
+        <Stack.Screen name="ShippingPolicy" component={WrappedShippingPolicy} />
+        <Stack.Screen name="ReturnsPolicy" component={WrappedReturnsPolicy} />
+        <Stack.Screen name="Blog" component={WrappedBlog} />
+        <Stack.Screen name="BlogPost" component={WrappedBlogPost} />
+        <Stack.Screen name="NotFound" component={WrappedNotFound} />
       </Stack.Group>
 
       <Stack.Group>
         <Stack.Screen name="Cart" component={ProtectedCart} />
         <Stack.Screen name="Profile" component={ProtectedProfile} />
-        <Stack.Screen name="EditProfile" component={ProtectedEditProfile} />
-        <Stack.Screen name="MyOrders" component={ProtectedMyOrders} />
+        <Stack.Screen name="EditProfile" component={ProtectedRedirectEditProfile} />
+        <Stack.Screen name="MyOrders" component={ProtectedRedirectMyOrders} />
         <Stack.Screen name="Notifications" component={ProtectedNotifications} />
-        <Stack.Screen name="Settings" component={ProtectedSettings} />
+        <Stack.Screen name="Settings" component={ProtectedRedirectSettings} />
         <Stack.Screen name="RedeemRewards" component={ProtectedRedeemRewards} />
-        <Stack.Screen name="ManageAddress" component={ProtectedManageAddress} />
+        <Stack.Screen name="ManageAddress" component={ProtectedRedirectManageAddress} />
         <Stack.Screen name="Support" component={ProtectedSupport} />
       </Stack.Group>
 
@@ -196,6 +265,7 @@ export default function AppNavigator({ navigationRef, navigationReady = false })
         <Stack.Screen name="AdminHomeView" component={ProtectedAdminHomeView} />
       </Stack.Group>
     </Stack.Navigator>
+    </>
         )}
       </View>
     </View>

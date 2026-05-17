@@ -1,11 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AppFooter from "../../components/AppFooter";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
-import AdminBackLink from "../../components/admin/AdminBackLink";
-import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
+import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
 import { useTheme } from "../../context/ThemeContext";
 import {
   fetchAdminSupportThreads,
@@ -93,72 +90,22 @@ export default function AdminSupportScreen({ navigation }) {
     }
   };
 
-  if (user && !user.isAdmin) {
-    return (
-      <CustomerScreenShell style={styles.screen} variant="admin">
-        <MotionScrollView
-          style={customerScrollFill}
-          contentContainerStyle={adminInnerPageScrollContent(insets)}
-          showsVerticalScrollIndicator={false}
-        >
-          <SectionReveal delay={40} preset="fade-up">
-            <View style={styles.panel}>
-              <PremiumErrorBanner
-                severity="warning"
-                title="Admin access required"
-                message="Sign in with an admin account to view support."
-              />
-              <PremiumButton
-                label="Back to Home"
-                variant="primary"
-                onPress={() => navigation.navigate("Home")}
-                style={styles.gateCta}
-              />
-            </View>
-          </SectionReveal>
-        </MotionScrollView>
-      </CustomerScreenShell>
-    );
-  }
-
   return (
-    <CustomerScreenShell style={styles.screen} variant="admin">
-      <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <MotionScrollView
-        style={customerScrollFill}
-        contentContainerStyle={adminInnerPageScrollContent(insets)}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <SectionReveal preset="fade-up" delay={0}>
-        <View style={styles.panel}>
-          <AdminBackLink navigation={navigation} />
-          <AdminPageHeading
-            title="Support Inbox"
-            subtitle="Customer conversations and replies."
-            right={
-              <PremiumButton label="Refresh" iconLeft="refresh-outline" variant="secondary" size="sm" onPress={loadThreads} />
-            }
-          />
-          {error ? (
-            <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
-            </View>
-          ) : null}
+    <OpsAdminScreen navigation={navigation} activeRoute="AdminSupport" sectionTitle="Support inbox">
+      {error ? (
+        <View style={styles.bannerSpacer}>
+          <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
         </View>
-        </SectionReveal>
+      ) : null}
 
-        {loading ? (
-          <SectionReveal preset="fade-up" delay={40}>
-          <View style={styles.panel}>
+      {loading ? (
+                    <View style={styles.panel}>
             <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} />
           </View>
-          </SectionReveal>
-        ) : (
+                  ) : (
           <View style={isWideWeb ? styles.workspaceGrid : null}>
             <View style={isWideWeb ? styles.workspaceRail : null}>
-              <SectionReveal preset="fade-up" delay={40}>
-                <View style={styles.panel}>
+                              <View style={styles.panel}>
                   <Text style={styles.sectionTitle}>Conversations</Text>
                   {(threads || []).length === 0 ? (
                     <PremiumEmptyState
@@ -187,11 +134,9 @@ export default function AdminSupportScreen({ navigation }) {
                     ))
                   )}
                 </View>
-              </SectionReveal>
-            </View>
+                          </View>
             <View style={isWideWeb ? styles.workspaceMain : null}>
-              <SectionReveal preset="fade-up" delay={100}>
-                <View style={styles.panel}>
+                              <View style={styles.panel}>
                   <View style={styles.rowBetween}>
                     <Text style={styles.sectionTitle}>Thread Details</Text>
                     {selectedThread ? (
@@ -255,14 +200,10 @@ export default function AdminSupportScreen({ navigation }) {
                     </>
                   )}
                 </View>
-              </SectionReveal>
-            </View>
+                          </View>
           </View>
         )}
-        <AppFooter />
-      </MotionScrollView>
-      </KeyboardAvoidingView>
-    </CustomerScreenShell>
+    </OpsAdminScreen>
   );
 }
 

@@ -1,10 +1,20 @@
 import { Platform } from "react-native";
 import { ALCHEMY, HERITAGE } from "./customerAlchemy";
 
-/** Fixed top bar height on web — slimmer so content starts sooner. */
-export const WEB_HEADER_HEIGHT = 66;
+/** Web header tallest band (desktop default, unscrolled); layout padding clears this. */
+export const WEB_HEADER_HEIGHT = 72;
 /** Shared top offset for sticky page chrome below fixed header. */
 export const WEB_STICKY_TOP_OFFSET = WEB_HEADER_HEIGHT + 16;
+
+/** Responsive header height bands — WebAppHeader uses these internally. */
+export const WEB_HEADER_BAND = {
+  desktopDefault: 72,
+  desktopScrolled: 60,
+  tabletDefault: 64,
+  tabletScrolled: 56,
+  phoneDefault: 56,
+  phoneScrolled: 52,
+};
 /** Shared z-index ladder to prevent header/dropdown overlap bugs. */
 export const WEB_Z_INDEX = {
   header: 1000,
@@ -90,11 +100,11 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
         background: rgba(100, 116, 139, 0.56);
       }
       ::selection {
-        background: rgba(220, 38, 38, 0.22);
+        background: rgba(184, 134, 11, 0.22);
         color: inherit;
       }
       *:focus-visible {
-        outline: 2px solid rgba(220, 38, 38, 0.38);
+        outline: 2px solid rgba(14, 23, 41, 0.38);
         outline-offset: 2px;
         border-radius: 12px;
       }

@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { loginRequest, registerRequest } from "../services/authService";
 import { fetchUserProfile } from "../services/userService";
@@ -8,10 +9,40 @@ import {
   LEGACY_AUTH_SESSION_KEY,
   LEGACY_JEEVAN_AUTH_SESSION_KEY,
 } from "../constants/migrationKeys";
+import { SESSION_ID_STORAGE_KEY } from "../constants/sessionConstants";
+import { clearStoredSessionId, loadStoredSessionId, persistSessionId } from "../utils/sessionStorage";
 
 const AuthContext = createContext(undefined);
 const AUTH_STORAGE_KEY = "@zeevan_auth";
+const AUTH_SESSION_STORAGE_KEY = "@zeevan_auth_session";
 const PROFILE_REFRESH_TTL_MS = 45 * 1000;
+
+function readWebSessionStorage() {
+  if (Platform.OS !== "web" || typeof sessionStorage === "undefined") return null;
+  try {
+    return sessionStorage.getItem(AUTH_SESSION_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeWebSessionStorage(payload) {
+  if (Platform.OS !== "web" || typeof sessionStorage === "undefined") return;
+  try {
+    sessionStorage.setItem(AUTH_SESSION_STORAGE_KEY, payload);
+  } catch {
+    // session-only is best-effort on web
+  }
+}
+
+function clearWebSessionStorage() {
+  if (Platform.OS !== "web" || typeof sessionStorage === "undefined") return;
+  try {
+    sessionStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -24,6 +55,8 @@ export function AuthProvider({ children }) {
   const refreshTokenRef = useRef(null);
   const userRef = useRef(null);
   const profileRefreshAtRef = useRef(0);
+  const rememberSessionRef = useRef(true);
+  const sessionIdRef = useRef("");
 
   useEffect(() => {
     tokenRef.current = token;
@@ -35,15 +68,19 @@ export function AuthProvider({ children }) {
     userRef.current = user;
   }, [user]);
 
-  const persistSession = useCallback(async (nextToken, nextRefreshToken, nextUser) => {
-    await AsyncStorage.setItem(
-      AUTH_STORAGE_KEY,
-      JSON.stringify({
-        token: nextToken,
-        refreshToken: nextRefreshToken,
-        user: nextUser,
-      })
-    );
+  const persistSession = useCallback(async (nextToken, nextRefreshToken, nextUser, { remember = true } = {}) => {
+    const payload = JSON.stringify({
+      token: nextToken,
+      refreshToken: nextRefreshToken,
+      user: nextUser,
+    });
+    if (remember) {
+      await AsyncStorage.setItem(AUTH_STORAGE_KEY, payload);
+      clearWebSessionStorage();
+      return;
+    }
+    await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+    writeWebSessionStorage(payload);
   }, []);
 
   const refreshProfile = useCallback(
@@ -57,7 +94,9 @@ export function AuthProvider({ children }) {
       profileRefreshAtRef.current = Date.now();
       setUser(freshUser);
       userRef.current = freshUser;
-      await persistSession(tokenRef.current, refreshTokenRef.current, freshUser);
+      await persistSession(tokenRef.current, refreshTokenRef.current, freshUser, {
+        remember: rememberSessionRef.current,
+      });
       return freshUser;
     },
     [persistSession]
@@ -68,11 +107,15 @@ export function AuthProvider({ children }) {
     setToken(null);
     setRefreshToken(null);
     try {
+      sessionIdRef.current = "";
       await AsyncStorage.multiRemove([
         AUTH_STORAGE_KEY,
         LEGACY_JEEVAN_AUTH_SESSION_KEY,
         LEGACY_AUTH_SESSION_KEY,
+        SESSION_ID_STORAGE_KEY,
       ]);
+      await clearStoredSessionId();
+      clearWebSessionStorage();
     } catch {
       // memory state already cleared
     }
@@ -84,6 +127,7 @@ export function AuthProvider({ children }) {
     configureApiClient({
       getAccessToken: () => tokenRef.current,
       getRefreshToken: () => refreshTokenRef.current,
+      getSessionId: () => sessionIdRef.current,
       onTokensRefreshed: async (nextToken, nextUser) => {
         if (!nextToken) return;
         setToken(nextToken);
@@ -94,7 +138,9 @@ export function AuthProvider({ children }) {
           userRef.current = nextUser;
         }
         try {
-          await persistSession(nextToken, refreshTokenRef.current, mergedUser);
+          await persistSession(nextToken, refreshTokenRef.current, mergedUser, {
+            remember: rememberSessionRef.current,
+          });
         } catch {
           // Persisting is best-effort; in-memory state is already updated.
         }
@@ -120,6 +166,9 @@ export function AuthProvider({ children }) {
       try {
         let saved = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
         if (!saved) {
+          saved = readWebSessionStorage();
+        }
+        if (!saved) {
           saved = await AsyncStorage.getItem(LEGACY_JEEVAN_AUTH_SESSION_KEY);
           if (saved) {
             await AsyncStorage.setItem(AUTH_STORAGE_KEY, saved);
@@ -139,6 +188,8 @@ export function AuthProvider({ children }) {
 
         const parsed = JSON.parse(saved);
         if (parsed?.token && parsed?.user) {
+          const storedSid = await loadStoredSessionId();
+          sessionIdRef.current = storedSid || "";
           if (isMounted) {
             setToken(parsed.token);
             tokenRef.current = parsed.token;
@@ -170,6 +221,7 @@ export function AuthProvider({ children }) {
           LEGACY_JEEVAN_AUTH_SESSION_KEY,
           LEGACY_AUTH_SESSION_KEY,
         ]);
+        clearWebSessionStorage();
       } finally {
         if (isMounted) {
           setIsAuthLoading(false);
@@ -198,17 +250,25 @@ export function AuthProvider({ children }) {
     });
   }, [token]);
 
-  const saveSession = useCallback(async (sessionToken, sessionUser, sessionRefreshToken = null) => {
-    setToken(sessionToken);
-    tokenRef.current = sessionToken;
-    setRefreshToken(sessionRefreshToken);
-    refreshTokenRef.current = sessionRefreshToken;
-    setUser(sessionUser);
-    userRef.current = sessionUser;
-    profileRefreshAtRef.current = Date.now();
-    setSessionExpired(false);
-    await persistSession(sessionToken, sessionRefreshToken, sessionUser);
-  }, [persistSession]);
+  const saveSession = useCallback(
+    async (sessionToken, sessionUser, sessionRefreshToken = null, { remember = true, sessionId = null } = {}) => {
+      rememberSessionRef.current = remember;
+      setToken(sessionToken);
+      tokenRef.current = sessionToken;
+      setRefreshToken(sessionRefreshToken);
+      refreshTokenRef.current = sessionRefreshToken;
+      if (sessionId) {
+        sessionIdRef.current = sessionId;
+        await persistSessionId(sessionId);
+      }
+      setUser(sessionUser);
+      userRef.current = sessionUser;
+      profileRefreshAtRef.current = Date.now();
+      setSessionExpired(false);
+      await persistSession(sessionToken, sessionRefreshToken, sessionUser, { remember });
+    },
+    [persistSession]
+  );
 
   const updateStoredUser = useCallback(async (nextUser) => {
     setUser(nextUser);
@@ -217,20 +277,10 @@ export function AuthProvider({ children }) {
     if (!tokenRef.current) {
       return;
     }
-    await persistSession(tokenRef.current, refreshTokenRef.current, nextUser);
+    await persistSession(tokenRef.current, refreshTokenRef.current, nextUser, {
+      remember: rememberSessionRef.current,
+    });
   }, [persistSession]);
-
-  const loginWithCredentials = useCallback(async ({ email, password }) => {
-    const data = await loginRequest({ email, password });
-    await saveSession(data.token, data.user, data.refreshToken || null);
-    return data.user;
-  }, [saveSession]);
-
-  const registerWithCredentials = useCallback(async ({ name, email, password }) => {
-    const data = await registerRequest({ name, email, password });
-    await saveSession(data.token, data.user, data.refreshToken || null);
-    return data.user;
-  }, [saveSession]);
 
   const logout = useCallback(async () => {
     await clearSession();
@@ -240,6 +290,66 @@ export function AuthProvider({ children }) {
   const acknowledgeSessionExpired = useCallback(() => {
     setSessionExpired(false);
   }, []);
+
+  const rehydrateFromStorage = useCallback(async () => {
+    try {
+      let saved = await AsyncStorage.getItem(AUTH_STORAGE_KEY);
+      if (!saved) saved = readWebSessionStorage();
+      if (!saved) return;
+      const parsed = JSON.parse(saved);
+      if (!parsed?.token || !parsed?.user) return;
+      setToken(parsed.token);
+      tokenRef.current = parsed.token;
+      setRefreshToken(parsed.refreshToken || null);
+      refreshTokenRef.current = parsed.refreshToken || null;
+      setUser(parsed.user);
+      userRef.current = parsed.user;
+      setSessionExpired(false);
+    } catch {
+      /* noop */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof window === "undefined") return undefined;
+    const onStorage = (event) => {
+      if (event.key === AUTH_STORAGE_KEY && event.newValue) {
+        rehydrateFromStorage();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [rehydrateFromStorage]);
+
+  const loginWithCredentials = useCallback(
+    async ({ email, password, remember = true, signal, captchaToken } = {}) => {
+      const data = await loginRequest({ email, password, signal, captchaToken });
+      await saveSession(data.token, data.user, data.refreshToken || null, {
+        remember,
+        sessionId: data.sessionId || null,
+      });
+      return data.user;
+    },
+    [saveSession]
+  );
+
+  const registerWithCredentials = useCallback(
+    async ({ name, email, password, remember = true, signal, captchaToken } = {}) => {
+      const data = await registerRequest({ name, email, password, signal, captchaToken });
+      const requiresEmailVerification = Boolean(data.requiresEmailVerification);
+      if (!requiresEmailVerification && data.token) {
+        await saveSession(data.token, data.user, data.refreshToken || null, {
+          remember,
+          sessionId: data.sessionId || null,
+        });
+      }
+      return {
+        user: data.user,
+        requiresEmailVerification,
+      };
+    },
+    [saveSession]
+  );
 
   const value = useMemo(
     () => ({
@@ -254,6 +364,7 @@ export function AuthProvider({ children }) {
       updateStoredUser,
       refreshProfile,
       logout,
+      rehydrateFromStorage,
     }),
     [
       user,
@@ -266,6 +377,7 @@ export function AuthProvider({ children }) {
       updateStoredUser,
       refreshProfile,
       logout,
+      rehydrateFromStorage,
     ]
   );
 

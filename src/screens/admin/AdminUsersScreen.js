@@ -1,13 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AppFooter from "../../components/AppFooter";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
-import AdminBackLink from "../../components/admin/AdminBackLink";
-import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import MotionScrollView from "../../components/motion/MotionScrollView";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { useAuth } from "../../context/AuthContext";
+import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
+import OpsListSkeleton from "../../components/ops/OpsListSkeleton";
 import {
   deleteAdminUser,
   fetchAdminUsers,
@@ -45,14 +43,18 @@ export default function AdminUsersScreen({ navigation }) {
   const [busyUserId, setBusyUserId] = useState("");
   const [confirmDeleteUserId, setConfirmDeleteUserId] = useState("");
   const [renderCount, setRenderCount] = useState(40);
+  const [usersLoading, setUsersLoading] = useState(true);
 
   const loadUsers = useCallback(async () => {
     try {
+      setUsersLoading(true);
       setError("");
       const response = await fetchAdminUsers(token);
       setUsers(response);
     } catch (err) {
       setError(err.message || "Failed to load users.");
+    } finally {
+      setUsersLoading(false);
     }
   }, [token]);
 
@@ -99,36 +101,6 @@ export default function AdminUsersScreen({ navigation }) {
     const usersWithAddress = users.filter((item) => Boolean(item.defaultAddress?.line1)).length;
     return { total, admins, customers, usersWithAddress, deliveryPartners };
   }, [users]);
-
-  if (user && !user.isAdmin) {
-    return (
-      <CustomerScreenShell style={styles.screen} variant="admin">
-        <MotionScrollView
-          style={customerScrollFill}
-          contentContainerStyle={adminInnerPageScrollContent(insets)}
-          showsVerticalScrollIndicator={false}
-        >
-          <SectionReveal delay={40} preset="fade-up">
-            <View style={styles.panel}>
-              <PremiumErrorBanner
-                severity="warning"
-                title="Admin access required"
-                message="This account does not have admin privileges."
-              />
-              <PremiumButton
-                label="Back to home"
-                iconLeft="home-outline"
-                variant="primary"
-                size="md"
-                onPress={() => navigation.navigate("Home")}
-                style={styles.gateCta}
-              />
-            </View>
-          </SectionReveal>
-        </MotionScrollView>
-      </CustomerScreenShell>
-    );
-  }
 
   function MetricCard({ label, value }) {
     return (
@@ -199,19 +171,7 @@ export default function AdminUsersScreen({ navigation }) {
   };
 
   return (
-    <CustomerScreenShell style={styles.screen} variant="admin">
-      <MotionScrollView
-        style={customerScrollFill}
-        contentContainerStyle={adminInnerPageScrollContent(insets)}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.panel}>
-          <SectionReveal preset="fade-up" delay={0}>
-          <AdminBackLink navigation={navigation} />
-          <AdminPageHeading
-            title={ADMIN_SCREEN_COPY.users.title}
-            subtitle={ADMIN_SCREEN_COPY.users.subtitle}
-          />
+    <OpsAdminScreen navigation={navigation} activeRoute="AdminUsers" sectionTitle="Manage users">
           {error ? (
             <View style={styles.bannerSpacer}>
               <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
@@ -274,11 +234,10 @@ export default function AdminUsersScreen({ navigation }) {
               onPress={() => setRoleFilter("delivery")}
             />
           </View>
-          </SectionReveal>
-
-          <SectionReveal preset="fade-up" delay={60}>
-          <View style={styles.listContent}>
-            {visibleUsers.length === 0 ? (
+          
+                    <View style={styles.listContent}>
+            {usersLoading && users.length === 0 ? <OpsListSkeleton rows={5} /> : null}
+            {!usersLoading && visibleUsers.length === 0 ? (
               <PremiumEmptyState
                 iconName="people-outline"
                 title="No users match"
@@ -286,7 +245,8 @@ export default function AdminUsersScreen({ navigation }) {
                 compact
               />
             ) : null}
-            {renderedUsers.map((item) => (
+            {!usersLoading &&
+            renderedUsers.map((item) => (
               <PremiumCard key={item._id} padding="md" style={styles.cardWrap}>
                 <View style={styles.cardTopRow}>
                   <View style={styles.userMain}>
@@ -346,7 +306,7 @@ export default function AdminUsersScreen({ navigation }) {
                   <PremiumButton
                     label={busyUserId === item._id ? "Deleting..." : "Delete User"}
                     iconLeft="trash-outline"
-                    variant="danger"
+                    variant="destructive"
                     size="sm"
                     onPress={() => setConfirmDeleteUserId(item._id)}
                     disabled={busyUserId === item._id}
@@ -403,11 +363,7 @@ export default function AdminUsersScreen({ navigation }) {
               />
             ) : null}
           </View>
-          </SectionReveal>
-        </View>
-        <AppFooter />
-      </MotionScrollView>
-      <PremiumConfirmDialog
+            <PremiumConfirmDialog
         visible={Boolean(confirmDeleteUserId)}
         title="Delete user account?"
         message="This action permanently removes the user account and cannot be undone."
@@ -417,7 +373,7 @@ export default function AdminUsersScreen({ navigation }) {
         onCancel={() => setConfirmDeleteUserId("")}
         onConfirm={() => handleDelete(confirmDeleteUserId)}
       />
-    </CustomerScreenShell>
+    </OpsAdminScreen>
   );
 }
 

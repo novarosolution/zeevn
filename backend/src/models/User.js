@@ -60,10 +60,86 @@ const userSchema = new mongoose.Schema(
       required: true,
       minlength: 6,
     },
+    passwordResetToken: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    passwordResetExpires: {
+      type: Date,
+      default: null,
+      select: false,
+    },
     phone: {
       type: String,
       default: "",
       trim: true,
+    },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    emailVerificationExpires: {
+      type: Date,
+      default: null,
+      select: false,
+    },
+    pendingEmail: {
+      type: String,
+      default: "",
+      trim: true,
+      lowercase: true,
+    },
+    phoneOtpHash: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    phoneOtpExpires: {
+      type: Date,
+      default: null,
+      select: false,
+    },
+    pendingPhone: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    activeSessions: {
+      type: [
+        {
+          sessionId: { type: String, required: true },
+          deviceName: { type: String, default: "Unknown device" },
+          location: { type: String, default: "" },
+          lastActiveAt: { type: Date, default: Date.now },
+          userAgent: { type: String, default: "" },
+        },
+      ],
+      default: [],
+    },
+    accountActivity: {
+      type: [
+        {
+          type: { type: String, required: true },
+          detail: { type: String, default: "" },
+          at: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+    },
+    /** Set when user requests account deletion; blocks login until purged. */
+    accountDeletionRequestedAt: {
+      type: Date,
+      default: null,
+    },
+    profileVersion: {
+      type: Number,
+      default: 1,
     },
     /** Profile photo URL (e.g. Cloudinary). */
     avatar: {

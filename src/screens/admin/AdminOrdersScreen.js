@@ -1,28 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import Animated, {
-  Easing as ReanimatedEasing,
-  interpolateColor,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import MotionScrollView from "../../components/motion/MotionScrollView";
-import SectionReveal from "../../components/motion/SectionReveal";
-import useReducedMotion from "../../hooks/useReducedMotion";
-import AppFooter from "../../components/AppFooter";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
-import AdminBackLink from "../../components/admin/AdminBackLink";
-import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
+import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
+import OrderStatusBadge from "../../components/ops/OrderStatusBadge";
+import PaymentStatusBadge from "../../components/ops/PaymentStatusBadge";
+import OpsListSkeleton from "../../components/ops/OpsListSkeleton";
 import {
   deleteAdminOrder,
   fetchAdminOrders,
@@ -30,10 +13,8 @@ import {
   updateAdminOrderDetails,
   updateOrderStatus,
 } from "../../services/adminService";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
 import { adminPanel } from "../../theme/adminLayout";
-import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
 import { getSemanticColors, layout, radius, spacing } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
 import {
@@ -52,74 +33,6 @@ import PremiumConfirmDialog from "../../components/ui/PremiumConfirmDialog";
 
 const STATUSES = ["all", ...ALL_ORDER_STATUSES];
 
-function AdminPaymentStatusChip({ paymentStatus, c, styles }) {
-  const ps = String(paymentStatus || "pending").toLowerCase();
-  const label =
-    ps === "paid"
-      ? "Paid"
-      : ps === "pending"
-        ? "Payment pending"
-        : ps === "failed"
-          ? "Payment failed"
-          : ps === "refunded"
-            ? "Refunded"
-            : String(paymentStatus || "—");
-  const bg =
-    ps === "paid"
-      ? c.secondarySoft
-      : ps === "failed"
-        ? "rgba(220, 38, 38, 0.08)"
-        : ps === "refunded"
-          ? c.surfaceMuted
-          : c.primarySoft;
-  const border =
-    ps === "paid" ? c.secondaryBorder : ps === "failed" ? c.danger : ps === "refunded" ? c.border : c.primaryBorder;
-  const textColor =
-    ps === "paid" ? c.secondaryDark : ps === "failed" ? c.danger : ps === "refunded" ? c.textMuted : c.primaryDark;
-  return (
-    <View style={[styles.paymentStatusBadge, { backgroundColor: bg, borderColor: border }]}>
-      <Text style={[styles.paymentStatusBadgeText, { color: textColor }]}>{label}</Text>
-    </View>
-  );
-}
-
-function AdminOrderStatusBadge({ status, c, styles, reducedMotion }) {
-  const s = String(status || "");
-  let target = 1;
-  if (s === "cancelled") target = 0;
-  else if (s === "delivered") target = 3;
-  else if (["shipped", "out_for_delivery", "ready_for_pickup"].includes(s)) target = 2;
-  else if (["pending", "pending_payment", "confirmed", "preparing", "paid"].includes(s)) target = 1;
-  const anim = useSharedValue(reducedMotion ? target : 0);
-  useEffect(() => {
-    if (reducedMotion) {
-      anim.value = target;
-      return;
-    }
-    anim.value = withTiming(target, {
-      duration: 360,
-      easing: ReanimatedEasing.bezier(0.22, 1, 0.36, 1),
-    });
-  }, [target, reducedMotion, anim]);
-  const pillStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
-      anim.value,
-      [0, 1, 2, 3],
-      [c.surfaceMuted, c.primarySoft, c.secondarySoft, c.secondarySoft],
-    ),
-    borderColor: interpolateColor(
-      anim.value,
-      [0, 1, 2, 3],
-      [c.danger, c.primaryBorder, c.secondaryBorder, c.secondaryBorder],
-    ),
-  }));
-  return (
-    <Animated.View style={[styles.statusBadge, pillStyle]}>
-      <Text style={styles.statusBadgeText}>{getOrderStatusLabel(s)}</Text>
-    </Animated.View>
-  );
-}
-
 export default function AdminOrdersScreen({ navigation, route }) {
   const { token, user } = useAuth();
   const [orders, setOrders] = useState([]);
@@ -133,6 +46,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
   const [deliveryPartners, setDeliveryPartners] = useState([]);
   const [confirmDeleteOrderId, setConfirmDeleteOrderId] = useState("");
   const [renderCount, setRenderCount] = useState(30);
+  const [ordersLoading, setOrdersLoading] = useState(true);
 
   const { colors: c, shadowPremium } = useTheme();
   const semantic = useMemo(() => getSemanticColors(c), [c]);
@@ -140,11 +54,9 @@ export default function AdminOrdersScreen({ navigation, route }) {
     () => createAdminOrdersStyles(c, shadowPremium, semantic),
     [c, shadowPremium, semantic]
   );
-  const insets = useSafeAreaInsets();
-  const reducedMotion = useReducedMotion();
-
   const loadOrders = useCallback(async () => {
     try {
+      setOrdersLoading(true);
       setError("");
       const [response, users] = await Promise.all([
         fetchAdminOrders(token),
@@ -154,6 +66,8 @@ export default function AdminOrdersScreen({ navigation, route }) {
       setDeliveryPartners((users || []).filter((u) => u.isDeliveryPartner));
     } catch (err) {
       setError(err.message || "Failed to load orders.");
+    } finally {
+      setOrdersLoading(false);
     }
   }, [token]);
 
@@ -207,36 +121,6 @@ export default function AdminOrdersScreen({ navigation, route }) {
     const delivered = orders.filter((order) => order.status === "delivered").length;
     return { total, newOrders, inKitchen, outForDelivery, delivered };
   }, [orders]);
-
-  if (user && !user.isAdmin) {
-    return (
-      <CustomerScreenShell style={styles.screen} variant="admin">
-        <MotionScrollView
-          style={customerScrollFill}
-          contentContainerStyle={adminInnerPageScrollContent(insets)}
-          showsVerticalScrollIndicator={false}
-        >
-          <SectionReveal delay={40} preset="fade-up">
-            <View style={styles.panel}>
-              <PremiumErrorBanner
-                severity="warning"
-                title="Admin access required"
-                message="This account does not have admin privileges."
-              />
-              <PremiumButton
-                label="Back to home"
-                iconLeft="home-outline"
-                variant="primary"
-                size="md"
-                onPress={() => navigation.navigate("Home")}
-                style={styles.gateCta}
-              />
-            </View>
-          </SectionReveal>
-        </MotionScrollView>
-      </CustomerScreenShell>
-    );
-  }
 
   const handleStatus = async (orderId, status) => {
     try {
@@ -386,21 +270,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
   }
 
   return (
-    <CustomerScreenShell style={styles.screen} variant="admin">
-      <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-      <MotionScrollView
-        style={customerScrollFill}
-        contentContainerStyle={adminInnerPageScrollContent(insets)}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.panel}>
-          <SectionReveal preset="fade-up" delay={0}>
-          <AdminBackLink navigation={navigation} />
-          <AdminPageHeading
-            title="Manage orders"
-            subtitle="Track statuses, assign delivery, and move orders forward."
-          />
+    <OpsAdminScreen navigation={navigation} activeRoute="AdminOrders" sectionTitle="Manage orders">
           {error ? (
             <View style={styles.bannerSpacer}>
               <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
@@ -474,18 +344,19 @@ export default function AdminOrdersScreen({ navigation, route }) {
               ))}
             </ScrollView>
           )}
-          </SectionReveal>
 
-          <SectionReveal preset="fade-up" delay={60}>
+          {ordersLoading && orders.length === 0 ? <OpsListSkeleton rows={5} /> : null}
+
           <View style={styles.listContent}>
-            {renderedOrders.map((item) => {
+            {!ordersLoading &&
+            renderedOrders.map((item) => {
               const accentBorder =
                 item.status === "delivered"
                   ? c.secondary
                   : item.status === "cancelled"
                     ? c.danger
                     : ["shipped", "out_for_delivery"].includes(item.status)
-                      ? c.primary
+                      ? c.accentGold || c.primary
                       : c.border;
               return (
               <PremiumCard
@@ -503,13 +374,8 @@ export default function AdminOrdersScreen({ navigation, route }) {
                     </Text>
                   </View>
                   <View style={styles.badgeCluster}>
-                    <AdminOrderStatusBadge
-                      status={item.status}
-                      c={c}
-                      styles={styles}
-                      reducedMotion={reducedMotion}
-                    />
-                    <AdminPaymentStatusChip paymentStatus={item.paymentStatus} c={c} styles={styles} />
+                    <OrderStatusBadge status={item.status} context="admin" />
+                    <PaymentStatusBadge paymentStatus={item.paymentStatus} />
                   </View>
                 </View>
                 <Text style={styles.amountText}>{formatINR(Number(item.totalPrice || 0))}</Text>
@@ -778,7 +644,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                   <PremiumButton
                     label={busyOrderId === item._id ? "Deleting…" : "Delete order"}
                     iconLeft="trash-outline"
-                    variant="danger"
+                    variant="destructive"
                     size="sm"
                     loading={busyOrderId === item._id}
                     disabled={busyOrderId === item._id}
@@ -797,7 +663,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                 style={styles.loadMoreBtn}
               />
             ) : null}
-            {visibleOrders.length === 0 ? (
+            {!ordersLoading && visibleOrders.length === 0 ? (
               <PremiumEmptyState
                 iconName="receipt-outline"
                 title="No orders match this filter"
@@ -806,12 +672,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
               />
             ) : null}
           </View>
-          </SectionReveal>
-        </View>
-        <AppFooter />
-      </MotionScrollView>
-      </KeyboardAvoidingView>
-      <PremiumConfirmDialog
+                  <PremiumConfirmDialog
         visible={Boolean(confirmDeleteOrderId)}
         title="Delete this order?"
         message="This permanently deletes the order record. This action cannot be undone."
@@ -821,7 +682,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
         onCancel={() => setConfirmDeleteOrderId("")}
         onConfirm={() => handleDelete(confirmDeleteOrderId)}
       />
-    </CustomerScreenShell>
+    </OpsAdminScreen>
   );
 }
 

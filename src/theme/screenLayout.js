@@ -56,9 +56,9 @@ export function customerPanelVariant(c, shadowPremium, isDark, variant = "defaul
   if (variant === "danger") {
     return {
       ...base,
-      borderTopColor: isDark ? "rgba(248, 113, 113, 0.55)" : "rgba(220, 38, 38, 0.4)",
-      borderColor: isDark ? "rgba(248, 113, 113, 0.32)" : "rgba(220, 38, 38, 0.2)",
-      backgroundColor: isDark ? "rgba(127, 29, 29, 0.12)" : "rgba(220, 38, 38, 0.05)",
+      borderTopColor: isDark ? "rgba(248, 113, 113, 0.45)" : "rgba(178, 58, 58, 0.35)",
+      borderColor: isDark ? "rgba(248, 113, 113, 0.28)" : "rgba(178, 58, 58, 0.2)",
+      backgroundColor: isDark ? "rgba(127, 29, 29, 0.12)" : "rgba(178, 58, 58, 0.06)",
     };
   }
   if (variant === "interactive") {

@@ -1,5 +1,5 @@
 import { Platform, StyleSheet } from "react-native";
-import { ALCHEMY, HERITAGE } from "./customerAlchemy";
+import { ALCHEMY } from "./customerAlchemy";
 import { darkColors, getSemanticColors, layout, semanticRadius, spacing } from "./tokens";
 
 function themeIsDark(c) {
@@ -14,12 +14,12 @@ export function adminPanel(c, shadowPremium, isDark) {
   const dark = typeof isDark === "boolean" ? isDark : themeIsDark(c);
   const semantic = getSemanticColors(c);
   const base = {
-    backgroundColor: dark ? semantic.bg.surface : ALCHEMY.ivory,
+    backgroundColor: dark ? semantic.bg.surface : semantic.bg.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: dark ? semantic.border.subtle : ALCHEMY.pillInactive,
+    borderColor: dark ? semantic.border.subtle : semantic.border.subtle,
     borderRadius: semanticRadius.panel,
-    borderTopWidth: Platform.OS === "web" ? 2 : 1,
-    borderTopColor: dark ? semantic.border.accent : HERITAGE.amberMid,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: dark ? semantic.border.subtle : semantic.border.subtle,
     padding: Platform.OS === "web" ? spacing.lg + 4 : spacing.md + 2,
     ...(Platform.OS === "web" ? shadowPremium : {}),
   };
@@ -51,14 +51,14 @@ export function adminModuleSection(isDark, c) {
     borderRadius: semanticRadius.card,
     padding: spacing.md + 2,
     paddingTop: spacing.sm,
-    backgroundColor: isDark ? semantic.bg.muted : ALCHEMY.creamAlt,
+    backgroundColor: isDark ? semantic.bg.muted : semantic.bg.surface,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? semantic.border.subtle : ALCHEMY.pillInactive,
+    borderColor: isDark ? semantic.border.subtle : semantic.border.subtle,
     borderLeftWidth: 2,
-    borderLeftColor: c.primary,
+    borderLeftColor: semantic.border.strong,
     ...Platform.select({
       ios: {
-        shadowColor: isDark ? "#000" : "#18181B",
+        shadowColor: isDark ? "#0E0E0E" : "#18181B",
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: isDark ? 0.22 : 0.06,
         shadowRadius: 10,

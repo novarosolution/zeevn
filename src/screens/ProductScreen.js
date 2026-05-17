@@ -1,101 +1,150 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  useWindowDimensions,
   View,
+  useWindowDimensions,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated";
 import AppFooter from "../components/AppFooter";
-import CustomerScreenShell from "../components/CustomerScreenShell";
 import BottomNavBar from "../components/BottomNavBar";
-import { getProductById, getProductReviews, submitProductReview } from "../services/productService";
+import MotionScrollView from "../components/motion/MotionScrollView";
+import ProductGallery from "../components/product/ProductGallery";
+import GalleryScrollFab from "../components/product/GalleryScrollFab";
+import MobileStickyDock from "../components/product/MobileStickyDock";
+import ProductPurchaseColumn from "../components/product/ProductPurchaseColumn";
+import ProductReviews from "../components/product/ProductReviews";
+import ProductRichDetails, { hasRichProductContent } from "../components/product/ProductRichDetails";
+import ProductCard from "../components/ProductCard";
+import Card from "../components/ui/Card";
+import EmptyState from "../components/ui/EmptyState";
+import Screen from "../components/ui/Screen";
+import SectionHeader from "../components/ui/SectionHeader";
+import SkeletonBlock from "../components/ui/SkeletonBlock";
+import Toast from "../components/ui/Toast";
+import { getProductById, getProductReviews, getProducts } from "../services/productService";
 import { useCart } from "../context/CartContext";
+import { hapticImpactLight, hapticSuccess } from "../utils/haptics";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import {
+  CUSTOMER_BOTTOM_NAV_BAR_HEIGHT,
   customerFloatingNavOffset,
   customerInnerPageScrollContent,
-  customerPanel,
-  customerScrollFill,
+  customerScrollPaddingBottom,
   customerScrollPaddingTop,
+  customerWebStickyTop,
 } from "../theme/screenLayout";
-import { fonts, icon as sz, layout, lineHeight, radius, semanticRadius, spacing, typography } from "../theme/tokens";
-import { platformShadow } from "../theme/shadowPlatform";
+import { fonts, icon as sz } from "../theme/tokens";
 import { formatINR } from "../utils/currency";
-import { getImageUriCandidates, PRODUCT_HERO_BLURHASH } from "../utils/image";
+import { getImageUriCandidates } from "../utils/image";
 import { matchesShelfProduct } from "../utils/shelfMatch";
 import { productToCartLine } from "../utils/productCart";
-import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI, HERITAGE } from "../theme/customerAlchemy";
 import { APP_LOADING_UI, PRODUCT_SCREEN, fillProductScreen } from "../content/appContent";
-import PremiumLoader from "../components/ui/PremiumLoader";
-import PremiumEmptyState from "../components/ui/PremiumEmptyState";
-import PremiumInput from "../components/ui/PremiumInput";
-import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
-import PremiumButton from "../components/ui/PremiumButton";
-import PremiumChip from "../components/ui/PremiumChip";
-import PremiumStickyBar from "../components/ui/PremiumStickyBar";
-import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
-import PremiumCard from "../components/ui/PremiumCard";
-import GoldHairline from "../components/ui/GoldHairline";
-import SkeletonBlock from "../components/ui/SkeletonBlock";
-import MotionScrollView from "../components/motion/MotionScrollView";
-import HeroParallax from "../components/motion/HeroParallax";
-import SectionReveal from "../components/motion/SectionReveal";
-import Animated, { FadeInDown, FadeOutDown } from "react-native-reanimated";
 import useReducedMotion from "../hooks/useReducedMotion";
 import useRouteMeta from "../hooks/useRouteMeta";
+import { buildProductRouteMetaOverrides } from "../utils/productMeta";
+import LiveRegion from "../components/a11y/LiveRegion";
+import { injectProductPrintStyles } from "../styles/productPrint.web";
+import { navigateToLogin } from "../components/auth/authNavigation";
+
+const RECENT_PRODUCT_IDS_KEY = "@zeevan_recent_product_ids";
+const RECENT_PRODUCT_VIEWS_KEY = "@zeevan_recent_product_views";
+const VIEWED_RECENTLY_MS = 7 * 24 * 60 * 60 * 1000;
+const DOCK_HEIGHT_ESTIMATE = 64;
+const FLY_MS = 480;
+const FLY_EASE = Easing.bezier(0.4, 0, 0.2, 1);
 
 export default function ProductScreen({ route, navigation }) {
   const { productId } = route.params ?? {};
-  const { colors: c, shadowPremium, isDark } = useTheme();
+  const loginReturnTo = useMemo(
+    () => (productId ? { name: "Product", params: { productId } } : undefined),
+    [productId]
+  );
+  const goLogin = useCallback(() => {
+    navigateToLogin(navigation, { returnTo: loginReturnTo });
+  }, [loginReturnTo, navigation]);
+  const { semanticPalette, TYPE, SPACING, RADII, SHADOWS } = useTheme();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
-  const { addToCart, removeFromCart, getItemQuantity } = useCart();
+  const { width, height: windowHeight } = useWindowDimensions();
+  const isTwoColumn = width >= 768;
+  const { addToCart, removeFromCart, getItemQuantity, bumpCartBadge } = useCart();
   const { isAuthenticated, token } = useAuth();
-  const { width } = useWindowDimensions();
-  const isWideWeb = Platform.OS === "web" && width >= 1180;
-  const isHugeWeb = Platform.OS === "web" && width >= 1440;
-  const styles = useMemo(
-    () => createProductStyles(c, shadowPremium, isDark, { isWideWeb, isHugeWeb }),
-    [c, shadowPremium, isDark, isWideWeb, isHugeWeb]
-  );
+
   const [product, setProduct] = useState(null);
+  const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState("");
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
   const [selectedVariantLabel, setSelectedVariantLabel] = useState("");
   const [showStickyCta, setShowStickyCta] = useState(false);
+  const [showGalleryFab, setShowGalleryFab] = useState(false);
+  const [viewedRecently, setViewedRecently] = useState(false);
+  const [bagToastVisible, setBagToastVisible] = useState(false);
+  const [wishlistToastVisible, setWishlistToastVisible] = useState(false);
+  const [purchaseElevated, setPurchaseElevated] = useState(false);
   const [reviews, setReviews] = useState([]);
-  const [reviewRating, setReviewRating] = useState(0);
-  const [reviewComment, setReviewComment] = useState("");
-  const [reviewBusy, setReviewBusy] = useState(false);
-  const [reviewSuccess, setReviewSuccess] = useState("");
-  const shellRef = useRef(null);
-  const heroRef = useRef(null);
-  const reviewRef = useRef(null);
-  const stickyShownRef = useRef(false);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const reviewsFetchedRef = useRef(false);
+  const [recentIds, setRecentIds] = useState([]);
+  const [accordionOpen, setAccordionOpen] = useState(() => ({ description: true, material: false, shipping: false, faq: false }));
+  const [reviewsFlash, setReviewsFlash] = useState(false);
+  const [flyGhost, setFlyGhost] = useState(null);
+  const [bagLiveMessage, setBagLiveMessage] = useState("");
+
+  const mainCtaRef = useRef(null);
+  const scrollRef = useRef(null);
+  const reviewsScrollY = useRef(0);
+  const scrollYRef = useRef(0);
+  const galleryWrapRef = useRef(null);
+  const richContentAnchorRef = useRef(null);
+  const reviewsSectionRef = useRef(null);
+  const scrollRaf = useRef(null);
+  const flyX = useSharedValue(0);
+  const flyY = useSharedValue(0);
+  const flyScale = useSharedValue(1);
+  const flyOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getProducts();
+        if (!cancelled) setCatalog(Array.isArray(data) ? data : []);
+      } catch {
+        if (!cancelled) setCatalog([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     async function loadProduct() {
       try {
         setLoading(true);
         setError("");
+        reviewsFetchedRef.current = false;
+        setReviews([]);
+        setReviewsLoading(false);
         const item = await getProductById(productId);
         setProduct(item);
-        try {
-          const reviewPayload = await getProductReviews(productId);
-          setReviews(reviewPayload.reviews || []);
-        } catch {
-          setReviews([]);
-        }
         setSelectedImage(item?.image || "");
         const vars = Array.isArray(item?.variants) ? item.variants : [];
         setSelectedVariantLabel(vars[0]?.label ? String(vars[0].label) : "");
@@ -108,1424 +157,872 @@ export default function ProductScreen({ route, navigation }) {
     loadProduct();
   }, [productId]);
 
-  // Reveal motion now lives on `SectionReveal` blocks below; this effect was a bespoke
-  // GSAP intro that is replaced by the unified motion primitives.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const rawIds = await AsyncStorage.getItem(RECENT_PRODUCT_IDS_KEY);
+        let ids = rawIds ? JSON.parse(rawIds) : [];
+        if (!Array.isArray(ids)) ids = [];
+        ids = ids.filter((x) => String(x) !== String(productId));
+        ids.unshift(productId);
+        ids = ids.slice(0, 16);
+        await AsyncStorage.setItem(RECENT_PRODUCT_IDS_KEY, JSON.stringify(ids));
 
-  /** Prefer `images[]`; always include primary `image` so gallery + hero URLs stay in sync. */
+        const rawViews = await AsyncStorage.getItem(RECENT_PRODUCT_VIEWS_KEY);
+        let views = rawViews ? JSON.parse(rawViews) : [];
+        if (!Array.isArray(views)) views = [];
+        const prior = views.find((v) => String(v?.id) === String(productId));
+        const hadRecentView =
+          prior?.at && Number.isFinite(Number(prior.at)) && Date.now() - Number(prior.at) < VIEWED_RECENTLY_MS;
+        views = views.filter((v) => String(v?.id) !== String(productId));
+        views.unshift({ id: productId, at: Date.now() });
+        views = views.slice(0, 32);
+        await AsyncStorage.setItem(RECENT_PRODUCT_VIEWS_KEY, JSON.stringify(views));
+
+        if (!alive) return;
+        setViewedRecently(Boolean(hadRecentView));
+        setRecentIds(ids.filter((id) => String(id) !== String(productId)));
+      } catch {
+        if (alive) {
+          setRecentIds([]);
+          setViewedRecently(false);
+        }
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [productId]);
+
   const galleryImages = useMemo(() => {
     const imgs = Array.isArray(product?.images) ? product.images.map((u) => String(u || "").trim()).filter(Boolean) : [];
     const primary = product?.image ? String(product.image).trim() : "";
     if (primary && !imgs.includes(primary)) imgs.unshift(primary);
     return imgs;
   }, [product]);
-  const selectedImageUris = useMemo(
-    () => getImageUriCandidates(selectedImage || product?.image),
-    [selectedImage, product?.image]
-  );
+
+  const selectedImageUris = useMemo(() => getImageUriCandidates(selectedImage || product?.image), [selectedImage, product?.image]);
   const selectedImageUri = selectedImageUris[imageCandidateIndex] || "";
-  const imageFailed = selectedImageUris.length === 0 || imageCandidateIndex >= selectedImageUris.length;
 
   useEffect(() => {
     setImageCandidateIndex(0);
   }, [selectedImage, product?.image]);
 
-  const shelfMatch = useMemo(
-    () => (product ? matchesShelfProduct(product) : false),
-    [product]
-  );
+  const shelfMatch = useMemo(() => (product ? matchesShelfProduct(product) : false), [product]);
 
-  const cartLine = useMemo(
-    () => (product ? productToCartLine(product, selectedVariantLabel) : null),
-    [product, selectedVariantLabel]
-  );
-  const productMetaOverrides = useMemo(() => {
-    const name = String(product?.name || "").trim();
-    const size = String(selectedVariantLabel || product?.unit || "").trim();
-    const category = String(product?.category || "").trim();
-    const shortDescription = String(product?.shortDescription || product?.description || "").trim();
-    const slug = String(product?.slug || product?.id || productId || "").trim();
-    const stockQty = Number(product?.stockQty || 0);
-    const inStock = product?.inStock !== false && stockQty > 0;
-    const priceAmount = cartLine?.price ?? product?.price;
+  const cartLine = useMemo(() => (product ? productToCartLine(product, selectedVariantLabel) : null), [product, selectedVariantLabel]);
 
-    return {
-      name,
-      size,
-      category,
-      shortDescription,
-      slug,
-      priceAmount: priceAmount != null && Number.isFinite(Number(priceAmount)) ? Number(priceAmount) : undefined,
-      priceCurrency: "INR",
-      availability: inStock ? "in stock" : "out of stock",
-    };
-  }, [cartLine?.price, product, productId, selectedVariantLabel]);
+  const loadReviewsDeferred = useCallback(async () => {
+    if (reviewsFetchedRef.current || !productId) return;
+    reviewsFetchedRef.current = true;
+    setReviewsLoading(true);
+    try {
+      const reviewPayload = await getProductReviews(productId);
+      setReviews(reviewPayload.reviews || []);
+      setProduct((current) =>
+        current
+          ? {
+              ...current,
+              ratingAverage: reviewPayload.ratingAverage,
+              reviewCount: reviewPayload.reviewCount,
+            }
+          : current
+      );
+    } catch {
+      setReviews([]);
+    } finally {
+      setReviewsLoading(false);
+    }
+  }, [productId]);
+
+  useEffect(() => {
+    if (!product?.id) return undefined;
+    const timer = setTimeout(() => {
+      loadReviewsDeferred();
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [loadReviewsDeferred, product?.id]);
+
+  const productMetaOverrides = useMemo(
+    () =>
+      buildProductRouteMetaOverrides({
+        product,
+        productId,
+        selectedVariantLabel,
+        cartLine,
+        reviews,
+      }),
+    [cartLine, product, productId, reviews, selectedVariantLabel]
+  );
 
   useRouteMeta("product", productMetaOverrides);
 
+  const completeLookItems = useMemo(() => {
+    if (!product) return [];
+    const cat = String(product.category || "").trim().toLowerCase();
+    return catalog
+      .filter((p) => p && String(p.id) !== String(product.id) && String(p.category || "").trim().toLowerCase() === cat)
+      .slice(0, 4);
+  }, [catalog, product]);
+
+  const youMayAlsoLikeItems = useMemo(() => {
+    if (!product) return [];
+    const block = new Set(completeLookItems.map((p) => String(p.id)));
+    block.add(String(product.id));
+    return catalog.filter((p) => p && !block.has(String(p.id))).slice(0, 8);
+  }, [catalog, completeLookItems, product]);
+
+  const recentlyViewedProducts = useMemo(() => {
+    const map = new Map(catalog.map((p) => [String(p.id), p]));
+    return recentIds.map((id) => map.get(String(id))).filter(Boolean).slice(0, 8);
+  }, [catalog, recentIds]);
+
+  const checkStickyDock = useCallback(
+    (scrollY = scrollYRef.current) => {
+      if (width >= 768) {
+        setShowStickyCta(false);
+        setShowGalleryFab(false);
+        return;
+      }
+      const atTop = scrollY < 32;
+
+      const finishDock = (pastGallery, railsVisible, pastRich) => {
+        setShowGalleryFab(!atTop && pastRich);
+        mainCtaRef.current?.measureInWindow((_, y, __, h) => {
+          const ctaOffScreen = y + h < 88;
+          setShowStickyCta(!atTop && pastGallery && ctaOffScreen && !railsVisible);
+        });
+      };
+
+      galleryWrapRef.current?.measureInWindow((_, galleryY, __, galleryH) => {
+        const pastGallery = galleryY + galleryH < 72;
+        reviewsSectionRef.current?.measureInWindow((_, reviewsY) => {
+          const railsVisible = reviewsY < windowHeight - 100;
+          richContentAnchorRef.current?.measureInWindow((_, anchorY) => {
+            const pastRich = anchorY < windowHeight - 64;
+            finishDock(pastGallery, railsVisible, pastRich);
+          });
+        });
+      });
+    },
+    [width, windowHeight]
+  );
+
+  const onScrollJS = useCallback(
+    (scrollY = 0) => {
+      scrollYRef.current = scrollY;
+      if (isTwoColumn) setPurchaseElevated(scrollY > 48);
+      if (bagToastVisible) setBagToastVisible(false);
+      reviewsSectionRef.current?.measureInWindow((_, reviewsY) => {
+        if (reviewsY < windowHeight + 240) {
+          loadReviewsDeferred();
+        }
+      });
+      if (scrollRaf.current != null) return;
+      scrollRaf.current = requestAnimationFrame(() => {
+        scrollRaf.current = null;
+        checkStickyDock(scrollY);
+      });
+    },
+    [bagToastVisible, checkStickyDock, isTwoColumn, loadReviewsDeferred, windowHeight]
+  );
+
+  useEffect(() => {
+    const t = setTimeout(() => checkStickyDock(scrollYRef.current), 120);
+    return () => clearTimeout(t);
+  }, [checkStickyDock, product?.id, isTwoColumn]);
+
+  useEffect(() => {
+    if (Platform.OS !== "web") return undefined;
+    return injectProductPrintStyles();
+  }, []);
+
+  const flyGhostStyle = useAnimatedStyle(() => ({
+    opacity: flyOpacity.value,
+    transform: [{ translateX: flyX.value }, { translateY: flyY.value }, { scale: flyScale.value }],
+  }));
+
+  const purchaseStickyStyle = useMemo(
+    () =>
+      Platform.select({
+        web: isTwoColumn
+          ? {
+              position: "sticky",
+              top: customerWebStickyTop(24),
+              alignSelf: "flex-start",
+              maxHeight: "calc(100vh - 160px)",
+              overflowY: "auto",
+            }
+          : {},
+        default: {},
+      }),
+    [isTwoColumn]
+  );
+
+  const triggerFlyToCart = useCallback(() => {
+    if (reducedMotion) {
+      bumpCartBadge();
+      hapticSuccess();
+      return;
+    }
+    galleryWrapRef.current?.measureInWindow((x, y, w, h) => {
+      const startX = x + w * 0.5 - 24;
+      const startY = y + h * 0.22;
+      const targetX = width * 0.5 - 24;
+      const targetY = windowHeight - insets.bottom - CUSTOMER_BOTTOM_NAV_BAR_HEIGHT - 8;
+
+      setFlyGhost({ imageUri: selectedImageUri || "" });
+      flyX.value = startX;
+      flyY.value = startY;
+      flyScale.value = 1;
+      flyOpacity.value = 0.98;
+      hapticImpactLight();
+
+      const midY = Math.min(startY, targetY) - 76;
+      flyX.value = withTiming(targetX, { duration: FLY_MS, easing: FLY_EASE });
+      flyY.value = withSequence(
+        withTiming(midY, { duration: Math.round(FLY_MS * 0.58), easing: FLY_EASE }),
+        withTiming(targetY, { duration: Math.round(FLY_MS * 0.42), easing: FLY_EASE })
+      );
+      flyScale.value = withSequence(
+        withTiming(0.92, { duration: FLY_MS - 80, easing: Easing.out(Easing.cubic) }),
+        withTiming(0, { duration: 80, easing: Easing.in(Easing.cubic) })
+      );
+      flyOpacity.value = withSequence(withTiming(1, { duration: FLY_MS - 60 }), withTiming(0, { duration: 80 }));
+      setTimeout(() => {
+        setFlyGhost(null);
+        bumpCartBadge();
+        hapticSuccess();
+      }, FLY_MS + 24);
+    });
+  }, [
+    bumpCartBadge,
+    flyOpacity,
+    flyScale,
+    flyX,
+    flyY,
+    insets.bottom,
+    reducedMotion,
+    selectedImageUri,
+    width,
+    windowHeight,
+  ]);
+
+  const onScrollToReviews = useCallback(() => {
+    scrollRef.current?.scrollTo({ y: Math.max(0, reviewsScrollY.current - 20), animated: true });
+    setReviewsFlash(true);
+    setTimeout(() => setReviewsFlash(false), 1200);
+  }, []);
+
+  const heroMainHeight = useMemo(() => {
+    if (isTwoColumn) return Math.min(520, Math.max(340, Math.round(width * 0.38)));
+    return Math.min(420, Math.max(280, Math.round(width * 0.72)));
+  }, [isTwoColumn, width]);
+
+  const styles = useMemo(
+    () =>
+      StyleSheet.create({
+        shell: { flex: 1, backgroundColor: semanticPalette.bg },
+        rowMain: {
+          flexDirection: isTwoColumn ? "row" : "column",
+          gap: SPACING.xl,
+          alignItems: "flex-start",
+          width: "100%",
+        },
+        galleryCol: {
+          flex: isTwoColumn ? 3 : undefined,
+          width: isTwoColumn ? undefined : "100%",
+          minWidth: 0,
+        },
+        purchaseCol: {
+          flex: isTwoColumn ? 2 : undefined,
+          width: isTwoColumn ? undefined : "100%",
+          minWidth: 0,
+          gap: SPACING.md,
+          ...Platform.select({
+            web:
+              isTwoColumn
+                ? {
+                    position: "sticky",
+                    top: customerWebStickyTop(16),
+                    alignSelf: "flex-start",
+                  }
+                : {},
+            default: {},
+          }),
+        },
+        galleryRow: {
+          flexDirection: isTwoColumn ? "row" : "column-reverse",
+          gap: SPACING.md,
+          width: "100%",
+        },
+        thumbRail: {
+          width: isTwoColumn ? 72 : undefined,
+          maxHeight: isTwoColumn ? heroMainHeight : undefined,
+        },
+        thumbScrollContent: {
+          gap: SPACING.sm,
+          paddingBottom: SPACING.xs,
+          ...(isTwoColumn ? { flexDirection: "column" } : { flexDirection: "row" }),
+        },
+        thumbCell: {
+          width: isTwoColumn ? 72 : 64,
+          height: isTwoColumn ? 72 : 64,
+          borderRadius: RADII.md,
+          borderWidth: StyleSheet.hairlineWidth,
+          overflow: "hidden",
+          backgroundColor: semanticPalette.surfaceAlt,
+        },
+        thumbCellActive: {
+          borderColor: semanticPalette.accent,
+          borderWidth: 2,
+        },
+        heroStage: {
+          flex: 1,
+          minHeight: heroMainHeight,
+          borderRadius: RADII.lg,
+          backgroundColor: semanticPalette.surfaceAlt,
+          overflow: "hidden",
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: semanticPalette.line,
+          ...SHADOWS.soft,
+        },
+        heroImage: { width: "100%", height: "100%" },
+        brandOverline: {
+          fontFamily: fonts.semibold,
+          fontSize: TYPE.micro.fontSize,
+          lineHeight: TYPE.micro.lineHeight,
+          letterSpacing: 1.8,
+          textTransform: "uppercase",
+          color: semanticPalette.accent,
+          marginBottom: SPACING.xs,
+        },
+        titleSerif: {
+          fontFamily: TYPE.serifFamily,
+          ...TYPE.h1,
+          color: semanticPalette.ink,
+          marginBottom: SPACING.sm,
+        },
+        priceRow: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          alignItems: "flex-end",
+          gap: SPACING.sm,
+          marginBottom: SPACING.sm,
+        },
+        priceMain: {
+          fontFamily: fonts.bold,
+          fontSize: TYPE.h2.fontSize,
+          lineHeight: TYPE.h2.lineHeight,
+          color: semanticPalette.ink,
+          fontVariant: ["tabular-nums"],
+        },
+        mrpStrike: {
+          fontFamily: fonts.medium,
+          fontSize: TYPE.body.fontSize,
+          color: semanticPalette.inkMuted,
+          textDecorationLine: "line-through",
+        },
+        unitTiny: {
+          fontFamily: fonts.regular,
+          fontSize: TYPE.caption.fontSize,
+          color: semanticPalette.inkMuted,
+          marginBottom: 2,
+        },
+        shortDesc: {
+          fontFamily: fonts.regular,
+          fontSize: TYPE.body.fontSize,
+          lineHeight: TYPE.body.lineHeight + 4,
+          color: semanticPalette.inkSoft,
+          marginBottom: SPACING.sm,
+        },
+        metaFactRow: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: SPACING.sm,
+          marginBottom: SPACING.sm,
+        },
+        heroBadge: {
+          position: "absolute",
+          top: SPACING.md,
+          left: SPACING.md,
+          zIndex: 3,
+          paddingHorizontal: 12,
+          paddingVertical: 6,
+          borderRadius: RADII.pill,
+          backgroundColor: semanticPalette.ink,
+          maxWidth: "72%",
+        },
+        heroBadgeText: {
+          fontFamily: fonts.semibold,
+          fontSize: TYPE.micro.fontSize,
+          letterSpacing: 1.2,
+          textTransform: "uppercase",
+          color: semanticPalette.inkInverse,
+        },
+        variantRow: { flexDirection: "row", flexWrap: "wrap", gap: SPACING.sm },
+        stepper: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          borderRadius: RADII.pill,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: semanticPalette.line,
+          backgroundColor: semanticPalette.surface,
+          paddingHorizontal: SPACING.sm,
+          paddingVertical: SPACING.xs,
+          ...SHADOWS.soft,
+        },
+        stepHit: {
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: semanticPalette.surfaceAlt,
+        },
+        stepCount: {
+          fontFamily: fonts.semibold,
+          fontSize: TYPE.body.fontSize,
+          color: semanticPalette.ink,
+        },
+        trustRow: {
+          flexDirection: "row",
+          justifyContent: "space-between",
+          gap: SPACING.sm,
+          marginTop: SPACING.sm,
+        },
+        trustCell: { flex: 1, alignItems: "center", gap: 6 },
+        trustLabel: {
+          fontFamily: fonts.medium,
+          fontSize: 10,
+          lineHeight: 13,
+          letterSpacing: 0.4,
+          color: semanticPalette.inkMuted,
+          textAlign: "center",
+        },
+        pinRow: {
+          flexDirection: "row",
+          alignItems: "flex-end",
+          gap: SPACING.sm,
+          marginTop: SPACING.md,
+        },
+        pinInputWrap: { flex: 1, minWidth: 0 },
+        shelfAccent: {
+          height: 2,
+          width: "100%",
+          backgroundColor: shelfMatch ? semanticPalette.accent : "transparent",
+          marginBottom: SPACING.sm,
+          borderRadius: 1,
+        },
+        bannerSoft: {
+          padding: SPACING.sm,
+          borderRadius: RADII.sm,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: semanticPalette.line,
+          backgroundColor: semanticPalette.surfaceAlt,
+          marginBottom: SPACING.sm,
+        },
+        bannerErrText: { fontFamily: fonts.medium, fontSize: TYPE.small.fontSize, color: semanticPalette.sale },
+        bannerOkText: { fontFamily: fonts.medium, fontSize: TYPE.small.fontSize, color: semanticPalette.success },
+        productRail: { paddingVertical: SPACING.sm },
+        railGap: { width: SPACING.md },
+        modalBackdrop: {
+          flex: 1,
+          backgroundColor: "rgba(14,23,41,0.92)",
+          justifyContent: "center",
+          alignItems: "center",
+          padding: SPACING.lg,
+        },
+        zoomClose: {
+          position: "absolute",
+          top: SPACING["2xl"],
+          right: SPACING.lg,
+          zIndex: 2,
+          padding: SPACING.sm,
+        },
+        skeletonBlock: { gap: SPACING.md, paddingVertical: SPACING.lg },
+        flyGhost: {
+          position: "absolute",
+          left: 0,
+          top: 0,
+          width: 48,
+          height: 60,
+          zIndex: 200,
+          borderRadius: RADII.md,
+          overflow: "hidden",
+          ...SHADOWS.soft,
+        },
+        flyGhostImage: { width: "100%", height: "100%" },
+      }),
+    [
+      TYPE,
+      SPACING,
+      RADII,
+      SHADOWS,
+      heroMainHeight,
+      isTwoColumn,
+      semanticPalette,
+      shelfMatch,
+    ]
+  );
 
   if (loading) {
     return (
-      <CustomerScreenShell
-        style={[styles.screen, Platform.OS === "web" ? { paddingTop: customerScrollPaddingTop(insets) } : null]}
-      >
-        <LinearGradient
-          colors={
-            isDark
-              ? ["rgba(28, 25, 23, 0.95)", "rgba(15, 23, 42, 0.92)", "rgba(20, 83, 45, 0.12)"]
-              : [ALCHEMY.pearl, ALCHEMY.cream, "rgba(237, 228, 212, 0.55)"]
-          }
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.loadingGradient}
-        >
-          <View style={styles.loadingSkeletonInner}>
-            <SkeletonBlock width="100%" height={260} rounded="xl" />
-            <View style={styles.loadingThumbRow}>
-              <SkeletonBlock width={56} height={56} rounded="md" />
-              <SkeletonBlock width={56} height={56} rounded="md" />
-              <SkeletonBlock width={56} height={56} rounded="md" />
-              <SkeletonBlock width={56} height={56} rounded="md" />
-            </View>
-            <View style={styles.loadingTextStack}>
-              <SkeletonBlock width="38%" height={12} rounded="sm" />
-              <SkeletonBlock width="76%" height={26} rounded="md" />
-              <SkeletonBlock width="56%" height={20} rounded="md" />
-              <SkeletonBlock width="100%" height={14} rounded="sm" />
-              <SkeletonBlock width="92%" height={14} rounded="sm" />
-              <SkeletonBlock width="80%" height={14} rounded="sm" />
-            </View>
-            <View style={styles.loadingChipRow}>
-              <SkeletonBlock width={64} height={32} rounded="pill" />
-              <SkeletonBlock width={64} height={32} rounded="pill" />
-              <SkeletonBlock width={64} height={32} rounded="pill" />
-            </View>
-            <SkeletonBlock width="100%" height={50} rounded="pill" />
-            <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.products} />
+      <View style={styles.shell}>
+        <Screen navigation={navigation} title={APP_LOADING_UI.inline.products} breadcrumbLabel="" contentContainerStyle={{ flex: 1, paddingHorizontal: 0 }}>
+          <View style={[styles.skeletonBlock, { paddingHorizontal: SPACING.lg }]}>
+            <SkeletonBlock height={heroMainHeight} rounded="lg" />
+            <SkeletonBlock height={22} width="40%" rounded="sm" />
+            <SkeletonBlock height={32} width="85%" rounded="sm" />
+            <SkeletonBlock height={120} rounded="md" />
           </View>
-        </LinearGradient>
-      </CustomerScreenShell>
+        </Screen>
+        <View {...(Platform.OS === "web" ? { "data-print-hide": "true" } : {})}>
+        <BottomNavBar />
+      </View>
+      </View>
     );
   }
 
   if (!product) {
     return (
-      <CustomerScreenShell
-        style={[styles.screen, Platform.OS === "web" ? { paddingTop: customerScrollPaddingTop(insets) } : null]}
-      >
-        <View style={styles.centered}>
-          <PremiumEmptyState
+      <View style={styles.shell}>
+        <Screen navigation={navigation} title={PRODUCT_SCREEN.notFoundTitle} breadcrumbLabel="" contentContainerStyle={{ flex: 1 }}>
+          <EmptyState
             iconName="alert-circle-outline"
             title={PRODUCT_SCREEN.notFoundTitle}
             description={error || PRODUCT_SCREEN.notFoundDescriptionFallback}
             ctaLabel={PRODUCT_SCREEN.backToHomeCta}
-            ctaIconLeft="arrow-back-outline"
             onCtaPress={() => navigation.navigate("Home")}
           />
-        </View>
-      </CustomerScreenShell>
+        </Screen>
+        <View {...(Platform.OS === "web" ? { "data-print-hide": "true" } : {})}>
+        <BottomNavBar />
+      </View>
+      </View>
     );
   }
 
   const handleAddToCart = () => {
-    if (product.inStock === false || Number(product.stockQty || 0) <= 0) {
-      return;
-    }
+    if (product.inStock === false || Number(product.stockQty || 0) <= 0) return;
     if (!isAuthenticated) {
-      navigation.navigate("Login");
+      goLogin();
       return;
     }
     if (!cartLine) return;
     addToCart(cartLine);
+    setBagLiveMessage(
+      fillProductScreen(PRODUCT_SCREEN.addedToBagLive, {
+        name: String(product?.name || "").trim(),
+        variant: String(selectedVariantLabel || product?.unit || "").trim(),
+      })
+    );
+    if (width < 768) setBagToastVisible(true);
   };
 
   const handleRemoveFromCart = () => {
     if (!isAuthenticated) {
-      navigation.navigate("Login");
+      goLogin();
       return;
     }
     removeFromCart(product.id, cartLine?.variantLabel ?? "");
   };
 
   const quantity = getItemQuantity(product.id, cartLine?.variantLabel ?? "");
-  const heroImageHeight = Platform.select({
-    web: isHugeWeb ? 520 : isWideWeb ? 460 : Math.min(380, Math.max(280, Math.round(width * 0.44))),
-    default: Math.min(380, Math.max(260, Math.round(width * 0.72))),
-  });
-  const storySubtitleOptional = String(PRODUCT_SCREEN.storySubtitle ?? "").trim() || undefined;
-  const variantSubtitleOptional = String(PRODUCT_SCREEN.variantSubtitle ?? "").trim() || undefined;
   const isOutOfStock = product.inStock === false || Number(product.stockQty || 0) <= 0;
   const displayPrice = cartLine ? cartLine.price : product.price;
-  const variants = Array.isArray(product.variants) ? product.variants : [];
-  const ratingAvg = Number(product.ratingAverage) || 0;
-  const reviewCt = Number(product.reviewCount) || 0;
-  const liveReviewCount = reviews.length > 0 ? reviews.length : reviewCt;
-  const liveRatingAvg =
-    reviews.length > 0
-      ? reviews.reduce((acc, r) => acc + Number(r.rating || 0), 0) / Math.max(1, reviews.length)
-      : ratingAvg;
-  const reviewCountDisplay = Math.max(liveReviewCount, (reviews || []).length);
   const mrp = product.mrp != null ? Number(product.mrp) : null;
   const showMrp = mrp != null && mrp > displayPrice;
-  const offPct =
-    showMrp && mrp > 0 ? Math.max(0, Math.round((1 - Number(displayPrice) / mrp) * 100)) : null;
-  /** Hero pills already cover stock / ship; facts only add unit + eta. */
-  const compactFacts = [
-    {
-      key: "unit",
-      icon: "cube-outline",
-      label: product.unit || PRODUCT_SCREEN.unitFallback,
-      tone: "neutral",
-    },
-    ...(product.eta
-      ? [
-          {
-            key: "note",
-            icon: "information-circle-outline",
-            label: String(product.eta),
-            tone: "neutral",
-          },
-        ]
-      : []),
-  ];
+  const offPct = showMrp && mrp > 0 ? Math.max(0, Math.round((1 - Number(displayPrice) / mrp) * 100)) : null;
 
-  const handleSubmitReview = async () => {
-    if (!isAuthenticated) {
-      navigation.navigate("Login");
-      return;
-    }
-    if (!token) return;
-    if (reviewRating < 1 || reviewRating > 5) {
-      setError(PRODUCT_SCREEN.reviewRatingError);
-      return;
-    }
-    try {
-      setReviewBusy(true);
-      setError("");
-      setReviewSuccess("");
-      const payload = await submitProductReview(token, product.id, {
-        rating: reviewRating,
-        comment: reviewComment,
-      });
-      setReviews(payload.reviews || []);
-      setReviewComment("");
-      setReviewRating(0);
-      setReviewSuccess(PRODUCT_SCREEN.reviewSubmitSuccess);
-      setProduct((current) =>
-        current
-          ? {
-              ...current,
-              ratingAverage: payload.ratingAverage,
-              reviewCount: payload.reviewCount,
-            }
-          : current
-      );
-    } catch (err) {
-      setError(err.message || PRODUCT_SCREEN.reviewSubmitErrorFallback);
-    } finally {
-      setReviewBusy(false);
-    }
+  const dockBottomOffset = customerFloatingNavOffset(insets);
+  const bagToastMessage = fillProductScreen(PRODUCT_SCREEN.addedToBagToast, {
+    price: formatINR(displayPrice),
+  });
+  const scrollToPageTop = () => scrollRef.current?.scrollTo({ y: 0, animated: true });
+  const scrollToGallery = () => scrollRef.current?.scrollTo({ y: 0, animated: true });
+
+  const descriptionBody = String(product.description || "").trim();
+  const showRichDetails = hasRichProductContent(product);
+  const materialAccordionBody =
+    Array.isArray(product.usps) && product.usps.length
+      ? product.usps.map((u) => [u.title, u.description].filter(Boolean).join(" — ")).join("\n\n")
+      : PRODUCT_SCREEN.accordionMaterialBody;
+
+  const breadcrumbLabel = fillProductScreen(PRODUCT_SCREEN.detailBreadcrumb, {
+    category: product.category || PRODUCT_SCREEN.categoryFallback,
+  });
+
+  const handleReviewsUpdate = (payload) => {
+    setReviews(payload.reviews || []);
+    setProduct((current) =>
+      current
+        ? {
+            ...current,
+            ratingAverage: payload.ratingAverage,
+            reviewCount: payload.reviewCount,
+          }
+        : current
+    );
   };
 
-  const onProductScrollJS = (y) => {
-    const shouldShow = stickyShownRef.current ? y > 200 : y > 240;
-    if (shouldShow === stickyShownRef.current) return;
-    stickyShownRef.current = shouldShow;
-    setShowStickyCta(shouldShow);
+  const toggleAccordion = (key) => {
+    setAccordionOpen((prev) => ({ ...prev, [key]: !prev[key] }));
   };
-  return (
-    <CustomerScreenShell style={styles.screen}>
-      <MotionScrollView
-        style={customerScrollFill}
-        contentContainerStyle={customerInnerPageScrollContent(insets, {
-          paddingTop: customerScrollPaddingTop(insets, { nativeMin: spacing.xs }),
-        })}
-        showsVerticalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScrollJS={onProductScrollJS}
+
+  const renderProductRail = (items) => {
+    if (!items || items.length === 0) return null;
+    const cardW = Math.max(148, Math.floor(width / 1.2));
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        decelerationRate="fast"
+        snapToInterval={cardW + SPACING.md}
+        snapToAlignment="start"
+        contentContainerStyle={styles.productRail}
       >
-        <View ref={shellRef} style={[styles.container, shelfMatch ? styles.containerShelfMatch : null]}>
-        <HeroParallax strength="medium" maxScroll={400} dim={false} scale style={styles.heroWrap}>
-          <View ref={heroRef}>
-            <View style={[styles.backFabWrap, { top: Math.max(insets.top, spacing.sm) }]}>
-              <PremiumButton
-                iconLeft="chevron-back"
-                variant="secondary"
-                size="sm"
-                onPress={() => navigation.goBack()}
-                accessibilityLabel="Back"
-                style={styles.backFab}
-              />
-            </View>
-            <View style={[styles.heroImageStage, { height: heroImageHeight }]}>
-              {selectedImageUri && !imageFailed ? (
-                <Image
-                  source={{ uri: selectedImageUri }}
-                  style={styles.heroImage}
-                  contentFit="contain"
-                  transition={200}
-                  cachePolicy="memory-disk"
-                  placeholder={{ blurhash: PRODUCT_HERO_BLURHASH }}
-                  onError={() => setImageCandidateIndex((index) => index + 1)}
-                />
-              ) : (
-                <View style={styles.imageFallback}>
-                  <Ionicons name="image-outline" size={sz.xxl} color={c.textMuted} />
-                  <Text style={styles.imageFallbackText}>{PRODUCT_SCREEN.heroImageUnavailable}</Text>
-                </View>
-              )}
-              <LinearGradient
-                colors={
-                  isDark
-                    ? ["transparent", "rgba(12, 10, 8, 0.08)", "rgba(12, 10, 8, 0.72)"]
-                    : ["transparent", "rgba(255, 253, 248, 0.2)", "rgba(255, 253, 248, 0.92)"]
-                }
-                locations={[0, 0.42, 1]}
-                style={[styles.heroVignette, { pointerEvents: "none" }]}
-              />
-            </View>
-            <View style={styles.heroTopRow}>
-              <View style={styles.heroTopLead}>
-                <View style={styles.heroTagPill}>
-                  <Ionicons name="sparkles-outline" size={sz.tiny} color={ALCHEMY.gold} />
-                  <Text style={styles.heroTagText}>Premium pick</Text>
-                </View>
-              </View>
-              <View style={[styles.heroChip, isOutOfStock ? styles.stockChipDanger : styles.stockChipSuccess]}>
-                <Ionicons
-                  name={isOutOfStock ? "close-circle-outline" : "checkmark-circle-outline"}
-                  size={sz.tiny}
-                  color={isOutOfStock ? c.danger : c.success}
-                />
-                <Text style={[styles.heroChipText, isOutOfStock ? styles.stockTextDanger : styles.stockTextSuccess]}>
-                  {isOutOfStock ? PRODUCT_SCREEN.heroOutOfStock : PRODUCT_SCREEN.heroInStock}
-                </Text>
-              </View>
-            </View>
-            {product.badgeText ? (
-              <View style={styles.heroBadge}>
-                <Text style={styles.heroBadgeText} numberOfLines={2}>
-                  {String(product.badgeText).toUpperCase()}
-                </Text>
-              </View>
-            ) : null}
-          </View>
-        </HeroParallax>
-        {galleryImages.length > 1 ? (
-          <View style={styles.galleryStrip}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.galleryRow}
-            >
-              {galleryImages.map((img) => (
-                <TouchableOpacity
-                  key={img}
-                  style={[
-                    styles.thumbWrap,
-                    (selectedImage || product.image) === img ? styles.thumbWrapActive : null,
-                  ]}
-                  onPress={() => {
-                    setSelectedImage(img);
-                  }}
-                >
-                  <RetryImage sourceUri={img} style={styles.thumbImage} styles={styles} c={c} />
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
-        <SectionReveal delay={120} preset="fade-up" style={styles.contentSheet}>
-        <View style={[styles.contentSheetAccent, { backgroundColor: isDark ? "rgba(220, 38, 38, 0.65)" : ALCHEMY.gold }]} />
-        <View style={styles.content}>
-          <View style={styles.contentMax}>
-          <View style={styles.titleBlock}>
-            <Text style={styles.categoryText}>{product.category || PRODUCT_SCREEN.categoryFallback}</Text>
-            <Text style={styles.name}>{product.name}</Text>
-          </View>
-
-          <View style={styles.heroMetaRow}>
-            <View style={[styles.heroMetaPill, styles.heroMetaRatingPill]}>
-              <Ionicons name="star" size={sz.tiny} color={HERITAGE.amberMid} />
-              <Text style={styles.heroMetaPillText}>
-                {liveRatingAvg > 0
-                  ? fillProductScreen(PRODUCT_SCREEN.metaRatingSummary, {
-                      rating: liveRatingAvg.toFixed(1),
-                      count: String(reviewCountDisplay),
-                    })
-                  : PRODUCT_SCREEN.metaNoRatings}
-              </Text>
-            </View>
-            <View style={[styles.heroMetaPill, isOutOfStock ? styles.heroMetaPillDanger : styles.heroMetaPillOk]}>
-              <Ionicons
-                name={isOutOfStock ? "close-circle-outline" : "checkmark-circle-outline"}
-                size={sz.tiny}
-                color={isOutOfStock ? c.danger : c.success}
-              />
-              <Text
-                style={[
-                  styles.heroMetaPillText,
-                  isOutOfStock ? styles.heroMetaPillTextDanger : styles.heroMetaPillTextOk,
-                ]}
-              >
-                {isOutOfStock ? PRODUCT_SCREEN.metaOutOfStockShort : PRODUCT_SCREEN.metaReadyToShip}
-              </Text>
-            </View>
-          </View>
-
-          <View style={[styles.priceBand, isDark ? styles.priceBandDark : styles.priceBandLight]}>
-            <View style={styles.priceBlock}>
-              <View style={styles.priceRow}>
-                <Text style={styles.price}>{formatINR(displayPrice)}</Text>
-                {showMrp ? <Text style={styles.mrpStrike}>{formatINR(mrp)}</Text> : null}
-                <Text style={styles.unitText}>/{product.unit || PRODUCT_SCREEN.unitFallback}</Text>
-              </View>
-              {offPct != null && offPct > 0 ? (
-                <View style={[styles.saveChip, { borderColor: isDark ? c.secondary : ALCHEMY.pillInactive }]}>
-                  <Ionicons name="pricetag" size={sz.tiny} color={c.secondaryDark} />
-                  <Text style={[styles.saveChipText, { color: c.secondaryDark }]}>
-                    {fillProductScreen(PRODUCT_SCREEN.savePctChip, { pct: String(offPct) })}
-                  </Text>
-                </View>
-              ) : null}
-            </View>
-          </View>
-
-          <GoldHairline marginVertical={spacing.sm} />
-
-          <PremiumCard variant="panel" padding="md" style={styles.storyCard}>
-            <PremiumSectionHeader
+        {items.map((item, idx) => (
+          <View key={String(item.id)} style={{ width: cardW, marginRight: idx === items.length - 1 ? 0 : SPACING.md }}>
+            <ProductCard
+              index={idx}
+              product={item}
+              variant="grid"
               compact
-              overline={PRODUCT_SCREEN.storyOverline}
-              title={PRODUCT_SCREEN.storyTitle}
-              subtitle={storySubtitleOptional}
+              railHover
+              isOutOfStock={item.inStock === false || Number(item.stockQty || 0) <= 0}
+              quantity={getItemQuantity(item.id)}
+              onPress={() => navigation.push("Product", { productId: item.id })}
+              onAddToCart={() => {
+                if (!isAuthenticated) goLogin();
+                else addToCart(productToCartLine(item));
+              }}
+              onRemoveFromCart={() => removeFromCart(item.id)}
             />
-            <Text style={[styles.description, styles.descriptionBelowHeader]}>
-              {product.description || PRODUCT_SCREEN.defaultDescription}
-            </Text>
-          </PremiumCard>
-
-          {variants.length > 0 ? (
-            <View style={styles.variantBlock}>
-              <PremiumSectionHeader
-                compact
-                overline={PRODUCT_SCREEN.variantOverline}
-                title={PRODUCT_SCREEN.variantTitle}
-                subtitle={variantSubtitleOptional}
-              />
-              <View style={[styles.variantPills, styles.variantPillsBelowHeader]}>
-                {variants.map((v) => {
-                  const lab = String(v.label || "").trim();
-                  const active = lab === selectedVariantLabel;
-                  return (
-                    <PremiumChip
-                      key={lab}
-                      label={lab}
-                      tone={active ? "gold" : "neutral"}
-                      selected={active}
-                      size="lg"
-                      onPress={() => setSelectedVariantLabel(lab)}
-                    />
-                  );
-                })}
-              </View>
-            </View>
-          ) : null}
-
-          {quantity > 0 && !isOutOfStock ? (
-            <View style={styles.stepper}>
-              <TouchableOpacity style={styles.stepButton} activeOpacity={0.85} onPress={handleRemoveFromCart}>
-                <Ionicons name="remove" size={sz.md} color={c.onPrimary} />
-              </TouchableOpacity>
-              <Text style={styles.stepCount}>
-                {fillProductScreen(PRODUCT_SCREEN.inCartCount, { count: String(quantity) })}
-              </Text>
-              <TouchableOpacity style={styles.stepButton} activeOpacity={0.85} onPress={handleAddToCart}>
-                <Ionicons name="add" size={sz.md} color={c.onPrimary} />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <PremiumButton
-              label={isOutOfStock ? PRODUCT_SCREEN.outOfStock : PRODUCT_SCREEN.addToCart}
-              variant="primary"
-              size="lg"
-              fullWidth
-              iconLeft={isOutOfStock ? "close-circle-outline" : "bag-add-outline"}
-              disabled={isOutOfStock}
-              onPress={handleAddToCart}
-              accessibilityLabel={
-                isOutOfStock ? PRODUCT_SCREEN.productOutOfStockA11y : PRODUCT_SCREEN.addToCartA11y
-              }
-            />
-          )}
-
-          {compactFacts.length > 0 ? (
-            <View style={styles.quickFactsWrap}>
-              {compactFacts.map((fact) => (
-                <View key={fact.key} style={styles.quickFactPill}>
-                  <View style={styles.quickFactIconWrap}>
-                    <Ionicons name={fact.icon} size={sz.xs} color={c.primary} />
-                  </View>
-                  <Text style={styles.quickFactText} numberOfLines={1}>
-                    {fact.label}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          <GoldHairline marginVertical={spacing.md} />
-
-          <View ref={reviewRef} style={styles.reviewCard}>
-            <PremiumSectionHeader
-              compact
-              overline={PRODUCT_SCREEN.reviewsOverline}
-              title={PRODUCT_SCREEN.reviewsTitle}
-              subtitle={reviewCountDisplay === 0 ? PRODUCT_SCREEN.reviewsEmptySubtitle : undefined}
-              count={reviewCountDisplay > 0 ? reviewCountDisplay : undefined}
-            />
-
-            {error ? (
-              <View style={styles.reviewBannerWrap}>
-                <PremiumErrorBanner severity="error" message={error} compact />
-              </View>
-            ) : null}
-            {reviewSuccess ? (
-              <View style={styles.reviewBannerWrap}>
-                <PremiumErrorBanner severity="success" message={reviewSuccess} compact />
-              </View>
-            ) : null}
-
-            <View style={[styles.reviewComposer, isDark ? styles.reviewComposerDark : styles.reviewComposerLight]}>
-              <View style={styles.reviewStarsPickRow}>
-                {[1, 2, 3, 4, 5].map((value) => (
-                  <TouchableOpacity
-                    key={value}
-                    onPress={() => setReviewRating(value)}
-                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-                    style={[
-                      styles.reviewStarHit,
-                      reviewRating === value ? styles.reviewStarHitActive : null,
-                    ]}
-                  >
-                    <Ionicons
-                      name={value <= reviewRating ? "star" : "star-outline"}
-                      size={22}
-                      color={value <= reviewRating ? HERITAGE.amberMid : c.textMuted}
-                    />
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <View style={styles.reviewInputWrap}>
-                <PremiumInput
-                  label={PRODUCT_SCREEN.reviewComposerNoteLabel}
-                  value={reviewComment}
-                  onChangeText={setReviewComment}
-                  placeholder={PRODUCT_SCREEN.reviewComposerPlaceholder}
-                  accessibilityLabel={PRODUCT_SCREEN.reviewComposerA11y}
-                  multiline
-                  numberOfLines={3}
-                  iconLeft="chatbubble-outline"
-                />
-              </View>
-              <PremiumButton
-                label={reviewBusy ? PRODUCT_SCREEN.reviewPosting : PRODUCT_SCREEN.reviewPost}
-                variant="primary"
-                size="sm"
-                loading={reviewBusy}
-                disabled={reviewBusy}
-                onPress={handleSubmitReview}
-                style={styles.reviewSubmitBtn}
-              />
-            </View>
-
-            {(reviews || []).length > 0 ? (
-              <>
-                {String(PRODUCT_SCREEN.reviewListLatest ?? "").trim() ? (
-                  <Text style={styles.reviewListLabel}>{PRODUCT_SCREEN.reviewListLatest}</Text>
-                ) : null}
-                <View style={styles.reviewList}>
-                  {(reviews || []).slice(0, 5).map((r, idx) => {
-                    const name = String(r.userName || "Customer").trim() || "Customer";
-                    const initial = name.charAt(0).toUpperCase();
-                    const comment = String(r.comment || "").trim();
-                    const rt = Number(r.rating || 0);
-                    return (
-                      <View key={`${r._id || idx}`} style={styles.reviewItem}>
-                        <View style={[styles.reviewAvatar, { backgroundColor: c.primarySoft, borderColor: c.primaryBorder }]}>
-                          <Text style={[styles.reviewAvatarText, { color: c.primaryDark }]}>{initial}</Text>
-                        </View>
-                        <View style={styles.reviewItemBody}>
-                          <View style={styles.reviewItemTop}>
-                            <Text style={styles.reviewUser} numberOfLines={1}>
-                              {name}
-                            </Text>
-                            <View style={styles.reviewRatingPill}>
-                              <Ionicons name="star" size={11} color={HERITAGE.amberMid} />
-                              <Text style={styles.reviewRatingPillText}>{rt}</Text>
-                            </View>
-                          </View>
-                          {comment ? (
-                            <Text style={styles.reviewComment} numberOfLines={4}>
-                              {comment}
-                            </Text>
-                          ) : (
-                            <Text style={styles.reviewNoComment}>{PRODUCT_SCREEN.reviewNoWrittenNote}</Text>
-                          )}
-                        </View>
-                      </View>
-                    );
-                  })}
-                </View>
-              </>
-            ) : String(PRODUCT_SCREEN.reviewFirstHint ?? "").trim() ? (
-              <Text style={styles.reviewEmptyHint}>{PRODUCT_SCREEN.reviewFirstHint}</Text>
-            ) : null}
           </View>
-          </View>
+        ))}
+      </ScrollView>
+    );
+  };
 
-        </View>
-        </SectionReveal>
-        </View>
-        <AppFooter />
-      </MotionScrollView>
-      {showStickyCta ? (
-        <Animated.View
-          entering={reducedMotion ? undefined : FadeInDown.duration(280)}
-          exiting={reducedMotion ? undefined : FadeOutDown.duration(220)}
-          style={[
-            styles.stickyCtaShell,
-            {
-              bottom: Platform.OS === "web" ? Math.max(insets.bottom, spacing.md) : customerFloatingNavOffset(insets),
-            },
-          ]}
+  const galleryBlock = (
+    <View ref={galleryWrapRef} style={styles.galleryCol} collapsable={false}>
+      <ProductGallery
+        images={galleryImages}
+        media={product.media}
+        badgeText={product.badgeText}
+        selectedImage={selectedImage || product.image}
+        onSelectImage={setSelectedImage}
+        isOutOfStock={isOutOfStock}
+      />
+    </View>
+  );
+
+  const purchaseBlock = (
+    <ProductPurchaseColumn
+      product={product}
+      selectedVariantLabel={selectedVariantLabel}
+      onSelectVariant={setSelectedVariantLabel}
+      quantity={quantity}
+      isOutOfStock={isOutOfStock}
+      displayPrice={displayPrice}
+      mrp={mrp}
+      showMrp={showMrp}
+      offPct={offPct}
+      reviews={reviews}
+      shelfMatch={shelfMatch}
+      isTwoColumn={isTwoColumn}
+      mainCtaRef={mainCtaRef}
+      descriptionBody={descriptionBody}
+      materialAccordionBody={materialAccordionBody}
+      accordionOpen={accordionOpen}
+      onToggleAccordion={toggleAccordion}
+      onAddToCart={handleAddToCart}
+      onRemoveFromCart={handleRemoveFromCart}
+      onNavigateLogin={goLogin}
+      isAuthenticated={isAuthenticated}
+      onScrollToReviews={onScrollToReviews}
+      onFlyToCart={triggerFlyToCart}
+      onAddToCartComplete={() => {
+        if (width < 768) setBagToastVisible(true);
+      }}
+      onWishlistSaved={() => setWishlistToastVisible(true)}
+      productImageUri={selectedImageUri}
+      stickyStyle={purchaseStickyStyle}
+      stickyElevated={purchaseElevated}
+      viewedRecently={viewedRecently}
+    />
+  );
+
+  return (
+    <View style={styles.shell}>
+      <Screen
+        navigation={navigation}
+        title={product.name}
+        breadcrumbLabel={breadcrumbLabel}
+        noScroll
+        contentContainerStyle={{ flex: 1, paddingHorizontal: 0 }}
+      >
+        <LiveRegion message={bagLiveMessage} />
+        <MotionScrollView
+          ref={scrollRef}
+          style={{ flex: 1 }}
+          {...(Platform.OS === "web" ? { "data-print-pdp": "true" } : {})}
+          contentContainerStyle={customerInnerPageScrollContent(insets, {
+            paddingHorizontal: SPACING.lg,
+            paddingBottom: customerScrollPaddingBottom(insets) + (width < 768 ? 96 : 0),
+            paddingTop: customerScrollPaddingTop(insets, { nativeMin: SPACING.xs, webMin: SPACING.sm }),
+            gap: SPACING["2xl"],
+          })}
+          scrollEventThrottle={16}
+          onScrollJS={onScrollJS}
+          showsVerticalScrollIndicator={false}
         >
-          <PremiumStickyBar align="row" variant="glass">
-            <View style={styles.stickyPriceCol}>
-              <Text style={[styles.stickyPriceLabel, { color: c.textSecondary }]}>
-                {PRODUCT_SCREEN.stickyPriceLabel}
-              </Text>
-              <Text style={[styles.stickyPrice, { color: c.textPrimary }]}>{formatINR(displayPrice)}</Text>
+          <View style={styles.rowMain}>
+            {galleryBlock}
+            {purchaseBlock}
+          </View>
+
+          {showRichDetails ? <ProductRichDetails product={product} /> : null}
+
+          {!showRichDetails && (product.brand || product.sku || product.productType) ? (
+            <View style={{ width: "100%", gap: SPACING.md }}>
+              <SectionHeader overline={PRODUCT_SCREEN.detailsOverline} title={PRODUCT_SCREEN.detailsTitle} headingLevel={2} />
+              <Card padding="md" contentStyle={{ gap: SPACING.sm }}>
+                {product.brand ? (
+                  <Text style={{ fontFamily: fonts.regular, fontSize: TYPE.body.fontSize, color: semanticPalette.inkSoft }}>
+                    {`Brand: ${String(product.brand).trim()}`}
+                  </Text>
+                ) : null}
+                {product.productType ? (
+                  <Text style={{ fontFamily: fonts.regular, fontSize: TYPE.body.fontSize, color: semanticPalette.inkSoft }}>
+                    {`Type: ${String(product.productType).trim()}`}
+                  </Text>
+                ) : null}
+                {product.sku ? (
+                  <Text style={{ fontFamily: fonts.regular, fontSize: TYPE.body.fontSize, color: semanticPalette.inkSoft }}>
+                    {`SKU: ${String(product.sku).trim()}`}
+                  </Text>
+                ) : null}
+                {product.unit ? (
+                  <Text style={{ fontFamily: fonts.regular, fontSize: TYPE.body.fontSize, color: semanticPalette.inkSoft }}>
+                    {`Unit: ${String(product.unit).trim()}`}
+                  </Text>
+                ) : null}
+              </Card>
             </View>
-            <View style={styles.stickyCtaCol}>
-              <PremiumButton
-                label={
-                  isOutOfStock
-                    ? PRODUCT_SCREEN.outOfStock
-                    : quantity > 0
-                      ? fillProductScreen(PRODUCT_SCREEN.stickyInCart, { count: String(quantity) })
-                      : PRODUCT_SCREEN.addToCart
-                }
-                variant="primary"
-                size="lg"
-                iconLeft={isOutOfStock ? "close-circle-outline" : "bag-add-outline"}
-                disabled={isOutOfStock}
-                onPress={handleAddToCart}
-                fullWidth
-              />
-            </View>
-          </PremiumStickyBar>
+          ) : null}
+
+          <View ref={richContentAnchorRef} collapsable={false} style={{ height: 1, width: "100%" }} />
+
+          <View
+            ref={reviewsSectionRef}
+            collapsable={false}
+            style={[
+              { width: "100%", gap: SPACING.lg },
+              reviewsFlash ? { backgroundColor: semanticPalette.accentSoft, borderRadius: RADII.md, padding: SPACING.sm } : null,
+            ]}
+            onLayout={(e) => {
+              reviewsScrollY.current = e.nativeEvent.layout.y;
+            }}
+          >
+            <ProductReviews
+              reviews={reviews}
+              reviewsLoading={reviewsLoading}
+              ratingAverage={Number(product.ratingAverage || 0)}
+              reviewCount={Number(product.reviewCount || reviews.length || 0)}
+              productId={product.id}
+              isAuthenticated={isAuthenticated}
+              token={token}
+              onReviewsUpdate={handleReviewsUpdate}
+              onNavigateLogin={goLogin}
+            />
+          </View>
+
+          <View style={{ gap: SPACING.lg }}>
+            <SectionHeader overline={PRODUCT_SCREEN.completeLookOverline} title={PRODUCT_SCREEN.completeLookTitle} headingLevel={2} />
+            {renderProductRail(completeLookItems)}
+          </View>
+
+          <View style={{ gap: SPACING.lg }}>
+            <SectionHeader overline={PRODUCT_SCREEN.youMayAlsoLikeOverline} title={PRODUCT_SCREEN.youMayAlsoLikeTitle} headingLevel={2} />
+            {renderProductRail(youMayAlsoLikeItems)}
+          </View>
+
+          <View style={{ gap: SPACING.lg }}>
+            <SectionHeader overline={PRODUCT_SCREEN.recentlyViewedOverline} title={PRODUCT_SCREEN.recentlyViewedTitle} headingLevel={2} />
+            {renderProductRail(recentlyViewedProducts)}
+          </View>
+
+          <AppFooter />
+        </MotionScrollView>
+      </Screen>
+
+      {width < 768 ? (
+        <>
+          <View {...(Platform.OS === "web" ? { "data-print-hide": "true" } : {})}>
+          <GalleryScrollFab
+            visible={showGalleryFab}
+            bottomOffset={dockBottomOffset + (showStickyCta ? DOCK_HEIGHT_ESTIMATE : 0) + 12}
+            onPress={scrollToGallery}
+          />
+          <MobileStickyDock
+            visible={showStickyCta}
+            bottomOffset={dockBottomOffset}
+            imageUri={selectedImageUri}
+            displayPrice={displayPrice}
+            mrp={mrp}
+            showMrp={showMrp}
+            variantLabel={selectedVariantLabel || product.unit}
+            quantity={quantity}
+            isOutOfStock={isOutOfStock}
+            onScrollToTop={scrollToPageTop}
+            onAddToCart={handleAddToCart}
+            onRemoveFromCart={handleRemoveFromCart}
+          />
+          </View>
+          <Toast
+            visible={bagToastVisible}
+            message={bagToastMessage}
+            actionLabel={PRODUCT_SCREEN.addedToBagToastAction}
+            onAction={() => {
+              setBagToastVisible(false);
+              navigation.navigate("Cart");
+            }}
+            onDismiss={() => setBagToastVisible(false)}
+            durationMs={4000}
+            enableSwipeDismiss
+          />
+          <Toast
+            visible={wishlistToastVisible}
+            message={PRODUCT_SCREEN.wishlistSavedToast}
+            actionLabel={PRODUCT_SCREEN.wishlistSavedToastAction}
+            onAction={() => {
+              setWishlistToastVisible(false);
+              navigation.navigate("Account", { screen: "Wishlist" });
+            }}
+            onDismiss={() => setWishlistToastVisible(false)}
+            durationMs={4000}
+            enableSwipeDismiss
+          />
+        </>
+      ) : null}
+
+      {flyGhost ? (
+        <Animated.View pointerEvents="none" style={[styles.flyGhost, flyGhostStyle]}>
+          {flyGhost.imageUri ? (
+            <Image source={{ uri: flyGhost.imageUri }} style={styles.flyGhostImage} contentFit="cover" transition={0} />
+          ) : (
+            <View style={[styles.flyGhostImage, { backgroundColor: semanticPalette.surfaceAlt }]} />
+          )}
         </Animated.View>
       ) : null}
-      <BottomNavBar />
-    </CustomerScreenShell>
-  );
-}
 
-function createProductStyles(c, shadowPremium, isDark, layoutFlags = {}) {
-  const { isWideWeb = false, isHugeWeb = false } = layoutFlags;
-  const panelLift = platformShadow({
-    web: {
-      boxShadow: isDark
-        ? "0 14px 44px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.05)"
-        : "0 12px 36px rgba(24, 24, 27, 0.07), 0 4px 14px rgba(28, 25, 23, 0.04), inset 0 1px 0 rgba(255,253,251,0.92)",
-    },
-    ios: {
-      shadowColor: "#18181B",
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: isDark ? 0.28 : 0.08,
-      shadowRadius: 22,
-    },
-    android: { elevation: isDark ? 6 : 5 },
-  });
-
-  const moduleShadow = platformShadow({
-    web: {
-      boxShadow: isDark
-        ? "0 10px 28px rgba(0,0,0,0.22)"
-        : "0 6px 18px rgba(28, 25, 23, 0.06), 0 1px 4px rgba(28, 25, 23, 0.035)",
-    },
-    ios: {
-      shadowColor: "#18181B",
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: isDark ? 0.18 : 0.06,
-      shadowRadius: 10,
-    },
-    android: { elevation: isDark ? 2 : 1 },
-  });
-
-  return StyleSheet.create({
-  screen: {
-    flex: 1,
-    width: "100%",
-    alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth + 24, default: "100%" }),
-  },
-  container: {
-    ...customerPanel(c, shadowPremium, isDark),
-    overflow: "hidden",
-    padding: 0,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: isDark ? "rgba(248, 113, 113, 0.32)" : "rgba(220, 38, 38, 0.3)",
-    ...panelLift,
-  },
-  /** Accent top edge when product matches home shelf (e.g. Ghee). */
-  containerShelfMatch: {
-    borderTopColor: c.secondary,
-  },
-  heroImageStage: {
-    width: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
-    position: "relative",
-    ...Platform.select({
-      web: {
-        minHeight: isHugeWeb ? 500 : isWideWeb ? 440 : 320,
-      },
-      default: {},
-    }),
-  },
-  heroVignette: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  heroImage: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "transparent",
-  },
-  imageFallback: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  imageFallbackText: {
-    color: c.textSecondary,
-    fontSize: typography.bodySmall,
-    fontFamily: fonts.semibold,
-  },
-  heroWrap: {
-    position: "relative",
-    borderBottomLeftRadius: radius.xxl,
-    borderBottomRightRadius: radius.xxl,
-    overflow: "hidden",
-    ...Platform.select({
-      web: {
-        isolation: "isolate",
-      },
-      default: {},
-    }),
-  },
-  heroTopLead: {
-    flex: 1,
-    alignItems: "flex-start",
-  },
-  heroTagPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: spacing.sm + 1,
-    paddingVertical: 7,
-    borderRadius: radius.pill,
-    backgroundColor: isDark ? "rgba(15, 23, 42, 0.82)" : "rgba(15, 23, 42, 0.74)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(255,232,184,0.28)",
-    ...Platform.select({
-      web: {
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
-      },
-      default: {},
-    }),
-  },
-  heroTagText: {
-    color: "#F8FAFC",
-    fontSize: typography.caption,
-    fontFamily: fonts.extrabold,
-    letterSpacing: 0.35,
-  },
-  backFabWrap: {
-    position: "absolute",
-    left: spacing.sm,
-    zIndex: 4,
-  },
-  backFab: {
-    minWidth: 44,
-  },
-  heroTopRow: {
-    position: "absolute",
-    top: spacing.sm,
-    left: 64,
-    right: spacing.sm,
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    gap: spacing.xs,
-    zIndex: 3,
-  },
-  heroChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-    backgroundColor: isDark ? "rgba(11, 17, 32, 0.84)" : "rgba(255,255,255,0.92)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.95)",
-    ...Platform.select({
-      web: {
-        backdropFilter: "blur(10px)",
-        WebkitBackdropFilter: "blur(10px)",
-      },
-      default: {},
-    }),
-  },
-  heroChipText: {
-    color: c.textPrimary,
-    fontSize: typography.caption,
-    fontFamily: fonts.bold,
-  },
-  stockChipSuccess: {
-    backgroundColor: isDark ? "rgba(100, 116, 139, 0.18)" : "rgba(241, 245, 249, 0.94)",
-    borderColor: isDark ? "rgba(74, 222, 128, 0.35)" : "rgba(187,247,208,0.95)",
-  },
-  stockChipDanger: {
-    backgroundColor: isDark ? "rgba(220, 38, 38, 0.2)" : "rgba(254,242,242,0.94)",
-    borderColor: isDark ? "rgba(252, 165, 165, 0.45)" : "rgba(254,202,202,0.95)",
-  },
-  stockTextSuccess: {
-    color: c.success,
-  },
-  stockTextDanger: {
-    color: c.danger,
-  },
-  galleryStrip: {
-    marginTop: -10,
-    marginHorizontal: isWideWeb ? spacing.lg : spacing.sm,
-    paddingBottom: spacing.sm + 2,
-    paddingHorizontal: isWideWeb ? spacing.sm : spacing.xs,
-    zIndex: 2,
-    borderRadius: radius.xl + 4,
-    backgroundColor: isDark ? "rgba(28, 25, 23, 0.72)" : "rgba(255, 253, 248, 0.88)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(185, 28, 28, 0.08)",
-    ...Platform.select({
-      web: {
-        maxWidth: isWideWeb ? 960 : "100%",
-        alignSelf: "center",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        boxShadow: isDark
-          ? "0 18px 34px rgba(0,0,0,0.24)"
-          : "0 18px 30px rgba(90, 62, 22, 0.08), inset 0 1px 0 rgba(255,255,255,0.8)",
-      },
-      default: {},
-    }),
-  },
-  galleryRow: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    gap: spacing.xs + 2,
-    alignItems: "center",
-  },
-  thumbWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: radius.lg + 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.border : "rgba(63, 63, 70, 0.22)",
-    overflow: "hidden",
-    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
-  },
-  thumbWrapActive: {
-    borderColor: ALCHEMY.gold,
-    borderWidth: 2,
-    ...platformShadow({
-      web: { boxShadow: "0 10px 20px rgba(185, 28, 28, 0.2)" },
-      ios: {
-        shadowColor: ALCHEMY.gold,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.35,
-        shadowRadius: 5,
-      },
-      android: { elevation: 3 },
-    }),
-  },
-  thumbImage: {
-    width: "100%",
-    height: "100%",
-  },
-  thumbImageFallback: {
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: c.surfaceMuted,
-  },
-  contentSheetAccent: {
-    height: 3,
-    width: "100%",
-    opacity: 0.9,
-  },
-  contentSheet: {
-    marginTop: -20,
-    paddingTop: 0,
-    paddingHorizontal: spacing.sm,
-    paddingBottom: spacing.xs,
-    backgroundColor: isDark ? c.surface : ALCHEMY.pearl,
-    borderTopLeftRadius: radius.xxl,
-    borderTopRightRadius: radius.xxl,
-    ...platformShadow({
-      web: {
-        boxShadow: isDark
-          ? "0 -12px 40px rgba(0,0,0,0.35)"
-          : "0 -10px 36px rgba(24, 24, 27, 0.06), 0 -2px 12px rgba(28, 25, 23, 0.04)",
-      },
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: isDark ? 0.35 : 0.06,
-        shadowRadius: 14,
-      },
-      android: { elevation: 0 },
-    }),
-    ...Platform.select({
-      web: {
-        borderTopLeftRadius: radius.xxl,
-        borderTopRightRadius: radius.xxl,
-      },
-      default: {},
-    }),
-  },
-  content: {
-    paddingHorizontal: spacing.md + 2,
-    paddingTop: spacing.md + 4,
-    paddingBottom: spacing.lg,
-    ...Platform.select({
-      web: {
-        paddingHorizontal: spacing.lg + 6,
-      },
-      default: {},
-    }),
-  },
-  contentMax: {
-    width: "100%",
-    ...Platform.select({
-      web: {
-        maxWidth: isHugeWeb ? 1080 : isWideWeb ? 1020 : 960,
-        alignSelf: "center",
-      },
-      default: {},
-    }),
-  },
-  titleBlock: {
-    marginBottom: isWideWeb ? spacing.sm : spacing.xs,
-  },
-  heroMetaRow: {
-    marginTop: isWideWeb ? spacing.sm : spacing.xs,
-    flexDirection: "row",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: isWideWeb ? spacing.sm : spacing.xs,
-  },
-  heroMetaPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.border : ALCHEMY.pillInactive,
-    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
-  },
-  heroMetaRatingPill: {
-    borderColor: isDark ? c.primaryBorder : "rgba(185, 28, 28, 0.3)",
-    backgroundColor: isDark ? "rgba(185, 28, 28, 0.12)" : ALCHEMY.goldSoft,
-  },
-  heroMetaPillOk: {
-    borderColor: isDark ? c.secondaryBorder : "rgba(16, 185, 129, 0.28)",
-    backgroundColor: isDark ? c.secondarySoft : "rgba(241, 245, 249, 0.9)",
-  },
-  heroMetaPillDanger: {
-    borderColor: isDark ? c.danger : "rgba(239, 68, 68, 0.35)",
-    backgroundColor: isDark ? "rgba(239, 68, 68, 0.18)" : "rgba(254, 242, 242, 0.92)",
-  },
-  heroMetaPillText: {
-    fontSize: typography.caption,
-    fontFamily: fonts.semibold,
-    color: c.textSecondary,
-  },
-  heroMetaPillTextOk: {
-    color: c.success,
-    fontFamily: fonts.bold,
-  },
-  heroMetaPillTextDanger: {
-    color: c.danger,
-    fontFamily: fonts.bold,
-  },
-  name: {
-    fontSize: Platform.select({
-      web: isHugeWeb ? typography.h1 + 6 : isWideWeb ? typography.h1 + 3 : typography.h1,
-      default: typography.h1,
-    }),
-    lineHeight: Platform.select({
-      web: isHugeWeb ? lineHeight.h1 + 8 : isWideWeb ? lineHeight.h1 + 4 : lineHeight.h1,
-      default: lineHeight.h1,
-    }),
-    fontFamily: FONT_DISPLAY,
-    color: c.textPrimary,
-    letterSpacing: Platform.OS === "web" ? -0.55 : -0.42,
-    marginTop: 2,
-  },
-  categoryText: {
-    fontSize: typography.overline + 1,
-    fontFamily: fonts.extrabold,
-    color: isDark ? ALCHEMY.goldBright : ALCHEMY.brown,
-    marginBottom: spacing.xs,
-    textTransform: "uppercase",
-    letterSpacing: 1.4,
-  },
-  priceBand: {
-    marginTop: isWideWeb ? spacing.lg : spacing.md,
-    borderRadius: radius.xl + 2,
-    padding: isWideWeb ? spacing.lg : spacing.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderTopWidth: 2,
-  },
-  priceBandLight: {
-    backgroundColor: isDark ? c.surfaceMuted : "rgba(255, 253, 249, 0.96)",
-    borderColor: isDark ? c.border : ALCHEMY.pillInactive,
-    borderLeftWidth: 3,
-    borderLeftColor: ALCHEMY.gold,
-    borderTopColor: "rgba(185, 28, 28, 0.6)",
-  },
-  priceBandDark: {
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderColor: c.border,
-    borderLeftWidth: 3,
-    borderLeftColor: "rgba(220, 38, 38, 0.65)",
-    borderTopColor: "rgba(220, 38, 38, 0.38)",
-  },
-  priceBlock: {
-    marginTop: 0,
-    gap: spacing.sm,
-  },
-  priceRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    flexWrap: "wrap",
-    gap: 8,
-  },
-  saveChip: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    backgroundColor: isDark ? "rgba(100, 116, 139, 0.12)" : "rgba(241, 245, 249, 0.85)",
-  },
-  saveChipText: {
-    fontSize: typography.caption,
-    fontFamily: fonts.extrabold,
-    letterSpacing: 0.25,
-  },
-  price: {
-    fontSize: Platform.select({
-      web: isWideWeb ? typography.h1 - 2 : typography.h2 + 2,
-      default: typography.h2 + 2,
-    }),
-    fontFamily: fonts.extrabold,
-    color: c.textPrimary,
-    letterSpacing: -0.35,
-  },
-  unitText: {
-    fontSize: typography.bodySmall,
-    fontFamily: fonts.regular,
-    color: c.textSecondary,
-    marginBottom: 3,
-  },
-  storyCard: {
-    marginTop: isWideWeb ? spacing.xl : spacing.lg,
-    borderRadius: semanticRadius.card,
-  },
-  descriptionBelowHeader: {
-    marginTop: spacing.sm,
-  },
-  description: {
-    marginBottom: 0,
-    fontSize: typography.body,
-    fontFamily: fonts.regular,
-    color: c.textSecondary,
-    lineHeight: 22,
-  },
-  variantPillsBelowHeader: {
-    marginTop: spacing.sm,
-  },
-  quickFactsWrap: {
-    marginTop: isWideWeb ? spacing.xl : spacing.lg,
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: isWideWeb ? spacing.sm : spacing.xs,
-  },
-  quickFactPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    maxWidth: "100%",
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.sm - 1,
-    borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.border : ALCHEMY.pillInactive,
-    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
-  },
-  quickFactIconWrap: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: isDark ? "rgba(220, 38, 38, 0.16)" : "rgba(185, 28, 28, 0.08)",
-  },
-  quickFactText: {
-    fontSize: typography.caption,
-    fontFamily: fonts.semibold,
-    color: c.textSecondary,
-    flexShrink: 1,
-  },
-  heroBadge: {
-    position: "absolute",
-    right: spacing.sm,
-    bottom: spacing.sm,
-    maxWidth: Platform.select({ web: "62%", default: "46%" }),
-    backgroundColor: ALCHEMY.brownMuted,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.md,
-    zIndex: 3,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,252,248,0.25)",
-    ...Platform.select({
-      web: { boxShadow: "0 8px 20px rgba(45, 29, 11, 0.35)" },
-      default: {},
-    }),
-  },
-  heroBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontFamily: fonts.extrabold,
-    letterSpacing: 0.6,
-  },
-  mrpStrike: {
-    fontSize: typography.body,
-    fontFamily: fonts.semibold,
-    color: c.textMuted,
-    textDecorationLine: "line-through",
-    marginBottom: 3,
-  },
-  variantBlock: {
-    marginTop: spacing.lg,
-  },
-  variantPills: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  stickyCtaShell: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    zIndex: 20,
-    paddingHorizontal: spacing.sm,
-    ...Platform.select({
-      web: {
-        alignItems: "center",
-      },
-      default: {},
-    }),
-  },
-  stickyPriceCol: {
-    flex: 1,
-    minWidth: 0,
-  },
-  stickyCtaCol: {
-    flexShrink: 0,
-    minWidth: 160,
-  },
-  stickyPriceLabel: {
-    fontSize: 11,
-    fontFamily: fonts.bold,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-  },
-  stickyPrice: {
-    fontSize: typography.h2,
-    fontFamily: fonts.bold,
-    fontVariant: ["tabular-nums"],
-  },
-  stepper: {
-    marginTop: spacing.md,
-    backgroundColor: isDark ? c.primaryDark : ALCHEMY.brown,
-    borderRadius: semanticRadius.full,
-    minHeight: 56,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.sm,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(255,232,184,0.2)",
-    ...Platform.select({
-      web: {
-        boxShadow: isDark
-          ? "0 10px 24px rgba(0,0,0,0.35)"
-          : "0 12px 24px rgba(24, 24, 27, 0.2)",
-      },
-      ios: {
-        shadowColor: "#18181B",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.22,
-        shadowRadius: 10,
-      },
-      android: { elevation: 4 },
-    }),
-  },
-  stepButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.12)",
-  },
-  stepCount: {
-    color: c.onPrimary,
-    fontSize: typography.body,
-    fontFamily: fonts.bold,
-    letterSpacing: 0.2,
-  },
-  reviewCard: {
-    marginTop: spacing.md + 2,
-    borderRadius: radius.xl + 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.border : ALCHEMY.pillInactive,
-    borderLeftWidth: 3,
-    borderLeftColor: isDark ? "rgba(220, 38, 38, 0.55)" : ALCHEMY.gold,
-    backgroundColor: isDark ? c.surfaceMuted : "rgba(255, 253, 249, 0.92)",
-    paddingHorizontal: isWideWeb ? spacing.lg : spacing.md,
-    paddingVertical: isWideWeb ? spacing.lg : spacing.md + 2,
-    ...moduleShadow,
-  },
-  reviewBannerWrap: {
-    marginBottom: spacing.sm,
-  },
-  reviewComposer: {
-    borderRadius: radius.lg + 2,
-    padding: spacing.md - 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    marginBottom: spacing.sm,
-  },
-  reviewComposerLight: {
-    backgroundColor: isDark ? c.surface : "#FFFFFF",
-    borderColor: isDark ? c.border : "rgba(63, 63, 70, 0.1)",
-  },
-  reviewComposerDark: {
-    backgroundColor: "rgba(0,0,0,0.12)",
-    borderColor: c.border,
-  },
-  reviewStarsPickRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.sm,
-    paddingHorizontal: spacing.xs,
-  },
-  reviewStarHit: {
-    padding: 4,
-    borderRadius: radius.md,
-  },
-  reviewStarHitActive: {
-    backgroundColor: isDark ? "rgba(185, 28, 28, 0.12)" : ALCHEMY.goldSoft,
-  },
-  reviewInputWrap: {
-    marginBottom: spacing.sm,
-  },
-  reviewSubmitBtn: {
-    alignSelf: "flex-end",
-  },
-  reviewListLabel: {
-    fontSize: typography.overline,
-    fontFamily: fonts.extrabold,
-    letterSpacing: 1,
-    color: c.textMuted,
-    textTransform: "uppercase",
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  reviewList: {
-    marginTop: spacing.sm,
-    gap: spacing.sm,
-  },
-  reviewItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radius.lg,
-    backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.75)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.border : "rgba(63, 63, 70, 0.08)",
-  },
-  reviewAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  reviewAvatarText: {
-    fontSize: typography.bodySmall,
-    fontFamily: FONT_DISPLAY_SEMI,
-  },
-  reviewItemBody: {
-    flex: 1,
-    minWidth: 0,
-  },
-  reviewItemTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-    marginBottom: 4,
-  },
-  reviewUser: {
-    flex: 1,
-    color: c.textPrimary,
-    fontSize: typography.bodySmall,
-    fontFamily: fonts.bold,
-  },
-  reviewRatingPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radius.pill,
-    backgroundColor: isDark ? "rgba(185, 28, 28, 0.12)" : ALCHEMY.goldSoft,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.primaryBorder : ALCHEMY.pillInactive,
-  },
-  reviewRatingPillText: {
-    fontSize: typography.overline + 1,
-    fontFamily: fonts.extrabold,
-    color: c.textPrimary,
-  },
-  reviewComment: {
-    color: c.textSecondary,
-    fontSize: typography.caption,
-    lineHeight: 19,
-    fontFamily: fonts.regular,
-  },
-  reviewNoComment: {
-    fontSize: typography.overline + 1,
-    fontFamily: fonts.medium,
-    color: c.textMuted,
-    fontStyle: "italic",
-  },
-  reviewEmptyHint: {
-    marginTop: spacing.sm,
-    fontSize: typography.caption,
-    fontFamily: fonts.medium,
-    color: c.textMuted,
-    textAlign: "center",
-  },
-  loadingGradient: {
-    flex: 1,
-    width: "100%",
-  },
-  loadingSkeletonInner: {
-    flex: 1,
-    alignSelf: "center",
-    width: "100%",
-    maxWidth: 720,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
-    gap: spacing.md,
-  },
-  loadingThumbRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
-  loadingTextStack: {
-    gap: spacing.xs,
-  },
-  loadingChipRow: {
-    flexDirection: "row",
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  centered: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: spacing.xl,
-  },
-  loadingHint: {
-    marginTop: spacing.sm,
-    fontSize: typography.bodySmall,
-    fontFamily: fonts.semibold,
-    color: c.textSecondary,
-  },
-  missingText: {
-    marginTop: spacing.md,
-    fontSize: typography.body,
-    fontFamily: fonts.semibold,
-    color: c.textSecondary,
-    textAlign: "center",
-  },
-});
-}
-
-function RetryImage({ sourceUri, style, styles, c }) {
-  const candidates = useMemo(() => getImageUriCandidates(sourceUri), [sourceUri]);
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    setIndex(0);
-  }, [sourceUri]);
-
-  const currentUri = candidates[index] || "";
-  if (!currentUri) {
-    return (
-      <View style={[style, styles.thumbImageFallback]}>
-        <Ionicons name="image-outline" size={sz.micro} color={c.textMuted} />
+      <View {...(Platform.OS === "web" ? { "data-print-hide": "true" } : {})}>
+        <BottomNavBar />
       </View>
-    );
-  }
-
-  return (
-    <Image
-      source={{ uri: currentUri }}
-      style={style}
-      contentFit="contain"
-      cachePolicy="memory-disk"
-      transition={200}
-      onError={() => setIndex((prev) => prev + 1)}
-    />
+    </View>
   );
 }

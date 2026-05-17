@@ -1,4 +1,5 @@
 const Product = require("../models/Product");
+const Order = require("../models/Order");
 const cloudinary = require("../config/cloudinary");
 const CLOUDINARY_PRODUCT_FOLDER =
   String(process.env.CLOUDINARY_PRODUCT_FOLDER || process.env.CLOUDINARY_UPLOAD_PREFIX || "").trim() ||
@@ -21,13 +22,37 @@ function sanitizeLabeledBlocks(raw) {
       icon: String(b?.icon ?? "checkmark-circle-outline").trim() || "checkmark-circle-outline",
       title: String(b?.title ?? "").trim(),
       description: String(b?.description ?? "").trim(),
+      image: String(b?.image ?? "").trim(),
+      recipeUrl: String(b?.recipeUrl ?? b?.recipeLink ?? "").trim(),
     }))
     .filter((b) => b.title || b.description);
+}
+
+function sanitizeSourcing(raw) {
+  if (!raw || typeof raw !== "object") return undefined;
+  const originRegion = String(raw.originRegion ?? "").trim();
+  const harvestDate = String(raw.harvestDate ?? "").trim();
+  const certifications = Array.isArray(raw.certifications)
+    ? raw.certifications.map((c) => String(c ?? "").trim()).filter(Boolean)
+    : [];
+  if (!originRegion && !harvestDate && !certifications.length) return undefined;
+  return { originRegion, harvestDate, certifications };
 }
 
 function sanitizeStringArray(raw) {
   if (!Array.isArray(raw)) return [];
   return raw.map((s) => String(s ?? "").trim()).filter(Boolean);
+}
+
+function sanitizeMedia(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((m) => ({
+      type: String(m?.type ?? "image").toLowerCase() === "video" ? "video" : "image",
+      url: String(m?.url ?? "").trim(),
+      poster: String(m?.poster ?? "").trim(),
+    }))
+    .filter((m) => m.url);
 }
 
 function toNumber(value, fallback) {
@@ -52,6 +77,22 @@ async function getProducts(req, res, next) {
     res.json(products);
   } catch (error) {
     next(error);
+  }
+}
+
+async function getProductById(req, res, next) {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    return res.json(product);
+  } catch (error) {
+    if (error.name === "CastError") {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    return next(error);
   }
 }
 
@@ -85,8 +126,13 @@ async function createProduct(req, res, next) {
       processTitle,
       processSteps,
       highlightQuote,
+      highlightQuoteAttribution,
+      lifestyleCaption,
+      processImage,
       usageRituals,
       richProductPage,
+      media,
+      sourcing,
     } = req.body;
 
     if (!name || price === undefined) {
@@ -94,6 +140,7 @@ async function createProduct(req, res, next) {
     }
 
     const mrpNum = mrp !== undefined && mrp !== "" ? toNumber(mrp, 0) : undefined;
+    const sourcingRow = sanitizeSourcing(sourcing);
     const ratingNum =
       ratingAverage !== undefined && ratingAverage !== ""
         ? Math.min(5, Math.max(0, toNumber(ratingAverage, 0)))
@@ -130,8 +177,13 @@ async function createProduct(req, res, next) {
       processTitle: String(processTitle || "").trim(),
       processSteps: sanitizeStringArray(processSteps),
       highlightQuote: String(highlightQuote || "").trim(),
+      highlightQuoteAttribution: String(highlightQuoteAttribution || "").trim(),
+      lifestyleCaption: String(lifestyleCaption || "").trim(),
+      processImage: String(processImage || "").trim(),
       usageRituals: sanitizeLabeledBlocks(usageRituals),
       richProductPage: toBoolean(richProductPage, false),
+      media: sanitizeMedia(media),
+      ...(sourcingRow ? { sourcing: sourcingRow } : {}),
     });
 
     res.status(201).json(product);
@@ -177,8 +229,13 @@ async function updateProduct(req, res, next) {
       processTitle,
       processSteps,
       highlightQuote,
+      highlightQuoteAttribution,
+      lifestyleCaption,
+      processImage,
       usageRituals,
       richProductPage,
+      media,
+      sourcing,
     } = req.body;
     if (name !== undefined) product.name = name;
     if (price !== undefined) product.price = toNumber(price, product.price);
@@ -214,8 +271,18 @@ async function updateProduct(req, res, next) {
     if (processTitle !== undefined) product.processTitle = String(processTitle || "").trim();
     if (processSteps !== undefined) product.processSteps = sanitizeStringArray(processSteps);
     if (highlightQuote !== undefined) product.highlightQuote = String(highlightQuote || "").trim();
+    if (highlightQuoteAttribution !== undefined) {
+      product.highlightQuoteAttribution = String(highlightQuoteAttribution || "").trim();
+    }
+    if (lifestyleCaption !== undefined) product.lifestyleCaption = String(lifestyleCaption || "").trim();
+    if (processImage !== undefined) product.processImage = String(processImage || "").trim();
     if (usageRituals !== undefined) product.usageRituals = sanitizeLabeledBlocks(usageRituals);
+    if (sourcing !== undefined) {
+      const next = sanitizeSourcing(sourcing);
+      product.sourcing = next || { originRegion: "", harvestDate: "", certifications: [] };
+    }
     if (richProductPage !== undefined) product.richProductPage = toBoolean(richProductPage, product.richProductPage);
+    if (media !== undefined) product.media = sanitizeMedia(media);
 
     await product.save();
     res.json(product);
@@ -297,11 +364,27 @@ async function getProductReviews(req, res, next) {
   }
 }
 
+async function userHasVerifiedPurchase(userId, productId) {
+  const delivered = await Order.exists({
+    user: userId,
+    status: { $in: ["delivered", "shipped", "paid"] },
+    "products.product": productId,
+  });
+  return Boolean(delivered);
+}
+
+function sanitizeReviewPhotos(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((u) => String(u || "").trim()).filter(Boolean).slice(0, 4);
+}
+
 async function createOrUpdateProductReview(req, res, next) {
   try {
     const { id } = req.params;
     const ratingNum = Number(req.body?.rating);
     const comment = String(req.body?.comment || "").trim();
+    const title = String(req.body?.title || "").trim().slice(0, 80);
+    const photos = sanitizeReviewPhotos(req.body?.photos);
     if (!Number.isFinite(ratingNum) || ratingNum < 1 || ratingNum > 5) {
       return res.status(400).json({ message: "Rating must be between 1 and 5." });
     }
@@ -312,17 +395,24 @@ async function createOrUpdateProductReview(req, res, next) {
     }
 
     const userId = String(req.user._id);
+    const verifiedPurchase = await userHasVerifiedPurchase(req.user._id, product._id);
     const existing = (product.reviews || []).find((r) => String(r.user) === userId);
     if (existing) {
       existing.rating = ratingNum;
       existing.comment = comment;
+      existing.title = title;
+      existing.photos = photos;
       existing.userName = String(req.user.name || "User").trim() || "User";
+      existing.verifiedPurchase = verifiedPurchase || existing.verifiedPurchase;
     } else {
       product.reviews.push({
         user: req.user._id,
         userName: String(req.user.name || "User").trim() || "User",
         rating: ratingNum,
         comment,
+        title,
+        photos,
+        verifiedPurchase,
       });
     }
 
@@ -345,12 +435,79 @@ async function createOrUpdateProductReview(req, res, next) {
   }
 }
 
+async function uploadReviewPhoto(req, res, next) {
+  try {
+    const { id } = req.params;
+    const product = await Product.findById(id).select("_id");
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    const { imageBase64, mimeType } = req.body || {};
+    if (!imageBase64 || typeof imageBase64 !== "string") {
+      return res.status(400).json({ message: "imageBase64 is required." });
+    }
+
+    const hasDataPrefix = imageBase64.startsWith("data:image/");
+    const safeMime = typeof mimeType === "string" && mimeType.startsWith("image/") ? mimeType : "image/jpeg";
+    const uploadSource = hasDataPrefix ? imageBase64 : `data:${safeMime};base64,${imageBase64}`;
+    const folder = `${CLOUDINARY_PRODUCT_FOLDER}/reviews`;
+
+    const uploaded = await cloudinary.uploader.upload(uploadSource, {
+      folder,
+      resource_type: "image",
+    });
+
+    res.status(201).json({ url: uploaded.secure_url, publicId: uploaded.public_id });
+  } catch (error) {
+    if (error?.http_code === 413 || String(error?.message || "").toLowerCase().includes("file size")) {
+      return res.status(413).json({ message: "Image is too large. Please choose a smaller photo." });
+    }
+    next(error);
+  }
+}
+
+async function voteProductReview(req, res, next) {
+  try {
+    const { id, reviewId } = req.params;
+    const helpful = req.body?.helpful !== false;
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found." });
+    }
+
+    const review = (product.reviews || []).find((r) => String(r._id) === String(reviewId));
+    if (!review) {
+      return res.status(404).json({ message: "Review not found." });
+    }
+
+    if (helpful) {
+      review.helpfulCount = Math.max(0, Number(review.helpfulCount || 0) + 1);
+    } else {
+      review.notHelpfulCount = Math.max(0, Number(review.notHelpfulCount || 0) + 1);
+    }
+    await product.save();
+
+    res.json({
+      reviewId: String(review._id),
+      helpfulCount: Number(review.helpfulCount || 0),
+      notHelpfulCount: Number(review.notHelpfulCount || 0),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getProducts,
+  getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
   uploadProductImage,
   getProductReviews,
   createOrUpdateProductReview,
+  uploadReviewPhoto,
+  voteProductReview,
 };

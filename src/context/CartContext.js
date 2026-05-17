@@ -11,6 +11,25 @@ export function CartProvider({ children }) {
   const [isCartSyncing, setIsCartSyncing] = useState(false);
   const isHydratingRef = useRef(false);
   const syncTimerRef = useRef(null);
+  const cartBadgeBumpListenersRef = useRef(new Set());
+
+  const registerCartBadgeBump = useCallback((listener) => {
+    if (typeof listener !== "function") return () => {};
+    cartBadgeBumpListenersRef.current.add(listener);
+    return () => {
+      cartBadgeBumpListenersRef.current.delete(listener);
+    };
+  }, []);
+
+  const bumpCartBadge = useCallback(() => {
+    cartBadgeBumpListenersRef.current.forEach((listener) => {
+      try {
+        listener();
+      } catch {
+        /* noop */
+      }
+    });
+  }, []);
 
   const addToCart = useCallback((product) => {
     setCartItems((currentItems) => {
@@ -190,6 +209,8 @@ export function CartProvider({ children }) {
       clearCart,
       getItemQuantity,
       refreshCartFromServer,
+      bumpCartBadge,
+      registerCartBadgeBump,
     }),
     [
       cartItems,
@@ -202,6 +223,8 @@ export function CartProvider({ children }) {
       clearCart,
       getItemQuantity,
       refreshCartFromServer,
+      bumpCartBadge,
+      registerCartBadgeBump,
     ]
   );
 

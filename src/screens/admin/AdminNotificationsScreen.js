@@ -1,10 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
-import AppFooter from "../../components/AppFooter";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
-import AdminBackLink from "../../components/admin/AdminBackLink";
-import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
+import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -79,51 +76,8 @@ export default function AdminNotificationsScreen({ navigation }) {
     }
   };
 
-  if (user && !user.isAdmin) {
-    return (
-      <CustomerScreenShell style={styles.screen} variant="admin">
-        <MotionScrollView
-          style={customerScrollFill}
-          contentContainerStyle={adminInnerPageScrollContent(insets)}
-          showsVerticalScrollIndicator={false}
-        >
-          <SectionReveal delay={40} preset="fade-up">
-            <View style={styles.panel}>
-              <PremiumErrorBanner
-                severity="warning"
-                title="Admin access required"
-                message="This account does not have admin privileges."
-              />
-              <PremiumButton
-                label="Back to home"
-                iconLeft="home-outline"
-                variant="primary"
-                size="md"
-                onPress={() => navigation.navigate("Home")}
-                style={styles.gateCta}
-              />
-            </View>
-          </SectionReveal>
-        </MotionScrollView>
-      </CustomerScreenShell>
-    );
-  }
-
   return (
-    <CustomerScreenShell style={styles.screen} variant="admin">
-      <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-        <MotionScrollView
-          style={customerScrollFill}
-          contentContainerStyle={adminInnerPageScrollContent(insets)}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.panel}>
-            <AdminBackLink navigation={navigation} />
-            <AdminPageHeading
-              title="Broadcast Notifications"
-              subtitle="Send updates to all users."
-            />
+    <OpsAdminScreen navigation={navigation} activeRoute="AdminNotifications" sectionTitle="Send notification">
             {error ? (
               <View style={styles.bannerSpacer}>
                 <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
@@ -180,7 +134,6 @@ export default function AdminNotificationsScreen({ navigation }) {
                 style={styles.refreshBelowSend}
               />
             </PremiumCard>
-          </View>
 
           <View style={styles.panel}>
             <Text style={[styles.sectionTitle, { color: c.textPrimary }]}>Sent notifications</Text>
@@ -212,10 +165,7 @@ export default function AdminNotificationsScreen({ navigation }) {
               ))
             )}
           </View>
-          <AppFooter />
-        </MotionScrollView>
-      </KeyboardAvoidingView>
-    </CustomerScreenShell>
+    </OpsAdminScreen>
   );
 }
 

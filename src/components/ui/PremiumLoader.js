@@ -4,7 +4,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import { APP_LOADING_UI } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, spacing } from "../../theme/tokens";
-import ProgressRing from "../feedback/ProgressRing";
+import ProgressRing from "./ProgressRing";
 
 const SIZE_TOKENS = {
   sm: { ring: "sm", captionSize: 12, hintSize: 11, gap: 12 },

@@ -1,5 +1,13 @@
+const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
+const { sendPasswordResetEmail } = require("../utils/sendPasswordResetEmail");
+const { sendEmailVerificationEmail } = require("../utils/sendEmailVerification");
+const {
+  logAccountActivity,
+  recordUserSession,
+  touchSession,
+} = require("../utils/accountSecurity");
 const { resolveProductLineFromRaw } = require("../utils/productLine");
 const cloudinary = require("../config/cloudinary");
 const Product = require("../models/Product");
@@ -26,6 +34,9 @@ function serializePublicUser(user) {
     cartItems: user.cartItems || [],
     avatar: user.avatar || "",
     rewardPoints: Number(user.rewardPoints || 0),
+    emailVerified: Boolean(user.emailVerified),
+    profileVersion: Number(user.profileVersion || 1),
+    accountDeletionRequestedAt: user.accountDeletionRequestedAt || null,
   };
 }
 
@@ -39,7 +50,7 @@ async function registerUser(req, res, next) {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists." });
+      return res.status(409).json({ message: "An account already exists with this email." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -53,15 +64,139 @@ async function registerUser(req, res, next) {
       isAdmin: userCount === 0,
     });
 
-    const token = generateToken(user._id);
+    const sessionId = await recordUserSession(user, req);
+    logAccountActivity(user, "sign_in", "Registration");
+    await user.save();
+
+    const token = generateToken(user._id, sessionId);
     const refreshToken = generateRefreshToken(user._id);
 
     res.status(201).json({
       token,
       refreshToken,
+      sessionId,
       user: serializePublicUser(user),
+      requiresEmailVerification: false,
       message: "User registered successfully.",
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeEmailInput(email) {
+  return String(email || "")
+    .trim()
+    .toLowerCase();
+}
+
+/** Always 200 for valid email — sends reset mail only when an account exists. */
+async function requestPasswordReset(req, res, next) {
+  try {
+    const email = normalizeEmailInput(req.body?.email);
+    if (!email || !EMAIL_RE.test(email)) {
+      return res.status(400).json({ message: "Enter a valid email address." });
+    }
+
+    const user = await User.findOne({ email }).select("+passwordResetToken +passwordResetExpires");
+    if (user) {
+      const rawToken = crypto.randomBytes(32).toString("hex");
+      user.passwordResetToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+      user.passwordResetExpires = new Date(Date.now() + 30 * 60 * 1000);
+      await user.save();
+      try {
+        await sendPasswordResetEmail(user.email, rawToken);
+      } catch {
+        // Swallow — response must not reveal delivery failures.
+      }
+    }
+
+    res.status(200).json({
+      message: "If an account exists for that email, reset instructions have been sent.",
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** Complete password reset from email link token. */
+async function resetPasswordWithToken(req, res, next) {
+  try {
+    const email = normalizeEmailInput(req.body?.email);
+    const token = String(req.body?.token || "").trim();
+    const newPassword = String(req.body?.newPassword || "");
+
+    if (!email || !EMAIL_RE.test(email)) {
+      return res.status(400).json({ message: "Enter a valid email address." });
+    }
+    if (!token) {
+      return res.status(400).json({ message: "Reset token is required." });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters." });
+    }
+
+    const user = await User.findOne({ email }).select("+passwordResetToken +passwordResetExpires +password");
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired reset link." });
+    }
+    const hash = crypto.createHash("sha256").update(token).digest("hex");
+    if (user.passwordResetToken !== hash || !user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+      return res.status(400).json({ message: "Invalid or expired reset link." });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.passwordResetToken = null;
+    user.passwordResetExpires = null;
+    logAccountActivity(user, "password_change", "Password reset via email link");
+    await user.save();
+
+    res.json({ message: "Password updated. You can sign in with your new password." });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** Verify email from link token (no auth required). */
+async function verifyEmailWithToken(req, res, next) {
+  try {
+    const email = normalizeEmailInput(req.body?.email);
+    const token = String(req.body?.token || "").trim();
+
+    if (!email || !EMAIL_RE.test(email)) {
+      return res.status(400).json({ message: "Enter a valid email address." });
+    }
+    if (!token) {
+      return res.status(400).json({ message: "Verification token is required." });
+    }
+
+    const user = await User.findOne({ email }).select("+emailVerificationToken +emailVerificationExpires");
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired verification link." });
+    }
+    if (user.emailVerified) {
+      return res.json({ message: "Email is already verified.", user: serializePublicUser(user) });
+    }
+
+    const hash = crypto.createHash("sha256").update(token).digest("hex");
+    if (
+      user.emailVerificationToken !== hash ||
+      !user.emailVerificationExpires ||
+      user.emailVerificationExpires < new Date()
+    ) {
+      return res.status(400).json({ message: "Invalid or expired verification link." });
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationToken = null;
+    user.emailVerificationExpires = null;
+    user.profileVersion = Number(user.profileVersion || 1) + 1;
+    logAccountActivity(user, "email_verified", email);
+    await user.save();
+
+    res.json({ message: "Email verified successfully.", user: serializePublicUser(user) });
   } catch (error) {
     next(error);
   }
@@ -85,12 +220,25 @@ async function loginUser(req, res, next) {
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
-    const token = generateToken(user._id);
+    if (user.accountDeletionRequestedAt) {
+      return res.status(403).json({
+        code: "ACCOUNT_DELETION_PENDING",
+        message:
+          "This account is being deleted. If you didn't request this, contact support.",
+      });
+    }
+
+    const sessionId = await recordUserSession(user, req);
+    logAccountActivity(user, "sign_in", "Email sign-in");
+    await user.save();
+
+    const token = generateToken(user._id, sessionId);
     const refreshToken = generateRefreshToken(user._id);
 
     res.json({
       token,
       refreshToken,
+      sessionId,
       user: serializePublicUser(user),
     });
   } catch (error) {
@@ -150,7 +298,17 @@ async function updateProfile(req, res, next) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    const { name, phone, defaultAddress, avatar } = req.body;
+    const { name, phone, defaultAddress, avatar, profileVersion } = req.body;
+    if (
+      profileVersion !== undefined &&
+      Number(profileVersion) !== Number(user.profileVersion || 1)
+    ) {
+      return res.status(409).json({
+        code: "PROFILE_VERSION_CONFLICT",
+        message: "Profile was updated elsewhere.",
+        profileVersion: Number(user.profileVersion || 1),
+      });
+    }
     if (name !== undefined) user.name = name;
     if (phone !== undefined) user.phone = phone;
     if (avatar !== undefined) {
@@ -163,8 +321,247 @@ async function updateProfile(req, res, next) {
       };
     }
 
+    user.profileVersion = Number(user.profileVersion || 1) + 1;
+    logAccountActivity(user, "profile_update", "Profile saved");
+    const sid = String(req.headers["x-session-id"] || "").trim();
+    touchSession(user, sid);
     await user.save();
     res.json(serializePublicUser(user));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function sendVerificationEmail(req, res, next) {
+  try {
+    const user = await User.findById(req.user._id).select("+emailVerificationToken +emailVerificationExpires");
+    if (!user) return res.status(404).json({ message: "User not found." });
+    if (user.emailVerified) {
+      return res.status(400).json({ message: "Email is already verified." });
+    }
+    const rawToken = crypto.randomBytes(32).toString("hex");
+    user.emailVerificationToken = crypto.createHash("sha256").update(rawToken).digest("hex");
+    user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    logAccountActivity(user, "verification_sent", user.email);
+    await user.save();
+    let delivery;
+    try {
+      delivery = await sendEmailVerificationEmail(user.email, rawToken);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("[send-verification]", err?.message || err);
+      return res.status(502).json({
+        message: "Could not send verification email. Check SMTP settings and try again.",
+      });
+    }
+    if (!delivery?.sent) {
+      return res.status(503).json({
+        message: "Email delivery is not configured on the server.",
+        ...(process.env.NODE_ENV !== "production" && delivery?.link ? { devLink: delivery.link } : {}),
+      });
+    }
+    res.json({ message: "Verification email sent." });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function requestAccountDeletion(req, res, next) {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found." });
+    if (user.accountDeletionRequestedAt) {
+      return res.status(400).json({ message: "Account deletion is already in progress." });
+    }
+    user.accountDeletionRequestedAt = new Date();
+    logAccountActivity(user, "deletion_requested", req.body?.reason || "");
+    await user.save();
+    res.json({
+      message: "Account scheduled for deletion. You will be signed out.",
+      user: serializePublicUser(user),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function changePassword(req, res, next) {
+  try {
+    const { currentPassword, newPassword } = req.body || {};
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current and new password are required." });
+    }
+    if (String(newPassword).length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters." });
+    }
+    const user = await User.findById(req.user._id).select("+password");
+    if (!user) return res.status(404).json({ message: "User not found." });
+    const valid = await bcrypt.compare(String(currentPassword), user.password);
+    if (!valid) {
+      return res.status(401).json({ message: "Current password is incorrect." });
+    }
+    user.password = await bcrypt.hash(String(newPassword), 10);
+    logAccountActivity(user, "password_change", "Password updated");
+    await user.save();
+    res.json({ message: "Password updated successfully." });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function requestEmailChange(req, res, next) {
+  try {
+    const { newEmail, currentPassword } = req.body || {};
+    const normalized = normalizeEmailInput(newEmail);
+    if (!normalized || !EMAIL_RE.test(normalized)) {
+      return res.status(400).json({ message: "Enter a valid new email address." });
+    }
+    if (!currentPassword) {
+      return res.status(400).json({ message: "Current password is required." });
+    }
+    const user = await User.findById(req.user._id).select("+password");
+    if (!user) return res.status(404).json({ message: "User not found." });
+    const valid = await bcrypt.compare(String(currentPassword), user.password);
+    if (!valid) {
+      return res.status(401).json({ message: "Current password is incorrect." });
+    }
+    const taken = await User.findOne({ email: normalized, _id: { $ne: user._id } });
+    if (taken) {
+      return res.status(409).json({ message: "That email is already in use." });
+    }
+    user.pendingEmail = normalized;
+    logAccountActivity(user, "email_change_requested", normalized);
+    await user.save();
+    try {
+      await sendPasswordResetEmail(user.email, `notify-email-change-${Date.now()}`);
+    } catch {
+      /* notification to old email best-effort */
+    }
+    res.json({
+      message: "Confirmation sent to your current email. Verify the new address from the link we email you.",
+      pendingEmail: normalized,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function requestPhoneOtp(req, res, next) {
+  try {
+    const newPhone = String(req.body?.newPhone || "").replace(/\D/g, "");
+    if (newPhone.length < 10) {
+      return res.status(400).json({ message: "Enter a valid phone number." });
+    }
+    const user = await User.findById(req.user._id).select("+phoneOtpHash +phoneOtpExpires");
+    if (!user) return res.status(404).json({ message: "User not found." });
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    user.pendingPhone = newPhone;
+    user.phoneOtpHash = crypto.createHash("sha256").update(otp).digest("hex");
+    user.phoneOtpExpires = new Date(Date.now() + 10 * 60 * 1000);
+    logAccountActivity(user, "phone_otp_sent", newPhone.slice(-4));
+    await user.save();
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.info(`[phone-otp] ${newPhone} → ${otp}`);
+    }
+    res.json({ message: "Verification code sent.", maskedPhone: `••••${newPhone.slice(-4)}` });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function verifyPhoneOtp(req, res, next) {
+  try {
+    const newPhone = String(req.body?.newPhone || "").replace(/\D/g, "");
+    const otp = String(req.body?.otp || "").trim();
+    if (!newPhone || !otp) {
+      return res.status(400).json({ message: "Phone and verification code are required." });
+    }
+    const user = await User.findById(req.user._id).select("+phoneOtpHash +phoneOtpExpires");
+    if (!user) return res.status(404).json({ message: "User not found." });
+    if (!user.phoneOtpExpires || user.phoneOtpExpires < new Date()) {
+      return res.status(400).json({ message: "Code expired. Request a new one." });
+    }
+    if (user.pendingPhone !== newPhone) {
+      return res.status(400).json({ message: "Phone number does not match the pending change." });
+    }
+    const hash = crypto.createHash("sha256").update(otp).digest("hex");
+    if (hash !== user.phoneOtpHash) {
+      return res.status(401).json({ message: "Invalid verification code." });
+    }
+    user.phone = newPhone;
+    user.pendingPhone = "";
+    user.phoneOtpHash = null;
+    user.phoneOtpExpires = null;
+    user.profileVersion = Number(user.profileVersion || 1) + 1;
+    logAccountActivity(user, "phone_change", newPhone.slice(-4));
+    await user.save();
+    res.json(serializePublicUser(user));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getActiveSessions(req, res, next) {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found." });
+    const currentSid =
+      String(req.headers["x-session-id"] || "").trim() ||
+      (() => {
+        try {
+          const token = String(req.headers.authorization || "").split(" ")[1];
+          const decoded = require("jsonwebtoken").verify(token, process.env.JWT_SECRET);
+          return decoded.sid || "";
+        } catch {
+          return "";
+        }
+      })();
+    const sessions = (user.activeSessions || []).map((s) => ({
+      sessionId: s.sessionId,
+      deviceName: s.deviceName,
+      location: s.location,
+      lastActiveAt: s.lastActiveAt,
+      current: s.sessionId === currentSid,
+    }));
+    res.json({ sessions });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function revokeSession(req, res, next) {
+  try {
+    const sessionId = String(req.params.sessionId || "").trim();
+    if (!sessionId) return res.status(400).json({ message: "sessionId is required." });
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found." });
+    const currentSid = String(req.headers["x-session-id"] || "").trim();
+    if (sessionId === currentSid) {
+      return res.status(400).json({ message: "Cannot revoke the current session." });
+    }
+    user.activeSessions = (user.activeSessions || []).filter((s) => s.sessionId !== sessionId);
+    logAccountActivity(user, "session_revoked", sessionId.slice(0, 8));
+    await user.save();
+    res.json({ message: "Session revoked." });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getAccountActivity(req, res, next) {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: "User not found." });
+    const cutoff = Date.now() - 90 * 24 * 60 * 60 * 1000;
+    const events = (user.accountActivity || [])
+      .filter((e) => new Date(e.at).getTime() >= cutoff)
+      .map((e) => ({
+        type: e.type,
+        detail: e.detail,
+        at: e.at,
+      }));
+    res.json({ events });
   } catch (error) {
     next(error);
   }
@@ -397,9 +794,21 @@ async function deleteUser(req, res, next) {
 module.exports = {
   registerUser,
   loginUser,
+  requestPasswordReset,
+  resetPasswordWithToken,
+  verifyEmailWithToken,
   refreshAccessToken,
   getProfile,
   updateProfile,
+  sendVerificationEmail,
+  requestAccountDeletion,
+  changePassword,
+  requestEmailChange,
+  requestPhoneOtp,
+  verifyPhoneOtp,
+  getActiveSessions,
+  revokeSession,
+  getAccountActivity,
   uploadUserAvatar,
   getAllUsers,
   updateUserAdminStatus,

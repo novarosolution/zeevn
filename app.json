@@ -48,8 +48,16 @@
         }
       ],
       "expo-notifications",
+      "expo-video",
       "expo-asset",
       "expo-font",
+      "expo-secure-store",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Zeevan to use Face ID for faster sign-in."
+        }
+      ],
       [
         "expo-build-properties",
         {

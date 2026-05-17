@@ -1,8 +1,17 @@
-import React, { useEffect, useRef, useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Animated as RNAnimated,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAnimatedReaction, runOnJS } from "react-native-reanimated";
+import Animated, { useAnimatedReaction, runOnJS, useAnimatedStyle, useSharedValue, withSequence, withSpring } from "react-native-reanimated";
 import { gsap } from "gsap";
 import {
   breakpoints,
@@ -13,35 +22,54 @@ import {
   spacing,
   typography,
 } from "../theme/tokens";
+import { useCartDrawer } from "../context/CartDrawerContext";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-import { WEB_HEADER_HEIGHT, WEB_Z_INDEX } from "../theme/web";
+import { WEB_HEADER_BAND, WEB_Z_INDEX } from "../theme/web";
 import { CUSTOMER_PAGE_MAX_WIDTH } from "../theme/screenLayout";
-import { SEARCH_PLACEHOLDER } from "../constants/brand";
-import { CUSTOMER_NAV_LINKS } from "../content/appContent";
+import { CUSTOMER_NAV_LINKS, SEARCH_PLACEHOLDERS, WEB_HEADER_UI } from "../content/appContent";
+import { ACCOUNT_NESTED } from "../navigation/accountRoutes";
 import BrandHeaderMark from "./BrandHeaderMark";
 import LocationIconButton from "./LocationIconButton";
 import useReducedMotion from "../hooks/useReducedMotion";
 import useScrollOffset from "../hooks/useScrollOffset";
 import { getAdminMenuFlatLinks, isAdminRouteName } from "../constants/adminNav";
+import SearchSuggestionsPopover from "./web/SearchSuggestionsPopover";
+import SearchOverlay from "./web/SearchOverlay";
+import WebHeaderDrawer from "./web/WebHeaderDrawer";
+import useRecentSearches from "../hooks/useRecentSearches";
+import useKeyboardShortcut from "../hooks/useKeyboardShortcut";
+import { HERITAGE } from "../theme/customerAlchemy";
 
-const COMPACT_SCROLL_THRESHOLD = 80;
+const COMPACT_SCROLL_THRESHOLD = 24;
 
-/** Sticky desktop nav (web). Kept intentionally calmer so pages carry the visual weight. */
+const ACCOUNT_ROUTE_NAMES = new Set([
+  "Profile",
+  ACCOUNT_NESTED.Overview,
+  ACCOUNT_NESTED.Orders,
+  ACCOUNT_NESTED.OrderDetail,
+  ACCOUNT_NESTED.Wishlist,
+  ACCOUNT_NESTED.Addresses,
+  ACCOUNT_NESTED.Payment,
+  ACCOUNT_NESTED.AccountProfile,
+  ACCOUNT_NESTED.NotificationPrefs,
+  "MyOrders",
+  "ManageAddress",
+  "EditProfile",
+  "Settings",
+]);
+
 function routeMatchesNav(navKey, routeName) {
   if (!routeName) return false;
   if (navKey === routeName) return true;
-  if (navKey === "Home" && routeName === "Product") {
+  if (navKey === "Home" && (routeName === "Product" || routeName === "Search")) {
     return true;
   }
-  if (navKey === "Settings" && (routeName === "EditProfile" || routeName === "ManageAddress")) {
+  if (navKey === "Settings" && (routeName === ACCOUNT_NESTED.AccountProfile || routeName === ACCOUNT_NESTED.NotificationPrefs)) {
     return true;
   }
-  if (
-    navKey === "Profile" &&
-    (routeName === "MyOrders" || routeName === "Notifications" || routeName === "Support")
-  ) {
+  if (navKey === "Profile" && (ACCOUNT_ROUTE_NAMES.has(routeName) || routeName === "Notifications" || routeName === "Support")) {
     return true;
   }
   if (navKey === "Delivery" && routeName === "DeliveryDashboard") {
@@ -53,27 +81,68 @@ function routeMatchesNav(navKey, routeName) {
   return false;
 }
 
+function isApplePlatform() {
+  return (
+    Platform.OS === "web" &&
+    typeof navigator !== "undefined" &&
+    /Mac|iPhone|iPad|iPod/.test(String(navigator.platform || navigator.userAgent || ""))
+  );
+}
+
+const SkipToMainLink = () => {
+  const [visible, setVisible] = useState(false);
+  if (Platform.OS !== "web") return null;
+  return (
+    <Pressable
+      onFocus={() => setVisible(true)}
+      onBlur={() => setVisible(false)}
+      onPress={() => {
+        if (typeof document === "undefined") return;
+        const el = document.getElementById("main-content");
+        if (el && typeof el.focus === "function") el.focus({ preventScroll: false });
+        if (el && typeof el.scrollIntoView === "function") el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }}
+      style={[styles.skipPress, { opacity: visible ? 1 : 0.01 }]}
+      accessibilityRole="link"
+      accessibilityLabel={WEB_HEADER_UI.skipToContentLabel}
+    >
+      <Text style={styles.skipText}>{WEB_HEADER_UI.skipToContentLabel}</Text>
+    </Pressable>
+  );
+};
+
 export default function WebAppHeader({ navigationRef }) {
-  const { colors, isDark, shadowLift, shadowPremium } = useTheme();
+  const { colors, isDark, shadowLift } = useTheme();
   const semantic = getSemanticColors(colors);
   const { width: windowWidth } = useWindowDimensions();
-  const { totalItems } = useCart();
+  const { totalItems, registerCartBadgeBump } = useCart();
+  const { openCartDrawer } = useCartDrawer();
   const { isAuthenticated, user } = useAuth();
   const [adminMenuOpen, setAdminMenuOpen] = useState(false);
   const adminWrapRef = useRef(null);
   const reducedMotion = useReducedMotion();
   const shellRef = useRef(null);
   const brandRef = useRef(null);
-  const searchRef = useRef(null);
+  const searchChromeRef = useRef(null);
+  const searchInputRef = useRef(null);
   const navRefs = useRef([]);
-  const cartBadgeRef = useRef(null);
-  const progressRef = useRef(null);
   const prevTotalItemsRef = useRef(totalItems);
   const [compact, setCompact] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchOverlayOpen, setSearchOverlayOpen] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const placeholderOpacity = useRef(new RNAnimated.Value(1)).current;
   const [currentRouteName, setCurrentRouteName] = useState(
     navigationRef?.getCurrentRoute?.()?.name
   );
   const { scrollY } = useScrollOffset({ trackWindow: true });
+  const progressRef = useRef(null);
+  const cartBadgeScale = useSharedValue(1);
+  const { recentSearches, add: addRecentSearch } = useRecentSearches();
+
+  const shortcutDisplay = useMemo(() => (isApplePlatform() ? WEB_HEADER_UI.searchShortcutApple : WEB_HEADER_UI.searchShortcutWin), []);
 
   useEffect(() => {
     if (!navigationRef?.addListener) return undefined;
@@ -89,6 +158,7 @@ export default function WebAppHeader({ navigationRef }) {
 
   useEffect(() => {
     setAdminMenuOpen(false);
+    setSuggestionsOpen(false);
   }, [currentRouteName]);
 
   useEffect(() => {
@@ -105,16 +175,52 @@ export default function WebAppHeader({ navigationRef }) {
   }, [adminMenuOpen]);
 
   const compactNav = windowWidth < breakpoints.md;
-  const isPhoneWeb = windowWidth < 760;
+  const isPhoneWeb = windowWidth < breakpoints.md;
+  const useDrawerNav = compactNav;
 
-  const go = React.useCallback((name, requiresAuth = false) => {
-    const dest = requiresAuth && !isAuthenticated ? "Login" : name;
-    if (currentRouteName !== dest && navigationRef?.isReady?.()) {
-      navigationRef.navigate(dest);
+  const headerHeight = useMemo(() => {
+    if (isPhoneWeb) {
+      return compact ? WEB_HEADER_BAND.phoneScrolled : WEB_HEADER_BAND.phoneDefault;
     }
-  }, [currentRouteName, isAuthenticated, navigationRef]);
+    if (compactNav) {
+      return compact ? WEB_HEADER_BAND.tabletScrolled : WEB_HEADER_BAND.tabletDefault;
+    }
+    return compact ? WEB_HEADER_BAND.desktopScrolled : WEB_HEADER_BAND.desktopDefault;
+  }, [compact, compactNav, isPhoneWeb]);
 
-  const goAdmin = React.useCallback(
+  const wordmarkFontSize = useMemo(() => {
+    if (isPhoneWeb) return compact ? 17 : 18;
+    if (compactNav) return compact ? 18 : 20;
+    return compact ? 20 : 22;
+  }, [compact, compactNav, isPhoneWeb]);
+
+  const surfaceAlt = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)";
+  const lineSoft = isDark ? "rgba(248,250,252,0.42)" : "rgba(30,41,59,0.35)";
+
+  const go = useCallback(
+    (name, requiresAuth = false, nestedScreen) => {
+      const dest = requiresAuth && !isAuthenticated ? "Login" : name;
+      if (dest === "Login") {
+        if (currentRouteName !== "Login" && navigationRef?.isReady?.()) {
+          const returnTo = { name };
+          if (nestedScreen) returnTo.params = { screen: nestedScreen };
+          navigationRef.navigate("Login", { returnTo });
+        }
+        return;
+      }
+      if (!navigationRef?.isReady?.()) return;
+      if (nestedScreen) {
+        navigationRef.navigate(dest, { screen: nestedScreen });
+        return;
+      }
+      if (currentRouteName !== dest) {
+        navigationRef.navigate(dest);
+      }
+    },
+    [currentRouteName, isAuthenticated, navigationRef]
+  );
+
+  const goAdmin = useCallback(
     (routeName) => {
       setAdminMenuOpen(false);
       if (navigationRef?.isReady?.()) {
@@ -124,9 +230,51 @@ export default function WebAppHeader({ navigationRef }) {
     [navigationRef]
   );
 
-  const adminFlatLinks = React.useMemo(() => getAdminMenuFlatLinks(), []);
+  const submitSearch = useCallback(
+    (raw) => {
+      const q = String(raw || "").trim();
+      if (!q) return;
+      addRecentSearch(q);
+      setSuggestionsOpen(false);
+      setSearchOverlayOpen(false);
+      if (navigationRef?.isReady?.()) {
+        navigationRef.navigate({
+          name: "Search",
+          params: { q, category: "", categoryLabel: "" },
+        });
+      }
+      setSearchQuery("");
+    },
+    [addRecentSearch, navigationRef]
+  );
 
-  const items = React.useMemo(() => {
+  const pickProduct = useCallback(
+    (product) => {
+      const id = product?.id;
+      if (!id) return;
+      setSuggestionsOpen(false);
+      setSearchOverlayOpen(false);
+      setSearchQuery("");
+      if (navigationRef?.isReady?.()) {
+        navigationRef.navigate({ name: "Product", params: { productId: String(id) } });
+      }
+    },
+    [navigationRef]
+  );
+
+  const focusSearchField = useCallback(() => {
+    if (isPhoneWeb) {
+      setSearchOverlayOpen(true);
+      return;
+    }
+    searchInputRef.current?.focus?.();
+  }, [isPhoneWeb]);
+
+  useKeyboardShortcut("k", focusSearchField, { enabled: Platform.OS === "web" && !isPhoneWeb });
+
+  const adminFlatLinks = useMemo(() => getAdminMenuFlatLinks(), []);
+
+  const items = useMemo(() => {
     const deliveryNavItem = user?.isDeliveryPartner
       ? [
           {
@@ -165,15 +313,21 @@ export default function WebAppHeader({ navigationRef }) {
         label: CUSTOMER_NAV_LINKS.cart.label,
         icon: "bag-outline",
         iconActive: "bag",
-        onPress: () => go("Cart", true),
-        badge: totalItems > 0 ? String(totalItems) : "",
+        onPress: () => {
+          if (Platform.OS === "web" && isAuthenticated) {
+            openCartDrawer();
+          } else {
+            go("Cart", true);
+          }
+        },
+        badge: totalItems > 0 ? (totalItems > 9 ? "9+" : String(totalItems)) : "",
       },
       {
         key: "Settings",
         label: CUSTOMER_NAV_LINKS.settings.label,
         icon: "settings-outline",
         iconActive: "settings",
-        onPress: () => go("Settings", true),
+        onPress: () => go("Profile", true, ACCOUNT_NESTED.AccountProfile),
       },
       {
         key: "Profile",
@@ -183,24 +337,42 @@ export default function WebAppHeader({ navigationRef }) {
         onPress: () => go("Profile", true),
       },
     ];
-  }, [go, totalItems, user?.isDeliveryPartner, user?.isAdmin]);
+  }, [go, isAuthenticated, openCartDrawer, totalItems, user?.isDeliveryPartner, user?.isAdmin]);
+
+  const placeholders = SEARCH_PLACEHOLDERS.filter(Boolean);
+
+  useEffect(() => {
+    if (reducedMotion || placeholders.length < 2 || searchQuery.trim().length > 0) {
+      placeholderOpacity.setValue(1);
+      return undefined;
+    }
+    const rotate = () => {
+      RNAnimated.timing(placeholderOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (!finished) return;
+        setPlaceholderIndex((i) => (i + 1) % placeholders.length);
+        RNAnimated.timing(placeholderOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }).start();
+      });
+    };
+    const t = setInterval(rotate, 4000);
+    return () => clearInterval(t);
+  }, [placeholderOpacity, placeholders.length, reducedMotion, searchQuery]);
 
   const itemCount = items.length;
 
   useEffect(() => {
-    if (Platform.OS !== "web" || reducedMotion) {
-      return undefined;
-    }
+    if (Platform.OS !== "web" || reducedMotion) return undefined;
     const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-    if (shellRef.current) {
-      tl.fromTo(shellRef.current, { y: -26 }, { y: 0, duration: 0.52 });
-    }
-    if (brandRef.current) {
-      tl.fromTo(brandRef.current, { x: -14 }, { x: 0, duration: 0.34 }, "-=0.36");
-    }
-    if (searchRef.current) {
-      tl.fromTo(searchRef.current, { y: -8 }, { y: 0, duration: 0.3 }, "-=0.25");
-    }
+    if (shellRef.current) tl.fromTo(shellRef.current, { y: -26 }, { y: 0, duration: 0.52 });
+    if (brandRef.current) tl.fromTo(brandRef.current, { x: -14 }, { x: 0, duration: 0.34 }, "-=0.36");
+    if (searchChromeRef.current) tl.fromTo(searchChromeRef.current, { y: -8 }, { y: 0, duration: 0.3 }, "-=0.25");
     if (navRefs.current.length) {
       tl.fromTo(
         navRefs.current.filter(Boolean),
@@ -212,25 +384,18 @@ export default function WebAppHeader({ navigationRef }) {
     return () => tl.kill();
   }, [itemCount, reducedMotion]);
 
-  const updateChrome = React.useCallback((y) => {
-    if (typeof globalThis === "undefined" || typeof globalThis.window === "undefined") {
-      return;
-    }
+  const updateChrome = useCallback((y) => {
+    if (typeof globalThis === "undefined" || typeof globalThis.window === "undefined") return;
     const win = globalThis.window;
     const doc = globalThis.document;
     const docHeight =
-      Math.max(
-        doc?.documentElement?.scrollHeight || 0,
-        doc?.body?.scrollHeight || 0
-      ) - (win.innerHeight || 0);
+      Math.max(doc?.documentElement?.scrollHeight || 0, doc?.body?.scrollHeight || 0) - (win.innerHeight || 0);
     const ratio = docHeight > 0 ? Math.max(0, Math.min(1, y / docHeight)) : 0;
     setCompact((prev) => {
       const next = y > COMPACT_SCROLL_THRESHOLD;
       return prev === next ? prev : next;
     });
-    if (progressRef.current) {
-      progressRef.current.style.transform = `scaleX(${ratio})`;
-    }
+    if (progressRef.current) progressRef.current.style.transform = `scaleX(${ratio})`;
   }, []);
 
   useAnimatedReaction(
@@ -240,236 +405,408 @@ export default function WebAppHeader({ navigationRef }) {
       if (Math.abs(current - previous) < 2) return;
       runOnJS(updateChrome)(current);
     },
-    [updateChrome],
+    [updateChrome]
   );
+
+  const pulseCartBadge = useCallback(() => {
+    if (reducedMotion) return;
+    cartBadgeScale.value = withSequence(
+      withSpring(1.18, { damping: 14, stiffness: 220, mass: 0.35 }),
+      withSpring(1, { damping: 16, stiffness: 280, mass: 0.3 })
+    );
+  }, [cartBadgeScale, reducedMotion]);
+
+  useEffect(() => registerCartBadgeBump(pulseCartBadge), [pulseCartBadge, registerCartBadgeBump]);
 
   useEffect(() => {
     const prev = prevTotalItemsRef.current;
     prevTotalItemsRef.current = totalItems;
-    if (reducedMotion || totalItems <= prev) return;
-    if (!cartBadgeRef.current) return;
-    gsap.fromTo(
-      cartBadgeRef.current,
-      { scale: 0.8 },
-      { scale: 1, duration: 0.5, ease: "back.out(2.4)" }
-    );
-  }, [totalItems, reducedMotion]);
+    if (totalItems <= prev || reducedMotion) return;
+    pulseCartBadge();
+  }, [pulseCartBadge, reducedMotion, totalItems]);
+
+  const cartBadgeAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: cartBadgeScale.value }],
+  }));
 
   if (Platform.OS !== "web") {
     return null;
   }
 
-  return (
-    <View ref={shellRef} style={styles.shell} accessibilityRole="navigation">
-      <View
-        style={[
-          styles.glassInner,
-          {
-            backgroundColor: isDark ? colors.surfaceOverlay : "rgba(255,255,255,0.94)",
-            borderBottomColor: isDark ? semantic.border.divider || semantic.border.subtle : semantic.border.subtle,
-          },
-          compact ? styles.glassInnerCompact : null,
-          Platform.OS === "web" ? shadowPremium : shadowLift,
-        ]}
-      >
-        <LinearGradient
-          colors={[semantic.commerce.cta.start, colors.primary, semantic.commerce.cta.end, colors.navy]}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={[styles.chromeTopAccent, styles.peNone]}
-        />
-        <LinearGradient
-          colors={
-            isDark
-              ? ["rgba(255,255,255,0.05)", "transparent"]
-              : ["rgba(255,255,255,0.8)", "rgba(255,255,255,0.08)"]
-          }
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[StyleSheet.absoluteFillObject, styles.peNone]}
-        />
-        <View style={[styles.inner, compact ? styles.innerCompact : null, isPhoneWeb ? styles.innerPhone : null]}>
-          <View ref={brandRef} style={styles.brandCluster}>
-            <BrandHeaderMark
-              navigationRef={navigationRef}
-              compact={isPhoneWeb || compact}
-              showSubline={!isPhoneWeb && !compact}
+  const cartItem = items.find((it) => it.key === "Cart");
+
+  const glassInnerDyn = compact
+    ? {
+        ...(Platform.OS === "web"
+          ? {
+              backdropFilter: "blur(18px) saturate(1.08)",
+              WebkitBackdropFilter: "blur(18px) saturate(1.08)",
+              borderBottomWidth: StyleSheet.hairlineWidth + 1,
+              boxShadow: isDark ? "0 10px 30px rgba(0,0,0,0.35)" : "0 12px 32px rgba(15,23,42,0.08)",
+              borderBottomColor: lineSoft,
+            }
+          : {}),
+      }
+    : {
+        ...(Platform.OS === "web"
+          ? {
+              borderBottomColor: `${colors.border}`,
+              opacity: 1,
+            }
+          : {}),
+      };
+
+  const navCluster = ({ phoneMode = false } = {}) =>
+    items.map((item, index) => {
+      const active = routeMatchesNav(item.key, currentRouteName);
+      const itemStyle = ({ hovered, pressed }) => [
+        styles.navItem,
+        phoneMode ? styles.navItemPhone : null,
+        compact ? styles.navItemCompact : null,
+        active
+          ? {
+              backgroundColor: surfaceAlt,
+              borderWidth: StyleSheet.hairlineWidth,
+              borderColor: lineSoft,
+            }
+          : { borderWidth: 0 },
+        !active && { opacity: 0.72 },
+        !active && hovered && { backgroundColor: semantic.bg.muted },
+        hovered && Platform.OS === "web" && !active ? { boxShadow: "0 6px 14px rgba(15, 23, 42, 0.05)" } : null,
+        pressed && { opacity: 0.86 },
+      ];
+
+      const iconLabel = (
+        <View style={styles.navIconCol}>
+          <View style={styles.navIconWrap}>
+            <Ionicons
+              name={active && item.iconActive ? item.iconActive : item.icon}
+              size={icon.webNav}
+              color={colors.textPrimary}
             />
-            {!isPhoneWeb ? <LocationIconButton navigationRef={navigationRef} size={icon.webNav} /> : null}
+            {item.badge ? (
+              <Animated.View
+                style={[
+                  styles.badge,
+                  {
+                    backgroundColor: colors.textPrimary,
+                    top: -4,
+                    right: -4,
+                  },
+                  item.key === "Cart" ? cartBadgeAnimatedStyle : undefined,
+                ]}
+              >
+                <Text style={[styles.badgeText, { fontFamily: fonts.extrabold, color: colors.surface }]}>{item.badge}</Text>
+              </Animated.View>
+            ) : null}
           </View>
-
-          {!isPhoneWeb ? (
-            <Pressable
-              onPress={() => go("Home")}
-              style={({ hovered, pressed }) => [
-                styles.searchFake,
-                {
-                  borderColor: colors.searchBarBorder,
-                  backgroundColor: colors.searchBarFill,
-                },
-                compact ? styles.searchFakeCompact : null,
-                hovered && { borderColor: semantic.border.focus, backgroundColor: semantic.bg.surface },
-                hovered && Platform.OS === "web" ? { boxShadow: "0 8px 16px rgba(15, 23, 42, 0.06)" } : null,
-                pressed && { opacity: 0.92 },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel="Search products"
-              ref={searchRef}
-            >
-              <Ionicons name="search-outline" size={icon.sm} color={colors.textSecondary} />
-              <Text style={[styles.searchFakeText, { color: colors.textMuted, fontFamily: fonts.medium }]} numberOfLines={1}>
-                {SEARCH_PLACEHOLDER}
+          {!compactNav && !compact && !phoneMode ? (
+            <View style={styles.labelStack}>
+              <Text
+                style={[
+                  styles.navLabel,
+                  {
+                    color: colors.textPrimary,
+                    fontFamily: active ? fonts.bold : fonts.semibold,
+                  },
+                ]}
+              >
+                {item.label}
               </Text>
-            </Pressable>
+              {active ? (
+                <View
+                  style={[
+                    styles.brassUnderline,
+                    {
+                      width: reducedMotion ? 24 : undefined,
+                      backgroundColor: HERITAGE.brass,
+                    },
+                  ]}
+                />
+              ) : null}
+            </View>
           ) : null}
+        </View>
+      );
 
-          <View style={[styles.navRow, isPhoneWeb ? styles.navRowPhone : null]}>
-            {items.map((item, index) => {
-              const active = routeMatchesNav(item.key, currentRouteName);
-              const itemStyle = ({ hovered, pressed }) => [
-                styles.navItem,
-                isPhoneWeb ? styles.navItemPhone : null,
-                compact ? styles.navItemCompact : null,
-                active && {
-                  backgroundColor: isDark ? colors.primarySoft : "rgba(220, 38, 38, 0.08)",
-                  borderWidth: 1,
-                  borderTopWidth: 2,
-                  borderColor: isDark ? semantic.border.accent : colors.border,
-                  borderTopColor: isDark ? semantic.border.accent : colors.primary,
-                },
-                !active && hovered && { backgroundColor: semantic.bg.muted },
-                !active && hovered && Platform.OS === "web" ? { boxShadow: "0 6px 14px rgba(15, 23, 42, 0.05)" } : null,
-                pressed && { opacity: 0.9 },
-              ];
-
-              const iconLabel = (
-                <>
-                  <View style={styles.navIconWrap}>
-                    <Ionicons
-                      name={active && item.iconActive ? item.iconActive : item.icon}
-                      size={icon.webNav}
-                      color={active ? colors.primary : colors.textSecondary}
-                    />
-                    {item.badge ? (
-                      <View
-                        ref={item.key === "Cart" ? cartBadgeRef : undefined}
-                        style={[styles.badge, { backgroundColor: colors.primary }]}
+      if (item.adminMenu) {
+        return (
+          <View
+            key={item.key}
+            ref={adminWrapRef}
+            style={[styles.adminNavWrap, adminMenuOpen ? { zIndex: WEB_Z_INDEX.dropdown } : null]}
+          >
+            <Pressable
+              ref={(el) => {
+                navRefs.current[index] = el;
+              }}
+              onPress={item.onPress}
+              style={itemStyle}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active, expanded: adminMenuOpen }}
+              accessibilityLabel="Admin menu"
+            >
+              {iconLabel}
+            </Pressable>
+            {adminMenuOpen ? (
+              <View
+                style={[
+                  styles.adminDropdown,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: semantic.border.subtle,
+                  },
+                ]}
+              >
+                <ScrollView
+                  nestedScrollEnabled
+                  keyboardShouldPersistTaps="handled"
+                  style={styles.adminDropdownScroll}
+                  showsVerticalScrollIndicator
+                >
+                  {adminFlatLinks.map((link) => {
+                    const linkActive = currentRouteName === link.route;
+                    return (
+                      <Pressable
+                        key={link.route}
+                        onPress={() => goAdmin(link.route)}
+                        style={({ hovered, pressed }) => [
+                          styles.adminDropdownRow,
+                          linkActive && { backgroundColor: surfaceAlt },
+                          hovered && !linkActive && { backgroundColor: semantic.bg.muted },
+                          pressed && { opacity: 0.92 },
+                        ]}
+                        accessibilityRole="menuitem"
                       >
-                        <Text style={[styles.badgeText, { fontFamily: fonts.extrabold, color: colors.onPrimary }]}>{item.badge}</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  {!compactNav && !isPhoneWeb && !compact ? (
-                    <Text
+                        <Ionicons name={link.icon} size={18} color={colors.textPrimary} />
+                        <Text style={[styles.adminDropdownLabel, { color: colors.textPrimary, fontFamily: fonts.semibold }]}>
+                          {link.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            ) : null}
+          </View>
+        );
+      }
+
+      return (
+        <Pressable
+          key={item.key}
+          ref={(el) => {
+            navRefs.current[index] = el;
+          }}
+          onPress={item.onPress}
+          style={itemStyle}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: active }}
+        >
+          {iconLabel}
+        </Pressable>
+      );
+    });
+
+  return (
+    <>
+      <View
+        ref={shellRef}
+        style={[
+          styles.shell,
+          { height: headerHeight },
+          Platform.OS === "web" ? { transition: "height 0.2s ease" } : {},
+        ]}
+        accessibilityRole="header"
+      >
+        <SkipToMainLink />
+        <View
+          style={[
+            styles.glassInner,
+            {
+              backgroundColor: colors.surface,
+              borderBottomWidth: StyleSheet.hairlineWidth,
+              borderBottomColor: isDark ? "rgba(248,250,252,0.28)" : "rgba(30,41,59,0.18)",
+              ...glassInnerDyn,
+            },
+            compact ? null : shadowLift,
+          ]}
+        >
+          <View
+            style={[styles.inner, compact ? styles.innerCompact : null, isPhoneWeb ? styles.innerPhone : null]}
+            accessibilityRole="navigation"
+            accessibilityLabel={WEB_HEADER_UI.primaryNavigationLabel}
+          >
+            {useDrawerNav ? (
+              <View style={styles.phoneToolbar}>
+                <Pressable
+                  onPress={() => setDrawerOpen((open) => !open)}
+                  hitSlop={8}
+                  style={({ hovered, pressed }) => [
+                    styles.iconHit,
+                    hovered && Platform.OS === "web" ? { opacity: 0.88 } : null,
+                    pressed && { opacity: 0.8 },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={drawerOpen ? "Close menu" : "Open menu"}
+                  accessibilityState={{ expanded: drawerOpen }}
+                >
+                  <Ionicons name={drawerOpen ? "close-outline" : "menu-outline"} size={icon.md + 4} color={colors.textPrimary} />
+                </Pressable>
+                <View style={styles.phoneBrandWrap} ref={brandRef}>
+                  <BrandHeaderMark
+                    navigationRef={navigationRef}
+                    compact
+                    showSubline={false}
+                    wordmarkFontSizeOverride={wordmarkFontSize}
+                  />
+                </View>
+                <Pressable
+                  onPress={() => setSearchOverlayOpen(true)}
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.iconHit, pressed && { opacity: 0.85 }]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Search products"
+                >
+                  <Ionicons name="search-outline" size={icon.md + 2} color={colors.textPrimary} />
+                </Pressable>
+                {cartItem ? (
+                  <Pressable
+                    onPress={cartItem.onPress}
+                    style={({ pressed }) => [styles.iconHit, pressed && { opacity: 0.85 }]}
+                    accessibilityRole="button"
+                    accessibilityLabel={CUSTOMER_NAV_LINKS.cart.label}
+                  >
+                    <View style={styles.navIconWrap}>
+                      <Ionicons name="bag-outline" size={icon.webNav} color={colors.textPrimary} />
+                      {cartItem.badge ? (
+                        <Animated.View
+                          style={[
+                            styles.badge,
+                            { backgroundColor: colors.textPrimary, top: -4, right: -4 },
+                            cartBadgeAnimatedStyle,
+                          ]}
+                        >
+                          <Text style={[styles.badgeText, { fontFamily: fonts.extrabold, color: colors.surface }]}>
+                            {cartItem.badge}
+                          </Text>
+                        </Animated.View>
+                      ) : null}
+                    </View>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : (
+              <>
+                <View ref={brandRef} style={styles.brandCluster}>
+                  <BrandHeaderMark
+                    navigationRef={navigationRef}
+                    compact={compact}
+                    showSubline={!compact}
+                    wordmarkFontSizeOverride={wordmarkFontSize}
+                  />
+                  <LocationIconButton navigationRef={navigationRef} size={icon.webNav} />
+                </View>
+
+                <View ref={searchChromeRef} style={[styles.searchWrap, compact ? styles.searchWrapCompact : null]}>
+                  <View
+                    style={[
+                      styles.searchField,
+                      {
+                        borderColor: colors.searchBarBorder,
+                        backgroundColor: colors.searchBarFill,
+                      },
+                    ]}
+                  >
+                    <Ionicons name="search-outline" size={icon.sm} color={colors.textSecondary} />
+                    <TextInput
+                      ref={searchInputRef}
+                      value={searchQuery}
+                      onChangeText={(t) => {
+                        setSearchQuery(t);
+                        setSuggestionsOpen(true);
+                      }}
+                      onFocus={() => setSuggestionsOpen(true)}
+                      onSubmitEditing={() => submitSearch(searchQuery)}
+                      placeholder={placeholders[placeholderIndex % placeholders.length] || ""}
+                      placeholderTextColor="transparent"
+                      style={[styles.searchInput, { color: colors.textPrimary, fontFamily: fonts.medium }]}
+                      returnKeyType="search"
+                      accessibilityLabel="Search products"
+                    />
+                    <RNAnimated.Text
                       style={[
-                        styles.navLabel,
+                        { pointerEvents: "none" },
+                        styles.searchPlaceholderOverlay,
                         {
-                          color: active ? colors.textPrimary : colors.textSecondary,
-                          fontFamily: active ? fonts.bold : fonts.semibold,
+                          color: colors.textMuted,
+                          fontFamily: fonts.medium,
+                          opacity: searchQuery.trim().length > 0 ? 0 : placeholderOpacity,
                         },
                       ]}
+                      numberOfLines={1}
                     >
-                      {item.label}
-                    </Text>
-                  ) : null}
-                </>
-              );
-
-              if (item.adminMenu) {
-                return (
-                  <View
-                    key={item.key}
-                    ref={adminWrapRef}
-                    style={[styles.adminNavWrap, adminMenuOpen ? { zIndex: WEB_Z_INDEX.dropdown } : null]}
-                  >
-                    <Pressable
-                      ref={(el) => {
-                        navRefs.current[index] = el;
-                      }}
-                      onPress={item.onPress}
-                      style={itemStyle}
-                      accessibilityRole="tab"
-                      accessibilityState={{ selected: active, expanded: adminMenuOpen }}
-                      accessibilityLabel="Admin menu"
-                    >
-                      {iconLabel}
-                    </Pressable>
-                    {adminMenuOpen ? (
-                      <View
-                        style={[
-                          styles.adminDropdown,
-                          {
-                            backgroundColor: colors.surface,
-                            borderColor: semantic.border.subtle,
-                          },
-                        ]}
-                      >
-                        <ScrollView
-                          nestedScrollEnabled
-                          keyboardShouldPersistTaps="handled"
-                          style={styles.adminDropdownScroll}
-                          showsVerticalScrollIndicator
-                        >
-                          {adminFlatLinks.map((link) => {
-                            const linkActive = currentRouteName === link.route;
-                            return (
-                              <Pressable
-                                key={link.route}
-                                onPress={() => goAdmin(link.route)}
-                                style={({ hovered, pressed }) => [
-                                  styles.adminDropdownRow,
-                                  linkActive && { backgroundColor: colors.primarySoft },
-                                  hovered && !linkActive && { backgroundColor: semantic.bg.muted },
-                                  pressed && { opacity: 0.92 },
-                                ]}
-                                accessibilityRole="menuitem"
-                              >
-                                <Ionicons name={link.icon} size={18} color={colors.primary} />
-                                <Text
-                                  style={[styles.adminDropdownLabel, { color: colors.textPrimary, fontFamily: fonts.semibold }]}
-                                  numberOfLines={2}
-                                >
-                                  {link.label}
-                                </Text>
-                              </Pressable>
-                            );
-                          })}
-                        </ScrollView>
-                      </View>
-                    ) : null}
+                      {placeholders[placeholderIndex % placeholders.length] || ""}
+                    </RNAnimated.Text>
+                    <Text style={[styles.kbdHint, { color: colors.textMuted, fontFamily: fonts.medium }]}>{shortcutDisplay}</Text>
                   </View>
-                );
-              }
+                  <SearchSuggestionsPopover
+                    visible={suggestionsOpen}
+                    onClose={() => setSuggestionsOpen(false)}
+                    anchorRef={searchChromeRef}
+                    query={searchQuery}
+                    onSubmitTerm={submitSearch}
+                    onPickProduct={pickProduct}
+                    recentSearches={recentSearches}
+                    onAddRecent={addRecentSearch}
+                    colors={colors}
+                    isDark={isDark}
+                  />
+                </View>
 
-              return (
-                <Pressable
-                  key={item.key}
-                  ref={(el) => {
-                    navRefs.current[index] = el;
-                  }}
-                  onPress={item.onPress}
-                  style={itemStyle}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected: active }}
-                >
-                  {iconLabel}
-                </Pressable>
-              );
-            })}
+                <View style={styles.navRow}>{navCluster({ phoneMode: false })}</View>
+              </>
+            )}
           </View>
+          <View
+            ref={progressRef}
+            style={[
+              styles.scrollProgress,
+              {
+                backgroundColor: HERITAGE.brass,
+              },
+            ]}
+            accessibilityElementsHidden
+          />
         </View>
-        <View
-          ref={progressRef}
-          style={[
-            styles.scrollProgress,
-            {
-              backgroundColor: colors.primary,
-            },
-          ]}
-          accessibilityElementsHidden
-        />
       </View>
-    </View>
+
+      <WebHeaderDrawer
+        visible={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        navigationRef={navigationRef}
+        colors={colors}
+        isDark={isDark}
+        isAuthenticated={isAuthenticated}
+        user={user}
+        onOpenSearch={() => {
+          setDrawerOpen(false);
+          setSearchOverlayOpen(true);
+        }}
+      />
+
+      <SearchOverlay
+        visible={searchOverlayOpen}
+        onClose={() => setSearchOverlayOpen(false)}
+        query={searchQuery}
+        onChangeQuery={setSearchQuery}
+        onSubmitQuery={(q) => submitSearch(q)}
+        onPickProduct={pickProduct}
+        recentSearches={recentSearches}
+        onAddRecent={addRecentSearch}
+        placeholder={placeholders[0] || ""}
+      />
+    </>
   );
 }
 
@@ -480,37 +817,41 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: WEB_Z_INDEX.header,
-    height: WEB_HEADER_HEIGHT,
     ...Platform.select({
-      web: { backdropFilter: "blur(12px) saturate(1.04)" },
+      web: { WebkitBackdropFilter: "blur(12px)", backdropFilter: "blur(12px) saturate(1.04)" },
       default: {},
     }),
   },
-  chromeTopAccent: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-    zIndex: 1,
-    opacity: 0.95,
+  skipPress: {
+    ...(Platform.OS === "web"
+      ? {
+          position: "fixed",
+          top: 10,
+          left: 12,
+          zIndex: WEB_Z_INDEX.overlay + 2,
+          paddingVertical: spacing.sm,
+          paddingHorizontal: spacing.md,
+          borderRadius: semanticRadius.full,
+          backgroundColor: "rgba(250,251,253,0.98)",
+        }
+      : {}),
+    ...Platform.select({
+      web: { cursor: "pointer" },
+      default: {},
+    }),
+  },
+  skipText: {
+    fontSize: typography.bodySmall,
+    fontFamily: fonts.semibold,
+    color: "#0f172a",
   },
   glassInner: {
     flex: 1,
     position: "relative",
-    borderBottomWidth: 1,
     overflow: Platform.OS === "web" ? "visible" : "hidden",
     ...Platform.select({
       web: {
         transition: "background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, padding 0.18s ease",
-      },
-      default: {},
-    }),
-  },
-  glassInnerCompact: {
-    ...Platform.select({
-      web: {
-        backdropFilter: "blur(18px) saturate(1.08)",
       },
       default: {},
     }),
@@ -532,13 +873,9 @@ const styles = StyleSheet.create({
     }),
   },
   innerPhone: {
-    alignItems: "center",
-    ...Platform.select({
-      web: {
-        gap: spacing.xs,
-      },
-      default: {},
-    }),
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    justifyContent: "center",
   },
   innerCompact: {
     paddingVertical: 5,
@@ -550,10 +887,43 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     minWidth: 0,
   },
-  searchFake: {
+  phoneToolbar: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    minHeight: 44,
+    width: "100%",
+  },
+  phoneBrandWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 0,
+  },
+  iconHit: {
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    ...Platform.select({
+      web: { cursor: "pointer" },
+      default: {},
+    }),
+  },
+  searchWrap: {
     flex: 1,
     maxWidth: 560,
     minWidth: 100,
+    position: "relative",
+    justifyContent: "center",
+    zIndex: WEB_Z_INDEX.sticky + 10,
+  },
+  searchWrapCompact: {
+    maxWidth: 480,
+  },
+  searchField: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
@@ -561,34 +931,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md + 2,
     borderRadius: semanticRadius.full,
     borderWidth: 1,
+    position: "relative",
     ...Platform.select({
       web: {
-        cursor: "pointer",
-        transition: "border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease, padding 0.18s ease",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.78), 0 4px 12px rgba(15, 23, 42, 0.04)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.5), 0 4px 12px rgba(15, 23, 42, 0.05)",
       },
       default: {},
     }),
   },
-  searchFakeCompact: {
-    paddingVertical: 8,
-  },
-  searchFakeText: {
+  searchInput: {
     flex: 1,
+    minHeight: 22,
     fontSize: typography.caption,
+    paddingVertical: Platform.OS === "web" ? 4 : 0,
+    ...(Platform.OS === "web"
+      ? {
+          outlineStyle: "none",
+        }
+      : {}),
+  },
+  searchPlaceholderOverlay: {
+    position: "absolute",
+    left: icon.sm + 10 + spacing.md,
+    right: 56,
+    top: "50%",
+    marginTop: -9,
+    fontSize: typography.caption,
+  },
+  kbdHint: {
+    fontSize: 10,
+    opacity: 0.75,
+    paddingHorizontal: 4,
   },
   navRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.xs,
-    flexShrink: 1,
-  },
-  navRowPhone: {
-    flex: 1,
-    minWidth: 0,
-    marginLeft: "auto",
-    gap: 2,
-    justifyContent: "flex-end",
+    flexShrink: 0,
   },
   navItem: {
     flexDirection: "row",
@@ -601,24 +980,41 @@ const styles = StyleSheet.create({
     ...Platform.select({
       web: {
         cursor: "pointer",
-        transition:
-          "background 0.18s ease, border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease, padding 0.18s ease",
+        transition: "opacity 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease",
       },
       default: {},
     }),
   },
   navItemPhone: {
-    paddingVertical: 7,
-    paddingHorizontal: 7,
-    minHeight: 36,
+    paddingHorizontal: spacing.xs,
+    minHeight: 40,
+    paddingVertical: 6,
   },
   navItemCompact: {
     paddingVertical: 6,
     paddingHorizontal: spacing.sm + 2,
     minHeight: 36,
   },
+  navIconCol: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    position: "relative",
+  },
   navIconWrap: {
     position: "relative",
+  },
+  labelStack: {
+    alignItems: "flex-start",
+    gap: 4,
+    minHeight: icon.webNav + 6,
+    justifyContent: "center",
+  },
+  brassUnderline: {
+    height: 2,
+    width: 24,
+    borderRadius: 99,
+    alignSelf: "flex-start",
   },
   navLabel: {
     fontSize: typography.bodySmall,
@@ -626,14 +1022,14 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: "absolute",
-    top: -6,
-    right: -10,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 4,
+    paddingHorizontal: 5,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(248,250,252,0.92)",
   },
   badgeText: {
     fontSize: 10,
@@ -646,14 +1042,11 @@ const styles = StyleSheet.create({
     height: 2,
     transformOrigin: "left center",
     transform: [{ scaleX: 0 }],
-    opacity: 0.85,
+    opacity: 0.9,
     ...Platform.select({
       web: { transition: "transform 0.08s linear" },
       default: {},
     }),
-  },
-  peNone: {
-    pointerEvents: "none",
   },
   adminNavWrap: {
     position: "relative",

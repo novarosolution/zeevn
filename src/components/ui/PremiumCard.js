@@ -1,24 +1,21 @@
 import React, { memo, useMemo } from "react";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
-import { getSemanticColors, radius, spacing } from "../../theme/tokens";
-import { ALCHEMY, heritageBrandTrimGradientShort } from "../../theme/customerAlchemy";
+import Card from "./Card";
+import { heritageBrandTrimGradientShort } from "../../theme/customerAlchemy";
 import { useTheme } from "../../context/ThemeContext";
-import useReducedMotion from "../../hooks/useReducedMotion";
 
-const PADDING_TOKENS = {
-  none: 0,
-  sm: spacing.sm,
-  md: spacing.md,
-  lg: spacing.lg,
-  xl: spacing.lg + 6,
+const PADDING_MAP = {
+  none: "none",
+  sm: "sm",
+  md: "md",
+  lg: "lg",
+  xl: "xl",
 };
 
 /**
- * Generic theme-aware container used as the standard "card" surface across
- * customer screens. Supports an optional gold top accent, interactive press +
- * hover states, and renders as a Pressable when `onPress` is provided.
+ * Legacy-friendly card shell built on design-system {@link Card}.
+ * Keeps variant overlays (gold accent bar, soft gradients) used across admin + profile.
  */
 function PremiumCardBase({
   children,
@@ -36,221 +33,140 @@ function PremiumCardBase({
   accessibilityRole,
   testID,
 }) {
-  const { colors: c, isDark } = useTheme();
-  const reducedMotion = useReducedMotion();
-  const isWeb = Platform.OS === "web";
-  const isInteractive = interactive ?? Boolean(onPress);
-  const semantic = getSemanticColors(c);
+  const { semanticPalette, SHADOWS, SPACING } = useTheme();
+  const isPressable = interactive ?? Boolean(onPress);
 
-  const padTokens =
-    typeof padding === "number" ? padding : PADDING_TOKENS[padding] ?? PADDING_TOKENS.lg;
+  const resolvedPaddingKey = PADDING_MAP[padding] ?? padding;
+  const resolvedPad =
+    typeof padding === "number"
+      ? padding
+      : resolvedPaddingKey === "none"
+        ? "none"
+        : resolvedPaddingKey === "sm"
+          ? SPACING.sm
+          : resolvedPaddingKey === "md"
+            ? SPACING.md
+            : resolvedPaddingKey === "lg"
+            ? SPACING.lg
+            : resolvedPaddingKey === "xl"
+              ? SPACING.lg + 6
+              : SPACING.base;
 
-  const styles = useMemo(
-    () => createStyles(c, semantic, isDark, padTokens, variant, borderless),
-    [c, semantic, isDark, padTokens, variant, borderless]
-  );
+  const variantSurface = useMemo(() => {
+    const dangerTintLight = "rgba(178, 58, 58, 0.06)";
+    const dangerTintDark = "rgba(178, 58, 58, 0.14)";
+    const mutedLift =
+      semanticPalette.mode === "dark" ? semanticPalette.surfaceAlt : semanticPalette.surfaceAlt;
 
-  const lift = useSharedValue(0);
-  const scale = useSharedValue(1);
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: lift.value }, { scale: scale.value }],
-  }));
+    switch (variant) {
+      case "muted":
+        return {
+          backgroundColor: mutedLift,
+          borderColor: semanticPalette.line,
+        };
+      case "elevated":
+      case "hero":
+        return {
+          ...SHADOWS.lifted,
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: semanticPalette.line,
+        };
+      case "flat":
+        return Platform.select({
+          web: { boxShadow: "none", elevation: 0 },
+          ios: { shadowOpacity: 0, shadowRadius: 0, shadowOffset: { width: 0, height: 0 } },
+          android: { elevation: 0 },
+          default: {},
+        });
+      case "danger":
+        return {
+          borderColor: semanticPalette.sale,
+          backgroundColor: semanticPalette.mode === "dark" ? dangerTintDark : dangerTintLight,
+          borderTopColor: semanticPalette.sale,
+        };
+      case "accent":
+        return {
+          borderTopWidth: 2,
+          borderTopColor: semanticPalette.accent,
+          backgroundColor: semanticPalette.surface,
+        };
+      case "panel":
+      default:
+        return {};
+    }
+  }, [SHADOWS.lifted, semanticPalette, variant]);
 
-  const handlePressIn = () => {
-    if (!isInteractive || reducedMotion || disabled) return;
-    scale.value = withSpring(0.99, { damping: 18, stiffness: 280 });
-  };
-  const handlePressOut = () => {
-    if (!isInteractive || reducedMotion) return;
-    scale.value = withSpring(1, { damping: 18, stiffness: 280 });
-  };
-  const handleHoverIn = () => {
-    if (!isInteractive || Platform.OS !== "web" || reducedMotion || disabled) return;
-    lift.value = withSpring(-2, { damping: 22, stiffness: 220 });
-  };
-  const handleHoverOut = () => {
-    if (Platform.OS !== "web" || reducedMotion) return;
-    lift.value = withSpring(0, { damping: 22, stiffness: 220 });
-  };
-
-  const inner = (
-    <>
-      {gradient && isWeb ? (
+  const overlay = useMemo(() => {
+    const nodes = [];
+    if (goldAccent) {
+      nodes.push(
+        Platform.OS === "web" ? (
+          <LinearGradient
+            key="accentBar"
+            colors={heritageBrandTrimGradientShort()}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 3,
+            }}
+          />
+        ) : (
+          <View
+            key="accentBarNative"
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 3,
+              backgroundColor: semanticPalette.accent,
+            }}
+          />
+        )
+      );
+    }
+    if (gradient && Platform.OS === "web") {
+      nodes.push(
         <LinearGradient
+          key="wash"
           colors={
-            isDark
-              ? ["rgba(220, 38, 38, 0.08)", "rgba(28, 25, 23, 0)", "rgba(28, 25, 23, 0)"]
-              : ["rgba(255, 255, 255, 0.85)", "rgba(255, 252, 246, 0.55)", "rgba(255, 248, 234, 0.85)"]
+            semanticPalette.mode === "dark"
+              ? ["rgba(14,23,41,0.35)", "transparent", "transparent"]
+              : ["rgba(255,255,255,0.92)", "rgba(244,242,236,0.55)", "rgba(250,250,247,0.9)"]
           }
-          locations={[0, 0.5, 1]}
+          locations={[0, 0.45, 1]}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
-          style={[StyleSheet.absoluteFillObject, styles.peNone]}
+          style={StyleSheet.absoluteFillObject}
         />
-      ) : null}
-      {goldAccent && isWeb ? (
-        <LinearGradient
-          colors={heritageBrandTrimGradientShort()}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={[styles.topAccent, styles.peNone]}
-        />
-      ) : null}
-      <View style={[styles.content, contentStyle]}>{children}</View>
-    </>
-  );
-
-  if (isInteractive) {
-    return (
-      <Animated.View style={[styles.outer, animStyle, style]}>
-        <Pressable
-          onPress={disabled ? undefined : onPress}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          onHoverIn={handleHoverIn}
-          onHoverOut={handleHoverOut}
-          disabled={disabled}
-          accessibilityRole={accessibilityRole || "button"}
-          accessibilityLabel={accessibilityLabel}
-          accessibilityState={{ disabled }}
-          testID={testID}
-          style={({ pressed, hovered }) => [
-            styles.card,
-            disabled ? styles.disabled : null,
-            hovered && Platform.OS === "web" && !disabled ? styles.hover : null,
-            pressed ? styles.pressed : null,
-          ]}
-        >
-          {inner}
-        </Pressable>
-      </Animated.View>
-    );
-  }
+      );
+    }
+    return nodes.length ? <>{nodes}</> : undefined;
+  }, [goldAccent, gradient, semanticPalette.accent, semanticPalette.mode]);
 
   return (
-    <View style={[styles.outer, styles.card, style]} testID={testID}>
-      {inner}
-    </View>
+    <Card
+      onPress={isPressable ? onPress : undefined}
+      padding={resolvedPad}
+      overlay={overlay}
+      disabled={disabled}
+      style={[
+        borderless ? { borderWidth: 0, borderTopWidth: 0 } : null,
+        variantSurface,
+        style,
+      ]}
+      contentStyle={contentStyle}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole={accessibilityRole}
+      testID={testID}
+    >
+      {children}
+    </Card>
   );
-}
-
-function createStyles(c, semantic, isDark, pad, variant, borderless) {
-  const muted = variant === "muted";
-  const elevated = variant === "elevated";
-  const flat = variant === "flat";
-  const danger = variant === "danger";
-  const hero = variant === "hero";
-  const panel = variant === "panel";
-  const accent = variant === "accent";
-  const premiumSurface = semantic.bg.elevated || c.surfaceElevated || c.surface || ALCHEMY.cardBg;
-
-  return StyleSheet.create({
-    outer: {
-      width: "100%",
-    },
-    card: {
-      borderRadius: Platform.OS === "web" ? radius.xl : radius.lg,
-      backgroundColor: danger
-        ? isDark
-          ? "rgba(127, 29, 29, 0.12)"
-          : "rgba(220, 38, 38, 0.05)"
-        : accent
-          ? isDark
-            ? "rgba(200, 169, 126, 0.14)"
-            : "rgba(255, 252, 246, 0.96)"
-        : muted
-          ? isDark
-            ? "rgba(255,255,255,0.035)"
-            : "rgba(255, 252, 247, 0.96)"
-          : isDark
-            ? premiumSurface
-            : premiumSurface,
-      borderWidth: borderless ? 0 : StyleSheet.hairlineWidth,
-      borderColor: danger
-        ? isDark
-          ? "rgba(248, 113, 113, 0.35)"
-          : "rgba(220, 38, 38, 0.2)"
-        : semantic.border.subtle,
-      overflow: Platform.OS === "web" ? "visible" : "hidden",
-      position: "relative",
-      borderTopWidth: borderless ? 0 : Platform.OS === "web" ? (hero ? 2 : 1) : 1,
-      borderTopColor: danger
-        ? isDark
-          ? "rgba(248, 113, 113, 0.42)"
-          : "rgba(220, 38, 38, 0.24)"
-        : accent
-          ? isDark
-            ? "rgba(200, 169, 126, 0.5)"
-            : "rgba(200, 169, 126, 0.42)"
-        : isDark
-          ? "rgba(255,255,255,0.14)"
-          : "rgba(15, 23, 42, 0.14)",
-      ...Platform.select({
-        ios: flat
-          ? {}
-          : {
-              shadowColor: isDark ? "#000000" : "#18181B",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.04,
-              shadowRadius: 8,
-            },
-        android: flat ? { elevation: 0 } : { elevation: 1 },
-        web: flat
-          ? {}
-          : {
-              boxShadow: isDark
-                ? hero || elevated
-                  ? "0 14px 28px rgba(0,0,0,0.26), 0 5px 14px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.05)"
-                  : "0 10px 20px rgba(0,0,0,0.22), 0 3px 10px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.05)"
-                : hero || elevated
-                  ? "0 12px 22px rgba(15, 23, 42, 0.06), 0 3px 10px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255,255,255,0.96)"
-                  : "0 8px 16px rgba(15, 23, 42, 0.05), 0 2px 6px rgba(15, 23, 42, 0.03), inset 0 1px 0 rgba(255,255,255,0.96)",
-              transition: "transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease",
-            },
-        default: {},
-      }),
-    },
-    topAccent: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 3,
-      opacity: 0.95,
-    },
-    content: {
-      width: "100%",
-      padding: hero ? pad + 2 : panel ? pad + 1 : pad,
-      ...(variant === "muted" ? { backgroundColor: "transparent" } : {}),
-      borderRadius: Platform.OS === "web" ? radius.xl : radius.lg,
-      overflow: "hidden",
-      ...Platform.select({
-        web: {
-          boxSizing: "border-box",
-        },
-        default: {},
-      }),
-    },
-    hover: {
-      ...Platform.select({
-        web: {
-          boxShadow: isDark
-            ? "0 14px 24px rgba(0,0,0,0.26), 0 4px 12px rgba(0,0,0,0.16), inset 0 1px 0 rgba(255,255,255,0.05)"
-            : "0 10px 18px rgba(15, 23, 42, 0.06), 0 3px 10px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255,255,255,0.95)",
-        },
-        default: {},
-      }),
-    },
-    pressed: {
-      opacity: 0.96,
-    },
-    disabled: {
-      opacity: 0.6,
-    },
-    peNone: {
-      pointerEvents: "none",
-    },
-  });
 }
 
 const PremiumCard = memo(PremiumCardBase);

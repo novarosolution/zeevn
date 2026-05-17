@@ -1,6 +1,9 @@
 import { fonts } from "../theme/tokens";
 import { FONT_DISPLAY } from "../theme/customerAlchemy";
 
+/** Design-system type ramp — prefer for new UI; fluid helpers below still use legacy tokens + FONT_DISPLAY. */
+export { TYPE, MOTION } from "./designSystem";
+
 const FLUID_BREAKPOINTS = {
   tablet: 768,
   desktop: 1200,

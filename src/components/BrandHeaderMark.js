@@ -2,8 +2,8 @@ import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { APP_DISPLAY_NAME, APP_WORDMARK_SUBLINE } from "../constants/brand";
 import BrandWordmark from "./BrandWordmark";
-import { useTheme } from "../context/ThemeContext";
-import { fonts, typography } from "../theme/tokens";
+import { HERITAGE } from "../theme/customerAlchemy";
+import { fonts } from "../theme/tokens";
 
 /**
  * Tappable logo; navigates Home (stack `navigation` or root `navigationRef`).
@@ -13,8 +13,9 @@ export default function BrandHeaderMark({
   navigationRef,
   compact = false,
   showSubline = false,
+  /** Optional numeric wordmark size override (dp) for responsive web chrome. */
+  wordmarkFontSizeOverride,
 }) {
-  const { colors: c } = useTheme();
   const goHome = () => {
     if (navigationRef?.isReady?.() && typeof navigationRef.navigate === "function") {
       navigationRef.navigate("Home");
@@ -39,9 +40,9 @@ export default function BrandHeaderMark({
       hitSlop={10}
     >
       <View style={styles.stack}>
-        <BrandWordmark sizeKey={sizeKey} style={styles.logoMark} />
+        <BrandWordmark sizeKey={sizeKey} fontSizeOverride={wordmarkFontSizeOverride} style={styles.logoMark} />
         {showSubline && !compact ? (
-          <Text style={[styles.subline, { color: c.textMuted }]} numberOfLines={1}>
+          <Text style={[styles.subline, { color: HERITAGE.brass }]} numberOfLines={1}>
             {APP_WORDMARK_SUBLINE}
           </Text>
         ) : null}
@@ -79,9 +80,9 @@ const styles = StyleSheet.create({
     marginVertical: 0,
   },
   subline: {
-    fontSize: typography.overline,
-    fontFamily: fonts.extrabold,
-    letterSpacing: 1.2,
+    fontSize: 9,
+    fontFamily: fonts.semibold,
+    letterSpacing: 1.62,
     textTransform: "uppercase",
     marginLeft: 1,
   },

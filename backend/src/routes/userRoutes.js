@@ -2,9 +2,21 @@ const express = require("express");
 const {
   registerUser,
   loginUser,
+  requestPasswordReset,
+  resetPasswordWithToken,
+  verifyEmailWithToken,
   refreshAccessToken,
   getProfile,
   updateProfile,
+  sendVerificationEmail,
+  requestAccountDeletion,
+  changePassword,
+  requestEmailChange,
+  requestPhoneOtp,
+  verifyPhoneOtp,
+  getActiveSessions,
+  revokeSession,
+  getAccountActivity,
   uploadUserAvatar,
   upsertPushToken,
   getMyCart,
@@ -23,14 +35,27 @@ const {
 } = require("../controllers/supportController");
 const { getRewardsCatalog, getMyRewardCoupons, redeemReward } = require("../controllers/rewardController");
 const { protect } = require("../middleware/authMiddleware");
+const { authRateLimit } = require("../middleware/authRateLimit");
 
 const router = express.Router();
 
-router.post("/register", registerUser);
-router.post("/login", loginUser);
+router.post("/register", authRateLimit, registerUser);
+router.post("/login", authRateLimit, loginUser);
+router.post("/forgot-password", authRateLimit, requestPasswordReset);
+router.post("/reset-password", authRateLimit, resetPasswordWithToken);
+router.post("/verify-email", authRateLimit, verifyEmailWithToken);
 router.post("/refresh", refreshAccessToken);
 router.get("/profile", protect, getProfile);
 router.put("/profile", protect, updateProfile);
+router.post("/profile/send-verification", protect, sendVerificationEmail);
+router.post("/profile/request-deletion", protect, requestAccountDeletion);
+router.put("/profile/password", protect, changePassword);
+router.post("/profile/email-change", protect, requestEmailChange);
+router.post("/profile/phone-otp", protect, requestPhoneOtp);
+router.post("/profile/phone-verify", protect, verifyPhoneOtp);
+router.get("/sessions", protect, getActiveSessions);
+router.delete("/sessions/:sessionId", protect, revokeSession);
+router.get("/account-activity", protect, getAccountActivity);
 router.post("/profile/avatar", protect, uploadUserAvatar);
 router.post("/push-token", protect, upsertPushToken);
 router.get("/cart", protect, getMyCart);

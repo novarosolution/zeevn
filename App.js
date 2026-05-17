@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import * as ExpoLinking from "expo-linking";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold } from "@expo-google-fonts/inter";
 import {
   PlayfairDisplay_600SemiBold,
@@ -13,13 +14,16 @@ import {
 } from "@expo-google-fonts/playfair-display";
 import * as SplashScreen from "expo-splash-screen";
 import { isRunningInExpoGo } from "expo";
+import { CartDrawerProvider } from "./src/context/CartDrawerContext";
 import { CartProvider } from "./src/context/CartContext";
+import { WishlistProvider } from "./src/context/WishlistContext";
 import { AuthProvider } from "./src/context/AuthContext";
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import AppStartupScreen from "./src/components/AppStartupScreen";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { darkColors, lightColors } from "./src/theme/tokens";
 import { applyWebPremiumChrome, webRootStyle } from "./src/theme/web";
+import { registerProductCacheServiceWorker } from "./src/utils/registerServiceWorker.web";
 import {
   LEGACY_JEEVAN_STARTUP_WELCOME_KEY,
   LEGACY_STARTUP_WELCOME_KEY,
@@ -30,6 +34,7 @@ const STARTUP_WELCOME_KEY = "@zeevan_startup_welcome_shown";
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const safeAreaRootStyle = { flex: 1, width: "100%" };
+const gestureRootStyle = { flex: 1 };
 
 const navigationRef = createNavigationContainerRef();
 const linking = {
@@ -37,10 +42,31 @@ const linking = {
   config: {
     screens: {
       Home: "",
+      Search: {
+        path: "search",
+        parse: {
+          q: (value) => (value == null ? "" : String(value)),
+        },
+      },
       Product: "product/:productId",
       Cart: "cart",
       Login: "login",
       Register: "register",
+      ForgotPassword: "forgot-password",
+      ResetPassword: {
+        path: "reset-password",
+        parse: {
+          token: (value) => String(value || ""),
+          email: (value) => String(value || ""),
+        },
+      },
+      VerifyEmail: {
+        path: "verify-email",
+        parse: {
+          token: (value) => String(value || ""),
+          email: (value) => String(value || ""),
+        },
+      },
       Profile: "profile",
       EditProfile: "profile/edit",
       MyOrders: "orders",
@@ -48,6 +74,21 @@ const linking = {
       Settings: "settings",
       ManageAddress: "address",
       Support: "support",
+      About: "about",
+      Contact: "contact",
+      Faq: "faq",
+      Privacy: "privacy",
+      Terms: "terms",
+      ShippingPolicy: "shipping",
+      ReturnsPolicy: "returns",
+      Blog: "blog",
+      BlogPost: {
+        path: "blog/:slug",
+        parse: {
+          slug: (value) => String(value || ""),
+        },
+      },
+      NotFound: "*",
       DeliveryDashboard: "delivery/dashboard",
       AdminDashboard: "admin",
       AdminProducts: "admin/products",
@@ -92,6 +133,7 @@ function WebBodySync() {
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return;
     applyWebPremiumChrome(isDark, colors.background);
+    registerProductCacheServiceWorker();
   }, [colors.background, isDark]);
   return null;
 }
@@ -113,7 +155,9 @@ function AppNavigationShell() {
         linking={linking}
         onReady={() => setNavigationReady(true)}
       >
-        <AppNavigator navigationRef={navigationRef} navigationReady={navigationReady} />
+        <CartDrawerProvider navigationRef={navigationRef}>
+          <AppNavigator navigationRef={navigationRef} navigationReady={navigationReady} />
+        </CartDrawerProvider>
       </NavigationContainer>
     </>
   );
@@ -192,16 +236,20 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider style={safeAreaRootStyle}>
-      <View style={webRootStyle}>
-        <ThemeProvider>
-          <AuthProvider>
-            <CartProvider>
-              <AppNavigationShell />
-            </CartProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </View>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={gestureRootStyle}>
+      <SafeAreaProvider style={safeAreaRootStyle}>
+        <View style={webRootStyle}>
+          <ThemeProvider>
+            <AuthProvider>
+              <WishlistProvider>
+                <CartProvider>
+                  <AppNavigationShell />
+                </CartProvider>
+              </WishlistProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </View>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

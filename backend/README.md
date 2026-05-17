@@ -7,7 +7,6 @@ Beginner-friendly backend for an e-commerce app using Express.js, Mongoose, and 
 ```txt
 backend
 ├── server.js
-├── .env.example
 └── src
     ├── config
     │   └── db.js
@@ -38,18 +37,14 @@ backend
 npm install
 ```
 
-2. Copy environment file:
-
-```bash
-cp .env.example .env
-```
-
-3. Update `.env` values:
+2. Create `backend/.env` with at least:
 - `PORT` (default set to `5001`)
 - Mongo connection string: `MONGO_URI` (preferred), or `MONGODB_URI`, `DATABASE_URL`, `DB_URI`
 - Optional DB name override: `MONGO_DB_NAME` or `DB_NAME`
 - Example local DB: `mongodb://127.0.0.1:27017/zeevan`
 - `JWT_SECRET`
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` (GoDaddy: `smtpout.secureserver.net`, port `465`)
+- `APP_WEB_URL` (public site URL for email links)
 - `RAZORPAY_KEY_ID` — public key id from the Razorpay dashboard (test or live).
 - `RAZORPAY_KEY_SECRET` — secret key, **server-only**.
 - `RAZORPAY_WEBHOOK_SECRET` — webhook secret you set when creating the
@@ -71,6 +66,7 @@ npm run dev
 ## APIs
 
 - `GET /products`
+- `GET /products/:id` (single product for PDP)
 - `POST /users/register`
 - `POST /users/login`
 - `POST /orders` (Protected: requires `Authorization: Bearer <token>`)

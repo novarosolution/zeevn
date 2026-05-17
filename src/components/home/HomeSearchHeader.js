@@ -84,14 +84,14 @@ export default function HomeSearchHeader({
       Animated.timing(placeholderOpacity, {
         toValue: 0,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: false,
       }).start(({ finished }) => {
         if (!finished) return;
         setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
         Animated.timing(placeholderOpacity, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: false,
         }).start();
       });
     }, 4000);
@@ -132,10 +132,17 @@ export default function HomeSearchHeader({
   const wrapperStyle = useMemo(
     () => [
       styles.outer,
-      {
-        maxWidth: isWideDesktop ? DESKTOP_MAX_WIDTH : undefined,
-        alignSelf: isWideDesktop ? "center" : "stretch",
-      },
+      Platform.OS === "web"
+        ? {
+            width: "100%",
+            maxWidth: isWideDesktop ? DESKTOP_MAX_WIDTH : undefined,
+            alignSelf: isWideDesktop ? "center" : "stretch",
+            minWidth: 0,
+          }
+        : {
+            maxWidth: isWideDesktop ? DESKTOP_MAX_WIDTH : undefined,
+            alignSelf: isWideDesktop ? "center" : "stretch",
+          },
     ],
     [isWideDesktop]
   );
@@ -326,6 +333,10 @@ export default function HomeSearchHeader({
 const styles = StyleSheet.create({
   outer: {
     width: "100%",
+    ...Platform.select({
+      web: { minWidth: 0 },
+      default: {},
+    }),
   },
   container: {
     borderWidth: 1,

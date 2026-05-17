@@ -4,8 +4,10 @@ const ACCESS_DEFAULT = "1d";
 const REFRESH_DEFAULT = "30d";
 
 /** Short-lived access token. Used as the bearer for normal API calls. */
-function generateToken(userId) {
-  return jwt.sign({ id: userId, type: "access" }, process.env.JWT_SECRET, {
+function generateToken(userId, sessionId) {
+  const payload = { id: userId, type: "access" };
+  if (sessionId) payload.sid = sessionId;
+  return jwt.sign(payload, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || ACCESS_DEFAULT,
   });
 }

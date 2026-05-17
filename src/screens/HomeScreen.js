@@ -30,7 +30,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import HomePageFooter from "../components/home/HomePageFooter";
+import AppFooter from "../components/AppFooter";
 import HomeCategoryGrid from "../components/home/HomeCategoryGrid";
 import HomeReorderStrip from "../components/home/HomeReorderStrip";
 import HomeLiveOrderPinnedCard from "../components/home/HomeLiveOrderPinnedCard";
@@ -42,7 +42,9 @@ import HomeSearchHeader from "../components/home/HomeSearchHeader";
 import BrandWordmark from "../components/BrandWordmark";
 import SkeletonBlock from "../components/ui/SkeletonBlock";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
+import NetworkErrorState from "../components/utility/NetworkErrorState";
 import useReducedMotion from "../hooks/useReducedMotion";
+import useRecentSearches from "../hooks/useRecentSearches";
 import { getHomeViewConfig, getProducts } from "../services/productService";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCart } from "../context/CartContext";
@@ -94,6 +96,7 @@ import { HomeCatalogResponsiveGrid } from "../components/home/HomeCatalogProduct
 import ProgressRing from "../components/feedback/ProgressRing";
 import SectionEnter from "../components/motion/SectionEnter";
 import { fetchMyNotifications, fetchMyOrders } from "../services/userService";
+import { ACCOUNT_NESTED } from "../navigation/accountRoutes";
 import { spacing as homeSpacing } from "../styles/spacing";
 import { applyRouteMeta } from "../utils/webMeta";
 
@@ -256,6 +259,7 @@ export default function HomeScreen({ navigation }) {
   }, [safeBottomInset]);
   const showMarketing = !query.trim();
   const reducedMotion = useReducedMotion();
+  const { add: addRecentSearch } = useRecentSearches();
   const cartBounceScale = useSharedValue(1);
   const cartBounceStyle = useAnimatedStyle(() => ({
     transform: [{ scale: cartBounceScale.value }],
@@ -264,32 +268,18 @@ export default function HomeScreen({ navigation }) {
     opacity: flyOpacity.value,
     transform: [{ translateX: flyX.value }, { translateY: flyY.value }, { scale: flyScale.value }],
   }));
-  const saveRecentSearch = useCallback(async (nextQuery) => {
-    const normalized = String(nextQuery || "").trim();
-    if (!normalized) return;
-    try {
-      const raw = await AsyncStorage.getItem("@zeevan/home/recent-searches");
-      const parsed = raw ? JSON.parse(raw) : [];
-      const prev = Array.isArray(parsed) ? parsed.filter((item) => typeof item === "string") : [];
-      const next = [normalized, ...prev.filter((item) => item.toLowerCase() !== normalized.toLowerCase())].slice(0, 5);
-      await AsyncStorage.setItem("@zeevan/home/recent-searches", JSON.stringify(next));
-    } catch {
-      // non-blocking persistence only
-    }
-  }, []);
-
   const onSearchSubmit = useCallback(
     (value) => {
       const normalized = String(value || "").trim();
       setQuery(normalized);
       if (!normalized) return;
-      saveRecentSearch(normalized);
-      if (Platform.OS === "web" && typeof window !== "undefined") {
-        const url = `/search?q=${encodeURIComponent(normalized)}`;
-        window.history.replaceState({}, "", url);
-      }
+      addRecentSearch(normalized);
+      navigation.navigate({
+        name: "Search",
+        params: { q: normalized, category: "", categoryLabel: "" },
+      });
     },
-    [saveRecentSearch]
+    [addRecentSearch, navigation]
   );
 
   useEffect(
@@ -321,7 +311,7 @@ export default function HomeScreen({ navigation }) {
   }, [user?.defaultAddress]);
 
   const openAddressSelector = useCallback(() => {
-    navigation.navigate("ManageAddress");
+    navigation.navigate("Profile", { screen: ACCOUNT_NESTED.Addresses });
   }, [navigation]);
 
   const openNotifications = useCallback(() => {
@@ -1293,7 +1283,7 @@ export default function HomeScreen({ navigation }) {
           {isAuthenticated && liveOrder ? (
             <SectionEnter sectionKey="home-live-order" scrollY={scrollY} windowHeight={safeWindowHeight}>
               <View style={styles.liveOrderPinnedWrap}>
-                <HomeLiveOrderPinnedCard order={liveOrder} onPress={() => navigation.navigate("MyOrders")} />
+                <HomeLiveOrderPinnedCard order={liveOrder} onPress={() => navigation.navigate("Profile", { screen: ACCOUNT_NESTED.Orders })} />
               </View>
             </SectionEnter>
           ) : null}
@@ -1433,30 +1423,7 @@ export default function HomeScreen({ navigation }) {
           </View>
         ) : hasNetworkErrorWithoutCache ? (
           <View style={[styles.catalogSurface, styles.emptyWrap, styles.networkErrorWrap]}>
-            <Ionicons
-              name={HOME_EMPTY_STATES.networkError.icon}
-              size={48}
-              color={c.textMuted}
-              style={styles.networkErrorIcon}
-            />
-            <Text style={[styles.networkErrorTitle, { color: c.textPrimary }]}>
-              {HOME_EMPTY_STATES.networkError.title}
-            </Text>
-            <Text style={[styles.networkErrorBody, { color: c.textSecondary }]}>
-              {HOME_EMPTY_STATES.networkError.body}
-            </Text>
-            <Pressable
-              onPress={() => loadHomeData()}
-              style={({ pressed }) => [
-                styles.networkRetryBtn,
-                { backgroundColor: c.ink || "#0E1729" },
-                pressed ? styles.networkRetryBtnPressed : null,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={HOME_EMPTY_STATES.networkError.retryCta}
-            >
-              <Text style={styles.networkRetryBtnText}>{HOME_EMPTY_STATES.networkError.retryCta}</Text>
-            </Pressable>
+            <NetworkErrorState onRetry={() => loadHomeData()} />
           </View>
         ) : totalMatches > 0 ? (
           <View
@@ -1701,7 +1668,7 @@ export default function HomeScreen({ navigation }) {
         ) : null}
 
         <View ref={webFooterRef} style={styles.footerWrapper}>
-          <HomePageFooter colors={c} />
+          <AppFooter />
         </View>
         </MotionScrollView>
         {totalItems > 0 && scrollY > safeHeroSlideHeight ? (
@@ -1902,7 +1869,11 @@ export default function HomeScreen({ navigation }) {
                   ]}
                   onPress={() => {
                     setMenuOpen(false);
-                    navigation.navigate(item.route);
+                    if (item.accountScreen) {
+                      navigation.navigate(item.route, { screen: item.accountScreen });
+                    } else {
+                      navigation.navigate(item.route);
+                    }
                   }}
                   accessibilityRole="button"
                   accessibilityLabel={item.label}
@@ -1948,11 +1919,15 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth = 0,
     },
     headerWrap: {
       paddingBottom: Platform.select({ web: homeSpacing.lg, default: homeSpacing.base }),
+      ...Platform.select({
+        web: { width: "100%", alignSelf: "stretch", minWidth: 0 },
+        default: {},
+      }),
     },
     headerAmbientCard: {
       position: "relative",
       borderRadius: radius.xxl,
-      overflow: "hidden",
+      overflow: Platform.OS === "web" ? "visible" : "hidden",
       borderWidth: 0,
       marginBottom: spacing.md,
       ...Platform.select({
@@ -2100,6 +2075,10 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth = 0,
       marginTop: 16,
       marginBottom: homeSpacing.md,
       paddingHorizontal: spacing.sm,
+      ...Platform.select({
+        web: { width: "100%", alignSelf: "stretch", minWidth: 0 },
+        default: {},
+      }),
     },
     webSearchRail: {
       flexDirection: "column",

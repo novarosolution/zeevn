@@ -2,7 +2,16 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from "react-native";
 import {
+  RADII,
+  SPACING,
+  SHADOWS,
+  TYPE,
+  MOTION,
+  getSemanticPalette,
+} from "../styles/designSystem";
+import {
   darkColors,
+  fonts,
   getShadow,
   getShadowLift,
   getShadowPremium,
@@ -63,6 +72,8 @@ export function ThemeProvider({ children }) {
 
   const colors = useMemo(() => (isDark ? darkColors : lightColors), [isDark]);
 
+  const semanticPalette = useMemo(() => getSemanticPalette(isDark), [isDark]);
+
   const setMode = useCallback(async (next) => {
     if (next !== "light" && next !== "dark" && next !== "system") return;
     setModeState(next);
@@ -79,16 +90,25 @@ export function ThemeProvider({ children }) {
       setMode,
       isDark,
       colors,
+      fonts,
+      semanticPalette,
+      RADII,
+      SPACING,
+      SHADOWS,
+      TYPE,
+      MOTION,
       shadow: getShadow(isDark),
       shadowLift: getShadowLift(isDark),
       shadowPremium: getShadowPremium(isDark),
       hydrated,
     }),
-    [mode, setMode, isDark, colors, hydrated]
+    [mode, setMode, isDark, colors, semanticPalette, hydrated, fonts]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
+
+const fallbackSemanticPalette = getSemanticPalette(false);
 
 export function useTheme() {
   const ctx = useContext(ThemeContext);
@@ -98,6 +118,13 @@ export function useTheme() {
       setMode: () => {},
       isDark: false,
       colors: lightColors,
+      fonts,
+      semanticPalette: fallbackSemanticPalette,
+      RADII,
+      SPACING,
+      SHADOWS,
+      TYPE,
+      MOTION,
       shadow: getShadow(false),
       shadowLift: getShadowLift(false),
       shadowPremium: getShadowPremium(false),

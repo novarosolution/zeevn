@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
-import AppFooter from "../../components/AppFooter";
-import CustomerScreenShell from "../../components/CustomerScreenShell";
-import AdminBackLink from "../../components/admin/AdminBackLink";
-import AdminPageHeading from "../../components/admin/AdminPageHeading";
 import { useAuth } from "../../context/AuthContext";
+import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
+import OpsListSkeleton from "../../components/ops/OpsListSkeleton";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
 import { deleteAdminProduct, fetchAdminProducts } from "../../services/adminService";
@@ -71,14 +69,18 @@ export default function AdminProductsScreen({ navigation }) {
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [renderCount, setRenderCount] = useState(40);
+  const [productsLoading, setProductsLoading] = useState(true);
 
   const loadProducts = useCallback(async () => {
     try {
+      setProductsLoading(true);
       setError("");
       const response = await fetchAdminProducts(token);
       setProducts(response);
     } catch (err) {
       setError(err.message || "Failed to load products.");
+    } finally {
+      setProductsLoading(false);
     }
   }, [token]);
 
@@ -120,35 +122,6 @@ export default function AdminProductsScreen({ navigation }) {
     setRenderCount(40);
   }, [search]);
 
-  if (user && !user.isAdmin) {
-    return (
-      <CustomerScreenShell style={styles.screen} variant="admin">
-        <MotionScrollView
-          style={customerScrollFill}
-          contentContainerStyle={adminInnerPageScrollContent(insets)}
-          showsVerticalScrollIndicator={false}
-        >
-          <SectionReveal delay={40} preset="fade-up">
-            <View style={styles.panel}>
-              <AdminBackLink navigation={navigation} />
-              <PremiumErrorBanner
-                severity="warning"
-                title="Admin access required"
-                message="Sign in with an admin account to manage the catalog."
-              />
-              <PremiumButton
-                label="Back to Home"
-                variant="primary"
-                onPress={() => navigation.navigate("Home")}
-                style={styles.gateCta}
-              />
-            </View>
-          </SectionReveal>
-        </MotionScrollView>
-      </CustomerScreenShell>
-    );
-  }
-
   const handleDelete = async (id) => {
     try {
       setError("");
@@ -160,31 +133,14 @@ export default function AdminProductsScreen({ navigation }) {
   };
 
   return (
-    <CustomerScreenShell style={styles.screen} variant="admin">
-      <MotionScrollView
-        style={customerScrollFill}
-        contentContainerStyle={adminInnerPageScrollContent(insets)}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          Platform.OS === "web" ? undefined : (
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.primary} colors={[c.primary]} />
-          )
-        }
-      >
-        <View style={styles.panel}>
-          <AdminBackLink navigation={navigation} />
-          <AdminPageHeading
-            title="Manage Products"
-            subtitle="Search, stock visibility, and quick edits."
-          />
+    <OpsAdminScreen navigation={navigation} activeRoute="AdminProducts" sectionTitle="Manage products">
           {error ? (
             <View style={styles.bannerSpacer}>
               <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
             </View>
           ) : null}
 
-          <SectionReveal preset="fade-up" delay={0}>
-            <PremiumCard padding="md" variant="elevated" goldAccent style={styles.summaryCard}>
+                      <PremiumCard padding="md" variant="elevated" goldAccent style={styles.summaryCard}>
               <Text style={[styles.summaryEyebrow, { color: c.textMuted }]}>Catalog snapshot</Text>
               <View style={styles.summaryGrid}>
                 <View style={styles.summaryCell}>
@@ -205,8 +161,7 @@ export default function AdminProductsScreen({ navigation }) {
                 </View>
               </View>
             </PremiumCard>
-          </SectionReveal>
-
+          
           <View style={styles.actionsRow}>
             <View style={styles.searchInputWrap}>
               <PremiumInput
@@ -240,7 +195,8 @@ export default function AdminProductsScreen({ navigation }) {
           </View>
 
           <View style={styles.listContent}>
-            {filteredProducts.length === 0 ? (
+            {productsLoading && products.length === 0 ? <OpsListSkeleton rows={5} /> : null}
+            {!productsLoading && filteredProducts.length === 0 ? (
               <PremiumEmptyState
                 iconName="cube-outline"
                 title={search.trim() ? "No matching products" : "No products in catalog"}
@@ -251,13 +207,13 @@ export default function AdminProductsScreen({ navigation }) {
                 compact
               />
             ) : null}
-            {visibleProducts.map((item, idx) => {
+            {!productsLoading &&
+            visibleProducts.map((item, idx) => {
               const chip = productStockChip(item);
               const uri = coverUri(item);
               const photoCount = (item.images || []).length || (item.image ? 1 : 0);
               return (
-                <SectionReveal key={item._id} preset="fade-up" delay={Math.min(idx * 24, 120)}>
-                  <PremiumCard padding="md" variant="elevated" style={styles.productCard}>
+                <PremiumCard key={item._id} padding="md" variant="elevated" style={styles.productCard}>
                     <View style={styles.cardTop}>
                       {uri ? (
                         <Image source={{ uri }} style={styles.thumb} contentFit="cover" transition={120} />
@@ -310,11 +266,10 @@ export default function AdminProductsScreen({ navigation }) {
                         size="sm"
                         onPress={() => navigation.navigate("AdminAddProduct", { product: item })}
                       />
-                      <PremiumButton label="Delete" variant="danger" size="sm" onPress={() => handleDelete(item._id)} />
+                      <PremiumButton label="Delete" variant="destructive" size="sm" onPress={() => handleDelete(item._id)} />
                     </View>
                   </PremiumCard>
-                </SectionReveal>
-              );
+                              );
             })}
             {visibleProducts.length < filteredProducts.length ? (
               <PremiumButton
@@ -326,10 +281,7 @@ export default function AdminProductsScreen({ navigation }) {
               />
             ) : null}
           </View>
-        </View>
-        <AppFooter />
-      </MotionScrollView>
-    </CustomerScreenShell>
+          </OpsAdminScreen>
   );
 }
 
@@ -353,8 +305,8 @@ function createAdminProductsStyles(c, shadowPremium, isDark, semantic) {
     },
     summaryCard: {
       marginBottom: spacing.md,
-      borderTopWidth: 2,
-      borderTopColor: isDark ? "rgba(248, 113, 113, 0.32)" : "rgba(220, 38, 38, 0.4)",
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: semantic.border.subtle,
     },
     summaryEyebrow: {
       fontSize: 11,

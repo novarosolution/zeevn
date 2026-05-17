@@ -22,7 +22,11 @@ async function userRequest(path, token, options = {}) {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.message || "Request failed.");
+    const err = new Error(data.message || "Request failed.");
+    err.status = response.status;
+    if (data.code) err.code = data.code;
+    if (data.profileVersion != null) err.profileVersion = data.profileVersion;
+    throw err;
   }
   return data;
 }
@@ -45,6 +49,46 @@ export const uploadUserAvatar = (token, { imageBase64, mimeType }) =>
     method: "POST",
     body: JSON.stringify({ imageBase64, mimeType }),
   });
+
+export const sendVerificationEmailRequest = (token) =>
+  userRequest("/users/profile/send-verification", token, { method: "POST", body: JSON.stringify({}) });
+
+export const requestAccountDeletion = (token, { reason, feedback } = {}) =>
+  userRequest("/users/profile/request-deletion", token, {
+    method: "POST",
+    body: JSON.stringify({ reason, feedback }),
+  });
+
+export const changePasswordRequest = (token, { currentPassword, newPassword }) =>
+  userRequest("/users/profile/password", token, {
+    method: "PUT",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
+export const requestEmailChange = (token, { newEmail, currentPassword }) =>
+  userRequest("/users/profile/email-change", token, {
+    method: "POST",
+    body: JSON.stringify({ newEmail, currentPassword }),
+  });
+
+export const requestPhoneOtp = (token, { newPhone }) =>
+  userRequest("/users/profile/phone-otp", token, {
+    method: "POST",
+    body: JSON.stringify({ newPhone }),
+  });
+
+export const verifyPhoneOtp = (token, { newPhone, otp }) =>
+  userRequest("/users/profile/phone-verify", token, {
+    method: "POST",
+    body: JSON.stringify({ newPhone, otp }),
+  });
+
+export const fetchActiveSessions = (token) => userRequest("/users/sessions", token);
+
+export const revokeSessionRequest = (token, sessionId) =>
+  userRequest(`/users/sessions/${encodeURIComponent(sessionId)}`, token, { method: "DELETE" });
+
+export const fetchAccountActivity = (token) => userRequest("/users/account-activity", token);
 
 export const fetchMyOrders = (token) => userRequest("/users/my-orders", token);
 

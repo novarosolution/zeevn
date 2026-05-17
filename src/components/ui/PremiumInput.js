@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { fonts, getSemanticColors, icon, lineHeight, radius, spacing, typography } from "../../theme/tokens";
+import { fonts, icon, lineHeight, spacing, typography } from "../../theme/tokens";
 import { inputOutlineWeb } from "../../theme/screenLayout";
 import { useTheme } from "../../context/ThemeContext";
 import useReducedMotion from "../../hooks/useReducedMotion";
@@ -48,8 +48,7 @@ function PremiumInputBase({
   accessibilityHint,
   passwordToggle = false,
 }) {
-  const { colors: c, isDark } = useTheme();
-  const semantic = getSemanticColors(c);
+  const { semanticPalette, RADII } = useTheme();
   const reducedMotion = useReducedMotion();
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(Boolean(secureTextEntry));
@@ -73,15 +72,15 @@ function PremiumInputBase({
   }, [showFloating, labelAnim, reducedMotion]);
 
   const styles = useMemo(
-    () => createStyles(c, isDark, multiline),
-    [c, isDark, multiline]
+    () => createStyles(semanticPalette, multiline, RADII),
+    [RADII, multiline, semanticPalette]
   );
 
   const borderColor = hasError
-    ? c.danger
+    ? semanticPalette.sale
     : focused
-      ? isDark ? c.primaryBright : c.primary
-      : semantic.border.subtle;
+      ? semanticPalette.ink
+      : semanticPalette.line;
 
   const labelTopBase = multiline ? spacing.md : spacing.md;
   const labelTopFloated = multiline ? spacing.xs + 2 : spacing.xs + 4;
@@ -96,7 +95,11 @@ function PremiumInputBase({
     inputRange: [0, 1],
     outputRange: [labelCollapsedSize, labelFloatedSize],
   });
-  const labelColor = hasError ? c.danger : focused ? (isDark ? c.primaryBright : c.primaryDark) : semantic.text.muted;
+  const labelColor = hasError
+    ? semanticPalette.sale
+    : focused
+      ? semanticPalette.ink
+      : semanticPalette.inkMuted;
 
   const handleFocus = (e) => {
     setFocused(true);
@@ -131,7 +134,7 @@ function PremiumInputBase({
               <Ionicons
                 name={iconLeft}
                 size={icon.sm}
-                color={focused ? (isDark ? c.primaryBright : c.primaryDark) : c.textMuted}
+                color={focused ? semanticPalette.ink : semanticPalette.inkMuted}
               />
             ) : (
               iconLeft
@@ -158,7 +161,7 @@ function PremiumInputBase({
             onFocus={handleFocus}
             onBlur={handleBlur}
             placeholder={!label || showFloating ? placeholder : undefined}
-            placeholderTextColor={c.textMuted}
+            placeholderTextColor={semanticPalette.inkMuted}
             secureTextEntry={Boolean(secureTextEntry) && hidden}
             multiline={multiline}
             numberOfLines={numberOfLines}
@@ -179,7 +182,7 @@ function PremiumInputBase({
             accessibilityHint={accessibilityHint}
             style={[
               styles.input,
-              { color: c.textPrimary },
+              { color: semanticPalette.ink },
               label ? styles.inputWithLabel : null,
               multiline ? styles.inputMultiline : null,
               inputOutlineWeb,
@@ -197,7 +200,7 @@ function PremiumInputBase({
             accessibilityLabel={passwordToggle ? (hidden ? "Show password" : "Hide password") : undefined}
           >
             {typeof effectiveIconRight === "string" ? (
-              <Ionicons name={effectiveIconRight} size={icon.sm} color={c.textMuted} />
+              <Ionicons name={effectiveIconRight} size={icon.sm} color={semanticPalette.inkMuted} />
             ) : (
               effectiveIconRight
             )}
@@ -206,13 +209,13 @@ function PremiumInputBase({
       </Pressable>
       {errorText ? (
         <View style={styles.helperRow}>
-          <Ionicons name="alert-circle" size={icon.tiny} color={c.danger} />
-          <Text style={[styles.helperText, { color: c.danger }]} numberOfLines={2}>
+          <Ionicons name="alert-circle" size={icon.tiny} color={semanticPalette.sale} />
+          <Text style={[styles.helperText, { color: semanticPalette.sale }]} numberOfLines={2}>
             {errorText}
           </Text>
         </View>
       ) : helperText ? (
-        <Text style={[styles.helperText, styles.helperTextNeutral, { color: c.textMuted }]} numberOfLines={2}>
+        <Text style={[styles.helperText, styles.helperTextNeutral, { color: semanticPalette.inkMuted }]} numberOfLines={2}>
           {helperText}
         </Text>
       ) : null}
@@ -220,7 +223,7 @@ function PremiumInputBase({
   );
 }
 
-function createStyles(c, isDark, multiline) {
+function createStyles(semanticPalette, multiline, RADII) {
   return StyleSheet.create({
     wrap: {
       width: "100%",
@@ -230,27 +233,26 @@ function createStyles(c, isDark, multiline) {
       flexDirection: "row",
       alignItems: multiline ? "flex-start" : "center",
       borderWidth: 1,
-      borderRadius: radius.lg,
-      backgroundColor: isDark ? c.surfaceMuted : c.surface,
+      borderRadius: RADII.md,
+      backgroundColor: semanticPalette.surfaceAlt,
       paddingHorizontal: spacing.md,
-      minHeight: multiline ? 96 : 54,
+      minHeight: multiline ? 96 : 48,
       ...Platform.select({
         web: {
           transition: "border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease",
         },
         default: {
-          borderRadius: radius.md,
-          backgroundColor: isDark ? c.surface : c.surfaceMuted,
-          minHeight: multiline ? 92 : 50,
+          minHeight: multiline ? 92 : 46,
         },
       }),
     },
     fieldFocused: {
       ...Platform.select({
         web: {
-          boxShadow: isDark
-            ? "0 0 0 3px rgba(248, 113, 113, 0.12), 0 6px 12px rgba(0,0,0,0.2)"
-            : "0 0 0 3px rgba(220, 38, 38, 0.08), 0 4px 10px rgba(15, 23, 42, 0.05)",
+          boxShadow:
+            semanticPalette.mode === "dark"
+              ? "0 0 0 3px rgba(255,255,255,0.10)"
+              : "0 0 0 3px rgba(14,23,41,0.08)",
         },
         default: {},
       }),
@@ -258,9 +260,7 @@ function createStyles(c, isDark, multiline) {
     fieldError: {
       ...Platform.select({
         web: {
-          boxShadow: isDark
-            ? "0 0 0 3px rgba(248, 113, 113, 0.14), 0 6px 12px rgba(0,0,0,0.22)"
-            : "0 0 0 3px rgba(220, 38, 38, 0.08), 0 4px 10px rgba(63, 63, 70, 0.05)",
+          boxShadow: "0 0 0 2px rgba(178, 58, 58, 0.22)",
         },
         default: {},
       }),

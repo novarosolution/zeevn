@@ -1,3 +1,28 @@
+const fs = require("fs");
+
+function resolveChromePath() {
+  const candidates = [
+    process.env.CHROME_PATH,
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary",
+    "/usr/bin/google-chrome",
+    "/usr/bin/google-chrome-stable",
+    "/snap/bin/chromium",
+    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
+  ].filter(Boolean);
+
+  const found = candidates.find((candidate) => {
+    try {
+      return fs.existsSync(candidate);
+    } catch {
+      return false;
+    }
+  });
+
+  return found || undefined;
+}
+
 /** @type {import('@lhci/cli').LHCI.ServerCommand.Options} */
 module.exports = {
   ci: {
@@ -13,6 +38,7 @@ module.exports = {
       settings: {
         preset: "desktop",
         chromeFlags: "--headless=new --no-sandbox",
+        chromePath: resolveChromePath(),
       },
     },
     assert: {

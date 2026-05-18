@@ -14,16 +14,16 @@ const copy = AUTH_SCREEN.verifyEmail;
 
 export default function VerifyEmailScreen({ navigation }) {
   const route = useRoute();
-  const { updateStoredUser } = useAuth();
+  const { updateStoredUser, refreshProfile, token: authToken } = useAuth();
   const { semanticPalette, TYPE, SPACING } = useTheme();
   const [status, setStatus] = useState("loading");
   const [message, setMessage] = useState("");
 
   const email = String(route.params?.email || "").trim();
-  const token = String(route.params?.token || "").trim();
+  const verifyToken = String(route.params?.token || "").trim();
 
   useEffect(() => {
-    if (!email || !token) {
+    if (!email || !verifyToken) {
       setStatus("error");
       setMessage(copy.missingParams);
       return;
@@ -31,10 +31,17 @@ export default function VerifyEmailScreen({ navigation }) {
     let cancelled = false;
     (async () => {
       try {
-        const data = await verifyEmailWithTokenRequest({ email, token });
+        const data = await verifyEmailWithTokenRequest({ email, token: verifyToken });
         if (cancelled) return;
         if (data?.user) {
           await updateStoredUser(data.user);
+          if (authToken) {
+            try {
+              await refreshProfile({ force: true });
+            } catch {
+              /* profile refresh is best-effort */
+            }
+          }
         }
         setStatus("success");
         setMessage(data?.message || copy.success);
@@ -47,7 +54,7 @@ export default function VerifyEmailScreen({ navigation }) {
     return () => {
       cancelled = true;
     };
-  }, [email, token, updateStoredUser]);
+  }, [authToken, email, refreshProfile, updateStoredUser, verifyToken]);
 
   return (
     <AuthShell

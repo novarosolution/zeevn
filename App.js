@@ -37,6 +37,25 @@ const safeAreaRootStyle = { flex: 1, width: "100%" };
 const gestureRootStyle = { flex: 1 };
 
 const navigationRef = createNavigationContainerRef();
+
+/** Avoid `returnTo=[object Object]` in web URLs — serialize as JSON. */
+function parseLoginReturnToParam(value) {
+  if (value == null || value === "") return undefined;
+  if (typeof value === "object" && value?.name) return value;
+  if (typeof value !== "string" || value === "[object Object]") return undefined;
+  try {
+    const parsed = JSON.parse(decodeURIComponent(value));
+    return parsed?.name ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function stringifyLoginReturnToParam(value) {
+  if (!value?.name) return undefined;
+  return encodeURIComponent(JSON.stringify(value));
+}
+
 const linking = {
   prefixes: [ExpoLinking.createURL("/")],
   config: {
@@ -50,7 +69,18 @@ const linking = {
       },
       Product: "product/:productId",
       Cart: "cart",
-      Login: "login",
+      Login: {
+        path: "login",
+        parse: {
+          email: (value) => String(value || ""),
+          sessionExpired: (value) => value === "true" || value === true,
+          returnTo: parseLoginReturnToParam,
+        },
+        stringify: {
+          sessionExpired: (value) => (value ? "true" : undefined),
+          returnTo: stringifyLoginReturnToParam,
+        },
+      },
       Register: "register",
       ForgotPassword: "forgot-password",
       ResetPassword: {

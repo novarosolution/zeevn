@@ -42,7 +42,8 @@ function serializePublicUser(user) {
 
 async function registerUser(req, res, next) {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, password, phone } = req.body;
+    const email = normalizeEmailInput(req.body?.email);
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Name, email, and password are required." });
@@ -101,13 +102,17 @@ async function requestPasswordReset(req, res, next) {
     }
 
     const user = await User.findOne({ email }).select("+passwordResetToken +passwordResetExpires");
+    let devLink;
     if (user) {
       const rawToken = crypto.randomBytes(32).toString("hex");
       user.passwordResetToken = crypto.createHash("sha256").update(rawToken).digest("hex");
       user.passwordResetExpires = new Date(Date.now() + 30 * 60 * 1000);
       await user.save();
       try {
-        await sendPasswordResetEmail(user.email, rawToken);
+        const delivery = await sendPasswordResetEmail(user.email, rawToken);
+        if (process.env.NODE_ENV !== "production" && delivery?.link && !delivery?.sent) {
+          devLink = delivery.link;
+        }
       } catch {
         // Swallow — response must not reveal delivery failures.
       }
@@ -115,6 +120,7 @@ async function requestPasswordReset(req, res, next) {
 
     res.status(200).json({
       message: "If an account exists for that email, reset instructions have been sent.",
+      ...(devLink ? { devLink } : {}),
     });
   } catch (error) {
     next(error);
@@ -204,7 +210,8 @@ async function verifyEmailWithToken(req, res, next) {
 
 async function loginUser(req, res, next) {
   try {
-    const { email, password } = req.body;
+    const email = normalizeEmailInput(req.body?.email);
+    const password = req.body?.password;
 
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password are required." });
@@ -269,7 +276,8 @@ async function refreshAccessToken(req, res, next) {
       return res.status(401).json({ message: "User no longer exists." });
     }
 
-    const token = generateToken(user._id);
+    const sessionId = String(req.headers["x-session-id"] || "").trim();
+    const token = generateToken(user._id, sessionId || undefined);
     res.json({
       token,
       user: serializePublicUser(user),

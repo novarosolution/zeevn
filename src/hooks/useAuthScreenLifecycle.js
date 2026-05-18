@@ -19,16 +19,22 @@ export default function useAuthScreenLifecycle({
   const route = useRoute();
   const { isAuthenticated, isAuthLoading, rehydrateFromStorage } = useAuth();
   const draftRef = useRef(null);
+  const draftHydratedRef = useRef(false);
+  const onDraftLoadedRef = useRef(onDraftLoaded);
   const toastShown = useRef(false);
   const [toastVisible, setToastVisible] = useState(false);
 
+  onDraftLoadedRef.current = onDraftLoaded;
+
   useEffect(() => {
+    if (draftHydratedRef.current) return;
     const draft = loadAuthFormDraft(screen);
+    draftHydratedRef.current = true;
     if (draft) {
       draftRef.current = draft;
-      onDraftLoaded?.(draft);
+      onDraftLoadedRef.current?.(draft);
     }
-  }, [onDraftLoaded, screen]);
+  }, [screen]);
 
   useFocusEffect(
     useCallback(() => {

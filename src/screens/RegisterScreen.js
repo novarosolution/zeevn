@@ -8,13 +8,10 @@ import {
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import * as Linking from "expo-linking";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import AuthShell from "../components/auth/AuthShell";
-import AuthBrassIconEntrance from "../components/auth/AuthBrassIconEntrance";
 import AuthCheckbox from "../components/auth/AuthCheckbox";
-import AuthContentSwap from "../components/auth/AuthContentSwap";
 import AuthErrorCard from "../components/auth/AuthErrorCard";
 import { navigateAfterAuth } from "../components/auth/authNavigation";
 import PasswordStrengthMeter from "../components/auth/PasswordStrengthMeter";
@@ -54,85 +51,6 @@ function openLegalDoc(navigation, screenName) {
   navigation.navigate(screenName);
 }
 
-function RegisterVerificationSuccess({
-  email,
-  onOpenMail,
-  onResend,
-  onUseDifferentEmail,
-  resendSeconds,
-  entranceKey,
-}) {
-  const { semanticPalette, TYPE, SPACING } = useTheme();
-  const body = fillPlaceholders(copy.successBody, { email });
-
-  return (
-    <View style={{ alignItems: "center", gap: SPACING.lg, paddingVertical: SPACING.xl }}>
-      <AuthBrassIconEntrance name="checkmark-circle" size={48} trigger={entranceKey} />
-      <Text
-        accessibilityRole="header"
-        style={{
-          fontFamily: FONT_DISPLAY_SEMI,
-          fontSize: 24,
-          lineHeight: 30,
-          color: semanticPalette.ink,
-          textAlign: "center",
-        }}
-      >
-        {copy.successTitle}
-      </Text>
-      <Text
-        style={{
-          fontFamily: fonts.regular,
-          fontSize: TYPE.body.fontSize,
-          lineHeight: TYPE.body.lineHeight,
-          color: semanticPalette.inkSoft,
-          textAlign: "center",
-          maxWidth: 360,
-        }}
-      >
-        {body}
-      </Text>
-      <View style={{ width: "100%", gap: SPACING.sm }}>
-        <Button variant="secondary" size="lg" fullWidth label={copy.openMailApp} onPress={onOpenMail} />
-        <Pressable
-          accessibilityRole="button"
-          disabled={resendSeconds > 0}
-          onPress={onResend}
-          style={{ alignSelf: "center", paddingVertical: SPACING.xs }}
-        >
-          <Text
-            style={{
-              fontFamily: fonts.medium,
-              fontSize: TYPE.small.fontSize,
-              color: resendSeconds > 0 ? semanticPalette.inkMuted : semanticPalette.accent,
-            }}
-          >
-            {resendSeconds > 0
-              ? fillPlaceholders(copy.resendCooldown, { seconds: String(resendSeconds) })
-              : copy.resendEmail}
-          </Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="link"
-          onPress={onUseDifferentEmail}
-          style={{ alignSelf: "center", paddingVertical: SPACING.xs }}
-        >
-          <Text
-            style={{
-              fontFamily: fonts.regular,
-              fontSize: TYPE.small.fontSize,
-              color: semanticPalette.inkSoft,
-              textDecorationLine: "underline",
-            }}
-          >
-            {copy.useDifferentEmail}
-          </Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
 export default function RegisterScreen({ navigation }) {
   const route = useRoute();
   const [name, setName] = useState("");
@@ -145,10 +63,7 @@ export default function RegisterScreen({ navigation }) {
   const [emailConflict, setEmailConflict] = useState(false);
   const [touched, setTouched] = useState({ name: false, email: false, password: false });
   const [submitAttempted, setSubmitAttempted] = useState(false);
-  const [verificationSent, setVerificationSent] = useState(false);
-  const [registeredEmail, setRegisteredEmail] = useState("");
   const [welcomeToastVisible, setWelcomeToastVisible] = useState(false);
-  const [resendSeconds, setResendSeconds] = useState(0);
   const [termsHover, setTermsHover] = useState(null);
   const [footerLinkHover, setFooterLinkHover] = useState(false);
   const { registerWithCredentials } = useAuth();
@@ -158,6 +73,7 @@ export default function RegisterScreen({ navigation }) {
     isSubmitting,
     slowHint,
     networkError,
+    timeoutError,
     serverError,
     rateLimitUntil,
     isRateLimited,
@@ -380,7 +296,7 @@ export default function RegisterScreen({ navigation }) {
     await runSubmit(async (signal) => {
       try {
         const captchaToken = await getAuthCaptchaToken("register");
-        const result = await registerWithCredentials({
+        await registerWithCredentials({
           name: trimmedName,
           email: em,
           password,
@@ -388,14 +304,6 @@ export default function RegisterScreen({ navigation }) {
           signal,
           captchaToken,
         });
-
-        if (result.requiresEmailVerification) {
-          setRegisteredEmail(em);
-          setVerificationSent(true);
-          setResendSeconds(60);
-          lifecycle.clearDraft();
-          return true;
-        }
 
         lifecycle.clearDraft();
         setWelcomeToastVisible(true);
@@ -426,37 +334,19 @@ export default function RegisterScreen({ navigation }) {
     validateFields,
   ]);
 
-  const handleUseDifferentEmail = useCallback(() => {
-    setVerificationSent(false);
-    setRegisteredEmail("");
-    setResendSeconds(0);
-    setEmail("");
-    setEmailError("");
-    setSubmitAttempted(false);
-    clearServerErrors();
-  }, [clearServerErrors]);
-
-  useEffect(() => {
-    if (!verificationSent || resendSeconds <= 0) return undefined;
-    const id = setInterval(() => {
-      setResendSeconds((s) => (s <= 1 ? 0 : s - 1));
-    }, 1000);
-    return () => clearInterval(id);
-  }, [verificationSent, resendSeconds]);
-
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return undefined;
     const onKeyDown = (event) => {
-      if (verificationSent || event.key !== "Enter" || event.defaultPrevented) return;
+      if (event.key !== "Enter" || event.defaultPrevented) return;
       const tag = event.target?.tagName?.toLowerCase?.();
-      if (tag === "textarea" || tag === "button") return;
+      if (tag === "textarea" || tag === "button" || tag === "input") return;
       if (!canSubmit || isSubmitting) return;
       event.preventDefault();
       handleRegister();
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [canSubmit, handleRegister, isSubmitting, verificationSent]);
+  }, [canSubmit, handleRegister, isSubmitting]);
 
   const socialProviders = useMemo(() => {
     const apple = {
@@ -473,18 +363,6 @@ export default function RegisterScreen({ navigation }) {
   }, [semanticPalette.ink]);
 
   const noopOAuth = () => {};
-
-  const openMailApp = () => {
-    Linking.openURL(`mailto:${registeredEmail}`).catch(() => {
-      Linking.openURL("mailto:").catch(() => {});
-    });
-  };
-
-  const handleResend = () => {
-    if (resendSeconds > 0) return;
-    setResendSeconds(60);
-    // Hook up resend API when backend supports verification emails.
-  };
 
   const footerLink = (
     <View style={styles.footerRow}>
@@ -515,21 +393,6 @@ export default function RegisterScreen({ navigation }) {
         durationMs={2400}
       />
 
-      <AuthContentSwap
-        showSuccess={verificationSent}
-        footer={footerLink}
-        success={
-          <RegisterVerificationSuccess
-            email={registeredEmail}
-            onOpenMail={openMailApp}
-            onResend={handleResend}
-            onUseDifferentEmail={handleUseDifferentEmail}
-            resendSeconds={resendSeconds}
-            entranceKey={registeredEmail}
-          />
-        }
-        form={
-          <>
       <Text accessibilityRole="header" style={styles.title}>
         {copy.formTitle}
       </Text>
@@ -670,7 +533,10 @@ export default function RegisterScreen({ navigation }) {
       <View style={styles.ctaBlock}>
         {rateLimitUntil ? <AuthRateLimitCard untilMs={rateLimitUntil} /> : null}
         {serverError && !rateLimitUntil ? <AuthErrorCard message={serverError} /> : null}
-        {networkError ? (
+        {timeoutError ? (
+          <AuthErrorCard message={shared.timeoutError} retryLabel={shared.retryCta} onRetry={handleRegister} />
+        ) : null}
+        {networkError && !timeoutError ? (
           <AuthErrorCard message={shared.networkError} retryLabel={shared.retryCta} onRetry={handleRegister} />
         ) : null}
 
@@ -720,9 +586,7 @@ export default function RegisterScreen({ navigation }) {
           />
         ))}
       </View>
-          </>
-        }
-      />
+      {footerLink}
     </AuthShell>
   );
 }

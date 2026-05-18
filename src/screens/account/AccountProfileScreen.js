@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
+import * as Clipboard from "expo-clipboard";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -366,6 +367,8 @@ export default function AccountProfileScreen({ navigation, route }) {
         gender: storedPrefs.gender,
       });
 
+      await persistUser(profile);
+
       const bio = await isBiometricLoginAvailable();
       setBiometricOn(bio);
       setBiometricLabel(await getBiometricLabel());
@@ -375,7 +378,7 @@ export default function AccountProfileScreen({ navigation, route }) {
     } finally {
       setLoading(false);
     }
-  }, [authToken, loadSessions, showToast]);
+  }, [authToken, loadSessions, persistUser, showToast]);
 
   useFocusEffect(
     useCallback(() => {
@@ -603,6 +606,15 @@ export default function AccountProfileScreen({ navigation, route }) {
       await sendVerificationEmailRequest(authToken);
       showToast(copy.toasts.verifySent);
     } catch (err) {
+      if (err?.devLink) {
+        try {
+          await Clipboard.setStringAsync(String(err.devLink));
+          showToast(copy.toasts.verifyDevLink);
+        } catch {
+          showToast(String(err.devLink));
+        }
+        return;
+      }
       showToast(err?.message || copy.toasts.saveError);
     }
   };

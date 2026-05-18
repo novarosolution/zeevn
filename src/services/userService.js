@@ -26,6 +26,7 @@ async function userRequest(path, token, options = {}) {
     err.status = response.status;
     if (data.code) err.code = data.code;
     if (data.profileVersion != null) err.profileVersion = data.profileVersion;
+    if (data.devLink) err.devLink = data.devLink;
     throw err;
   }
   return data;

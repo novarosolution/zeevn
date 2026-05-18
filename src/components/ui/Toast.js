@@ -1,10 +1,12 @@
 import React, { memo, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { PanResponder, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { fonts } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import { usePrefersReducedMotion } from "../../utils/motion";
+import { getWebToastPortalRoot } from "../../utils/webToastPortal";
 
 /**
  * Bottom-centered toast: navy surface, white body, brass action label.
@@ -86,7 +88,7 @@ function ToastBase({
 
   if (!message) return null;
 
-  return (
+  const toastLayer = (
     <View
       style={[
         StyleSheet.absoluteFillObject,
@@ -95,7 +97,6 @@ function ToastBase({
           alignItems: "center",
           paddingHorizontal: 16,
           paddingBottom: Math.max(insets.bottom, 12) + (Platform.OS === "web" ? 72 : 88),
-          zIndex: 9999,
           elevation: 9999,
           pointerEvents: "box-none",
         },
@@ -163,6 +164,13 @@ function ToastBase({
       </Animated.View>
     </View>
   );
+
+  if (Platform.OS === "web") {
+    const portalRoot = getWebToastPortalRoot();
+    if (portalRoot) return createPortal(toastLayer, portalRoot);
+  }
+
+  return toastLayer;
 }
 
 const Toast = memo(ToastBase);

@@ -253,19 +253,19 @@ export function AuthProvider({ children }) {
   const saveSession = useCallback(
     async (sessionToken, sessionUser, sessionRefreshToken = null, { remember = true, sessionId = null } = {}) => {
       rememberSessionRef.current = remember;
-      setToken(sessionToken);
-      tokenRef.current = sessionToken;
-      setRefreshToken(sessionRefreshToken);
-      refreshTokenRef.current = sessionRefreshToken;
       if (sessionId) {
         sessionIdRef.current = sessionId;
         await persistSessionId(sessionId);
       }
+      await persistSession(sessionToken, sessionRefreshToken, sessionUser, { remember });
+      setToken(sessionToken);
+      tokenRef.current = sessionToken;
+      setRefreshToken(sessionRefreshToken);
+      refreshTokenRef.current = sessionRefreshToken;
       setUser(sessionUser);
       userRef.current = sessionUser;
       profileRefreshAtRef.current = Date.now();
       setSessionExpired(false);
-      await persistSession(sessionToken, sessionRefreshToken, sessionUser, { remember });
     },
     [persistSession]
   );
@@ -328,9 +328,13 @@ export function AuthProvider({ children }) {
         remember,
         sessionId: data.sessionId || null,
       });
-      return data.user;
+      try {
+        return await refreshProfile({ force: true });
+      } catch {
+        return data.user;
+      }
     },
-    [saveSession]
+    [saveSession, refreshProfile]
   );
 
   const registerWithCredentials = useCallback(

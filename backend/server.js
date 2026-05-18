@@ -27,9 +27,11 @@ const defaultAllowedOrigins = [
   "http://localhost:8081",
   "http://localhost:8082",
   "http://localhost:8083",
+  "http://localhost:19006",
   "http://127.0.0.1:8081",
   "http://127.0.0.1:8082",
   "http://127.0.0.1:8083",
+  "http://127.0.0.1:19006",
   "https://novarosolution.com",
   "https://www.novarosolution.com",
 ];
@@ -65,7 +67,7 @@ const corsOptions = {
     return callback(new Error("Not allowed by CORS"));
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Session-Id", "X-Captcha-Token"],
 };
 
 app.use(cors(corsOptions));

@@ -285,5 +285,9 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     minHeight: 0,
+    ...Platform.select({
+      web: { position: "relative", zIndex: 0 },
+      default: {},
+    }),
   },
 });

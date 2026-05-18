@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import ProgressRing from "../../ui/ProgressRing";
+import { WebNativeButton } from "../../ui/inputWebHelpers";
 import { useTheme } from "../../../context/ThemeContext";
 import useReducedMotion from "../../../hooks/useReducedMotion";
 import { fonts } from "../../../theme/tokens";
@@ -75,21 +76,52 @@ export default function AccountSaveButton({
   }));
 
   const enabled = dirty && !saving && !showSaved;
+  const pillRadius = Platform.OS === "web" ? 22 : RADII.pill;
+  const pillShell = { backgroundColor: semanticPalette.ink, borderRadius: pillRadius };
 
   const content = () => {
     if (saving) {
       return (
-        <View style={[styles.pill, { backgroundColor: semanticPalette.ink, borderRadius: RADII.pill }]}>
+        <View style={[styles.pill, pillShell]}>
           <ProgressRing size={22} accentColor={semanticPalette.accent} spinning />
         </View>
       );
     }
     if (showSaved) {
       return (
-        <View style={[styles.pill, { backgroundColor: semanticPalette.ink, borderRadius: RADII.pill, flexDirection: "row", gap: 8 }]}>
+        <View style={[styles.pill, pillShell, { flexDirection: "row", gap: 8 }]}>
           <Ionicons name="checkmark-circle" size={20} color={semanticPalette.accent} />
           <Text style={{ fontFamily: fonts.semibold, fontSize: TYPE.body.fontSize, color: semanticPalette.inkInverse }}>{savedLabel}</Text>
         </View>
+      );
+    }
+    if (Platform.OS === "web") {
+      return (
+        <WebNativeButton
+          onPress={onPress}
+          disabled={!enabled}
+          ariaLabel={saveLabel}
+          minHeight={44}
+          borderRadius={RADII.pill}
+          style={{
+            ...styles.pill,
+            ...pillShell,
+            borderWidth: 0,
+            opacity: !dirty ? 0.5 : 1,
+            cursor: !enabled ? "not-allowed" : "pointer",
+          }}
+        >
+          <span
+            style={{
+              fontFamily: fonts.semibold,
+              fontSize: TYPE.body.fontSize,
+              lineHeight: `${TYPE.body.lineHeight}px`,
+              color: semanticPalette.inkInverse,
+            }}
+          >
+            {saveLabel}
+          </span>
+        </WebNativeButton>
       );
     }
     return (
@@ -98,12 +130,8 @@ export default function AccountSaveButton({
         disabled={!enabled}
         style={({ pressed }) => [
           styles.pill,
-          {
-            backgroundColor: semanticPalette.ink,
-            borderRadius: RADII.pill,
-            opacity: !dirty ? 0.5 : pressed ? 0.92 : 1,
-          },
-          Platform.OS === "web" && !enabled ? { cursor: "not-allowed" } : null,
+          pillShell,
+          { opacity: !dirty ? 0.5 : pressed ? 0.92 : 1 },
         ]}
         accessibilityRole="button"
         accessibilityState={{ disabled: !enabled }}

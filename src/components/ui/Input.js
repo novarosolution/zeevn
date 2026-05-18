@@ -6,6 +6,13 @@ import { fonts, icon } from "../../theme/tokens";
 import { inputOutlineWeb } from "../../theme/screenLayout";
 import { useTheme } from "../../context/ThemeContext";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import {
+  InputFieldShell,
+  textInputWebStyle,
+  WebNativeTextInput,
+  webDomInputStyle,
+} from "./inputWebHelpers";
+import { webZIndex } from "../../theme/webStacking";
 
 const FOCUS_MS = 180;
 const ERROR_SLOT_MIN = 20;
@@ -171,7 +178,7 @@ function InputBase({
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        wrap: { width: "100%" },
+        wrap: { width: "100%", ...webZIndex(1) },
         field: {
           minHeight: 40,
           borderRadius: RADII.md,
@@ -200,6 +207,10 @@ function InputBase({
           flexDirection: "row",
           alignItems: "center",
           minHeight: 38,
+          ...Platform.select({
+            web: { pointerEvents: "auto" },
+            default: {},
+          }),
         },
         iconLeftWrap: {
           paddingRight: 8,
@@ -211,6 +222,7 @@ function InputBase({
           width: 28,
           height: 28,
           alignItems: "center",
+          ...webZIndex(5),
         },
         eyeStack: {
           width: icon.sm,
@@ -328,6 +340,89 @@ function InputBase({
       ? { borderColor }
       : null;
 
+  const webInputType =
+    wantsSecure || passwordToggle
+      ? hidden
+        ? "password"
+        : "text"
+      : keyboardType === "email-address"
+        ? "email"
+        : "text";
+
+  const webDomStyles = useMemo(
+    () => [
+      webDomInputStyle(semanticPalette, TYPE),
+      floatingLabel && label ? styles.inputFloated : null,
+      !editable ? { color: semanticPalette.inkSoft } : null,
+      inputStyle,
+    ],
+    [TYPE, editable, floatingLabel, inputStyle, label, semanticPalette, styles]
+  );
+
+  const textControl =
+    Platform.OS === "web" && !multiline ? (
+      <WebNativeTextInput
+        ref={resolvedInputRef}
+        id={inputNativeId}
+        testID={testID}
+        value={value}
+        onChangeText={onChangeText}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        placeholder={floatingLabel && label && !showFloating ? undefined : placeholder}
+        type={webInputType}
+        disabled={!editable}
+        autoComplete={autoComplete}
+        maxLength={maxLength}
+        onEnterSubmit={
+          returnKeyType === "go" || returnKeyType === "next" || returnKeyType === "done"
+            ? onSubmitEditing
+            : undefined
+        }
+        ariaDescribedBy={resolvedDescribedBy}
+        ariaInvalid={hasError}
+        ariaRequired={required}
+        inputStyle={webDomStyles}
+      />
+    ) : (
+      <TextInput
+        ref={resolvedInputRef}
+        value={value ?? ""}
+        onChangeText={onChangeText}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        placeholder={floatingLabel && label && !showFloating ? undefined : placeholder}
+        placeholderTextColor={semanticPalette.inkMuted}
+        secureTextEntry={effectiveSecure}
+        multiline={multiline}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+        autoComplete={autoComplete}
+        autoCorrect={autoCorrect}
+        autoFocus={autoFocus}
+        editable={editable}
+        maxLength={maxLength}
+        returnKeyType={returnKeyType}
+        onSubmitEditing={onSubmitEditing}
+        blurOnSubmit={blurOnSubmit}
+        textContentType={textContentType}
+        inputMode={inputMode}
+        importantForAutofill={importantForAutofill}
+        testID={testID}
+        accessibilityLabel={a11yLabel}
+        accessibilityHint={accessibilityHint}
+        accessibilityDescribedBy={resolvedDescribedBy}
+        nativeID={inputNativeId}
+        style={[
+          styles.input,
+          textInputWebStyle,
+          floatingLabel && label ? styles.inputFloated : null,
+          !editable ? { color: semanticPalette.inkSoft } : null,
+          inputStyle,
+        ]}
+      />
+    );
+
   const fieldBody = (
     <View style={[styles.innerRow, floatingLabel ? styles.floatingWrap : null]}>
       {iconLeft && !multiline ? (
@@ -354,49 +449,7 @@ function InputBase({
           {label}
         </Animated.Text>
       ) : null}
-      <TextInput
-        ref={resolvedInputRef}
-        value={value}
-        onChangeText={onChangeText}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        placeholder={floatingLabel && label && !showFloating ? undefined : placeholder}
-        placeholderTextColor={semanticPalette.inkMuted}
-        secureTextEntry={effectiveSecure}
-        multiline={multiline}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        autoComplete={autoComplete}
-        autoCorrect={autoCorrect}
-        autoFocus={autoFocus}
-        editable={editable}
-        maxLength={maxLength}
-        returnKeyType={returnKeyType}
-        onSubmitEditing={onSubmitEditing}
-        blurOnSubmit={blurOnSubmit}
-        textContentType={textContentType}
-        inputMode={inputMode}
-        importantForAutofill={importantForAutofill}
-        testID={testID}
-        accessibilityLabel={a11yLabel}
-        accessibilityHint={accessibilityHint}
-        accessibilityDescribedBy={resolvedDescribedBy}
-        nativeID={inputNativeId}
-        {...(Platform.OS === "web"
-          ? {
-              id: inputNativeId,
-              ...(resolvedDescribedBy ? { "aria-describedby": resolvedDescribedBy } : {}),
-              ...(hasError ? { "aria-invalid": true } : {}),
-              ...(required ? { "aria-required": true } : {}),
-            }
-          : {})}
-        style={[
-          styles.input,
-          floatingLabel && label ? styles.inputFloated : null,
-          !editable ? { color: semanticPalette.inkSoft } : null,
-          inputStyle,
-        ]}
-      />
+      {textControl}
       {passwordToggle && !multiline ? (
         <Pressable
           onPress={effectiveOnRightPress}
@@ -474,11 +527,14 @@ function InputBase({
           </Pressable>
         )
       ) : null}
-      <Pressable onPress={() => resolvedInputRef.current?.focus?.()} disabled={!editable}>
+      <InputFieldShell
+        editable={editable}
+        onFocusField={() => resolvedInputRef.current?.focus?.()}
+      >
         <FieldWrapper style={[fieldShellStyle, animatedFieldStyle]}>
           {fieldBody}
         </FieldWrapper>
-      </Pressable>
+      </InputFieldShell>
       <View style={styles.errorSlot}>
         {errorText ? (
           <Animated.Text

@@ -30,12 +30,71 @@ import {
   isBiometricLoginAvailable,
   promptBiometricOptInAfterLogin,
 } from "../utils/biometricAuth";
+import { WebTextLink } from "../components/ui/inputWebHelpers";
 
 const copy = AUTH_SCREEN.login;
 const shared = AUTH_SCREEN.shared;
 
 function RememberMeCheckbox({ checked, onToggle, label }) {
   const { semanticPalette, TYPE } = useTheme();
+  const box = (
+    <View
+      style={{
+        width: 18,
+        height: 18,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: checked ? semanticPalette.ink : semanticPalette.line,
+        backgroundColor: checked ? semanticPalette.ink : semanticPalette.surface,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {checked ? <Ionicons name="checkmark" size={12} color={semanticPalette.inkInverse} /> : null}
+    </View>
+  );
+  const labelText = (
+    <Text
+      style={{
+        fontFamily: fonts.regular,
+        fontSize: TYPE.small.fontSize,
+        lineHeight: TYPE.small.lineHeight,
+        color: semanticPalette.inkSoft,
+      }}
+    >
+      {label}
+    </Text>
+  );
+
+  if (Platform.OS === "web") {
+    return (
+      <button
+        type="button"
+        role="checkbox"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={onToggle}
+        className="zv-web-text-link"
+        style={{
+          display: "inline-flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 8,
+          flex: "0 0 auto",
+          width: "auto",
+          height: "auto",
+          background: "none",
+          border: "none",
+          padding: 0,
+          cursor: "pointer",
+        }}
+      >
+        {box}
+        {label}
+      </button>
+    );
+  }
+
   return (
     <Pressable
       accessibilityRole="checkbox"
@@ -44,30 +103,8 @@ function RememberMeCheckbox({ checked, onToggle, label }) {
       onPress={onToggle}
       style={({ pressed }) => [{ flexDirection: "row", alignItems: "center", gap: 8, opacity: pressed ? 0.75 : 1 }]}
     >
-      <View
-        style={{
-          width: 18,
-          height: 18,
-          borderRadius: 4,
-          borderWidth: 1,
-          borderColor: checked ? semanticPalette.ink : semanticPalette.line,
-          backgroundColor: checked ? semanticPalette.ink : semanticPalette.surface,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {checked ? <Ionicons name="checkmark" size={12} color={semanticPalette.inkInverse} /> : null}
-      </View>
-      <Text
-        style={{
-          fontFamily: fonts.regular,
-          fontSize: TYPE.small.fontSize,
-          lineHeight: TYPE.small.lineHeight,
-          color: semanticPalette.inkSoft,
-        }}
-      >
-        {label}
-      </Text>
+      {box}
+      {labelText}
     </Pressable>
   );
 }
@@ -92,6 +129,7 @@ export default function LoginScreen({ navigation }) {
     isSubmitting,
     slowHint,
     networkError,
+    timeoutError,
     serverError,
     rateLimitUntil,
     isRateLimited,
@@ -99,12 +137,14 @@ export default function LoginScreen({ navigation }) {
     setServerError,
   } = useAuthSubmit();
 
+  const handleDraftLoaded = useCallback((draft) => {
+    if (draft?.email) setEmail(draft.email);
+  }, []);
+
   const lifecycle = useAuthScreenLifecycle({
     navigation,
     screen: "login",
-    onDraftLoaded: (draft) => {
-      if (draft?.email) setEmail(draft.email);
-    },
+    onDraftLoaded: handleDraftLoaded,
     toastMessage: shared.alreadySignedInToast,
   });
 
@@ -124,8 +164,20 @@ export default function LoginScreen({ navigation }) {
   }, []);
 
   useEffect(() => {
-    lifecycle.persistDraft({ email });
+    const timer = setTimeout(() => {
+      lifecycle.persistDraft({ email });
+    }, 400);
+    return () => clearTimeout(timer);
   }, [email, lifecycle]);
+
+  const emailPrefilledRef = useRef(false);
+  useEffect(() => {
+    if (emailPrefilledRef.current) return;
+    const prefill = normalizeEmail(String(route.params?.email || ""));
+    if (!prefill) return;
+    emailPrefilledRef.current = true;
+    setEmail(prefill);
+  }, [route.params?.email]);
 
   const showSessionBanner = Boolean(route.params?.sessionExpired);
 
@@ -329,7 +381,7 @@ export default function LoginScreen({ navigation }) {
     const onKeyDown = (event) => {
       if (event.key !== "Enter" || event.defaultPrevented) return;
       const tag = event.target?.tagName?.toLowerCase?.();
-      if (tag === "textarea" || tag === "button") return;
+      if (tag === "textarea" || tag === "button" || tag === "input") return;
       event.preventDefault();
       handleLogin();
     };
@@ -438,22 +490,51 @@ export default function LoginScreen({ navigation }) {
           onToggle={() => setRememberMe((v) => !v)}
           label={copy.rememberMe}
         />
-        <Pressable
-          style={styles.forgotLink}
-          accessibilityRole="link"
-          accessibilityHint="Opens password recovery"
-          onPress={() => navigation.navigate("ForgotPassword")}
-          onHoverIn={() => Platform.OS === "web" && setForgotHover(true)}
-          onHoverOut={() => Platform.OS === "web" && setForgotHover(false)}
-        >
-          <Text style={styles.forgotText}>{copy.forgotLink}</Text>
-        </Pressable>
+        {Platform.OS === "web" ? (
+          <WebTextLink
+            onPress={() => navigation.navigate("ForgotPassword")}
+            ariaLabel={copy.forgotLink}
+            style={styles.forgotLink}
+          >
+            <span
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: TYPE.small.fontSize,
+                lineHeight: `${TYPE.small.lineHeight}px`,
+                color: semanticPalette.accent,
+                textDecoration: forgotHover ? "underline" : "none",
+              }}
+              onMouseEnter={() => setForgotHover(true)}
+              onMouseLeave={() => setForgotHover(false)}
+            >
+              {copy.forgotLink}
+            </span>
+          </WebTextLink>
+        ) : (
+          <Pressable
+            style={styles.forgotLink}
+            accessibilityRole="link"
+            accessibilityHint="Opens password recovery"
+            onPress={() => navigation.navigate("ForgotPassword")}
+            onHoverIn={() => Platform.OS === "web" && setForgotHover(true)}
+            onHoverOut={() => Platform.OS === "web" && setForgotHover(false)}
+          >
+            <Text style={styles.forgotText}>{copy.forgotLink}</Text>
+          </Pressable>
+        )}
       </View>
 
       <View style={styles.ctaBlock}>
         {rateLimitUntil ? <AuthRateLimitCard untilMs={rateLimitUntil} /> : null}
         {serverError && !rateLimitUntil ? <AuthErrorCard message={serverError} /> : null}
-        {networkError ? (
+        {timeoutError ? (
+          <AuthErrorCard
+            message={shared.timeoutError}
+            retryLabel={shared.retryCta}
+            onRetry={handleLogin}
+          />
+        ) : null}
+        {networkError && !timeoutError ? (
           <AuthErrorCard
             message={shared.networkError}
             retryLabel={shared.retryCta}
@@ -510,17 +591,40 @@ export default function LoginScreen({ navigation }) {
 
       <View style={styles.footerRow}>
         <Text style={styles.footerLead}>{copy.footerLabel}</Text>
-        <Pressable
-          accessibilityRole="link"
-          accessibilityHint="Opens registration"
-          onPress={() => navigation.navigate("Register")}
-          onHoverIn={() => Platform.OS === "web" && setFooterLinkHover(true)}
-          onHoverOut={() => Platform.OS === "web" && setFooterLinkHover(false)}
-          style={styles.footerLink}
-        >
-          <Text style={styles.footerLinkText}>{copy.footerLink}</Text>
-          <Ionicons name="chevron-forward" size={14} color={semanticPalette.accent} />
-        </Pressable>
+        {Platform.OS === "web" ? (
+          <WebTextLink
+            onPress={() => navigation.navigate("Register")}
+            ariaLabel={copy.footerLink}
+            style={[styles.footerLink, { display: "inline-flex", flexDirection: "row", alignItems: "center", gap: 2 }]}
+          >
+            <span
+              style={{
+                fontFamily: fonts.semibold,
+                fontSize: 13,
+                lineHeight: "18px",
+                color: semanticPalette.accent,
+                textDecoration: footerLinkHover ? "underline" : "none",
+              }}
+              onMouseEnter={() => setFooterLinkHover(true)}
+              onMouseLeave={() => setFooterLinkHover(false)}
+            >
+              {copy.footerLink}
+            </span>
+            <Ionicons name="chevron-forward" size={14} color={semanticPalette.accent} />
+          </WebTextLink>
+        ) : (
+          <Pressable
+            accessibilityRole="link"
+            accessibilityHint="Opens registration"
+            onPress={() => navigation.navigate("Register")}
+            onHoverIn={() => Platform.OS === "web" && setFooterLinkHover(true)}
+            onHoverOut={() => Platform.OS === "web" && setFooterLinkHover(false)}
+            style={styles.footerLink}
+          >
+            <Text style={styles.footerLinkText}>{copy.footerLink}</Text>
+            <Ionicons name="chevron-forward" size={14} color={semanticPalette.accent} />
+          </Pressable>
+        )}
       </View>
     </AuthShell>
   );

@@ -21,7 +21,13 @@ export const WEB_Z_INDEX = {
   sticky: 1050,
   dropdown: 1200,
   overlay: 1100,
+  content: 1,
+  authForm: 20,
+  authInteractive: 30,
+  toast: 9999,
 };
+
+export { webZIndex, webElevatedLayer, webDecorLayer, webFixedLayer } from "./webStacking";
 
 /** Root shell: full viewport height on web so the layout feels like a real page. */
 export const webRootStyle = Platform.select({
@@ -110,6 +116,28 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
       }
       a, button, [role="button"], [role="tab"] {
         transition: box-shadow 180ms ease, opacity 180ms ease, background-color 180ms ease, border-color 180ms ease;
+      }
+      /* RN Web (css-view-*): z-index only applies with non-static positioning */
+      [data-zv-elevated="true"] {
+        position: relative;
+        pointer-events: auto;
+      }
+      [data-zv-decor="true"] {
+        pointer-events: none;
+      }
+      button.zv-web-button,
+      button[data-zv-button="true"] {
+        box-sizing: border-box !important;
+        flex-shrink: 0 !important;
+        align-self: flex-start !important;
+        overflow: hidden;
+      }
+      button.zv-web-text-link,
+      button[role="checkbox"] {
+        flex: 0 0 auto;
+        height: auto;
+        width: auto;
+        max-height: none;
       }
       @media (max-width: 760px) {
         ::-webkit-scrollbar {

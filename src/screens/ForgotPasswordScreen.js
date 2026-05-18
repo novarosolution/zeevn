@@ -25,6 +25,7 @@ const shared = AUTH_SCREEN.shared;
 
 function ForgotPasswordSuccess({
   email,
+  devLink,
   onOpenMail,
   onResend,
   onUseDifferentEmail,
@@ -72,6 +73,34 @@ function ForgotPasswordSuccess({
       >
         {copy.expiryNote}
       </Text>
+      <Text
+        style={{
+          fontFamily: fonts.regular,
+          fontSize: 12,
+          lineHeight: 17,
+          color: semanticPalette.inkMuted,
+          textAlign: "center",
+        }}
+      >
+        {copy.spamNote}
+      </Text>
+      {devLink ? (
+        <Text
+          selectable
+          style={{
+            fontFamily: fonts.regular,
+            fontSize: 11,
+            lineHeight: 16,
+            color: semanticPalette.inkSoft,
+            textAlign: "center",
+            maxWidth: 360,
+          }}
+        >
+          {copy.devResetLink}
+          {"\n"}
+          {devLink}
+        </Text>
+      ) : null}
       <View style={{ width: "100%", gap: SPACING.sm }}>
         <Button variant="secondary" size="lg" fullWidth label={copy.openMailApp} onPress={onOpenMail} />
         <Pressable
@@ -121,6 +150,7 @@ export default function ForgotPasswordScreen({ navigation }) {
   const [sent, setSent] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
   const [resendSeconds, setResendSeconds] = useState(0);
+  const [devLink, setDevLink] = useState("");
   const [footerLinkHover, setFooterLinkHover] = useState(false);
   const { semanticPalette, TYPE, SPACING } = useTheme();
 
@@ -129,6 +159,7 @@ export default function ForgotPasswordScreen({ navigation }) {
     isSubmitting: busy,
     slowHint,
     networkError,
+    timeoutError,
     serverError,
     rateLimitUntil,
     isRateLimited,
@@ -219,8 +250,9 @@ export default function ForgotPasswordScreen({ navigation }) {
 
     await runSubmit(async (signal) => {
       const captchaToken = await getAuthCaptchaToken("forgot_password");
-      await forgotPasswordRequest({ email: em, signal, captchaToken });
+      const data = await forgotPasswordRequest({ email: em, signal, captchaToken });
       setSubmittedEmail(em);
+      setDevLink(typeof data?.devLink === "string" ? data.devLink : "");
       setSent(true);
       setResendSeconds(60);
       lifecycle.clearDraft();
@@ -241,7 +273,7 @@ export default function ForgotPasswordScreen({ navigation }) {
     const onKeyDown = (event) => {
       if (event.key !== "Enter" || event.defaultPrevented) return;
       const tag = event.target?.tagName?.toLowerCase?.();
-      if (tag === "textarea" || tag === "button") return;
+      if (tag === "textarea" || tag === "button" || tag === "input") return;
       event.preventDefault();
       submit();
     };
@@ -260,7 +292,8 @@ export default function ForgotPasswordScreen({ navigation }) {
     clearErrors();
     await runSubmit(async (signal) => {
       const captchaToken = await getAuthCaptchaToken("forgot_password");
-      await forgotPasswordRequest({ email: submittedEmail, signal, captchaToken });
+      const data = await forgotPasswordRequest({ email: submittedEmail, signal, captchaToken });
+      if (typeof data?.devLink === "string") setDevLink(data.devLink);
       setResendSeconds(60);
       return true;
     });
@@ -270,6 +303,7 @@ export default function ForgotPasswordScreen({ navigation }) {
     setSent(false);
     setSubmittedEmail("");
     setResendSeconds(0);
+    setDevLink("");
     setSubmitAttempted(false);
     setTouched(false);
     setEmail("");
@@ -309,6 +343,7 @@ export default function ForgotPasswordScreen({ navigation }) {
         success={
           <ForgotPasswordSuccess
             email={submittedEmail}
+            devLink={devLink}
             onOpenMail={openMailApp}
             onResend={handleResend}
             onUseDifferentEmail={handleUseDifferentEmail}
@@ -350,7 +385,10 @@ export default function ForgotPasswordScreen({ navigation }) {
             <View style={styles.ctaBlock}>
               {rateLimitUntil ? <AuthRateLimitCard untilMs={rateLimitUntil} /> : null}
               {serverError && !rateLimitUntil ? <AuthErrorCard message={serverError} /> : null}
-              {networkError ? (
+              {timeoutError ? (
+                <AuthErrorCard message={shared.timeoutError} retryLabel={shared.retryCta} onRetry={submit} />
+              ) : null}
+              {networkError && !timeoutError ? (
                 <AuthErrorCard message={shared.networkError} retryLabel={shared.retryCta} onRetry={submit} />
               ) : null}
 

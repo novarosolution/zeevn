@@ -5,6 +5,7 @@ import { fonts, icon, lineHeight, spacing, typography } from "../../theme/tokens
 import { inputOutlineWeb } from "../../theme/screenLayout";
 import { useTheme } from "../../context/ThemeContext";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import { InputFieldShell, textInputWebStyle } from "./inputWebHelpers";
 
 /**
  * Premium text input with floating label, focus glow, error state, and icon
@@ -116,18 +117,18 @@ function PremiumInputBase({
     : iconRight;
   const effectiveOnRightPress = passwordToggle ? togglePassword : onIconRightPress;
 
+  const fieldChromeStyle = [
+    styles.field,
+    { borderColor },
+    focused ? styles.fieldFocused : null,
+    hasError ? styles.fieldError : null,
+    !editable ? styles.fieldDisabled : null,
+  ];
+
   return (
     <View style={[styles.wrap, style]}>
-      <Pressable
-        onPress={() => inputRef.current?.focus?.()}
-        style={[
-          styles.field,
-          { borderColor },
-          focused ? styles.fieldFocused : null,
-          hasError ? styles.fieldError : null,
-          !editable ? styles.fieldDisabled : null,
-        ]}
-      >
+      <InputFieldShell editable={editable} onFocusField={() => inputRef.current?.focus?.()}>
+        <View style={fieldChromeStyle}>
         {iconLeft ? (
           <View style={styles.iconLeftWrap}>
             {typeof iconLeft === "string" ? (
@@ -156,7 +157,7 @@ function PremiumInputBase({
           ) : null}
           <TextInput
             ref={inputRef}
-            value={value}
+            value={value ?? ""}
             onChangeText={onChangeText}
             onFocus={handleFocus}
             onBlur={handleBlur}
@@ -182,6 +183,7 @@ function PremiumInputBase({
             accessibilityHint={accessibilityHint}
             style={[
               styles.input,
+              textInputWebStyle,
               { color: semanticPalette.ink },
               label ? styles.inputWithLabel : null,
               multiline ? styles.inputMultiline : null,
@@ -206,7 +208,8 @@ function PremiumInputBase({
             )}
           </Pressable>
         ) : null}
-      </Pressable>
+        </View>
+      </InputFieldShell>
       {errorText ? (
         <View style={styles.helperRow}>
           <Ionicons name="alert-circle" size={icon.tiny} color={semanticPalette.sale} />
@@ -232,6 +235,10 @@ function createStyles(semanticPalette, multiline, RADII) {
       width: "100%",
       flexDirection: "row",
       alignItems: multiline ? "flex-start" : "center",
+      ...Platform.select({
+        web: { pointerEvents: "auto" },
+        default: {},
+      }),
       borderWidth: 1,
       borderRadius: RADII.md,
       backgroundColor: semanticPalette.surfaceAlt,
@@ -279,6 +286,10 @@ function createStyles(semanticPalette, multiline, RADII) {
       paddingRight: 2,
       alignSelf: multiline ? "flex-start" : "center",
       paddingTop: multiline ? 14 : 0,
+      ...Platform.select({
+        web: { zIndex: 2 },
+        default: {},
+      }),
     },
     inputCol: {
       flex: 1,

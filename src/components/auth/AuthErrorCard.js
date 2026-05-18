@@ -1,5 +1,6 @@
 import React from "react";
-import { Pressable, Text, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
+import { WebTextLink } from "../ui/inputWebHelpers";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import Card from "../ui/Card";
@@ -31,19 +32,35 @@ export default function AuthErrorCard({ message, onRetry, retryLabel }) {
               {message}
             </Text>
             {onRetry ? (
-              <Pressable accessibilityRole="button" onPress={onRetry} hitSlop={8}>
-                <Text
-                  style={{
-                    fontFamily: fonts.semibold,
-                    fontSize: TYPE.small.fontSize,
-                    lineHeight: TYPE.small.lineHeight,
-                    color: semanticPalette.accent,
-                    textDecorationLine: "underline",
-                  }}
-                >
-                  {retryLabel}
-                </Text>
-              </Pressable>
+              Platform.OS === "web" ? (
+                <WebTextLink onPress={onRetry} ariaLabel={retryLabel}>
+                  <span
+                    style={{
+                      fontFamily: fonts.semibold,
+                      fontSize: TYPE.small.fontSize,
+                      lineHeight: `${TYPE.small.lineHeight}px`,
+                      color: semanticPalette.accent,
+                      textDecoration: "underline",
+                    }}
+                  >
+                    {retryLabel}
+                  </span>
+                </WebTextLink>
+              ) : (
+                <Pressable accessibilityRole="button" onPress={onRetry} hitSlop={8}>
+                  <Text
+                    style={{
+                      fontFamily: fonts.semibold,
+                      fontSize: TYPE.small.fontSize,
+                      lineHeight: TYPE.small.lineHeight,
+                      color: semanticPalette.accent,
+                      textDecorationLine: "underline",
+                    }}
+                  >
+                    {retryLabel}
+                  </Text>
+                </Pressable>
+              )
             ) : null}
           </View>
         </View>

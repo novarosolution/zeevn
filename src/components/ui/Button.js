@@ -11,6 +11,8 @@ import { fonts } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import ProgressRing from "./ProgressRing";
+import { flattenStyleForDom, WebNativeButton } from "./inputWebHelpers";
+import { splitWebButtonLayoutStyle, WEB_BUTTON_SIZES } from "./webButtonLayout";
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -85,7 +87,7 @@ function ButtonBase({
           ...(fullWidth ? { width: "100%", alignSelf: "stretch" } : { alignSelf: "flex-start" }),
           maxWidth: "100%",
           borderRadius: RADII.pill,
-          overflow: Platform.OS === "web" ? "visible" : "hidden",
+          overflow: "hidden",
         },
         press: {
           borderRadius: RADII.pill,
@@ -98,7 +100,7 @@ function ButtonBase({
           alignItems: "center",
           justifyContent: "center",
           flexDirection: "row",
-          alignSelf: fullWidth ? "stretch" : "flex-start",
+          alignSelf: fullWidth && Platform.OS !== "web" ? "stretch" : "flex-start",
           opacity: disabled ? 0.5 : 1,
           ...Platform.select({
             web: {
@@ -183,6 +185,41 @@ function ButtonBase({
     (typeof displayText === "string" ? displayText : undefined) ||
     (typeof resolvedLabel === "string" ? resolvedLabel : undefined);
 
+  if (Platform.OS === "web") {
+    const isDisabled = disabled || loading;
+    const { outer: layoutStyle, press: pressStyle } = splitWebButtonLayoutStyle(style);
+    return (
+      <WebNativeButton
+        onPress={onPress}
+        disabled={isDisabled}
+        loading={loading}
+        testID={testID}
+        ariaLabel={a11yLabel}
+        fullWidth={fullWidth}
+        minHeight={tokens.minHeight}
+        borderRadius={RADII.pill}
+        style={[layoutStyle, styles.press, pressStyle]}
+        contentStyle={flattenStyleForDom([styles.row, { gap: tokens.gap }])}
+      >
+        {loading ? <ProgressRing size="sm" spinning reducedMotion={reducedMotion} accessible={false} /> : iconLeft}
+        {resolvedLabel != null || loading ? (
+          <span
+            style={flattenStyleForDom([
+              styles.label,
+              textStyle,
+              { whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" },
+            ])}
+          >
+            {displayText}
+          </span>
+        ) : (
+          children
+        )}
+        {!loading ? iconRight : null}
+      </WebNativeButton>
+    );
+  }
+
   return (
     <Animated.View style={[styles.outer, motionStyle, style]}>
       <AnimatedPressable
@@ -215,11 +252,7 @@ function ButtonBase({
   );
 }
 
-const SIZE_TOKENS = {
-  sm: { padV: 6, padH: 14, gap: 6, minHeight: 34 },
-  md: { padV: 10, padH: 18, gap: 8, minHeight: 42 },
-  lg: { padV: 12, padH: 22, gap: 10, minHeight: 48 },
-};
+const SIZE_TOKENS = WEB_BUTTON_SIZES;
 
 const Button = memo(ButtonBase);
 

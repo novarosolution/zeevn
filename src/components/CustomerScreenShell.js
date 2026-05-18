@@ -15,6 +15,7 @@ import {
   getCustomerShellGradient,
 } from "../theme/customerAlchemy";
 import { getSemanticColors } from "../theme/tokens";
+import { webElevatedLayer } from "../theme/webStacking";
 import { useScrollOffsetValue } from "../hooks/useScrollOffset";
 import useReducedMotion from "../hooks/useReducedMotion";
 
@@ -260,7 +261,12 @@ export default function CustomerScreenShell({
           style={[styles.topSheen, styles.peNone]}
         />
       ) : null}
-      <View style={[styles.content, style]}>{children}</View>
+      <View
+        {...(isWeb ? { dataSet: { zvElevated: "true" } } : {})}
+        style={[styles.content, webElevatedLayer(1), style]}
+      >
+        {children}
+      </View>
     </View>
   );
 }
@@ -352,6 +358,10 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     minHeight: Platform.OS === "web" ? "100dvh" : undefined,
+    ...Platform.select({
+      web: { position: "relative", zIndex: 1 },
+      default: {},
+    }),
   },
   topSheen: {
     position: "absolute",

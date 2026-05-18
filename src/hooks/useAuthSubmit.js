@@ -13,12 +13,14 @@ export default function useAuthSubmit() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [slowHint, setSlowHint] = useState(false);
   const [networkError, setNetworkError] = useState(false);
+  const [timeoutError, setTimeoutError] = useState(false);
   const [serverError, setServerError] = useState("");
   const [rateLimitUntil, setRateLimitUntil] = useState(null);
   const abortRef = useRef(null);
 
   const clearErrors = useCallback(() => {
     setNetworkError(false);
+    setTimeoutError(false);
     setServerError("");
   }, []);
 
@@ -54,6 +56,7 @@ export default function useAuthSubmit() {
       setIsSubmitting(true);
       setSlowHint(false);
       setNetworkError(false);
+      setTimeoutError(false);
       setServerError("");
 
       const controller = new AbortController();
@@ -65,7 +68,7 @@ export default function useAuthSubmit() {
         return await task(controller.signal);
       } catch (err) {
         if (err?.name === "AbortError" || err?.aborted || controller.signal.aborted) {
-          setNetworkError(true);
+          setTimeoutError(true);
           return null;
         }
         if (err?.isNetwork) {
@@ -104,6 +107,7 @@ export default function useAuthSubmit() {
     isSubmitting,
     slowHint,
     networkError,
+    timeoutError,
     serverError,
     rateLimitMessage,
     rateLimitUntil,
@@ -111,5 +115,6 @@ export default function useAuthSubmit() {
     clearErrors,
     setServerError,
     setNetworkError,
+    setTimeoutError,
   };
 }

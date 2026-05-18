@@ -22,6 +22,7 @@ import { COLORS } from "../../styles/designSystem";
 import { FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, icon, spacing } from "../../theme/tokens";
+import { WEB_Z_INDEX, webDecorLayer, webElevatedLayer } from "../../theme/web";
 
 const SPLIT_BREAKPOINT = 768;
 const PHONE_BANNER_HEIGHT = 220;
@@ -89,15 +90,21 @@ function EditorialPane({ split, leftPane, heroImageUri, heroBannerA11y }) {
   const overline = `■ ${leftPane.overline}`;
   return (
     <View
-      style={[styles.editorialShell, split ? styles.editorialSplit : styles.editorialStacked]}
+      style={[
+        styles.editorialShell,
+        split ? styles.editorialSplit : styles.editorialStacked,
+        webDecorLayer(0),
+      ]}
       accessibilityLabel={heroBannerA11y}
       accessible
       {...(Platform.OS !== "web" ? { accessibilityRole: "image" } : {})}
+      {...(Platform.OS === "web" ? { dataSet: { zvDecor: "true" } } : {})}
     >
       <Image
         source={{ uri: heroImageUri }}
         style={[StyleSheet.absoluteFill, styles.editorialHeroImage]}
         contentFit="cover"
+        {...(Platform.OS === "web" ? { pointerEvents: "none" } : {})}
       />
       <LinearGradient
         colors={["rgba(200,169,126,0.10)", "transparent"]}
@@ -180,7 +187,7 @@ export default function AuthShell({
           width: "100%",
           flex: Platform.OS === "web" && split ? 1 : undefined,
           ...Platform.select({
-            web: split ? { minHeight: "100vh" } : {},
+            web: split ? { minHeight: "100vh", position: "relative", zIndex: 0 } : {},
             default: {},
           }),
         },
@@ -189,6 +196,7 @@ export default function AuthShell({
           maxWidth: split ? FORM_COLUMN_MAX_WIDTH : undefined,
           flexGrow: split ? 1 : undefined,
           flexShrink: split ? 0 : undefined,
+          ...webElevatedLayer(WEB_Z_INDEX.authForm),
           backgroundColor: semanticPalette.bg,
           paddingHorizontal: split ? spacing.xxl : spacing.lg,
           paddingTop: split ? 0 : spacing.xl,
@@ -203,6 +211,11 @@ export default function AuthShell({
           width: "100%",
           maxWidth: FORM_MAX_WIDTH,
           alignSelf: "center",
+          ...webElevatedLayer(WEB_Z_INDEX.authInteractive),
+        },
+        mainContent: {
+          width: "100%",
+          ...webElevatedLayer(WEB_Z_INDEX.authInteractive + 1),
         },
         backLink: {
           alignSelf: "flex-start",
@@ -303,7 +316,10 @@ export default function AuthShell({
               heroBannerA11y={layout.heroBannerA11y}
             />
 
-            <View style={shellStyles.formCol}>
+            <View
+              style={shellStyles.formCol}
+              {...(Platform.OS === "web" ? { dataSet: { zvElevated: "true" } } : {})}
+            >
               <View style={shellStyles.formInner}>
                 {split && showBackLink ? (
                   <Pressable
@@ -321,7 +337,8 @@ export default function AuthShell({
                 <View
                   nativeID="auth-main-content"
                   accessibilityRole="main"
-                  {...(Platform.OS === "web" ? { tabIndex: -1 } : {})}
+                  style={shellStyles.mainContent}
+                  {...(Platform.OS === "web" ? { tabIndex: -1, dataSet: { zvElevated: "true" } } : {})}
                 >
                   {!bareForm ? (
                     <>
@@ -433,7 +450,10 @@ const styles = StyleSheet.create({
   editorialInner: {
     flex: 1,
     justifyContent: "space-between",
-    zIndex: 1,
+    ...Platform.select({
+      web: { position: "relative", zIndex: 1 },
+      default: { zIndex: 1 },
+    }),
   },
   editorialInnerSplit: {
     paddingHorizontal: spacing.xxl,

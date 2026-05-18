@@ -44,7 +44,8 @@ npm install
 - Example local DB: `mongodb://127.0.0.1:27017/zeevan`
 - `JWT_SECRET`
 - `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` (GoDaddy: `smtpout.secureserver.net`, port `465`)
-- `APP_WEB_URL` (public site URL for email links)
+- `APP_WEB_URL` (public site URL for email links, no trailing slash)
+- `CORS_ORIGINS` (optional comma-separated extra origins, e.g. `http://localhost:19006` for Expo web)
 - `RAZORPAY_KEY_ID` — public key id from the Razorpay dashboard (test or live).
 - `RAZORPAY_KEY_SECRET` — secret key, **server-only**.
 - `RAZORPAY_WEBHOOK_SECRET` — webhook secret you set when creating the

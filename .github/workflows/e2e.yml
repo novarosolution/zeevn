@@ -55,14 +55,28 @@ jobs:
       - name: Seed E2E catalog product
         run: node backend/scripts/seed-e2e.js
 
+      - name: Wait for Mongo service
+        run: npx wait-on tcp:127.0.0.1:27017 --timeout 120000
+
       - name: Start API
-        working-directory: backend
-        run: node server.js &
+        run: |
+          nohup node backend/server.js > /tmp/zeevan-api.log 2>&1 &
+          echo $! > /tmp/zeevan-api.pid
         env:
           MONGO_URI: mongodb://127.0.0.1:27017/zeevan_e2e
 
       - name: Wait for API
-        run: npx wait-on http://127.0.0.1:5001 --timeout 60000
+        run: |
+          npx wait-on http://127.0.0.1:5001 --timeout 120000 || {
+            echo "API did not become ready on :5001. Startup log:"
+            if [ -f /tmp/zeevan-api.log ]; then
+              sed -n '1,220p' /tmp/zeevan-api.log
+            fi
+            if [ -f /tmp/zeevan-api.pid ]; then
+              echo "API PID: $(cat /tmp/zeevan-api.pid)"
+            fi
+            exit 1
+          }
 
       - name: Build static web export
         run: npm run export:web

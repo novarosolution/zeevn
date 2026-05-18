@@ -15,9 +15,7 @@ const hasRazorpay =
   Boolean(process.env.RAZORPAY_KEY_SECRET);
 
 test.describe("Checkout E2E", () => {
-  test.skip(!hasRazorpay, "Set RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET (and EXPO_PUBLIC_RAZORPAY_KEY_ID for web build)");
-
-  test("sign in → cart → Razorpay test pay → order in account", async ({ page }) => {
+  test("sign in → cart → checkout pay (Razorpay or COD) → order in account", async ({ page }) => {
     const email = uniqueEmail("checkout");
     const password = E2E_PASSWORD;
     const productId = await ensureE2EProductId();
@@ -56,11 +54,22 @@ test.describe("Checkout E2E", () => {
 
     await expect(page.getByText(/secure checkout/i)).toBeVisible({ timeout: 15_000 });
 
+    let usedOnlinePayment = false;
+    if (hasRazorpay) {
+      const onlinePaymentTab = page.getByRole("button", { name: /online payment/i }).first();
+      if ((await onlinePaymentTab.count()) > 0 && (await onlinePaymentTab.isEnabled())) {
+        await onlinePaymentTab.click();
+        usedOnlinePayment = true;
+      }
+    }
+
     const placeOrder = page.getByRole("button", { name: /place order/i });
     await expect(placeOrder).toBeEnabled({ timeout: 15_000 });
     await placeOrder.click();
 
-    await completeRazorpayTestPayment(page);
+    if (usedOnlinePayment) {
+      await completeRazorpayTestPayment(page);
+    }
 
     await expect(page.getByText(/order placed/i)).toBeVisible({ timeout: 60_000 });
 

@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Platform, Pressable } from "react-native";
+import { Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   interpolateColor,
@@ -54,7 +54,7 @@ function CatalogViewToggleButton({
           <Ionicons name={iconName} size={iconSize} color={c.textSecondary} />
         </Animated.View>
         <Animated.View style={[styles.catalogViewToggleIconLayer, activeIconStyle]}>
-          <Ionicons name={iconName} size={iconSize} color="#FFFFFF" />
+          <Ionicons name={iconName} size={iconSize} color={c.onPrimary} />
         </Animated.View>
       </Animated.View>
     </Pressable>

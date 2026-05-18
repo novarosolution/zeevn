@@ -97,6 +97,8 @@ export function normalizeProduct(raw) {
     productType: String(raw.productType ?? raw.category ?? "").trim() || "General",
     showOnHome: raw.showOnHome !== false,
     homeOrder: Number.isFinite(Number(raw.homeOrder)) ? Number(raw.homeOrder) : 0,
+    featuredDeal: raw.featuredDeal === true,
+    dealEndsAt: raw.dealEndsAt ? String(raw.dealEndsAt) : "",
     brand: String(raw.brand ?? "").trim(),
     sku: String(raw.sku ?? "").trim(),
     unit,

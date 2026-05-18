@@ -1,5 +1,6 @@
 import React, { memo, useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useWindowDimensions } from "react-native";
 import { fonts } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import { headingA11yProps } from "../../utils/a11y";
@@ -17,23 +18,26 @@ function SectionHeaderBase({
   align = "left",
   headingLevel = 2,
   cardTitleLevel,
+  density = "default",
 }) {
   const { semanticPalette, TYPE, SPACING } = useTheme();
+  const { width } = useWindowDimensions();
   const overlineText = String(overline || "").trim();
   const isCenter = align === "center";
 
+  const isCatalogDensity = density === "catalog";
   const styles = useMemo(
     () =>
       StyleSheet.create({
         root: {
           width: "100%",
-          marginBottom: SPACING.lg,
+          marginBottom: isCatalogDensity ? (width >= 600 ? 20 : 16) : SPACING.lg,
         },
         overlineRow: {
           flexDirection: "row",
           alignItems: "center",
           gap: SPACING.sm,
-          marginBottom: SPACING.sm,
+          marginBottom: isCatalogDensity ? SPACING.xs : SPACING.sm,
           justifyContent: isCenter ? "center" : "flex-start",
         },
         square: {
@@ -44,9 +48,9 @@ function SectionHeaderBase({
         },
         overlineText: {
           fontFamily: fonts.semibold,
-          fontSize: TYPE.micro.fontSize,
-          lineHeight: TYPE.micro.lineHeight,
-          letterSpacing: 1.6,
+          fontSize: isCatalogDensity ? 10 : TYPE.micro.fontSize,
+          lineHeight: isCatalogDensity ? 12 : TYPE.micro.lineHeight,
+          letterSpacing: isCatalogDensity ? 1.1 : 1.6,
           textTransform: "uppercase",
           color: semanticPalette.accent,
           minWidth: 0,
@@ -68,14 +72,16 @@ function SectionHeaderBase({
           width: "100%",
           textAlign: isCenter ? "center" : "left",
           fontFamily: TYPE.serifFamily,
-          ...TYPE.h2,
+          ...(isCatalogDensity
+            ? { fontSize: 20, lineHeight: 24, letterSpacing: -0.2 }
+            : TYPE.h2),
           color: semanticPalette.ink,
         },
         subtitle: {
           width: "100%",
           textAlign: isCenter ? "center" : "left",
           fontFamily: fonts.regular,
-          ...TYPE.body,
+          ...(isCatalogDensity ? TYPE.caption : TYPE.body),
           color: semanticPalette.inkSoft,
         },
         actionInner: {
@@ -86,13 +92,22 @@ function SectionHeaderBase({
         },
         actionText: {
           fontFamily: fonts.semibold,
-          fontSize: TYPE.caption.fontSize,
-          lineHeight: TYPE.caption.lineHeight,
-          letterSpacing: 0.6,
-          color: semanticPalette.inkSoft,
+          fontSize: isCatalogDensity ? 12 : TYPE.caption.fontSize,
+          lineHeight: isCatalogDensity ? 16 : TYPE.caption.lineHeight,
+          letterSpacing: isCatalogDensity ? 0.2 : 0.6,
+          color: isCatalogDensity ? semanticPalette.accent : semanticPalette.inkSoft,
         },
       }),
-    [TYPE, SPACING, isCenter, semanticPalette.accent, semanticPalette.ink, semanticPalette.inkMuted, semanticPalette.inkSoft]
+    [
+      TYPE,
+      SPACING,
+      width,
+      isCatalogDensity,
+      isCenter,
+      semanticPalette.accent,
+      semanticPalette.ink,
+      semanticPalette.inkSoft,
+    ]
   );
 
   return (

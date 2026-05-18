@@ -23,6 +23,8 @@ export default function HomeSearchHeader({
   colors,
   isDark,
   deliveryAddress,
+  deliveryPromise,
+  isScrolled = false,
   unreadCount = 0,
   onPressAddress,
   onPressBell,
@@ -39,6 +41,7 @@ export default function HomeSearchHeader({
   const [isFocused, setIsFocused] = useState(false);
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [searchSegmentWidth, setSearchSegmentWidth] = useState(0);
+  const [rowWidth, setRowWidth] = useState(0);
   const placeholderOpacity = useRef(new Animated.Value(1)).current;
   const focusAnim = useRef(new Animated.Value(0)).current;
 
@@ -47,14 +50,13 @@ export default function HomeSearchHeader({
   }, [value]);
 
   const c = colors || {};
-  const surface = c.surface || "#FFFFFF";
-  const line = c.line || c.border || "#E8E6E1";
-  const ink = c.ink || c.textPrimary || "#0E0E0E";
-  const muted = c.muted || c.textMuted || "#6B7280";
-  const accent = c.accent || c.primary || "#C8A97E";
-  const surfaceAlt =
-    c.surfaceAlt ||
-    (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.03)");
+  const surface = c.surface;
+  const line = c.line || c.border;
+  const ink = c.ink || c.textPrimary;
+  const muted = c.muted || c.textMuted;
+  const inkSoft = c.inkSoft || c.textSecondary;
+  const accent = isDark ? c.accent : c.accentOnLight || c.accent;
+  const surfaceAlt = c.surfaceAlt;
 
   const placeholders = useMemo(() => {
     if (Array.isArray(HOME_SEARCH_UI.searchPlaceholders) && HOME_SEARCH_UI.searchPlaceholders.length > 0) {
@@ -99,8 +101,12 @@ export default function HomeSearchHeader({
     return () => clearInterval(timer);
   }, [inputValue, isFocused, placeholderOpacity, placeholders, reducedMotion]);
 
+  const addressWidthPx = rowWidth > 0 ? Math.max(120, Math.floor(rowWidth * 0.38)) : undefined;
+  const effectiveSearchWidth = rowWidth > 0 ? rowWidth - (addressWidthPx || 0) - 40 - homeSpacing.sm * 2 : searchSegmentWidth;
   const useTwoRows =
-    isPhone && (width < NARROW_FALLBACK_BREAKPOINT || (searchSegmentWidth > 0 && searchSegmentWidth < SEARCH_MIN_WIDTH));
+    isPhone &&
+    (width < NARROW_FALLBACK_BREAKPOINT ||
+      (effectiveSearchWidth > 0 && effectiveSearchWidth < SEARCH_MIN_WIDTH));
 
   const addressText = isPhone
     ? HOME_SEARCH_UI.locationCtaShort || "Set address"
@@ -164,6 +170,9 @@ export default function HomeSearchHeader({
 
   const addressPressLabel = getA11yLabel(deliveryAddress);
 
+  const resolvedPromiseLine =
+    String(deliveryPromise || "").trim() || "Reliable doorstep delivery";
+
   const renderAddressChip = (fillRow = false) => (
     <Pressable
       onPress={onPressAddress}
@@ -172,10 +181,10 @@ export default function HomeSearchHeader({
         {
           borderColor: line,
           paddingHorizontal: isPhone ? homeSpacing.md : homeSpacing.base,
-          width: !isPhone ? TABLET_ADDRESS_WIDTH : undefined,
-          maxWidth: isPhone && !fillRow ? "40%" : undefined,
+          width: isPhone ? addressWidthPx : TABLET_ADDRESS_WIDTH,
+          maxWidth: isPhone && !fillRow ? addressWidthPx || "38%" : undefined,
           flexGrow: fillRow ? 1 : 0,
-          backgroundColor: pressed ? surfaceAlt : "transparent",
+          backgroundColor: pressed ? surfaceAlt : surface,
           opacity: pressed ? 0.92 : 1,
         },
       ]}
@@ -183,10 +192,15 @@ export default function HomeSearchHeader({
       accessibilityLabel={addressPressLabel}
       hitSlop={2}
     >
-      <Ionicons name="location-outline" size={16} color={ink} />
-      <Text style={[styles.addressText, { color: ink }]} numberOfLines={1} ellipsizeMode="tail">
-        {addressText}
-      </Text>
+      <Ionicons name="location-outline" size={16} color={ink} style={styles.addressIcon} />
+      <View style={styles.addressTextWrap}>
+        <Text style={[styles.addressText, { color: ink }]} numberOfLines={1} ellipsizeMode="tail">
+          {addressText}
+        </Text>
+        <Text style={[styles.addressPromiseText, { color: inkSoft }]} numberOfLines={1} ellipsizeMode="tail">
+          {resolvedPromiseLine}
+        </Text>
+      </View>
       {showChevron ? <Ionicons name="chevron-down" size={14} color={muted} /> : null}
     </Pressable>
   );
@@ -199,6 +213,20 @@ export default function HomeSearchHeader({
           {
             borderColor: line,
             backgroundColor: surface,
+            borderBottomColor: isScrolled ? accent : line,
+            borderBottomWidth: isScrolled ? 1 : StyleSheet.hairlineWidth,
+            ...(isScrolled
+              ? Platform.select({
+                  web: {
+                    backdropFilter: "saturate(180%) blur(14px)",
+                    WebkitBackdropFilter: "saturate(180%) blur(14px)",
+                    backgroundColor: c.surfaceOverlay || surface,
+                  },
+                  default: {
+                    backgroundColor: surface,
+                  },
+                })
+              : null),
           },
         ]}
       >
@@ -264,7 +292,7 @@ export default function HomeSearchHeader({
             </Animated.View>
           </View>
         ) : (
-          <View style={[styles.row, { gap: rowGap }]}>
+          <View style={[styles.row, { gap: rowGap }]} onLayout={(event) => setRowWidth(Math.round(event.nativeEvent.layout.width || 0))}>
             {renderAddressChip(false)}
             <Animated.View
               onLayout={onSearchLayout}
@@ -274,7 +302,7 @@ export default function HomeSearchHeader({
                   flex: 1,
                   minWidth: SEARCH_MIN_WIDTH,
                   maxWidth: isPhone ? undefined : SEARCH_MAX_WIDTH,
-                  backgroundColor: focusBackground,
+                  backgroundColor: surfaceAlt,
                   borderColor: focusBorder,
                 },
               ]}
@@ -345,10 +373,10 @@ const styles = StyleSheet.create({
     paddingVertical: homeSpacing.sm,
     ...Platform.select({
       web: {
-        boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+        boxShadow: "0 1px 2px rgba(14,23,41,0.08)",
       },
       ios: {
-        shadowColor: "#000",
+        shadowColor: "#0E1729",
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.04,
         shadowRadius: 2,
@@ -364,7 +392,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   addressChip: {
-    height: 40,
+    minHeight: 40,
     borderWidth: 1,
     borderRadius: 999,
     flexDirection: "row",
@@ -372,11 +400,25 @@ const styles = StyleSheet.create({
     minWidth: 0,
     gap: homeSpacing.xs,
   },
+  addressIcon: {
+    alignSelf: "center",
+  },
+  addressTextWrap: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: "center",
+  },
   addressText: {
     flexShrink: 1,
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: homeType.uiMedium.fontFamily,
     fontWeight: "500",
+  },
+  addressPromiseText: {
+    fontSize: 10,
+    lineHeight: 12,
+    fontFamily: homeType.uiRegular.fontFamily,
+    marginTop: 1,
   },
   searchWrap: {
     height: 40,

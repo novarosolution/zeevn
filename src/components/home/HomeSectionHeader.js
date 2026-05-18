@@ -17,6 +17,7 @@ function HomeSectionHeader({ count, subtitle, onSeeAll, seeAllLabel = "See all",
       subtitle={resolvedSubtitle}
       actionLabel={seeAllLabel}
       onActionPress={onSeeAll}
+      density="catalog"
     />
   );
 }

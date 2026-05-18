@@ -1,5 +1,5 @@
 import { Platform, StyleSheet } from "react-native";
-import { fonts, icon, layout, lineHeight, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
+import { fonts, layout, lineHeight, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
 import { FONT_DISPLAY, FONT_DISPLAY_SEMI, ALCHEMY, HERITAGE } from "../../theme/customerAlchemy";
 import { WEB_HEADER_HEIGHT, WEB_Z_INDEX } from "../../theme/web";
 import { CUSTOMER_BOTTOM_NAV_BAR_HEIGHT } from "../../theme/screenLayout";
@@ -11,9 +11,9 @@ const HOME_HEADER_INK = "#0E0E0E";
 const HOME_LINE = "#E8E6E1";
 
 function createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth = 0, insets = { top: 0, bottom: 0 }) {
-  const sectionGap = windowWidth >= 600 ? homeSpacing["5xl"] : homeSpacing["4xl"];
+  const sectionGap = windowWidth >= 600 ? 40 : 32;
   const cardPadding = windowWidth >= 600 ? homeSpacing.lg : homeSpacing.base;
-  const productGridGap = windowWidth >= 600 ? homeSpacing.base : homeSpacing.md;
+  const productGridGap = windowWidth >= 600 ? 14 : 10;
   const safeTopInset = Number(insets?.top || 0);
   const safeBottomInset = Number(insets?.bottom || 0);
   return StyleSheet.create({
@@ -32,7 +32,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth = 0,
       width: "100%",
     },
     headerWrap: {
-      paddingBottom: Platform.select({ web: homeSpacing.lg, default: homeSpacing.base }),
+      paddingBottom: Platform.select({ web: homeSpacing.base, default: homeSpacing.sm }),
       ...Platform.select({
         web: { width: "100%", alignSelf: "stretch", minWidth: 0 },
         default: {},
@@ -1729,9 +1729,9 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth = 0,
       borderColor: isDark ? c.border : "#E8E6E1",
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: isDark ? c.border : "#E8E6E1",
-      paddingHorizontal: Platform.select({ web: homeSpacing["3xl"], default: homeSpacing.xl }),
-      paddingTop: Platform.select({ web: homeSpacing.xl, default: homeSpacing["2xl"] }),
-      paddingBottom: Platform.select({ web: homeSpacing["2xl"], default: homeSpacing["3xl"] }),
+      paddingHorizontal: windowWidth >= 600 ? 20 : 16,
+      paddingTop: windowWidth >= 600 ? 20 : 16,
+      paddingBottom: windowWidth >= 600 ? 20 : 16,
       ...Platform.select({
         web: {
           width: "100%",

@@ -97,7 +97,7 @@ export default function ProductCardInner({
   const heartOpacity = useSharedValue(1);
   const cardPress = useSharedValue(0);
   const shimmerX = useSharedValue(-140);
-  const stepperY = useSharedValue(-24);
+  const atcWidth = useSharedValue(quantity > 0 ? 84 : isOutOfStock ? 74 : 32);
   const [primaryLoaded, setPrimaryLoaded] = useState(false);
   const primaryImage = useMemo(() => {
     if (String(product?.image || "").trim()) return product.image;
@@ -158,9 +158,8 @@ export default function ProductCardInner({
     transform: [{ translateX: shimmerX.value }],
     opacity: primaryLoaded ? 0 : 1,
   }));
-  const stepperStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: stepperY.value }],
-    opacity: quantity > 0 ? 1 : 0,
+  const atcControlStyle = useAnimatedStyle(() => ({
+    width: atcWidth.value,
   }));
 
   const hasEtaCopy = Boolean(String(product?.eta || "").trim());
@@ -204,8 +203,11 @@ export default function ProductCardInner({
   }, [primaryLoaded, reducedMotion, shimmerX]);
 
   useEffect(() => {
-    stepperY.value = withTiming(quantity > 0 ? 0 : -24, { duration: 220, easing: Easing.out(Easing.cubic) });
-  }, [quantity, stepperY]);
+    atcWidth.value = withTiming(quantity > 0 ? 84 : isOutOfStock ? 74 : 32, {
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+    });
+  }, [atcWidth, isOutOfStock, quantity]);
 
   useEffect(
     () => () => {
@@ -370,7 +372,10 @@ export default function ProductCardInner({
           ]}
         >
           <View style={styles.premiumCardPressable}>
-            <View ref={imageAreaRef} style={styles.premiumImageArea}>
+            <View
+              ref={imageAreaRef}
+              style={[styles.premiumImageArea, compact ? styles.premiumImageAreaCompact : styles.premiumImageAreaComfortable]}
+            >
               <Pressable
                 onPress={handleCardPress}
                 onPressIn={onCardPressIn}
@@ -444,7 +449,6 @@ export default function ProductCardInner({
 
               {offPct != null && offPct > 0 ? (
                 <View style={[styles.discountBadge, { backgroundColor: saleColor }]}>
-                  <Ionicons name="flash" size={10} color="#FFFFFF" />
                   <Text style={styles.discountBadgeText}>{`${offPct}% OFF`}</Text>
                 </View>
               ) : isNewArrival ? (
@@ -468,37 +472,50 @@ export default function ProductCardInner({
                   </>
                 ) : null}
                 <Animated.View style={heartIconStyle}>
-                  <Ionicons name={isSaved ? "heart" : "heart-outline"} size={17} color={isSaved ? saleColor : inkColor} />
+                  <Ionicons name={isSaved ? "heart" : "heart-outline"} size={15} color={isSaved ? saleColor : inkColor} />
                 </Animated.View>
               </Pressable>
 
               {isOutOfStock ? (
                 <>
-                  <View style={[styles.oosOverlay, { backgroundColor: c.surfaceAlt || "rgba(241,245,249,0.6)" }]} />
+                  <View style={[styles.oosOverlay, { backgroundColor: c.surface || "rgba(255,255,255,0.7)" }]} />
                   <View style={styles.oosRibbon}>
-                    <Text style={styles.oosRibbonText}>OUT OF STOCK</Text>
+                    <Text style={styles.oosRibbonText}>Out of stock</Text>
                   </View>
                 </>
               ) : null}
 
-              {quantity > 0 ? null : (
-                <Pressable
-                  onPress={onAddPress}
-                  style={({ pressed }) => [
-                    styles.gridFloatingAdd,
-                    isOutOfStock ? styles.notifyGhost : null,
-                    pressed ? styles.gridFloatingAddPressed : null,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel={isOutOfStock ? `Notify me when ${product.name} is back in stock` : `Add ${product.name} to cart`}
-                >
-                  {isOutOfStock ? (
-                    <Text style={[styles.notifyGhostText, { color: inkColor }]}>Notify me</Text>
-                  ) : (
-                    <Ionicons name="add" size={18} color="#FFFFFF" />
-                  )}
-                </Pressable>
-              )}
+              <Animated.View style={[styles.atcControl, atcControlStyle, isOutOfStock ? styles.notifyGhost : null]}>
+                {isOutOfStock ? (
+                  <Pressable
+                    onPress={onAddPress}
+                    style={({ pressed }) => [styles.notifyHit, pressed ? styles.gridFloatingAddPressed : null]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Notify me when ${product.name} is back in stock`}
+                  >
+                    <Text style={[styles.notifyGhostText, { color: inkColor }]}>Notify</Text>
+                  </Pressable>
+                ) : quantity > 0 ? (
+                  <View style={styles.inlineStepper}>
+                    <Pressable style={styles.inlineStepHit} onPress={onStepperRemove} accessibilityRole="button" accessibilityLabel="Decrease quantity">
+                      <Ionicons name="remove" size={14} color={inkColor} />
+                    </Pressable>
+                    <Text style={[styles.inlineQty, { color: inkColor }]}>{quantity}</Text>
+                    <Pressable style={styles.inlineStepHit} onPress={onStepperAdd} accessibilityRole="button" accessibilityLabel="Increase quantity">
+                      <Ionicons name="add" size={14} color={inkColor} />
+                    </Pressable>
+                  </View>
+                ) : (
+                  <Pressable
+                    onPress={onAddPress}
+                    style={({ pressed }) => [styles.addHit, pressed ? styles.gridFloatingAddPressed : null]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add ${product.name} to cart`}
+                  >
+                    <Ionicons name="add" size={16} color={inkColor} />
+                  </Pressable>
+                )}
+              </Animated.View>
             </View>
 
             <View style={styles.premiumContent}>
@@ -510,54 +527,41 @@ export default function ProductCardInner({
                 importantForAccessibility="no-hide-descendants"
                 style={styles.premiumContentPressable}
               >
-                {showCategory ? (
+                {showCategory && !compact ? (
                   <Text style={[styles.categoryPremium, { color: mutedColor }]} numberOfLines={1}>
                     {String(product.category || "Groceries").toUpperCase()}
                   </Text>
                 ) : null}
-                <Text numberOfLines={1} style={[styles.namePremium, { color: inkColor }]}>
+                <Text numberOfLines={2} style={[styles.namePremium, { color: inkColor }]}>
                   {displayName}
                 </Text>
-                <View style={styles.ratingRow}>
-                  {ratingInfo.rating ? (
-                    <>
-                      <Ionicons name="star" size={10} color={c.accent || "#C8A97E"} />
-                      <Text style={[styles.ratingValue, { color: inkColor }]}>{ratingInfo.rating}</Text>
-                      <Text style={[styles.reviewCount, { color: mutedColor }]}>{`(${ratingInfo.reviewCount || 0})`}</Text>
-                    </>
-                  ) : (
-                    <View style={[styles.newPill, { backgroundColor: "rgba(200,169,126,0.14)" }]}>
-                      <Text style={[styles.newPillText, { color: c.textSecondary }]}>NEW</Text>
-                    </View>
-                  )}
+                <Text style={styles.unitText} numberOfLines={1}>
+                  {product.unit || "1 pc"}
+                </Text>
+                {compact ? null : String(product.description || "").trim() ? (
+                  <Text style={styles.shortDescription} numberOfLines={1}>
+                    {String(product.description || "").trim()}
+                  </Text>
+                ) : null}
+                {ratingInfo.rating && ratingInfo.reviewCount > 0 ? (
+                  <Text style={styles.ratingInline} numberOfLines={1}>
+                    {`★ ${ratingInfo.rating} (${ratingInfo.reviewCount})`}
+                  </Text>
+                ) : null}
+              </Pressable>
+              <Pressable
+                onPress={handleCardPress}
+                accessible={false}
+                importantForAccessibility="no-hide-descendants"
+                style={styles.premiumPriceHit}
+              >
+                <View style={styles.gridPriceRow}>
+                  <Text style={[styles.gridPriceCurrent, { color: inkColor }]}>{formatINRWhole(safePrice)}</Text>
+                  {listMrp ? (
+                    <Text style={[styles.gridPriceMrp, { color: mutedColor }]}>{formatINRWhole(listMrp)}</Text>
+                  ) : null}
                 </View>
               </Pressable>
-              <View style={styles.premiumBottomRow}>
-                <Pressable
-                  onPress={handleCardPress}
-                  accessible={false}
-                  importantForAccessibility="no-hide-descendants"
-                  style={styles.premiumPriceHit}
-                >
-                  <View style={styles.gridPriceRow}>
-                    <Text style={[styles.gridPriceCurrent, { color: inkColor }]}>{formatINRWhole(safePrice)}</Text>
-                    {listMrp ? (
-                      <Text style={[styles.gridPriceMrp, { color: mutedColor }]}>{formatINRWhole(listMrp)}</Text>
-                    ) : null}
-                  </View>
-                </Pressable>
-                {quantity > 0 ? (
-                  <Animated.View style={[styles.inlineStepper, stepperStyle]}>
-                    <Pressable style={styles.inlineStepHit} onPress={onStepperRemove} accessibilityRole="button" accessibilityLabel="Decrease quantity">
-                      <Ionicons name="remove" size={14} color="#FFFFFF" />
-                    </Pressable>
-                    <Text style={styles.inlineQty}>{quantity}</Text>
-                    <Pressable style={styles.inlineStepHit} onPress={onStepperAdd} accessibilityRole="button" accessibilityLabel="Increase quantity">
-                      <Ionicons name="add" size={14} color="#FFFFFF" />
-                    </Pressable>
-                  </Animated.View>
-                ) : null}
-              </View>
             </View>
           </View>
         </Animated.View>

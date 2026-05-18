@@ -11,6 +11,18 @@ function normalizeBoolean(value, fallback) {
   return Boolean(value);
 }
 
+function normalizeDealsRail(raw, fallback) {
+  if (raw === undefined) return fallback;
+  if (!Array.isArray(raw)) return fallback;
+  return raw
+    .map((entry, idx) => ({
+      productId: entry?.productId || entry?._id || entry?.id || null,
+      endsAt: entry?.endsAt ? new Date(entry.endsAt) : null,
+      rank: Number.isFinite(Number(entry?.rank)) ? Number(entry.rank) : idx,
+    }))
+    .filter((entry) => Boolean(entry.productId));
+}
+
 async function getOrCreateConfig() {
   let config = await HomeViewConfig.findOne();
   if (!config) {
@@ -49,6 +61,7 @@ async function updateAdminHomeViewConfig(req, res, next) {
       showHomeSections,
       showProductTypeSections,
       productCardStyle,
+      dealsRail,
     } = req.body || {};
 
     if (heroTitle !== undefined) config.heroTitle = heroTitle;
@@ -69,6 +82,9 @@ async function updateAdminHomeViewConfig(req, res, next) {
     }
     if (productCardStyle !== undefined && ["compact", "comfortable"].includes(String(productCardStyle))) {
       config.productCardStyle = productCardStyle;
+    }
+    if (dealsRail !== undefined) {
+      config.dealsRail = normalizeDealsRail(dealsRail, config.dealsRail);
     }
 
     await config.save();

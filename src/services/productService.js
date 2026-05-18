@@ -183,6 +183,15 @@ export async function getHomeViewConfig() {
       showHomeSections: data.showHomeSections !== false,
       showProductTypeSections: data.showProductTypeSections !== false,
       productCardStyle: data.productCardStyle === "comfortable" ? "comfortable" : "compact",
+      dealsRail: Array.isArray(data.dealsRail)
+        ? data.dealsRail
+            .map((entry, idx) => ({
+              productId: String(entry?.productId || entry?._id || entry?.id || "").trim(),
+              endsAt: entry?.endsAt ? new Date(entry.endsAt).toISOString() : null,
+              rank: Number.isFinite(Number(entry?.rank)) ? Number(entry.rank) : idx,
+            }))
+            .filter((entry) => Boolean(entry.productId))
+        : [],
     };
   } catch {
     return { ...DEFAULT_HOME_VIEW };

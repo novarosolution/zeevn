@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,7 +10,6 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -27,6 +25,7 @@ import GalleryScrollFab from "../components/product/GalleryScrollFab";
 import MobileStickyDock from "../components/product/MobileStickyDock";
 import ProductPurchaseColumn from "../components/product/ProductPurchaseColumn";
 import ProductReviews from "../components/product/ProductReviews";
+import HomeTestimonials from "../components/home/HomeTestimonials";
 import ProductRichDetails, { hasRichProductContent } from "../components/product/ProductRichDetails";
 import ProductCard from "../components/ProductCard";
 import Card from "../components/ui/Card";
@@ -48,7 +47,7 @@ import {
   customerScrollPaddingTop,
   customerWebStickyTop,
 } from "../theme/screenLayout";
-import { fonts, icon as sz } from "../theme/tokens";
+import { fonts } from "../theme/tokens";
 import { formatINR } from "../utils/currency";
 import { getImageUriCandidates } from "../utils/image";
 import { matchesShelfProduct } from "../utils/shelfMatch";
@@ -77,7 +76,7 @@ export default function ProductScreen({ route, navigation }) {
   const goLogin = useCallback(() => {
     navigateToLogin(navigation, { returnTo: loginReturnTo });
   }, [loginReturnTo, navigation]);
-  const { semanticPalette, TYPE, SPACING, RADII, SHADOWS } = useTheme();
+  const { semanticPalette, TYPE, SPACING, RADII, SHADOWS, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const { width, height: windowHeight } = useWindowDimensions();
@@ -946,6 +945,10 @@ export default function ProductScreen({ route, navigation }) {
               onReviewsUpdate={handleReviewsUpdate}
               onNavigateLogin={goLogin}
             />
+          </View>
+
+          <View style={{ width: "100%" }}>
+            <HomeTestimonials c={semanticPalette} isDark={isDark} />
           </View>
 
           <View style={styles.railSection}>

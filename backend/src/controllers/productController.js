@@ -109,6 +109,8 @@ async function createProduct(req, res, next) {
       productType,
       showOnHome,
       homeOrder,
+      featuredDeal,
+      dealEndsAt,
       brand,
       sku,
       unit,
@@ -161,6 +163,8 @@ async function createProduct(req, res, next) {
       productType: productType || category || "General",
       showOnHome: toBoolean(showOnHome, true),
       homeOrder: toNumber(homeOrder, 0),
+      featuredDeal: toBoolean(featuredDeal, false),
+      dealEndsAt: dealEndsAt ? new Date(dealEndsAt) : null,
       brand: brand || "",
       sku: sku || "",
       unit: unit || "1 pc",
@@ -212,6 +216,8 @@ async function updateProduct(req, res, next) {
       productType,
       showOnHome,
       homeOrder,
+      featuredDeal,
+      dealEndsAt,
       brand,
       sku,
       unit,
@@ -251,6 +257,10 @@ async function updateProduct(req, res, next) {
     if (productType !== undefined) product.productType = productType;
     if (showOnHome !== undefined) product.showOnHome = toBoolean(showOnHome, product.showOnHome);
     if (homeOrder !== undefined) product.homeOrder = toNumber(homeOrder, product.homeOrder);
+    if (featuredDeal !== undefined) product.featuredDeal = toBoolean(featuredDeal, product.featuredDeal);
+    if (dealEndsAt !== undefined) {
+      product.dealEndsAt = dealEndsAt ? new Date(dealEndsAt) : null;
+    }
     if (brand !== undefined) product.brand = brand;
     if (sku !== undefined) product.sku = sku;
     if (unit !== undefined) product.unit = unit;

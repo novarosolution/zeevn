@@ -1,54 +1,48 @@
 import React, { useCallback, useMemo, useRef } from "react";
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Circle, Path, Rect } from "react-native-svg";
 import { useTheme } from "../../context/ThemeContext";
 import HomeSectionHeader from "./HomeSectionHeader";
-import { spacing } from "../../theme/tokens";
 import { homeType } from "../../styles/typography";
-import { spacing as homeSpacing } from "../../styles/spacing";
+const PHONE_COLS = 4;
+const TABLET_COLS = 6;
+const DESKTOP_COLS = 8;
 
-function MilkBottleIcon({ color }) {
+function CategoryArt({ categoryKey, color }) {
+  const key = String(categoryKey || "").toLowerCase();
+  if (key === "all") {
+    return (
+      <Svg width={26} height={26} viewBox="0 0 26 26" fill="none">
+        <Rect x="4.5" y="4.5" width="7" height="7" rx="2" stroke={color} strokeWidth="1.4" />
+        <Rect x="14.5" y="4.5" width="7" height="7" rx="2" stroke={color} strokeWidth="1.4" />
+        <Rect x="4.5" y="14.5" width="7" height="7" rx="2" stroke={color} strokeWidth="1.4" />
+        <Path d="M14 18h7m0 0-2.5-2.5M21 18l-2.5 2.5" stroke={color} strokeWidth="1.4" strokeLinecap="round" />
+      </Svg>
+    );
+  }
   return (
-    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M10 3h4m-3 0v3.2l-1.6 1.8A4 4 0 0 0 8.4 10v7.2A2.8 2.8 0 0 0 11.2 20h1.6a2.8 2.8 0 0 0 2.8-2.8V10c0-.76-.28-1.5-.8-2.04L13.2 6.2V3"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <Svg width={28} height={28} viewBox="0 0 28 28" fill="none">
+      <Circle cx="14" cy="14" r="10.2" stroke={color} strokeWidth="1.4" />
+      {key === "staples" ? <Rect x="9" y="8.8" width="10" height="11.2" rx="2" stroke={color} strokeWidth="1.4" /> : null}
+      {key === "oils" ? <Path d="M14 8.8c-2.4 3-3.4 4.8-3.4 6.6A3.4 3.4 0 1 0 17.4 15c0-1.8-1-3.6-3.4-6.2Z" stroke={color} strokeWidth="1.4" /> : null}
+      {key === "spices" ? <Path d="M14 8.5v11m-4-6h8m-6.5-3.5 5 9" stroke={color} strokeWidth="1.4" strokeLinecap="round" /> : null}
+      {key === "dairy" ? <Path d="M12 8h4m-3 0v3l-1.7 2V19a1.8 1.8 0 0 0 1.8 1.8h1.8A1.8 1.8 0 0 0 16.7 19v-6l-1.7-2V8" stroke={color} strokeWidth="1.4" strokeLinecap="round" /> : null}
+      {key === "sweets" ? <Path d="M9.2 13.2h9.6M10.5 16.8h7m-6.5-7 1.7 10m3.3-10-1.7 10" stroke={color} strokeWidth="1.4" strokeLinecap="round" /> : null}
+      {key === "dryfruits" ? (
+        <>
+          <Path d="M9.5 15.5c1.8-4 7.2-4 9 0-1.8 4-7.2 4-9 0Z" stroke={color} strokeWidth="1.4" />
+          <Circle cx="14" cy="15.4" r="1.8" stroke={color} strokeWidth="1.2" />
+        </>
+      ) : null}
+      {key === "drinks" || key === "beverages" ? <Path d="M10 9h8l-.8 5.5a3.2 3.2 0 0 1-3.2 2.8h0a3.2 3.2 0 0 1-3.2-2.8L10 9Zm4 8.4V20" stroke={color} strokeWidth="1.4" strokeLinecap="round" /> : null}
+      {key === "wellness" ? <Path d="M9.8 17c4.8 0 6.4-2.8 8.4-8.2C13 9 10 12 9.8 17Zm0 0c2.5-.2 4.8 1.4 6.2 3.2" stroke={color} strokeWidth="1.4" strokeLinecap="round" /> : null}
+      {key === "snacks" ? <Path d="M9.6 9.4h8.8l-1.2 9.2h-6.4l-1.2-9.2Zm2.2 4.2h4.4" stroke={color} strokeWidth="1.4" strokeLinecap="round" /> : null}
     </Svg>
   );
 }
 
-function getCategoryIcon(item, color) {
-  const key = String(item?.key || "").toLowerCase();
-  switch (key) {
-    case "staples":
-      return <Ionicons name="basket-outline" size={22} color={color} />;
-    case "oils":
-      return <Ionicons name="water-outline" size={22} color={color} />;
-    case "spices":
-      return <Ionicons name="flame-outline" size={22} color={color} />;
-    case "dairy":
-      return <MilkBottleIcon color={color} />;
-    case "sweets":
-      return <Ionicons name="ice-cream-outline" size={22} color={color} />;
-    case "dryfruits":
-      return <Ionicons name="nutrition-outline" size={22} color={color} />;
-    case "beverages":
-    case "drinks":
-      return <Ionicons name="wine-outline" size={22} color={color} />;
-    case "wellness":
-      return <Ionicons name="leaf-outline" size={22} color={color} />;
-    default:
-      return <Ionicons name={item?.icon || "ellipse-outline"} size={22} color={color} />;
-  }
-}
-
-function CategoryTile({ item, compact, onPress, columns, isDesktop }) {
+function CategoryTile({ item, compact, onPress, columns, isDesktop, isAllTile = false }) {
   const { colors: c, isDark } = useTheme();
   const styles = useMemo(
     () => createStyles(c, isDark, compact, columns, isDesktop),
@@ -79,11 +73,11 @@ function CategoryTile({ item, compact, onPress, columns, isDesktop }) {
 
   const tileBg = bgAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [c.surface, c.surfaceAlt || (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.04)")],
+    outputRange: [c.surface, c.surfaceAlt],
   });
   const circleBg = bgAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ["rgba(200,169,126,0.12)", "rgba(200,169,126,0.17)"],
+    outputRange: [c.accentSoft || c.primarySoft, c.primarySoft || c.accentSoft],
   });
 
   const handlePress = useCallback(async () => {
@@ -117,8 +111,8 @@ function CategoryTile({ item, compact, onPress, columns, isDesktop }) {
                 { backgroundColor: tileBg },
               ]}
             >
-              <Animated.View style={[styles.iconCircle, { backgroundColor: circleBg }]}>
-                {getCategoryIcon(item, c.ink || c.textPrimary)}
+              <Animated.View style={[styles.photoCircle, isAllTile ? styles.allTileCircle : null, { backgroundColor: circleBg }]}>
+                <CategoryArt categoryKey={isAllTile ? "all" : item.key} color={c.ink || c.textPrimary} />
               </Animated.View>
               <Text style={styles.label} numberOfLines={2}>
                 {item.label}
@@ -133,9 +127,9 @@ function CategoryTile({ item, compact, onPress, columns, isDesktop }) {
 
 export default function HomeCategoryGrid({
   categories = [],
-  overline = "",
+  overline: _overline = "",
   title = "Shop by category",
-  viewAllLabel = "View all",
+  viewAllLabel: _viewAllLabel = "View all",
   onPressCategory,
   onPressViewAll,
 }) {
@@ -143,32 +137,39 @@ export default function HomeCategoryGrid({
   const compact = width < 420;
   const isTablet = width >= 600;
   const isDesktop = width >= 1024;
-  const columns = isDesktop ? 8 : 4;
+  const columns = isDesktop ? DESKTOP_COLS : isTablet ? TABLET_COLS : PHONE_COLS;
+  const maxTiles = isDesktop ? 8 : isTablet ? 12 : 8;
+  const allTileInsertIndex = maxTiles > 8 ? 8 : 7;
   const { colors: c, isDark } = useTheme();
-  const displayOverline = "EXPLORE THE PANTRY";
   const styles = useMemo(
     () => createStyles(c, isDark, compact, columns, isDesktop, isTablet),
     [c, isDark, compact, columns, isDesktop, isTablet]
   );
+  const tiles = useMemo(() => {
+    const list = Array.isArray(categories) ? categories.slice() : [];
+    const visible = list.slice(0, Math.max(0, maxTiles - 1));
+    const insertAt = Math.min(allTileInsertIndex, visible.length);
+    visible.splice(insertAt, 0, {
+      key: "__all_categories__",
+      label: "All categories",
+      all: true,
+    });
+    return visible.slice(0, maxTiles);
+  }, [allTileInsertIndex, categories, maxTiles]);
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.editorialOverlineRow}>
-        <View style={styles.editorialSquare} />
-        <Text style={styles.editorialOverline} numberOfLines={1}>
-          {displayOverline}
-        </Text>
-      </View>
-      <HomeSectionHeader overline="" title={title} onSeeAll={onPressViewAll} seeAllLabel={viewAllLabel} />
+      <HomeSectionHeader overline="" title={title} />
       <View style={styles.grid}>
-        {categories.slice(0, 8).map((item) => (
+        {tiles.map((item) => (
           <CategoryTile
             key={item.key}
             item={item}
             compact={compact}
             columns={columns}
             isDesktop={isDesktop}
-            onPress={onPressCategory}
+            isAllTile={Boolean(item.all)}
+            onPress={item.all ? onPressViewAll : onPressCategory}
           />
         ))}
       </View>
@@ -177,28 +178,10 @@ export default function HomeCategoryGrid({
 }
 
 function createStyles(c, isDark, compact, columns, isDesktop, isTablet) {
-  const gap = isTablet ? 14 : 10;
+  const gap = isTablet ? 10 : 8;
   return StyleSheet.create({
     wrap: {
-      marginBottom: spacing.lg,
-    },
-    editorialOverlineRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: homeSpacing.xs,
-      marginBottom: homeSpacing.md,
-    },
-    editorialSquare: {
-      width: 4,
-      height: 4,
-      backgroundColor: c.primaryDark || "#A8895E",
-    },
-    editorialOverline: {
-      fontSize: 11,
-      fontFamily: homeType.overline.fontFamily,
-      letterSpacing: 1.4,
-      color: c.textSecondary,
-      textTransform: "uppercase",
+      marginBottom: isTablet ? 40 : 32,
     },
     grid: {
       flexDirection: "row",
@@ -211,14 +194,14 @@ function createStyles(c, isDark, compact, columns, isDesktop, isTablet) {
       paddingVertical: gap / 2,
     },
     tile: {
-      minHeight: compact ? 108 : 116,
+      aspectRatio: 1,
       borderRadius: 14,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.line || (isDark ? "rgba(255,255,255,0.14)" : "rgba(100,116,139,0.18)"),
+      borderColor: c.lineSoft || c.line,
       alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: homeSpacing.md,
-      paddingHorizontal: spacing.xs,
+      justifyContent: "flex-start",
+      paddingVertical: compact ? 8 : 10,
+      paddingHorizontal: 6,
       ...Platform.select({
         web: {
           transition: "transform 120ms ease, opacity 120ms ease, background-color 120ms ease",
@@ -229,6 +212,7 @@ function createStyles(c, isDark, compact, columns, isDesktop, isTablet) {
     },
     tilePressed: {
       opacity: 0.97,
+      transform: [{ scale: 0.97 }],
     },
     tileHovered: {
       opacity: 0.98,
@@ -239,20 +223,27 @@ function createStyles(c, isDark, compact, columns, isDesktop, isTablet) {
         default: {},
       }),
     },
-    iconCircle: {
-      width: 48,
-      height: 48,
+    photoCircle: {
+      width: 40,
+      height: 40,
       borderRadius: 999,
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: homeSpacing.md,
+      marginTop: 8,
+      marginBottom: 8,
+    },
+    allTileCircle: {
+      borderWidth: 1,
+      borderColor: c.accentOnLight || c.primary,
     },
     label: {
-      fontSize: 13,
+      fontSize: 11,
       fontFamily: homeType.uiMedium.fontFamily,
       color: c.ink || c.textPrimary,
       textAlign: "center",
-      lineHeight: Math.round(13 * 1.4),
+      lineHeight: Math.round(11 * 1.25),
+      marginTop: "auto",
+      marginBottom: 6,
     },
   });
 }

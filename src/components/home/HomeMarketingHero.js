@@ -10,12 +10,9 @@ import Animated, { Easing, FadeInDown, useAnimatedStyle, useSharedValue, withRep
 import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
 import { homeType } from "../../styles/typography";
 import { spacing as homeSpacing } from "../../styles/spacing";
+import { useTheme } from "../../context/ThemeContext";
 
 const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
-const NAVY_BASE = "#0E1729";
-const BRASS = "#C8A97E";
-const WHITE = "#FFFFFF";
-
 function getSlideOverline(slide, index) {
   if (typeof slide?.overline === "string" && slide.overline.trim()) {
     return slide.overline.trim().toUpperCase();
@@ -108,6 +105,10 @@ export default function HomeMarketingHero({
   onHeroPressIn,
   onHeroPressOut,
 }) {
+  const { colors: c } = useTheme();
+  const NAVY_BASE = c.navy || c.bgDeep;
+  const BRASS = c.accent;
+  const WHITE = c.onPrimary;
   const { width: measuredWidth } = useWindowDimensions();
   const viewportWidth = Number(windowWidth || measuredWidth || 0);
   const isTablet = viewportWidth >= 768;
@@ -311,7 +312,7 @@ export default function HomeMarketingHero({
         opacity: 0,
       },
     });
-  }, [isTablet]);
+  }, [BRASS, NAVY_BASE, WHITE, isTablet]);
 
   useEffect(() => {
     if (reducedMotion) {
@@ -355,7 +356,6 @@ export default function HomeMarketingHero({
           entering={reducedMotion ? undefined : FadeInDown.duration(520)}
           style={[styles.heroImageOuter, { borderRadius: 18, backgroundColor: NAVY_BASE }]}
           accessible
-          accessibilityRole="region"
           accessibilityLabel={`Featured collections, slide ${heroSlideIndex + 1} of ${heroSlides.length}`}
         >
           <ScrollView

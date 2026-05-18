@@ -3,53 +3,86 @@ import { FlatList, Platform, Pressable, StyleSheet, Text, useWindowDimensions, V
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import HomeSectionHeader from "./HomeSectionHeader";
-import Card from "../ui/Card";
 import { useTheme } from "../../context/ThemeContext";
-import { icon, radius, typography } from "../../theme/tokens";
-import { formatINR } from "../../utils/currency";
+import { formatINRWhole } from "../../utils/currency";
 import { homeType } from "../../styles/typography";
 import { spacing as homeSpacing } from "../../styles/spacing";
 
-function ReorderCard({ item, onAdd }) {
+const CARD_WIDTH = 132;
+const CARD_HEIGHT = 210;
+
+function ReorderCard({ item, quantity, onIncrease, onDecrease }) {
   const { colors: c, isDark } = useTheme();
   const styles = useMemo(() => createStyles(c, 0, 0, isDark), [c, isDark]);
+  const hasDiscount = Number(item?.mrp || 0) > Number(item?.price || 0);
 
   return (
     <View style={styles.cardWrap}>
-      <Card variant="muted" padding="none" style={styles.cardShell} contentStyle={styles.cardContent}>
+      <View style={styles.cardShell}>
         <View style={styles.mediaWrap}>
+          {item.showRestockPill ? (
+            <View style={styles.restockPill}>
+              <Text style={styles.restockPillText}>Time to restock</Text>
+            </View>
+          ) : (
+            null
+          )}
           {item.image ? (
             <Image source={{ uri: item.image }} style={styles.media} contentFit="cover" transition={120} />
-          ) : (
-            <View style={styles.mediaFallback}>
-              <Ionicons name="bag-outline" size={icon.md} color={c.textMuted} />
+          ) : <View style={styles.mediaFallback} />}
+          {quantity > 0 ? (
+            <View style={styles.qtyStepper}>
+              <Pressable onPress={() => onDecrease?.(item)} style={styles.stepperBtn} accessibilityRole="button" accessibilityLabel={`Remove one ${item.name}`}>
+                <Ionicons name="remove" size={12} color={c.primary} />
+              </Pressable>
+              <Text style={styles.qtyText}>{quantity}</Text>
+              <Pressable onPress={() => onIncrease?.(item)} style={styles.stepperBtn} accessibilityRole="button" accessibilityLabel={`Add one more ${item.name}`}>
+                <Ionicons name="add" size={12} color={c.primary} />
+              </Pressable>
             </View>
+          ) : (
+            <Pressable
+              onPress={() => onIncrease?.(item)}
+              style={({ pressed }) => [styles.addCircle, pressed ? styles.addCirclePressed : null]}
+              accessibilityRole="button"
+              accessibilityLabel={`Add ${item.name} to bag`}
+            >
+              <Ionicons name="add" size={12} color={c.primary} />
+            </Pressable>
           )}
         </View>
         <View style={styles.meta}>
           <Text style={styles.name} numberOfLines={2}>
             {item.name}
           </Text>
-          <Text style={styles.price}>{formatINR(Number(item.price || 0))}</Text>
+          <Text style={styles.unit} numberOfLines={1}>
+            {item.unitLabel}
+          </Text>
+          <View style={styles.priceRow}>
+            <Text style={styles.price}>{formatINRWhole(Number(item.price || 0))}</Text>
+            {hasDiscount ? <Text style={styles.mrp}>{formatINRWhole(Number(item.mrp || 0))}</Text> : null}
+          </View>
         </View>
-        <Pressable
-          onPress={() => onAdd?.(item)}
-          style={({ pressed }) => [styles.addPill, pressed ? styles.addPillPressed : null]}
-          accessibilityRole="button"
-          accessibilityLabel={`Add ${item.name} to bag`}
-        >
-          <Text style={styles.addPillText}>Add</Text>
-        </Pressable>
-      </Card>
+      </View>
     </View>
   );
 }
 
-function HomeReorderStripBase({ items = [], overline, title, onAdd, onSeeAll, carouselBottomPadding = 24 }) {
-  const capped = useMemo(() => (Array.isArray(items) ? items.slice(0, 8) : []), [items]);
+function HomeReorderStripBase({
+  items = [],
+  overline,
+  title,
+  subtitle,
+  onIncrease,
+  onDecrease,
+  getQuantity,
+  onSeeAll,
+  carouselBottomPadding = 24,
+}) {
+  const capped = useMemo(() => (Array.isArray(items) ? items.slice(0, 12) : []), [items]);
   const { width } = useWindowDimensions();
   const { colors: c } = useTheme();
-  const sectionGap = width >= 640 ? 72 : 56;
+  const sectionGap = width >= 640 ? 40 : 32;
   const styles = useMemo(() => createStyles(c, sectionGap, carouselBottomPadding, false), [c, sectionGap, carouselBottomPadding]);
 
   if (capped.length === 0) {
@@ -58,14 +91,31 @@ function HomeReorderStripBase({ items = [], overline, title, onAdd, onSeeAll, ca
 
   return (
     <View style={styles.wrap}>
-      <HomeSectionHeader overline={overline} title={title} onSeeAll={onSeeAll} seeAllLabel="View all" compact />
+      <HomeSectionHeader
+        overline={overline}
+        title={title}
+        subtitle={subtitle}
+        onSeeAll={onSeeAll}
+        seeAllLabel="View all"
+        compact
+      />
       <FlatList
         data={capped}
         keyExtractor={(item) => String(item.key || item.id)}
         horizontal
         showsHorizontalScrollIndicator={false}
+        decelerationRate={Platform.OS === "ios" ? "fast" : 0.98}
+        snapToInterval={CARD_WIDTH + homeSpacing.sm}
+        snapToAlignment="start"
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => <ReorderCard item={item} onAdd={onAdd} />}
+        renderItem={({ item }) => (
+          <ReorderCard
+            item={item}
+            quantity={Math.max(0, Number(getQuantity?.(item) || 0))}
+            onIncrease={onIncrease}
+            onDecrease={onDecrease}
+          />
+        )}
       />
     </View>
   );
@@ -77,31 +127,29 @@ function createStyles(c, sectionGap, carouselBottomPadding, isDark = false) {
       marginBottom: sectionGap,
     },
     listContent: {
-      paddingVertical: homeSpacing.md,
-      paddingRight: homeSpacing.md,
+      paddingVertical: homeSpacing.sm,
+      paddingRight: homeSpacing.sm,
       paddingBottom: carouselBottomPadding,
-      gap: homeSpacing.md,
+      gap: homeSpacing.sm,
     },
     cardWrap: {
-      width: 140,
-      height: 180,
+      width: CARD_WIDTH,
+      height: CARD_HEIGHT,
     },
     cardShell: {
       width: "100%",
       height: "100%",
-      borderRadius: radius.lg,
+      borderRadius: 12,
       overflow: "hidden",
-    },
-    cardContent: {
-      width: "100%",
-      height: "100%",
-      padding: 0,
-      position: "relative",
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+      backgroundColor: c.surface,
     },
     mediaWrap: {
-      height: 92,
+      height: CARD_WIDTH,
       width: "100%",
-      backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(241,245,249,0.8)",
+      backgroundColor: c.surfaceAlt,
+      position: "relative",
     },
     media: {
       width: "100%",
@@ -113,35 +161,70 @@ function createStyles(c, sectionGap, carouselBottomPadding, isDark = false) {
       alignItems: "center",
       justifyContent: "center",
     },
+    restockPill: {
+      position: "absolute",
+      left: 8,
+      top: 8,
+      zIndex: 3,
+      borderRadius: 999,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.primary,
+      backgroundColor: c.surface,
+      paddingHorizontal: 8,
+      minHeight: 20,
+      justifyContent: "center",
+    },
+    restockPillText: {
+      fontSize: 10,
+      fontFamily: homeType.uiSemibold.fontFamily,
+      color: c.primary,
+    },
     meta: {
       flex: 1,
-      paddingHorizontal: homeSpacing.base,
-      paddingTop: homeSpacing.md,
-      paddingBottom: homeSpacing["2xl"],
-      gap: homeSpacing.sm,
+      paddingHorizontal: 10,
+      paddingTop: 10,
+      paddingBottom: 10,
+      gap: 6,
     },
     name: {
-      fontSize: 14,
-      lineHeight: 21,
+      fontSize: 12,
+      lineHeight: 15,
       fontFamily: homeType.uiMedium.fontFamily,
       color: c.textPrimary,
-      minHeight: 36,
+      minHeight: 30,
+    },
+    unit: {
+      fontSize: 11,
+      lineHeight: 13,
+      fontFamily: homeType.uiRegular.fontFamily,
+      color: c.textSecondary,
+    },
+    priceRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
     },
     price: {
-      fontSize: 16,
+      fontSize: 13,
       fontFamily: homeType.uiSemibold.fontFamily,
       color: c.textPrimary,
     },
-    addPill: {
+    mrp: {
+      fontSize: 11,
+      fontFamily: homeType.uiRegular.fontFamily,
+      color: c.textMuted,
+      textDecorationLine: "line-through",
+    },
+    addCircle: {
       position: "absolute",
-      right: homeSpacing.md,
-      bottom: homeSpacing.md,
-      minHeight: 28,
-      borderRadius: radius.pill,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(100,116,139,0.24)",
-      backgroundColor: isDark ? "rgba(148,163,184,0.14)" : "rgba(241,245,249,0.9)",
-      paddingHorizontal: homeSpacing.md,
+      right: 8,
+      bottom: -16,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.primary,
+      backgroundColor: c.surface,
       alignItems: "center",
       justifyContent: "center",
       ...Platform.select({
@@ -149,16 +232,38 @@ function createStyles(c, sectionGap, carouselBottomPadding, isDark = false) {
         default: {},
       }),
     },
-    addPillPressed: {
+    addCirclePressed: {
       opacity: 0.86,
       transform: [{ scale: 0.98 }],
     },
-    addPillText: {
-      fontSize: typography.caption,
+    qtyStepper: {
+      position: "absolute",
+      right: 8,
+      bottom: -16,
+      minWidth: 88,
+      height: 32,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: c.primary,
+      backgroundColor: c.surface,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 4,
+    },
+    stepperBtn: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    qtyText: {
+      minWidth: 20,
+      textAlign: "center",
+      fontSize: 12,
       fontFamily: homeType.uiSemibold.fontFamily,
       color: c.textPrimary,
-      letterSpacing: 0.3,
-      textTransform: "uppercase",
     },
   });
 }

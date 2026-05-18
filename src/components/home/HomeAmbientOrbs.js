@@ -9,12 +9,14 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import { useTheme } from "../../context/ThemeContext";
 
 /**
  * Soft floating orbs behind the hero — navy/forest + neutral depth, no imagery.
  */
 export default function HomeAmbientOrbs({ isDark }) {
   const reduced = useReducedMotion();
+  const { colors: c } = useTheme();
   const orb1Ref = useRef(null);
   const orb2Ref = useRef(null);
 
@@ -106,14 +108,14 @@ export default function HomeAmbientOrbs({ isDark }) {
     opacity: orb2Op.value,
   }));
 
-  const redGlow = isDark ? "rgba(34, 197, 94, 0.12)" : "rgba(15, 23, 42, 0.18)";
-  const neutralGlow = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(24, 24, 27, 0.12)";
+  const brassGlow = isDark ? c.accentSoft : c.primarySoft;
+  const neutralGlow = isDark ? c.lineSoft : c.lineSoft;
 
   return (
     <View style={[styles.layer, styles.peNone]} accessibilityElementsHidden>
       <Animated.View
         ref={orb1Ref}
-        style={[styles.orbA, { backgroundColor: redGlow }, Platform.OS === "web" ? null : orb1Style]}
+        style={[styles.orbA, { backgroundColor: brassGlow }, Platform.OS === "web" ? null : orb1Style]}
       />
       <Animated.View
         ref={orb2Ref}

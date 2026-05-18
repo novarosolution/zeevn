@@ -128,6 +128,8 @@ If you see “Route not found” or network errors:
 | Path | Purpose |
 | --- | --- |
 | `docs/architecture.md` | System diagram and context overview |
+| `docs/home-architecture.md` | Home composition diagram, hooks, and section ownership |
+| `docs/home-redesign-2026-05.md` | Home redesign screenshots and final verification checklist |
 | `docs/audit-2026-05.md` | Codebase audit (May 2026) |
 | `docs/ui-migration.md` | Premium → canonical UI checklist |
 | `docs/token-violations-baseline.txt` | Design-token drift baseline |

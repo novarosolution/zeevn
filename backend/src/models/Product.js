@@ -133,6 +133,16 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    /** Manual merchandiser pin for Home deals rail. */
+    featuredDeal: {
+      type: Boolean,
+      default: false,
+    },
+    /** Optional expiry timestamp for featured deal messaging/countdown. */
+    dealEndsAt: {
+      type: Date,
+      default: null,
+    },
     brand: {
       type: String,
       default: "",

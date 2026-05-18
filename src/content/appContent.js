@@ -260,6 +260,7 @@ export const HOME_VIEW_DEFAULTS = {
   showHomeSections: true,
   showProductTypeSections: true,
   productCardStyle: "compact",
+  dealsRail: [],
 };
 
 /** Hero image card (above-the-fold marketing, not the same fields as API hero title). */
@@ -299,7 +300,7 @@ export const HOME_HERO_SLIDE_COPY = [
 /** Light-mode tagline under the home top wordmark. */
 export const HOME_WORDMARK_TAGLINE = "Heritage pantry essentials, delivered";
 
-/** Trust strip under the hero image (icon = Ionicons name). */
+/** Trust badges used in footer + About (no longer a home mid-page strip). */
 export const HOME_TRUST_STRIP = [
   {
     key: "source",
@@ -324,9 +325,13 @@ export const HOME_TRUST_STRIP = [
   },
 ];
 
+/** Thin commerce banner shown above home catalog sections. */
+export const HOME_TRUST_BANNER = "Free shipping over ₹1,499 · Same-day in Ahmedabad · 30-day returns";
+
 /**
  * Animated stats strip (count-up). `target` numeric, `prefix` and `suffix` cosmetic,
  * `precision` controls decimals.
+ * @deprecated for Home usage; keep for About page.
  */
 export const HOME_STATS_STRIP = {
   overline: "Trusted by modern families",
@@ -364,6 +369,7 @@ export const HOME_STATS_STRIP = {
 /**
  * Customer testimonials shown under the stats strip. Keep voice short, regional, real.
  * `name`, `city`, `quote`, `rating` (out of 5), optional `avatar` (string url or null = initial).
+ * @deprecated for Home usage; keep for About + PDP social proof.
  */
 export const HOME_TESTIMONIALS = {
   overline: "Customer love",
@@ -427,8 +433,9 @@ export const HOME_CATEGORY_QUICK_NAV = [
   { key: "spices", label: "Spices", icon: "flame-outline", filter: "spice", tint: "#F1F5F9" },
   { key: "dairy", label: "Dairy", icon: "cafe-outline", filter: "dairy", tint: "#E7E5E4" },
   { key: "sweets", label: "Sweets", icon: "ice-cream-outline", filter: "sweet", tint: "#F3F4F6" },
-  { key: "dryfruits", label: "Dry Fruits", icon: "leaf-outline", filter: "dry", tint: "#E2E8F0" },
+  { key: "dryfruits", label: "Dry fruits", icon: "leaf-outline", filter: "dry", tint: "#E2E8F0" },
   { key: "beverages", label: "Drinks", icon: "wine-outline", filter: "beverage", tint: "#E5E7EB" },
+  { key: "snacks", label: "Snacks", icon: "fast-food-outline", filter: "snack", tint: "#F3F4F6" },
   { key: "wellness", label: "Wellness", icon: "heart-outline", filter: "wellness", tint: "#E7E5E4" },
 ];
 
@@ -439,8 +446,9 @@ export const HOME_CATEGORY_UI = {
 };
 
 export const HOME_REORDER_STRIP = {
-  overline: "Welcome back",
-  title: "Reorder your essentials",
+  overline: "",
+  title: "Order again",
+  subtitle: "Your usual basket",
   emptyHidden: true,
 };
 
@@ -449,6 +457,11 @@ export const HOME_TOAST = {
   viewBag: "View bag",
   undo: "Undo",
   closeMenu: "Close menu",
+};
+
+export const HOME_OFFERS_BAND = {
+  primary: "Replenish now",
+  cta: "15% off on repeat orders",
 };
 
 export const HOME_EMPTY_STATES = {
@@ -2545,8 +2558,10 @@ export const APP_CONTENT_INDEX = {
     wordmarkTagline: HOME_WORDMARK_TAGLINE,
     labels: HOME_PAGE_LABELS,
     trustStrip: HOME_TRUST_STRIP,
+    trustBanner: HOME_TRUST_BANNER,
     statsStrip: HOME_STATS_STRIP,
     testimonials: HOME_TESTIMONIALS,
+    offersBand: HOME_OFFERS_BAND,
     catalogIntro: HOME_CATALOG_INTRO,
     searchUi: HOME_SEARCH_UI,
     toast: HOME_TOAST,

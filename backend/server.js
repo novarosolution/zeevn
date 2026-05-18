@@ -137,13 +137,6 @@ mountApi("/products", productRoutes);
 mountApi("/admin", adminRoutes);
 mountApi("/delivery", deliveryRoutes);
 
-if (process.env.NODE_ENV !== "production" && process.env.ENABLE_TEST_ROUTES !== "false") {
-  const testRoutes = require("./src/routes/testRoutes");
-  app.use("/test", testRoutes);
-  app.use("/api/test", testRoutes);
-  logger.info("E2E test routes enabled at /test (non-production only)");
-}
-
 app.use(notFound);
 app.use(errorHandler);
 

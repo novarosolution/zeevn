@@ -51,12 +51,6 @@ Edit both files—see [Environment](#environment). Minimum for local dev:
 - `JWT_SECRET` in `backend/.env`
 - `EXPO_PUBLIC_API_URL=http://127.0.0.1:5001` in root `.env`
 
-For CI-style backend runs, use:
-
-```bash
-cp backend/.env.test backend/.env
-```
-
 ### 3. Start the API
 
 ```bash
@@ -146,7 +140,6 @@ Copy the examples—**never commit real secrets**.
 | --- | --- |
 | [`.env.example`](./.env.example) | Expo app / build-time public config (`EXPO_PUBLIC_*`, EAS) |
 | [`backend/.env.example`](./backend/.env.example) | API server secrets and integrations |
-| [`backend/.env.test`](./backend/.env.test) | Minimal backend env used by CI E2E |
 
 The backend also reads a root `.env` if present (shared monorepo setup).
 
@@ -165,8 +158,6 @@ Backend integrations are feature-gated:
 | `npm run check:tokens` | Audit off-palette colors and off-scale spacing (warn baseline) |
 | `npm test` | Unit tests with coverage + design-token audit |
 | `npm run test:unit` | Jest unit tests (cart, coupons, auth, orders) + HTML/LCOV coverage in `coverage/` |
-| `npm run test:e2e` | Playwright web E2E (auth, checkout, smoke) |
-| `npm run test:e2e:headed` | E2E with visible browser |
 | `npm run lint` | ESLint via Expo |
 | `npm run lhci` | Lighthouse CI autorun (requires Chrome) |
 | `npm run lhci:collect` | Collect Lighthouse runs only |
@@ -174,15 +165,6 @@ Backend integrations are feature-gated:
 | `cd backend && npm run dev` | API with nodemon |
 
 Other useful scripts: `npm run doctor`, `npm run deploy:check`, `npm run build:android`, `npm run build:ios`.
-
-### E2E tests (Playwright)
-
-1. Start MongoDB, API (`cd backend && npm run dev`), and web (`npm run web` or `npx serve -s dist -l 8081` after `npm run export:web`).
-2. Seed a fixture product: `node backend/scripts/seed-e2e.js`
-3. Set `EXPO_PUBLIC_API_URL`, `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `EXPO_PUBLIC_RAZORPAY_KEY_ID` for checkout tests.
-4. Run: `npx playwright install && npm run test:e2e`
-
-See [docs/smoke-test.md](./docs/smoke-test.md) for the manual checklist; `tests/e2e/` automates the critical paths.
 
 ### Lighthouse CI
 

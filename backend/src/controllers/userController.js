@@ -18,7 +18,6 @@ const generateToken = generateTokenModule;
 const generateRefreshToken =
   generateTokenModule.generateRefreshToken || generateTokenModule;
 const verifyRefreshToken = generateTokenModule.verifyRefreshToken;
-const { rememberVerificationToken } = require("../utils/e2eVerificationStore");
 const CLOUDINARY_AVATAR_FOLDER =
   String(process.env.CLOUDINARY_AVATAR_FOLDER || process.env.CLOUDINARY_UPLOAD_PREFIX || "").trim() ||
   "zeevan/avatars";
@@ -353,7 +352,6 @@ async function sendVerificationEmail(req, res, next) {
     user.emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
     logAccountActivity(user, "verification_sent", user.email);
     await user.save();
-    rememberVerificationToken(user.email, rawToken);
     let delivery;
     try {
       delivery = await sendEmailVerificationEmail(user.email, rawToken);

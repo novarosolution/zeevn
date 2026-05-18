@@ -32,10 +32,6 @@
     "lint": "expo lint",
     "test": "npm run test:unit && npm run check:tokens",
     "test:unit": "jest --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed",
-    "test:a11y": "playwright test tests/e2e/a11y.spec.ts --project=chromium",
-    "test:a11y:report": "node scripts/axe-report.js",
     "sentry:upload-sourcemaps": "node scripts/sentry-upload-sourcemaps.js",
     "check:tokens": "node scripts/check-tokens.js",
     "prepare": "husky"
@@ -94,9 +90,7 @@
     "web-vitals": "^4.2.4"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.11.3",
     "@lhci/cli": "^0.14.0",
-    "@playwright/test": "^1.60.0",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.3.3",
     "@types/react": "~19.0.10",

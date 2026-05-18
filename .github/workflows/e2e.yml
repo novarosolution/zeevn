@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
@@ -38,9 +41,9 @@ jobs:
       SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: npm
@@ -90,11 +93,12 @@ jobs:
         run: npm run test:e2e -- --project=chromium
 
       - name: Upload Playwright HTML report
-        if: failure()
-        uses: actions/upload-artifact@v4
+        if: ${{ failure() && (hashFiles('playwright-report/**') != '' || hashFiles('test-results/**') != '') }}
+        uses: actions/upload-artifact@v5
         with:
           name: playwright-report
           path: |
             playwright-report/
             test-results/
+          if-no-files-found: ignore
           retention-days: 7

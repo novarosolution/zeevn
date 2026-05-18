@@ -383,7 +383,6 @@ export default function HomeMarketingHero({
               return (
                 <View
                   key={slide.key}
-                  accessible
                   accessibilityLabel={`${getSlideOverline(slide, slideIndex)}. ${slide.title}. ${slide.subtitle}`}
                   style={[
                     styles.heroPremiumFill,

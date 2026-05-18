@@ -407,7 +407,7 @@ export default function EditProfileScreen({ navigation }) {
             disabled={saving}
             onPress={handleSave}
           />
-        </PremiumStickyBar>
+        </StickyBar>
       ) : null}
       <BottomNavBar />
     </CustomerScreenShell>

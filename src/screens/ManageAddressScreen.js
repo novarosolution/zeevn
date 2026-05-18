@@ -336,7 +336,7 @@ export default function ManageAddressScreen({ navigation }) {
             disabled={saving}
             onPress={handleSave}
           />
-        </PremiumStickyBar>
+        </StickyBar>
       ) : null}
       <BottomNavBar />
     </CustomerScreenShell>

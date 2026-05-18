@@ -1,7 +1,10 @@
 import React, { memo } from "react";
 import SectionHeader from "./SectionHeader";
 
-/** @deprecated Prefer {@link SectionHeader} — maps legacy home-style props to the design-system header. */
+/**
+ * @deprecated Use `SectionHeader` from `components/ui` (or `@/components/ui`) instead.
+ * This shim exists for backward compatibility during migration.
+ */
 function PremiumSectionHeaderBase({
   overline,
   title,

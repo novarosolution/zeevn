@@ -1,7 +1,10 @@
 import React, { memo } from "react";
 import EmptyState from "./EmptyState";
 
-/** @deprecated Prefer {@link EmptyState} — thin compatibility wrapper. */
+/**
+ * @deprecated Use `EmptyState` from `components/ui` (or `@/components/ui`) instead.
+ * This shim exists for backward compatibility during migration.
+ */
 function PremiumEmptyStateBase({
   iconName = "leaf-outline",
   title,

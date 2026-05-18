@@ -14,8 +14,9 @@ const PADDING_MAP = {
 };
 
 /**
- * Legacy-friendly card shell built on design-system {@link Card}.
- * Keeps variant overlays (gold accent bar, soft gradients) used across admin + profile.
+ * @deprecated Use `Card` from `components/ui` (or `@/components/ui`) instead.
+ * Legacy-friendly adapter on top of {@link Card} (gold accent bar, soft gradients).
+ * This shim exists for backward compatibility during migration.
  */
 function PremiumCardBase({
   children,

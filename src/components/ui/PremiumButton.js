@@ -11,8 +11,8 @@ const ICON_BY_SIZE = {
 };
 
 /**
- * Back-compat shim around {@link Button}. Maps legacy variants (`danger` → `destructive`,
- * `subtle` → `ghost`) and string icon names to `Ionicons`.
+ * @deprecated Use `Button` from `components/ui` (or `@/components/ui`) instead.
+ * This shim exists for backward compatibility during migration.
  */
 function PremiumButtonBase({
   variant = "primary",

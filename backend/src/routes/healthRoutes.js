@@ -1,16 +1,10 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const { isSmtpConfigured } = require("../utils/mailTransport");
+const { isCloudinaryConfigured } = require("../config/cloudinary");
+const { isRazorpayConfigured } = require("../services/razorpayService");
 
 const router = express.Router();
-
-function razorpayStatus() {
-  const keyId = (process.env.RAZORPAY_KEY_ID || "").trim();
-  const keySecret = (process.env.RAZORPAY_KEY_SECRET || "").trim();
-  if (keyId && keySecret) return "configured";
-  if (keyId || keySecret) return "partial";
-  return "not_configured";
-}
 
 function mongoStatus() {
   const state = mongoose.connection.readyState;
@@ -21,12 +15,14 @@ function mongoStatus() {
 
 router.get("/health", (_req, res) => {
   const mongo = mongoStatus();
-  const smtp = isSmtpConfigured() ? "configured" : "not_configured";
-  const razorpay = razorpayStatus();
+  const smtp = isSmtpConfigured() ? "configured" : "not-configured";
+  const razorpay = isRazorpayConfigured() ? "configured" : "not-configured";
+  const cloudinary = isCloudinaryConfigured() ? "configured" : "not-configured";
   const healthy = mongo === "up";
   res.status(healthy ? 200 : 503).json({
     status: healthy ? "ok" : "degraded",
     mongo,
+    cloudinary,
     smtp,
     razorpay,
     timestamp: new Date().toISOString(),

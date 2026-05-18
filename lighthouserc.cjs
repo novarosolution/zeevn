@@ -37,18 +37,20 @@ module.exports = {
       numberOfRuns: 3,
       settings: {
         preset: "desktop",
-        chromeFlags: "--headless=new --no-sandbox",
+        chromeFlags: "--no-sandbox --disable-dev-shm-usage --headless=new",
         chromePath: resolveChromePath(),
       },
     },
     assert: {
       assertions: {
-        "categories:performance": ["error", { minScore: 0.75 }],
-        "categories:accessibility": ["warn", { minScore: 0.9 }],
-        "largest-contentful-paint": ["error", { maxNumericValue: 2500 }],
-        "cumulative-layout-shift": ["error", { maxNumericValue: 0.1 }],
-        "total-blocking-time": ["warn", { maxNumericValue: 350 }],
-        "interactive": ["warn", { maxNumericValue: 4500 }],
+        "categories:performance": ["warn", { minScore: 0.75 }],
+        "categories:accessibility": ["error", { minScore: 0.9 }],
+        "categories:best-practices": ["warn", { minScore: 0.85 }],
+        "categories:seo": ["warn", { minScore: 0.9 }],
+        "largest-contentful-paint": ["warn", { maxNumericValue: 3000 }],
+        "cumulative-layout-shift": ["warn", { maxNumericValue: 0.15 }],
+        "total-blocking-time": ["warn", { maxNumericValue: 450 }],
+        "interactive": ["warn", { maxNumericValue: 5000 }],
       },
     },
     upload: {

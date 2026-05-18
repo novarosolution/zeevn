@@ -83,6 +83,13 @@ Canonical values live in **`src/theme/tokens.js`** (`COLORS`, `SPACING`, `RADII`
 
 Duplicate mounts under `/api/*` exist for deployments that reverse-proxy only `/api`.
 
+## Integration readiness & boot behavior
+
+- `GET /health` returns runtime integration state: `mongo`, `cloudinary`, `razorpay`, `smtp`.
+- Third-party integrations are lazy-loaded and feature-gated to avoid startup crashes:
+  - Missing Cloudinary no longer blocks API boot; upload endpoints return `503 image_uploads_disabled`.
+  - Razorpay and SMTP are initialized only when their features are used.
+
 ## Related documentation
 
 | Doc | Contents |

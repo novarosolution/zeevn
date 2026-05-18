@@ -1,28 +1,42 @@
 const { v2: cloudinary } = require("cloudinary");
 
-const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-const apiKey = process.env.CLOUDINARY_API_KEY;
-const apiSecret = process.env.CLOUDINARY_API_SECRET;
-const cloudinaryUrl = process.env.CLOUDINARY_URL;
+let configured = false;
+let instance = null;
 
-
-if (cloudName && apiKey && apiSecret) {
-  cloudinary.config({
-    cloud_name: cloudName,
-    api_key: apiKey,
-    api_secret: apiSecret,
-  });
-} else if (cloudinaryUrl) {
-  const parsed = new URL(cloudinaryUrl);
-  cloudinary.config({
-    cloud_name: parsed.hostname,
-    api_key: decodeURIComponent(parsed.username || ""),
-    api_secret: decodeURIComponent(parsed.password || ""),
-  });
-} else {
-  throw new Error(
-    "Cloudinary config missing. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET (or CLOUDINARY_URL)."
+function isCloudinaryConfigured() {
+  return Boolean(
+    process.env.CLOUDINARY_URL ||
+      (process.env.CLOUDINARY_CLOUD_NAME &&
+        process.env.CLOUDINARY_API_KEY &&
+        process.env.CLOUDINARY_API_SECRET)
   );
 }
 
-module.exports = cloudinary;
+function getCloudinary() {
+  if (configured) return instance;
+
+  if (!isCloudinaryConfigured()) {
+    const error = new Error(
+      "Cloudinary not configured. Set CLOUDINARY_URL or (CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET)."
+    );
+    error.code = "CLOUDINARY_NOT_CONFIGURED";
+    error.statusCode = 503;
+    throw error;
+  }
+
+  if (process.env.CLOUDINARY_URL) {
+    // SDK auto-reads CLOUDINARY_URL, explicit config not required.
+  } else {
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+  }
+
+  instance = cloudinary;
+  configured = true;
+  return instance;
+}
+
+module.exports = { getCloudinary, isCloudinaryConfigured };

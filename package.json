@@ -24,6 +24,7 @@
     "optimize:assets": "node scripts/optimize-hero-images.js && node scripts/copy-fonts-public.js",
     "lhci": "lhci autorun",
     "lhci:collect": "lhci collect",
+    "lhci:assert": "lhci assert",
     "deploy:check": "npm run lint && npm run doctor && npm run config:app && npm run export:web",
     "build:android": "npx eas-cli@latest build --platform android --profile production",
     "build:ios": "npx eas-cli@latest build --platform ios --profile production",

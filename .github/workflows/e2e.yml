@@ -52,6 +52,9 @@ jobs:
         working-directory: backend
         run: npm ci
 
+      - name: Prepare backend test env
+        run: cp backend/.env.test backend/.env
+
       - name: Seed E2E catalog product
         run: node backend/scripts/seed-e2e.js
 

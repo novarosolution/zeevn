@@ -51,6 +51,12 @@ Edit both files—see [Environment](#environment). Minimum for local dev:
 - `JWT_SECRET` in `backend/.env`
 - `EXPO_PUBLIC_API_URL=http://127.0.0.1:5001` in root `.env`
 
+For CI-style backend runs, use:
+
+```bash
+cp backend/.env.test backend/.env
+```
+
 ### 3. Start the API
 
 ```bash
@@ -59,6 +65,7 @@ npm run dev
 ```
 
 API listens on **http://127.0.0.1:5001** by default. Routes are mounted at `/` and `/api/*` (e.g. `/products` and `/api/products`).
+Health is available at `GET /health` and reports integration readiness (Mongo, Cloudinary, Razorpay, SMTP).
 
 ### 4. Start the app
 
@@ -139,8 +146,14 @@ Copy the examples—**never commit real secrets**.
 | --- | --- |
 | [`.env.example`](./.env.example) | Expo app / build-time public config (`EXPO_PUBLIC_*`, EAS) |
 | [`backend/.env.example`](./backend/.env.example) | API server secrets and integrations |
+| [`backend/.env.test`](./backend/.env.test) | Minimal backend env used by CI E2E |
 
 The backend also reads a root `.env` if present (shared monorepo setup).
+
+Backend integrations are feature-gated:
+- Cloudinary missing -> image upload routes return `503 image_uploads_disabled`
+- SMTP missing -> verify/reset mail falls back to non-production dev-link behavior
+- Razorpay missing -> online payment flow unavailable, COD path still works
 
 ## Scripts
 
@@ -155,6 +168,9 @@ The backend also reads a root `.env` if present (shared monorepo setup).
 | `npm run test:e2e` | Playwright web E2E (auth, checkout, smoke) |
 | `npm run test:e2e:headed` | E2E with visible browser |
 | `npm run lint` | ESLint via Expo |
+| `npm run lhci` | Lighthouse CI autorun (requires Chrome) |
+| `npm run lhci:collect` | Collect Lighthouse runs only |
+| `npm run lhci:assert` | Assert LHCI thresholds only |
 | `cd backend && npm run dev` | API with nodemon |
 
 Other useful scripts: `npm run doctor`, `npm run deploy:check`, `npm run build:android`, `npm run build:ios`.
@@ -167,6 +183,13 @@ Other useful scripts: `npm run doctor`, `npm run deploy:check`, `npm run build:a
 4. Run: `npx playwright install && npm run test:e2e`
 
 See [docs/smoke-test.md](./docs/smoke-test.md) for the manual checklist; `tests/e2e/` automates the critical paths.
+
+### Lighthouse CI
+
+- Local LHCI needs a Chrome binary available.
+  - macOS: Google Chrome install is typically auto-detected.
+  - Linux: install `google-chrome-stable` or set `CHROME_PATH`.
+- CI setup and required token (`LHCI_GITHUB_APP_TOKEN`) are documented in [docs/ci.md](./docs/ci.md).
 
 ### Unit tests (Jest)
 

@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
+const mongoose = require("mongoose");
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 dotenv.config({ path: path.join(__dirname, "..", ".env") });
@@ -11,6 +12,9 @@ initSentry();
 
 const connectDB = require("./src/config/db");
 const logger = require("./src/utils/logger");
+const { isCloudinaryConfigured } = require("./src/config/cloudinary");
+const { isSmtpConfigured } = require("./src/utils/mailTransport");
+const { isRazorpayConfigured } = require("./src/services/razorpayService");
 const { requestIdMiddleware } = require("./src/middleware/requestId");
 const { requestLogger } = require("./src/middleware/requestLogger");
 const healthRoutes = require("./src/routes/healthRoutes");
@@ -145,6 +149,13 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5001;
 
+function mongoStartupState() {
+  const state = mongoose.connection.readyState;
+  if (state === 1) return "up";
+  if (state === 2) return "connecting";
+  return "down";
+}
+
 function startExpiredPaymentSweeper() {
   const interval = setInterval(() => {
     sweepExpiredPendingPayments().catch(() => {});
@@ -159,6 +170,18 @@ async function start() {
   startExpiredPaymentSweeper();
   startWebhookReplayLoop();
   app.listen(PORT, "0.0.0.0", () => {
+    const mongoState = mongoStartupState();
+    const cloudinaryState = isCloudinaryConfigured() ? "configured" : "not-configured";
+    const razorpayState = isRazorpayConfigured() ? "configured" : "not-configured";
+    const smtpState = isSmtpConfigured() ? "configured" : "not-configured";
+    console.log(
+      "[zeevan-api] starting on :%d | mongo=%s cloudinary=%s razorpay=%s smtp=%s",
+      PORT,
+      mongoState,
+      cloudinaryState,
+      razorpayState,
+      smtpState
+    );
     logger.info({ port: PORT }, "Zeevan API listening");
   });
 }

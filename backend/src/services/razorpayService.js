@@ -2,6 +2,12 @@ const crypto = require("crypto");
 
 let razorpayInstance = null;
 
+function isRazorpayConfigured() {
+  const keyId = (process.env.RAZORPAY_KEY_ID || "").trim();
+  const keySecret = (process.env.RAZORPAY_KEY_SECRET || "").trim();
+  return Boolean(keyId && keySecret);
+}
+
 /**
  * Reads RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET from env, lazily constructs a
  * singleton razorpay client. Throws a clear error when the keys aren't
@@ -121,6 +127,7 @@ function verifyWebhookSignature(rawBody, signature) {
 
 module.exports = {
   getRazorpay,
+  isRazorpayConfigured,
   getRazorpayKeyId,
   createPaymentOrder,
   verifyPaymentSignature,

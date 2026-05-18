@@ -9,7 +9,7 @@ const {
   touchSession,
 } = require("../utils/accountSecurity");
 const { resolveProductLineFromRaw } = require("../utils/productLine");
-const cloudinary = require("../config/cloudinary");
+const { getCloudinary, isCloudinaryConfigured } = require("../config/cloudinary");
 const Product = require("../models/Product");
 const User = require("../models/User");
 const generateTokenModule = require("../utils/generateToken");
@@ -579,6 +579,12 @@ async function getAccountActivity(req, res, next) {
 
 async function uploadUserAvatar(req, res, next) {
   try {
+    if (!isCloudinaryConfigured()) {
+      return res.status(503).json({
+        error: "image_uploads_disabled",
+        message: "Image uploads are not configured in this environment.",
+      });
+    }
     const { imageBase64, mimeType } = req.body || {};
 
     if (!imageBase64 || typeof imageBase64 !== "string") {
@@ -593,7 +599,7 @@ async function uploadUserAvatar(req, res, next) {
       ? imageBase64
       : `data:${safeMime};base64,${imageBase64}`;
 
-    const uploaded = await cloudinary.uploader.upload(uploadSource, {
+    const uploaded = await getCloudinary().uploader.upload(uploadSource, {
       folder: CLOUDINARY_AVATAR_FOLDER,
       resource_type: "image",
     });

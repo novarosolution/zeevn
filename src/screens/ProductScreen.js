@@ -429,6 +429,9 @@ export default function ProductScreen({ route, navigation }) {
           gap: SPACING.xl,
           alignItems: "flex-start",
           width: "100%",
+          maxWidth: 1240,
+          alignSelf: "center",
+          paddingTop: SPACING.xs,
         },
         galleryCol: {
           flex: isTwoColumn ? 3 : undefined,
@@ -451,6 +454,10 @@ export default function ProductScreen({ route, navigation }) {
                 : {},
             default: {},
           }),
+        },
+        railSection: {
+          width: "100%",
+          gap: SPACING.lg,
         },
         galleryRow: {
           flexDirection: isTwoColumn ? "row" : "column-reverse",
@@ -941,17 +948,17 @@ export default function ProductScreen({ route, navigation }) {
             />
           </View>
 
-          <View style={{ gap: SPACING.lg }}>
+          <View style={styles.railSection}>
             <SectionHeader overline={PRODUCT_SCREEN.completeLookOverline} title={PRODUCT_SCREEN.completeLookTitle} headingLevel={2} />
             {renderProductRail(completeLookItems)}
           </View>
 
-          <View style={{ gap: SPACING.lg }}>
+          <View style={styles.railSection}>
             <SectionHeader overline={PRODUCT_SCREEN.youMayAlsoLikeOverline} title={PRODUCT_SCREEN.youMayAlsoLikeTitle} headingLevel={2} />
             {renderProductRail(youMayAlsoLikeItems)}
           </View>
 
-          <View style={{ gap: SPACING.lg }}>
+          <View style={styles.railSection}>
             <SectionHeader overline={PRODUCT_SCREEN.recentlyViewedOverline} title={PRODUCT_SCREEN.recentlyViewedTitle} headingLevel={2} />
             {renderProductRail(recentlyViewedProducts)}
           </View>

@@ -399,6 +399,12 @@ export default function ProductPurchaseColumn({
           width: isTwoColumn ? undefined : "100%",
           minWidth: 0,
           gap: 0,
+          paddingHorizontal: isTwoColumn ? SPACING.lg : 0,
+          paddingVertical: isTwoColumn ? SPACING.md : 0,
+          borderRadius: isTwoColumn ? RADII.lg : 0,
+          borderWidth: isTwoColumn ? StyleSheet.hairlineWidth : 0,
+          borderColor: isTwoColumn ? semanticPalette.lineSoft : "transparent",
+          backgroundColor: isTwoColumn ? semanticPalette.surface : "transparent",
           ...(stickyStyle || {}),
         },
         shelfAccent: {
@@ -419,7 +425,7 @@ export default function ProductPurchaseColumn({
         title: {
           fontFamily: TYPE.serifFamily,
           fontSize: titleSize,
-          lineHeight: titleSize * 1.1,
+          lineHeight: titleSize * 1.14,
           fontWeight: "500",
           letterSpacing: titleSize * -0.025,
           color: semanticPalette.ink,
@@ -509,11 +515,12 @@ export default function ProductPurchaseColumn({
         secondaryRow: {
           marginTop: 12,
           flexDirection: "row",
+          flexWrap: "wrap",
           gap: 8,
         },
-        secondaryBtn: { flex: 1, minWidth: 0 },
+        secondaryBtn: { minWidth: 0 },
         saveRow: {
-          flex: 1,
+          width: "100%",
           minWidth: 0,
           flexDirection: "row",
           alignItems: "center",
@@ -527,10 +534,15 @@ export default function ProductPurchaseColumn({
           fontSize: 13,
           color: semanticPalette.ink,
         },
+        actionBtn: {
+          flex: 1,
+          minWidth: 0,
+        },
         trustCard: {
           marginTop: 24,
           borderWidth: StyleSheet.hairlineWidth,
           borderColor: semanticPalette.lineSoft,
+          backgroundColor: semanticPalette.surfaceAlt,
         },
         trustGrid: {
           flexDirection: "row",
@@ -555,7 +567,7 @@ export default function ProductPurchaseColumn({
           borderColor: semanticPalette.line,
           borderRadius: 14,
           padding: 14,
-          backgroundColor: semanticPalette.surface,
+          backgroundColor: semanticPalette.surfaceAlt,
         },
         pinHeading: {
           fontFamily: fonts.semibold,
@@ -896,7 +908,7 @@ export default function ProductPurchaseColumn({
           label={PRODUCT_SCREEN.shareLabel}
           iconLeft={<Ionicons name="share-outline" size={18} color={semanticPalette.ink} />}
           onPress={handleShare}
-          style={styles.secondaryBtn}
+          style={[styles.secondaryBtn, styles.actionBtn]}
         />
         <Button
           variant="ghost"
@@ -904,7 +916,7 @@ export default function ProductPurchaseColumn({
           label={PRODUCT_SCREEN.askLabel}
           iconLeft={<Ionicons name="help-circle-outline" size={18} color={semanticPalette.ink} />}
           onPress={() => setShowAskModal(true)}
-          style={styles.secondaryBtn}
+          style={[styles.secondaryBtn, styles.actionBtn]}
         />
       </View>
 

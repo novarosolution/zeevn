@@ -12,12 +12,12 @@ import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/scr
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { getSemanticColors, layout, radius, spacing, typography } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
-import PremiumInput from "../../components/ui/PremiumInput";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumCard from "../../components/ui/PremiumCard";
-import PremiumChip from "../../components/ui/PremiumChip";
+import Input from "../../components/ui/Input";
+import ErrorBanner from "../../components/ui/ErrorBanner";
+import EmptyState from "../../components/ui/EmptyState";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import Chip from "../../components/ui/Chip";
 import MotionScrollView from "../../components/motion/MotionScrollView";
 import SectionReveal from "../../components/motion/SectionReveal";
 
@@ -136,11 +136,11 @@ export default function AdminProductsScreen({ navigation }) {
     <OpsAdminScreen navigation={navigation} activeRoute="AdminProducts" sectionTitle="Manage products">
           {error ? (
             <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+              <ErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
             </View>
           ) : null}
 
-                      <PremiumCard padding="md" variant="elevated" goldAccent style={styles.summaryCard}>
+                      <Card padding="md" variant="elevated" goldAccent style={styles.summaryCard}>
               <Text style={[styles.summaryEyebrow, { color: c.textMuted }]}>Catalog snapshot</Text>
               <View style={styles.summaryGrid}>
                 <View style={styles.summaryCell}>
@@ -160,11 +160,11 @@ export default function AdminProductsScreen({ navigation }) {
                   <Text style={[styles.summaryLabel, { color: c.textSecondary }]}>Out</Text>
                 </View>
               </View>
-            </PremiumCard>
+            </Card>
           
           <View style={styles.actionsRow}>
             <View style={styles.searchInputWrap}>
-              <PremiumInput
+              <Input
                 label="Search catalog"
                 value={search}
                 onChangeText={setSearch}
@@ -174,18 +174,18 @@ export default function AdminProductsScreen({ navigation }) {
                 autoCapitalize="none"
               />
             </View>
-            <PremiumButton label="Refresh" variant="secondary" size="md" onPress={loadProducts} />
+            <Button label="Refresh" variant="secondary" size="md" onPress={loadProducts} />
           </View>
 
           <View style={styles.ctaRow}>
-            <PremiumButton
+            <Button
               label="Inventory & stock"
               variant="secondary"
               iconLeft="layers-outline"
               onPress={() => navigation.navigate("AdminInventory")}
               style={styles.ctaFlex}
             />
-            <PremiumButton
+            <Button
               label="Add product"
               variant="primary"
               iconLeft="add"
@@ -197,7 +197,7 @@ export default function AdminProductsScreen({ navigation }) {
           <View style={styles.listContent}>
             {productsLoading && products.length === 0 ? <OpsListSkeleton rows={5} /> : null}
             {!productsLoading && filteredProducts.length === 0 ? (
-              <PremiumEmptyState
+              <EmptyState
                 iconName="cube-outline"
                 title={search.trim() ? "No matching products" : "No products in catalog"}
                 description={search.trim() ? "Try another search term." : "Add a product to get started."}
@@ -213,7 +213,7 @@ export default function AdminProductsScreen({ navigation }) {
               const uri = coverUri(item);
               const photoCount = (item.images || []).length || (item.image ? 1 : 0);
               return (
-                <PremiumCard key={item._id} padding="md" variant="elevated" style={styles.productCard}>
+                <Card key={item._id} padding="md" variant="elevated" style={styles.productCard}>
                     <View style={styles.cardTop}>
                       {uri ? (
                         <Image source={{ uri }} style={styles.thumb} contentFit="cover" transition={120} />
@@ -227,7 +227,7 @@ export default function AdminProductsScreen({ navigation }) {
                           <Text style={[styles.cardTitle, { color: c.textPrimary }]} numberOfLines={2}>
                             {item.name}
                           </Text>
-                          <PremiumChip label={chip.label} tone={chip.tone} size="sm" />
+                          <Chip label={chip.label} tone={chip.tone} size="sm" />
                         </View>
                         <Text style={[styles.cardPrice, { color: c.primary }]}>{formatINR(item.price)}</Text>
                       </View>
@@ -260,19 +260,19 @@ export default function AdminProductsScreen({ navigation }) {
                     ) : null}
 
                     <View style={styles.cardActions}>
-                      <PremiumButton
+                      <Button
                         label="Edit"
                         variant="ghost"
                         size="sm"
                         onPress={() => navigation.navigate("AdminAddProduct", { product: item })}
                       />
-                      <PremiumButton label="Delete" variant="destructive" size="sm" onPress={() => handleDelete(item._id)} />
+                      <Button label="Delete" variant="destructive" size="sm" onPress={() => handleDelete(item._id)} />
                     </View>
-                  </PremiumCard>
+                  </Card>
                               );
             })}
             {visibleProducts.length < filteredProducts.length ? (
-              <PremiumButton
+              <Button
                 label={`Load more (${filteredProducts.length - visibleProducts.length} remaining)`}
                 variant="subtle"
                 size="md"

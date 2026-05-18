@@ -1556,6 +1556,12 @@ export const AUTH_SCREEN = {
     stillTrying: "Still trying…",
     signInWithBiometric: "Sign in with {label}",
   },
+  gateShell: {
+    title: "Sign in to your account",
+    subtitle: "Continue to view orders, saved addresses, and account settings.",
+    signInCta: "Sign in",
+    guestCta: "Continue as guest",
+  },
   login: {
     leftPane: {
       overline: "WELCOME BACK",
@@ -2058,8 +2064,10 @@ export const CHECKOUT_UI = {
   paymentTabCards: "Cards",
   paymentTabNetbanking: "Net banking",
   paymentTabWallet: "Wallet",
-  paymentTabCod: "COD",
-  paymentOnlineHint: "You’ll complete payment securely via Razorpay after tapping Place order.",
+  paymentTabCod: "Cash on delivery",
+  paymentTabOnline: "Online payment",
+  paymentOnlineComingSoon: "Coming soon",
+  paymentOnlineHint: "Online payment is coming soon. Please choose Cash on Delivery for now.",
   validationRequired: "Required",
   invalidPhone: "Enter a valid phone number",
   invalidPostal: "Enter a valid postal code",
@@ -2579,4 +2587,13 @@ export const APP_CONTENT_INDEX = {
   admin: ADMIN_SCREEN_COPY,
   ops: OPS_UI,
   adminHomeView: ADMIN_HOME_VIEW_COPY,
+};
+
+/** Global error / offline UX — observability surfaces. */
+export const OBSERVABILITY_UI = {
+  errorBoundaryTitle: "Something went wrong",
+  errorBoundaryBody: "We hit an unexpected error. You can try again — your bag and account data are safe on this device.",
+  errorBoundaryRetry: "Try again",
+  offlineBanner: "You're offline. Changes will sync when you're back online.",
+  offlineSyncing: "Back online — syncing your changes…",
 };

@@ -76,7 +76,7 @@ function SectionHeaderBase({
           textAlign: isCenter ? "center" : "left",
           fontFamily: fonts.regular,
           ...TYPE.body,
-          color: semanticPalette.inkMuted,
+          color: semanticPalette.inkSoft,
         },
         actionInner: {
           flexDirection: "row",

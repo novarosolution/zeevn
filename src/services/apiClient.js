@@ -1,4 +1,12 @@
 import { getApiBaseUrl } from "./apiBase";
+import { captureException, captureNetworkFailure } from "../observability/sentry";
+import { isDeviceOffline } from "../utils/authNetwork";
+
+let lastRequestId = null;
+
+export function getLastRequestId() {
+  return lastRequestId;
+}
 
 /**
  * Lightweight central API client.
@@ -127,6 +135,11 @@ async function refreshAccessToken() {
   return refreshInFlight;
 }
 
+function absorbRequestId(response) {
+  const id = response?.headers?.get?.("x-request-id");
+  if (id) lastRequestId = id;
+}
+
 async function doFetch(path, options, token) {
   const headers = { ...(options.headers || {}) };
   if (!headers["Content-Type"] && options.body && typeof options.body === "string") {
@@ -139,7 +152,34 @@ async function doFetch(path, options, token) {
   if (sessionId) {
     headers["X-Session-Id"] = sessionId;
   }
-  return fetch(buildUrl(path), { ...options, headers });
+  if (lastRequestId && !headers["X-Request-Id"]) {
+    headers["X-Request-Id"] = lastRequestId;
+  }
+  try {
+    const response = await fetch(buildUrl(path), { ...options, headers });
+    absorbRequestId(response);
+    return response;
+  } catch (err) {
+    const offline = await isDeviceOffline().catch(() => false);
+    captureNetworkFailure({
+      path,
+      method: options.method || "GET",
+      offline,
+      message: err?.message,
+    });
+    const wrapped = err instanceof Error ? err : new Error("Network request failed.");
+    wrapped.code = offline ? "OFFLINE" : "NETWORK_ERROR";
+    throw wrapped;
+  }
+}
+
+function reportApiFailure(path, response, data) {
+  if (response.status >= 500) {
+    captureException(new Error(data?.message || `Server error (${response.status})`), {
+      tags: { area: "api", status: String(response.status) },
+      extra: { path, requestId: lastRequestId },
+    });
+  }
 }
 
 /**
@@ -155,7 +195,11 @@ export async function apiRequest(path, options = {}) {
   if (response.status !== 401 || !auth) {
     const data = await readJson(response);
     if (!response.ok) {
-      throw new Error(data.message || `Request failed (${response.status}).`);
+      reportApiFailure(path, response, data);
+      const err = new Error(data.message || `Request failed (${response.status}).`);
+      err.status = response.status;
+      err.requestId = lastRequestId;
+      throw err;
     }
     return data;
   }
@@ -181,7 +225,11 @@ export async function apiRequest(path, options = {}) {
     throw new Error(data.message || "Session expired.");
   }
   if (!response.ok) {
-    throw new Error(data.message || `Request failed (${response.status}).`);
+    reportApiFailure(path, response, data);
+    const err = new Error(data.message || `Request failed (${response.status}).`);
+    err.status = response.status;
+    err.requestId = lastRequestId;
+    throw err;
   }
   return data;
 }

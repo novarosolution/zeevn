@@ -11,6 +11,7 @@ import {
 } from "../constants/migrationKeys";
 import { SESSION_ID_STORAGE_KEY } from "../constants/sessionConstants";
 import { clearStoredSessionId, loadStoredSessionId, persistSessionId } from "../utils/sessionStorage";
+import { clearSentryUser, setSentryUser } from "../observability/sentry";
 
 const AuthContext = createContext(undefined);
 const AUTH_STORAGE_KEY = "@zeevan_auth";
@@ -66,6 +67,14 @@ export function AuthProvider({ children }) {
   }, [refreshToken]);
   useEffect(() => {
     userRef.current = user;
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      setSentryUser(user);
+    } else {
+      clearSentryUser();
+    }
   }, [user]);
 
   const persistSession = useCallback(async (nextToken, nextRefreshToken, nextUser, { remember = true } = {}) => {

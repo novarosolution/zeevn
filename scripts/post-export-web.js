@@ -25,6 +25,27 @@ function copySeoAssets(destRoot) {
 
 copySeoAssets(path.join(root, "public"));
 
+function copyPublicDir(subPath) {
+  const src = path.join(root, "public", subPath);
+  const dest = path.join(dist, subPath);
+  if (!fs.existsSync(src)) return;
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  if (fs.statSync(src).isDirectory()) {
+    fs.mkdirSync(dest, { recursive: true });
+    for (const name of fs.readdirSync(src)) {
+      const from = path.join(src, name);
+      const to = path.join(dest, name);
+      if (fs.statSync(from).isDirectory()) {
+        fs.cpSync(from, to, { recursive: true });
+      } else {
+        fs.copyFileSync(from, to);
+      }
+    }
+  } else {
+    fs.copyFileSync(src, dest);
+  }
+}
+
 if (!fs.existsSync(dist)) {
   console.warn("[post-export-web] dist/ not found — run expo export first.");
   process.exit(0);
@@ -42,5 +63,7 @@ if (fs.existsSync(swSrc)) {
 
 if (fs.existsSync(dist)) {
   copySeoAssets(dist);
-  console.log("[post-export-web] copied assets/seo → dist/assets/seo");
+  copyPublicDir("assets/hero");
+  copyPublicDir("fonts");
+  console.log("[post-export-web] copied assets/seo, assets/hero, fonts → dist/");
 }

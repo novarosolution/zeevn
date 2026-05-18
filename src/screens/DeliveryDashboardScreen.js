@@ -23,7 +23,7 @@ import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import EmptyState from "../components/ui/EmptyState";
 import Skeleton from "../components/ui/Skeleton";
-import PremiumSwitch from "../components/ui/PremiumSwitch";
+import Switch from "../components/ui/Switch";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import {
@@ -343,7 +343,7 @@ export default function DeliveryDashboardScreen({ navigation }) {
             <Text style={{ fontFamily: fonts.semibold, color: semanticPalette.ink }}>{DELIVERY_LIVE_SHARE.hintBold}</Text>
             {DELIVERY_LIVE_SHARE.hintAfterBold}
           </Text>
-          <PremiumSwitch
+          <Switch
             label={DELIVERY_LIVE_SHARE.switchA11yLabel}
             value={shareLiveLocation}
             onChange={(on) => {

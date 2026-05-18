@@ -1,7 +1,14 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
+import {
+  WEB_Z_INDEX,
+  webDialogLayerStyle,
+  webOverlayRootStyle,
+  webOverlayScrimStyle,
+} from "../../theme/web";
+import useModalA11y from "../../hooks/useModalA11y";
 import Button from "./Button";
 import Card from "./Card";
 import Modal from "./Modal";
@@ -16,8 +23,12 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
   busy = false,
+  triggerRef,
 }) {
   const { colors: c, isDark, SPACING } = useTheme();
+  const containerRef = useRef(null);
+
+  useModalA11y({ visible, onClose: onCancel, triggerRef, containerRef });
 
   if (!visible) return null;
 
@@ -25,16 +36,18 @@ export default function ConfirmDialog({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} accessibilityLabel="Dismiss dialog" />
-        <View
-          style={[
-            styles.scrim,
-            { backgroundColor: isDark ? "rgba(0,0,0,0.56)" : "rgba(15,23,42,0.34)" },
-          ]}
-          pointerEvents="none"
+      <View
+        ref={containerRef}
+        style={[styles.overlay, webOverlayRootStyle(WEB_Z_INDEX.dialog)]}
+        accessibilityViewIsModal
+      >
+        <Pressable
+          style={[styles.scrim, webOverlayScrimStyle(isDark)]}
+          onPress={onCancel}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss dialog"
         />
-        <View style={styles.cardWrap}>
+        <View style={[styles.cardWrap, webDialogLayerStyle()]}>
           <Card padding={SPACING.lg} style={styles.card}>
             <Text style={[styles.title, { color: c.textPrimary }]}>{title}</Text>
             {message ? (
@@ -70,20 +83,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: spacing.lg,
   },
-  scrim: {
-    ...StyleSheet.absoluteFillObject,
-  },
+  scrim: {},
   cardWrap: {
     width: "100%",
     maxWidth: 460,
-    zIndex: 1,
+    ...Platform.select({
+      web: { position: "relative" },
+      default: {},
+    }),
   },
   card: {
     borderRadius: radius.xl,
-    ...Platform.select({
-      web: { backdropFilter: "blur(6px)" },
-      default: {},
-    }),
   },
   title: {
     fontFamily: fonts.bold,

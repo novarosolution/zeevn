@@ -2,7 +2,7 @@ import React, { memo, useMemo } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { radius, spacing } from "../../theme/tokens";
+import { radius, spacing, WEB_BACKDROP } from "../../theme/tokens";
 import { HERITAGE } from "../../theme/customerAlchemy";
 import { useTheme } from "../../context/ThemeContext";
 
@@ -73,8 +73,8 @@ function createStyles(c, isDark, bottomInset, variant, align, spacingHorizontal)
         },
         android: { elevation: 12 },
         web: {
-          backdropFilter: isGlass ? "saturate(160%) blur(18px)" : "none",
-          WebkitBackdropFilter: isGlass ? "saturate(160%) blur(18px)" : "none",
+          backdropFilter: isGlass ? WEB_BACKDROP.filter : "none",
+          WebkitBackdropFilter: isGlass ? WEB_BACKDROP.filter : "none",
           boxShadow: isDark
             ? "0 -12px 26px rgba(0,0,0,0.34)"
             : "0 -10px 22px rgba(15, 23, 42, 0.06), 0 -2px 8px rgba(15, 23, 42, 0.03)",

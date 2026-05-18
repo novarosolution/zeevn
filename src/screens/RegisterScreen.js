@@ -32,6 +32,7 @@ import {
   validateRegisterPassword,
 } from "../utils/authValidation";
 import { getPasswordStrengthScore } from "../utils/passwordStrength";
+import { headingA11yProps } from "../utils/a11y";
 
 const copy = AUTH_SCREEN.register;
 const shared = AUTH_SCREEN.shared;
@@ -136,19 +137,14 @@ export default function RegisterScreen({ navigation }) {
           fontFamily: fonts.regular,
           fontSize: 12,
           lineHeight: 17,
-          color: semanticPalette.inkMuted,
+          color: semanticPalette.inkSoft,
         },
         termsLink: {
           fontFamily: fonts.medium,
           fontSize: 12,
           lineHeight: 17,
-          color: semanticPalette.accent,
-          ...Platform.select({
-            web: {
-              textDecorationLine: termsHover ? "underline" : "none",
-            },
-            default: {},
-          }),
+          color: semanticPalette.ink,
+          textDecorationLine: "underline",
         },
         emailConflictRow: {
           marginTop: 4,
@@ -167,33 +163,11 @@ export default function RegisterScreen({ navigation }) {
           fontFamily: fonts.semibold,
           fontSize: 12,
           lineHeight: 16,
-          color: semanticPalette.accent,
+          color: semanticPalette.ink,
           textDecorationLine: "underline",
         },
         ctaBlock: {
           marginTop: spacing.lg,
-        },
-        dividerWrap: {
-          marginTop: spacing.lg,
-          flexDirection: "row",
-          alignItems: "center",
-          gap: SPACING.sm,
-        },
-        dividerHairline: {
-          flex: 1,
-          height: StyleSheet.hairlineWidth,
-          backgroundColor: semanticPalette.lineSoft,
-        },
-        dividerLabel: {
-          fontFamily: fonts.semibold,
-          ...TYPE.micro,
-          letterSpacing: 1.4,
-          textTransform: "uppercase",
-          color: semanticPalette.inkMuted,
-        },
-        socialStack: {
-          marginTop: spacing.sm,
-          gap: spacing.sm,
         },
         footerRow: {
           marginTop: spacing.xl,
@@ -218,13 +192,8 @@ export default function RegisterScreen({ navigation }) {
           fontFamily: fonts.semibold,
           fontSize: 13,
           lineHeight: 18,
-          color: semanticPalette.accent,
-          ...Platform.select({
-            web: {
-              textDecorationLine: footerLinkHover ? "underline" : "none",
-            },
-            default: {},
-          }),
+          color: semanticPalette.ink,
+          textDecorationLine: "underline",
         },
       }),
     [
@@ -233,7 +202,7 @@ export default function RegisterScreen({ navigation }) {
       footerLinkHover,
       semanticPalette.accent,
       semanticPalette.ink,
-      semanticPalette.inkMuted,
+      semanticPalette.inkSoft,
       semanticPalette.inkSoft,
       semanticPalette.lineSoft,
       semanticPalette.sale,
@@ -348,22 +317,6 @@ export default function RegisterScreen({ navigation }) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [canSubmit, handleRegister, isSubmitting]);
 
-  const socialProviders = useMemo(() => {
-    const apple = {
-      key: "apple",
-      label: copy.socialApple,
-      icon: <Ionicons name="logo-apple" size={18} color={semanticPalette.ink} />,
-    };
-    const google = {
-      key: "google",
-      label: copy.socialGoogle,
-      icon: <Ionicons name="logo-google" size={18} color={semanticPalette.ink} />,
-    };
-    return Platform.OS === "ios" ? [apple, google] : [google, apple];
-  }, [semanticPalette.ink]);
-
-  const noopOAuth = () => {};
-
   const footerLink = (
     <View style={styles.footerRow}>
       <Text style={styles.footerLead}>{copy.footerLabel}</Text>
@@ -373,13 +326,13 @@ export default function RegisterScreen({ navigation }) {
         style={styles.footerLink}
       >
         <Text style={styles.footerLinkText}>{copy.footerLink}</Text>
-        <Ionicons name="chevron-forward" size={14} color={semanticPalette.accent} />
+        <Ionicons name="chevron-forward" size={14} color={semanticPalette.ink} />
       </Pressable>
     </View>
   );
 
   return (
-    <AuthShell variant="register" navigation={navigation} bareForm showSocialRow={false}>
+    <AuthShell variant="register" navigation={navigation} bareForm>
       <Toast
         visible={welcomeToastVisible}
         message={fillPlaceholders(copy.welcomeToast, { brand: APP_DISPLAY_NAME })}
@@ -393,7 +346,7 @@ export default function RegisterScreen({ navigation }) {
         durationMs={2400}
       />
 
-      <Text accessibilityRole="header" style={styles.title}>
+      <Text {...headingA11yProps(1)} style={styles.title}>
         {copy.formTitle}
       </Text>
       <Text style={styles.subtitle}>{copy.formSubtitle}</Text>
@@ -557,7 +510,7 @@ export default function RegisterScreen({ navigation }) {
               textAlign: "center",
               fontFamily: fonts.regular,
               fontSize: 12,
-              color: semanticPalette.inkMuted,
+              color: semanticPalette.inkSoft,
             }}
           >
             {shared.stillTrying}
@@ -565,27 +518,6 @@ export default function RegisterScreen({ navigation }) {
         ) : null}
       </View>
 
-      <View style={styles.dividerWrap} accessibilityRole="text">
-        <View style={styles.dividerHairline} />
-        <Text style={styles.dividerLabel}>{copy.socialDivider}</Text>
-        <View style={styles.dividerHairline} />
-      </View>
-
-      <View style={styles.socialStack}>
-        {socialProviders.map((provider) => (
-          <Button
-            key={provider.key}
-            variant="secondary"
-            size="lg"
-            fullWidth
-            label={provider.label}
-            onPress={noopOAuth}
-            iconLeft={provider.icon}
-            accessibilityHint={copy.oauthUnavailableHint}
-            interactionProfile="authSocial"
-          />
-        ))}
-      </View>
       {footerLink}
     </AuthShell>
   );

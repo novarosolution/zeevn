@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { fetchUserProfile, updateUserProfile } from "../services/userService";
+import { isDeviceOffline } from "./authNetwork";
+import { WRITE_TYPES, enqueueCriticalWrite } from "./criticalWriteQueue";
 
 export const SAVED_ADDRESSES_KEY = "@zeevan_saved_addresses_v1";
 
@@ -139,14 +141,32 @@ export async function saveSavedAddresses(list, { token, updateStoredUser } = {})
   if (token && primary) {
     const payload = toBackendDefaultAddress(primary);
     if (payload?.line1) {
-      const updated = await updateUserProfile(token, { defaultAddress: payload });
-      if (typeof updateStoredUser === "function") await updateStoredUser(updated);
+      try {
+        const updated = await updateUserProfile(token, { defaultAddress: payload });
+        if (typeof updateStoredUser === "function") await updateStoredUser(updated);
+      } catch (err) {
+        const offline = err?.code === "OFFLINE" || (await isDeviceOffline().catch(() => false));
+        if (offline) {
+          await enqueueCriticalWrite(WRITE_TYPES.ADDRESS_SAVE, { list: next });
+        } else {
+          throw err;
+        }
+      }
     }
   } else if (token && next.length === 0) {
-    const updated = await updateUserProfile(token, {
-      defaultAddress: { line1: "", city: "", state: "", postalCode: "", country: "" },
-    });
-    if (typeof updateStoredUser === "function") await updateStoredUser(updated);
+    try {
+      const updated = await updateUserProfile(token, {
+        defaultAddress: { line1: "", city: "", state: "", postalCode: "", country: "" },
+      });
+      if (typeof updateStoredUser === "function") await updateStoredUser(updated);
+    } catch (err) {
+      const offline = err?.code === "OFFLINE" || (await isDeviceOffline().catch(() => false));
+      if (offline) {
+        await enqueueCriticalWrite(WRITE_TYPES.ADDRESS_SAVE, { list: next });
+      } else {
+        throw err;
+      }
+    }
   }
 
   return next;

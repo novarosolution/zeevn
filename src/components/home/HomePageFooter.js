@@ -54,7 +54,13 @@ export default function HomePageFooter({ colors: c, compact = false }) {
   };
 
   return (
-    <View style={styles.shell}>
+    <View
+      style={styles.shell}
+      accessibilityRole="contentinfo"
+      {...Platform.select({
+        web: { role: "contentinfo", "aria-label": "Site footer" },
+      })}
+    >
       <View style={styles.newsletterStrip}>
         <View style={styles.newsletterTextCol}>
           <Text style={styles.newsletterTitle}>{HOME_FOOTER.newsletter.title}</Text>

@@ -14,14 +14,14 @@ import MotionScrollView from "../../components/motion/MotionScrollView";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
 import { layout, radius, spacing } from "../../theme/tokens";
-import PremiumLoader from "../../components/ui/PremiumLoader";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumInput from "../../components/ui/PremiumInput";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumCard from "../../components/ui/PremiumCard";
-import PremiumChip from "../../components/ui/PremiumChip";
-import PremiumSwitch from "../../components/ui/PremiumSwitch";
+import Loader from "../../components/ui/Loader";
+import EmptyState from "../../components/ui/EmptyState";
+import ErrorBanner from "../../components/ui/ErrorBanner";
+import Input from "../../components/ui/Input";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import Chip from "../../components/ui/Chip";
+import Switch from "../../components/ui/Switch";
 import { ADMIN_SCREEN_COPY, APP_LOADING_UI } from "../../content/appContent";
 
 export default function AdminRewardsScreen({ navigation }) {
@@ -138,20 +138,20 @@ export default function AdminRewardsScreen({ navigation }) {
     <OpsAdminScreen navigation={navigation} activeRoute="AdminRewards" sectionTitle="Loyalty rewards">
               {error ? (
                 <View style={styles.bannerSpacer}>
-                  <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+                  <ErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
                 </View>
               ) : null}
               {success ? (
                 <View style={styles.bannerSpacer}>
-                  <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
+                  <ErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
                 </View>
               ) : null}
                           <View style={isWideWeb ? styles.workspaceGrid : null}>
               <View style={isWideWeb ? styles.workspacePrimary : null}>
-                            <PremiumCard padding="lg" style={styles.formCard}>
+                            <Card padding="lg" style={styles.formCard}>
                 <Text style={[styles.formTitle, { color: c.textPrimary }]}>{ADMIN_SCREEN_COPY.rewards.createTitle}</Text>
                 <View style={styles.fieldGap}>
-                  <PremiumInput
+                  <Input
                     label="Title"
                     value={form.title}
                     onChangeText={(value) => setForm((cur) => ({ ...cur, title: value }))}
@@ -159,7 +159,7 @@ export default function AdminRewardsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.fieldGap}>
-                  <PremiumInput
+                  <Input
                     label="Description"
                     value={form.description}
                     onChangeText={(value) => setForm((cur) => ({ ...cur, description: value }))}
@@ -169,7 +169,7 @@ export default function AdminRewardsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.fieldGap}>
-                  <PremiumInput
+                  <Input
                     label="Points cost"
                     value={form.pointsCost}
                     onChangeText={(value) => setForm((cur) => ({ ...cur, pointsCost: value }))}
@@ -178,7 +178,7 @@ export default function AdminRewardsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.typeRow}>
-                  <PremiumChip
+                  <Chip
                     label="Percent off"
                     tone="gold"
                     size="md"
@@ -186,7 +186,7 @@ export default function AdminRewardsScreen({ navigation }) {
                     onPress={() => setForm((cur) => ({ ...cur, discountType: "percent" }))}
                     style={styles.typeChipFlex}
                   />
-                  <PremiumChip
+                  <Chip
                     label="Flat ₹ off"
                     tone="gold"
                     size="md"
@@ -196,7 +196,7 @@ export default function AdminRewardsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.fieldGap}>
-                  <PremiumInput
+                  <Input
                     label={form.discountType === "percent" ? "Discount %" : "Discount amount (₹)"}
                     value={form.discountValue}
                     onChangeText={(value) => setForm((cur) => ({ ...cur, discountValue: value }))}
@@ -205,7 +205,7 @@ export default function AdminRewardsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.fieldGap}>
-                  <PremiumInput
+                  <Input
                     label="Minimum order amount"
                     value={form.minOrderAmount}
                     onChangeText={(value) => setForm((cur) => ({ ...cur, minOrderAmount: value }))}
@@ -214,7 +214,7 @@ export default function AdminRewardsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.fieldGap}>
-                  <PremiumInput
+                  <Input
                     label="Max discount (optional, for %)"
                     value={form.maxDiscountAmount}
                     onChangeText={(value) => setForm((cur) => ({ ...cur, maxDiscountAmount: value }))}
@@ -222,7 +222,7 @@ export default function AdminRewardsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.fieldGap}>
-                  <PremiumInput
+                  <Input
                     label="Global redemption cap (optional)"
                     value={form.totalRedemptionLimit}
                     onChangeText={(value) => setForm((cur) => ({ ...cur, totalRedemptionLimit: value }))}
@@ -231,7 +231,7 @@ export default function AdminRewardsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.fieldGap}>
-                  <PremiumInput
+                  <Input
                     label="Max redeems per customer"
                     value={form.perUserLimit}
                     onChangeText={(value) => setForm((cur) => ({ ...cur, perUserLimit: value }))}
@@ -239,7 +239,7 @@ export default function AdminRewardsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.fieldGap}>
-                  <PremiumInput
+                  <Input
                     label="Issued coupon valid (days)"
                     value={form.issuedCouponValidDays}
                     onChangeText={(value) => setForm((cur) => ({ ...cur, issuedCouponValidDays: value }))}
@@ -247,7 +247,7 @@ export default function AdminRewardsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.fieldGap}>
-                  <PremiumInput
+                  <Input
                     label="Reward visible until (YYYY-MM-DD, optional)"
                     value={form.expiresAt}
                     onChangeText={(value) => setForm((cur) => ({ ...cur, expiresAt: value }))}
@@ -256,7 +256,7 @@ export default function AdminRewardsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.toggleRow}>
-                  <PremiumSwitch
+                  <Switch
                     label="Active"
                     hint="Reward can be redeemed by customers"
                     value={Boolean(form.isActive)}
@@ -264,14 +264,14 @@ export default function AdminRewardsScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.toggleRow}>
-                  <PremiumSwitch
+                  <Switch
                     label="Show in customer Rewards shop"
                     hint="Controls storefront visibility in the rewards catalog"
                     value={Boolean(form.isVisibleToUsers)}
                     onChange={(value) => setForm((cur) => ({ ...cur, isVisibleToUsers: value }))}
                   />
                 </View>
-                <PremiumButton
+                <Button
                   label={submitting ? "Creating…" : "Create reward"}
                   variant="primary"
                   size="md"
@@ -281,15 +281,15 @@ export default function AdminRewardsScreen({ navigation }) {
                   fullWidth
                   style={styles.createBtnMargin}
                 />
-              </PremiumCard>
+              </Card>
                             </View>
 
             <View style={isWideWeb ? styles.workspaceSecondary : null}>
                           <Text style={[styles.listTitle, { color: c.textPrimary }]}>{ADMIN_SCREEN_COPY.rewards.listTitle}</Text>
               {loading ? (
-                <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} />
+                <Loader size="sm" caption={APP_LOADING_UI.inline.admin} />
               ) : rewards.length === 0 ? (
-                <PremiumEmptyState
+                <EmptyState
                   iconName="gift-outline"
                   title={ADMIN_SCREEN_COPY.rewards.emptyTitle}
                   description={ADMIN_SCREEN_COPY.rewards.emptyDescription}
@@ -297,10 +297,10 @@ export default function AdminRewardsScreen({ navigation }) {
                 />
               ) : (
                 rewards.map((reward) => (
-                  <PremiumCard key={reward._id} padding="md" style={styles.card}>
+                  <Card key={reward._id} padding="md" style={styles.card}>
                     <View style={styles.cardTop}>
                       <Text style={[styles.cardTitle, { color: c.textPrimary }]}>{reward.title}</Text>
-                      <PremiumChip
+                      <Chip
                         label={reward.isActive ? "Active" : "Inactive"}
                         tone={reward.isActive ? "green" : "neutral"}
                         size="xs"
@@ -328,21 +328,21 @@ export default function AdminRewardsScreen({ navigation }) {
                     </Text>
                     <View style={styles.rowSwitches}>
                       <View style={styles.switchRow}>
-                        <PremiumSwitch
+                        <Switch
                           label="Active"
                           value={Boolean(reward.isActive)}
                           onChange={() => handleToggleActive(reward)}
                         />
                       </View>
                       <View style={styles.switchRow}>
-                        <PremiumSwitch
+                        <Switch
                           label="Visible"
                           value={Boolean(reward.isVisibleToUsers)}
                           onChange={() => handleToggleVisibility(reward)}
                         />
                       </View>
                     </View>
-                  </PremiumCard>
+                  </Card>
                 ))
               )}
                         </View>

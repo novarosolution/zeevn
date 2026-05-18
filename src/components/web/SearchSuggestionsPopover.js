@@ -270,7 +270,7 @@ export default function SearchSuggestionsPopover({
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
         onPress={onClose}
-        style={[styles.scrim, { zIndex: WEB_Z_INDEX.overlay - 1 }]}
+        style={[styles.scrim, { zIndex: WEB_Z_INDEX.dropdownScrim }]}
       />
       <View
         nativeID="search-suggestions-popover-root"

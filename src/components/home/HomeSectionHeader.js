@@ -1,15 +1,24 @@
-import PremiumSectionHeader from "../ui/PremiumSectionHeader";
+import React, { memo } from "react";
+import SectionHeader from "../ui/SectionHeader";
 
 /**
- * Back-compat alias for the home section header. The shared implementation
- * lives in `src/components/ui/PremiumSectionHeader.js` so any customer
- * screen can use it (and cohesion stays one-source-of-truth).
- *
- *   <HomeSectionHeader
- *     overline="Curated for you"
- *     title="Prime products"
- *     count={items.length}
- *     onSeeAll={...}
- *   />
+ * Home catalog section chrome — maps legacy `onSeeAll` / `count` props to `SectionHeader`.
  */
-export default PremiumSectionHeader;
+function HomeSectionHeader({ count, subtitle, onSeeAll, seeAllLabel = "See all", compact: _compact, ...rest }) {
+  const resolvedSubtitle =
+    subtitle ??
+    (count != null && Number.isFinite(Number(count))
+      ? `${count} item${Number(count) === 1 ? "" : "s"}`
+      : undefined);
+
+  return (
+    <SectionHeader
+      {...rest}
+      subtitle={resolvedSubtitle}
+      actionLabel={seeAllLabel}
+      onActionPress={onSeeAll}
+    />
+  );
+}
+
+export default memo(HomeSectionHeader);

@@ -22,19 +22,21 @@ import AccountNavigator from "./AccountNavigator";
 import { ACCOUNT_NESTED } from "./accountRoutes";
 import SearchScreen from "../screens/SearchScreen";
 import SupportScreen from "../screens/SupportScreen";
-import DeliveryDashboardScreen from "../screens/DeliveryDashboardScreen";
-import AdminDashboardScreen from "../screens/admin/AdminDashboardScreen";
-import AdminProductsScreen from "../screens/admin/AdminProductsScreen";
-import AdminAddProductScreen from "../screens/admin/AdminAddProductScreen";
-import AdminOrdersScreen from "../screens/admin/AdminOrdersScreen";
-import AdminUsersScreen from "../screens/admin/AdminUsersScreen";
-import AdminNotificationsScreen from "../screens/admin/AdminNotificationsScreen";
-import AdminAnalyticsScreen from "../screens/admin/AdminAnalyticsScreen";
-import AdminCouponsScreen from "../screens/admin/AdminCouponsScreen";
-import AdminRewardsScreen from "../screens/admin/AdminRewardsScreen";
-import AdminSupportScreen from "../screens/admin/AdminSupportScreen";
-import AdminHomeViewScreen from "../screens/admin/AdminHomeViewScreen";
-import AdminInventoryScreen from "../screens/admin/AdminInventoryScreen";
+import {
+  LazyAdminAddProductScreen,
+  LazyAdminAnalyticsScreen,
+  LazyAdminCouponsScreen,
+  LazyAdminDashboardScreen,
+  LazyAdminHomeViewScreen,
+  LazyAdminInventoryScreen,
+  LazyAdminNotificationsScreen,
+  LazyAdminOrdersScreen,
+  LazyAdminProductsScreen,
+  LazyAdminRewardsScreen,
+  LazyAdminSupportScreen,
+  LazyAdminUsersScreen,
+  LazyDeliveryDashboardScreen,
+} from "./lazyOpsScreens";
 import AboutScreen from "../screens/editorial/AboutScreen";
 import ContactScreen from "../screens/editorial/ContactScreen";
 import FaqScreen from "../screens/editorial/FaqScreen";
@@ -44,17 +46,18 @@ import BlogPostScreen from "../screens/editorial/BlogPostScreen";
 import NotFoundScreen from "../screens/NotFoundScreen";
 import { useAuth } from "../context/AuthContext";
 import SessionExpiryRedirect from "./SessionExpiryRedirect";
+import { withRouteErrorBoundary } from "../components/errors/RouteErrorBoundary";
 
 const Stack = createNativeStackNavigator();
 
 function withPageTransition(Component) {
-  return function PageTransitionedScreen(props) {
+  return withRouteErrorBoundary(function PageTransitionedScreen(props) {
     return (
       <PageTransition>
         <Component {...props} />
       </PageTransition>
     );
-  };
+  });
 }
 
 function withAuthGuard(Component) {
@@ -160,19 +163,19 @@ const ProtectedNotifications = withAuthGuard(NotificationsScreen);
 const ProtectedRedeemRewards = withAuthGuard(RedeemRewardsScreen);
 const ProtectedSupport = withAuthGuard(SupportScreen);
 /** Auth only — role is checked inside the screen after a fresh profile fetch (avoids stale cache + wrong redirect). */
-const ProtectedDeliveryDashboard = withAuthGuard(DeliveryDashboardScreen);
-const ProtectedAdminDashboard = withRoleGuard(AdminDashboardScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminProducts = withRoleGuard(AdminProductsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminInventory = withRoleGuard(AdminInventoryScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminAddProduct = withRoleGuard(AdminAddProductScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminOrders = withRoleGuard(AdminOrdersScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminUsers = withRoleGuard(AdminUsersScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminNotifications = withRoleGuard(AdminNotificationsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminAnalytics = withRoleGuard(AdminAnalyticsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminCoupons = withRoleGuard(AdminCouponsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminRewards = withRoleGuard(AdminRewardsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminSupport = withRoleGuard(AdminSupportScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminHomeView = withRoleGuard(AdminHomeViewScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedDeliveryDashboard = withAuthGuard(LazyDeliveryDashboardScreen);
+const ProtectedAdminDashboard = withRoleGuard(LazyAdminDashboardScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminProducts = withRoleGuard(LazyAdminProductsScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminInventory = withRoleGuard(LazyAdminInventoryScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminAddProduct = withRoleGuard(LazyAdminAddProductScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminOrders = withRoleGuard(LazyAdminOrdersScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminUsers = withRoleGuard(LazyAdminUsersScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminNotifications = withRoleGuard(LazyAdminNotificationsScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminAnalytics = withRoleGuard(LazyAdminAnalyticsScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminCoupons = withRoleGuard(LazyAdminCouponsScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminRewards = withRoleGuard(LazyAdminRewardsScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminSupport = withRoleGuard(LazyAdminSupportScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminHomeView = withRoleGuard(LazyAdminHomeViewScreen, (user) => Boolean(user?.isAdmin));
 
 export default function AppNavigator({ navigationRef, navigationReady = false }) {
   const { isAuthLoading } = useAuth();
@@ -197,7 +200,11 @@ export default function AppNavigator({ navigationRef, navigationReady = false })
         nativeID="main-content"
         style={styles.stackFill}
         accessible={false}
-        {...Platform.select({ web: { tabIndex: -1 } })}
+        accessibilityRole="main"
+        accessibilityLabel="Main content"
+        {...Platform.select({
+          web: { tabIndex: -1, role: "main", "aria-label": "Main content" },
+        })}
       >
         {isAuthLoading ? (
           <AppStartupScreen />

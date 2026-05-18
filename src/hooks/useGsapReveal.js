@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Platform } from "react-native";
-import { gsap } from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 const PRESETS = {
   "fade-up": {
@@ -22,16 +20,11 @@ const PRESETS = {
   },
 };
 
-if (Platform.OS === "web") {
-  gsap.registerPlugin(ScrollTrigger);
-}
+import { loadGsap } from "../utils/loadGsap";
 
 /**
  * Web-only ScrollTrigger reveal helper. Returns `{ ref }` to attach to a View.
  * On native it's a no-op so callers can render the View unconditionally.
- *
- *   const { ref } = useGsapReveal({ preset: "fade-up", start: "top 88%" });
- *   <View ref={ref} ... />
  */
 export default function useGsapReveal({
   preset = "fade-up",
@@ -58,33 +51,42 @@ export default function useGsapReveal({
       return undefined;
     }
 
-    const target = ref.current;
-    if (!target || typeof Element === "undefined" || !(target instanceof Element)) {
-      return undefined;
-    }
+    let cancelled = false;
+    let tween;
 
-    const settings = PRESETS[preset] || PRESETS["fade-up"];
-    if (target.style) {
-      target.style.opacity = "1";
-      target.style.transform = "";
-    }
-    const tween = gsap.fromTo(target, settings.from, {
-      ...settings.to,
-      delay,
-      scrollTrigger: {
-        trigger: target,
-        start,
-        end,
-        scrub,
-        toggleActions,
-      },
-    });
+    (async () => {
+      const gsap = await loadGsap();
+      if (cancelled || !gsap) return;
+
+      const target = ref.current;
+      if (!target || typeof Element === "undefined" || !(target instanceof Element)) {
+        return;
+      }
+
+      const settings = PRESETS[preset] || PRESETS["fade-up"];
+      if (target.style) {
+        target.style.opacity = "1";
+        target.style.transform = "";
+      }
+      tween = gsap.fromTo(target, settings.from, {
+        ...settings.to,
+        delay,
+        scrollTrigger: {
+          trigger: target,
+          start,
+          end,
+          scrub,
+          toggleActions,
+        },
+      });
+    })();
 
     return () => {
-      if (tween && tween.scrollTrigger && typeof tween.scrollTrigger.kill === "function") {
+      cancelled = true;
+      if (tween?.scrollTrigger && typeof tween.scrollTrigger.kill === "function") {
         tween.scrollTrigger.kill();
       }
-      if (typeof tween.kill === "function") {
+      if (typeof tween?.kill === "function") {
         tween.kill();
       }
     };

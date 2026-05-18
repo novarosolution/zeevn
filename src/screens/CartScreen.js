@@ -25,6 +25,8 @@ import {
   PaymentTabsRow,
   paymentTabToBackend,
 } from "../components/cart/CartCheckoutPanels";
+import CartItem from "../components/cart/CartItem";
+import CartItemThumb from "../components/cart/CartItemThumb";
 import Screen from "../components/ui/Screen";
 import SectionHeader from "../components/ui/SectionHeader";
 import Button from "../components/ui/Button";
@@ -92,33 +94,13 @@ function postalOk(p) {
   return s.length >= 4 && s.length <= 12;
 }
 
-function RetryCartImage({ sourceUri, style, placeholderStyle, iconSize, inkMuted }) {
-  const candidates = useMemo(() => getImageUriCandidates(sourceUri), [sourceUri]);
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    setIndex(0);
-  }, [sourceUri]);
-
-  const currentUri = candidates[index] || "";
-  if (!currentUri) {
-    return (
-      <View style={[style, placeholderStyle]}>
-        <Ionicons name="image-outline" size={iconSize} color={inkMuted} />
-      </View>
-    );
+function normalizePaymentTab(rawTab) {
+  const value = String(rawTab || "").toLowerCase();
+  if (value === "cod") return "cod";
+  if (value === "online" || value === "upi" || value === "cards" || value === "netbanking" || value === "wallet") {
+    return "online";
   }
-
-  return (
-    <Image
-      source={{ uri: currentUri }}
-      style={style}
-      contentFit="cover"
-      transition={200}
-      recyclingKey={currentUri}
-      onError={() => setIndex((prev) => prev + 1)}
-    />
-  );
+  return "cod";
 }
 
 export default function CartScreen({ navigation, route }) {
@@ -152,7 +134,7 @@ export default function CartScreen({ navigation, route }) {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [availableCoupons, setAvailableCoupons] = useState([]);
   const [catalogProducts, setCatalogProducts] = useState([]);
-  const [paymentTab, setPaymentTab] = useState("upi");
+  const [paymentTab, setPaymentTab] = useState("cod");
   const [deliveryMethod, setDeliveryMethod] = useState("standard");
   const [openSteps, setOpenSteps] = useState({ contact: true, delivery: false, payment: false });
   const [orderSuccess, setOrderSuccess] = useState(null);
@@ -254,7 +236,7 @@ export default function CartScreen({ navigation, route }) {
         if (d.postalCode != null) setPostalCode(String(d.postalCode));
         if (d.country != null) setCountry(String(d.country));
         if (d.note != null) setNote(String(d.note));
-        if (d.paymentTab != null) setPaymentTab(String(d.paymentTab));
+        if (d.paymentTab != null) setPaymentTab(normalizePaymentTab(d.paymentTab));
         if (d.deliveryMethod != null) setDeliveryMethod(String(d.deliveryMethod));
       } catch {
         /* noop */
@@ -383,6 +365,11 @@ export default function CartScreen({ navigation, route }) {
 
   const handlePlaceOrder = async () => {
     if (cartItems.length === 0) return;
+    if (paymentTab === "online") {
+      setError(CHECKOUT_UI.paymentOnlineHint);
+      setOpenSteps((prev) => ({ ...prev, payment: true }));
+      return;
+    }
     if (!validateCheckoutFields()) return;
 
     try {
@@ -551,76 +538,14 @@ export default function CartScreen({ navigation, route }) {
   );
 
   const renderCartLine = (item) => (
-    <Card key={`${item.id}-${item.variantLabel || ""}`} padding="md" style={{ marginBottom: SPACING.md }}>
-      <View style={{ flexDirection: "row", gap: SPACING.md }}>
-        <RetryCartImage
-          sourceUri={item.image || ""}
-          style={{
-            width: 80,
-            height: 100,
-            borderRadius: RADII.sm,
-            backgroundColor: semanticPalette.surfaceAlt,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: semanticPalette.line,
-          }}
-          placeholderStyle={{ alignItems: "center", justifyContent: "center" }}
-          iconSize={icon.lg}
-          inkMuted={semanticPalette.inkMuted}
-        />
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", gap: SPACING.sm }}>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: TYPE.body.fontSize, color: semanticPalette.ink, flex: 1 }} numberOfLines={2}>
-              {item.name}
-            </Text>
-            <Text style={{ fontFamily: fonts.semibold, fontSize: TYPE.body.fontSize, color: semanticPalette.ink }}>
-              {formatINR(item.price * item.quantity)}
-            </Text>
-          </View>
-          {item.variantLabel ? (
-            <Text style={{ marginTop: 4, fontFamily: fonts.medium, fontSize: TYPE.caption.fontSize, color: semanticPalette.inkMuted }}>
-              {item.variantLabel}
-            </Text>
-          ) : null}
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: SPACING.sm }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                borderWidth: StyleSheet.hairlineWidth,
-                borderColor: semanticPalette.line,
-                borderRadius: RADII.pill,
-              }}
-            >
-              <Pressable
-                style={{ paddingHorizontal: 12, paddingVertical: 8 }}
-                onPress={() => removeFromCart(item.id, item.variantLabel)}
-                accessibilityRole="button"
-                accessibilityLabel="Decrease quantity"
-              >
-                <Ionicons name="remove" size={18} color={semanticPalette.ink} />
-              </Pressable>
-              <Text style={{ fontFamily: fonts.semibold, minWidth: 24, textAlign: "center", color: semanticPalette.ink }}>{item.quantity}</Text>
-              <Pressable
-                style={{ paddingHorizontal: 12, paddingVertical: 8 }}
-                onPress={() => addToCart(item)}
-                accessibilityRole="button"
-                accessibilityLabel="Increase quantity"
-              >
-                <Ionicons name="add" size={18} color={semanticPalette.ink} />
-              </Pressable>
-            </View>
-            <Pressable
-              onPress={() => removeLineFromCart(item.id, item.variantLabel)}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={CART_DRAWER_UI.removeLineA11y}
-            >
-              <Ionicons name="trash-outline" size={20} color={semanticPalette.inkMuted} />
-            </Pressable>
-          </View>
-        </View>
-      </View>
-    </Card>
+    <CartItem
+      key={`${item.id}-${item.variantLabel || ""}`}
+      item={item}
+      showLineTotal
+      onDecrease={() => removeFromCart(item.id, item.variantLabel)}
+      onIncrease={() => addToCart(item)}
+      onRemove={() => removeLineFromCart(item.id, item.variantLabel)}
+    />
   );
 
   const renderAddonsStrip = () => {
@@ -632,18 +557,7 @@ export default function CartScreen({ navigation, route }) {
           {upsellProducts.map((p) => (
             <Card key={p.id} padding="md" style={{ width: isCompact ? 240 : 260 }}>
               <View style={{ flexDirection: "row", gap: SPACING.sm }}>
-                <RetryCartImage
-                  sourceUri={p.image || ""}
-                  style={{
-                    width: 72,
-                    height: 72,
-                    borderRadius: RADII.sm,
-                    backgroundColor: semanticPalette.surfaceAlt,
-                  }}
-                  placeholderStyle={{ alignItems: "center", justifyContent: "center" }}
-                  iconSize={icon.md}
-                  inkMuted={semanticPalette.inkMuted}
-                />
+                <CartItemThumb uri={p.image || ""} width={72} height={72} borderRadius={RADII.sm} semanticPalette={semanticPalette} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={{ fontFamily: fonts.semibold, fontSize: TYPE.small.fontSize, color: semanticPalette.ink }} numberOfLines={2}>
                     {p.name}
@@ -1039,7 +953,7 @@ export default function CartScreen({ navigation, route }) {
                     subtitle={
                       paymentTab === "cod"
                         ? CHECKOUT_UI.paymentTabCod
-                        : `${CHECKOUT_UI.paymentTabUpi} · ${CHECKOUT_UI.paymentTabCards}`
+                        : `${CHECKOUT_UI.paymentTabOnline} · ${CHECKOUT_UI.paymentOnlineComingSoon}`
                     }
                     expanded={openSteps.payment}
                     onToggle={() => toggleStep("payment")}

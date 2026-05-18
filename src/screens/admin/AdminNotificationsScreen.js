@@ -11,12 +11,12 @@ import {
 import { adminPanel } from "../../theme/adminLayout";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
 import { spacing, typography } from "../../theme/tokens";
-import PremiumLoader from "../../components/ui/PremiumLoader";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumInput from "../../components/ui/PremiumInput";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumCard from "../../components/ui/PremiumCard";
+import Loader from "../../components/ui/Loader";
+import EmptyState from "../../components/ui/EmptyState";
+import ErrorBanner from "../../components/ui/ErrorBanner";
+import Input from "../../components/ui/Input";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
 import MotionScrollView from "../../components/motion/MotionScrollView";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { APP_LOADING_UI } from "../../content/appContent";
@@ -80,19 +80,19 @@ export default function AdminNotificationsScreen({ navigation }) {
     <OpsAdminScreen navigation={navigation} activeRoute="AdminNotifications" sectionTitle="Send notification">
             {error ? (
               <View style={styles.bannerSpacer}>
-                <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+                <ErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
               </View>
             ) : null}
             {success ? (
               <View style={styles.bannerSpacer}>
-                <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
+                <ErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
               </View>
             ) : null}
 
-            <PremiumCard padding="lg" goldAccent style={styles.composeCard}>
+            <Card padding="lg" goldAccent style={styles.composeCard}>
               <Text style={[styles.composeLabel, { color: c.textPrimary }]}>Compose broadcast</Text>
               <View style={styles.fieldGap}>
-                <PremiumInput
+                <Input
                   label="Notification title"
                   value={title}
                   onChangeText={setTitle}
@@ -100,7 +100,7 @@ export default function AdminNotificationsScreen({ navigation }) {
                 />
               </View>
               <View style={styles.fieldGap}>
-                <PremiumInput
+                <Input
                   label="Message"
                   value={message}
                   onChangeText={setMessage}
@@ -111,7 +111,7 @@ export default function AdminNotificationsScreen({ navigation }) {
                 />
               </View>
 
-              <PremiumButton
+              <Button
                 label={sending ? "Sending..." : "Send to all users"}
                 iconLeft="megaphone-outline"
                 variant="primary"
@@ -122,7 +122,7 @@ export default function AdminNotificationsScreen({ navigation }) {
                 fullWidth
               />
 
-              <PremiumButton
+              <Button
                 label={loading ? "Refreshing…" : "Refresh list"}
                 iconLeft="refresh-outline"
                 variant="secondary"
@@ -133,16 +133,16 @@ export default function AdminNotificationsScreen({ navigation }) {
                 fullWidth
                 style={styles.refreshBelowSend}
               />
-            </PremiumCard>
+            </Card>
 
           <View style={styles.panel}>
             <Text style={[styles.sectionTitle, { color: c.textPrimary }]}>Sent notifications</Text>
             {loading ? (
               <View style={styles.loaderWrap}>
-                <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} />
+                <Loader size="sm" caption={APP_LOADING_UI.inline.admin} />
               </View>
             ) : items.length === 0 ? (
-              <PremiumEmptyState
+              <EmptyState
                 iconName="notifications-outline"
                 title="No notifications sent yet"
                 description="Send a message above to reach users."
@@ -150,7 +150,7 @@ export default function AdminNotificationsScreen({ navigation }) {
               />
             ) : (
               items.map((item, index) => (
-                <PremiumCard
+                <Card
                   key={item._id}
                   padding="md"
                   goldAccent={index === 0}
@@ -161,7 +161,7 @@ export default function AdminNotificationsScreen({ navigation }) {
                   <Text style={[styles.itemMeta, { color: c.textMuted }]}>
                     Sent: {new Date(item.createdAt).toLocaleString()}
                   </Text>
-                </PremiumCard>
+                </Card>
               ))
             )}
           </View>

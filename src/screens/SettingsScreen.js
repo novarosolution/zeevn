@@ -19,10 +19,10 @@ import {
   customerScrollFill,
 } from "../theme/screenLayout";
 import { fonts, icon as glyphSize, radius, spacing, typography } from "../theme/tokens";
-import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
-import PremiumCard from "../components/ui/PremiumCard";
-import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
-import PremiumSwitch from "../components/ui/PremiumSwitch";
+import ErrorBanner from "../components/ui/ErrorBanner";
+import Card from "../components/ui/Card";
+import SectionHeader from "../components/ui/SectionHeader";
+import Switch from "../components/ui/Switch";
 import CollapsibleSection from "../components/ui/CollapsibleSection";
 import { SETTINGS_SCREEN } from "../content/appContent";
 
@@ -36,7 +36,7 @@ function SettingsItem({ icon, title, subtitle, onPress, danger = false, styles, 
     : {};
   return (
     <View {...webHandlers}>
-      <PremiumCard
+      <Card
         onPress={onPress}
         variant={danger ? "danger" : "panel"}
         padding="md"
@@ -52,7 +52,7 @@ function SettingsItem({ icon, title, subtitle, onPress, danger = false, styles, 
           {subtitle ? <Text style={styles.itemSubtitle}>{subtitle}</Text> : null}
         </View>
         <Ionicons name="chevron-forward" size={glyphSize.xs} color={c.textMuted} style={styles.itemChevron} />
-      </PremiumCard>
+      </Card>
     </View>
   );
 }
@@ -70,13 +70,12 @@ export default function SettingsScreen({ navigation }) {
     [c, shadowPremium, isDark, isCompactWeb]
   );
 
-  const themeSubtitle =
-    mode === "system" ? "Match system" : mode === "dark" ? "Dark mode" : "Light mode";
+  const themeSubtitle = mode === "system" ? `Match system (${isDark ? "Dark" : "Light"})` : isDark ? "Dark mode" : "Light mode";
   const [orderUpdates, setOrderUpdates] = useState(true);
   const [marketingUpdates, setMarketingUpdates] = useState(false);
 
-  const cycleTheme = () => {
-    setMode(mode === "light" ? "dark" : mode === "dark" ? "system" : "light");
+  const toggleTheme = () => {
+    setMode(isDark ? "light" : "dark");
   };
 
   const handleEnableNotifications = async () => {
@@ -117,18 +116,18 @@ export default function SettingsScreen({ navigation }) {
         <View style={styles.panel}>
           {error ? (
             <View style={styles.bannerWrap}>
-              <PremiumErrorBanner severity="error" message={error} compact />
+              <ErrorBanner severity="error" message={error} compact />
             </View>
           ) : null}
           {permissionMsg ? (
             <View style={styles.bannerWrap}>
-              <PremiumErrorBanner severity="success" message={permissionMsg} compact />
+              <ErrorBanner severity="success" message={permissionMsg} compact />
             </View>
           ) : null}
 
           <SectionReveal preset="fade-up" index={groupIndex} delay={staggerDelay(groupIndex++, { initialDelay: 80 })}>
             <CollapsibleSection title={SETTINGS_SCREEN.appearanceGroup} subtitle={SETTINGS_SCREEN.appearanceGroupSub}>
-              <PremiumSectionHeader
+              <SectionHeader
                 overline={SETTINGS_SCREEN.appearanceGroup}
                 title={SETTINGS_SCREEN.themeSectionTitle}
                 subtitle={SETTINGS_SCREEN.themeSectionSub}
@@ -138,7 +137,7 @@ export default function SettingsScreen({ navigation }) {
                 icon="contrast-outline"
                 title={SETTINGS_SCREEN.themeRowTitle}
                 subtitle={themeSubtitle}
-                onPress={cycleTheme}
+                onPress={toggleTheme}
                 styles={styles}
                 c={c}
               />
@@ -147,7 +146,7 @@ export default function SettingsScreen({ navigation }) {
 
           <SectionReveal preset="fade-up" index={groupIndex} delay={staggerDelay(groupIndex++, { initialDelay: 80 })}>
             <CollapsibleSection title={SETTINGS_SCREEN.accountGroup} subtitle={SETTINGS_SCREEN.accountGroupSub}>
-              <PremiumSectionHeader
+              <SectionHeader
                 overline={SETTINGS_SCREEN.accountGroup}
                 title={SETTINGS_SCREEN.accountSectionTitle}
                 subtitle={SETTINGS_SCREEN.accountSectionSub}
@@ -196,7 +195,7 @@ export default function SettingsScreen({ navigation }) {
 
           <SectionReveal preset="fade-up" index={groupIndex} delay={staggerDelay(groupIndex++, { initialDelay: 80 })}>
             <CollapsibleSection title={SETTINGS_SCREEN.notificationsGroup} subtitle={SETTINGS_SCREEN.notificationsGroupSub}>
-              <PremiumSectionHeader
+              <SectionHeader
                 overline={SETTINGS_SCREEN.notificationsGroup}
                 title={SETTINGS_SCREEN.alertsSectionTitle}
                 subtitle={SETTINGS_SCREEN.alertsSectionSub}
@@ -209,13 +208,13 @@ export default function SettingsScreen({ navigation }) {
                 styles={styles}
                 c={c}
               />
-              <PremiumSwitch
+              <Switch
                 label={SETTINGS_SCREEN.orderUpdatesTitle}
                 hint={SETTINGS_SCREEN.orderUpdatesHint}
                 value={orderUpdates}
                 onChange={setOrderUpdates}
               />
-              <PremiumSwitch
+              <Switch
                 label={SETTINGS_SCREEN.marketingTitle}
                 hint={SETTINGS_SCREEN.marketingHint}
                 value={marketingUpdates}

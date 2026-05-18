@@ -3,7 +3,7 @@ import { FlatList, Platform, Pressable, StyleSheet, Text, useWindowDimensions, V
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import HomeSectionHeader from "./HomeSectionHeader";
-import PremiumCard from "../ui/PremiumCard";
+import Card from "../ui/Card";
 import { useTheme } from "../../context/ThemeContext";
 import { icon, radius, typography } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
@@ -16,7 +16,7 @@ function ReorderCard({ item, onAdd }) {
 
   return (
     <View style={styles.cardWrap}>
-      <PremiumCard variant="muted" padding="none" style={styles.cardShell} contentStyle={styles.cardContent}>
+      <Card variant="muted" padding="none" style={styles.cardShell} contentStyle={styles.cardContent}>
         <View style={styles.mediaWrap}>
           {item.image ? (
             <Image source={{ uri: item.image }} style={styles.media} contentFit="cover" transition={120} />
@@ -40,7 +40,7 @@ function ReorderCard({ item, onAdd }) {
         >
           <Text style={styles.addPillText}>Add</Text>
         </Pressable>
-      </PremiumCard>
+      </Card>
     </View>
   );
 }

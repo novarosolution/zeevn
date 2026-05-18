@@ -16,13 +16,13 @@ import { useTheme } from "../../context/ThemeContext";
 import { adminPanel } from "../../theme/adminLayout";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
 import { getSemanticColors, layout, radius, spacing } from "../../theme/tokens";
-import PremiumInput from "../../components/ui/PremiumInput";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumCard from "../../components/ui/PremiumCard";
-import PremiumChip from "../../components/ui/PremiumChip";
-import PremiumConfirmDialog from "../../components/ui/PremiumConfirmDialog";
+import Input from "../../components/ui/Input";
+import ErrorBanner from "../../components/ui/ErrorBanner";
+import EmptyState from "../../components/ui/EmptyState";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import Chip from "../../components/ui/Chip";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { ADMIN_SCREEN_COPY } from "../../content/appContent";
 
 export default function AdminUsersScreen({ navigation }) {
@@ -114,14 +114,14 @@ export default function AdminUsersScreen({ navigation }) {
   function RoleBadges({ isAdmin, isDeliveryPartner }) {
     return (
       <View style={styles.roleBadgeRow}>
-        <PremiumChip label={isAdmin ? "Admin" : "Customer"} tone={isAdmin ? "gold" : "neutral"} size="xs" />
-        {isDeliveryPartner ? <PremiumChip label="Delivery" tone="green" size="xs" /> : null}
+        <Chip label={isAdmin ? "Admin" : "Customer"} tone={isAdmin ? "gold" : "neutral"} size="xs" />
+        {isDeliveryPartner ? <Chip label="Delivery" tone="green" size="xs" /> : null}
       </View>
     );
   }
 
   function FilterPill({ label, active, onPress }) {
-    return <PremiumChip label={label} tone={active ? "gold" : "neutral"} size="sm" selected={active} onPress={onPress} />;
+    return <Chip label={label} tone={active ? "gold" : "neutral"} size="sm" selected={active} onPress={onPress} />;
   }
 
   const handleDeliveryPartner = async (id, isDeliveryPartner) => {
@@ -174,12 +174,12 @@ export default function AdminUsersScreen({ navigation }) {
     <OpsAdminScreen navigation={navigation} activeRoute="AdminUsers" sectionTitle="Manage users">
           {error ? (
             <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+              <ErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
             </View>
           ) : null}
           {success ? (
             <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
+              <ErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
             </View>
           ) : null}
 
@@ -193,7 +193,7 @@ export default function AdminUsersScreen({ navigation }) {
 
           <View style={styles.actionsRow}>
             <View style={styles.searchInputWrap}>
-              <PremiumInput
+              <Input
                 label="Search users"
                 value={search}
                 onChangeText={setSearch}
@@ -204,7 +204,7 @@ export default function AdminUsersScreen({ navigation }) {
                 autoCapitalize="none"
               />
             </View>
-            <PremiumButton
+            <Button
               label={ADMIN_SCREEN_COPY.refreshCta}
               iconLeft="refresh-outline"
               variant="secondary"
@@ -238,7 +238,7 @@ export default function AdminUsersScreen({ navigation }) {
                     <View style={styles.listContent}>
             {usersLoading && users.length === 0 ? <OpsListSkeleton rows={5} /> : null}
             {!usersLoading && visibleUsers.length === 0 ? (
-              <PremiumEmptyState
+              <EmptyState
                 iconName="people-outline"
                 title="No users match"
                 description={search.trim() || roleFilter !== "all" ? "Try clearing search or switching the role filter." : "No accounts loaded yet."}
@@ -247,7 +247,7 @@ export default function AdminUsersScreen({ navigation }) {
             ) : null}
             {!usersLoading &&
             renderedUsers.map((item) => (
-              <PremiumCard key={item._id} padding="md" style={styles.cardWrap}>
+              <Card key={item._id} padding="md" style={styles.cardWrap}>
                 <View style={styles.cardTopRow}>
                   <View style={styles.userMain}>
                     <Text style={[styles.cardTitle, { color: c.textPrimary }]}>{item.name || "Unnamed User"}</Text>
@@ -261,7 +261,7 @@ export default function AdminUsersScreen({ navigation }) {
                 </Text>
 
                 <View style={styles.actionsWrap}>
-                  <PremiumButton
+                  <Button
                     label={
                       busyUserId === item._id
                         ? "Updating..."
@@ -275,7 +275,7 @@ export default function AdminUsersScreen({ navigation }) {
                     onPress={() => handleDeliveryPartner(item._id, !item.isDeliveryPartner)}
                     disabled={busyUserId === item._id}
                   />
-                  <PremiumButton
+                  <Button
                     label={
                       busyUserId === item._id
                         ? "Updating..."
@@ -289,21 +289,21 @@ export default function AdminUsersScreen({ navigation }) {
                     onPress={() => handleRole(item._id, !item.isAdmin)}
                     disabled={busyUserId === item._id}
                   />
-                  <PremiumButton
+                  <Button
                     label="View Orders"
                     iconLeft="receipt-outline"
                     variant="ghost"
                     size="sm"
                     onPress={() => navigation.navigate("AdminOrders", { query: item.email || item.name })}
                   />
-                  <PremiumButton
+                  <Button
                     label={expandedUserId === item._id ? "Hide Details" : "More Details"}
                     iconLeft={expandedUserId === item._id ? "chevron-up" : "chevron-down"}
                     variant="subtle"
                     size="sm"
                     onPress={() => setExpandedUserId((current) => (current === item._id ? "" : item._id))}
                   />
-                  <PremiumButton
+                  <Button
                     label={busyUserId === item._id ? "Deleting..." : "Delete User"}
                     iconLeft="trash-outline"
                     variant="destructive"
@@ -351,10 +351,10 @@ export default function AdminUsersScreen({ navigation }) {
                     </Text>
                   </View>
                 ) : null}
-              </PremiumCard>
+              </Card>
             ))}
             {renderedUsers.length < visibleUsers.length ? (
-              <PremiumButton
+              <Button
                 label={`Load more (${visibleUsers.length - renderedUsers.length} remaining)`}
                 variant="subtle"
                 size="md"
@@ -363,7 +363,7 @@ export default function AdminUsersScreen({ navigation }) {
               />
             ) : null}
           </View>
-            <PremiumConfirmDialog
+            <ConfirmDialog
         visible={Boolean(confirmDeleteUserId)}
         title="Delete user account?"
         message="This action permanently removes the user account and cannot be undone."

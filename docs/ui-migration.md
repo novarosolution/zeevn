@@ -36,22 +36,22 @@
 
 ## Duplication table (legacy → canonical)
 
-| Legacy import | Canonical | Consumer files (approx.) |
-|---------------|-----------|---------------------------|
-| `PremiumButton` | `Button` | 22 screens/components |
-| `PremiumInput` | `Input` | 15 |
-| `PremiumCard` | `Card` (+ adapter props via shim) | 19 |
-| `PremiumEmptyState` | `EmptyState` | 13 |
-| `PremiumSectionHeader` | `SectionHeader` | 11 |
-| `PremiumErrorBanner` | `ErrorBanner` | 12 |
-| `PremiumChip` | `Chip` | 10 |
-| `PremiumLoader` | `Loader` | 10 |
-| `PremiumStatCard` | `StatCard` | 4 |
-| `PremiumStickyBar` | `StickyBar` | 2 |
-| `PremiumSwitch` | `Switch` | 4 |
-| `PremiumConfirmDialog` | `ConfirmDialog` | 2 |
-| Raw `<button>` (login) | `Checkbox` | 1 (`LoginScreen`) |
-| `IconGhostButton` | `IconButton` | 3 account components |
+| Legacy import | Canonical | Status |
+|---------------|-----------|--------|
+| `PremiumButton` | `Button` | Screen imports migrated |
+| `PremiumInput` | `Input` | Screen imports migrated |
+| `PremiumCard` | `Card` | Screen imports migrated |
+| `PremiumEmptyState` | `EmptyState` | Screen imports migrated |
+| `PremiumSectionHeader` | `SectionHeader` | Screen imports migrated |
+| `PremiumErrorBanner` | `ErrorBanner` | Screen imports migrated |
+| `PremiumChip` | `Chip` | Screen imports migrated |
+| `PremiumLoader` | `Loader` | Screen imports migrated |
+| `PremiumStatCard` | `StatCard` | Screen imports migrated |
+| `PremiumStickyBar` | `StickyBar` | Screen imports migrated |
+| `PremiumSwitch` | `Switch` | Screen imports migrated |
+| `PremiumConfirmDialog` | `ConfirmDialog` | Screen imports migrated |
+
+Shim re-exports remain in `src/components/ui/index.js` until ESLint rule is bumped to **error**.
 
 ---
 
@@ -61,87 +61,88 @@ Legend: `[ ]` not started · `[~]` in progress · `[x]` migrated to canonical im
 
 ### Shop & discovery
 
-- [ ] `HomeScreen.js` — PremiumEmptyState → EmptyState
-- [ ] `SearchScreen.js` — (uses EmptyState path if any)
-- [ ] `ProductScreen.js` — audit Premium vs ui
-- [ ] `CategoriesScreen.js`
-- [ ] `ReviewsScreen.js`
-- [ ] `TrustInfoScreen.js`
-- [ ] `CartScreen.js` — Button, Card, EmptyState
-- [ ] `NotFoundScreen.js` — Button
+- [~] `HomeScreen.js` — `EmptyState`; sub-component extraction per audit still pending (`HomeHero`, `HomeProductRails`, …)
+- [x] `SearchScreen.js`
+- [x] `ProductScreen.js`
+- [x] `CategoriesScreen.js`
+- [x] `ReviewsScreen.js`
+- [x] `TrustInfoScreen.js`
+- [x] `CartScreen.js` — `CartItem` shared with drawer; collapsible checkout steps
+- [x] `NotFoundScreen.js`
 
 ### Auth
 
-- [ ] `LoginScreen.js` — Button; Remember Me → Checkbox
-- [ ] `RegisterScreen.js` — Button, Toast
-- [ ] `ForgotPasswordScreen.js` — Button, Input, Toast
-- [ ] `ResetPasswordScreen.js` — Button, Input
-- [ ] `VerifyEmailScreen.js` — Button
+- [x] `LoginScreen.js` — `Button`, `Input`, `Checkbox` (remember me)
+- [x] `RegisterScreen.js` — `Button`, `Input`, `Toast`, `AuthCheckbox` → `Checkbox`
+- [x] `ForgotPasswordScreen.js`
+- [x] `ResetPasswordScreen.js`
+- [x] `VerifyEmailScreen.js`
 
 ### Account (`Profile` stack)
 
-- [ ] `account/AccountOverviewScreen.js`
-- [ ] `account/AccountOrdersScreen.js`
-- [ ] `account/AccountOrderDetailScreen.js`
-- [ ] `account/AccountWishlistScreen.js` — Button, Toast
-- [ ] `account/AccountAddressesScreen.js`
-- [ ] `account/AccountPaymentScreen.js`
-- [ ] `account/AccountProfileScreen.js` — Button, Toast, PremiumSwitch → Switch
-- [ ] `account/AccountNotificationPrefsScreen.js` — Button, Toast
-- [ ] `account/AccountActivityScreen.js`
+- [x] `account/AccountOverviewScreen.js`
+- [x] `account/AccountOrdersScreen.js`
+- [x] `account/AccountOrderDetailScreen.js`
+- [x] `account/AccountWishlistScreen.js`
+- [x] `account/AccountAddressesScreen.js`
+- [x] `account/AccountPaymentScreen.js`
+- [x] `account/AccountProfileScreen.js` — `Switch`
+- [x] `account/AccountNotificationPrefsScreen.js`
+- [x] `account/AccountActivityScreen.js`
 
 ### Legacy account (redirects)
 
-- [ ] `ProfileScreen.js` — PremiumButton, Card, Chip, StatCard, SectionHeader, ErrorBanner
-- [ ] `EditProfileScreen.js` — PremiumInput, Button, Loader, ErrorBanner, SectionHeader, StickyBar
-- [ ] `ManageAddressScreen.js` — Premium* set
-- [ ] `SettingsScreen.js` — PremiumCard, SectionHeader, Switch, ErrorBanner
-- [ ] `MyOrdersScreen.js` — full Premium set
-- [ ] `NotificationsScreen.js`
-- [ ] `RedeemRewardsScreen.js` — full Premium set
-- [ ] `SupportScreen.js` — PremiumEmptyState, Input, Button, Card, ErrorBanner
+- [x] `ProfileScreen.js`
+- [x] `EditProfileScreen.js`
+- [x] `ManageAddressScreen.js`
+- [x] `SettingsScreen.js`
+- [x] `MyOrdersScreen.js`
+- [x] `NotificationsScreen.js`
+- [x] `RedeemRewardsScreen.js`
+- [x] `SupportScreen.js`
 
 ### Editorial
 
-- [ ] `editorial/AboutScreen.js`
-- [ ] `editorial/ContactScreen.js` — Input
-- [ ] `editorial/FaqScreen.js`
-- [ ] `editorial/PolicyScreen.js`
-- [ ] `editorial/BlogIndexScreen.js`
-- [ ] `editorial/BlogPostScreen.js` — Button
+- [x] `editorial/AboutScreen.js`
+- [x] `editorial/ContactScreen.js`
+- [x] `editorial/FaqScreen.js`
+- [x] `editorial/PolicyScreen.js`
+- [x] `editorial/BlogIndexScreen.js`
+- [x] `editorial/BlogPostScreen.js`
 
 ### Admin
 
-- [ ] `admin/AdminDashboardScreen.js`
-- [ ] `admin/AdminProductsScreen.js` — PremiumInput, Button, Card, Chip, EmptyState, ErrorBanner
-- [ ] `admin/AdminAddProductScreen.js` — PremiumInput, Button, Chip, SectionHeader, ErrorBanner
-- [ ] `admin/AdminInventoryScreen.js`
-- [ ] `admin/AdminOrdersScreen.js` — PremiumConfirmDialog → ConfirmDialog
-- [ ] `admin/AdminUsersScreen.js` — PremiumConfirmDialog
-- [ ] `admin/AdminNotificationsScreen.js`
-- [ ] `admin/AdminAnalyticsScreen.js`
-- [ ] `admin/AdminCouponsScreen.js`
-- [ ] `admin/AdminRewardsScreen.js`
-- [ ] `admin/AdminSupportScreen.js`
-- [ ] `admin/AdminHomeViewScreen.js`
-- [ ] `AdminScreen.js` — Premium* dashboard
+- [x] `admin/AdminDashboardScreen.js`
+- [x] `admin/AdminProductsScreen.js`
+- [x] `admin/AdminAddProductScreen.js`
+- [x] `admin/AdminInventoryScreen.js`
+- [x] `admin/AdminOrdersScreen.js`
+- [x] `admin/AdminUsersScreen.js`
+- [x] `admin/AdminNotificationsScreen.js`
+- [x] `admin/AdminAnalyticsScreen.js`
+- [x] `admin/AdminCouponsScreen.js`
+- [x] `admin/AdminRewardsScreen.js`
+- [x] `admin/AdminSupportScreen.js`
+- [x] `admin/AdminHomeViewScreen.js`
+- [x] `AdminScreen.js`
 
 ### Ops
 
-- [ ] `DeliveryDashboardScreen.js` — PremiumSwitch → Switch
+- [x] `DeliveryDashboardScreen.js` — `Switch`
 
 ---
 
 ## Shared components (non-screen)
 
-- [ ] `components/AuthGateShell.js` — PremiumButton → Button
-- [ ] `components/home/HomeSectionHeader.js` — PremiumSectionHeader → SectionHeader
-- [ ] `components/home/HomeReorderStrip.js` — PremiumCard → Card
-- [ ] `components/orders/OrderLiveMapCard.*.js` — PremiumButton, Card, SectionHeader
-- [ ] `components/payments/PaymentStatusBanner.js` — PremiumButton, ErrorBanner
-- [ ] `components/account/notifications/NotificationToggleRow.js` — PremiumSwitch
-- [ ] `components/ui/InteractiveListRow.js` — PremiumCard → Card
-- [ ] `components/account/shared/IconGhostButton.js` — → IconButton (optional)
+- [x] `components/AuthGateShell.js` — `Button`, `AUTH_SCREEN.gateShell` copy
+- [x] `components/home/HomeSectionHeader.js` — wraps `SectionHeader`
+- [x] `components/home/HomeReorderStrip.js` — `Card`
+- [x] `components/orders/OrderLiveMapCard.*.js`
+- [x] `components/payments/PaymentStatusBanner.js`
+- [x] `components/account/notifications/NotificationToggleRow.js` — `Switch`
+- [x] `components/ui/InteractiveListRow.js` — `Card`
+- [x] `components/cart/CartItem.js` — shared line row (screen + drawer)
+- [x] `components/auth/AuthCheckbox.js` — re-exports `Checkbox`
 
 ---
 
@@ -163,13 +164,24 @@ Consumers should **not** import `inputWebHelpers` directly except edge cases (e.
 
 - Rule: `no-restricted-imports` **warn** on `**/components/ui/Premium*`
 - Exempt: `src/components/ui/Premium*.js` shim files
-- After migration complete: change to **error**
+- **Next:** After `HomeScreen` extraction + design-token pass, change to **error** and delete shims in a follow-up PR
 
 ---
 
-## Commits (this migration kickoff)
+## PR log (suggested split)
 
-1. `feat(ui): add canonical Chip, Loader, Switch, Modal, and form primitives`
-2. `refactor(ui): Premium shims delegate to components/ui`
-3. `chore: babel @ alias, jsconfig, eslint warn on Premium imports`
-4. `docs: add ui-migration tracker`
+| PR | Title | Files (primary) |
+|----|-------|-------------------|
+| 1 | `refactor(ui): migrate auth screens to ui/* primitives` | `LoginScreen.js`, `RegisterScreen.js`, `ForgotPasswordScreen.js`, `ResetPasswordScreen.js`, `VerifyEmailScreen.js`, `AuthGateShell.js`, `AuthCheckbox.js`, `Checkbox.js`, `appContent.js` |
+| 2 | `refactor(ui): migrate HomeScreen empty states + home chrome` | `HomeScreen.js`, `HomeSectionHeader.js`, `HomeReorderStrip.js` |
+| 3 | `refactor(ui): unify CartItem for cart screen and drawer` | `CartItem.js`, `CartItemThumb.js`, `CartScreen.js`, `CartDrawer.js` |
+| 4 | `refactor(ui): migrate legacy account + admin screens to ui/*` | `ProfileScreen.js`, `MyOrdersScreen.js`, `Admin*.js`, `SettingsScreen.js`, … |
+| 5 | `refactor(ui): migrate ops + shared components` | `DeliveryDashboardScreen.js`, `OrderLiveMapCard.*`, `PaymentStatusBanner.js` |
+
+---
+
+## Remaining work
+
+1. **HomeScreen extraction** — split per `docs/audit-2026-05.md` (`HomeHero`, `HomeProductRails`, …).
+2. **Token / copy pass** on large screens — hardcoded colors, spacing, and strings (especially `HomeScreen`, `MyOrdersScreen`).
+3. **ESLint** — `Premium*` imports → `error` after extraction PR merges.

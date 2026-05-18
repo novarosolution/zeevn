@@ -129,11 +129,13 @@ export function DeliveryMethodCards({ value, onChange, semanticPalette, TYPE, SP
 }
 
 const PAYMENT_TABS = [
-  { key: "upi", label: CHECKOUT_UI.paymentTabUpi },
-  { key: "cards", label: CHECKOUT_UI.paymentTabCards },
-  { key: "netbanking", label: CHECKOUT_UI.paymentTabNetbanking },
-  { key: "wallet", label: CHECKOUT_UI.paymentTabWallet },
-  { key: "cod", label: CHECKOUT_UI.paymentTabCod },
+  { key: "cod", label: CHECKOUT_UI.paymentTabCod, disabled: false },
+  {
+    key: "online",
+    label: CHECKOUT_UI.paymentTabOnline,
+    disabled: true,
+    badge: CHECKOUT_UI.paymentOnlineComingSoon,
+  },
 ];
 
 export function PaymentTabsRow({ activeTab, onChange, semanticPalette, TYPE, SPACING, RADII }) {
@@ -146,6 +148,7 @@ export function PaymentTabsRow({ activeTab, onChange, semanticPalette, TYPE, SPA
             <Pressable
               key={t.key}
               onPress={() => onChange(t.key)}
+              disabled={t.disabled}
               style={{
                 paddingHorizontal: SPACING.md,
                 paddingVertical: SPACING.sm,
@@ -153,9 +156,26 @@ export function PaymentTabsRow({ activeTab, onChange, semanticPalette, TYPE, SPA
                 borderWidth: StyleSheet.hairlineWidth,
                 borderColor: on ? semanticPalette.accent : semanticPalette.line,
                 backgroundColor: on ? semanticPalette.accentSoft : semanticPalette.surfaceAlt,
+                opacity: t.disabled ? 0.72 : 1,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
               }}
             >
               <Text style={{ fontFamily: fonts.semibold, fontSize: TYPE.caption.fontSize, color: semanticPalette.ink }}>{t.label}</Text>
+              {t.badge ? (
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: TYPE.micro.fontSize,
+                    color: semanticPalette.accent,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  {t.badge}
+                </Text>
+              ) : null}
             </Pressable>
           );
         })}

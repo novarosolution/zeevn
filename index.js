@@ -3,7 +3,10 @@ import "react-native-reanimated";
 import { LogBox, Platform } from "react-native";
 import { enableScreens } from "react-native-screens";
 import { registerRootComponent } from "expo";
+import { initSentry } from "./src/observability/sentry";
 import App from "./App";
+
+initSentry();
 
 // Native stack + react-native-screens on web often yields a blank first paint; use JS stack on web.
 if (Platform.OS === "web") {

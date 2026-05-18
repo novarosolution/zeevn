@@ -43,12 +43,12 @@ function EmptyStateBase({
         body: {
           fontFamily: fonts.regular,
           ...TYPE.body,
-          color: semanticPalette.inkMuted,
+          color: semanticPalette.inkSoft,
           textAlign: "center",
           maxWidth: 340,
         },
       }),
-    [semanticPalette.ink, semanticPalette.inkMuted, SPACING, TYPE]
+    [semanticPalette.ink, semanticPalette.inkSoft, SPACING, TYPE]
   );
 
   return (

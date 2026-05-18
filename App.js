@@ -24,10 +24,17 @@ import AppNavigator from "./src/navigation/AppNavigator";
 import { darkColors, lightColors } from "./src/theme/tokens";
 import { applyWebPremiumChrome, webRootStyle } from "./src/theme/web";
 import { registerProductCacheServiceWorker } from "./src/utils/registerServiceWorker.web";
+import { initWebVitalsReporting } from "./src/utils/reportWebVitals";
+import { injectSelfHostedFontFaces } from "./src/utils/webHead";
 import {
   LEGACY_JEEVAN_STARTUP_WELCOME_KEY,
   LEGACY_STARTUP_WELCOME_KEY,
 } from "./src/constants/migrationKeys";
+import { parseLoginReturnToParam, stringifyLoginReturnToParam } from "./src/utils/deepLink";
+import AppErrorBoundary from "./src/components/errors/AppErrorBoundary";
+import OfflineBanner from "./src/components/errors/OfflineBanner";
+import ConnectivityBridge from "./src/context/ConnectivityBridge";
+import { setSentryRoute } from "./src/observability/sentry";
 
 const STARTUP_WELCOME_KEY = "@zeevan_startup_welcome_shown";
 
@@ -38,29 +45,12 @@ const gestureRootStyle = { flex: 1 };
 
 const navigationRef = createNavigationContainerRef();
 
-/** Avoid `returnTo=[object Object]` in web URLs — serialize as JSON. */
-function parseLoginReturnToParam(value) {
-  if (value == null || value === "") return undefined;
-  if (typeof value === "object" && value?.name) return value;
-  if (typeof value !== "string" || value === "[object Object]") return undefined;
-  try {
-    const parsed = JSON.parse(decodeURIComponent(value));
-    return parsed?.name ? parsed : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function stringifyLoginReturnToParam(value) {
-  if (!value?.name) return undefined;
-  return encodeURIComponent(JSON.stringify(value));
-}
-
 const linking = {
   prefixes: [ExpoLinking.createURL("/")],
   config: {
     screens: {
       Home: "",
+      Categories: "shop",
       Search: {
         path: "search",
         parse: {
@@ -163,7 +153,9 @@ function WebBodySync() {
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return;
     applyWebPremiumChrome(isDark, colors.background);
+    injectSelfHostedFontFaces();
     registerProductCacheServiceWorker();
+    initWebVitalsReporting();
   }, [colors.background, isDark]);
   return null;
 }
@@ -180,10 +172,20 @@ function AppNavigationShell() {
     <>
       <WebBodySync />
       <ThemedStatusBar />
+      <OfflineBanner />
       <NavigationContainer
         ref={navigationRef}
         linking={linking}
         onReady={() => setNavigationReady(true)}
+        onStateChange={(state) => {
+          const route = state?.routes?.[state.index];
+          const nested = route?.state;
+          const active =
+            nested?.routes?.[nested.index ?? 0]?.name ||
+            route?.name ||
+            "unknown";
+          setSentryRoute(active);
+        }}
       >
         <CartDrawerProvider navigationRef={navigationRef}>
           <AppNavigator navigationRef={navigationRef} navigationReady={navigationReady} />
@@ -194,7 +196,7 @@ function AppNavigationShell() {
 }
 
 export default function App() {
-  const [fontsLoaded] = useFonts({
+  const [nativeFontsLoaded, nativeFontError] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
     Inter_600SemiBold,
@@ -204,6 +206,20 @@ export default function App() {
     PlayfairDisplay_700Bold,
     PlayfairDisplay_400Regular_Italic,
   });
+  const [fontLoadTimeoutReached, setFontLoadTimeoutReached] = useState(false);
+  const fontsLoaded = Platform.OS === "web" ? true : nativeFontsLoaded || Boolean(nativeFontError) || fontLoadTimeoutReached;
+
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      injectSelfHostedFontFaces();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === "web" || nativeFontsLoaded || nativeFontError) return undefined;
+    const timer = setTimeout(() => setFontLoadTimeoutReached(true), 3000);
+    return () => clearTimeout(timer);
+  }, [nativeFontError, nativeFontsLoaded]);
   const [bootFootnote, setBootFootnote] = useState("Loading your storefront…");
 
   const bootstrapColors = Appearance.getColorScheme() === "dark" ? darkColors : lightColors;
@@ -266,20 +282,24 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={gestureRootStyle}>
-      <SafeAreaProvider style={safeAreaRootStyle}>
-        <View style={webRootStyle}>
-          <ThemeProvider>
-            <AuthProvider>
-              <WishlistProvider>
-                <CartProvider>
-                  <AppNavigationShell />
-                </CartProvider>
-              </WishlistProvider>
-            </AuthProvider>
-          </ThemeProvider>
-        </View>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <AppErrorBoundary>
+      <GestureHandlerRootView style={gestureRootStyle}>
+        <SafeAreaProvider style={safeAreaRootStyle}>
+          <View style={webRootStyle}>
+            <ThemeProvider>
+              <AuthProvider>
+                <ConnectivityBridge>
+                  <WishlistProvider>
+                    <CartProvider>
+                      <AppNavigationShell />
+                    </CartProvider>
+                  </WishlistProvider>
+                </ConnectivityBridge>
+              </AuthProvider>
+            </ThemeProvider>
+          </View>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </AppErrorBoundary>
   );
 }

@@ -1,7 +1,7 @@
 import React, { memo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import PremiumSwitch from "../../ui/PremiumSwitch";
+import Switch from "../../ui/Switch";
 import { useTheme } from "../../../context/ThemeContext";
 import { fonts } from "../../../theme/tokens";
 
@@ -31,7 +31,7 @@ function NotificationToggleRowBase({ label, helper, value, onValueChange, locked
           </Text>
         ) : null}
       </View>
-      <PremiumSwitch value={Boolean(value)} onValueChange={onValueChange} disabled={disabled} locked={locked} />
+      <Switch value={Boolean(value)} onValueChange={onValueChange} disabled={disabled} locked={locked} />
     </View>
   );
 }

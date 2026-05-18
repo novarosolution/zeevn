@@ -37,3 +37,10 @@ export function productToCartLine(product, variantLabel) {
     name: lab ? `${baseName} — ${lab}` : baseName,
   };
 }
+
+/** Line total for cart/checkout (price × quantity). */
+export function cartLineTotal(item, quantity = item?.quantity ?? 1) {
+  const price = Math.max(0, Number(item?.price) || 0);
+  const qty = Math.max(0, Number(quantity) || 0);
+  return Number((price * qty).toFixed(2));
+}

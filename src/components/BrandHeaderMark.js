@@ -42,7 +42,7 @@ export default function BrandHeaderMark({
       <View style={styles.stack}>
         <BrandWordmark sizeKey={sizeKey} fontSizeOverride={wordmarkFontSizeOverride} style={styles.logoMark} />
         {showSubline && !compact ? (
-          <Text style={[styles.subline, { color: HERITAGE.brass }]} numberOfLines={1}>
+          <Text style={[styles.subline, { color: HERITAGE.amberDeep }]} numberOfLines={1}>
             {APP_WORDMARK_SUBLINE}
           </Text>
         ) : null}

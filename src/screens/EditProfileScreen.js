@@ -21,16 +21,16 @@ import {
   customerScrollFill,
 } from "../theme/screenLayout";
 import { fonts, radius, spacing, typography } from "../theme/tokens";
-import PremiumInput from "../components/ui/PremiumInput";
-import PremiumButton from "../components/ui/PremiumButton";
-import PremiumLoader from "../components/ui/PremiumLoader";
-import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
+import Loader from "../components/ui/Loader";
+import ErrorBanner from "../components/ui/ErrorBanner";
 import SkeletonBlock from "../components/ui/SkeletonBlock";
 import MotionScrollView from "../components/motion/MotionScrollView";
 import SectionReveal from "../components/motion/SectionReveal";
 import useReducedMotion from "../hooks/useReducedMotion";
-import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
-import PremiumStickyBar from "../components/ui/PremiumStickyBar";
+import SectionHeader from "../components/ui/SectionHeader";
+import StickyBar from "../components/ui/StickyBar";
 import { APP_LOADING_UI, EDIT_PROFILE_SCREEN } from "../content/appContent";
 
 export default function EditProfileScreen({ navigation }) {
@@ -257,31 +257,31 @@ export default function EditProfileScreen({ navigation }) {
             <SkeletonBlock width="100%" height={56} rounded="lg" />
             <SkeletonBlock width="100%" height={48} rounded="pill" />
             <SkeletonBlock width="100%" height={50} rounded="pill" />
-            <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.profile} />
+            <Loader size="sm" caption={APP_LOADING_UI.inline.profile} />
           </View>
         ) : (
           <SectionReveal delay={60} preset="fade-up">
             <View style={styles.panel}>
               {error ? (
                 <View style={styles.bannerWrap}>
-                  <PremiumErrorBanner severity="error" message={error} compact />
+                  <ErrorBanner severity="error" message={error} compact />
                 </View>
               ) : null}
               {success ? (
                 <View style={styles.bannerWrap}>
-                  <PremiumErrorBanner severity="success" message={success} compact />
+                  <ErrorBanner severity="success" message={success} compact />
                 </View>
               ) : null}
 
               <SectionReveal delay={120}>
                 <View style={styles.sectionCard}>
-                  <PremiumSectionHeader
+                  <SectionHeader
                     overline={EDIT_PROFILE_SCREEN.photoOverline}
                     title={EDIT_PROFILE_SCREEN.photoTitle}
                     compact
                   />
                   <View style={styles.avatarBlock}>
-                    <PremiumButton
+                    <Button
                       variant="ghost"
                       size="sm"
                       label="Change photo"
@@ -306,7 +306,7 @@ export default function EditProfileScreen({ navigation }) {
                     </View>
                     <View style={styles.avatarActions}>
                       {avatarUrl ? (
-                        <PremiumButton
+                        <Button
                           label="Remove"
                           iconLeft="trash-outline"
                           variant="subtle"
@@ -323,14 +323,14 @@ export default function EditProfileScreen({ navigation }) {
 
               <SectionReveal delay={180}>
                 <View style={styles.sectionCard}>
-                  <PremiumSectionHeader
+                  <SectionHeader
                     overline={EDIT_PROFILE_SCREEN.accountOverline}
                     title={EDIT_PROFILE_SCREEN.accountTitle}
                     compact
                   />
                   <View style={styles.fieldStack}>
                     <SectionReveal delay={220}>
-                      <PremiumInput
+                      <Input
                         label="Full name"
                         value={name}
                         onChangeText={setName}
@@ -341,7 +341,7 @@ export default function EditProfileScreen({ navigation }) {
                       />
                     </SectionReveal>
                     <SectionReveal delay={260}>
-                      <PremiumInput
+                      <Input
                         label="Phone number"
                         value={phone}
                         onChangeText={setPhone}
@@ -357,7 +357,7 @@ export default function EditProfileScreen({ navigation }) {
               </SectionReveal>
 
               <SectionReveal delay={300}>
-                <PremiumButton
+                <Button
                   label={hasAddress ? "Manage delivery address" : "Add delivery address"}
                   iconLeft="location-outline"
                   iconRight="chevron-forward"
@@ -373,7 +373,7 @@ export default function EditProfileScreen({ navigation }) {
                 <View style={styles.saveBtnWrap}>
                   {/* Success ripple sits behind the save CTA. */}
                   <Animated.View style={[styles.successRipple, successRippleStyle, styles.peNone]} />
-                  <PremiumButton
+                  <Button
                     label={saving ? "Saving…" : "Save changes"}
                     iconLeft="checkmark-circle-outline"
                     variant="primary"
@@ -396,8 +396,8 @@ export default function EditProfileScreen({ navigation }) {
         <AppFooter />
       </MotionScrollView>
       {Platform.OS !== "web" && showStickySave ? (
-        <PremiumStickyBar>
-          <PremiumButton
+        <StickyBar>
+          <Button
             label={saving ? "Saving…" : "Save changes"}
             iconLeft="checkmark-circle-outline"
             variant="primary"

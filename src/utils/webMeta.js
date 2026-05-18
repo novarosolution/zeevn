@@ -512,19 +512,20 @@ export function applyRouteMeta(routeKey, dynamicOverrides = {}) {
   const lcpImage = dynamicOverrides.lcpImage;
   if (lcpImage) {
     const lcpHref = toAbsolute(siteUrl, lcpImage);
-    const preloadAttrs = {
-      rel: "preload",
-      as: "image",
-      href: lcpHref,
-      fetchpriority: "high",
-    };
-    if (dynamicOverrides.lcpImageSrcSet) {
-      preloadAttrs.imagesrcset = String(dynamicOverrides.lcpImageSrcSet);
+    if (lcpHref && /^https?:\/\//i.test(lcpHref)) {
+      const link = appendLink({ rel: "preload", as: "image", href: lcpHref });
+      if (link) {
+        if ("fetchPriority" in link) {
+          link.fetchPriority = "high";
+        }
+        if (dynamicOverrides.lcpImageSrcSet) {
+          link.setAttribute("imagesrcset", String(dynamicOverrides.lcpImageSrcSet));
+        }
+        if (dynamicOverrides.lcpImageSizes) {
+          link.setAttribute("imagesizes", String(dynamicOverrides.lcpImageSizes));
+        }
+      }
     }
-    if (dynamicOverrides.lcpImageSizes) {
-      preloadAttrs.imagesizes = String(dynamicOverrides.lcpImageSizes);
-    }
-    appendLink(preloadAttrs);
   }
 
   if (safeRouteKey === "home") {

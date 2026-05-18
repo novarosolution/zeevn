@@ -14,12 +14,12 @@ import MotionScrollView from "../../components/motion/MotionScrollView";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
 import { layout, radius, spacing } from "../../theme/tokens";
-import PremiumLoader from "../../components/ui/PremiumLoader";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumInput from "../../components/ui/PremiumInput";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumCard from "../../components/ui/PremiumCard";
+import Loader from "../../components/ui/Loader";
+import EmptyState from "../../components/ui/EmptyState";
+import ErrorBanner from "../../components/ui/ErrorBanner";
+import Input from "../../components/ui/Input";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
 import { APP_LOADING_UI } from "../../content/appContent";
 
 export default function AdminSupportScreen({ navigation }) {
@@ -94,13 +94,13 @@ export default function AdminSupportScreen({ navigation }) {
     <OpsAdminScreen navigation={navigation} activeRoute="AdminSupport" sectionTitle="Support inbox">
       {error ? (
         <View style={styles.bannerSpacer}>
-          <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+          <ErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
         </View>
       ) : null}
 
       {loading ? (
                     <View style={styles.panel}>
-            <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} />
+            <Loader size="sm" caption={APP_LOADING_UI.inline.admin} />
           </View>
                   ) : (
           <View style={isWideWeb ? styles.workspaceGrid : null}>
@@ -108,7 +108,7 @@ export default function AdminSupportScreen({ navigation }) {
                               <View style={styles.panel}>
                   <Text style={styles.sectionTitle}>Conversations</Text>
                   {(threads || []).length === 0 ? (
-                    <PremiumEmptyState
+                    <EmptyState
                       iconName="chatbubbles-outline"
                       title="No support messages yet"
                       description="Customer threads will appear here."
@@ -116,7 +116,7 @@ export default function AdminSupportScreen({ navigation }) {
                     />
                   ) : (
                     (threads || []).map((thread) => (
-                      <PremiumCard
+                      <Card
                         key={thread._id}
                         padding="md"
                         interactive
@@ -130,7 +130,7 @@ export default function AdminSupportScreen({ navigation }) {
                         <Text style={[styles.threadMeta, { color: c.textSecondary }]}>
                           Status: {thread.status} • Messages: {(thread.messages || []).length}
                         </Text>
-                      </PremiumCard>
+                      </Card>
                     ))
                   )}
                 </View>
@@ -140,7 +140,7 @@ export default function AdminSupportScreen({ navigation }) {
                   <View style={styles.rowBetween}>
                     <Text style={styles.sectionTitle}>Thread Details</Text>
                     {selectedThread ? (
-                      <PremiumButton
+                      <Button
                         label={`Mark ${selectedThread.status === "closed" ? "Open" : "Closed"}`}
                         variant="secondary"
                         size="sm"
@@ -149,7 +149,7 @@ export default function AdminSupportScreen({ navigation }) {
                     ) : null}
                   </View>
                   {!selectedThread ? (
-                    <PremiumEmptyState
+                    <EmptyState
                       iconName="hand-left-outline"
                       title="Select a conversation"
                       description="Choose a thread to read and reply."
@@ -176,7 +176,7 @@ export default function AdminSupportScreen({ navigation }) {
                         </View>
                       ))}
                       <View style={styles.replyInputWrap}>
-                        <PremiumInput
+                        <Input
                           label="Reply"
                           value={message}
                           onChangeText={setMessage}
@@ -186,7 +186,7 @@ export default function AdminSupportScreen({ navigation }) {
                           iconLeft="chatbubble-ellipses-outline"
                         />
                       </View>
-                      <PremiumButton
+                      <Button
                         label={sending ? "Sending..." : "Send Reply"}
                         iconLeft="send-outline"
                         variant="primary"

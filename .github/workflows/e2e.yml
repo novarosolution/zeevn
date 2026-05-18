@@ -1,0 +1,101 @@
+name: E2E (Playwright)
+
+on:
+  push:
+    branches: [main, chore/**, feat/**, fix/**]
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      mongodb:
+        image: mongo:7
+        ports:
+          - 27017:27017
+
+    env:
+      CI: true
+      MONGO_URI: mongodb://127.0.0.1:27017/zeevan_e2e
+      JWT_SECRET: e2e-ci-jwt-secret-change-in-production
+      NODE_ENV: test
+      ENABLE_TEST_ROUTES: "true"
+      PORT: 5001
+      APP_WEB_URL: http://127.0.0.1:8081
+      WEB_APP_URL: http://127.0.0.1:8081
+      E2E_BASE_URL: http://127.0.0.1:8081
+      E2E_API_URL: http://127.0.0.1:5001
+      EXPO_PUBLIC_API_URL: http://127.0.0.1:5001
+      EXPO_PUBLIC_RAZORPAY_KEY_ID: ${{ secrets.RAZORPAY_KEY_ID }}
+      RAZORPAY_KEY_ID: ${{ secrets.RAZORPAY_KEY_ID }}
+      RAZORPAY_KEY_SECRET: ${{ secrets.RAZORPAY_KEY_SECRET }}
+      RAZORPAY_WEBHOOK_SECRET: ${{ secrets.RAZORPAY_WEBHOOK_SECRET }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Seed E2E catalog product
+        run: node backend/scripts/seed-e2e.js
+
+      - name: Start API
+        working-directory: backend
+        run: node server.js &
+        env:
+          MONGO_URI: mongodb://127.0.0.1:27017/zeevan_e2e
+
+      - name: Wait for API
+        run: npx wait-on http://127.0.0.1:5001 --timeout 60000
+
+      - name: Build static web export
+        run: npm run export:web
+        env:
+          EXPO_PUBLIC_API_URL: http://127.0.0.1:5001
+          EXPO_PUBLIC_RAZORPAY_KEY_ID: ${{ secrets.RAZORPAY_KEY_ID }}
+
+      - name: Upload Sentry source maps (optional)
+        if: ${{ secrets.SENTRY_AUTH_TOKEN != '' }}
+        run: npm run sentry:upload-sourcemaps
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+
+      - name: Serve web build
+        run: npx serve -s dist -l 8081 &
+
+      - name: Wait for web
+        run: npx wait-on http://127.0.0.1:8081 --timeout 120000
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Run accessibility tests (axe)
+        run: npm run test:a11y
+
+      - name: Run E2E tests
+        run: npm run test:e2e -- --project=chromium
+
+      - name: Upload Playwright HTML report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

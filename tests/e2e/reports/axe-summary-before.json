@@ -1,0 +1,95 @@
+{
+  "generatedAt": "2026-05-18T12:16:11.626Z",
+  "baseURL": "http://127.0.0.1:8081",
+  "routes": {
+    "/": {
+      "url": "http://127.0.0.1:8081/",
+      "violationCount": 0,
+      "byImpact": {
+        "critical": 0,
+        "serious": 0,
+        "moderate": 0,
+        "minor": 0
+      },
+      "violations": []
+    },
+    "/shop": {
+      "url": "http://127.0.0.1:8081/shop",
+      "violationCount": 1,
+      "byImpact": {
+        "critical": 0,
+        "serious": 1,
+        "moderate": 0,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 3
+        }
+      ]
+    },
+    "/login": {
+      "url": "http://127.0.0.1:8081/login",
+      "violationCount": 2,
+      "byImpact": {
+        "critical": 1,
+        "serious": 1,
+        "moderate": 0,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 1
+        },
+        {
+          "id": "image-alt",
+          "impact": "critical",
+          "help": "Images must have alternative text",
+          "nodes": 1
+        }
+      ]
+    },
+    "/cart": {
+      "url": "http://127.0.0.1:8081/cart",
+      "violationCount": 1,
+      "byImpact": {
+        "critical": 0,
+        "serious": 1,
+        "moderate": 0,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 1
+        }
+      ]
+    },
+    "/register": {
+      "url": "http://127.0.0.1:8081/register",
+      "violationCount": 1,
+      "byImpact": {
+        "critical": 0,
+        "serious": 1,
+        "moderate": 0,
+        "minor": 0
+      },
+      "violations": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "help": "Elements must meet minimum color contrast ratio thresholds",
+          "nodes": 1
+        }
+      ]
+    }
+  }
+}

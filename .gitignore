@@ -12,3 +12,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .DS_Store
+playwright-report/
+test-results/
+coverage/
+blob-report/
+playwright/.cache/

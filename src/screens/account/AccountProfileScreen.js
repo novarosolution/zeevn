@@ -23,7 +23,7 @@ import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import Input from "../../components/ui/Input";
 import ProgressRing from "../../components/ui/ProgressRing";
-import PremiumSwitch from "../../components/ui/PremiumSwitch";
+import Switch from "../../components/ui/Switch";
 import SectionHeader from "../../components/ui/SectionHeader";
 import Toast from "../../components/ui/Toast";
 import AccountSaveButton from "../../components/account/interactions/AccountSaveButton";
@@ -1163,7 +1163,7 @@ export default function AccountProfileScreen({ navigation, route }) {
               detailColor={twoFactor ? semanticPalette.success : semanticPalette.inkSoft}
               children={
                 <View style={{ alignItems: "flex-end", gap: 8 }}>
-                  <PremiumSwitch
+                  <Switch
                     value={twoFactor}
                     onValueChange={(v) => {
                       setTwoFactor(v);
@@ -1186,7 +1186,7 @@ export default function AccountProfileScreen({ navigation, route }) {
                 label={copy.security.biometricLabel}
                 detail={biometricLabel}
                 children={
-                  <PremiumSwitch
+                  <Switch
                     value={biometricOn}
                     onValueChange={async (v) => {
                       if (!v) {

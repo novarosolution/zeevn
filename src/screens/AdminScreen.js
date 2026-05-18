@@ -19,7 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppFooter from "../components/AppFooter";
 import CustomerScreenShell from "../components/CustomerScreenShell";
-import PremiumCard from "../components/ui/PremiumCard";
+import Card from "../components/ui/Card";
 import SectionReveal from "../components/motion/SectionReveal";
 import useReducedMotion from "../hooks/useReducedMotion";
 import useCountUp from "../hooks/useCountUp";
@@ -43,11 +43,11 @@ import { customerScrollPaddingTop } from "../theme/screenLayout";
 import { fonts, layout, radius, spacing, typography } from "../theme/tokens";
 import { formatINRWhole } from "../utils/currency";
 import { ALL_ORDER_STATUSES, getOrderStatusLabel } from "../utils/orderStatus";
-import PremiumLoader from "../components/ui/PremiumLoader";
-import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
-import PremiumInput from "../components/ui/PremiumInput";
-import PremiumEmptyState from "../components/ui/PremiumEmptyState";
-import PremiumButton from "../components/ui/PremiumButton";
+import Loader from "../components/ui/Loader";
+import ErrorBanner from "../components/ui/ErrorBanner";
+import Input from "../components/ui/Input";
+import EmptyState from "../components/ui/EmptyState";
+import Button from "../components/ui/Button";
 import { APP_LOADING_UI } from "../content/appContent";
 
 const TABS = {
@@ -87,13 +87,13 @@ function ModuleTile({ icon, label, description, onPress, color, reducedMotion, s
     : {};
   return (
     <Animated.View style={[styles.moduleTileWrap, animatedStyle]} {...webHoverProps}>
-      <PremiumCard onPress={onPress} interactive padding="lg" goldAccent style={styles.moduleTileCard}>
+      <Card onPress={onPress} interactive padding="lg" goldAccent style={styles.moduleTileCard}>
         <View style={[styles.moduleTileIcon, { backgroundColor: color || c.primarySoft }]}>
           <Ionicons name={icon} size={22} color={c.primaryDark} />
         </View>
         <Text style={styles.moduleTileLabel}>{label}</Text>
         {description ? <Text style={styles.moduleTileDescription}>{description}</Text> : null}
-      </PremiumCard>
+      </Card>
     </Animated.View>
   );
 }
@@ -321,7 +321,7 @@ export default function AdminScreen({ navigation }) {
           <View style={styles.panel}>
             <Text style={styles.title}>Admin Access Required</Text>
             <Text style={styles.subtitle}>This account does not have admin privileges.</Text>
-            <PremiumButton
+            <Button
               label="Back to home"
               iconLeft="home-outline"
               variant="subtle"
@@ -397,12 +397,12 @@ export default function AdminScreen({ navigation }) {
 
         {error ? (
           <View style={styles.bannerWrap}>
-            <PremiumErrorBanner severity="error" message={error} compact />
+            <ErrorBanner severity="error" message={error} compact />
           </View>
         ) : null}
         {success ? (
           <View style={styles.bannerWrap}>
-            <PremiumErrorBanner severity="success" message={success} compact />
+            <ErrorBanner severity="success" message={success} compact />
           </View>
         ) : null}
 
@@ -446,7 +446,7 @@ export default function AdminScreen({ navigation }) {
 
         <View style={styles.topActionRow}>
           <View style={styles.searchInputWrap}>
-            <PremiumInput
+            <Input
               label={`Search ${TABS[activeTab].toLowerCase()}`}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -456,7 +456,7 @@ export default function AdminScreen({ navigation }) {
               autoCapitalize="none"
             />
           </View>
-          <PremiumButton
+          <Button
             label="Refresh"
             iconLeft="refresh-outline"
             variant="primary"
@@ -472,13 +472,13 @@ export default function AdminScreen({ navigation }) {
 
         {actionLoading ? (
           <View style={styles.actionLoader}>
-            <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} inline />
+            <Loader size="sm" caption={APP_LOADING_UI.inline.admin} inline />
           </View>
         ) : null}
 
         {loading ? (
           <View style={styles.loadingWrap}>
-            <PremiumLoader size="md" caption={APP_LOADING_UI.inline.admin} />
+            <Loader size="md" caption={APP_LOADING_UI.inline.admin} />
           </View>
         ) : (
           <>
@@ -488,7 +488,7 @@ export default function AdminScreen({ navigation }) {
                   {editingProductId ? "Edit Product" : "Create Product"}
                 </Text>
                 <View style={styles.adminFieldGap}>
-                  <PremiumInput
+                  <Input
                     label="Name"
                     value={name}
                     onChangeText={setName}
@@ -497,7 +497,7 @@ export default function AdminScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.adminFieldGap}>
-                  <PremiumInput
+                  <Input
                     label="Price"
                     value={price}
                     onChangeText={setPrice}
@@ -506,7 +506,7 @@ export default function AdminScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.adminFieldGap}>
-                  <PremiumInput
+                  <Input
                     label="Image URL"
                     value={image}
                     onChangeText={setImage}
@@ -516,7 +516,7 @@ export default function AdminScreen({ navigation }) {
                   />
                 </View>
                 <View style={styles.adminFieldGap}>
-                  <PremiumInput
+                  <Input
                     label="Description"
                     value={description}
                     onChangeText={setDescription}
@@ -537,7 +537,7 @@ export default function AdminScreen({ navigation }) {
                 ) : null}
 
                 {visibleProducts.length === 0 ? (
-                  <PremiumEmptyState
+                  <EmptyState
                     iconName="cube-outline"
                     title={searchQuery ? "No matching products" : "No products yet"}
                     description={searchQuery ? "Try a different keyword or clear the search." : "Use the form above to add your first product."}
@@ -573,7 +573,7 @@ export default function AdminScreen({ navigation }) {
 
             {activeTab === "orders" ? (
               visibleOrders.length === 0 ? (
-                <PremiumEmptyState
+                <EmptyState
                   iconName="receipt-outline"
                   title={searchQuery || orderFilter !== "all" ? "No matching orders" : "No orders yet"}
                   description={searchQuery || orderFilter !== "all" ? "Try a different filter or clear the search." : "Customer orders will appear here when they come in."}
@@ -620,7 +620,7 @@ export default function AdminScreen({ navigation }) {
 
             {activeTab === "users" ? (
               visibleUsers.length === 0 ? (
-                <PremiumEmptyState
+                <EmptyState
                   iconName="people-outline"
                   title={searchQuery ? "No matching users" : "No users yet"}
                   description={searchQuery ? "Try a different keyword or clear the search." : "Customer accounts will appear here once they register."}

@@ -55,7 +55,6 @@ export default function ResetPasswordScreen({ navigation }) {
         navigation={navigation}
         formTitle={copy.successTitle}
         formSubtitle={copy.successBody}
-        showSocialRow={false}
         bareForm
         footerLabel="Ready?"
         footerLinkLabel={copy.signInCta}
@@ -71,7 +70,6 @@ export default function ResetPasswordScreen({ navigation }) {
       navigation={navigation}
       formTitle={copy.formTitle}
       formSubtitle={copy.formSubtitle}
-      showSocialRow={false}
       bareForm
     >
       <View style={{ gap: SPACING.md }}>

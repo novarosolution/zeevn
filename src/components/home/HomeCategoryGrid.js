@@ -191,13 +191,13 @@ function createStyles(c, isDark, compact, columns, isDesktop, isTablet) {
     editorialSquare: {
       width: 4,
       height: 4,
-      backgroundColor: c.accent || c.rating || "#C8A97E",
+      backgroundColor: c.primaryDark || "#A8895E",
     },
     editorialOverline: {
       fontSize: 11,
       fontFamily: homeType.overline.fontFamily,
       letterSpacing: 1.4,
-      color: c.accent || c.rating || "#C8A97E",
+      color: c.textSecondary,
       textTransform: "uppercase",
     },
     grid: {

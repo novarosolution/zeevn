@@ -1,0 +1,77 @@
+
+> zeevan-ecommerce-app@1.0.0 check:tokens
+> node scripts/check-tokens.js
+
+════════════════════════════════════════════════════════════
+  Zeevan token check — baseline report
+  2026-05-18T11:00:43.330Z
+  Scanned 339 files under src/
+  Palette: 65 hex + 54 rgba from tokens
+════════════════════════════════════════════════════════════
+
+⚠ Total violations: 1247
+
+  rgba: 866
+  spacing: 226
+  hex: 111
+  fontWeight: 24
+  shadowOpacity: 20
+
+── fontWeight (24) ──
+  src/screens/RedeemRewardsScreen.js:401  fontWeight "800" not in 400/500/600/700
+  src/screens/RedeemRewardsScreen.js:419  fontWeight "800" not in 400/500/600/700
+  src/screens/RedeemRewardsScreen.js:455  fontWeight "800" not in 400/500/600/700
+  src/screens/RedeemRewardsScreen.js:482  fontWeight "800" not in 400/500/600/700
+  src/screens/RedeemRewardsScreen.js:486  fontWeight "800" not in 400/500/600/700
+  src/screens/admin/AdminAnalyticsScreen.js:1246  fontWeight "800" not in 400/500/600/700
+  src/screens/admin/AdminAnalyticsScreen.js:1277  fontWeight "800" not in 400/500/600/700
+  src/screens/admin/AdminAnalyticsScreen.js:1361  fontWeight "800" not in 400/500/600/700
+  … and 16 more
+
+── hex (111) ──
+  src/components/PremiumProductCard.js:426  Off-palette hex #9CA3AF
+  src/components/PremiumProductCard.js:426  Off-palette hex #6B7280
+  src/components/PremiumProductCard.js:426  Off-palette hex #4B5563
+  src/components/PremiumProductCard.js:701  Off-palette hex #1a1208
+  src/components/ProductCard.js:343  Off-palette hex #6B7280
+  src/components/SessionExpiredBanner.js:115  Off-palette hex #1a1208
+  src/components/home/HomePageFooter.js:187  Off-palette hex #09090B
+  src/components/home/HomePageFooter.js:231  Off-palette hex #A7F3D0
+  … and 103 more
+
+── rgba (866) ──
+  src/components/AppStartupScreen.js:313  Off-palette rgba rgba(200,169,126,0.24)
+  src/components/AppStartupScreen.js:363  Off-palette rgba rgba(255,255,255,0.04)
+  src/components/AppStartupScreen.js:366  Off-palette rgba rgba(200,169,126,0.40)
+  src/components/AppStartupScreen.js:371  Off-palette rgba rgba(255,255,255,0.04)
+  src/components/AuthGateShell.js:100  Off-palette rgba rgba(255,255,255,0.04)
+  src/components/AuthGateShell.js:101  Off-palette rgba rgba(24, 24, 27, 0.09)
+  src/components/AuthPageScaffold.js:245  Off-palette rgba rgba(14,23,41,0.05)
+  src/components/AuthPageScaffold.js:245  Off-palette rgba rgba(14,23,41,0.75)
+  … and 858 more
+
+── shadowOpacity (20) ──
+  src/components/PremiumProductCard.js:591  shadowOpacity 0.18 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
+  src/components/PremiumProductCard.js:703  shadowOpacity 0.28 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
+  src/components/ProductCard.js:1151  shadowOpacity 0 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
+  src/components/ProductCard.js:1206  shadowOpacity 0.12 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
+  src/components/ProductCard.js:1567  shadowOpacity 0.2 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
+  src/components/ProductCard.js:1614  shadowOpacity 0.12 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
+  src/components/ProductCard.js:1904  shadowOpacity 0.18 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
+  src/components/SessionExpiredBanner.js:117  shadowOpacity 0.16 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
+  … and 12 more
+
+── spacing (226) ──
+  src/components/AppStartupScreen.js:305  Off-scale spacing paddingHorizontal=28 (allowed: 0, 1, 2, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+  src/components/AppStartupScreen.js:359  Off-scale spacing paddingHorizontal=14 (allowed: 0, 1, 2, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+  src/components/AppStartupScreen.js:392  Off-scale spacing paddingHorizontal=14 (allowed: 0, 1, 2, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+  src/components/AppStartupScreen.js:412  Off-scale spacing paddingHorizontal=6 (allowed: 0, 1, 2, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+  src/components/AppStartupScreen.js:358  Off-scale spacing paddingVertical=10 (allowed: 0, 1, 2, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+  src/components/AppStartupScreen.js:393  Off-scale spacing paddingVertical=10 (allowed: 0, 1, 2, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+  src/components/AppStartupScreen.js:357  Off-scale spacing gap=6 (allowed: 0, 1, 2, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+  src/components/AuthPageScaffold.js:199  Off-scale spacing gap=6 (allowed: 0, 1, 2, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+  … and 218 more
+
+Fix gradually: use useTheme() → { c, S, R, SH, T } and theme/tokens.js.
+Set TOKEN_CHECK_STRICT=1 to fail CI when ready.
+

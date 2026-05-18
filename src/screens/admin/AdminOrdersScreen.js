@@ -23,13 +23,13 @@ import {
   getOrderStatusLabel,
   getAdminNextStatusLabel,
 } from "../../utils/orderStatus";
-import PremiumInput from "../../components/ui/PremiumInput";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumCard from "../../components/ui/PremiumCard";
-import PremiumChip from "../../components/ui/PremiumChip";
-import PremiumConfirmDialog from "../../components/ui/PremiumConfirmDialog";
+import Input from "../../components/ui/Input";
+import ErrorBanner from "../../components/ui/ErrorBanner";
+import EmptyState from "../../components/ui/EmptyState";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import Chip from "../../components/ui/Chip";
+import ConfirmDialog from "../../components/ui/ConfirmDialog";
 
 const STATUSES = ["all", ...ALL_ORDER_STATUSES];
 
@@ -273,12 +273,12 @@ export default function AdminOrdersScreen({ navigation, route }) {
     <OpsAdminScreen navigation={navigation} activeRoute="AdminOrders" sectionTitle="Manage orders">
           {error ? (
             <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+              <ErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
             </View>
           ) : null}
           {success ? (
             <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
+              <ErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
             </View>
           ) : null}
 
@@ -292,7 +292,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
 
           <View style={styles.actionsRow}>
             <View style={styles.searchInputWrap}>
-              <PremiumInput
+              <Input
                 label="Search orders"
                 value={search}
                 onChangeText={setSearch}
@@ -303,7 +303,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                 autoCapitalize="none"
               />
             </View>
-            <PremiumButton
+            <Button
               label="Refresh"
               iconLeft="refresh-outline"
               variant="secondary"
@@ -316,7 +316,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
           {Platform.OS === "web" ? (
             <View style={styles.filtersRow}>
               {STATUSES.map((status) => (
-                <PremiumChip
+                <Chip
                   key={status}
                   label={status === "all" ? "All" : getOrderStatusLabel(status)}
                   tone="gold"
@@ -333,7 +333,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
               contentContainerStyle={styles.filtersRow}
             >
               {STATUSES.map((status) => (
-                <PremiumChip
+                <Chip
                   key={status}
                   label={status === "all" ? "All" : getOrderStatusLabel(status)}
                   tone="gold"
@@ -359,7 +359,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                       ? c.accentGold || c.primary
                       : c.border;
               return (
-              <PremiumCard
+              <Card
                 key={item._id}
                 variant="muted"
                 padding="md"
@@ -397,7 +397,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
 
                 <View style={styles.quickActionsRow}>
                   {ORDER_ADMIN_NEXT_STATUS[item.status] ? (
-                    <PremiumButton
+                    <Button
                       label={
                         busyOrderId === item._id
                           ? "Updating…"
@@ -411,7 +411,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                       onPress={() => handleStatus(item._id, ORDER_ADMIN_NEXT_STATUS[item.status])}
                     />
                   ) : null}
-                  <PremiumButton
+                  <Button
                     label={expandedOrderId === item._id ? "Hide details" : "View full details"}
                     iconLeft={expandedOrderId === item._id ? "chevron-up-outline" : "chevron-down-outline"}
                     variant="ghost"
@@ -486,7 +486,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                       </Text>
                     ) : (
                       <View style={styles.assigneeChips}>
-                        <PremiumChip
+                        <Chip
                           label="Unassign"
                           tone="neutral"
                           size="sm"
@@ -496,7 +496,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                         {deliveryPartners.map((dp) => {
                           const sel = getOrderEditForm(item).assignedDeliveryUserId === String(dp._id);
                           return (
-                            <PremiumChip
+                            <Chip
                               key={dp._id}
                               label={dp.name}
                               tone="gold"
@@ -512,7 +512,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
 
                     <SectionTitle icon="create-outline" label="Edit Order Details (Admin)" />
                     <View style={styles.orderFieldGap}>
-                      <PremiumInput
+                      <Input
                         label="Payment method"
                         value={getOrderEditForm(item).paymentMethod}
                         onChangeText={(value) =>
@@ -522,7 +522,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                       />
                     </View>
                     <View style={styles.orderFieldGap}>
-                      <PremiumInput
+                      <Input
                         label="Full name"
                         value={getOrderEditForm(item).fullName}
                         onChangeText={(value) => updateOrderFormField(item._id, "fullName", value, item)}
@@ -530,7 +530,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                       />
                     </View>
                     <View style={styles.orderFieldGap}>
-                      <PremiumInput
+                      <Input
                         label="Phone"
                         value={getOrderEditForm(item).phone}
                         onChangeText={(value) => updateOrderFormField(item._id, "phone", value, item)}
@@ -539,7 +539,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                       />
                     </View>
                     <View style={styles.orderFieldGap}>
-                      <PremiumInput
+                      <Input
                         label="Address line"
                         value={getOrderEditForm(item).line1}
                         onChangeText={(value) => updateOrderFormField(item._id, "line1", value, item)}
@@ -548,14 +548,14 @@ export default function AdminOrdersScreen({ navigation, route }) {
                     </View>
                     <View style={styles.editSplitRow}>
                       <View style={[styles.orderFieldGap, styles.orderHalfField]}>
-                        <PremiumInput
+                        <Input
                           label="City"
                           value={getOrderEditForm(item).city}
                           onChangeText={(value) => updateOrderFormField(item._id, "city", value, item)}
                         />
                       </View>
                       <View style={[styles.orderFieldGap, styles.orderHalfField]}>
-                        <PremiumInput
+                        <Input
                           label="State"
                           value={getOrderEditForm(item).state}
                           onChangeText={(value) => updateOrderFormField(item._id, "state", value, item)}
@@ -564,7 +564,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                     </View>
                     <View style={styles.editSplitRow}>
                       <View style={[styles.orderFieldGap, styles.orderHalfField]}>
-                        <PremiumInput
+                        <Input
                           label="Postal code"
                           value={getOrderEditForm(item).postalCode}
                           onChangeText={(value) =>
@@ -574,7 +574,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                         />
                       </View>
                       <View style={[styles.orderFieldGap, styles.orderHalfField]}>
-                        <PremiumInput
+                        <Input
                           label="Country"
                           value={getOrderEditForm(item).country}
                           onChangeText={(value) => updateOrderFormField(item._id, "country", value, item)}
@@ -582,7 +582,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                       </View>
                     </View>
                     <View style={styles.orderFieldGap}>
-                      <PremiumInput
+                      <Input
                         label="Order note"
                         value={getOrderEditForm(item).note}
                         onChangeText={(value) => updateOrderFormField(item._id, "note", value, item)}
@@ -593,7 +593,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                     <Text style={styles.cardMeta}>
                       Invoice editing is coming soon. Order status, payment state, and delivery assignment still work as usual.
                     </Text>
-                    <PremiumButton
+                    <Button
                       label={busyOrderId === item._id ? "Saving…" : "Save order details"}
                       iconLeft="save-outline"
                       variant="secondary"
@@ -609,7 +609,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                     {Platform.OS === "web" ? (
                       <View style={[styles.statusButtonsWrap, styles.statusButtonsWrapWeb]}>
                         {STATUSES.filter((status) => status !== "all").map((status) => (
-                          <PremiumChip
+                          <Chip
                             key={status}
                             label={getOrderStatusLabel(status)}
                             tone="gold"
@@ -624,7 +624,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                     ) : (
                       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.statusButtonsWrap}>
                         {STATUSES.filter((status) => status !== "all").map((status) => (
-                          <PremiumChip
+                          <Chip
                             key={status}
                             label={getOrderStatusLabel(status)}
                             tone="gold"
@@ -641,7 +641,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                 ) : null}
 
                 <View style={styles.actionsWrap}>
-                  <PremiumButton
+                  <Button
                     label={busyOrderId === item._id ? "Deleting…" : "Delete order"}
                     iconLeft="trash-outline"
                     variant="destructive"
@@ -651,11 +651,11 @@ export default function AdminOrdersScreen({ navigation, route }) {
                     onPress={() => setConfirmDeleteOrderId(item._id)}
                   />
                 </View>
-              </PremiumCard>
+              </Card>
             );
             })}
             {renderedOrders.length < visibleOrders.length ? (
-              <PremiumButton
+              <Button
                 label={`Load more (${visibleOrders.length - renderedOrders.length} remaining)`}
                 variant="ghost"
                 size="sm"
@@ -664,7 +664,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
               />
             ) : null}
             {!ordersLoading && visibleOrders.length === 0 ? (
-              <PremiumEmptyState
+              <EmptyState
                 iconName="receipt-outline"
                 title="No orders match this filter"
                 description="Try another status chip or clear your search."
@@ -672,7 +672,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
               />
             ) : null}
           </View>
-                  <PremiumConfirmDialog
+                  <ConfirmDialog
         visible={Boolean(confirmDeleteOrderId)}
         title="Delete this order?"
         message="This permanently deletes the order record. This action cannot be undone."

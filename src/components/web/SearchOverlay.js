@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Input from "../ui/Input";
@@ -6,7 +6,8 @@ import { SearchSuggestionsPanel } from "./SearchSuggestionsPopover";
 import { useTheme } from "../../context/ThemeContext";
 import { SEARCH_OVERLAY_UI } from "../../content/appContent";
 import { icon } from "../../theme/tokens";
-import { WEB_Z_INDEX } from "../../theme/web";
+import { WEB_Z_INDEX, webOverlayRootStyle } from "../../theme/web";
+import useModalA11y from "../../hooks/useModalA11y";
 
 /**
  * Full-screen search overlay (compact web / mobile header).
@@ -24,26 +25,20 @@ export default function SearchOverlay({
 }) {
   const { semanticPalette, SPACING } = useTheme();
   const [local, setLocal] = useState(query);
+  const containerRef = useRef(null);
+
+  useModalA11y({ visible, onClose, containerRef });
 
   useEffect(() => {
     setLocal(query);
   }, [query, visible]);
 
-  useEffect(() => {
-    if (!visible || Platform.OS !== "web" || typeof window === "undefined") return undefined;
-    const onKey = (e) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, visible]);
-
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
-      <View style={[styles.root, { backgroundColor: semanticPalette.bg, zIndex: WEB_Z_INDEX.overlay }]}>
+      <View
+        ref={containerRef}
+        style={[styles.root, { backgroundColor: semanticPalette.bg }, webOverlayRootStyle(WEB_Z_INDEX.overlayPanel)]}
+      >
         <View style={[styles.header, { paddingHorizontal: SPACING.lg, paddingTop: SPACING.xl, gap: SPACING.sm }]}>
           <View style={styles.searchRow}>
             <View style={{ flex: 1 }}>

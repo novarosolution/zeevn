@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useMemo } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { Image } from "expo-image";
+import WebLcpImage from "../web/WebLcpImage";
+import { HERO_LCP_SRC, HERO_SRCSET } from "../../constants/heroLcp.web";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,7 +25,7 @@ function getSlideOverline(slide, index) {
   return "DAILY PANTRY";
 }
 
-function HeroKenBurnsImage({ slide, reducedMotion, style, direction }) {
+function HeroKenBurnsImage({ slide, reducedMotion, style, direction, priority = false, slideIndex = 0 }) {
   const scale = useSharedValue(1);
 
   useEffect(() => {
@@ -41,7 +43,23 @@ function HeroKenBurnsImage({ slide, reducedMotion, style, direction }) {
     transform: [{ scale: scale.value }],
   }));
 
-  if (!slide?.image) return null;
+  if (!slide?.image && Platform.OS !== "web") return null;
+
+  if (Platform.OS === "web") {
+    return (
+      <Animated.View style={[StyleSheet.absoluteFillObject, imageAnimStyle]}>
+        <WebLcpImage
+          src={HERO_LCP_SRC}
+          srcSet={HERO_SRCSET}
+          sizes="(max-width: 768px) 100vw, 1280px"
+          alt={slide?.title ? String(slide.title) : "Featured collection"}
+          priority={priority}
+          lazy={!priority}
+          style={[style, StyleSheet.absoluteFillObject]}
+        />
+      </Animated.View>
+    );
+  }
 
   return (
     <AnimatedExpoImage
@@ -114,6 +132,7 @@ export default function HomeMarketingHero({
         height: 1,
         backgroundColor: "rgba(200,169,126,0.32)",
         zIndex: 4,
+        pointerEvents: "none",
       },
       lampOverlay: {
         position: "absolute",
@@ -124,6 +143,7 @@ export default function HomeMarketingHero({
         borderRadius: 999,
         backgroundColor: "rgba(200,169,126,0.10)",
         zIndex: 1,
+        pointerEvents: "none",
       },
       contentWrap: {
         flex: 1,
@@ -376,9 +396,11 @@ export default function HomeMarketingHero({
                   <View style={editorialStyles.heroFrame}>
                     <HeroKenBurnsImage
                       slide={slide}
+                      slideIndex={slideIndex}
                       reducedMotion={reducedMotion}
                       style={styles.heroSlideMedia}
                       direction={slideIndex % 2 === 0 ? 1 : -1}
+                      priority={slideIndex === 0}
                     />
                     <LinearGradient
                       colors={["rgba(14,23,41,0.48)", "rgba(14,23,41,0.82)"]}
@@ -386,8 +408,8 @@ export default function HomeMarketingHero({
                       end={{ x: 0, y: 1 }}
                       style={StyleSheet.absoluteFillObject}
                     />
-                    <View style={editorialStyles.lampOverlay} pointerEvents="none" />
-                    <View style={editorialStyles.topRule} pointerEvents="none" />
+                    <View style={editorialStyles.lampOverlay} />
+                    <View style={editorialStyles.topRule} />
                     <View
                       style={editorialStyles.counterPill}
                       accessibilityRole="text"

@@ -30,7 +30,7 @@ function PageHeaderBase({
 
   const isDarkSurface = variant === "dark";
   const ink = isDarkSurface ? semanticPalette.inkInverse : semanticPalette.ink;
-  const muted = isDarkSurface ? semanticPalette.inkInverseMuted : semanticPalette.inkMuted;
+  const muted = isDarkSurface ? semanticPalette.inkInverseMuted : semanticPalette.inkSoft;
   const soft = isDarkSurface ? semanticPalette.inkInverseSoft : semanticPalette.inkSoft;
 
   const handleBack = () => {

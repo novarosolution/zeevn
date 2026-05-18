@@ -13,22 +13,11 @@ export function navigateToLogin(navigation, options = {}) {
   navigation.navigate("Login", params);
 }
 
+import { decodeReturnToString } from "../../utils/deepLink";
+
 /** Post-auth navigation — honors `returnTo` param, else goBack, else Home. */
 export function navigateAfterAuth(navigation, route) {
-  const raw = route?.params?.returnTo;
-  const returnTo =
-    raw && typeof raw === "object" && typeof raw.name === "string"
-      ? raw
-      : typeof raw === "string" && raw !== "[object Object]"
-        ? (() => {
-            try {
-              const parsed = JSON.parse(decodeURIComponent(raw));
-              return parsed?.name ? parsed : null;
-            } catch {
-              return null;
-            }
-          })()
-        : null;
+  const returnTo = decodeReturnToString(route?.params?.returnTo);
   if (returnTo?.name) {
     navigation.replace(returnTo.name, returnTo.params ?? {});
     return;

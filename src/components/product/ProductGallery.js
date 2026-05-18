@@ -570,7 +570,7 @@ export default function ProductGallery({
 
   const thumbList = slides.map((slide, index) => (
     <GalleryThumbnail
-      key={`${slide.type}-${slide.uri}`}
+      key={`${slide.type}-${slide.uri}-${index}`}
       slide={slide}
       selected={index === selectedIndex}
       thumbIndex={index}

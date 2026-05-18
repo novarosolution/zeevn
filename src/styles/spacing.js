@@ -11,7 +11,7 @@ import {
   SPACING,
   TYPE,
   getSemanticPalette,
-} from "./designSystem";
+} from "../theme/tokens";
 
 export {
   COLORS,

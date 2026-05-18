@@ -9,13 +9,16 @@ import { fonts, spacing, typography } from "../theme/tokens";
 import BottomNavBar from "./BottomNavBar";
 import CustomerScreenShell from "./CustomerScreenShell";
 import SessionExpiredBanner from "./SessionExpiredBanner";
-import PremiumButton from "./ui/PremiumButton";
+import Button from "./ui/Button";
+import { AUTH_SCREEN } from "../content/appContent";
 
 /**
  * Empty shell while auth is restoring.
  * When `signedOut` is set, shows sign-in / home instead of auto-redirecting to Login
  * (avoids racing with logout + stack reset).
  */
+const gateCopy = AUTH_SCREEN.gateShell;
+
 export default function AuthGateShell({ navigation, signedOut = false }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
   const styles = useMemo(() => createStyles(c, isDark, shadowPremium), [c, isDark, shadowPremium]);
@@ -31,20 +34,22 @@ export default function AuthGateShell({ navigation, signedOut = false }) {
             <View style={styles.signedOutIconWrap}>
               <Ionicons name="person-circle-outline" size={30} color={isDark ? c.primaryBright : ALCHEMY.brown} />
             </View>
-            <Text style={styles.signedOutTitle}>Sign in to your account</Text>
-            <Text style={styles.signedOutSub}>
-              Continue to view orders, saved addresses, and account settings.
+            <Text accessibilityRole="header" style={styles.signedOutTitle}>
+              {gateCopy.title}
             </Text>
-            <PremiumButton
-              label="Sign in"
+            <Text style={styles.signedOutSub}>{gateCopy.subtitle}</Text>
+            <Button
+              label={gateCopy.signInCta}
+              accessibilityLabel={gateCopy.signInCta}
               onPress={() => navigation.navigate("Login")}
               variant="primary"
               size="lg"
               fullWidth
               style={styles.primaryBtn}
             />
-            <PremiumButton
-              label="Continue as guest"
+            <Button
+              label={gateCopy.guestCta}
+              accessibilityLabel={gateCopy.guestCta}
               onPress={() => resetNavigationToHome(navigation)}
               variant="ghost"
               size="lg"

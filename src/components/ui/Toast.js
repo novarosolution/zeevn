@@ -148,7 +148,12 @@ function ToastBase({
           {message}
         </Text>
         {actionLabel ? (
-          <Pressable onPress={handleAction} hitSlop={10} accessibilityRole="button">
+          <Pressable
+            onPress={handleAction}
+            hitSlop={10}
+            accessibilityRole="button"
+            accessibilityLabel={actionLabel}
+          >
             <Text
               style={{
                 fontFamily: fonts.semibold,

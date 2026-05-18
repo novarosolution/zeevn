@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import { ALCHEMY, HERITAGE } from "./customerAlchemy";
+import { WEB_BACKDROP } from "./tokens";
 
 /** Web header tallest band (desktop default, unscrolled); layout padding clears this. */
 export const WEB_HEADER_HEIGHT = 72;
@@ -15,19 +16,19 @@ export const WEB_HEADER_BAND = {
   phoneDefault: 56,
   phoneScrolled: 52,
 };
-/** Shared z-index ladder to prevent header/dropdown overlap bugs. */
-export const WEB_Z_INDEX = {
-  header: 1000,
-  sticky: 1050,
-  dropdown: 1200,
-  overlay: 1100,
-  content: 1,
-  authForm: 20,
-  authInteractive: 30,
-  toast: 9999,
-};
-
-export { webZIndex, webElevatedLayer, webDecorLayer, webFixedLayer } from "./webStacking";
+export {
+  WEB_Z_INDEX,
+  webZIndex,
+  webElevatedLayer,
+  webDecorLayer,
+  webFixedLayer,
+  webBackdropFilterStyle,
+  webOverlayScrimStyle,
+  webOverlayRootStyle,
+  webOverlayPanelStyle,
+  webDialogLayerStyle,
+  webScrimColor,
+} from "./webStacking";
 
 /** Root shell: full viewport height on web so the layout feels like a real page. */
 export const webRootStyle = Platform.select({
@@ -92,25 +93,28 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
         -webkit-tap-highlight-color: transparent;
       }
       ::-webkit-scrollbar {
-        width: 10px;
-        height: 10px;
+        width: 12px;
+        height: 12px;
       }
       ::-webkit-scrollbar-track {
-        background: rgba(100, 116, 139, 0.06);
+        background: ${WEB_BACKDROP.scrollbarTrack};
       }
       ::-webkit-scrollbar-thumb {
-        background: rgba(148, 163, 184, 0.4);
+        background: ${WEB_BACKDROP.scrollbarThumb};
         border-radius: 999px;
+        border: 2px solid transparent;
+        background-clip: padding-box;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: rgba(100, 116, 139, 0.56);
+        background: ${HERITAGE.brass};
+        background-clip: padding-box;
       }
       ::selection {
-        background: rgba(184, 134, 11, 0.22);
-        color: inherit;
+        background: ${WEB_BACKDROP.selectionBackground};
+        color: ${WEB_BACKDROP.selectionColor};
       }
       *:focus-visible {
-        outline: 2px solid rgba(14, 23, 41, 0.38);
+        outline: 2px solid ${WEB_BACKDROP.focusRing};
         outline-offset: 2px;
         border-radius: 12px;
       }

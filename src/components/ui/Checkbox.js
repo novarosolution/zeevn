@@ -3,12 +3,11 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/tokens";
-import { WebNativeButton } from "./inputWebHelpers";
 
 /**
  * Checkbox row with label. Uses native `<button role="checkbox">` on web.
  */
-function CheckboxBase({ checked, onToggle, label, disabled = false, style, testID }) {
+function CheckboxBase({ checked, onToggle, label, labelStyle, disabled = false, style, testID }) {
   const { semanticPalette, TYPE } = useTheme();
 
   const box = (
@@ -30,24 +29,34 @@ function CheckboxBase({ checked, onToggle, label, disabled = false, style, testI
 
   const labelNode = label ? (
     <Text
-      style={{
-        fontFamily: fonts.regular,
-        fontSize: TYPE.small.fontSize,
-        lineHeight: TYPE.small.lineHeight,
-        color: semanticPalette.inkSoft,
-      }}
+      style={[
+        {
+          fontFamily: fonts.regular,
+          fontSize: TYPE.small.fontSize,
+          lineHeight: TYPE.small.lineHeight,
+          color: semanticPalette.inkSoft,
+        },
+        labelStyle,
+      ]}
     >
       {label}
     </Text>
   ) : null;
 
   if (Platform.OS === "web") {
+    const a11yLabel = typeof label === "string" ? label : "Checkbox";
     return (
-      <WebNativeButton
-        testID={testID}
+      <button
+        type="button"
+        data-testid={testID}
+        role="checkbox"
+        aria-checked={checked}
+        aria-label={a11yLabel}
         disabled={disabled}
-        ariaLabel={typeof label === "string" ? label : "Checkbox"}
-        onPress={onToggle}
+        onClick={(e) => {
+          e.preventDefault();
+          if (!disabled && onToggle) onToggle();
+        }}
         style={{
           display: "inline-flex",
           flexDirection: "row",
@@ -56,16 +65,16 @@ function CheckboxBase({ checked, onToggle, label, disabled = false, style, testI
           background: "none",
           border: "none",
           padding: 0,
+          margin: 0,
           cursor: disabled ? "default" : "pointer",
           opacity: disabled ? 0.5 : 1,
-          ...style,
+          font: "inherit",
+          textAlign: "left",
         }}
       >
-        <span role="checkbox" aria-checked={checked} style={{ display: "flex" }}>
-          {box}
-        </span>
+        {box}
         {labelNode}
-      </WebNativeButton>
+      </button>
     );
   }
 

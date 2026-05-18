@@ -1,6 +1,7 @@
 // https://docs.expo.dev/guides/using-eslint/
 const { defineConfig } = require("eslint/config");
 const expoConfig = require("eslint-config-expo/flat");
+const reactNativeA11y = require("eslint-plugin-react-native-a11y");
 
 const PREMIUM_SHIM_MESSAGE =
   "Deprecated: import from components/ui (e.g. Button, Input, Card) or @/components/ui instead of Premium* shims.";
@@ -85,6 +86,22 @@ module.exports = defineConfig([
     files: ["src/components/ui/Premium*.js"],
     rules: {
       "no-restricted-imports": "off",
+    },
+  },
+  {
+    files: ["src/**/*.{js,jsx,ts,tsx}"],
+    plugins: {
+      "react-native-a11y": reactNativeA11y,
+    },
+    rules: {
+      ...reactNativeA11y.configs.basic.rules,
+      "react-native-a11y/has-accessibility-hint": "off",
+      "react-native-a11y/has-valid-accessibility-descriptors": "warn",
+      "react-native-a11y/has-valid-accessibility-role": "warn",
+      "react-native-a11y/has-valid-accessibility-state": "warn",
+      "react-native-a11y/has-valid-accessibility-value": "warn",
+      "react-native-a11y/has-valid-important-for-accessibility": "warn",
+      "react-native-a11y/no-nested-touchables": "error",
     },
   },
 ]);

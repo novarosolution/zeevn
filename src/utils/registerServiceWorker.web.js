@@ -3,6 +3,7 @@
  */
 export function registerProductCacheServiceWorker() {
   if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
+  if (__DEV__ || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") return;
 
   const register = () => {
     navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {

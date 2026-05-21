@@ -1,5 +1,6 @@
 import { Platform, StyleSheet } from "react-native";
 import { WEB_BACKDROP } from "./tokens";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../utils/webViewport";
 
 /**
  * Web z-index ladder (bottom → top). Pair every z-index with non-static `position` on web
@@ -75,6 +76,8 @@ export function webFixedLayer(zIndex) {
   return {
     position: "fixed",
     zIndex,
+    transform: "translateZ(0)",
+    willChange: "transform",
   };
 }
 
@@ -108,7 +111,7 @@ export function webOverlayRootStyle(zIndex = WEB_Z_INDEX.overlay) {
     ...base,
     position: "relative",
     zIndex,
-    minHeight: "100vh",
+    minHeight: APP_VIEWPORT_MIN_HEIGHT,
   };
 }
 

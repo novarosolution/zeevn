@@ -10,7 +10,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { Image } from "expo-image";
+import DecorativeExpoImage from "../ui/DecorativeExpoImage";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, {
@@ -24,16 +24,19 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
+import { Skeleton } from "moti/skeleton";
 import { fonts, getSemanticColors, icon, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 import { formatINR, formatINRWhole } from "../../utils/currency";
 import { getImageUriCandidates } from "../../utils/image";
+import { pointerEventsProp } from "../../utils/pointerEventsStyle";
 import { matchesShelfProduct } from "../../utils/shelfMatch";
 import { APP_DISPLAY_NAME } from "../../constants/brand";
 import { useTheme } from "../../context/ThemeContext";
 import { useWishlistOptional } from "../../context/WishlistContext";
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
 import { usePrefersReducedMotion } from "../../utils/motion";
+import { isLowEndWebDevice } from "../../utils/webPerf";
 
 export default function ProductCardInner({
   product,
@@ -73,6 +76,7 @@ export default function ProductCardInner({
   const isWeb = Platform.OS === "web";
   const isWebGrid = isWeb && !isList;
   const reducedMotion = usePrefersReducedMotion();
+  const lowEndWeb = isLowEndWebDevice();
   const wishlist = useWishlistOptional();
   const wishlistProductId = useMemo(
     () => String(product?.id ?? product?._id ?? "").trim(),
@@ -85,9 +89,11 @@ export default function ProductCardInner({
   const [secondaryImageIndex, setSecondaryImageIndex] = useState(0);
   const [showNotifyModal, setShowNotifyModal] = useState(false);
   const [notifyEmail, setNotifyEmail] = useState("");
+  const [addFlash, setAddFlash] = useState(false);
   const [showSecondaryImage, setShowSecondaryImage] = useState(false);
   const [longPressRaised, setLongPressRaised] = useState(false);
   const previewTimerRef = useRef(null);
+  const addFlashTimerRef = useRef(null);
   const imageAreaRef = useRef(null);
   const burstProgress = useSharedValue(0);
   const imageOpacity = useSharedValue(0);
@@ -204,15 +210,18 @@ export default function ProductCardInner({
 
   useEffect(() => {
     atcWidth.value = withTiming(quantity > 0 ? 84 : isOutOfStock ? 74 : 32, {
-      duration: 220,
+      duration: lowEndWeb ? 1 : 220,
       easing: Easing.out(Easing.cubic),
     });
-  }, [atcWidth, isOutOfStock, quantity]);
+  }, [atcWidth, isOutOfStock, lowEndWeb, quantity]);
 
   useEffect(
     () => () => {
       if (previewTimerRef.current) {
         clearTimeout(previewTimerRef.current);
+      }
+      if (addFlashTimerRef.current) {
+        clearTimeout(addFlashTimerRef.current);
       }
     },
     []
@@ -299,6 +308,9 @@ export default function ProductCardInner({
 
   const onAddPress = (event) => {
     event?.stopPropagation?.();
+    if (addFlashTimerRef.current) clearTimeout(addFlashTimerRef.current);
+    setAddFlash(true);
+    addFlashTimerRef.current = setTimeout(() => setAddFlash(false), 140);
     if (isOutOfStock) {
       setShowNotifyModal(true);
       return;
@@ -329,7 +341,7 @@ export default function ProductCardInner({
   const compactListLayout = isList && isNarrowViewport;
   const compactGridLayout = !isWeb && !isList && isNarrowViewport;
   const rootEntering =
-    !isWeb && index != null
+    !isWeb && !lowEndWeb && index != null
       ? FadeInDown.delay(Math.min(index * 52, 520)).duration(400)
       : undefined;
 
@@ -343,6 +355,7 @@ export default function ProductCardInner({
   const saleColor = c.sale || "#B23A3A";
   const inkColor = c.ink || c.textPrimary || "#111827";
   const mutedColor = c.textSecondary || c.muted || "#4A4A4A";
+  const brassAction = c.accentOnLight || c.accent || "#C8A97E";
   const ratingInfo = getRatingMeta(product);
   const displayName = getProductDisplayName(product);
   const isNewArrival = isWithinDays(product?.createdAt, 21) && !(offPct > 0);
@@ -396,6 +409,17 @@ export default function ProductCardInner({
               <Animated.View style={[styles.premiumImageScaleWrap, hoverImageScaleStyle]}>
                 <View style={styles.premiumImageFrame}>
                   <View style={styles.premiumImageBackground} />
+                  {!primaryLoaded ? (
+                    <View style={StyleSheet.absoluteFillObject} {...pointerEventsProp("none")}>
+                      <Skeleton
+                        height="100%"
+                        width="100%"
+                        radius={0}
+                        colorMode={isDark ? "dark" : "light"}
+                        transition={{ type: "timing", duration: 320 }}
+                      />
+                    </View>
+                  ) : null}
                   {!reducedMotion && !primaryLoaded ? (
                     <Animated.View style={[styles.shimmerSweep, shimmerStyle, { pointerEvents: "none" }]}>
                       <LinearGradient
@@ -408,7 +432,7 @@ export default function ProductCardInner({
                   ) : null}
                   {imageUri && !imageFailed ? (
                     <Animated.View style={[styles.imageFadeWrap, imageFadeStyle]}>
-                      <Image
+                      <DecorativeExpoImage
                         source={{ uri: imageUri }}
                         style={styles.premiumImage}
                         contentFit="cover"
@@ -433,7 +457,7 @@ export default function ProductCardInner({
                   )}
                   {hasSecondaryImage ? (
                     <Animated.View style={[styles.premiumSecondaryImageLayer, secondaryFadeStyle, { pointerEvents: "none" }]}>
-                      <Image
+                      <DecorativeExpoImage
                         source={{ uri: secondaryUri }}
                         style={styles.premiumImage}
                         contentFit="cover"
@@ -485,7 +509,14 @@ export default function ProductCardInner({
                 </>
               ) : null}
 
-              <Animated.View style={[styles.atcControl, atcControlStyle, isOutOfStock ? styles.notifyGhost : null]}>
+              <Animated.View
+                style={[
+                  styles.atcControl,
+                  atcControlStyle,
+                  isOutOfStock ? styles.notifyGhost : null,
+                  addFlash ? styles.atcFlashActive : null,
+                ]}
+              >
                 {isOutOfStock ? (
                   <Pressable
                     onPress={onAddPress}
@@ -498,11 +529,11 @@ export default function ProductCardInner({
                 ) : quantity > 0 ? (
                   <View style={styles.inlineStepper}>
                     <Pressable style={styles.inlineStepHit} onPress={onStepperRemove} accessibilityRole="button" accessibilityLabel="Decrease quantity">
-                      <Ionicons name="remove" size={14} color={inkColor} />
+                      <Ionicons name="remove" size={14} color={brassAction} />
                     </Pressable>
                     <Text style={[styles.inlineQty, { color: inkColor }]}>{quantity}</Text>
                     <Pressable style={styles.inlineStepHit} onPress={onStepperAdd} accessibilityRole="button" accessibilityLabel="Increase quantity">
-                      <Ionicons name="add" size={14} color={inkColor} />
+                      <Ionicons name="add" size={14} color={brassAction} />
                     </Pressable>
                   </View>
                 ) : (
@@ -512,7 +543,7 @@ export default function ProductCardInner({
                     accessibilityRole="button"
                     accessibilityLabel={`Add ${product.name} to cart`}
                   >
-                    <Ionicons name="add" size={16} color={inkColor} />
+                    <Ionicons name="add" size={16} color={brassAction} />
                   </Pressable>
                 )}
               </Animated.View>
@@ -650,7 +681,7 @@ export default function ProductCardInner({
             >
             {imageUri && !imageFailed ? (
               <Animated.View style={[styles.imageFadeWrap, imageFadeStyle]}>
-                <Image
+                <DecorativeExpoImage
                   source={{ uri: imageUri }}
                   style={[styles.image, isWebGrid ? styles.imageGridWeb : null]}
                   contentFit="cover"

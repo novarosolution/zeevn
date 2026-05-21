@@ -27,6 +27,9 @@ jobs:
       - name: Run unit tests with coverage
         run: npm run test:unit
 
+      - name: Run token policy check (warn-only baseline)
+        run: npm run check:tokens
+
       - name: Upload coverage report
         if: always()
         uses: actions/upload-artifact@v5

@@ -1,13 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { Linking, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { MapPin, RotateCcw, Truck } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { navigateCustomerNav } from "../../navigation/accountRoutes";
-import {
-  APP_DISPLAY_NAME,
-  HOME_FOOTER,
-  HOME_TRUST_STRIP,
-} from "../../content/appContent";
+import { APP_DISPLAY_NAME, HOME_FOOTER } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, getSemanticColors, layout, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
 import { homeType } from "../../styles/typography";
@@ -39,6 +36,11 @@ export default function HomePageFooter({ colors: c, compact = false }) {
     .filter((col) => String(col.title || "").trim() && col.links.length > 0);
   const social = (HOME_FOOTER.social || []).filter((s) => s?.icon);
   const paymentIcons = HOME_FOOTER.bottom?.paymentIcons || [];
+  const trustPills = [
+    { key: "shipping", label: "Free shipping over ₹1,499", Icon: Truck },
+    { key: "local", label: "Same-day in Ahmedabad", Icon: MapPin },
+    { key: "returns", label: "30-day returns", Icon: RotateCcw },
+  ];
 
   const submitNewsletter = () => {
     if (!String(email || "").trim()) return;
@@ -59,7 +61,7 @@ export default function HomePageFooter({ colors: c, compact = false }) {
     <View
       style={styles.shell}
       {...Platform.select({
-        web: { role: "contentinfo", "aria-label": "Site footer" },
+        web: { role: "region", "aria-label": "Site footer" },
       })}
     >
       <View style={styles.newsletterStrip}>
@@ -112,10 +114,13 @@ export default function HomePageFooter({ colors: c, compact = false }) {
       </View>
 
       <View style={styles.trustPillsRow}>
-        {HOME_TRUST_STRIP.map((item, index) => (
+        {trustPills.map((item, index) => (
           <React.Fragment key={item.key}>
-            <Text style={styles.trustPillText}>{item.label}</Text>
-            {index < HOME_TRUST_STRIP.length - 1 ? <View style={styles.trustSeparator} /> : null}
+            <View style={styles.trustPillItem}>
+              <item.Icon size={12} color={c.inkInverseSoft || "rgba(226,232,240,0.9)"} />
+              <Text style={styles.trustPillText}>{item.label}</Text>
+            </View>
+            {index < trustPills.length - 1 ? <View style={styles.trustSeparator} /> : null}
           </React.Fragment>
         ))}
       </View>
@@ -327,23 +332,26 @@ function createStyles(c, isDark, semantic, compact) {
     },
     trustPillsRow: {
       flexDirection: "row",
-      flexWrap: "wrap",
       alignItems: "center",
-      rowGap: homeSpacing.xs,
       columnGap: homeSpacing.sm,
       marginBottom: homeSpacing.lg,
       paddingBottom: homeSpacing.base,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: "rgba(226,232,240,0.14)",
     },
+    trustPillItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
     trustSeparator: {
       width: 1,
       height: 12,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(226,232,240,0.3)",
+      borderWidth: 1,
+      borderColor: c.lineInverse || "rgba(226,232,240,0.3)",
     },
     trustPillText: {
-      color: "rgba(226,232,240,0.92)",
+      color: c.inkInverseSoft || "rgba(226,232,240,0.9)",
       fontSize: 12,
       fontFamily: homeType.uiMedium.fontFamily,
       lineHeight: 16,

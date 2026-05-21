@@ -1,16 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Platform, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { Platform, RefreshControl, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { Image } from "expo-image";
 import { useAuth } from "../../context/AuthContext";
 import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
+import OpsDataTable from "../../components/ops/OpsDataTable";
 import OpsListSkeleton from "../../components/ops/OpsListSkeleton";
+import OpsStatCard from "../../components/ops/OpsStatCard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
 import { deleteAdminProduct, fetchAdminProducts } from "../../services/adminService";
 import { adminPanel } from "../../theme/adminLayout";
-import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
-import { ALCHEMY } from "../../theme/customerAlchemy";
-import { getSemanticColors, layout, radius, spacing, typography } from "../../theme/tokens";
+import { getSemanticColors, layout, radius, spacing, typography, fonts } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
 import Input from "../../components/ui/Input";
 import ErrorBanner from "../../components/ui/ErrorBanner";
@@ -18,8 +18,7 @@ import EmptyState from "../../components/ui/EmptyState";
 import Button from "../../components/ui/Button";
 import Card from "../../components/ui/Card";
 import Chip from "../../components/ui/Chip";
-import MotionScrollView from "../../components/motion/MotionScrollView";
-import SectionReveal from "../../components/motion/SectionReveal";
+import Badge from "../../components/ui/Badge";
 
 const LOW_STOCK_MAX = 5;
 
@@ -56,7 +55,9 @@ function coverUri(p) {
 }
 
 export default function AdminProductsScreen({ navigation }) {
-  const { colors: c, shadowPremium, isDark } = useTheme();
+  const { width } = useWindowDimensions();
+  const useTable = Platform.OS === "web" && width >= 768;
+  const { colors: c, shadowPremium, isDark, semanticPalette, SPACING } = useTheme();
   const semantic = useMemo(() => getSemanticColors(c), [c]);
   const styles = useMemo(
     () => createAdminProductsStyles(c, shadowPremium, isDark, semantic),
@@ -132,6 +133,78 @@ export default function AdminProductsScreen({ navigation }) {
     }
   };
 
+  const productColumns = useMemo(
+    () => [
+      {
+        key: "name",
+        label: "Product",
+        flex: 1.4,
+        sortable: true,
+        sortValue: (row) => row.name || "",
+        render: (row) => (
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: semanticPalette.ink }} numberOfLines={2}>
+            {row.name}
+          </Text>
+        ),
+      },
+      {
+        key: "price",
+        label: "Price",
+        flex: 0.7,
+        sortable: true,
+        sortValue: (row) => Number(row.price || 0),
+        render: (row) => (
+          <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: semanticPalette.ink }}>
+            {formatINR(row.price)}
+          </Text>
+        ),
+      },
+      {
+        key: "stock",
+        label: "Qty",
+        flex: 0.5,
+        sortable: true,
+        sortValue: (row) => Number(row.stockQty || 0),
+        render: (row) => (
+          <Text style={{ fontFamily: fonts.regular, fontSize: 13, color: semanticPalette.inkSoft }}>
+            {Math.max(0, Number(row.stockQty) || 0)}
+          </Text>
+        ),
+      },
+      {
+        key: "status",
+        label: "Stock",
+        flex: 0.7,
+        render: (row) => {
+          const chip = productStockChip(row);
+          return (
+            <Badge variant={chip.tone === "red" ? "sale" : chip.tone === "gold" ? "brass" : "success"} size="sm">
+              {chip.label}
+            </Badge>
+          );
+        },
+      },
+      {
+        key: "actions",
+        label: "",
+        flex: 1,
+        minWidth: 140,
+        render: (row) => (
+          <View style={{ flexDirection: "row", gap: 6 }}>
+            <Button
+              label="Edit"
+              variant="secondary"
+              size="sm"
+              onPress={() => navigation.navigate("AdminAddProduct", { product: row })}
+            />
+            <Button label="Delete" variant="destructive" size="sm" onPress={() => handleDelete(row._id)} />
+          </View>
+        ),
+      },
+    ],
+    [navigation, semanticPalette.ink, semanticPalette.inkSoft]
+  );
+
   return (
     <OpsAdminScreen navigation={navigation} activeRoute="AdminProducts" sectionTitle="Manage products">
           {error ? (
@@ -140,27 +213,12 @@ export default function AdminProductsScreen({ navigation }) {
             </View>
           ) : null}
 
-                      <Card padding="md" variant="elevated" goldAccent style={styles.summaryCard}>
-              <Text style={[styles.summaryEyebrow, { color: c.textMuted }]}>Catalog snapshot</Text>
-              <View style={styles.summaryGrid}>
-                <View style={styles.summaryCell}>
-                  <Text style={[styles.summaryValue, { color: c.textPrimary }]}>{stats.total}</Text>
-                  <Text style={[styles.summaryLabel, { color: c.textSecondary }]}>Total SKUs</Text>
-                </View>
-                <View style={styles.summaryCell}>
-                  <Text style={[styles.summaryValue, { color: c.secondaryDark }]}>{stats.inStock}</Text>
-                  <Text style={[styles.summaryLabel, { color: c.textSecondary }]}>Healthy</Text>
-                </View>
-                <View style={styles.summaryCell}>
-                  <Text style={[styles.summaryValue, { color: ALCHEMY.gold }]}>{stats.low}</Text>
-                  <Text style={[styles.summaryLabel, { color: c.textSecondary }]}>Low stock</Text>
-                </View>
-                <View style={styles.summaryCell}>
-                  <Text style={[styles.summaryValue, { color: c.danger }]}>{stats.out}</Text>
-                  <Text style={[styles.summaryLabel, { color: c.textSecondary }]}>Out</Text>
-                </View>
-              </View>
-            </Card>
+          <View style={[styles.summaryGrid, { flexDirection: "row", flexWrap: "wrap", gap: SPACING.sm, marginBottom: SPACING.md }]}>
+            <OpsStatCard label="Total SKUs" value={String(stats.total)} style={{ flex: 1, minWidth: 120 }} />
+            <OpsStatCard label="Healthy" value={String(stats.inStock)} style={{ flex: 1, minWidth: 120 }} />
+            <OpsStatCard label="Low stock" value={String(stats.low)} style={{ flex: 1, minWidth: 120 }} />
+            <OpsStatCard label="Out" value={String(stats.out)} style={{ flex: 1, minWidth: 120 }} />
+          </View>
           
           <View style={styles.actionsRow}>
             <View style={styles.searchInputWrap}>
@@ -196,6 +254,15 @@ export default function AdminProductsScreen({ navigation }) {
 
           <View style={styles.listContent}>
             {productsLoading && products.length === 0 ? <OpsListSkeleton rows={5} /> : null}
+            {useTable && !productsLoading && visibleProducts.length > 0 ? (
+              <OpsDataTable
+                columns={productColumns}
+                data={visibleProducts}
+                keyExtractor={(row) => row._id}
+                pageSize={20}
+                emptyMessage="No products to show."
+              />
+            ) : null}
             {!productsLoading && filteredProducts.length === 0 ? (
               <EmptyState
                 iconName="cube-outline"
@@ -207,7 +274,7 @@ export default function AdminProductsScreen({ navigation }) {
                 compact
               />
             ) : null}
-            {!productsLoading &&
+            {!productsLoading && !useTable &&
             visibleProducts.map((item, idx) => {
               const chip = productStockChip(item);
               const uri = coverUri(item);
@@ -229,7 +296,7 @@ export default function AdminProductsScreen({ navigation }) {
                           </Text>
                           <Chip label={chip.label} tone={chip.tone} size="sm" />
                         </View>
-                        <Text style={[styles.cardPrice, { color: c.primary }]}>{formatINR(item.price)}</Text>
+                        <Text style={[styles.cardPrice, { color: semanticPalette.ink }]}>{formatINR(item.price)}</Text>
                       </View>
                     </View>
 
@@ -262,7 +329,7 @@ export default function AdminProductsScreen({ navigation }) {
                     <View style={styles.cardActions}>
                       <Button
                         label="Edit"
-                        variant="ghost"
+                        variant="secondary"
                         size="sm"
                         onPress={() => navigation.navigate("AdminAddProduct", { product: item })}
                       />
@@ -271,7 +338,7 @@ export default function AdminProductsScreen({ navigation }) {
                   </Card>
                               );
             })}
-            {visibleProducts.length < filteredProducts.length ? (
+            {visibleProducts.length < filteredProducts.length && !useTable ? (
               <Button
                 label={`Load more (${filteredProducts.length - visibleProducts.length} remaining)`}
                 variant="subtle"

@@ -18,6 +18,7 @@ import { getSemanticColors } from "../theme/tokens";
 import { webElevatedLayer } from "../theme/webStacking";
 import { useScrollOffsetValue } from "../hooks/useScrollOffset";
 import useReducedMotion from "../hooks/useReducedMotion";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../utils/webViewport";
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -357,7 +358,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     width: "100%",
-    minHeight: Platform.OS === "web" ? "100dvh" : undefined,
+    minHeight: Platform.OS === "web" ? APP_VIEWPORT_MIN_HEIGHT : undefined,
     ...Platform.select({
       web: { position: "relative", zIndex: 1 },
       default: {},

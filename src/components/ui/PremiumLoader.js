@@ -1,5 +1,5 @@
-/**
- * @deprecated Use `Loader` from `components/ui` (or `@/components/ui`) instead.
- * This shim exists for backward compatibility during migration.
- */
-export { default } from "./Loader";
+/** @deprecated Use `Loader` from `@/components/ui`. */
+import Loader from "./Loader";
+
+const PremiumLoader = Loader;
+export default PremiumLoader;

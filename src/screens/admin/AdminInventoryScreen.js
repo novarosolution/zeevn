@@ -6,7 +6,7 @@ import {
   Switch,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,7 +16,7 @@ import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminProducts, patchAdminProductStock } from "../../services/adminService";
 import { adminModuleSection } from "../../theme/adminLayout";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
 import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
 import Loader from "../../components/ui/Loader";
@@ -272,7 +272,7 @@ export default function AdminInventoryScreen({ navigation }) {
             <View
               style={[
                 styles.rowCard,
-                { borderColor: c.border, backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt },
+                { borderColor: c.border, backgroundColor: isDark ? c.surfaceMuted : c.surfaceMuted },
                 s.out ? styles.rowWarn : null,
               ]}
             >
@@ -289,14 +289,14 @@ export default function AdminInventoryScreen({ navigation }) {
 
               <View style={styles.qtyRow}>
                 <View style={styles.stepper}>
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.stepBtn}
                     onPress={() => onDelta(p, -1)}
                     disabled={busy}
                     accessibilityLabel="Decrease stock"
                   >
                     <Ionicons name="remove" size={20} color={c.textPrimary} />
-                  </TouchableOpacity>
+                  </Pressable>
                   <TextInput
                     style={[
                       styles.qtyField,
@@ -309,9 +309,9 @@ export default function AdminInventoryScreen({ navigation }) {
                     onSubmitEditing={() => onApplyQty(p)}
                     onBlur={() => onApplyQty(p)}
                   />
-                  <TouchableOpacity style={styles.stepBtn} onPress={() => onDelta(p, 1)} disabled={busy} accessibilityLabel="Increase stock">
+                  <Pressable style={styles.stepBtn} onPress={() => onDelta(p, 1)} disabled={busy} accessibilityLabel="Increase stock">
                     <Ionicons name="add" size={20} color={c.textPrimary} />
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
 
                 <View style={styles.switchBlock}>
@@ -386,7 +386,7 @@ function createStyles(c, shadowPremium) {
     titleRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
     h1: {
       fontSize: typography.h1,
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_DISPLAY_SEMI,
       color: c.textPrimary,
       letterSpacing: -0.4,
     },
@@ -469,7 +469,7 @@ function createStyles(c, shadowPremium) {
     footCtaD: { fontSize: typography.caption, marginTop: 2, fontFamily: fonts.regular },
     emptyWrap: { marginBottom: spacing.md },
     denied: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.sm },
-    deniedTitle: { fontSize: typography.h2, fontFamily: FONT_DISPLAY, color: c.textPrimary, marginTop: spacing.md },
+    deniedTitle: { fontSize: typography.h2, fontFamily: FONT_DISPLAY_SEMI, color: c.textPrimary, marginTop: spacing.md },
     deniedSub: { color: c.textSecondary, textAlign: "center", paddingHorizontal: spacing.xl, fontFamily: fonts.regular },
     gateCta: { marginTop: spacing.md },
   });

@@ -9,6 +9,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useTheme } from "../../context/ThemeContext";
+import { pointerEventsProp } from "../../utils/pointerEventsStyle";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import { hapticToggle } from "../../utils/accountHaptics";
 import { platformShadow } from "../../theme/shadowPlatform";
@@ -69,7 +70,7 @@ export default function Switch({ value, onValueChange, disabled = false, locked 
     >
       <Animated.View style={[styles.track, trackStyle]}>
         {locked ? (
-          <View style={styles.lockOverlay} pointerEvents="none">
+          <View style={styles.lockOverlay} {...pointerEventsProp("none")}>
             <Ionicons name="lock-closed" size={10} color={semanticPalette.inkMuted} />
           </View>
         ) : null}

@@ -127,6 +127,32 @@ async function requestPasswordReset(req, res, next) {
   }
 }
 
+/** Check reset link token before showing the new-password form. */
+async function validateResetToken(req, res, next) {
+  try {
+    const email = normalizeEmailInput(req.body?.email);
+    const token = String(req.body?.token || "").trim();
+
+    if (!email || !EMAIL_RE.test(email) || !token) {
+      return res.status(400).json({ message: "Invalid or expired reset link.", valid: false });
+    }
+
+    const user = await User.findOne({ email }).select("+passwordResetToken +passwordResetExpires");
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired reset link.", valid: false });
+    }
+
+    const hash = crypto.createHash("sha256").update(token).digest("hex");
+    if (user.passwordResetToken !== hash || !user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+      return res.status(400).json({ message: "Invalid or expired reset link.", valid: false });
+    }
+
+    res.json({ valid: true });
+  } catch (error) {
+    next(error);
+  }
+}
+
 /** Complete password reset from email link token. */
 async function resetPasswordWithToken(req, res, next) {
   try {
@@ -809,6 +835,7 @@ module.exports = {
   registerUser,
   loginUser,
   requestPasswordReset,
+  validateResetToken,
   resetPasswordWithToken,
   verifyEmailWithToken,
   refreshAccessToken,

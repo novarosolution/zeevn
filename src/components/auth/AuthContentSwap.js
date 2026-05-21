@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import { pointerEventsNativeOnly, withPointerEventsStyle } from "../../utils/pointerEventsStyle";
 
 const FADE_MS = 200;
 
@@ -39,8 +40,8 @@ export default function AuthContentSwap({ showSuccess, form, success, footer = n
   return (
     <View style={styles.root}>
       <Animated.View
-        style={[styles.layer, formStyle]}
-        pointerEvents={showSuccess ? "none" : "auto"}
+        style={withPointerEventsStyle([styles.layer, formStyle], showSuccess ? "none" : "auto")}
+        {...pointerEventsNativeOnly(showSuccess ? "none" : "auto")}
         accessibilityElementsHidden={showSuccess}
         importantForAccessibility={showSuccess ? "no-hide-descendants" : "auto"}
       >
@@ -48,8 +49,8 @@ export default function AuthContentSwap({ showSuccess, form, success, footer = n
       </Animated.View>
       {showSuccess ? (
         <Animated.View
-          style={[styles.layer, styles.successOverlay, successStyle]}
-          pointerEvents="auto"
+          style={withPointerEventsStyle([styles.layer, styles.successOverlay, successStyle], "auto")}
+          {...pointerEventsNativeOnly("auto")}
         >
           {success}
         </Animated.View>

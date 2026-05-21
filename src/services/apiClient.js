@@ -161,12 +161,14 @@ async function doFetch(path, options, token) {
     return response;
   } catch (err) {
     const offline = await isDeviceOffline().catch(() => false);
-    captureNetworkFailure({
-      path,
-      method: options.method || "GET",
-      offline,
-      message: err?.message,
-    });
+    if (typeof __DEV__ === "undefined" || !__DEV__) {
+      captureNetworkFailure({
+        path,
+        method: options.method || "GET",
+        offline,
+        message: err?.message,
+      });
+    }
     const wrapped = err instanceof Error ? err : new Error("Network request failed.");
     wrapped.code = offline ? "OFFLINE" : "NETWORK_ERROR";
     throw wrapped;

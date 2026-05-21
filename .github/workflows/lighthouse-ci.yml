@@ -39,7 +39,7 @@ jobs:
 
       - name: Run Lighthouse CI
         continue-on-error: true
-        run: npm run lhci
+        run: npm run lighthouse:autorun
         env:
           LHCI_BASE_URL: http://127.0.0.1:8080
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

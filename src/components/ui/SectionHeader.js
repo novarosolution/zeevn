@@ -26,31 +26,32 @@ function SectionHeaderBase({
   const isCenter = align === "center";
 
   const isCatalogDensity = density === "catalog";
+  const headingScale = width >= 1200 ? 28 : width >= 768 ? 24 : 20;
   const styles = useMemo(
     () =>
       StyleSheet.create({
         root: {
           width: "100%",
-          marginBottom: isCatalogDensity ? (width >= 600 ? 20 : 16) : SPACING.lg,
+          marginBottom: isCatalogDensity ? 16 : SPACING.lg,
         },
         overlineRow: {
           flexDirection: "row",
           alignItems: "center",
-          gap: SPACING.sm,
+          gap: 6,
           marginBottom: isCatalogDensity ? SPACING.xs : SPACING.sm,
           justifyContent: isCenter ? "center" : "flex-start",
         },
         square: {
-          width: 6,
-          height: 6,
+          width: 4,
+          height: 4,
           borderRadius: 1,
           backgroundColor: semanticPalette.accent,
         },
         overlineText: {
           fontFamily: fonts.semibold,
-          fontSize: isCatalogDensity ? 10 : TYPE.micro.fontSize,
+          fontSize: 10,
           lineHeight: isCatalogDensity ? 12 : TYPE.micro.lineHeight,
-          letterSpacing: isCatalogDensity ? 1.1 : 1.6,
+          letterSpacing: isCatalogDensity ? 1.4 : 1.6,
           textTransform: "uppercase",
           color: semanticPalette.accent,
           minWidth: 0,
@@ -73,8 +74,8 @@ function SectionHeaderBase({
           textAlign: isCenter ? "center" : "left",
           fontFamily: TYPE.serifFamily,
           ...(isCatalogDensity
-            ? { fontSize: 20, lineHeight: 24, letterSpacing: -0.2 }
-            : TYPE.h2),
+            ? { fontSize: headingScale, lineHeight: Math.round(headingScale * 1.15), letterSpacing: -0.2 }
+            : { fontSize: headingScale, lineHeight: Math.round(headingScale * 1.15), letterSpacing: -0.2 }),
           color: semanticPalette.ink,
         },
         subtitle: {
@@ -102,6 +103,7 @@ function SectionHeaderBase({
       TYPE,
       SPACING,
       width,
+      headingScale,
       isCatalogDensity,
       isCenter,
       semanticPalette.accent,

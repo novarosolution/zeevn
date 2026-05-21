@@ -21,6 +21,7 @@ import { useTheme } from "../context/ThemeContext";
 import { FONT_DISPLAY } from "../theme/customerAlchemy";
 import { adminScrollPaddingBottom, customerScrollFill } from "../theme/screenLayout";
 import { fonts } from "../theme/tokens";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../utils/webViewport";
 
 function FooterAuthLink({ children, onPress, hint }) {
   const [hover, setHover] = useState(false);
@@ -92,7 +93,7 @@ export default function AuthPageScaffold({
           flexDirection: split ? "row" : "column",
           width: "100%",
           ...Platform.select({
-            web: split ? { flex: 1, minHeight: "calc(100vh - 80px)" } : {},
+            web: split ? { flex: 1, minHeight: `calc(${APP_VIEWPORT_MIN_HEIGHT} - 80px)` } : {},
             default: {},
           }),
         },

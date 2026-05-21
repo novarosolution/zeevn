@@ -5,7 +5,7 @@ module.exports = {
       displayName: "app",
       preset: "jest-expo",
       setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
-      testMatch: ["<rootDir>/src/**/__tests__/**/*.test.js"],
+      testMatch: ["<rootDir>/src/**/__tests__/**/*.test.js", "<rootDir>/tests/**/**/*.test.js"],
       moduleNameMapper: {
         "^@/(.*)$": "<rootDir>/src/$1",
       },
@@ -83,4 +83,5 @@ module.exports = {
   ],
   coverageDirectory: "<rootDir>/coverage",
   coverageReporters: ["text", "text-summary", "lcov", "html"],
+  forceExit: true,
 };

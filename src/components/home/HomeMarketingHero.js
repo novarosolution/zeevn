@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { Image } from "expo-image";
 import WebLcpImage from "../web/WebLcpImage";
-import { HERO_LCP_SRC, HERO_SRCSET } from "../../constants/heroLcp.web";
+import { HERO_FALLBACK_SRCSET, HERO_LCP_FALLBACK_SRC, HERO_LCP_SRC, HERO_SRCSET } from "../../constants/heroLcp.web";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,12 +14,8 @@ import { useTheme } from "../../context/ThemeContext";
 
 const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
 function getSlideOverline(slide, index) {
-  if (typeof slide?.overline === "string" && slide.overline.trim()) {
-    return slide.overline.trim().toUpperCase();
-  }
-  if (index === 0 || slide?.key === "heritage") return "DAILY PANTRY";
-  if (slide?.key === "purity") return "FRESH EDIT";
-  return "DAILY PANTRY";
+  if (index >= 0 || slide?.key) return "■ THIS WEEK";
+  return "■ THIS WEEK";
 }
 
 function HeroKenBurnsImage({ slide, reducedMotion, style, direction, priority = false, slideIndex = 0 }) {
@@ -48,6 +44,8 @@ function HeroKenBurnsImage({ slide, reducedMotion, style, direction, priority = 
         <WebLcpImage
           src={HERO_LCP_SRC}
           srcSet={HERO_SRCSET}
+          fallbackSrc={HERO_LCP_FALLBACK_SRC}
+          fallbackSrcSet={HERO_FALLBACK_SRCSET}
           sizes="(max-width: 768px) 100vw, 1280px"
           alt={slide?.title ? String(slide.title) : "Featured collection"}
           priority={priority}
@@ -150,8 +148,11 @@ export default function HomeMarketingHero({
         flex: 1,
         paddingVertical: isTablet ? homeSpacing["3xl"] : homeSpacing.xl,
         paddingHorizontal: isTablet ? 32 : 24,
-        justifyContent: "space-between",
+        justifyContent: "flex-end",
         zIndex: 3,
+      },
+      contentCluster: {
+        alignItems: "flex-start",
       },
       overlineRow: {
         flexDirection: "row",
@@ -185,8 +186,8 @@ export default function HomeMarketingHero({
       subtitle: {
         marginTop: 12,
         color: "rgba(255,255,255,0.72)",
-        fontSize: 16,
-        lineHeight: 21,
+        fontSize: 14,
+        lineHeight: 20,
         fontFamily: homeType.uiRegular.fontFamily,
         fontWeight: "400",
         maxWidth: isTablet ? 520 : 420,
@@ -266,7 +267,7 @@ export default function HomeMarketingHero({
         borderRadius: 999,
       },
       dotIdle: {
-        backgroundColor: "rgba(255,255,255,0.32)",
+        backgroundColor: "rgba(200,169,126,0.32)",
       },
       dotActive: {
         backgroundColor: BRASS,
@@ -465,7 +466,7 @@ export default function HomeMarketingHero({
                       </View>
                     ) : null}
                     <Animated.View style={[editorialStyles.contentWrap, contentAnimStyle]}>
-                      <View>
+                      <View style={editorialStyles.contentCluster}>
                         <View style={editorialStyles.overlineRow}>
                           <View style={editorialStyles.overlineSquare} />
                           <Text style={editorialStyles.overlineText}>{getSlideOverline(slide, slideIndex)}</Text>
@@ -476,23 +477,23 @@ export default function HomeMarketingHero({
                         <Text style={editorialStyles.subtitle} numberOfLines={2} ellipsizeMode="tail">
                           {slide.subtitle}
                         </Text>
+                        <Pressable
+                          onHoverIn={Platform.OS === "web" ? onHeroPressIn : undefined}
+                          onHoverOut={Platform.OS === "web" ? onHeroPressOut : undefined}
+                          onPressIn={onHeroPressIn}
+                          onPressOut={onHeroPressOut}
+                          onPress={() => onPressCta(slide)}
+                          style={({ pressed }) => [
+                            editorialStyles.cta,
+                            pressed ? editorialStyles.ctaPressed : null,
+                          ]}
+                          accessibilityRole="button"
+                          accessibilityLabel={slide.cta}
+                        >
+                          <Text style={editorialStyles.ctaText}>{slide.cta}</Text>
+                          <Ionicons name="arrow-forward" size={14} color={NAVY_BASE} />
+                        </Pressable>
                       </View>
-                      <Pressable
-                        onHoverIn={Platform.OS === "web" ? onHeroPressIn : undefined}
-                        onHoverOut={Platform.OS === "web" ? onHeroPressOut : undefined}
-                        onPressIn={onHeroPressIn}
-                        onPressOut={onHeroPressOut}
-                        onPress={() => onPressCta(slide)}
-                        style={({ pressed }) => [
-                          editorialStyles.cta,
-                          pressed ? editorialStyles.ctaPressed : null,
-                        ]}
-                        accessibilityRole="button"
-                        accessibilityLabel={slide.cta}
-                      >
-                        <Text style={editorialStyles.ctaText}>{slide.cta}</Text>
-                        <Ionicons name="arrow-forward" size={14} color={NAVY_BASE} />
-                      </Pressable>
                     </Animated.View>
                   </View>
                 </View>

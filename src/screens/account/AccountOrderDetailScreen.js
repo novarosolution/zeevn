@@ -279,27 +279,17 @@ export default function AccountOrderDetailScreen({ navigation, route }) {
         <Card padding="lg" {...(Platform.OS === "web" ? { "data-print-actions": "true" } : {})}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: SPACING.sm }}>
             <Button
-              label={copy.actions.downloadInvoice}
-              variant="secondary"
+              label={copy.actions.reorder}
+              variant="primary"
               size="md"
               style={{ flexGrow: 1, minWidth: 140 }}
-              onPress={() => Alert.alert(copy.actions.downloadInvoice, copy.invoiceSoon)}
+              onPress={() => setReorderOpen(true)}
+              disabled={cancelled}
             />
-            {bucket === "active" ? (
-              <Button label={copy.actions.track} variant="primary" size="md" style={{ flexGrow: 1, minWidth: 140 }} onPress={() => {}} />
-            ) : (
-              <Button
-                label={copy.actions.reorder}
-                variant="primary"
-                size="md"
-                style={{ flexGrow: 1, minWidth: 140 }}
-                onPress={() => setReorderOpen(true)}
-              />
-            )}
             {bucket === "delivered" && !cancelled ? (
               <Button
                 label={copy.actions.returnItem}
-                variant="ghost"
+                variant="secondary"
                 size="md"
                 style={{ flexGrow: 1, minWidth: 140 }}
                 onPress={() => navigation.navigate("Support")}
@@ -312,6 +302,18 @@ export default function AccountOrderDetailScreen({ navigation, route }) {
               style={{ flexGrow: 1, minWidth: 140 }}
               onPress={() => navigation.navigate("Support")}
             />
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: SPACING.sm, marginTop: SPACING.sm }}>
+            <Button
+              label={copy.actions.downloadInvoice}
+              variant="ghost"
+              size="sm"
+              style={{ flexGrow: 1, minWidth: 140 }}
+              onPress={() => Alert.alert(copy.actions.downloadInvoice, copy.invoiceSoon)}
+            />
+            {bucket === "active" ? (
+              <Button label={copy.actions.track} variant="secondary" size="sm" style={{ flexGrow: 1, minWidth: 140 }} onPress={() => {}} />
+            ) : null}
           </View>
         </Card>
 

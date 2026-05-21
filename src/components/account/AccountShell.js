@@ -30,6 +30,7 @@ import { headingA11yProps, srOnlyStyle } from "../../utils/a11y";
 import AccountSidebarNavItem from "./interactions/AccountSidebarNavItem";
 import AccountSignOutDialog from "./shared/AccountSignOutDialog";
 import AccountSectionReveal from "./interactions/AccountSectionReveal";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../../utils/webViewport";
 
 const TABLET_COMPACT_KEYS = new Set(["help", "notifications", "payment"]);
 const SIDEBAR_WIDTH = 240;
@@ -225,7 +226,7 @@ export default function AccountShell({
                   position: "sticky",
                   top: 96,
                   alignSelf: "flex-start",
-                  maxHeight: "calc(100vh - 120px)",
+                  maxHeight: `calc(${APP_VIEWPORT_MIN_HEIGHT} - 120px)`,
                 }
               : {},
             default: {},
@@ -573,7 +574,7 @@ export default function AccountShell({
         ) : null}
 
         <AccountSectionReveal sectionKey={activeSection} enabled={isDesktop}>
-          {showPhoneHub ? null : children}
+          {children}
         </AccountSectionReveal>
         </View>
       </View>

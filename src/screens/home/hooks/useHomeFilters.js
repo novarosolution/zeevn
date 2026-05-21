@@ -49,17 +49,35 @@ export default function useHomeFilters({ products = [], homeViewConfig = {} }) {
       .sort((a, b) => a.title.localeCompare(b.title));
   }, [filteredProducts]);
 
+  const primeKey = useMemo(
+    () =>
+      String(homeViewConfig?.primeSectionTitle || "Prime Products")
+        .trim()
+        .toLowerCase(),
+    [homeViewConfig?.primeSectionTitle]
+  );
+
+  const primeProducts = useMemo(() => {
+    const primeSection = groupedSections.find(
+      (section) => String(section?.title || "").trim().toLowerCase() === primeKey
+    );
+    return Array.isArray(primeSection?.items) ? primeSection.items : [];
+  }, [groupedSections, primeKey]);
+
+  const showPrimeSection = useMemo(() => {
+    const hasSearchQuery = String(query || "").trim().length > 0;
+    if (hasSearchQuery) return false;
+    if (homeViewConfig?.showPrimeSection === false) return false;
+    return primeProducts.length > 0;
+  }, [homeViewConfig?.showPrimeSection, primeProducts.length, query]);
+
   const sections = useMemo(() => {
-    const hidePrime = Boolean(homeViewConfig?.showPrimeSection);
-    const primeKey = String(homeViewConfig?.primeSectionTitle || "Prime Products")
-      .trim()
-      .toLowerCase();
-    const visible = hidePrime
-      ? groupedSections.filter((section) => String(section.title || "").trim().toLowerCase() !== primeKey)
-      : groupedSections;
+    const visible = showPrimeSection
+      ? groupedSections
+      : groupedSections.filter((section) => String(section.title || "").trim().toLowerCase() !== primeKey);
     if (!sectionFilter) return visible;
     return visible.filter((section) => String(section.title || "").trim() === String(sectionFilter).trim());
-  }, [groupedSections, homeViewConfig?.primeSectionTitle, homeViewConfig?.showPrimeSection, sectionFilter]);
+  }, [groupedSections, primeKey, sectionFilter, showPrimeSection]);
 
   const clearFilters = useCallback(() => {
     setQuery("");
@@ -76,6 +94,7 @@ export default function useHomeFilters({ products = [], homeViewConfig = {} }) {
     setCategoryFilter,
     clearFilters,
     filteredProducts,
+    showPrimeSection,
     sections,
   };
 }

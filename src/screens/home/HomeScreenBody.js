@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, RefreshControl, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown, FadeOutDown } from "react-native-reanimated";
 import BottomNavBar from "../../components/BottomNavBar";
 import HomeSearchHeader from "../../components/home/HomeSearchHeader";
@@ -14,8 +15,9 @@ import HomeMarketingHero from "../../components/home/HomeMarketingHero";
 import HomeDealsRail from "../../components/home/HomeDealsRail";
 import HomeCatalogSections from "../../components/home/HomeCatalogSections";
 import HomeOffersBand from "../../components/home/HomeOffersBand";
-import HomeStickyMicroBar from "../../components/home/HomeStickyMicroBar";
+import HomeStickyAddToBagBar from "../../components/home/HomeStickyAddToBagBar";
 import HomePageFooter from "../../components/home/HomePageFooter";
+import SectionReveal from "../../components/motion/SectionReveal";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import useRecentSearches from "../../hooks/useRecentSearches";
 import { useAuth } from "../../context/AuthContext";
@@ -27,7 +29,6 @@ import {
   HOME_HERO_BANNER,
   HOME_REORDER_STRIP,
   HOME_TOAST,
-  HOME_TRUST_BANNER,
 } from "../../content/appContent";
 import { HOME_HERO_MOBILE_SLIDER_SLIDES, HOME_HERO_WEB_SLIDER_SLIDES } from "../../constants/marketingAssets";
 import { CUSTOMER_BOTTOM_NAV_BAR_HEIGHT } from "../../theme/screenLayout";
@@ -41,13 +42,13 @@ import useHeroSlider from "./hooks/useHeroSlider";
 import useCartFeedback from "./hooks/useCartFeedback";
 import useNotifications from "./hooks/useNotifications";
 import { productToCartLine } from "../../utils/productCart";
+import { setScrollY as setScrollYStore } from "../../hooks/useScrollY";
+import { invalidateMyOrdersCache } from "../../services/orderCache";
+
 export default function HomeScreenBody({ navigation }) {
   const route = useRoute();
   const insets = useSafeAreaInsets();
-  const { width: windowWidth, height: windowHeight } = useMemo(
-    () => ({ width: 390 + Number(insets?.left || 0) + Number(insets?.right || 0), height: 844 }),
-    [insets?.left, insets?.right]
-  );
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const { colors: c, shadowLift, shadowPremium, isDark } = useTheme();
   const styles = useMemo(
     () => createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth, insets),
@@ -89,6 +90,7 @@ export default function HomeScreenBody({ navigation }) {
     safeWindowWidth: windowWidth,
     safeWindowHeight,
     safeBottomInset: Number(insets?.bottom || 0),
+    reducedMotion,
   });
   const { query, setQuery, setSectionFilter, setCategoryFilter, sections } = filters;
   useEffect(() => {
@@ -100,6 +102,10 @@ export default function HomeScreenBody({ navigation }) {
       setCategoryFilter(String(category));
     }
   }, [route.params?.filterHomeCategory, route.params?.filterHomeSection, setCategoryFilter, setQuery, setSectionFilter]);
+
+  useEffect(() => {
+    setScrollYStore(scrollY);
+  }, [scrollY]);
 
   useEffect(() => {
     let cancelled = false;
@@ -149,6 +155,7 @@ export default function HomeScreenBody({ navigation }) {
   );
 
   const onPullRefresh = useCallback(async () => {
+    invalidateMyOrdersCache();
     await Promise.all([refresh(), reorder.refresh(), liveOrder.refresh(), notifications.refresh()]);
   }, [liveOrder, notifications, refresh, reorder]);
   const onAddFromReorder = useCallback(
@@ -202,47 +209,90 @@ export default function HomeScreenBody({ navigation }) {
     [isAuthenticated, navigation, removeFromCart]
   );
   const getDealQuantity = useCallback((item) => getItemQuantity(item.id, item.variantLabel || ""), [getItemQuantity]);
+  const deliveryAddress = useMemo(() => {
+    const addr = user?.defaultAddress;
+    if (!addr) return "";
+    const parts = [addr.line1, addr.city].map((part) => String(part || "").trim()).filter(Boolean);
+    if (parts.length) return parts.join(", ");
+    return String(addr.label || addr.name || "").trim();
+  }, [user?.defaultAddress]);
+  const showMobileTopBar = Platform.OS !== "web";
   const topOffset = Number(insets?.bottom || 0) + CUSTOMER_BOTTOM_NAV_BAR_HEIGHT + 24;
   const gridColumns = windowWidth < 640 ? 2 : windowWidth < 1024 ? 3 : 4;
   const gridGap = windowWidth >= 600 ? 14 : 10;
   const pageHorizontalPadding = windowWidth >= 1024 ? 56 : windowWidth >= 600 ? 28 : 16;
+  const catalogSurfacePadding = windowWidth >= 600 ? 20 : 16;
   const catalogHorizontalPadding = pageHorizontalPadding;
-  const gridCardWidth = Math.floor(
-    (Math.max(320, windowWidth) - catalogHorizontalPadding * 2 - gridGap * (gridColumns - 1)) / gridColumns
-  );
+  const contentMaxWidth = Platform.OS === "web" && windowWidth >= 1200 ? 1280 : undefined;
+  const viewportWidth = contentMaxWidth ? Math.min(windowWidth, contentMaxWidth) : windowWidth;
+  const usableGridWidth =
+    Math.max(320, viewportWidth) -
+    catalogHorizontalPadding * 2 -
+    catalogSurfacePadding * 2 -
+    gridGap * (gridColumns - 1);
+  const gridCardWidth = Math.max(132, Math.floor(usableGridWidth / gridColumns));
   return (
     <View style={styles.screen}>
+      <LinearGradient
+        colors={[c.background, c.backgroundGradientEnd || c.surfaceMuted, c.background]}
+        locations={[0, 0.45, 1]}
+        style={StyleSheet.absoluteFillObject}
+        pointerEvents="none"
+      />
       <ScrollView
         ref={scrollRef}
         style={styles.scrollMain}
         contentContainerStyle={[
           styles.scrollMain?.contentContainerStyle,
-          { paddingHorizontal: pageHorizontalPadding, paddingBottom: topOffset + 70 },
+          {
+            paddingHorizontal: pageHorizontalPadding,
+            paddingBottom: topOffset + 70,
+            width: contentMaxWidth ? "100%" : undefined,
+            maxWidth: contentMaxWidth,
+            alignSelf: contentMaxWidth ? "center" : undefined,
+          },
         ]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onPullRefresh} />}
-        onScroll={(event) => setScrollY(Number(event.nativeEvent.contentOffset.y || 0))}
+        onScroll={(event) => {
+          const next = Number(event.nativeEvent.contentOffset.y || 0);
+          setScrollY(next);
+        }}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerWrap}>
-          <View style={styles.alchemyTopBar}>
-            <Pressable style={styles.alchemyIconBtn} onPress={() => navigation.navigate("Profile")} accessibilityLabel="Open account">
-              <Ionicons name="person-outline" size={22} color={c.textPrimary} />
-            </Pressable>
-            <Text style={styles.catalogIntroTitle}>Zeevan</Text>
-            <Pressable
-              style={styles.alchemyIconBtn}
-              onLayout={(e) => cartFx.setCartAnchorRect(e.nativeEvent.layout)}
-              onPress={() => navigation.navigate(isAuthenticated ? "Cart" : "Login")}
-              accessibilityLabel={isAuthenticated ? "Open cart" : "Sign in to open cart"}
-            >
-              <Ionicons name="bag-outline" size={22} color={c.textPrimary} />
-            </Pressable>
-          </View>
+          {showMobileTopBar ? (
+            <View style={styles.alchemyTopBar}>
+              <Pressable
+                style={[styles.alchemyIconBtn, { borderColor: c.border, backgroundColor: c.surface }]}
+                onPress={() => navigation.navigate("Profile")}
+                accessibilityLabel="Open account"
+              >
+                <Ionicons name="person-outline" size={22} color={c.textPrimary} />
+              </Pressable>
+              <View style={styles.wordmarkBlock}>
+                <Text style={styles.catalogIntroTitle}>Zeevan</Text>
+                <Text style={styles.topBarTagline}>Heritage pantry</Text>
+              </View>
+              <Pressable
+                style={[styles.alchemyIconBtn, { borderColor: c.border, backgroundColor: c.surface }]}
+                onLayout={(e) => cartFx.setCartAnchorRect(e.nativeEvent.layout)}
+                onPress={() => navigation.navigate(isAuthenticated ? "Cart" : "Login")}
+                accessibilityLabel={isAuthenticated ? "Open cart" : "Sign in to open cart"}
+              >
+                <Ionicons name="bag-outline" size={22} color={c.textPrimary} />
+                {totalItems > 0 ? (
+                  <View style={[styles.cartBadge, { backgroundColor: c.primary, borderColor: c.surface }]}>
+                    <Text style={styles.cartBadgeText}>{totalItems > 9 ? "9+" : totalItems}</Text>
+                  </View>
+                ) : null}
+              </Pressable>
+            </View>
+          ) : null}
           <HomeSearchHeader
             colors={c}
             isDark={isDark}
-            deliveryAddress=""
+            deliveryAddress={deliveryAddress}
             deliveryPromise={deliveryPromise}
             isScrolled={scrollY > 24}
             unreadCount={notifications.unreadNotificationCount}
@@ -251,6 +301,7 @@ export default function HomeScreenBody({ navigation }) {
             onSubmitSearch={onSearchSubmit}
             value={query}
             onChangeSearch={setQuery}
+            compactWeb={Platform.OS === "web"}
           />
         </View>
 
@@ -269,17 +320,9 @@ export default function HomeScreenBody({ navigation }) {
             onIncrease={onAddFromReorder}
             onDecrease={onDecreaseFromReorder}
             getQuantity={getReorderQuantity}
+            onSeeAll={goToCatalog}
           />
         ) : null}
-
-        <HomeCategoryGrid
-          categories={HOME_CATEGORY_QUICK_NAV}
-          overline={HOME_CATEGORY_UI.overline}
-          title={HOME_CATEGORY_UI.title}
-          viewAllLabel={HOME_CATEGORY_UI.viewAllLabel}
-          onPressCategory={(category) => setCategoryFilter(String(category?.filter || category?.label || ""))}
-          onPressViewAll={() => navigation.navigate("Categories")}
-        />
 
         <HomeMarketingHero
           showMarketing={!query.trim()}
@@ -302,47 +345,57 @@ export default function HomeScreenBody({ navigation }) {
           onMomentumScrollEnd={hero.onMomentumScrollEnd}
         />
 
-        <HomeDealsRail
-          products={products}
-          homeViewConfig={homeViewConfig}
-          getQuantity={getDealQuantity}
-          onIncrease={onIncreaseDeal}
-          onDecrease={onDecreaseDeal}
-          onOpenProduct={(item) => navigation.navigate("Product", { productId: item.id })}
-          onSeeAllDeals={goToCatalog}
+        <HomeCategoryGrid
+          categories={HOME_CATEGORY_QUICK_NAV}
+          overline=""
+          title=""
+          viewAllLabel={HOME_CATEGORY_UI.viewAllLabel}
+          onPressCategory={(category) => setCategoryFilter(String(category?.filter || category?.label || ""))}
+          onPressViewAll={() => navigation.navigate("Categories")}
         />
 
-        <View style={localStyles.trustBannerWrap}>
-          <Text style={[localStyles.trustBannerText, { borderColor: c.accent || "#C8A97E", color: c.textSecondary }]}>
-            {HOME_TRUST_BANNER}
-          </Text>
-        </View>
-
-        <View onLayout={(e) => (catalogYRef.current = e.nativeEvent.layout.y)}>
-          <HomeCatalogSections
-            sections={sections}
-            styles={styles}
-            navigation={navigation}
-            getItemQuantity={getItemQuantity}
-            onAddToCart={onAddCatalog}
-            onRemoveFromCart={onRemoveCatalog}
-            cardStyle={homeViewConfig.productCardStyle}
-            numColumns={gridColumns}
-            gridGap={gridGap}
-            cardWidth={gridCardWidth}
+        <SectionReveal index={1} preset="fade-up">
+          <HomeDealsRail
+            products={products}
+            homeViewConfig={homeViewConfig}
+            getQuantity={getDealQuantity}
+            onIncrease={onIncreaseDeal}
+            onDecrease={onDecreaseDeal}
+            onOpenProduct={(item) => navigation.navigate("Product", { productId: item.id })}
+            onSeeAllDeals={goToCatalog}
           />
-        </View>
+        </SectionReveal>
 
-        <HomeOffersBand />
+        <SectionReveal index={2} preset="fade-up">
+          <View onLayout={(e) => (catalogYRef.current = e.nativeEvent.layout.y)}>
+            <HomeCatalogSections
+              sections={sections}
+              styles={styles}
+              navigation={navigation}
+              getItemQuantity={getItemQuantity}
+              onAddToCart={onAddCatalog}
+              onRemoveFromCart={onRemoveCatalog}
+              cardStyle={homeViewConfig.productCardStyle}
+              numColumns={gridColumns}
+              gridGap={gridGap}
+              cardWidth={gridCardWidth}
+            />
+          </View>
+        </SectionReveal>
+
+        <SectionReveal index={3} preset="fade-up">
+          <HomeOffersBand />
+        </SectionReveal>
         <HomePageFooter colors={c} />
       </ScrollView>
-      <HomeStickyMicroBar
+      <HomeStickyAddToBagBar
         visible={totalItems > 0 && scrollY > heroSlideHeight}
         totalItems={totalItems}
         totalAmount={totalAmount}
         styles={styles}
-        accentColor={c.accent || "#C8A97E"}
+        accentColor={c.bgDeep || "#0E1729"}
         isAuthenticated={isAuthenticated}
+        reducedMotion={reducedMotion}
         onViewBag={() => navigation.navigate(isAuthenticated ? "Cart" : "Login")}
       />
       <BottomNavBar />
@@ -352,7 +405,7 @@ export default function HomeScreenBody({ navigation }) {
           {cartFx.flyGhost.imageUri ? (
             <Image source={{ uri: cartFx.flyGhost.imageUri }} style={styles.flyGhostImage} contentFit="cover" transition={0} />
           ) : (
-            <View style={[styles.flyGhostImage, { backgroundColor: c.surfaceAlt }]} />
+            <View style={[styles.flyGhostImage, { backgroundColor: c.surfaceMuted || c.surface }]} />
           )}
         </Animated.View>
       ) : null}
@@ -386,6 +439,11 @@ export default function HomeScreenBody({ navigation }) {
         </View>
       ) : null}
       {loading ? <View style={localStyles.loadingPad} /> : null}
+      {Platform.OS === "web" && __DEV__ ? (
+        <View style={localStyles.scrollHud} pointerEvents="none">
+          <Text style={localStyles.scrollHudText}>scrollY: {Math.round(scrollY)}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -393,15 +451,18 @@ const localStyles = StyleSheet.create({
   errorWrap: { position: "absolute", left: 16, right: 16, top: 12, alignItems: "center" },
   errorText: { fontSize: 12, color: "#B23A3A" },
   loadingPad: { height: 1 },
-  trustBannerWrap: { marginBottom: 10 },
-  trustBannerText: {
-    minHeight: 36,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    textAlign: "center",
-    textAlignVertical: "center",
-    fontSize: 12,
+  scrollHud: {
+    position: "absolute",
+    right: 12,
+    bottom: 96,
+    borderRadius: 8,
+    backgroundColor: "rgba(0,0,0,0.72)",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  scrollHudText: {
+    color: "#FFFFFF",
+    fontSize: 11,
     fontWeight: "600",
   },
 });

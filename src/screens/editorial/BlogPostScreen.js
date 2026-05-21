@@ -50,10 +50,19 @@ export default function BlogPostScreen({ navigation, route }) {
   return (
     <Screen
       navigation={navigation}
-      title={post.title}
       breadcrumbLabel="Journal"
       contentContainerStyle={{ maxWidth: 720, alignSelf: "center", width: "100%" }}
     >
+      <Text
+        style={{
+          fontFamily: TYPE.serifFamily,
+          ...TYPE.display,
+          color: semanticPalette.ink,
+          marginBottom: SPACING.lg,
+        }}
+      >
+        {post.title}
+      </Text>
       <Text style={{ fontFamily: fonts.regular, fontSize: TYPE.small.fontSize, color: semanticPalette.inkMuted, marginBottom: SPACING.xl }}>
         {post.author} · {post.date} · {post.readingMinutes} min read
       </Text>

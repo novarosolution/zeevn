@@ -23,3 +23,14 @@ export const AUTH_CAPTCHA_PROVIDER = readFlag(
   "authCaptchaProvider",
   "recaptcha"
 );
+
+/** OAuth — hidden in UI until explicitly enabled and handlers are wired. */
+export const AUTH_SOCIAL_GOOGLE_ENABLED =
+  readFlag("EXPO_PUBLIC_AUTH_SOCIAL_GOOGLE_ENABLED", "authSocialGoogleEnabled") === "true";
+
+export const AUTH_SOCIAL_APPLE_ENABLED =
+  readFlag("EXPO_PUBLIC_AUTH_SOCIAL_APPLE_ENABLED", "authSocialAppleEnabled") === "true";
+
+export function isAuthSocialVisible() {
+  return AUTH_SOCIAL_GOOGLE_ENABLED || AUTH_SOCIAL_APPLE_ENABLED;
+}

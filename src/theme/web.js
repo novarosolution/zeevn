@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import { ALCHEMY, HERITAGE } from "./customerAlchemy";
 import { WEB_BACKDROP } from "./tokens";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../utils/webViewport";
 
 /** Web header tallest band (desktop default, unscrolled); layout padding clears this. */
 export const WEB_HEADER_HEIGHT = 72;
@@ -37,7 +38,7 @@ export const webRootStyle = Platform.select({
     width: "100%",
     maxWidth: "100%",
     // Match Expo’s html/body/#root chain so flex children get a real height (avoids blank web).
-    minHeight: "100dvh",
+    minHeight: APP_VIEWPORT_MIN_HEIGHT,
     height: "100%",
   },
   default: {
@@ -86,32 +87,41 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
     style.setAttribute("data-zeevan", "premium-chrome");
     style.textContent = `
       html {
-        scroll-behavior: smooth;
+        scroll-behavior: auto;
+        scrollbar-color: rgba(200,169,126,0.32) transparent;
+        scrollbar-width: thin;
+        -webkit-text-size-adjust: 100%;
+        text-size-adjust: 100%;
       }
       body {
         overscroll-behavior-y: none;
         -webkit-tap-highlight-color: transparent;
       }
+      button, [role="button"], a {
+        touch-action: manipulation;
+      }
+      @media (pointer: coarse) {
+        input, textarea, select {
+          font-size: 16px !important;
+        }
+      }
       ::-webkit-scrollbar {
-        width: 12px;
-        height: 12px;
+        width: 10px;
+        height: 10px;
       }
       ::-webkit-scrollbar-track {
-        background: ${WEB_BACKDROP.scrollbarTrack};
+        background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: ${WEB_BACKDROP.scrollbarThumb};
+        background: rgba(200,169,126,0.32);
         border-radius: 999px;
-        border: 2px solid transparent;
-        background-clip: padding-box;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: ${HERITAGE.brass};
-        background-clip: padding-box;
+        background: rgba(200,169,126,0.55);
       }
       ::selection {
-        background: ${WEB_BACKDROP.selectionBackground};
-        color: ${WEB_BACKDROP.selectionColor};
+        background: rgba(200,169,126,0.30);
+        color: #0E0E0E;
       }
       *:focus-visible {
         outline: 2px solid ${WEB_BACKDROP.focusRing};
@@ -119,6 +129,7 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
         border-radius: 12px;
       }
       a, button, [role="button"], [role="tab"] {
+        cursor: pointer;
         transition: box-shadow 180ms ease, opacity 180ms ease, background-color 180ms ease, border-color 180ms ease;
       }
       /* RN Web (css-view-*): z-index only applies with non-static positioning */

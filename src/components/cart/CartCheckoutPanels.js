@@ -6,7 +6,7 @@ import Card from "../ui/Card";
 import { CHECKOUT_UI } from "../../content/appContent";
 import { fonts } from "../../theme/tokens";
 
-export function CheckoutStrippedHeader({ onBack, semanticPalette, TYPE, SPACING }) {
+export function CheckoutStrippedHeader({ onBack, semanticPalette, TYPE, SPACING, contactLine }) {
   return (
     <View style={{ width: "100%", paddingVertical: SPACING.md }}>
       {onBack ? (
@@ -35,6 +35,11 @@ export function CheckoutStrippedHeader({ onBack, semanticPalette, TYPE, SPACING 
         <Text style={{ fontFamily: fonts.medium, fontSize: TYPE.micro.fontSize, letterSpacing: 1.2, color: semanticPalette.inkMuted, textTransform: "uppercase" }}>
           {CHECKOUT_UI.secureLine}
         </Text>
+        {contactLine ? (
+          <Text style={{ fontFamily: fonts.regular, fontSize: TYPE.caption.fontSize, color: semanticPalette.inkMuted }}>
+            {contactLine}
+          </Text>
+        ) : null}
       </View>
     </View>
   );
@@ -129,13 +134,11 @@ export function DeliveryMethodCards({ value, onChange, semanticPalette, TYPE, SP
 }
 
 const PAYMENT_TABS = [
+  { key: "upi", label: CHECKOUT_UI.paymentTabUpi, disabled: false },
+  { key: "cards", label: CHECKOUT_UI.paymentTabCards, disabled: false },
+  { key: "netbanking", label: CHECKOUT_UI.paymentTabNetbanking, disabled: false },
+  { key: "wallet", label: CHECKOUT_UI.paymentTabWallet, disabled: false },
   { key: "cod", label: CHECKOUT_UI.paymentTabCod, disabled: false },
-  {
-    key: "online",
-    label: CHECKOUT_UI.paymentTabOnline,
-    disabled: true,
-    badge: CHECKOUT_UI.paymentOnlineComingSoon,
-  },
 ];
 
 export function PaymentTabsRow({ activeTab, onChange, semanticPalette, TYPE, SPACING, RADII }) {

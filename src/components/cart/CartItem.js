@@ -16,6 +16,7 @@ function CartItemBase({
   onDecrease,
   onIncrease,
   onRemove,
+  onMoveToWishlist,
   showLineTotal = true,
   style,
 }) {
@@ -104,6 +105,20 @@ function CartItemBase({
               <Ionicons name="trash-outline" size={20} color={semanticPalette.inkMuted} />
             </Pressable>
           </View>
+          {onMoveToWishlist ? (
+            <Pressable onPress={() => onMoveToWishlist?.(item)} hitSlop={8} accessibilityRole="button">
+              <Text
+                style={{
+                  marginTop: SPACING.xs,
+                  fontFamily: fonts.semibold,
+                  fontSize: TYPE.caption.fontSize,
+                  color: semanticPalette.accent,
+                }}
+              >
+                {CART_DRAWER_UI.moveToWishlist}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
     </Card>

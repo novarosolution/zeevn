@@ -12,6 +12,8 @@ import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import AuthShell from "../components/auth/AuthShell";
 import AuthCheckbox from "../components/auth/AuthCheckbox";
+import AuthBrassIconEntrance from "../components/auth/AuthBrassIconEntrance";
+import AuthContentSwap from "../components/auth/AuthContentSwap";
 import AuthErrorCard from "../components/auth/AuthErrorCard";
 import { navigateAfterAuth } from "../components/auth/authNavigation";
 import PasswordStrengthMeter from "../components/auth/PasswordStrengthMeter";
@@ -33,6 +35,8 @@ import {
 } from "../utils/authValidation";
 import { getPasswordStrengthScore } from "../utils/passwordStrength";
 import { headingA11yProps } from "../utils/a11y";
+import { sendVerificationEmailRequest } from "../services/userService";
+import * as Linking from "expo-linking";
 
 const copy = AUTH_SCREEN.register;
 const shared = AUTH_SCREEN.shared;
@@ -52,6 +56,55 @@ function openLegalDoc(navigation, screenName) {
   navigation.navigate(screenName);
 }
 
+function RegisterSuccess({
+  email,
+  resendSeconds,
+  onResend,
+  onContinue,
+  devLink,
+  resendBusy,
+}) {
+  const { semanticPalette, TYPE, SPACING } = useTheme();
+
+  return (
+    <View style={{ alignItems: "center", gap: SPACING.lg, paddingVertical: SPACING.xl }}>
+      <AuthBrassIconEntrance name="mail" size={48} trigger={email} />
+      <Text {...headingA11yProps(1)} style={{ fontFamily: FONT_DISPLAY_SEMI, fontSize: 24, lineHeight: 30, color: semanticPalette.ink, textAlign: "center" }}>
+        {copy.successTitle}
+      </Text>
+      <Text style={{ fontFamily: fonts.regular, fontSize: TYPE.body.fontSize, lineHeight: TYPE.body.lineHeight, color: semanticPalette.inkSoft, textAlign: "center" }}>
+        {fillPlaceholders(copy.successBody, { email })}
+      </Text>
+      {devLink ? (
+        <Text selectable style={{ fontFamily: fonts.regular, fontSize: 11, lineHeight: 16, color: semanticPalette.inkMuted, textAlign: "center" }}>
+          {copy.resendEmail}
+          {"\n"}
+          {devLink}
+        </Text>
+      ) : null}
+      <View style={{ width: "100%", gap: SPACING.sm }}>
+        <Button
+          variant="secondary"
+          size="lg"
+          fullWidth
+          label={copy.openMailApp}
+          onPress={() => Linking.openURL(`mailto:${email}`).catch(() => Linking.openURL("mailto:").catch(() => {}))}
+        />
+        <Button
+          variant="ghost"
+          size="md"
+          fullWidth
+          label={resendSeconds > 0 ? fillPlaceholders(copy.resendCooldown, { seconds: String(resendSeconds) }) : copy.resendEmail}
+          onPress={onResend}
+          disabled={resendSeconds > 0 || resendBusy}
+          loading={resendBusy}
+        />
+        <Button variant="primary" size="md" fullWidth label={copy.useDifferentEmail} onPress={onContinue} />
+      </View>
+    </View>
+  );
+}
+
 export default function RegisterScreen({ navigation }) {
   const route = useRoute();
   const [name, setName] = useState("");
@@ -65,9 +118,14 @@ export default function RegisterScreen({ navigation }) {
   const [touched, setTouched] = useState({ name: false, email: false, password: false });
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [welcomeToastVisible, setWelcomeToastVisible] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
+  const [resendSeconds, setResendSeconds] = useState(0);
+  const [resendBusy, setResendBusy] = useState(false);
+  const [verificationDevLink, setVerificationDevLink] = useState("");
   const [termsHover, setTermsHover] = useState(null);
   const [footerLinkHover, setFooterLinkHover] = useState(false);
-  const { registerWithCredentials } = useAuth();
+  const { registerWithCredentials, token } = useAuth();
   const { semanticPalette, TYPE, SPACING } = useTheme();
   const {
     run: runSubmit,
@@ -219,6 +277,14 @@ export default function RegisterScreen({ navigation }) {
     setEmailConflict(false);
   }, [clearSubmitErrors]);
 
+  useEffect(() => {
+    if (!showSuccess || resendSeconds <= 0) return undefined;
+    const id = setInterval(() => {
+      setResendSeconds((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [showSuccess, resendSeconds]);
+
   const validateFields = useCallback(() => {
     let ok = true;
     const nameErr = validateRegisterName(name);
@@ -265,7 +331,7 @@ export default function RegisterScreen({ navigation }) {
     await runSubmit(async (signal) => {
       try {
         const captchaToken = await getAuthCaptchaToken("register");
-        await registerWithCredentials({
+        const result = await registerWithCredentials({
           name: trimmedName,
           email: em,
           password,
@@ -275,11 +341,11 @@ export default function RegisterScreen({ navigation }) {
         });
 
         lifecycle.clearDraft();
+        setSubmittedEmail(em);
+        setVerificationDevLink(typeof result?.devLink === "string" ? result.devLink : "");
+        setShowSuccess(true);
+        setResendSeconds(60);
         setWelcomeToastVisible(true);
-        setTimeout(() => {
-          setWelcomeToastVisible(false);
-          navigateAfterAuth(navigation, route);
-        }, 1200);
         return true;
       } catch (err) {
         if (err?.status === 409) {
@@ -302,6 +368,24 @@ export default function RegisterScreen({ navigation }) {
     runSubmit,
     validateFields,
   ]);
+
+  const handleResendVerification = useCallback(async () => {
+    if (resendSeconds > 0 || resendBusy || !token) return;
+    try {
+      setResendBusy(true);
+      const data = await sendVerificationEmailRequest(token);
+      if (typeof data?.devLink === "string") setVerificationDevLink(data.devLink);
+      setResendSeconds(60);
+    } finally {
+      setResendBusy(false);
+    }
+  }, [resendBusy, resendSeconds, token]);
+
+  const handleContinueAfterSuccess = useCallback(() => {
+    setShowSuccess(false);
+    setWelcomeToastVisible(false);
+    navigateAfterAuth(navigation, route);
+  }, [navigation, route]);
 
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return undefined;
@@ -346,179 +430,197 @@ export default function RegisterScreen({ navigation }) {
         durationMs={2400}
       />
 
-      <Text {...headingA11yProps(1)} style={styles.title}>
-        {copy.formTitle}
-      </Text>
-      <Text style={styles.subtitle}>{copy.formSubtitle}</Text>
-
-      <View style={styles.stack}>
-        <Input
-          testID="register-name"
-          label={copy.nameLabel}
-          accessibilityLabel={copy.nameLabel}
-          placeholder={copy.namePlaceholder}
-          value={name}
-          onChangeText={(t) => {
-            setName(t);
-            if (nameError) setNameError("");
-            clearServerErrors();
-          }}
-          onBlur={() => setTouched((p) => ({ ...p, name: true }))}
-          errorText={showFieldError("name") && nameError ? nameError : undefined}
-          iconLeft="person-outline"
-          autoCapitalize="words"
-          autoCorrect={false}
-          autoComplete="name"
-          textContentType="name"
-          returnKeyType="next"
-          blurOnSubmit={false}
-          onSubmitEditing={() => emailRef.current?.focus?.()}
-          importantForAutofill="yes"
-        />
-
-        <View>
-          <Input
-            testID="register-email"
-            inputRef={emailRef}
-            label={copy.emailLabel}
-            accessibilityLabel={copy.emailLabel}
-            placeholder={copy.emailPlaceholder}
-            value={email}
-            onChangeText={(t) => {
-              setEmail(t);
-              if (emailError) setEmailError("");
-              clearServerErrors();
-            }}
-            onBlur={() => setTouched((p) => ({ ...p, email: true }))}
-            errorText={showFieldError("email") && emailError ? emailError : undefined}
-            iconLeft="mail-outline"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="email"
-            textContentType="emailAddress"
-            returnKeyType="next"
-            blurOnSubmit={false}
-            onSubmitEditing={() => passwordRef.current?.focus?.()}
-            importantForAutofill="yes"
+      <AuthContentSwap
+        showSuccess={showSuccess}
+        footer={showSuccess ? null : footerLink}
+        success={
+          <RegisterSuccess
+            email={submittedEmail}
+            resendSeconds={resendSeconds}
+            onResend={handleResendVerification}
+            onContinue={handleContinueAfterSuccess}
+            devLink={verificationDevLink}
+            resendBusy={resendBusy}
           />
-          {emailConflict ? (
-            <View style={styles.emailConflictRow}>
-              <Text style={styles.emailConflictText}>{copy.emailExists}</Text>
-              <Pressable
-                accessibilityRole="link"
-                onPress={() => navigation.navigate("Login", { email: normalizeEmail(email) })}
-              >
-                <Text style={styles.emailConflictLink}>{copy.emailExistsSignIn}</Text>
-              </Pressable>
+        }
+        form={
+          <>
+            <Text {...headingA11yProps(1)} style={{ fontFamily: TYPE.serifFamily, ...TYPE.h1, color: semanticPalette.ink }}>
+              {copy.formTitle}
+            </Text>
+            <Text style={{ marginTop: spacing.sm, marginBottom: spacing.lg, fontFamily: fonts.regular, ...TYPE.body, color: semanticPalette.inkSoft }}>
+              {copy.formSubtitle}
+            </Text>
+
+            <View style={styles.stack}>
+              <Input
+                testID="register-name"
+                label={copy.nameLabel}
+                accessibilityLabel={copy.nameLabel}
+                placeholder={copy.namePlaceholder}
+                value={name}
+                onChangeText={(t) => {
+                  setName(t);
+                  if (nameError) setNameError("");
+                  clearServerErrors();
+                }}
+                onBlur={() => setTouched((p) => ({ ...p, name: true }))}
+                errorText={showFieldError("name") && nameError ? nameError : undefined}
+                iconLeft="person-outline"
+                autoCapitalize="words"
+                autoCorrect={false}
+                autoComplete="name"
+                textContentType="name"
+                returnKeyType="next"
+                blurOnSubmit={false}
+                onSubmitEditing={() => emailRef.current?.focus?.()}
+                importantForAutofill="yes"
+              />
+
+              <View>
+                <Input
+                  testID="register-email"
+                  inputRef={emailRef}
+                  label={copy.emailLabel}
+                  accessibilityLabel={copy.emailLabel}
+                  placeholder={copy.emailPlaceholder}
+                  value={email}
+                  onChangeText={(t) => {
+                    setEmail(t);
+                    if (emailError) setEmailError("");
+                    clearServerErrors();
+                  }}
+                  onBlur={() => setTouched((p) => ({ ...p, email: true }))}
+                  errorText={showFieldError("email") && emailError ? emailError : undefined}
+                  iconLeft="mail-outline"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="email"
+                  textContentType="emailAddress"
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                  onSubmitEditing={() => passwordRef.current?.focus?.()}
+                  importantForAutofill="yes"
+                />
+                {emailConflict ? (
+                  <View style={styles.emailConflictRow}>
+                    <Text style={styles.emailConflictText}>{copy.emailExists}</Text>
+                    <Pressable
+                      accessibilityRole="link"
+                      onPress={() => navigation.navigate("Login", { email: normalizeEmail(email) })}
+                    >
+                      <Text style={styles.emailConflictLink}>{copy.emailExistsSignIn}</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+              </View>
+
+              <View>
+                <Input
+                  testID="register-password"
+                  inputRef={passwordRef}
+                  label={copy.passwordLabel}
+                  accessibilityLabel={copy.passwordLabel}
+                  placeholder={copy.passwordPlaceholder}
+                  value={password}
+                  onChangeText={(t) => {
+                    setPassword(t);
+                    if (passwordError) setPasswordError("");
+                    clearServerErrors();
+                  }}
+                  onBlur={() => setTouched((p) => ({ ...p, password: true }))}
+                  errorText={showFieldError("password") && passwordError ? passwordError : undefined}
+                  iconLeft="lock-closed-outline"
+                  secureTextEntry
+                  passwordToggle
+                  passwordShowA11yLabel={copy.showPassword}
+                  passwordHideA11yLabel={copy.hidePassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="new-password"
+                  textContentType="newPassword"
+                  returnKeyType="go"
+                  onSubmitEditing={handleRegister}
+                  importantForAutofill="yes"
+                />
+                <PasswordStrengthMeter
+                  password={password}
+                  strengthLabels={copy.strengthLabels}
+                  hint={copy.passwordHint}
+                />
+              </View>
             </View>
-          ) : null}
-        </View>
 
-        <View>
-          <Input
-            testID="register-password"
-            inputRef={passwordRef}
-            label={copy.passwordLabel}
-            accessibilityLabel={copy.passwordLabel}
-            placeholder={copy.passwordPlaceholder}
-            value={password}
-            onChangeText={(t) => {
-              setPassword(t);
-              if (passwordError) setPasswordError("");
-              clearServerErrors();
-            }}
-            onBlur={() => setTouched((p) => ({ ...p, password: true }))}
-            errorText={showFieldError("password") && passwordError ? passwordError : undefined}
-            iconLeft="lock-closed-outline"
-            secureTextEntry
-            passwordToggle
-            passwordShowA11yLabel={copy.showPassword}
-            passwordHideA11yLabel={copy.hidePassword}
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="new-password"
-            textContentType="newPassword"
-            returnKeyType="go"
-            onSubmitEditing={handleRegister}
-            importantForAutofill="yes"
-          />
-          <PasswordStrengthMeter
-            password={password}
-            strengthLabels={copy.strengthLabels}
-            hint={copy.passwordHint}
-          />
-        </View>
-      </View>
+            <View style={styles.marketing}>
+              <AuthCheckbox
+                checked={marketingOptIn}
+                onToggle={() => setMarketingOptIn((v) => !v)}
+                label={copy.marketingOptIn}
+                labelStyle={styles.marketingLabel}
+              />
+            </View>
 
-      <View style={styles.marketing}>
-        <AuthCheckbox
-          checked={marketingOptIn}
-          onToggle={() => setMarketingOptIn((v) => !v)}
-          label={copy.marketingOptIn}
-          labelStyle={styles.marketingLabel}
-        />
-      </View>
+            <Text style={styles.terms}>
+              {copy.termsPrefix}{" "}
+              <Text
+                accessibilityRole="link"
+                onPress={() => openLegalDoc(navigation, "Terms")}
+                onHoverIn={() => Platform.OS === "web" && setTermsHover("terms")}
+                onHoverOut={() => Platform.OS === "web" && setTermsHover(null)}
+                style={[styles.termsLink, termsHover === "terms" && Platform.OS === "web" ? { textDecorationLine: "underline" } : null]}
+              >
+                {copy.termsLink}
+              </Text>{" "}
+              {copy.termsAnd}{" "}
+              <Text
+                accessibilityRole="link"
+                onPress={() => openLegalDoc(navigation, "Privacy")}
+                onHoverIn={() => Platform.OS === "web" && setTermsHover("privacy")}
+                onHoverOut={() => Platform.OS === "web" && setTermsHover(null)}
+                style={[styles.termsLink, termsHover === "privacy" && Platform.OS === "web" ? { textDecorationLine: "underline" } : null]}
+              >
+                {copy.privacyLink}
+              </Text>
+            </Text>
 
-      <Text style={styles.terms}>
-        {copy.termsPrefix}{" "}
-        <Text
-          accessibilityRole="link"
-          onPress={() => openLegalDoc(navigation, "Terms")}
-          onHoverIn={() => Platform.OS === "web" && setTermsHover("terms")}
-          onHoverOut={() => Platform.OS === "web" && setTermsHover(null)}
-          style={[styles.termsLink, termsHover === "terms" && Platform.OS === "web" ? { textDecorationLine: "underline" } : null]}
-        >
-          {copy.termsLink}
-        </Text>{" "}
-        {copy.termsAnd}{" "}
-        <Text
-          accessibilityRole="link"
-          onPress={() => openLegalDoc(navigation, "Privacy")}
-          onHoverIn={() => Platform.OS === "web" && setTermsHover("privacy")}
-          onHoverOut={() => Platform.OS === "web" && setTermsHover(null)}
-          style={[styles.termsLink, termsHover === "privacy" && Platform.OS === "web" ? { textDecorationLine: "underline" } : null]}
-        >
-          {copy.privacyLink}
-        </Text>
-      </Text>
+            <View style={styles.ctaBlock}>
+              {rateLimitUntil ? <AuthRateLimitCard untilMs={rateLimitUntil} /> : null}
+              {serverError && !rateLimitUntil ? <AuthErrorCard message={serverError} /> : null}
+              {timeoutError ? (
+                <AuthErrorCard message={shared.timeoutError} retryLabel={shared.retryCta} onRetry={handleRegister} />
+              ) : null}
+              {networkError && !timeoutError ? (
+                <AuthErrorCard message={shared.networkError} retryLabel={shared.retryCta} onRetry={handleRegister} />
+              ) : null}
 
-      <View style={styles.ctaBlock}>
-        {rateLimitUntil ? <AuthRateLimitCard untilMs={rateLimitUntil} /> : null}
-        {serverError && !rateLimitUntil ? <AuthErrorCard message={serverError} /> : null}
-        {timeoutError ? (
-          <AuthErrorCard message={shared.timeoutError} retryLabel={shared.retryCta} onRetry={handleRegister} />
-        ) : null}
-        {networkError && !timeoutError ? (
-          <AuthErrorCard message={shared.networkError} retryLabel={shared.retryCta} onRetry={handleRegister} />
-        ) : null}
-
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          label={copy.submitCta}
-          loading={isSubmitting}
-          loadingLabel={copy.submitLoading}
-          onPress={handleRegister}
-          disabled={!canSubmit || isSubmitting || isRateLimited}
-        />
-        {slowHint ? (
-          <Text
-            style={{
-              marginTop: spacing.xs,
-              textAlign: "center",
-              fontFamily: fonts.regular,
-              fontSize: 12,
-              color: semanticPalette.inkSoft,
-            }}
-          >
-            {shared.stillTrying}
-          </Text>
-        ) : null}
-      </View>
-
-      {footerLink}
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                label={copy.submitCta}
+                loading={isSubmitting}
+                loadingLabel={copy.submitLoading}
+                onPress={handleRegister}
+                disabled={!canSubmit || isSubmitting || isRateLimited}
+              />
+              {slowHint ? (
+                <Text
+                  style={{
+                    marginTop: spacing.xs,
+                    textAlign: "center",
+                    fontFamily: fonts.regular,
+                    fontSize: 12,
+                    color: semanticPalette.inkSoft,
+                  }}
+                >
+                  {shared.stillTrying}
+                </Text>
+              ) : null}
+            </View>
+          </>
+        }
+      />
     </AuthShell>
   );
 }

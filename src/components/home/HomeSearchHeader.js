@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { Bell, Search } from "lucide-react-native";
+import { BlurView } from "expo-blur";
 import { HOME_SEARCH_UI } from "../../content/appContent";
 import { usePrefersReducedMotion } from "../../utils/motion";
 import { homeType } from "../../styles/typography";
 import { spacing as homeSpacing } from "../../styles/spacing";
+import { supportsBackdropFilter } from "../../utils/webViewport";
 
 const PHONE_BREAKPOINT = 600;
 const NARROW_FALLBACK_BREAKPOINT = 360;
@@ -31,11 +34,13 @@ export default function HomeSearchHeader({
   onSubmitSearch,
   value,
   onChangeSearch,
+  compactWeb = false,
 }) {
   const { width } = useWindowDimensions();
   const reducedMotion = usePrefersReducedMotion();
   const isPhone = width < PHONE_BREAKPOINT;
   const isWideDesktop = width >= 1024;
+  const isDesktop = width >= 1024;
 
   const [inputValue, setInputValue] = useState(String(value || ""));
   const [isFocused, setIsFocused] = useState(false);
@@ -44,19 +49,20 @@ export default function HomeSearchHeader({
   const [rowWidth, setRowWidth] = useState(0);
   const placeholderOpacity = useRef(new Animated.Value(1)).current;
   const focusAnim = useRef(new Animated.Value(0)).current;
+  const inputRef = useRef(null);
 
   useEffect(() => {
     setInputValue(String(value || ""));
   }, [value]);
 
   const c = colors || {};
+  const canUseBackdrop = Platform.OS === "web" ? supportsBackdropFilter() : false;
   const surface = c.surface;
-  const line = c.line || c.border;
-  const ink = c.ink || c.textPrimary;
-  const muted = c.muted || c.textMuted;
-  const inkSoft = c.inkSoft || c.textSecondary;
-  const accent = isDark ? c.accent : c.accentOnLight || c.accent;
-  const surfaceAlt = c.surfaceAlt;
+  const line = c.border;
+  const ink = c.textPrimary;
+  const muted = c.textMuted;
+  const accent = isDark ? c.primary : c.accentOnLight || c.primary;
+  const surfaceMuted = c.surfaceMuted || c.surface;
 
   const placeholders = useMemo(() => {
     if (Array.isArray(HOME_SEARCH_UI.searchPlaceholders) && HOME_SEARCH_UI.searchPlaceholders.length > 0) {
@@ -108,9 +114,15 @@ export default function HomeSearchHeader({
     (width < NARROW_FALLBACK_BREAKPOINT ||
       (effectiveSearchWidth > 0 && effectiveSearchWidth < SEARCH_MIN_WIDTH));
 
-  const addressText = isPhone
-    ? HOME_SEARCH_UI.locationCtaShort || "Set address"
-    : HOME_SEARCH_UI.locationCta || "Set delivery address";
+  const addressText = useMemo(() => {
+    const trimmed = String(deliveryAddress || "").trim();
+    if (trimmed) {
+      const short = isPhone && trimmed.length > 18 ? `${trimmed.slice(0, 16)}…` : trimmed;
+      return `Deliver to ${short}`;
+    }
+    return "Deliver to Ahmedabad";
+  }, [deliveryAddress, isPhone]);
+  const hasAddress = Boolean(String(deliveryAddress || "").trim());
   const showChevron = !isPhone;
 
   const onChangeText = useCallback(
@@ -156,7 +168,7 @@ export default function HomeSearchHeader({
   const rowGap = isPhone ? homeSpacing.sm : homeSpacing.md;
   const focusBackground = focusAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [surfaceAlt, surface],
+    outputRange: [surfaceMuted, surface],
   });
   const focusBorder = focusAnim.interpolate({
     inputRange: [0, 1],
@@ -170,8 +182,19 @@ export default function HomeSearchHeader({
 
   const addressPressLabel = getA11yLabel(deliveryAddress);
 
-  const resolvedPromiseLine =
-    String(deliveryPromise || "").trim() || "Reliable doorstep delivery";
+  const resolvedPromiseLine = String(deliveryPromise || "").trim() || "In 11 minutes";
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || !isDesktop) return undefined;
+    const onKeyDown = (event) => {
+      if ((event.metaKey || event.ctrlKey) && String(event.key || "").toLowerCase() === "k") {
+        event.preventDefault();
+        inputRef.current?.focus?.();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isDesktop]);
 
   const renderAddressChip = (fillRow = false) => (
     <Pressable
@@ -184,7 +207,7 @@ export default function HomeSearchHeader({
           width: isPhone ? addressWidthPx : TABLET_ADDRESS_WIDTH,
           maxWidth: isPhone && !fillRow ? addressWidthPx || "38%" : undefined,
           flexGrow: fillRow ? 1 : 0,
-          backgroundColor: pressed ? surfaceAlt : surface,
+          backgroundColor: pressed ? surfaceMuted : surface,
           opacity: pressed ? 0.92 : 1,
         },
       ]}
@@ -197,10 +220,11 @@ export default function HomeSearchHeader({
         <Text style={[styles.addressText, { color: ink }]} numberOfLines={1} ellipsizeMode="tail">
           {addressText}
         </Text>
-        <Text style={[styles.addressPromiseText, { color: inkSoft }]} numberOfLines={1} ellipsizeMode="tail">
+        <Text style={[styles.addressPromiseText, { color: accent }]} numberOfLines={1} ellipsizeMode="tail">
           {resolvedPromiseLine}
         </Text>
       </View>
+      {!hasAddress ? <View style={[styles.addressUnsetDot, { backgroundColor: accent }]} /> : null}
       {showChevron ? <Ionicons name="chevron-down" size={14} color={muted} /> : null}
     </Pressable>
   );
@@ -210,17 +234,25 @@ export default function HomeSearchHeader({
       <View
         style={[
           styles.container,
+          compactWeb ? styles.containerWebCompact : null,
           {
             borderColor: line,
             backgroundColor: surface,
-            borderBottomColor: isScrolled ? accent : line,
+            minHeight: isScrolled ? (isPhone ? 48 : isWideDesktop ? 56 : 52) : isPhone ? 52 : isWideDesktop ? 60 : 56,
+            borderBottomColor: isScrolled ? "rgba(200,169,126,0.40)" : line,
             borderBottomWidth: isScrolled ? 1 : StyleSheet.hairlineWidth,
             ...(isScrolled
               ? Platform.select({
                   web: {
-                    backdropFilter: "saturate(180%) blur(14px)",
-                    WebkitBackdropFilter: "saturate(180%) blur(14px)",
-                    backgroundColor: c.surfaceOverlay || surface,
+                    ...(canUseBackdrop
+                      ? {
+                          backdropFilter: "saturate(180%) blur(14px)",
+                          WebkitBackdropFilter: "saturate(180%) blur(14px)",
+                          backgroundColor: c.surfaceOverlay || surface,
+                        }
+                      : {
+                          backgroundColor: surface,
+                        }),
                   },
                   default: {
                     backgroundColor: surface,
@@ -230,6 +262,9 @@ export default function HomeSearchHeader({
           },
         ]}
       >
+        {isScrolled && Platform.OS !== "web" ? (
+          <BlurView intensity={60} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFillObject} pointerEvents="none" />
+        ) : null}
         {useTwoRows ? (
           <View style={{ gap: homeSpacing.sm }}>
             <View style={[styles.row, { gap: homeSpacing.sm }]}>
@@ -240,7 +275,7 @@ export default function HomeSearchHeader({
                   styles.bellButton,
                   {
                     borderColor: line,
-                    backgroundColor: pressed ? surfaceAlt : "transparent",
+                    backgroundColor: pressed ? surfaceMuted : "transparent",
                     opacity: pressed ? 0.92 : 1,
                   },
                 ]}
@@ -248,7 +283,7 @@ export default function HomeSearchHeader({
                 accessibilityLabel={bellLabel}
                 hitSlop={2}
               >
-                <Ionicons name="notifications-outline" size={18} color={ink} />
+                <Bell size={18} color={ink} strokeWidth={1.8} />
                 {unreadCount > 0 ? (
                   <View
                     style={[
@@ -270,25 +305,33 @@ export default function HomeSearchHeader({
                   width: "100%",
                   backgroundColor: focusBackground,
                   borderColor: focusBorder,
+                  height: isScrolled ? 36 : 40,
+                  ...(Platform.OS === "web" && isFocused ? { boxShadow: "0 0 0 3px rgba(14,23,41,0.08)" } : null),
                 },
               ]}
             >
-              <Ionicons name="search-outline" size={16} color={muted} />
+              <Search size={16} color={muted} strokeWidth={1.8} />
               <Animated.View style={[styles.placeholderContainer, { opacity: reducedMotion ? 1 : placeholderOpacity }]}>
                 <TextInput
+                  ref={inputRef}
                   style={[styles.input, { color: ink }]}
                   value={inputValue}
                   onChangeText={onChangeText}
                   onSubmitEditing={submitSearch}
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
-                  placeholder={placeholders[0]}
+                  placeholder={activePlaceholder}
                   placeholderTextColor={muted}
                   returnKeyType="search"
                   clearButtonMode="while-editing"
                   accessibilityLabel={HOME_SEARCH_UI.searchA11yLabel || "Search products"}
                 />
               </Animated.View>
+              {Platform.OS === "web" && isDesktop && !isFocused ? (
+                <View style={[styles.shortcutPill, { borderColor: line }]}>
+                  <Text style={[styles.shortcutText, { color: muted }]}>⌘K</Text>
+                </View>
+              ) : null}
             </Animated.View>
           </View>
         ) : (
@@ -302,14 +345,17 @@ export default function HomeSearchHeader({
                   flex: 1,
                   minWidth: SEARCH_MIN_WIDTH,
                   maxWidth: isPhone ? undefined : SEARCH_MAX_WIDTH,
-                  backgroundColor: surfaceAlt,
+                  backgroundColor: surfaceMuted,
                   borderColor: focusBorder,
+                  height: isScrolled ? 36 : 40,
+                  ...(Platform.OS === "web" && isFocused ? { boxShadow: "0 0 0 3px rgba(14,23,41,0.08)" } : null),
                 },
               ]}
             >
-              <Ionicons name="search-outline" size={16} color={muted} />
+              <Search size={16} color={muted} strokeWidth={1.8} />
               <Animated.View style={[styles.placeholderContainer, { opacity: reducedMotion ? 1 : placeholderOpacity }]}>
                 <TextInput
+                  ref={inputRef}
                   style={[styles.input, { color: ink }]}
                   value={inputValue}
                   onChangeText={onChangeText}
@@ -330,7 +376,7 @@ export default function HomeSearchHeader({
                 styles.bellButton,
                 {
                   borderColor: line,
-                  backgroundColor: pressed ? surfaceAlt : "transparent",
+                  backgroundColor: pressed ? surfaceMuted : "transparent",
                   opacity: pressed ? 0.92 : 1,
                 },
               ]}
@@ -338,7 +384,7 @@ export default function HomeSearchHeader({
               accessibilityLabel={bellLabel}
               hitSlop={2}
             >
-              <Ionicons name="notifications-outline" size={18} color={ink} />
+              <Bell size={18} color={ink} strokeWidth={1.8} />
               {unreadCount > 0 ? (
                 <View
                   style={[
@@ -371,9 +417,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: homeSpacing.sm,
     paddingVertical: homeSpacing.sm,
+    minHeight: 60,
     ...Platform.select({
       web: {
-        boxShadow: "0 1px 2px rgba(14,23,41,0.08)",
+        boxShadow: "0 2px 12px rgba(14,23,41,0.06)",
+        transition: "min-height 220ms cubic-bezier(0.4,0,0.2,1), border-color 220ms cubic-bezier(0.4,0,0.2,1), background-color 220ms cubic-bezier(0.4,0,0.2,1)",
       },
       ios: {
         shadowColor: "#0E1729",
@@ -385,6 +433,11 @@ const styles = StyleSheet.create({
         elevation: 1,
       },
     }),
+  },
+  containerWebCompact: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 16,
+    paddingVertical: homeSpacing.xs,
   },
   row: {
     flexDirection: "row",
@@ -418,7 +471,17 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 12,
     fontFamily: homeType.uiRegular.fontFamily,
-    marginTop: 1,
+    marginTop: 2,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+  },
+  addressUnsetDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 999,
+    marginLeft: 2,
+    alignSelf: "flex-start",
+    marginTop: 8,
   },
   searchWrap: {
     height: 40,
@@ -436,9 +499,24 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     minWidth: 0,
-    fontSize: 14,
+    fontSize: Platform.select({ web: 16, default: 14 }),
     fontFamily: homeType.uiRegular.fontFamily,
     paddingVertical: 0,
+  },
+  shortcutPill: {
+    minHeight: 20,
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 2,
+  },
+  shortcutText: {
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 0.6,
+    fontFamily: homeType.uiMedium.fontFamily,
   },
   bellButton: {
     width: 40,

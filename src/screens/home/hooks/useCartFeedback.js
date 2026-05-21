@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Easing, useAnimatedStyle, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
 import { HOME_TOAST } from "../../../content/appContent";
+import { buildFlyToCartPath } from "../../../animations/flyToCart";
 
 export default function useCartFeedback({
   addToCart,
@@ -8,6 +9,7 @@ export default function useCartFeedback({
   safeWindowWidth,
   safeWindowHeight,
   safeBottomInset = 0,
+  reducedMotion = false,
 }) {
   const [toastQueue, setToastQueue] = useState([]);
   const [flyGhost, setFlyGhost] = useState(null);
@@ -48,18 +50,19 @@ export default function useCartFeedback({
 
   const runFlyToCart = useCallback(
     (interactionMeta) => {
+      if (reducedMotion) return;
       const sourceRect = interactionMeta?.sourceRect;
       if (!sourceRect) return;
       const target = cartAnchorRef.current;
-      const targetX =
-        Number(target?.x) + Number(target?.width || 20) * 0.5 - 20 || Number(safeWindowWidth || 360) * 0.8;
-      const targetY =
-        Number(target?.y) + Number(target?.height || 20) * 0.5 - 20 ||
-        Number(safeWindowHeight || 800) - Number(safeBottomInset || 0) - 84;
-      const startX = Number(sourceRect?.x || 0) + Number(sourceRect?.width || 48) * 0.5 - 20;
-      const startY = Number(sourceRect?.y || 0) + Number(sourceRect?.height || 48) * 0.5 - 20;
-      const midX = (startX + targetX) / 2 + 18;
-      const midY = Math.min(startY, targetY) - 76;
+      const path = buildFlyToCartPath({
+        sourceRect,
+        targetRect: target,
+        safeWindowWidth,
+        safeWindowHeight,
+        safeBottomInset,
+      });
+      if (!path) return;
+      const { startX, startY, midX, midY, targetX, targetY } = path;
 
       setFlyGhost({ imageUri: interactionMeta?.imageUri || "" });
       flyX.value = startX;
@@ -81,7 +84,7 @@ export default function useCartFeedback({
       flyOpacity.value = withSequence(withTiming(1, { duration: 380 }), withTiming(0, { duration: 100 }));
       setTimeout(() => setFlyGhost(null), 520);
     },
-    [flyOpacity, flyScale, flyX, flyY, safeBottomInset, safeWindowHeight, safeWindowWidth]
+    [flyOpacity, flyScale, flyX, flyY, reducedMotion, safeBottomInset, safeWindowHeight, safeWindowWidth]
   );
 
   const addWithFeedback = useCallback(

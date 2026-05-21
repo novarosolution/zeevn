@@ -59,6 +59,7 @@ import { buildProductRouteMetaOverrides } from "../utils/productMeta";
 import LiveRegion from "../components/a11y/LiveRegion";
 import { injectProductPrintStyles } from "../styles/productPrint.web";
 import { navigateToLogin } from "../components/auth/authNavigation";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../utils/webViewport";
 
 const RECENT_PRODUCT_IDS_KEY = "@zeevan_recent_product_ids";
 const RECENT_PRODUCT_VIEWS_KEY = "@zeevan_recent_product_views";
@@ -350,7 +351,7 @@ export default function ProductScreen({ route, navigation }) {
               position: "sticky",
               top: customerWebStickyTop(24),
               alignSelf: "flex-start",
-              maxHeight: "calc(100vh - 160px)",
+                  maxHeight: `calc(${APP_VIEWPORT_MIN_HEIGHT} - 160px)`,
               overflowY: "auto",
             }
           : {},

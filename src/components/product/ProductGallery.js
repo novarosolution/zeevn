@@ -12,6 +12,7 @@ import {
 import ProductImage from "../ui/ProductImage";
 import GalleryHeroVideo from "./GalleryHeroVideo";
 import { Ionicons } from "@expo/vector-icons";
+import { Zap } from "lucide-react-native";
 import Animated, {
   Easing,
   runOnJS,
@@ -410,6 +411,7 @@ export default function ProductGallery({
             : { backgroundColor: semanticPalette.accent, borderColor: semanticPalette.accent },
         ]}
       >
+        {saleBadge ? <Zap size={12} color="#FFFFFF" strokeWidth={2.2} /> : null}
         <Text style={styles.badgeText}>{badge}</Text>
       </View>
     );
@@ -699,6 +701,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     maxWidth: "78%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   badgeText: {
     fontFamily: fonts.semibold,

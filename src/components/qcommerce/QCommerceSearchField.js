@@ -6,6 +6,7 @@ import { SEARCH_PLACEHOLDER } from "../../constants/brand";
 import { fonts, getSemanticColors, icon, semanticRadius, spacing, typography } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 import { ALCHEMY } from "../../theme/customerAlchemy";
+import { nativeDriverEnabled } from "../../utils/motion";
 
 /**
  * Zepto/Blinkit-style pill search: grey fill, search icon, optional clear.
@@ -39,7 +40,7 @@ export default function QCommerceSearchField({
     Animated.timing(placeholderOpacity, {
       toValue: 1,
       duration: 200,
-      useNativeDriver: true,
+      useNativeDriver: nativeDriverEnabled,
     }).start();
   }, [placeholder, placeholderOpacity, value]);
 

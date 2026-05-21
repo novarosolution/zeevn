@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
+import { HOME_OFFERS_BAND } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
 import { spacing as homeSpacing } from "../../styles/spacing";
 import { homeType } from "../../styles/typography";
@@ -22,9 +23,9 @@ export default function HomeOffersBand() {
         style={styles.card}
       >
         <View style={styles.topRow}>
-          <Text style={[styles.overline, { color: brassAction }]}>REPLENISH</Text>
-          <Text style={styles.title}>15% off your favourite restocks</Text>
-          <Text style={styles.subtitle}>When you order an item you&apos;ve bought twice before.</Text>
+          <Text style={[styles.overline, { color: brassAction }]}>{String(HOME_OFFERS_BAND.overline || "").toUpperCase()}</Text>
+          <Text style={styles.title}>{HOME_OFFERS_BAND.title}</Text>
+          <Text style={styles.subtitle}>{HOME_OFFERS_BAND.subtitle}</Text>
         </View>
         <View style={styles.bottomRow}>
           <Pressable
@@ -33,7 +34,7 @@ export default function HomeOffersBand() {
             accessibilityRole="button"
             accessibilityLabel="Open my pantry"
           >
-            <Text style={[styles.ctaText, { color: c.onPrimary }]}>Open my pantry</Text>
+            <Text style={[styles.ctaText, { color: c.onPrimary }]}>{HOME_OFFERS_BAND.cta}</Text>
           </Pressable>
         </View>
       </LinearGradient>
@@ -48,9 +49,9 @@ function createStyles(c) {
       marginBottom: homeSpacing.xl,
     },
     card: {
-      borderRadius: 16,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.border,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: c.accentOnLight || c.accent,
       backgroundColor: c.surface,
       paddingHorizontal: homeSpacing.lg,
       paddingVertical: homeSpacing.lg,

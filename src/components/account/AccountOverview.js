@@ -393,32 +393,19 @@ export default function AccountOverview({ navigation }) {
       <View style={{ gap: SPACING.md }}>
         <Text
           style={{
-            fontFamily: FONT_DISPLAY_SEMI,
-            fontSize: TYPE.h1.fontSize,
-            lineHeight: TYPE.h1.lineHeight,
+            fontFamily: TYPE.serifFamily,
+            ...TYPE.h1,
             color: semanticPalette.ink,
           }}
           {...headingA11yProps(1)}
-        >
-          {copy.pageTitle}
-        </Text>
-        <Text style={{ fontFamily: fonts.regular, fontSize: TYPE.body.fontSize, lineHeight: TYPE.body.lineHeight, color: semanticPalette.inkSoft }}>
-          {copy.subline}
-        </Text>
-        <Text
-          style={{
-            fontFamily: FONT_DISPLAY_SEMI,
-            fontSize: TYPE.h2.fontSize,
-            lineHeight: TYPE.h2.lineHeight,
-            color: semanticPalette.ink,
-            marginTop: SPACING.sm,
-          }}
-          {...headingA11yProps(2)}
         >
           {fillPlaceholders(copy.greetingTemplate, {
             time: greetingTimeKey(),
             firstName: firstNameFrom(user?.name),
           })}
+        </Text>
+        <Text style={{ fontFamily: fonts.regular, fontSize: TYPE.body.fontSize, lineHeight: TYPE.body.lineHeight, color: semanticPalette.inkSoft }}>
+          {copy.subline}
         </Text>
         <ProfileCompletenessMeter
           percent={completeness.percent}

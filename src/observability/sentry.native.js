@@ -52,6 +52,10 @@ export function setSentryRoute(routeName) {
 
 export function setSentryUser(user) {
   const id = user?.id || user?._id || user?.email;
+  if (!id) {
+    clearSentryUser();
+    return;
+  }
   currentUserHash = hashUserIdForTelemetrySync(id);
   if (!initialized) return;
   Sentry.setUser({ id: currentUserHash });

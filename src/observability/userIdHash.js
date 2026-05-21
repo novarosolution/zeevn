@@ -34,7 +34,9 @@ async function hashWebSubtle(input) {
   }
 }
 
-/** Sync wrapper — web may use fnv until async hash resolves. */
+/** Sync wrapper for Sentry tags (uses FNV-1a; web async SHA-256 is optional elsewhere). */
 export function hashUserIdForTelemetrySync(userId) {
-  return hashFnv1a(userId);
+  const raw = String(userId ?? "").trim();
+  if (!raw) return "anonymous";
+  return hashFnv1a(raw);
 }

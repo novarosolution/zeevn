@@ -1,9 +1,19 @@
 import React, { useMemo, useState } from "react";
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import {
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Screen from "../ui/Screen";
 import Button from "../ui/Button";
+import AccountSidebarNavItem from "../account/interactions/AccountSidebarNavItem";
 import { useTheme } from "../../context/ThemeContext";
 import {
   OPS_ADMIN_KICKER,
@@ -13,97 +23,18 @@ import {
 } from "../../constants/opsNav";
 import { fonts, icon } from "../../theme/tokens";
 import { CUSTOMER_PAGE_MAX_WIDTH } from "../../theme/screenLayout";
+import { FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
+import { headingA11yProps } from "../../utils/a11y";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../../utils/webViewport";
 
-function NavItem({ item, active, onPress, onNavigate }) {
-  const { semanticPalette, TYPE, SPACING, RADII } = useTheme();
+const SIDEBAR_WIDTH = 240;
 
-  const go = () => {
-    onPress?.();
-    if (item.route === "Home") {
-      onNavigate("Home");
-    } else {
-      onNavigate(item.route);
-    }
-  };
-
-  return (
-    <Pressable
-      onPress={go}
-      style={({ pressed, hovered }) => [
-        {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: SPACING.sm,
-          paddingVertical: SPACING.sm,
-          paddingHorizontal: SPACING.md,
-          borderRadius: RADII.md,
-          marginBottom: 4,
-          borderLeftWidth: 3,
-          borderLeftColor: active ? semanticPalette.accent : "transparent",
-          backgroundColor: active ? semanticPalette.surfaceAlt : "transparent",
-        },
-        hovered && Platform.OS === "web" && !active ? { backgroundColor: semanticPalette.surfaceAlt } : null,
-        pressed ? { opacity: 0.88 } : null,
-      ]}
-      accessibilityRole="button"
-      accessibilityLabel={item.label}
-      accessibilityState={{ selected: active }}
-    >
-      <Ionicons name={item.icon} size={icon.sm} color={active ? semanticPalette.accent : semanticPalette.inkMuted} />
-      <Text
-        style={{
-          fontFamily: fonts.medium,
-          fontSize: TYPE.small.fontSize,
-          color: active ? semanticPalette.ink : semanticPalette.inkSoft,
-          flex: 1,
-        }}
-        numberOfLines={1}
-      >
-        {item.label}
-      </Text>
-    </Pressable>
-  );
-}
-
-function SidebarNav({ sections, activeRoute, onNavigate, onItemPress }) {
-  const { semanticPalette, TYPE, SPACING } = useTheme();
-
-  return (
-    <View>
-      {sections.map((section) => (
-        <View key={section.id} style={{ marginBottom: SPACING.lg }}>
-          {section.label ? (
-            <Text
-              style={{
-                fontFamily: fonts.semibold,
-                fontSize: TYPE.micro.fontSize,
-                letterSpacing: 1.2,
-                textTransform: "uppercase",
-                color: semanticPalette.inkMuted,
-                marginBottom: SPACING.sm,
-                paddingHorizontal: SPACING.md,
-              }}
-            >
-              {section.label}
-            </Text>
-          ) : null}
-          {section.items.map((item) => (
-            <NavItem
-              key={item.route}
-              item={item}
-              active={activeRoute === item.route}
-              onNavigate={onNavigate}
-              onPress={onItemPress}
-            />
-          ))}
-        </View>
-      ))}
-    </View>
-  );
+function toNavItem(item) {
+  return { key: item.route, label: item.label, icon: item.icon, route: item.route };
 }
 
 /**
- * Admin / delivery operations shell: Screen + sidebar (240px desktop) or drawer (phone).
+ * Admin / delivery shell — AccountShell pattern: sticky sidebar, breadcrumb + ink title, dense content.
  */
 export default function OpsLayout({
   navigation,
@@ -117,13 +48,15 @@ export default function OpsLayout({
 }) {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { semanticPalette, SPACING } = useTheme();
+  const { semanticPalette, TYPE, SPACING } = useTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [hoveredKey, setHoveredKey] = useState(null);
 
-  const desktopSidebar = Platform.OS === "web" && width >= 1024;
+  const isDesktop = Platform.OS === "web" && width >= 1024;
+  const isTablet = width >= 768 && width < 1024;
   const kicker = mode === "delivery" ? OPS_DELIVERY_KICKER : OPS_ADMIN_KICKER;
-  const sections = useMemo(
-    () => (mode === "delivery" ? [{ id: "delivery", items: OPS_DELIVERY_NAV }] : getOpsAdminSidebarSections()),
+  const flatItems = useMemo(
+    () => (mode === "delivery" ? OPS_DELIVERY_NAV : getOpsAdminSidebarSections()[0]?.items || []),
     [mode]
   );
 
@@ -133,7 +66,7 @@ export default function OpsLayout({
   };
 
   const menuBtn =
-    !desktopSidebar ? (
+    !isDesktop ? (
       <Button
         variant="ghost"
         size="sm"
@@ -151,53 +84,162 @@ export default function OpsLayout({
     </View>
   );
 
+  const renderSidebarItem = (item, navIndex = 0) => {
+    const navItem = toNavItem(item);
+    const active = activeRoute === item.route;
+    return (
+      <AccountSidebarNavItem
+        key={item.route}
+        item={navItem}
+        active={active}
+        hovered={hoveredKey === item.route || (Platform.OS === "web" && false)}
+        onPress={() => navigateTo(item.route)}
+        onHoverIn={() => Platform.OS === "web" && setHoveredKey(item.route)}
+        onHoverOut={() => Platform.OS === "web" && setHoveredKey(null)}
+      />
+    );
+  };
+
   const sidebar = (
-    <SidebarNav
-      sections={sections}
-      activeRoute={activeRoute}
-      onNavigate={navigateTo}
-      onItemPress={() => setDrawerOpen(false)}
-    />
+    <View style={{ marginLeft: -14 }}>
+      {flatItems.map((item, index) => renderSidebarItem(item, index))}
+    </View>
+  );
+
+  const pillNav = (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      style={{ marginHorizontal: -SPACING.lg, paddingHorizontal: SPACING.lg }}
+      contentContainerStyle={{ flexDirection: "row", gap: 8, paddingVertical: SPACING.xs }}
+    >
+      {flatItems.map((item) => {
+        const active = activeRoute === item.route;
+        return (
+          <Pressable
+            key={item.route}
+            onPress={() => navigateTo(item.route)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
+            style={[
+              {
+                paddingVertical: 8,
+                paddingHorizontal: 16,
+                borderRadius: 999,
+                borderWidth: 1,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                flexShrink: 0,
+                borderColor: active ? semanticPalette.ink : semanticPalette.line,
+                backgroundColor: active ? semanticPalette.ink : semanticPalette.surface,
+              },
+              Platform.OS === "web" ? { cursor: "pointer" } : null,
+            ]}
+          >
+            <Ionicons
+              name={item.icon}
+              size={16}
+              color={active ? semanticPalette.inkInverse : semanticPalette.inkSoft}
+            />
+            <Text
+              style={{
+                fontFamily: fonts.medium,
+                fontSize: 14,
+                color: active ? semanticPalette.inkInverse : semanticPalette.ink,
+              }}
+            >
+              {item.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
   );
 
   return (
     <>
       <Screen
         navigation={navigation}
-        title={sectionTitle}
-        kicker={kicker}
         breadcrumbLabel={kicker}
         headerRight={mergedHeaderRight}
         refreshControl={refreshControl}
         contentContainerStyle={{
-          maxWidth: CUSTOMER_PAGE_MAX_WIDTH + 120,
+          maxWidth: CUSTOMER_PAGE_MAX_WIDTH + 160,
           paddingBottom: insets.bottom + SPACING["2xl"],
           ...scrollContentStyle,
         }}
       >
-        <View style={{ flexDirection: desktopSidebar ? "row" : "column", gap: SPACING.xl, alignItems: "flex-start" }}>
-          {desktopSidebar ? (
+        <View style={{ flexDirection: isDesktop ? "row" : "column", gap: SPACING.xl, alignItems: "flex-start" }}>
+          {isDesktop ? (
             <View
               style={{
-                width: 240,
+                width: SIDEBAR_WIDTH,
                 flexShrink: 0,
                 ...Platform.select({
-                  web: { position: "sticky", top: 96, alignSelf: "flex-start" },
+                  web: {
+                    position: "sticky",
+                    top: 96,
+                    alignSelf: "flex-start",
+                    maxHeight: `calc(${APP_VIEWPORT_MIN_HEIGHT} - 120px)`,
+                  },
                   default: {},
                 }),
               }}
+              accessibilityRole="navigation"
+              accessibilityLabel={kicker}
             >
               {sidebar}
             </View>
           ) : null}
-          <View style={{ flex: 1, minWidth: 0, width: "100%" }}>{children}</View>
+
+          <View style={{ flex: 1, minWidth: 0, width: "100%" }}>
+            {isTablet ? <View style={{ marginBottom: SPACING.md }}>{pillNav}</View> : null}
+
+            <View style={{ marginBottom: SPACING.lg }}>
+              <Text
+                style={{
+                  fontFamily: fonts.medium,
+                  fontSize: 12,
+                  lineHeight: 16,
+                  letterSpacing: 0.6,
+                  textTransform: "uppercase",
+                  color: semanticPalette.inkMuted,
+                  marginBottom: SPACING.xs,
+                }}
+              >
+                {kicker} › {sectionTitle || "Overview"}
+              </Text>
+              <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: SPACING.sm }}>
+                <Text
+                  style={{
+                    fontFamily: FONT_DISPLAY_SEMI,
+                    fontSize: TYPE.h1.fontSize,
+                    lineHeight: TYPE.h1.lineHeight,
+                    color: semanticPalette.ink,
+                    flex: 1,
+                  }}
+                  {...headingA11yProps(1)}
+                >
+                  {sectionTitle || "Overview"}
+                </Text>
+              </View>
+            </View>
+
+            {children}
+          </View>
         </View>
       </Screen>
 
-      {!desktopSidebar ? (
+      {!isDesktop ? (
         <Modal visible={drawerOpen} animationType="slide" transparent onRequestClose={() => setDrawerOpen(false)}>
           <Pressable style={styles.drawerScrim} onPress={() => setDrawerOpen(false)} />
-          <View style={[styles.drawerPanel, { backgroundColor: semanticPalette.surface, paddingTop: insets.top + SPACING.md }]}>
+          <View
+            style={[
+              styles.drawerPanel,
+              { backgroundColor: semanticPalette.surface, paddingTop: insets.top + SPACING.md },
+            ]}
+          >
             <View style={{ flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: SPACING.md }}>
               <Pressable onPress={() => setDrawerOpen(false)} hitSlop={12} accessibilityLabel="Close menu">
                 <Ionicons name="close" size={icon.lg} color={semanticPalette.ink} />

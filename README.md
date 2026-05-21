@@ -132,7 +132,10 @@ If you see “Route not found” or network errors:
 | `docs/home-redesign-2026-05.md` | Home redesign screenshots and final verification checklist |
 | `docs/audit-2026-05.md` | Codebase audit (May 2026) |
 | `docs/ui-migration.md` | Premium → canonical UI checklist |
-| `docs/token-violations-baseline.txt` | Design-token drift baseline |
+| `docs/smoke-test.md` | Pre-deploy manual checklist |
+| `docs/known-issues.md` | Platform edge cases |
+| `docs/a11y-report.json` | Latest automated a11y smoke |
+| `docs/perf/final-summary.json` | Lighthouse + bundle snapshot |
 
 ## Environment
 
@@ -160,8 +163,11 @@ Backend integrations are feature-gated:
 | `npm run check:tokens` | Audit off-palette colors and off-scale spacing (warn baseline) |
 | `npm test` | Unit tests with coverage + design-token audit |
 | `npm run test:unit` | Jest unit tests (cart, coupons, auth, orders) + HTML/LCOV coverage in `coverage/` |
+| `npm run test:a11y` | Playwright + axe on 6 customer routes (requires `dist/` served) |
+| `npm run check:contrast` | WCAG AA contrast audit for semantic palette pairs |
+| `npm run measure:final` | Lighthouse desktop + mobile + bundle top-chunks → `docs/perf/final-summary.json` |
 | `npm run lint` | ESLint via Expo |
-| `npm run lhci` | Lighthouse CI autorun (requires Chrome) |
+| `npm run lighthouse:autorun` | Lighthouse CI autorun (requires Chrome) |
 | `npm run lhci:collect` | Collect Lighthouse runs only |
 | `npm run lhci:assert` | Assert LHCI thresholds only |
 | `cd backend && npm run dev` | API with nodemon |

@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import MotionScrollView from "../../components/motion/MotionScrollView";
-import SectionReveal from "../../components/motion/SectionReveal";
 import { useAuth } from "../../context/AuthContext";
 import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
+import OpsDataTable from "../../components/ops/OpsDataTable";
+import OpsStatCard from "../../components/ops/OpsStatCard";
 import OpsListSkeleton from "../../components/ops/OpsListSkeleton";
 import {
   deleteAdminUser,
@@ -15,7 +15,7 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import { adminPanel } from "../../theme/adminLayout";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
-import { getSemanticColors, layout, radius, spacing } from "../../theme/tokens";
+import { fonts, getSemanticColors, layout, radius, spacing } from "../../theme/tokens";
 import Input from "../../components/ui/Input";
 import ErrorBanner from "../../components/ui/ErrorBanner";
 import EmptyState from "../../components/ui/EmptyState";
@@ -26,7 +26,9 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 import { ADMIN_SCREEN_COPY } from "../../content/appContent";
 
 export default function AdminUsersScreen({ navigation }) {
-  const { colors: c, shadowPremium } = useTheme();
+  const { width } = useWindowDimensions();
+  const useTable = Platform.OS === "web" && width >= 768;
+  const { colors: c, shadowPremium, semanticPalette, SPACING } = useTheme();
   const semantic = useMemo(() => getSemanticColors(c), [c]);
   const styles = useMemo(
     () => createAdminUsersStyles(c, shadowPremium, semantic),
@@ -102,15 +104,6 @@ export default function AdminUsersScreen({ navigation }) {
     return { total, admins, customers, usersWithAddress, deliveryPartners };
   }, [users]);
 
-  function MetricCard({ label, value }) {
-    return (
-      <View style={styles.metricCard}>
-        <Text style={styles.metricValue}>{value}</Text>
-        <Text style={styles.metricLabel}>{label}</Text>
-      </View>
-    );
-  }
-
   function RoleBadges({ isAdmin, isDeliveryPartner }) {
     return (
       <View style={styles.roleBadgeRow}>
@@ -119,6 +112,65 @@ export default function AdminUsersScreen({ navigation }) {
       </View>
     );
   }
+
+  const userColumns = useMemo(
+    () => [
+      {
+        key: "name",
+        label: "Name",
+        flex: 1,
+        sortable: true,
+        sortValue: (row) => row.name || "",
+        render: (row) => (
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: semanticPalette.ink }} numberOfLines={1}>
+            {row.name || "Unnamed User"}
+          </Text>
+        ),
+      },
+      {
+        key: "email",
+        label: "Email",
+        flex: 1.2,
+        sortable: true,
+        sortValue: (row) => row.email || "",
+        render: (row) => (
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: semanticPalette.inkSoft }} numberOfLines={1}>
+            {row.email}
+          </Text>
+        ),
+      },
+      {
+        key: "roles",
+        label: "Roles",
+        flex: 0.9,
+        render: (row) => <RoleBadges isAdmin={Boolean(row.isAdmin)} isDeliveryPartner={Boolean(row.isDeliveryPartner)} />,
+      },
+      {
+        key: "actions",
+        label: "",
+        flex: 1.2,
+        minWidth: 180,
+        render: (row) => (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+            <Button
+              label={expandedUserId === row._id ? "Hide" : "View"}
+              variant="secondary"
+              size="sm"
+              onPress={() => setExpandedUserId((current) => (current === row._id ? "" : row._id))}
+            />
+            <Button
+              label="Delete"
+              variant="destructive"
+              size="sm"
+              disabled={busyUserId === row._id}
+              onPress={() => setConfirmDeleteUserId(row._id)}
+            />
+          </View>
+        ),
+      },
+    ],
+    [busyUserId, expandedUserId, semanticPalette.ink, semanticPalette.inkSoft]
+  );
 
   function FilterPill({ label, active, onPress }) {
     return <Chip label={label} tone={active ? "gold" : "neutral"} size="sm" selected={active} onPress={onPress} />;
@@ -183,12 +235,12 @@ export default function AdminUsersScreen({ navigation }) {
             </View>
           ) : null}
 
-          <View style={styles.statsGrid}>
-            <MetricCard label="Total" value={stats.total} />
-            <MetricCard label="Admins" value={stats.admins} />
-            <MetricCard label="Customers" value={stats.customers} />
-            <MetricCard label="Address Saved" value={stats.usersWithAddress} />
-            <MetricCard label="Delivery" value={stats.deliveryPartners} />
+          <View style={[styles.statsGrid, { gap: SPACING.sm }]}>
+            <OpsStatCard label="Total" value={String(stats.total)} style={{ flex: 1, minWidth: 100 }} />
+            <OpsStatCard label="Admins" value={String(stats.admins)} style={{ flex: 1, minWidth: 100 }} />
+            <OpsStatCard label="Customers" value={String(stats.customers)} style={{ flex: 1, minWidth: 100 }} />
+            <OpsStatCard label="Address saved" value={String(stats.usersWithAddress)} style={{ flex: 1, minWidth: 100 }} />
+            <OpsStatCard label="Delivery" value={String(stats.deliveryPartners)} style={{ flex: 1, minWidth: 100 }} />
           </View>
 
           <View style={styles.actionsRow}>
@@ -235,18 +287,26 @@ export default function AdminUsersScreen({ navigation }) {
             />
           </View>
           
-                    <View style={styles.listContent}>
-            {usersLoading && users.length === 0 ? <OpsListSkeleton rows={5} /> : null}
-            {!usersLoading && visibleUsers.length === 0 ? (
-              <EmptyState
-                iconName="people-outline"
-                title="No users match"
-                description={search.trim() || roleFilter !== "all" ? "Try clearing search or switching the role filter." : "No accounts loaded yet."}
-                compact
+          {usersLoading && users.length === 0 ? <OpsListSkeleton rows={5} /> : null}
+
+          {useTable && !usersLoading && renderedUsers.length > 0 ? (
+            <View style={{ marginBottom: SPACING.md }}>
+              <OpsDataTable
+                columns={userColumns}
+                data={renderedUsers}
+                keyExtractor={(row) => row._id}
+                pageSize={15}
+                emptyMessage="No users to show."
               />
-            ) : null}
+            </View>
+          ) : null}
+
+                    <View style={styles.listContent}>
             {!usersLoading &&
-            renderedUsers.map((item) => (
+            renderedUsers.map((item) => {
+              if (useTable && item._id !== expandedUserId) return null;
+              if (useTable && !expandedUserId) return null;
+              return (
               <Card key={item._id} padding="md" style={styles.cardWrap}>
                 <View style={styles.cardTopRow}>
                   <View style={styles.userMain}>
@@ -299,7 +359,7 @@ export default function AdminUsersScreen({ navigation }) {
                   <Button
                     label={expandedUserId === item._id ? "Hide Details" : "More Details"}
                     iconLeft={expandedUserId === item._id ? "chevron-up" : "chevron-down"}
-                    variant="subtle"
+                    variant="secondary"
                     size="sm"
                     onPress={() => setExpandedUserId((current) => (current === item._id ? "" : item._id))}
                   />
@@ -352,8 +412,17 @@ export default function AdminUsersScreen({ navigation }) {
                   </View>
                 ) : null}
               </Card>
-            ))}
-            {renderedUsers.length < visibleUsers.length ? (
+            );
+            })}
+            {!usersLoading && visibleUsers.length === 0 ? (
+              <EmptyState
+                iconName="people-outline"
+                title="No users match"
+                description={search.trim() || roleFilter !== "all" ? "Try clearing search or switching the role filter." : "No accounts loaded yet."}
+                compact
+              />
+            ) : null}
+            {renderedUsers.length < visibleUsers.length && !useTable ? (
               <Button
                 label={`Load more (${visibleUsers.length - renderedUsers.length} remaining)`}
                 variant="subtle"

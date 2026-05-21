@@ -59,6 +59,10 @@ export const CONTACT_PAGE = {
   hoursValue: "Mon–Sat · 9:00–18:00 IST",
   addressLabel: "Studio",
   addressValue: "Ahmedabad, Gujarat · India",
+  mapEmbedUrl:
+    "https://www.openstreetmap.org/export/embed.html?bbox=72.545%2C22.995%2C72.598%2C23.048&layer=mapnik&marker=23.0225%2C72.5714",
+  mapsUrl: "https://maps.google.com/?q=Ahmedabad,Gujarat,India",
+  mapOpenLabel: "Open in Maps",
   whatsappLabel: "Chat on WhatsApp",
   whatsappUrl: RUNTIME_SUPPORT_WHATSAPP_URL,
   email: SUPPORT_EMAIL_DISPLAY,

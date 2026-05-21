@@ -1,13 +1,30 @@
 import React, { useCallback, useMemo, useRef } from "react";
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import * as Haptics from "expo-haptics";
+import DecorativeExpoImage from "../ui/DecorativeExpoImage";
+import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Path, Rect } from "react-native-svg";
 import { useTheme } from "../../context/ThemeContext";
+import { pointerEventsProp } from "../../utils/pointerEventsStyle";
 import HomeSectionHeader from "./HomeSectionHeader";
+import { nativeDriverEnabled } from "../../utils/motion";
 import { homeType } from "../../styles/typography";
 const PHONE_COLS = 4;
 const TABLET_COLS = 6;
 const DESKTOP_COLS = 8;
+const CATEGORY_PHOTOS = {
+  staples: "https://images.unsplash.com/photo-1617093727343-374698b1b08d?auto=format&fit=crop&w=240&q=70",
+  oils: "https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=240&q=70",
+  spices: "https://images.unsplash.com/photo-1532336414038-cf19250c5757?auto=format&fit=crop&w=240&q=70",
+  dairy: "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=240&q=70",
+  sweets: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=240&q=70",
+  dryfruits: "https://images.unsplash.com/photo-1599599810694-57a0c1d2dcb1?auto=format&fit=crop&w=240&q=70",
+  beverages: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=240&q=70",
+  drinks: "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=240&q=70",
+  wellness: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=240&q=70",
+  snacks: "https://images.unsplash.com/photo-1621303837174-89787a7d4729?auto=format&fit=crop&w=240&q=70",
+  all: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=240&q=70",
+};
 
 function CategoryArt({ categoryKey, color }) {
   const key = String(categoryKey || "").toLowerCase();
@@ -44,9 +61,11 @@ function CategoryArt({ categoryKey, color }) {
 
 function CategoryTile({ item, compact, onPress, columns, isDesktop, isAllTile = false }) {
   const { colors: c, isDark } = useTheme();
+  const isTablet = columns === TABLET_COLS;
+  const tileTint = String(item?.tint || "").trim();
   const styles = useMemo(
-    () => createStyles(c, isDark, compact, columns, isDesktop),
-    [c, isDark, compact, columns, isDesktop]
+    () => createStyles(c, isDark, compact, columns, isDesktop, isTablet),
+    [c, isDark, compact, columns, isDesktop, isTablet]
   );
   const scale = useRef(new Animated.Value(1)).current;
   const bgAnim = useRef(new Animated.Value(0)).current;
@@ -58,7 +77,7 @@ function CategoryTile({ item, compact, onPress, columns, isDesktop, isAllTile = 
           toValue: nextScale,
           duration: 120,
           easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
+          useNativeDriver: nativeDriverEnabled,
         }),
         Animated.timing(bgAnim, {
           toValue: nextBg,
@@ -73,13 +92,18 @@ function CategoryTile({ item, compact, onPress, columns, isDesktop, isAllTile = 
 
   const tileBg = bgAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [c.surface, c.surfaceAlt],
+    outputRange: [c.surface, c.surfaceMuted || c.surface],
   });
   const circleBg = bgAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [c.accentSoft || c.primarySoft, c.primarySoft || c.accentSoft],
+    outputRange: [c.primarySoft, c.accentGoldSoft || c.primarySoft],
   });
 
+  const imageUri = useMemo(() => {
+    const source = String(item?.image || item?.imageUrl || "").trim();
+    if (source) return source;
+    return CATEGORY_PHOTOS[String(isAllTile ? "all" : item?.key || "").toLowerCase()] || "";
+  }, [isAllTile, item?.image, item?.imageUrl, item?.key]);
   const handlePress = useCallback(async () => {
     if (Platform.OS === "ios") {
       try {
@@ -96,7 +120,7 @@ function CategoryTile({ item, compact, onPress, columns, isDesktop, isAllTile = 
       <Animated.View style={{ transform: [{ scale }] }}>
         <Pressable
           onPress={handlePress}
-          onPressIn={() => animateTo(0.97, 1)}
+          onPressIn={() => animateTo(0.96, 1)}
           onPressOut={() => animateTo(1, 0)}
           style={({ hovered }) => [hovered && Platform.OS === "web" ? styles.tileHovered : null]}
           accessibilityRole="button"
@@ -111,8 +135,25 @@ function CategoryTile({ item, compact, onPress, columns, isDesktop, isAllTile = 
                 { backgroundColor: tileBg },
               ]}
             >
-              <Animated.View style={[styles.photoCircle, isAllTile ? styles.allTileCircle : null, { backgroundColor: circleBg }]}>
-                <CategoryArt categoryKey={isAllTile ? "all" : item.key} color={c.ink || c.textPrimary} />
+              <LinearGradient
+                {...pointerEventsProp("none")}
+                colors={["rgba(200,169,126,0.04)", "rgba(200,169,126,0)"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={styles.tileGradient}
+              />
+              <Animated.View
+                style={[
+                  styles.photoCircle,
+                  isAllTile ? styles.allTileCircle : null,
+                  tileTint ? { backgroundColor: tileTint } : { backgroundColor: circleBg },
+                ]}
+              >
+                {imageUri ? (
+                  <DecorativeExpoImage source={{ uri: imageUri }} style={styles.categoryPhoto} contentFit="cover" transition={100} />
+                ) : (
+                  <CategoryArt categoryKey={isAllTile ? "all" : item.key} color={c.accentOnLight || c.primary} />
+                )}
               </Animated.View>
               <Text style={styles.label} numberOfLines={2}>
                 {item.label}
@@ -128,7 +169,7 @@ function CategoryTile({ item, compact, onPress, columns, isDesktop, isAllTile = 
 export default function HomeCategoryGrid({
   categories = [],
   overline: _overline = "",
-  title = "Shop by category",
+  title = "",
   viewAllLabel: _viewAllLabel = "View all",
   onPressCategory,
   onPressViewAll,
@@ -159,7 +200,7 @@ export default function HomeCategoryGrid({
 
   return (
     <View style={styles.wrap}>
-      <HomeSectionHeader overline="" title={title} />
+      {title ? <HomeSectionHeader overline="" title={title} /> : null}
       <View style={styles.grid}>
         {tiles.map((item) => (
           <CategoryTile
@@ -178,7 +219,8 @@ export default function HomeCategoryGrid({
 }
 
 function createStyles(c, isDark, compact, columns, isDesktop, isTablet) {
-  const gap = isTablet ? 10 : 8;
+  const gap = isDesktop ? 12 : isTablet ? 10 : 8;
+  const circleSize = 56;
   return StyleSheet.create({
     wrap: {
       marginBottom: isTablet ? 40 : 32,
@@ -194,54 +236,80 @@ function createStyles(c, isDark, compact, columns, isDesktop, isTablet) {
       paddingVertical: gap / 2,
     },
     tile: {
+      position: "relative",
       aspectRatio: 1,
       borderRadius: 14,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: c.lineSoft || c.line,
+      borderWidth: 1,
+      borderColor: c.lineSoft || c.dividerSoft || c.border,
       alignItems: "center",
       justifyContent: "flex-start",
       paddingVertical: compact ? 8 : 10,
       paddingHorizontal: 6,
+      backgroundColor: c.surface,
       ...Platform.select({
         web: {
-          transition: "transform 120ms ease, opacity 120ms ease, background-color 120ms ease",
+          transition: "transform 120ms ease, opacity 120ms ease, background-color 120ms ease, box-shadow 120ms ease",
           cursor: "pointer",
+          boxShadow: isDark ? "none" : "0 2px 8px rgba(14,23,41,0.04)",
+        },
+        ios: {
+          shadowColor: c.shadow || "#0E0E0E",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: isDark ? 0 : 0.04,
+          shadowRadius: 6,
+        },
+        android: {
+          elevation: isDark ? 0 : 1,
         },
         default: {},
       }),
     },
     tilePressed: {
       opacity: 0.97,
-      transform: [{ scale: 0.97 }],
+      transform: [{ scale: 0.96 }],
     },
     tileHovered: {
       opacity: 0.98,
       ...Platform.select({
         web: {
           transform: [{ scale: 1.03 }],
+          boxShadow: isDark ? "none" : "0 6px 16px rgba(14,23,41,0.08)",
         },
         default: {},
       }),
     },
     photoCircle: {
-      width: 40,
-      height: 40,
+      width: circleSize,
+      height: circleSize,
       borderRadius: 999,
       alignItems: "center",
       justifyContent: "center",
       marginTop: 8,
       marginBottom: 8,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: "rgba(200,169,126,0.16)",
+    },
+    tileGradient: {
+      ...StyleSheet.absoluteFillObject,
+      borderRadius: 14,
+    },
+    categoryPhoto: {
+      width: circleSize - 8,
+      height: circleSize - 8,
+      borderRadius: 999,
     },
     allTileCircle: {
       borderWidth: 1,
       borderColor: c.accentOnLight || c.primary,
+      backgroundColor: c.primarySoft,
     },
     label: {
-      fontSize: 11,
+      fontSize: 12,
       fontFamily: homeType.uiMedium.fontFamily,
-      color: c.ink || c.textPrimary,
+      color: c.textPrimary,
       textAlign: "center",
-      lineHeight: Math.round(11 * 1.25),
+      lineHeight: 15,
       marginTop: "auto",
       marginBottom: 6,
     },

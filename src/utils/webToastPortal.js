@@ -18,6 +18,8 @@ export function getWebToastPortalRoot() {
       inset: "0",
       zIndex: String(WEB_Z_INDEX.toast),
       pointerEvents: "none",
+      transform: "translateZ(0)",
+      willChange: "transform",
     });
     document.body.appendChild(toastRoot);
   }

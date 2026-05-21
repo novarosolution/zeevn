@@ -13,6 +13,7 @@ import {
 } from "../../theme/web";
 import useModalA11y from "../../hooks/useModalA11y";
 import { pointerEventsProp } from "../../utils/pointerEventsStyle";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../../utils/webViewport";
 
 const BASE_DRAWER = [
   { route: "Home", label: CUSTOMER_NAV_LINKS.home.label, icon: "home-outline", auth: false },
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     ...Platform.select({
-      web: { minHeight: "100vh" },
+      web: { minHeight: APP_VIEWPORT_MIN_HEIGHT },
       default: {},
     }),
   },
@@ -203,7 +204,7 @@ const styles = StyleSheet.create({
     maxWidth: "88%",
     borderRightWidth: StyleSheet.hairlineWidth,
     ...Platform.select({
-      web: { maxHeight: "100vh", boxShadow: "8px 0 32px rgba(15, 23, 42, 0.18)" },
+      web: { maxHeight: APP_VIEWPORT_MIN_HEIGHT, boxShadow: "8px 0 32px rgba(15, 23, 42, 0.18)" },
       default: { maxHeight: "100%" },
     }),
   },

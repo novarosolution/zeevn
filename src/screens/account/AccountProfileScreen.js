@@ -1400,7 +1400,7 @@ export default function AccountProfileScreen({ navigation, route }) {
         </View>
 
         {showPhoneSignOut ? (
-          <Button label={copy.buttons.signOut} variant="secondary" size="lg" fullWidth onPress={() => setSignOutOpen(true)} />
+          <Button label={copy.buttons.signOut} variant="ghost" size="lg" fullWidth onPress={() => setSignOutOpen(true)} />
         ) : null}
       </View>
     </AccountLayout>

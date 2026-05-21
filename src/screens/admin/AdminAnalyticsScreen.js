@@ -8,7 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
 import { fetchAdminAnalytics } from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
-import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
+import { FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
 import { adminPanel } from "../../theme/adminLayout";
 import MotionScrollView from "../../components/motion/MotionScrollView";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
@@ -260,10 +260,10 @@ export default function AdminAnalyticsScreen({ navigation }) {
     };
   }, [analytics]);
 
-  const hairline = isDark ? c.border : ALCHEMY.pillInactive;
+  const hairline = isDark ? c.border : c.border;
   const heroColors = isDark
     ? [c.surfaceMuted, "#1a1714"]
-    : [ALCHEMY.creamAlt, ALCHEMY.cardBg];
+    : [c.surfaceMuted, c.surface];
   const isFiltered = Boolean(analytics?.range?.filtered);
 
   return (
@@ -889,8 +889,8 @@ export default function AdminAnalyticsScreen({ navigation }) {
 }
 
 function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDark) {
-  const cardBg = isDark ? c.surface : ALCHEMY.cardBg;
-  const hairline = isDark ? c.border : ALCHEMY.pillInactive;
+  const cardBg = isDark ? c.surface : c.surface;
+  const hairline = isDark ? c.border : c.border;
   return StyleSheet.create({
   screen: {
     flex: 1,
@@ -1029,7 +1029,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
+    backgroundColor: isDark ? c.surfaceMuted : c.surfaceMuted,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: hairline,
   },
@@ -1066,8 +1066,8 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     justifyContent: "center",
   },
   heroIconWrapLight: {
-    borderColor: ALCHEMY.pillInactive,
-    backgroundColor: c.frostTint || ALCHEMY.creamAlt,
+    borderColor: c.border,
+    backgroundColor: c.frostTint || c.surfaceMuted,
   },
   heroTextCol: {
     flex: 1,
@@ -1084,8 +1084,8 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     height: 30,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: isDark ? c.primaryBorder : ALCHEMY.pillInactive,
-    backgroundColor: isDark ? c.primarySoft : ALCHEMY.creamAlt,
+    borderColor: isDark ? c.primaryBorder : c.border,
+    backgroundColor: isDark ? c.primarySoft : c.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1096,7 +1096,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     letterSpacing: -0.35,
   },
   titleLight: {
-    color: ALCHEMY.brown,
+    color: c.textPrimary,
   },
   subtitle: {
     marginTop: spacing.xs,
@@ -1138,7 +1138,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     paddingHorizontal: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: c.border,
-    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
+    backgroundColor: isDark ? c.surfaceMuted : c.surfaceMuted,
   },
   categoryRowLast: {
     borderBottomWidth: 0,
@@ -1151,7 +1151,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     marginRight: spacing.md,
   },
   categoryRowCount: {
-    color: isDark ? c.primary : ALCHEMY.brown,
+    color: isDark ? c.primary : c.textPrimary,
     fontFamily: fonts.extrabold,
     fontSize: typography.bodySmall,
   },
@@ -1177,7 +1177,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     borderWidth: 1,
     borderColor: hairline,
     borderRadius: semanticRadius.card,
-    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
+    backgroundColor: isDark ? c.surfaceMuted : c.surfaceMuted,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xs,
     alignItems: "center",
@@ -1202,7 +1202,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     marginBottom: 6,
   },
   metricValue: {
-    color: isDark ? c.primary : ALCHEMY.brown,
+    color: isDark ? c.primary : c.textPrimary,
     fontSize: typography.h3,
     fontFamily: fonts.extrabold,
   },
@@ -1217,7 +1217,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     borderWidth: 1,
     borderColor: hairline,
     borderRadius: semanticRadius.card,
-    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
+    backgroundColor: isDark ? c.surfaceMuted : c.surfaceMuted,
     overflow: "hidden",
     marginBottom: spacing.sm,
   },
@@ -1266,7 +1266,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
   },
   listCardRank: {
     width: 36,
-    backgroundColor: isDark ? c.primarySoft : ALCHEMY.goldSoft,
+    backgroundColor: isDark ? c.primarySoft : c.primarySoft,
     borderRightWidth: 1,
     borderRightColor: c.primaryBorder,
     alignItems: "center",

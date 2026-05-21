@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { fetchMyOrders } from "../../../services/userService";
+import { getMyOrdersCached } from "../../../services/orderCache";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -28,7 +29,7 @@ export default function useReorderData({ isAuthenticated, token }) {
       return;
     }
     try {
-      const data = await fetchMyOrders(token);
+      const data = await getMyOrdersCached(() => fetchMyOrders(token));
       setPastOrders(Array.isArray(data) ? data : []);
     } catch {
       setPastOrders([]);

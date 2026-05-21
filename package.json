@@ -4,6 +4,11 @@
   "private": true,
   "main": "index.js",
   "expo": {
+    "install": {
+      "exclude": [
+        "@sentry/react-native"
+      ]
+    },
     "doctor": {
       "reactNativeDirectoryCheck": {
         "exclude": [
@@ -18,11 +23,13 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "api:dev": "npm --prefix backend run dev",
     "doctor": "npx expo-doctor",
     "config:app": "npx expo config --type public",
-    "export:web": "expo export --platform web && node scripts/post-export-web.js",
+    "export:web": "npm run optimize:assets && expo export --platform web && node scripts/post-export-web.js",
+    "web:smoke": "node scripts/web-smoke.mjs",
     "optimize:assets": "node scripts/optimize-hero-images.js && node scripts/copy-fonts-public.js",
-    "lhci": "lhci autorun",
+    "lighthouse:autorun": "lhci autorun",
     "lhci:collect": "lhci collect",
     "lhci:assert": "lhci assert",
     "deploy:check": "npm run lint && npm run doctor && npm run config:app && npm run export:web",
@@ -32,8 +39,12 @@
     "lint": "expo lint",
     "test": "npm run test:unit && npm run check:tokens",
     "test:unit": "jest --coverage",
+    "test:a11y": "node scripts/test-a11y.mjs",
+    "check:contrast": "node scripts/check-contrast.js",
+    "measure:final": "node scripts/measure-final.mjs",
     "sentry:upload-sourcemaps": "node scripts/sentry-upload-sourcemaps.js",
     "check:tokens": "node scripts/check-tokens.js",
+    "check:tokens:strict": "TOKEN_CHECK_STRICT=1 node scripts/check-tokens.js",
     "prepare": "husky"
   },
   "dependencies": {
@@ -75,6 +86,8 @@
     "jest": "~29.7.0",
     "jest-expo": "~53.0.14",
     "leaflet": "^1.9.4",
+    "lucide-react-native": "^1.16.0",
+    "moti": "^0.30.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-leaflet": "^5.0.0",
@@ -85,15 +98,17 @@
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "react-native-svg": "15.11.2",
+    "react-native-svg": "^15.11.2",
     "react-native-web": "^0.20.0",
     "web-vitals": "^4.2.4"
   },
   "devDependencies": {
     "@lhci/cli": "^0.14.0",
+    "@studio-freight/lenis": "^1.0.42",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^13.3.3",
     "@types/react": "~19.0.10",
+    "axe-core": "^4.11.4",
     "babel-plugin-module-resolver": "^5.0.3",
     "eslint": "^8.57.1",
     "eslint-config-expo": "~9.2.0",
@@ -101,9 +116,11 @@
     "husky": "^9.1.7",
     "jest": "^29.7.0",
     "jest-expo": "~53.0.4",
+    "playwright": "^1.60.0",
     "react-native-svg-transformer": "^1.5.3",
     "serve": "^14.2.6",
     "sharp": "^0.33.5",
+    "ttf2woff2": "^8.0.1",
     "typescript": "~5.8.3",
     "wait-on": "^8.0.5"
   }

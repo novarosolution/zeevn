@@ -20,6 +20,19 @@ export default function PageTransition({ children, style, distance = 12, duratio
 
   useFocusEffect(
     React.useCallback(() => {
+      return () => {
+        if (Platform.OS === "web" && typeof document !== "undefined") {
+          const active = document.activeElement;
+          if (active instanceof HTMLElement && typeof active.blur === "function") {
+            active.blur();
+          }
+        }
+      };
+    }, [])
+  );
+
+  useFocusEffect(
+    React.useCallback(() => {
       if (Platform.OS !== "web" || reducedMotion) return undefined;
       const node = ref.current;
       if (!node || typeof node.style === "undefined") return undefined;

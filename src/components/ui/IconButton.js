@@ -5,11 +5,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { icon as iconTokens } from "../../theme/tokens";
 import { WebNativeButton } from "./inputWebHelpers";
 
-const SIZE_MAP = {
-  sm: 28,
-  md: 32,
-  lg: 40,
-};
+const SIZE_MAP = { sm: 40, md: 40, lg: 40 };
 
 /**
  * Icon-only control (ghost hit target). Uses native `<button>` on web for reliable clicks.
@@ -29,6 +25,7 @@ function IconButtonBase({
   const hit = SIZE_MAP[size] || SIZE_MAP.md;
   const glyph = iconSize || (size === "lg" ? iconTokens.md : iconTokens.sm);
   const glyphColor = color || semanticPalette.inkSoft;
+  const a11yLabel = accessibilityLabel || "Icon button";
 
   if (Platform.OS === "web") {
     return (
@@ -36,7 +33,7 @@ function IconButtonBase({
         onPress={onPress}
         disabled={disabled}
         testID={testID}
-        ariaLabel={accessibilityLabel}
+        ariaLabel={a11yLabel}
         style={{
           width: hit,
           height: hit,
@@ -66,7 +63,7 @@ function IconButtonBase({
       hitSlop={8}
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
+      accessibilityLabel={a11yLabel}
       style={({ pressed, hovered }) => [
         styles.hit,
         { width: hit, height: hit, borderRadius: hit / 2 },

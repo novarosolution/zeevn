@@ -3,20 +3,26 @@ import { HERO_LCP_SRC, HERO_SRCSET } from "../constants/heroLcp.web";
 
 const PRELOAD_IDS = {
   hero: "zv-preload-hero-lcp",
+  inter400: "zv-preload-font-inter-400",
+  inter500: "zv-preload-font-inter-500",
+  playfair600: "zv-preload-font-playfair-600",
 };
 
-/** Expo `useFonts` family names → self-hosted files under /public/fonts. */
+const isDevWeb =
+  typeof __DEV__ !== "undefined" && __DEV__ && typeof window !== "undefined";
+
+/** Expo `useFonts` family names → self-hosted WOFF2 under /public/fonts. */
 const SELF_HOSTED_APP_FONTS = [
-  { family: "Inter_400Regular", file: "/fonts/Inter-400.ttf", weight: 400 },
-  { family: "Inter_500Medium", file: "/fonts/Inter-500.ttf", weight: 500 },
-  { family: "Inter_600SemiBold", file: "/fonts/Inter-600.ttf", weight: 600 },
-  { family: "Inter_700Bold", file: "/fonts/Inter-700.ttf", weight: 700 },
-  { family: "Inter_800ExtraBold", file: "/fonts/Inter-800.ttf", weight: 800 },
-  { family: "PlayfairDisplay_600SemiBold", file: "/fonts/PlayfairDisplay-600.ttf", weight: 600 },
-  { family: "PlayfairDisplay_700Bold", file: "/fonts/PlayfairDisplay-700.ttf", weight: 700 },
+  { family: "Inter_400Regular", file: "/fonts/Inter-400.woff2", weight: 400 },
+  { family: "Inter_500Medium", file: "/fonts/Inter-500.woff2", weight: 500 },
+  { family: "Inter_600SemiBold", file: "/fonts/Inter-600.woff2", weight: 600 },
+  { family: "Inter_700Bold", file: "/fonts/Inter-700.woff2", weight: 700 },
+  { family: "Inter_800ExtraBold", file: "/fonts/Inter-800.woff2", weight: 800 },
+  { family: "PlayfairDisplay_600SemiBold", file: "/fonts/PlayfairDisplay-600.woff2", weight: 600 },
+  { family: "PlayfairDisplay_700Bold", file: "/fonts/PlayfairDisplay-700.woff2", weight: 700 },
   {
     family: "PlayfairDisplay_400Regular_Italic",
-    file: "/fonts/PlayfairDisplay-400Italic.ttf",
+    file: "/fonts/PlayfairDisplay-400Italic.woff2",
     weight: 400,
     style: "italic",
   },
@@ -53,6 +59,10 @@ function upsertLink(id, apply) {
     document.head.appendChild(el);
   }
   apply(el);
+  const href = el.getAttribute("href");
+  if (!href || !isValidPreloadHref(href)) {
+    el.remove();
+  }
 }
 
 function upsertStyle(id, css) {
@@ -74,7 +84,7 @@ function buildSelfHostedFontFaceCss() {
       font-style: ${style};
       font-weight: ${weight};
       font-display: swap;
-      src: url("${file}") format("truetype");
+      src: url("${file}") format("woff2");
     }`
   ).join("");
 }
@@ -89,13 +99,13 @@ export function injectSelfHostedFontFaces() {
 
 /** Preload home LCP hero (call when route is `/`). */
 export function preloadHomeHeroLcp() {
-  if (Platform.OS !== "web") return;
+  if (Platform.OS !== "web" || isDevWeb) return;
   const href = resolveWebHref(HERO_LCP_SRC);
   if (!isValidPreloadHref(href)) return;
   upsertLink(PRELOAD_IDS.hero, (el) => {
     el.rel = "preload";
     el.as = "image";
-    el.href = href;
+    el.setAttribute("href", href);
     el.removeAttribute("type");
     el.removeAttribute("crossorigin");
     if ("fetchPriority" in el) {
@@ -109,6 +119,36 @@ export function preloadHomeHeroLcp() {
       el.removeAttribute("imagesizes");
     }
   });
+}
+
+function preloadFont(id, href, type = "font/woff2") {
+  const resolved = resolveWebHref(href);
+  if (!isValidPreloadHref(resolved)) return;
+  upsertLink(id, (el) => {
+    el.rel = "preload";
+    el.as = "font";
+    el.setAttribute("type", type);
+    el.setAttribute("href", resolved);
+    el.setAttribute("crossorigin", "anonymous");
+  });
+}
+
+export function preloadCriticalWebFonts() {
+  if (Platform.OS !== "web" || isDevWeb) return;
+  preloadFont(PRELOAD_IDS.inter400, "/fonts/Inter-400.woff2");
+  preloadFont(PRELOAD_IDS.inter500, "/fonts/Inter-500.woff2");
+  preloadFont(PRELOAD_IDS.playfair600, "/fonts/PlayfairDisplay-600.woff2");
+}
+
+export function enforceMobileViewportMeta() {
+  if (Platform.OS !== "web" || typeof document === "undefined") return;
+  let tag = document.querySelector('meta[name="viewport"]');
+  if (!tag) {
+    tag = document.createElement("meta");
+    tag.setAttribute("name", "viewport");
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute("content", "width=device-width, initial-scale=1, viewport-fit=cover");
 }
 
 export function clearHomeHeroPreload() {

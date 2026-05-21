@@ -50,9 +50,9 @@ export function getApiBaseUrl() {
     return `http://127.0.0.1:${DEV_API_PORT}`;
   }
 
-  // Web: use 127.0.0.1 so we don't hit IPv6 ::1 with no server (broken fetch / 404 from wrong host).
+  // Web dev: same-origin /api proxy (metro.config.js) — no CORS, backend stays on :5001.
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    return `http://127.0.0.1:${DEV_API_PORT}`;
+    return sanitizeConfiguredBase(`${window.location.origin}/api`);
   }
 
   const debuggerHost =

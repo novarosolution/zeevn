@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { useAnimatedReaction, runOnJS, useAnimatedStyle, useSharedValue, withSequence, withSpring } from "react-native-reanimated";
 import { loadGsap } from "../utils/loadGsap";
+import { nativeDriverEnabled } from "../utils/motion";
 import {
   breakpoints,
   fonts,
@@ -353,14 +354,14 @@ export default function WebAppHeader({ navigationRef }) {
       RNAnimated.timing(placeholderOpacity, {
         toValue: 0,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: nativeDriverEnabled,
       }).start(({ finished }) => {
         if (!finished) return;
         setPlaceholderIndex((i) => (i + 1) % placeholders.length);
         RNAnimated.timing(placeholderOpacity, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: nativeDriverEnabled,
         }).start();
       });
     };
@@ -856,6 +857,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: WEB_Z_INDEX.header,
+    transform: Platform.OS === "web" ? "translateZ(0)" : undefined,
+    willChange: Platform.OS === "web" ? "transform" : undefined,
     ...webBackdropFilterStyle(),
   },
   skipPress: {
@@ -978,7 +981,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     minHeight: 22,
-    fontSize: typography.caption,
+    fontSize: Platform.OS === "web" ? 16 : typography.caption,
     paddingVertical: Platform.OS === "web" ? 4 : 0,
     ...(Platform.OS === "web"
       ? {
@@ -992,7 +995,7 @@ const styles = StyleSheet.create({
     right: 56,
     top: "50%",
     marginTop: -9,
-    fontSize: typography.caption,
+    fontSize: Platform.OS === "web" ? 16 : typography.caption,
   },
   kbdHint: {
     fontSize: 11,

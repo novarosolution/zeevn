@@ -7,6 +7,7 @@ import { WEB_Z_INDEX, webDialogLayerStyle, webOverlayRootStyle, webOverlayScrimS
 import Button from "../../ui/Button";
 import Card from "../../ui/Card";
 import useModalA11y from "../../../hooks/useModalA11y";
+import { pointerEventsProp } from "../../../utils/pointerEventsStyle";
 
 export default function AccountSignOutDialog({ visible, busy, onCancel, onConfirm }) {
   const { semanticPalette, TYPE, SPACING, RADII, isDark } = useTheme();
@@ -24,7 +25,10 @@ export default function AccountSignOutDialog({ visible, busy, onCancel, onConfir
         ]}
         accessibilityViewIsModal
       >
-        <View style={[webOverlayScrimStyle(isDark), { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }]} pointerEvents="none" />
+        <View
+          style={[webOverlayScrimStyle(isDark), { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }]}
+          {...pointerEventsProp("none")}
+        />
         <Card
           padding="lg"
           style={[
@@ -46,7 +50,7 @@ export default function AccountSignOutDialog({ visible, busy, onCancel, onConfir
             <Button label={ACCOUNT_UI.cancelCta} variant="secondary" size="md" style={{ flex: 1 }} onPress={onCancel} disabled={busy} />
             <Button
               label={ACCOUNT_UI.signOutConfirmCta}
-              variant="primary"
+              variant="ghost"
               size="md"
               style={{ flex: 1 }}
               loading={busy}

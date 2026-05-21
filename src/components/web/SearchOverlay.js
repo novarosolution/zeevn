@@ -8,6 +8,7 @@ import { SEARCH_OVERLAY_UI } from "../../content/appContent";
 import { icon } from "../../theme/tokens";
 import { WEB_Z_INDEX, webOverlayRootStyle } from "../../theme/web";
 import useModalA11y from "../../hooks/useModalA11y";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../../utils/webViewport";
 
 /**
  * Full-screen search overlay (compact web / mobile header).
@@ -89,7 +90,7 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     ...Platform.select({
-      web: { minHeight: "100dvh" },
+      web: { minHeight: APP_VIEWPORT_MIN_HEIGHT },
       default: {},
     }),
   },

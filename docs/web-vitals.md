@@ -41,7 +41,7 @@ npm run optimize:assets
 npm run export:web
 npx serve dist -l 8080
 # In another terminal:
-LHCI_BASE_URL=http://127.0.0.1:8080 npm run lhci
+LHCI_BASE_URL=http://127.0.0.1:8080 npm run lighthouse:autorun
 ```
 
 Set `EXPO_PUBLIC_WEB_VITALS_ENDPOINT` to POST RUM payloads in production.

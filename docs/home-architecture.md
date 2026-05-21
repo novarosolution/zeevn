@@ -7,14 +7,13 @@ flowchart TD
   A[HomeScreenBody orchestrator] --> B[HomeSearchHeader]
   A --> C[HomeLiveOrderPinnedCard]
   A --> D[HomeReorderStrip]
-  A --> E[HomeCategoryGrid]
-  A --> F[HomeMarketingHero]
+  A --> E[HomeMarketingHero]
+  A --> F[HomeCategoryGrid]
   A --> G[HomeDealsRail]
-  A --> H[Trust Banner]
-  A --> I[HomeCatalogSections]
-  A --> J[HomeOffersBand]
-  A --> K[HomePageFooter]
-  A --> L[HomeStickyMicroBar]
+  A --> H[HomeCatalogSections]
+  A --> I[HomeOffersBand]
+  A --> J[HomePageFooter]
+  A --> K[HomeStickyAddToBagBar]
 ```
 
 ## Hook Responsibilities
@@ -24,15 +23,30 @@ flowchart TD
 - `useReorderData`: reorder candidates and refresh.
 - `useLiveOrder`: active order summary used for pinned card.
 - `useHeroSlider`: hero autoplay, index control, user-interaction pause/resume.
-- `useCartFeedback`: add-to-cart fly animation, toast queue, cart anchor tracking.
+- `useCartFeedback`: add-to-cart fly animation, toast queue, cart anchor tracking, reduced-motion fallback.
 - `useNotifications`: unread count and notification refresh.
+- `useScrollY`: shared scroll state store fed by the root home `ScrollView` `onScroll`.
+
+## Scroll Source Of Truth (Web)
+
+- Chosen architecture: **Option B** (RN `ScrollView` is the single source on web; Lenis disabled for home).
+- Why: this removes desync between `window` scroll and inner RN web scroll, which was causing sticky thresholds and reveal triggers to drift.
+- Implementation:
+  - `HomeScreenBody` now updates `scrollY` and `setScrollYStore` from one `ScrollView.onScroll` path on all platforms.
+  - No Lenis initialization in home web path.
+  - Pull-to-refresh invalidates cached orders first, then refetches.
+  - Dev-only HUD (`Platform.OS === "web" && __DEV__`) shows live `scrollY` in the corner for threshold debugging.
+- Verified behavior targets:
+  - Search header blur threshold engages consistently.
+  - Sticky add-to-bag trigger remains stable.
+  - Section reveal timing is no longer tied to a second scroll system.
 
 ## Section Ownership (Copy + UX)
 
 - Home (`HomeScreenBody` path):
   - Fast decision surfaces (search, reorder, categories, deals, catalog, offers)
   - Short transactional copy and action CTAs
-  - Trust summary only (single compact banner + footer pills)
+  - Trust summary only in footer pills (no mid-page trust strip)
 - About / brand storytelling:
   - Extended trust narrative, long-form brand claims, mission copy
   - Deep testimonials and heritage storytelling (not in the home commerce path)
@@ -43,5 +57,6 @@ flowchart TD
 ## Current Render Policy Checks
 
 - Home render excludes `HOME_STATS_STRIP` and `HOME_TESTIMONIALS`.
-- Home includes `HOME_TRUST_BANNER` and `HomeOffersBand`.
+- Home no longer renders `HOME_TRUST_BANNER` in the main feed.
+- Home includes `HomeOffersBand` above footer.
 - Deals and reorder labels remain short/action-oriented.

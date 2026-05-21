@@ -26,13 +26,14 @@ import {
   paymentTabToBackend,
 } from "../components/cart/CartCheckoutPanels";
 import CartItem from "../components/cart/CartItem";
-import CartItemThumb from "../components/cart/CartItemThumb";
 import Screen from "../components/ui/Screen";
 import SectionHeader from "../components/ui/SectionHeader";
 import Button from "../components/ui/Button";
 import Card from "../components/ui/Card";
 import Input from "../components/ui/Input";
 import EmptyState from "../components/ui/EmptyState";
+import Checkbox from "../components/ui/Checkbox";
+import ProductCard from "../components/ProductCard";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -40,7 +41,7 @@ import {
   fetchAvailableCouponsRequest,
   validateCouponRequest,
 } from "../services/orderService";
-import { getCurrentAddressFromGPS } from "../services/locationService";
+import { getAddressFromPincode, getCurrentAddressFromGPS } from "../services/locationService";
 import { useTheme } from "../context/ThemeContext";
 import {
   adminScrollPaddingBottom,
@@ -60,6 +61,7 @@ import {
   CART_DRAWER_UI,
   CART_UI,
   CHECKOUT_UI,
+  SUPPORT_EMAIL_DISPLAY,
   fillPlaceholders,
 } from "../content/appContent";
 import {
@@ -68,6 +70,10 @@ import {
   openRazorpayCheckout,
   verifyOrderPayment,
 } from "../services/paymentService";
+import { invalidateMyOrdersCache } from "../services/orderCache";
+import { FREE_SHIPPING_PROGRESS_GOAL_INR } from "../constants/cartConstants";
+import { useWishlistOptional } from "../context/WishlistContext";
+import useReducedMotion from "../hooks/useReducedMotion";
 
 const CHECKOUT_MODE_KEY = "@zeevan_cart_checkout_mode_v1";
 const CHECKOUT_DRAFT_KEY = "@zeevan_checkout_draft_v1";
@@ -97,8 +103,8 @@ function postalOk(p) {
 function normalizePaymentTab(rawTab) {
   const value = String(rawTab || "").toLowerCase();
   if (value === "cod") return "cod";
-  if (value === "online" || value === "upi" || value === "cards" || value === "netbanking" || value === "wallet") {
-    return "online";
+  if (value === "upi" || value === "cards" || value === "netbanking" || value === "wallet") {
+    return value;
   }
   return "cod";
 }
@@ -106,6 +112,7 @@ function normalizePaymentTab(rawTab) {
 export default function CartScreen({ navigation, route }) {
   const checkoutMode = route.params?.checkout === true;
   const { cartItems, totalAmount, totalItems, addToCart, removeFromCart, removeLineFromCart, clearCart } = useCart();
+  const wishlist = useWishlistOptional();
   const { isAuthenticated, token, user } = useAuth();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
@@ -138,13 +145,17 @@ export default function CartScreen({ navigation, route }) {
   const [deliveryMethod, setDeliveryMethod] = useState("standard");
   const [openSteps, setOpenSteps] = useState({ contact: true, delivery: false, payment: false });
   const [orderSuccess, setOrderSuccess] = useState(null);
+  const [giftWrap, setGiftWrap] = useState(false);
+  const [giftMessage, setGiftMessage] = useState("");
+  const [pincodeLookupBusy, setPincodeLookupBusy] = useState(false);
+  const reducedMotion = useReducedMotion();
 
   const draftLoadedRef = useRef(false);
   const placingFlowRef = useRef(false);
 
   const paymentMethodForOrder = useMemo(() => paymentTabToBackend(paymentTab), [paymentTab]);
 
-  const deliveryFee = 0;
+  const deliveryFee = totalAmount >= FREE_SHIPPING_PROGRESS_GOAL_INR ? 0 : 49;
   const platformFee = 1.2;
   const discountAmount = Number(appliedCoupon?.discountAmount || 0);
   const payableAmount = Math.max(0, totalAmount + deliveryFee + platformFee - discountAmount);
@@ -238,6 +249,8 @@ export default function CartScreen({ navigation, route }) {
         if (d.note != null) setNote(String(d.note));
         if (d.paymentTab != null) setPaymentTab(normalizePaymentTab(d.paymentTab));
         if (d.deliveryMethod != null) setDeliveryMethod(String(d.deliveryMethod));
+        if (d.giftWrap != null) setGiftWrap(Boolean(d.giftWrap));
+        if (d.giftMessage != null) setGiftMessage(String(d.giftMessage));
       } catch {
         /* noop */
       }
@@ -263,11 +276,13 @@ export default function CartScreen({ navigation, route }) {
           note,
           paymentTab,
           deliveryMethod,
+          giftWrap,
+          giftMessage,
         })
       ).catch(() => {});
     }, 450);
     return () => clearTimeout(t);
-  }, [checkoutMode, fullName, phone, line1, city, state, postalCode, country, note, paymentTab, deliveryMethod]);
+  }, [checkoutMode, fullName, phone, line1, city, state, postalCode, country, note, paymentTab, deliveryMethod, giftWrap, giftMessage]);
 
   useEffect(() => {
     if (placingFlowRef.current) return;
@@ -295,6 +310,31 @@ export default function CartScreen({ navigation, route }) {
       clearTimeout(timer);
     };
   }, [isAuthenticated, token, totalAmount]);
+
+  useEffect(() => {
+    const pin = String(postalCode || "").replace(/\D/g, "");
+    if (pin.length !== 6) return undefined;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        setPincodeLookupBusy(true);
+        const resolved = await getAddressFromPincode(pin);
+        if (cancelled) return;
+        if (resolved.city) setCity(resolved.city);
+        if (resolved.state) setState(resolved.state);
+        if (resolved.country) setCountry(resolved.country);
+        setSuccess(CART_ADDRESS.pincodeFillSuccess);
+      } catch {
+        /* noop */
+      } finally {
+        if (!cancelled) setPincodeLookupBusy(false);
+      }
+    }, 320);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [postalCode]);
 
   useFocusEffect(
     useCallback(() => {
@@ -365,11 +405,6 @@ export default function CartScreen({ navigation, route }) {
 
   const handlePlaceOrder = async () => {
     if (cartItems.length === 0) return;
-    if (paymentTab === "online") {
-      setError(CHECKOUT_UI.paymentOnlineHint);
-      setOpenSteps((prev) => ({ ...prev, payment: true }));
-      return;
-    }
     if (!validateCheckoutFields()) return;
 
     try {
@@ -402,9 +437,11 @@ export default function CartScreen({ navigation, route }) {
         },
         paymentMethod: paymentMethodForOrder,
         couponCode: appliedCoupon?.code || "",
+        note: giftWrap ? `${note?.trim() ? `${note.trim()} | ` : ""}Gift note: ${giftMessage.trim()}` : note,
       });
 
       clearCart();
+      invalidateMyOrdersCache();
 
       const etaCopy = deliveryMethod === "express" ? CHECKOUT_UI.deliveryExpressSub : CHECKOUT_UI.deliveryStandardSub;
 
@@ -439,6 +476,7 @@ export default function CartScreen({ navigation, route }) {
           razorpay_payment_id: p.razorpay_payment_id,
           razorpay_signature: p.razorpay_signature,
         });
+        invalidateMyOrdersCache();
         setOrderSuccess({ id: String(orderId), eta: etaCopy });
         navigation.setParams({ checkout: false });
         await AsyncStorage.setItem(CHECKOUT_MODE_KEY, "0").catch(() => {});
@@ -521,7 +559,9 @@ export default function CartScreen({ navigation, route }) {
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Text style={{ fontFamily: fonts.medium, color: semanticPalette.inkSoft, ...TYPE.bodyLg }}>{CHECKOUT_UI.summaryShipping}</Text>
-        <Text style={{ fontFamily: fonts.semibold, color: semanticPalette.accent, ...TYPE.bodyLg }}>FREE</Text>
+        <Text style={{ fontFamily: fonts.semibold, color: semanticPalette.accent, ...TYPE.bodyLg }}>
+          {deliveryFee === 0 ? "FREE" : formatINR(deliveryFee)}
+        </Text>
       </View>
       {discountAmount > 0 ? (
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
@@ -545,32 +585,34 @@ export default function CartScreen({ navigation, route }) {
       onDecrease={() => removeFromCart(item.id, item.variantLabel)}
       onIncrease={() => addToCart(item)}
       onRemove={() => removeLineFromCart(item.id, item.variantLabel)}
+      onMoveToWishlist={() => {
+        wishlist?.add?.(item.id);
+        removeLineFromCart(item.id, item.variantLabel);
+        setSuccess(CART_UI.movedToWishlist);
+      }}
     />
   );
 
-  const renderAddonsStrip = () => {
+  const renderAddonsStrip = (copy = { overline: CHECKOUT_UI.addonsOverline, title: CHECKOUT_UI.addonsTitle }) => {
     if (upsellProducts.length === 0) return null;
     return (
       <View style={{ marginTop: SPACING.lg }}>
-        <SectionHeader overline={CHECKOUT_UI.addonsOverline} title={CHECKOUT_UI.addonsTitle} />
+        <SectionHeader overline={copy.overline} title={copy.title} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: SPACING.md, paddingVertical: 4 }}>
           {upsellProducts.map((p) => (
-            <Card key={p.id} padding="md" style={{ width: isCompact ? 240 : 260 }}>
-              <View style={{ flexDirection: "row", gap: SPACING.sm }}>
-                <CartItemThumb uri={p.image || ""} width={72} height={72} borderRadius={RADII.sm} semanticPalette={semanticPalette} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ fontFamily: fonts.semibold, fontSize: TYPE.small.fontSize, color: semanticPalette.ink }} numberOfLines={2}>
-                    {p.name}
-                  </Text>
-                  <Text style={{ marginTop: 4, fontFamily: fonts.medium, fontSize: TYPE.caption.fontSize, color: semanticPalette.inkMuted }}>
-                    {formatINR(p.price)}
-                  </Text>
-                  <View style={{ marginTop: SPACING.sm }}>
-                    <Button label={CART_UI.addUpsellCta} variant="secondary" size="sm" onPress={() => addToCart(p)} />
-                  </View>
-                </View>
-              </View>
-            </Card>
+            <View key={p.id} style={{ width: isCompact ? 240 : 260 }}>
+              <ProductCard
+                product={p}
+                compact
+                variant="grid"
+                railHover
+                quantity={0}
+                isOutOfStock={p.inStock === false || Number(p.stockQty || 0) <= 0}
+                onPress={() => navigation.push("Product", { productId: p.id })}
+                onAddToCart={() => addToCart(p)}
+                onRemoveFromCart={() => removeFromCart(p.id)}
+              />
+            </View>
           ))}
         </ScrollView>
       </View>
@@ -619,9 +661,27 @@ export default function CartScreen({ navigation, route }) {
         <Button label={CART_UI.applyCouponCta} variant="secondary" size="md" fullWidth={stackCouponRow} onPress={handleApplyCoupon} />
       </View>
       {appliedCoupon ? (
-        <Text style={{ fontFamily: fonts.medium, fontSize: TYPE.caption.fontSize, color: semanticPalette.success }}>
-          {appliedCoupon.code} applied — saved {formatINR(appliedCoupon.discountAmount || 0)}.
-        </Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: SPACING.sm }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              borderWidth: StyleSheet.hairlineWidth,
+              borderColor: semanticPalette.success,
+              borderRadius: RADII.pill,
+              paddingHorizontal: SPACING.sm,
+              paddingVertical: 6,
+            }}
+          >
+            <Text style={{ fontFamily: fonts.semibold, fontSize: TYPE.caption.fontSize, color: semanticPalette.success }}>
+              {fillPlaceholders(CART_UI.couponAppliedChip, { code: appliedCoupon.code })}
+            </Text>
+            <Pressable onPress={() => setAppliedCoupon(null)} hitSlop={6} accessibilityRole="button" accessibilityLabel="Remove coupon">
+              <Ionicons name="close-outline" size={14} color={semanticPalette.success} />
+            </Pressable>
+          </View>
+        </View>
       ) : null}
     </View>
   );
@@ -657,6 +717,18 @@ export default function CartScreen({ navigation, route }) {
     </Card>
   );
 
+  const giftOptionsCard = (
+    <Card padding="md">
+      <View style={{ gap: SPACING.sm }}>
+        <Checkbox checked={giftWrap} onToggle={() => setGiftWrap((v) => !v)} label={CART_UI.giftWrapLabel} />
+        <Text style={{ fontFamily: fonts.regular, fontSize: TYPE.caption.fontSize, color: semanticPalette.inkMuted }}>
+          {CART_UI.giftWrapHint}
+        </Text>
+        {giftWrap ? <Input label={CART_UI.giftMessageLabel} value={giftMessage} onChangeText={setGiftMessage} multiline /> : null}
+      </View>
+    </Card>
+  );
+
   const placeOrderLabel = fillPlaceholders(CHECKOUT_UI.placeOrderTemplate, { total: formatINR(payableAmount) });
 
   if (!isAuthenticated) {
@@ -686,25 +758,53 @@ export default function CartScreen({ navigation, route }) {
 
   if (orderSuccess) {
     const desc = fillPlaceholders(CHECKOUT_UI.successBody, { id: orderSuccess.id, eta: orderSuccess.eta });
+    const confettiCount = reducedMotion ? 0 : 22;
     return (
       <View style={{ flex: 1, width: "100%", alignSelf: "center", maxWidth: Platform.select({ web: layout.maxContentWidth + 24, default: "100%" }) }}>
-        <Screen navigation={navigation} noScroll contentContainerStyle={{ flex: 1, justifyContent: "center", paddingVertical: SPACING["2xl"] }}>
-          <EmptyState
-            iconName="checkmark-circle"
-            iconColor={semanticPalette.accent}
-            title={CHECKOUT_UI.successTitle}
-            description={desc}
-            ctaLabel={CHECKOUT_UI.trackOrderCta}
-            onCtaPress={() => {
-              setOrderSuccess(null);
-              navigation.navigate("Profile", { screen: ACCOUNT_NESTED.Orders });
-            }}
-            secondaryCtaLabel={CHECKOUT_UI.continueShoppingCta}
-            onSecondaryCtaPress={() => {
-              setOrderSuccess(null);
-              navigation.navigate("Home");
-            }}
-          />
+        <Screen navigation={navigation} title={CHECKOUT_UI.successTitle}>
+          <Card padding="lg" style={{ overflow: "hidden" }}>
+            {confettiCount > 0 ? (
+              <View pointerEvents="none" style={{ ...StyleSheet.absoluteFillObject }}>
+                {Array.from({ length: confettiCount }).map((_, idx) => (
+                  <View
+                    key={`confetti-${idx}`}
+                    style={{
+                      position: "absolute",
+                      left: `${(idx * 17) % 96}%`,
+                      top: `${(idx * 23) % 88}%`,
+                      width: idx % 3 === 0 ? 10 : 6,
+                      height: idx % 2 === 0 ? 10 : 6,
+                      borderRadius: 999,
+                      backgroundColor: idx % 2 === 0 ? semanticPalette.accent : semanticPalette.accentSoft,
+                      opacity: 0.7,
+                    }}
+                  />
+                ))}
+              </View>
+            ) : null}
+            <EmptyState
+              iconName="checkmark-circle"
+              iconColor={semanticPalette.accent}
+              title={CHECKOUT_UI.successTitle}
+              description={desc}
+              ctaLabel={CHECKOUT_UI.trackOrderCta}
+              onCtaPress={() => {
+                setOrderSuccess(null);
+                navigation.navigate("Profile", { screen: ACCOUNT_NESTED.Orders });
+              }}
+              secondaryCtaLabel={CHECKOUT_UI.continueShoppingCta}
+              onSecondaryCtaPress={() => {
+                setOrderSuccess(null);
+                navigation.navigate("Home");
+              }}
+            />
+          </Card>
+          <View style={{ marginTop: SPACING.lg }}>
+            {renderAddonsStrip({
+              overline: CHECKOUT_UI.successRecommendationsOverline,
+              title: CHECKOUT_UI.successRecommendationsTitle,
+            })}
+          </View>
         </Screen>
       </View>
     );
@@ -741,6 +841,7 @@ export default function CartScreen({ navigation, route }) {
                 semanticPalette={semanticPalette}
                 TYPE={TYPE}
                 SPACING={SPACING}
+                contactLine={CHECKOUT_UI.contactLine || `Need help? ${SUPPORT_EMAIL_DISPLAY}`}
               />
               {error ? (
                 <View
@@ -830,19 +931,38 @@ export default function CartScreen({ navigation, route }) {
                       textContentType="name"
                     />
                     <View style={{ height: SPACING.sm }} />
-                    <Input
-                      label={CART_ADDRESS.phoneLabel}
-                      value={phone}
-                      onChangeText={(t) => {
-                        setPhone(t);
-                        clearField("phone");
-                      }}
-                      errorText={fieldErrors.phone}
-                      iconLeft="call-outline"
-                      keyboardType="phone-pad"
-                      autoComplete="tel"
-                      textContentType="telephoneNumber"
-                    />
+                    <View style={{ flexDirection: "row", alignItems: "flex-start", gap: SPACING.sm }}>
+                      <View
+                        style={{
+                          marginTop: 30,
+                          minWidth: 56,
+                          height: 40,
+                          borderRadius: RADII.md,
+                          borderWidth: StyleSheet.hairlineWidth,
+                          borderColor: semanticPalette.line,
+                          alignItems: "center",
+                          justifyContent: "center",
+                          backgroundColor: semanticPalette.surfaceAlt,
+                        }}
+                      >
+                        <Text style={{ fontFamily: fonts.semibold, color: semanticPalette.inkMuted }}>{CART_ADDRESS.phonePrefix}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Input
+                          label={CART_ADDRESS.phoneLabel}
+                          value={phone}
+                          onChangeText={(t) => {
+                            setPhone(String(t || "").replace(/[^\d]/g, "").slice(0, 10));
+                            clearField("phone");
+                          }}
+                          errorText={fieldErrors.phone}
+                          iconLeft="call-outline"
+                          keyboardType="phone-pad"
+                          autoComplete="tel"
+                          textContentType="telephoneNumber"
+                        />
+                      </View>
+                    </View>
                     <View style={{ height: SPACING.sm }} />
                     <Input
                       label={CART_ADDRESS.line1Label}
@@ -895,13 +1015,14 @@ export default function CartScreen({ navigation, route }) {
                           label={CART_ADDRESS.postalCodeLabel}
                           value={postalCode}
                           onChangeText={(t) => {
-                            setPostalCode(t);
+                            setPostalCode(String(t || "").replace(/[^\d]/g, "").slice(0, 6));
                             clearField("postalCode");
                           }}
                           errorText={fieldErrors.postalCode}
                           keyboardType="number-pad"
                           autoComplete="postal-code"
                           textContentType="postalCode"
+                          helperText={pincodeLookupBusy ? "Checking pincode..." : ""}
                         />
                       </View>
                       <View style={{ flex: 1 }}>
@@ -953,7 +1074,7 @@ export default function CartScreen({ navigation, route }) {
                     subtitle={
                       paymentTab === "cod"
                         ? CHECKOUT_UI.paymentTabCod
-                        : `${CHECKOUT_UI.paymentTabOnline} · ${CHECKOUT_UI.paymentOnlineComingSoon}`
+                        : CHECKOUT_UI.paymentTabOnline
                     }
                     expanded={openSteps.payment}
                     onToggle={() => toggleStep("payment")}
@@ -975,6 +1096,7 @@ export default function CartScreen({ navigation, route }) {
                     <View style={{ gap: SPACING.md }}>
                       <Button label={CHECKOUT_UI.editBag} variant="ghost" size="md" fullWidth onPress={exitCheckout} />
                       {summaryCardShell({})}
+                      {giftOptionsCard}
                       <Button
                         label={placeOrderLabel}
                         variant="primary"
@@ -1006,6 +1128,7 @@ export default function CartScreen({ navigation, route }) {
                   >
                     <Button label={CHECKOUT_UI.editBag} variant="ghost" size="md" fullWidth onPress={exitCheckout} />
                     {summaryCardShell({})}
+                    {giftOptionsCard}
                     <Button
                       label={placeOrderLabel}
                       variant="primary"
@@ -1094,7 +1217,12 @@ export default function CartScreen({ navigation, route }) {
                       : { width: "100%" }
                   }
                 >
-                  {cartItems.length > 0 ? summaryCardShell({}) : null}
+                  {cartItems.length > 0 ? (
+                    <View style={{ gap: SPACING.md }}>
+                      {summaryCardShell({})}
+                      {giftOptionsCard}
+                    </View>
+                  ) : null}
                 </View>
               </View>
             </>

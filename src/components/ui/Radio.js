@@ -25,7 +25,7 @@ function RadioBase({ selected = false, onPress, label, disabled = false, style, 
           height: 18,
           borderRadius: 9,
           borderWidth: 1.5,
-          borderColor: selected ? semanticPalette.ink : semanticPalette.line,
+          borderColor: selected ? semanticPalette.accentOnLight : semanticPalette.accent,
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -36,7 +36,7 @@ function RadioBase({ selected = false, onPress, label, disabled = false, style, 
               width: 8,
               height: 8,
               borderRadius: 4,
-              backgroundColor: semanticPalette.ink,
+              backgroundColor: semanticPalette.accent,
             }}
           />
         ) : null}

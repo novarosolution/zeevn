@@ -3,10 +3,10 @@ import { APP_META } from "../content/appContent";
 
 const MANAGED_ATTR = "zeevan-meta";
 const SCHEMA_MANAGED_PREFIX = "zeevan-meta-schema-";
-const FAVICON_16_PATH = "/assets/seo/favicon-16.png";
-const FAVICON_32_PATH = "/assets/seo/favicon-32.png";
-const APPLE_TOUCH_ICON_PATH = "/assets/seo/apple-touch-icon.png";
-const PWA_ICON_512_PATH = "/assets/seo/icon-512.png";
+const FAVICON_16_PATH = "/seo/favicon-16.png";
+const FAVICON_32_PATH = "/seo/favicon-32.png";
+const APPLE_TOUCH_ICON_PATH = "/seo/apple-touch-icon.png";
+const PWA_ICON_512_PATH = "/seo/icon-512.png";
 
 const ROUTE_KEYS = new Set([
   "home",
@@ -39,6 +39,9 @@ function removeManagedTags() {
 
 function appendManaged(tagName, attrs = {}) {
   if (typeof document === "undefined") return null;
+  if (tagName === "link" && attrs.href != null && !String(attrs.href).trim()) {
+    return null;
+  }
   const node = document.createElement(tagName);
   node.setAttribute("data-managed", MANAGED_ATTR);
   Object.entries(attrs).forEach(([k, v]) => {

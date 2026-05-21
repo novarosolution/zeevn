@@ -17,7 +17,7 @@ export default function AboutScreen({ navigation }) {
   const { SPACING, colors, isDark } = useTheme();
 
   return (
-    <Screen navigation={navigation} title="About" breadcrumbLabel="About">
+    <Screen navigation={navigation} breadcrumbLabel="About">
       <EditorialHero kicker={ABOUT_PAGE.kicker} headline={ABOUT_PAGE.headline} subline={ABOUT_PAGE.subline} />
       {ABOUT_PAGE.sections.map((section) => (
         <EditorialTwoColumn
@@ -28,11 +28,17 @@ export default function AboutScreen({ navigation }) {
           imageFirst={section.imageFirst}
         />
       ))}
+      <PressLogosStrip logos={EDITORIAL_PRESS_LOGOS} />
       <HomeStatsStrip c={colors} isDark={isDark} />
       <HomeTestimonials c={colors} isDark={isDark} />
-      <PressLogosStrip logos={EDITORIAL_PRESS_LOGOS} />
-      <View style={{ marginBottom: SPACING["2xl"] }}>
-        <Button label={ABOUT_PAGE.ctaLabel} variant="primary" size="lg" onPress={() => navigation.navigate("Home")} />
+      <View style={{ marginBottom: SPACING["2xl"], alignItems: "center" }}>
+        <Button
+          label={ABOUT_PAGE.ctaLabel}
+          variant="primary"
+          size="lg"
+          fullWidth
+          onPress={() => navigation.navigate("Home")}
+        />
       </View>
       <AppFooter webTight />
     </Screen>

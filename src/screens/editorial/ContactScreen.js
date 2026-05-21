@@ -1,13 +1,13 @@
 import React, { useState } from "react";
 import { Alert, Linking, Platform, Text, useWindowDimensions, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Screen from "../../components/ui/Screen";
 import Button from "../../components/ui/Button";
 import Input from "../../components/ui/Input";
 import AppFooter from "../../components/AppFooter";
-import EditorialHero from "../../components/editorial/EditorialHero";
+import ContactMap from "../../components/editorial/ContactMap";
 import EditorialLink from "../../components/editorial/EditorialLink";
+import WhatsAppFab from "../../components/editorial/WhatsAppFab";
 import { CONTACT_PAGE } from "../../content/editorialContent";
 import { useTheme } from "../../context/ThemeContext";
 import useRouteMeta from "../../hooks/useRouteMeta";
@@ -15,7 +15,6 @@ import { fonts, icon } from "../../theme/tokens";
 
 export default function ContactScreen({ navigation }) {
   useRouteMeta("contact");
-  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { semanticPalette, TYPE, SPACING } = useTheme();
   const stacked = width < 900;
@@ -43,16 +42,32 @@ export default function ContactScreen({ navigation }) {
       });
   };
 
-  const openWhatsApp = () => {
-    if (CONTACT_PAGE.whatsappUrl) void Linking.openURL(CONTACT_PAGE.whatsappUrl);
-  };
-
   return (
     <View style={{ flex: 1 }}>
-      <Screen navigation={navigation} title="Contact" breadcrumbLabel="Contact">
-        <EditorialHero kicker={CONTACT_PAGE.kicker} headline={CONTACT_PAGE.headline} subline={CONTACT_PAGE.subline} />
+      <Screen navigation={navigation} breadcrumbLabel="Contact">
         <View style={{ flexDirection: stacked ? "column" : "row", gap: SPACING["2xl"], marginBottom: SPACING["2xl"] }}>
           <View style={{ flex: 1, gap: SPACING.md, minWidth: 0 }}>
+            <Text
+              style={{
+                fontFamily: TYPE.serifFamily,
+                ...TYPE.h2,
+                color: semanticPalette.ink,
+                marginBottom: SPACING.sm,
+              }}
+            >
+              {CONTACT_PAGE.headline}
+            </Text>
+            <Text
+              style={{
+                fontFamily: fonts.regular,
+                fontSize: TYPE.body.fontSize,
+                lineHeight: TYPE.body.lineHeight * 1.5,
+                color: semanticPalette.inkSoft,
+                marginBottom: SPACING.md,
+              }}
+            >
+              {CONTACT_PAGE.subline}
+            </Text>
             <Input label={CONTACT_PAGE.form.nameLabel} value={name} onChangeText={setName} autoCapitalize="words" />
             <Input
               label={CONTACT_PAGE.form.emailLabel}
@@ -92,31 +107,21 @@ export default function ContactScreen({ navigation }) {
                 {CONTACT_PAGE.addressValue}
               </Text>
             </InfoRow>
+            <ContactMap
+              embedUrl={CONTACT_PAGE.mapEmbedUrl}
+              mapsUrl={CONTACT_PAGE.mapsUrl}
+              label={CONTACT_PAGE.mapOpenLabel}
+            />
           </View>
         </View>
         <AppFooter webTight />
       </Screen>
 
-      {CONTACT_PAGE.whatsappUrl ? (
-        <View
-          pointerEvents="box-none"
-          style={{
-            position: "absolute",
-            right: SPACING.lg,
-            bottom: Math.max(insets.bottom, SPACING.lg) + (Platform.OS === "web" ? 16 : 72),
-            zIndex: 40,
-          }}
-        >
-          <Button
-            label={CONTACT_PAGE.whatsappLabel}
-            variant="primary"
-            size="md"
-            iconLeft={<Ionicons name="logo-whatsapp" size={icon.sm} color={semanticPalette.inkInverse} />}
-            onPress={openWhatsApp}
-            accessibilityLabel={CONTACT_PAGE.whatsappLabel}
-          />
-        </View>
-      ) : null}
+      <WhatsAppFab
+        url={CONTACT_PAGE.whatsappUrl}
+        accessibilityLabel={CONTACT_PAGE.whatsappLabel}
+        bottomOffset={Platform.OS === "web" ? 16 : 72}
+      />
     </View>
   );
 }

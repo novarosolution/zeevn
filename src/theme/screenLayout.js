@@ -3,6 +3,7 @@ import { adminPanel } from "./adminLayout";
 import { ALCHEMY } from "./customerAlchemy";
 import { container, layout, semanticRadius, spacing } from "./tokens";
 import { WEB_HEADER_HEIGHT, WEB_STICKY_TOP_OFFSET } from "./web";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../utils/webViewport";
 
 export const CUSTOMER_PAGE_MAX_WIDTH = Platform.select({ web: layout.maxContentWidth + 24, default: "100%" });
 export const ADMIN_PAGE_MAX_WIDTH = Platform.select({ web: layout.maxContentWidth + 96, default: "100%" });
@@ -225,7 +226,7 @@ export const authScrollContent = {
       paddingTop: customerScrollPaddingTop(),
       paddingBottom: spacing.xxl,
       flexGrow: 1,
-      minHeight: `calc(100dvh - ${customerScrollPaddingTop()}px)`,
+      minHeight: `calc(${APP_VIEWPORT_MIN_HEIGHT} - ${customerScrollPaddingTop()}px)`,
       justifyContent: "center",
     },
     default: {

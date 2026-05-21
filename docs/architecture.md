@@ -98,6 +98,22 @@ Duplicate mounts under `/api/*` exist for deployments that reverse-proxy only `/
 | [audit-2026-05.md](./audit-2026-05.md) | Git hygiene, oversized files, Premium→ui duplication, risk flags |
 | [ui-migration.md](./ui-migration.md) | Screen-by-screen UI primitive migration |
 | [token-violations-baseline.txt](./token-violations-baseline.txt) | Token linter baseline counts |
+| [web-vitals.md](./web-vitals.md) | Core Web Vitals targets, hero/font/bundle optimizations |
+| [observability.md](./observability.md) | Sentry, error boundaries, `/health`, RUM |
+| [smoke-test.md](./smoke-test.md) | Pre-deploy manual checklist |
+| [known-issues.md](./known-issues.md) | Platform edge cases (Android Chrome viewport, etc.) |
+| [a11y-report.json](./a11y-report.json) | Latest axe smoke (6 routes) |
+| [perf/final-summary.json](./perf/final-summary.json) | Lighthouse desktop/mobile + bundle snapshot |
+
+## Performance & observability (May 2026)
+
+- **Code-splitting:** `lazyOpsScreens.web.js`, `lazyCustomerScreens.web.js`, dynamic GSAP/Leaflet.
+- **LCP:** WebP hero srcset in `public/assets/hero/`, preload in `post-export-web.js` + `webHead.web.js`.
+- **Fonts:** Self-hosted woff2, `font-display: swap`, preload Inter 400/500 + Playfair 600.
+- **Images:** Cloudinary product URLs use `f_webp` via `buildResponsiveImageSources()`.
+- **RUM:** `web-vitals` → `reportWebVitals.web.js` (console dev, optional `EXPO_PUBLIC_WEB_VITALS_ENDPOINT`).
+- **Errors:** `AppErrorBoundary` + per-route `RouteErrorBoundary`; Sentry client (`src/observability/sentry.web.js`) + backend (`backend/src/observability/sentry.js`).
+- **Health:** `GET /health` and `GET /api/health` report Mongo + integration readiness.
 | [ui-overhaul-baseline-report.md](./ui-overhaul-baseline-report.md) | Route-to-shell matrix |
 
 ## Security notes

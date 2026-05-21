@@ -1,5 +1,5 @@
-/**
- * @deprecated Use `ConfirmDialog` from `components/ui` (or `@/components/ui`) instead.
- * This shim exists for backward compatibility during migration.
- */
-export { default } from "./ConfirmDialog";
+/** @deprecated Use `ConfirmDialog` from `@/components/ui`. */
+import ConfirmDialog from "./ConfirmDialog";
+
+const PremiumConfirmDialog = ConfirmDialog;
+export default PremiumConfirmDialog;

@@ -9,13 +9,13 @@
   "lang": "en-IN",
   "icons": [
     {
-      "src": "/assets/seo/icon-512.png",
+      "src": "/seo/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/assets/seo/apple-touch-icon.png",
+      "src": "/seo/apple-touch-icon.png",
       "sizes": "180x180",
       "type": "image/png"
     }

@@ -6,6 +6,7 @@ import { fonts, icon } from "../../theme/tokens";
 import { inputOutlineWeb } from "../../theme/screenLayout";
 import { useTheme } from "../../context/ThemeContext";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import { nativeDriverEnabled } from "../../utils/motion";
 import {
   InputFieldShell,
   textInputWebStyle,
@@ -125,17 +126,17 @@ function InputBase({
         Animated.timing(eyeHiddenOpacity, {
           toValue: hidden ? 1 : 0,
           duration: FOCUS_MS,
-          useNativeDriver: true,
+          useNativeDriver: nativeDriverEnabled,
         }),
         Animated.timing(eyeVisibleOpacity, {
           toValue: hidden ? 0 : 1,
           duration: FOCUS_MS,
-          useNativeDriver: true,
+          useNativeDriver: nativeDriverEnabled,
         }),
         Animated.timing(eyeRotate, {
           toValue: hidden ? 0 : 1,
           duration: FOCUS_MS,
-          useNativeDriver: true,
+          useNativeDriver: nativeDriverEnabled,
         }),
       ]).start();
     }
@@ -154,12 +155,12 @@ function InputBase({
         Animated.timing(errorOpacity, {
           toValue: 1,
           duration: FOCUS_MS,
-          useNativeDriver: true,
+          useNativeDriver: nativeDriverEnabled,
         }),
         Animated.timing(errorTranslate, {
           toValue: 0,
           duration: FOCUS_MS,
-          useNativeDriver: true,
+          useNativeDriver: nativeDriverEnabled,
         }),
       ]).start();
     } else {
@@ -251,7 +252,7 @@ function InputBase({
           minWidth: 0,
           paddingVertical: Platform.OS === "ios" ? 10 : 8,
           fontFamily: fonts.regular,
-          fontSize: TYPE.body.fontSize,
+          fontSize: Platform.select({ web: Math.max(16, Number(TYPE.body.fontSize || 16)), default: TYPE.body.fontSize }),
           lineHeight: TYPE.body.lineHeight,
           color: semanticPalette.ink,
           minHeight: 38,

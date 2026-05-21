@@ -1,17 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Appearance, Platform, View } from "react-native";
+import { Appearance, Platform, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer, createNavigationContainerRef } from "@react-navigation/native";
 import * as ExpoLinking from "expo-linking";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold } from "@expo-google-fonts/inter";
-import {
-  PlayfairDisplay_600SemiBold,
-  PlayfairDisplay_700Bold,
-  PlayfairDisplay_400Regular_Italic,
-} from "@expo-google-fonts/playfair-display";
+import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { isRunningInExpoGo } from "expo";
 import { CartDrawerProvider } from "./src/context/CartDrawerContext";
@@ -25,7 +20,8 @@ import { darkColors, lightColors } from "./src/theme/tokens";
 import { applyWebPremiumChrome, webRootStyle } from "./src/theme/web";
 import { registerProductCacheServiceWorker } from "./src/utils/registerServiceWorker.web";
 import { initWebVitalsReporting } from "./src/utils/reportWebVitals";
-import { injectSelfHostedFontFaces } from "./src/utils/webHead";
+import { enforceMobileViewportMeta, injectSelfHostedFontFaces, preloadCriticalWebFonts } from "./src/utils/webHead";
+import { installWebViewportWorkarounds } from "./src/utils/webViewport";
 import {
   LEGACY_JEEVAN_STARTUP_WELCOME_KEY,
   LEGACY_STARTUP_WELCOME_KEY,
@@ -35,6 +31,11 @@ import AppErrorBoundary from "./src/components/errors/AppErrorBoundary";
 import OfflineBanner from "./src/components/errors/OfflineBanner";
 import ConnectivityBridge from "./src/context/ConnectivityBridge";
 import { setSentryRoute } from "./src/observability/sentry";
+import { nativeAppFonts } from "./src/config/nativeFontConfig";
+import { DEV_DEBUG_UI } from "./src/content/appContent";
+import { configureNetInfo } from "./src/utils/configureNetInfo";
+
+configureNetInfo();
 
 const STARTUP_WELCOME_KEY = "@zeevan_startup_welcome_shown";
 
@@ -55,6 +56,41 @@ const linking = {
         path: "search",
         parse: {
           q: (value) => (value == null ? "" : String(value)),
+          category: (value) => (value == null ? "" : String(value)),
+          categoryLabel: (value) => (value == null ? "" : String(value)),
+          sort: (value) => String(value || "featured"),
+          priceMin: (value) => {
+            const n = Number(value);
+            return Number.isFinite(n) ? n : undefined;
+          },
+          priceMax: (value) => {
+            const n = Number(value);
+            return Number.isFinite(n) ? n : undefined;
+          },
+          cats: (value) => String(value || ""),
+          types: (value) => String(value || ""),
+          brands: (value) => String(value || ""),
+          sizes: (value) => String(value || ""),
+          colors: (value) => String(value || ""),
+          rating: (value) => {
+            const n = Number(value);
+            return Number.isFinite(n) ? n : undefined;
+          },
+          discount: (value) => value === "1" || value === true,
+          stock: (value) => value === "1" || value === true,
+        },
+        stringify: {
+          sort: (value) => (value && value !== "featured" ? String(value) : undefined),
+          priceMin: (value) => (value != null && value !== "" ? String(value) : undefined),
+          priceMax: (value) => (value != null && value !== "" ? String(value) : undefined),
+          cats: (value) => (value ? String(value) : undefined),
+          types: (value) => (value ? String(value) : undefined),
+          brands: (value) => (value ? String(value) : undefined),
+          sizes: (value) => (value ? String(value) : undefined),
+          colors: (value) => (value ? String(value) : undefined),
+          rating: (value) => (value != null ? String(value) : undefined),
+          discount: (value) => (value ? "1" : undefined),
+          stock: (value) => (value ? "1" : undefined),
         },
       },
       Product: "product/:productId",
@@ -94,6 +130,10 @@ const linking = {
       Settings: "settings",
       ManageAddress: "address",
       Support: "support",
+      Reviews: "reviews",
+      QualityInfo: "quality",
+      ProcessInfo: "process",
+      DeliveryInfo: "delivery",
       About: "about",
       Contact: "contact",
       Faq: "faq",
@@ -119,8 +159,15 @@ const linking = {
       AdminNotifications: "admin/notifications",
       AdminAnalytics: "admin/analytics",
       AdminCoupons: "admin/coupons",
+      AdminRewards: "admin/rewards",
       AdminSupport: "admin/support",
       AdminHomeView: "admin/home-view",
+      DevDebug: {
+        path: "dev-debug",
+        parse: {
+          key: (value) => String(value || ""),
+        },
+      },
     },
   },
 };
@@ -150,14 +197,79 @@ setupNotificationHandlerIfSupported();
 
 function WebBodySync() {
   const { colors, isDark } = useTheme();
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return undefined;
+    injectSelfHostedFontFaces();
+    preloadCriticalWebFonts();
+    enforceMobileViewportMeta();
+    const cleanupViewport = installWebViewportWorkarounds();
+    registerProductCacheServiceWorker();
+    initWebVitalsReporting();
+    return () => cleanupViewport?.();
+  }, []);
+
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return;
     applyWebPremiumChrome(isDark, colors.background);
-    injectSelfHostedFontFaces();
-    registerProductCacheServiceWorker();
-    initWebVitalsReporting();
   }, [colors.background, isDark]);
+
   return null;
+}
+
+function WebDebugHud() {
+  const [metrics, setMetrics] = useState(null);
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof window === "undefined" || !__DEV__) return undefined;
+    const params = new URLSearchParams(window.location.search || "");
+    if (params.get("debug") !== "1") return undefined;
+    let rafId = 0;
+    let frames = 0;
+    let lastSampleAt = performance.now();
+    const loop = () => {
+      frames += 1;
+      const now = performance.now();
+      if (now - lastSampleAt >= 1000) {
+        const vv = window.visualViewport;
+        setMetrics({
+          fps: frames,
+          scrollY: Math.round(window.scrollY || 0),
+          inner: `${window.innerWidth}x${window.innerHeight}`,
+          viewport: vv ? `${Math.round(vv.width)}x${Math.round(vv.height)}` : "n/a",
+        });
+        frames = 0;
+        lastSampleAt = now;
+      }
+      rafId = window.requestAnimationFrame(loop);
+    };
+    rafId = window.requestAnimationFrame(loop);
+    return () => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  if (!metrics) return null;
+  return (
+    <View
+      style={{
+        position: "fixed",
+        top: 10,
+        right: 10,
+        zIndex: 100000,
+        borderRadius: 10,
+        backgroundColor: "rgba(0,0,0,0.72)",
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        pointerEvents: "none",
+      }}
+    >
+      <Text style={{ color: "#FFFFFF", fontSize: 11 }}>{`${DEV_DEBUG_UI.hudFps}: ${metrics.fps}`}</Text>
+      <Text style={{ color: "#FFFFFF", fontSize: 11 }}>{`${DEV_DEBUG_UI.hudScroll}: ${metrics.scrollY}`}</Text>
+      <Text style={{ color: "#FFFFFF", fontSize: 11 }}>{`${DEV_DEBUG_UI.hudWindow}: ${metrics.inner}`}</Text>
+      <Text style={{ color: "#FFFFFF", fontSize: 11 }}>{`${DEV_DEBUG_UI.hudViewport}: ${metrics.viewport}`}</Text>
+    </View>
+  );
 }
 
 function ThemedStatusBar() {
@@ -187,6 +299,7 @@ function AppNavigationShell() {
           setSentryRoute(active);
         }}
       >
+        <WebDebugHud />
         <CartDrawerProvider navigationRef={navigationRef}>
           <AppNavigator navigationRef={navigationRef} navigationReady={navigationReady} />
         </CartDrawerProvider>
@@ -196,16 +309,7 @@ function AppNavigationShell() {
 }
 
 export default function App() {
-  const [nativeFontsLoaded, nativeFontError] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    PlayfairDisplay_600SemiBold,
-    PlayfairDisplay_700Bold,
-    PlayfairDisplay_400Regular_Italic,
-  });
+  const [nativeFontsLoaded, nativeFontError] = useFonts(nativeAppFonts);
   const [fontLoadTimeoutReached, setFontLoadTimeoutReached] = useState(false);
   const fontsLoaded = Platform.OS === "web" ? true : nativeFontsLoaded || Boolean(nativeFontError) || fontLoadTimeoutReached;
 

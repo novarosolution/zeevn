@@ -6,22 +6,32 @@ import AuthGateShell from "../components/AuthGateShell";
 import WebAppHeader from "../components/WebAppHeader";
 import PageTransition from "../components/motion/PageTransition";
 import HomeScreen from "../screens/HomeScreen";
-import ProductScreen from "../screens/ProductScreen";
-import CategoriesScreen from "../screens/CategoriesScreen";
-import TrustInfoScreen from "../screens/TrustInfoScreen";
-import ReviewsScreen from "../screens/ReviewsScreen";
-import CartScreen from "../screens/CartScreen";
-import LoginScreen from "../screens/LoginScreen";
-import RegisterScreen from "../screens/RegisterScreen";
-import ForgotPasswordScreen from "../screens/ForgotPasswordScreen";
-import ResetPasswordScreen from "../screens/ResetPasswordScreen";
-import VerifyEmailScreen from "../screens/VerifyEmailScreen";
-import NotificationsScreen from "../screens/NotificationsScreen";
-import RedeemRewardsScreen from "../screens/RedeemRewardsScreen";
-import AccountNavigator from "./AccountNavigator";
+import {
+  LazyAboutScreen,
+  LazyAccountNavigator,
+  LazyBlogIndexScreen,
+  LazyBlogPostScreen,
+  LazyCartScreen,
+  LazyCategoriesScreen,
+  LazyContactScreen,
+  LazyDevDebugScreen,
+  LazyFaqScreen,
+  LazyForgotPasswordScreen,
+  LazyLoginScreen,
+  LazyNotFoundScreen,
+  LazyNotificationsScreen,
+  LazyPolicyScreen,
+  LazyProductScreen,
+  LazyRedeemRewardsScreen,
+  LazyRegisterScreen,
+  LazyResetPasswordScreen,
+  LazyReviewsScreen,
+  LazySearchScreen,
+  LazySupportScreen,
+  LazyTrustInfoScreen,
+  LazyVerifyEmailScreen,
+} from "./lazyCustomerScreens";
 import { ACCOUNT_NESTED } from "./accountRoutes";
-import SearchScreen from "../screens/SearchScreen";
-import SupportScreen from "../screens/SupportScreen";
 import {
   LazyAdminAddProductScreen,
   LazyAdminAnalyticsScreen,
@@ -37,16 +47,10 @@ import {
   LazyAdminUsersScreen,
   LazyDeliveryDashboardScreen,
 } from "./lazyOpsScreens";
-import AboutScreen from "../screens/editorial/AboutScreen";
-import ContactScreen from "../screens/editorial/ContactScreen";
-import FaqScreen from "../screens/editorial/FaqScreen";
-import PolicyScreen from "../screens/editorial/PolicyScreen";
-import BlogIndexScreen from "../screens/editorial/BlogIndexScreen";
-import BlogPostScreen from "../screens/editorial/BlogPostScreen";
-import NotFoundScreen from "../screens/NotFoundScreen";
 import { useAuth } from "../context/AuthContext";
 import SessionExpiryRedirect from "./SessionExpiryRedirect";
 import { withRouteErrorBoundary } from "../components/errors/RouteErrorBoundary";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../utils/webViewport";
 
 const Stack = createNativeStackNavigator();
 
@@ -129,39 +133,40 @@ const RedirectManageAddress = createAccountRedirect(ACCOUNT_NESTED.Addresses);
 const RedirectEditProfile = createAccountRedirect(ACCOUNT_NESTED.AccountProfile);
 const RedirectSettings = createAccountRedirect(ACCOUNT_NESTED.AccountProfile);
 
-const WrappedLogin = withPageTransition(LoginScreen);
-const WrappedRegister = withPageTransition(RegisterScreen);
-const WrappedForgotPassword = withPageTransition(ForgotPasswordScreen);
-const WrappedResetPassword = withPageTransition(ResetPasswordScreen);
-const WrappedVerifyEmail = withPageTransition(VerifyEmailScreen);
+const WrappedLogin = withPageTransition(LazyLoginScreen);
+const WrappedRegister = withPageTransition(LazyRegisterScreen);
+const WrappedForgotPassword = withPageTransition(LazyForgotPasswordScreen);
+const WrappedResetPassword = withPageTransition(LazyResetPasswordScreen);
+const WrappedVerifyEmail = withPageTransition(LazyVerifyEmailScreen);
 const WrappedHome = withPageTransition(HomeScreen);
-const WrappedSearch = withPageTransition(SearchScreen);
-const WrappedProduct = withPageTransition(ProductScreen);
-const WrappedCategories = withPageTransition(CategoriesScreen);
-const WrappedReviews = withPageTransition(ReviewsScreen);
-const WrappedQualityInfo = withPageTransition((props) => <TrustInfoScreen {...props} topic="quality" />);
-const WrappedProcessInfo = withPageTransition((props) => <TrustInfoScreen {...props} topic="process" />);
-const WrappedDeliveryInfo = withPageTransition((props) => <TrustInfoScreen {...props} topic="delivery" />);
-const WrappedAbout = withPageTransition(AboutScreen);
-const WrappedContact = withPageTransition(ContactScreen);
-const WrappedFaq = withPageTransition(FaqScreen);
-const WrappedPrivacy = withPageTransition(PolicyScreen);
-const WrappedTerms = withPageTransition(PolicyScreen);
-const WrappedShippingPolicy = withPageTransition(PolicyScreen);
-const WrappedReturnsPolicy = withPageTransition(PolicyScreen);
-const WrappedBlog = withPageTransition(BlogIndexScreen);
-const WrappedBlogPost = withPageTransition(BlogPostScreen);
-const WrappedNotFound = withPageTransition(NotFoundScreen);
+const WrappedSearch = withPageTransition(LazySearchScreen);
+const WrappedProduct = withPageTransition(LazyProductScreen);
+const WrappedCategories = withPageTransition(LazyCategoriesScreen);
+const WrappedReviews = withPageTransition(LazyReviewsScreen);
+const WrappedQualityInfo = withPageTransition((props) => <LazyTrustInfoScreen {...props} topic="quality" />);
+const WrappedProcessInfo = withPageTransition((props) => <LazyTrustInfoScreen {...props} topic="process" />);
+const WrappedDeliveryInfo = withPageTransition((props) => <LazyTrustInfoScreen {...props} topic="delivery" />);
+const WrappedAbout = withPageTransition(LazyAboutScreen);
+const WrappedContact = withPageTransition(LazyContactScreen);
+const WrappedDevDebug = withPageTransition(LazyDevDebugScreen);
+const WrappedFaq = withPageTransition(LazyFaqScreen);
+const WrappedPrivacy = withPageTransition(LazyPolicyScreen);
+const WrappedTerms = withPageTransition(LazyPolicyScreen);
+const WrappedShippingPolicy = withPageTransition(LazyPolicyScreen);
+const WrappedReturnsPolicy = withPageTransition(LazyPolicyScreen);
+const WrappedBlog = withPageTransition(LazyBlogIndexScreen);
+const WrappedBlogPost = withPageTransition(LazyBlogPostScreen);
+const WrappedNotFound = withPageTransition(LazyNotFoundScreen);
 
-const ProtectedCart = withAuthGuard(CartScreen);
-const ProtectedProfile = withAuthGuard(AccountNavigator);
+const ProtectedCart = withAuthGuard(LazyCartScreen);
+const ProtectedProfile = withAuthGuard(LazyAccountNavigator);
 const ProtectedRedirectMyOrders = withAuthGuard(RedirectMyOrders);
 const ProtectedRedirectManageAddress = withAuthGuard(RedirectManageAddress);
 const ProtectedRedirectEditProfile = withAuthGuard(RedirectEditProfile);
 const ProtectedRedirectSettings = withAuthGuard(RedirectSettings);
-const ProtectedNotifications = withAuthGuard(NotificationsScreen);
-const ProtectedRedeemRewards = withAuthGuard(RedeemRewardsScreen);
-const ProtectedSupport = withAuthGuard(SupportScreen);
+const ProtectedNotifications = withAuthGuard(LazyNotificationsScreen);
+const ProtectedRedeemRewards = withAuthGuard(LazyRedeemRewardsScreen);
+const ProtectedSupport = withAuthGuard(LazySupportScreen);
 /** Auth only — role is checked inside the screen after a fresh profile fetch (avoids stale cache + wrong redirect). */
 const ProtectedDeliveryDashboard = withAuthGuard(LazyDeliveryDashboardScreen);
 const ProtectedAdminDashboard = withRoleGuard(LazyAdminDashboardScreen, (user) => Boolean(user?.isAdmin));
@@ -231,6 +236,7 @@ export default function AppNavigator({ navigationRef, navigationReady = false })
         <Stack.Screen name="DeliveryInfo" component={WrappedDeliveryInfo} />
         <Stack.Screen name="About" component={WrappedAbout} />
         <Stack.Screen name="Contact" component={WrappedContact} />
+        <Stack.Screen name="DevDebug" component={WrappedDevDebug} />
         <Stack.Screen name="Faq" component={WrappedFaq} />
         <Stack.Screen name="Privacy" component={WrappedPrivacy} />
         <Stack.Screen name="Terms" component={WrappedTerms} />
@@ -284,7 +290,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     ...Platform.select({
-      web: { minHeight: "100dvh", height: "100%" },
+      web: { minHeight: APP_VIEWPORT_MIN_HEIGHT, height: "100%" },
       default: {},
     }),
   },

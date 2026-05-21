@@ -1,76 +1,84 @@
 # Home Redesign - May 2026
 
-This report captures the final sweep for the home redesign (Blinkit-density, Zeevan-finish).
+This report captures the latest full-pass home update and verification run.
 
-## Screenshots
+## Screenshots (Top + Mid + Bottom)
 
-### Before (reference placeholders)
+Legacy baseline:
 
-- Before screenshots were not present in this workspace snapshot.
-- Add archived "before" captures here when available.
+- iPhone top: `docs/images/home-redesign-2026-05/iphone-top.png`
+- iPhone mid: `docs/images/home-redesign-2026-05/iphone-mid.png`
+- Tablet top: `docs/images/home-redesign-2026-05/tablet-top.png`
+- Tablet mid: `docs/images/home-redesign-2026-05/tablet-mid.png`
+- Desktop top: `docs/images/home-redesign-2026-05/desktop-top.png`
+- Desktop mid: `docs/images/home-redesign-2026-05/desktop-mid.png`
 
-### After
+Polish pass (`2026-05-20`):
 
-- iPhone - top: `docs/images/home-redesign-2026-05/iphone-top.png`
-- iPhone - mid-scroll: `docs/images/home-redesign-2026-05/iphone-mid.png`
-- iPhone - bottom: `docs/images/home-redesign-2026-05/iphone-bottom.png`
-- Tablet: `docs/images/home-redesign-2026-05/tablet.png`
-- Desktop: `docs/images/home-redesign-2026-05/desktop.png`
+- iPhone 14 top: `docs/home-redesign-screenshots/2026-05-20/iphone-14-top.png`
+- iPhone 14 mid: `docs/home-redesign-screenshots/2026-05-20/iphone-14-mid.png`
+- iPhone 14 bottom: `docs/home-redesign-screenshots/2026-05-20/iphone-14-bottom.png`
+- iPad top: `docs/home-redesign-screenshots/2026-05-20/ipad-top.png`
+- iPad mid: `docs/home-redesign-screenshots/2026-05-20/ipad-mid.png`
+- iPad bottom: `docs/home-redesign-screenshots/2026-05-20/ipad-bottom.png`
+- Desktop top: `docs/home-redesign-screenshots/2026-05-20/desktop-top.png`
+- Desktop mid: `docs/home-redesign-screenshots/2026-05-20/desktop-mid.png`
+- Desktop bottom: `docs/home-redesign-screenshots/2026-05-20/desktop-bottom.png`
 
-## Final Checks
+## Verification
 
-- `npm run lint`: PASS (0 errors, warnings present in unrelated areas)
-- `npm run test:a11y`: FAIL (script missing in `package.json`)
-- `npm run check:contrast`: FAIL (script missing in `package.json`)
-- `npm run typecheck`: FAIL (script missing in `package.json`)
-- `npx tsc --noEmit` fallback: FAIL (`my-app` template TS path/module errors)
+- `npm run lint`: PASS
+- `npm run export:web`: PASS
 
-## Home Content Tracker Verification
+## Lighthouse (Exported Build - Post Polish)
 
-- `HOME_STATS_STRIP` removed from home render: CONFIRMED (not rendered in `HomeScreenBody`)
-- `HOME_TESTIMONIALS` removed from home render: CONFIRMED (not rendered in `HomeScreenBody`)
-- `HOME_TRUST_BANNER` added: CONFIRMED (inline trust banner in `HomeScreenBody`)
-- `HOME_OFFERS_BAND` added: CONFIRMED (`HomeOffersBand` section above footer)
-- `HOME_REORDER` copy norm: CONFIRMED (`Order again`, `Your usual basket`)
-- `HOME_DEALS_RAIL` copy norm: CONFIRMED (short action copy: `Deals`, `See all deals`)
+Run target: static export served via `serve`, audited with `npx lighthouse`.
 
-## Lighthouse + Web Vitals
-
-Run target: static production build (`expo export`) served locally via `serve`.
-
-- Performance: **84**
-- Accessibility: **100**
+- Performance: **50** (desktop preset: **82**)
+- Accessibility: **91**
 - Best Practices: **96**
-- SEO: **82**
-- LCP: **2649 ms**
-- FCP: **349 ms**
-- TBT: **16 ms**
-- CLS: **0.0059**
+- SEO: **92**
+- LCP: **13199 ms** (desktop preset: **2908 ms**)
+- FCP: **3603 ms** (desktop preset: **888 ms**)
+- TBT: **406 ms** (desktop preset: **11 ms**)
+- CLS: **0.0097**
 
-Threshold check requested:
+Threshold checks:
 
-- Performance >= 85: **NOT MET** (missed by 1 point in repeated runs)
-- Accessibility >= 95: **MET**
+- Performance >= 85: **NOT MET**
+- Accessibility >= 95: **NOT MET**
 
-LCP source verification:
+Notes:
 
-- Web LCP image preload is configured via `src/constants/heroLcp.web.js` and `src/utils/webHead.web.js`.
-- Lighthouse "largest-contentful-paint-element" audit is currently returning `error` due trace gatherer issue, so element attribution is not emitted in this run.
-- Runtime web-vitals logging is active (`src/utils/reportWebVitals.web.js`); observed logs include TTFB/FCP in headless capture.
+- Home web bundle remains heavy (`_expo/static/js/web/index-*.js` ~7.9 MB combined), which dominates cold-load lighthouse metrics.
+- Performance target held below threshold after polish; no new hero/visual regressions were introduced, but JavaScript execution cost remains the dominant blocker.
 
-## Move / Remove / Rename / Add Checklist
+## Content + Composition Tracker
 
-- Removed from home flow:
-  - Stats strip section in home render path
-  - Testimonials section in home render path
-  - Legacy multi-band trust/stats/testimonials stack before footer
-- Added to home flow:
-  - Deals rail below hero
-  - Single offers band above footer
-  - Footer inline trust pills
-  - Inline ATC morph in product cards
-- Tightened:
-  - Home section spacing rhythm
-  - Catalog card density and typography
-  - Home header speed/access pattern
-  - Palette hardening to brass/navy/red usage rules
+- `HOME_STATS_STRIP` rendered on home: **NO**
+- `HOME_TESTIMONIALS` rendered on home: **NO**
+- `HOME_TRUST_BANNER` rendered on home: **NO**
+- `HOME_OFFERS_BAND` rendered on home: **YES**
+- `HOME_REORDER_STRIP` copy normalized: **YES**
+- `HOME_DEALS_RAIL` copy normalized: **YES**
+
+## Files Updated In This Pass
+
+- `src/screens/home/HomeScreenBody.js`
+- `src/web/lenis.ts`
+- `src/theme/web.js`
+- `src/screens/home/hooks/useCartFeedback.js`
+- `src/components/home/HomeMicroBar.js`
+- `src/components/home/HomeSearchHeader.js`
+- `src/components/home/HomeDealsRail.js`
+- `src/components/home/HomeReorderStrip.js`
+- `src/components/home/HomeOffersBand.js`
+- `src/components/home/HomeCategoryGrid.js`
+- `src/components/home/HomeMarketingHero.js`
+- `src/components/home/HomePageFooter.js`
+- `src/components/productCard/ProductCardInner.js`
+- `src/components/productCard/productCardStyles.js`
+- `src/components/ui/SectionHeader.js`
+- `src/content/appContent.js`
+- `scripts/capture-home-screenshots.mjs`
+- `docs/home-redesign-2026-05.md`

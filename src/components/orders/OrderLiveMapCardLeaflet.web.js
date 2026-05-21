@@ -3,7 +3,6 @@ import { ActivityIndicator, Linking, Pressable, StyleSheet, Text, View } from "r
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
 import { MapContainer, Marker, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import { useTheme } from "../../context/ThemeContext";
 import { ORDER_LIVE_TRACKING } from "../../content/appContent";
@@ -15,6 +14,9 @@ import Card from "../ui/Card";
 import Button from "../ui/Button";
 import SectionHeader from "../ui/SectionHeader";
 import { openMapsDirections, POLL_MS, STALE_MS } from "./orderLiveMapShared";
+
+const LEAFLET_STYLE_ID = "zv-leaflet-style";
+const LEAFLET_STYLE_HREF = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
 
 function hasDestinationSummary(dest) {
   if (!dest || typeof dest !== "object") return false;
@@ -199,6 +201,19 @@ export default function OrderLiveMapCard({ orderId }) {
   const [loading, setLoading] = useState(true);
   const [routeCoords, setRouteCoords] = useState(null);
   const lastDrivingFetchRef = useRef(0);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    let link = document.getElementById(LEAFLET_STYLE_ID);
+    if (!link) {
+      link = document.createElement("link");
+      link.id = LEAFLET_STYLE_ID;
+      link.rel = "stylesheet";
+      link.href = LEAFLET_STYLE_HREF;
+      document.head.appendChild(link);
+    }
+    return undefined;
+  }, []);
 
   useFocusEffect(
     useCallback(() => {

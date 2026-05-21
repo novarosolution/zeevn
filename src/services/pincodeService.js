@@ -12,28 +12,9 @@ function formatDeliveryDate(date) {
   }
 }
 
-function mockServiceability(digits) {
-  const last = Number(digits.slice(-1));
-  if (last === 0) {
-    return {
-      serviceable: false,
-      messageKey: "notServiceable",
-    };
-  }
-  const delivers = new Date();
-  delivers.setDate(delivers.getDate() + (last % 4) + 2);
-  return {
-    serviceable: true,
-    deliversByLabel: formatDeliveryDate(delivers),
-    dispatchNoteKey: "dispatchWindow",
-    dispatchHours: 4,
-    dispatchMinutes: 12,
-  };
-}
-
 /**
  * Check whether a 6-digit pincode is serviceable.
- * Wire to `GET /delivery/pincode/:pin` when the backend route exists.
+ * Calls `GET /delivery/pincode/:pin`.
  *
  * @param {string} pincode
  * @returns {Promise<{
@@ -52,24 +33,19 @@ export async function checkPincodeServiceability(pincode) {
     return { serviceable: false, errorKey: "invalid" };
   }
 
-  try {
-    const response = await fetch(apiUrl(`/delivery/pincode/${digits}`));
-    const data = await response.json().catch(() => ({}));
-    if (response.ok && data && typeof data.serviceable === "boolean") {
-      if (!data.serviceable) {
-        return { serviceable: false, messageKey: data.messageKey || "notServiceable" };
-      }
-      return {
-        serviceable: true,
-        deliversByLabel: data.deliversBy || data.deliversByLabel || formatDeliveryDate(new Date(data.deliversAt || Date.now())),
-        dispatchNoteKey: data.dispatchNoteKey || "dispatchWindow",
-        dispatchHours: data.dispatchHours ?? 4,
-        dispatchMinutes: data.dispatchMinutes ?? 12,
-      };
+  const response = await fetch(apiUrl(`/delivery/pincode/${digits}`));
+  const data = await response.json().catch(() => ({}));
+  if (response.ok && data && typeof data.serviceable === "boolean") {
+    if (!data.serviceable) {
+      return { serviceable: false, messageKey: data.messageKey || "notServiceable" };
     }
-  } catch {
-    /* fall through to mock */
+    return {
+      serviceable: true,
+      deliversByLabel: data.deliversBy || data.deliversByLabel || formatDeliveryDate(new Date(data.deliversAt || Date.now())),
+      dispatchNoteKey: data.dispatchNoteKey || "dispatchWindow",
+      dispatchHours: data.dispatchHours ?? 4,
+      dispatchMinutes: data.dispatchMinutes ?? 12,
+    };
   }
-
-  return mockServiceability(digits);
+  return { serviceable: false, errorKey: "unavailable" };
 }

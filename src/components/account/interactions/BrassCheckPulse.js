@@ -10,6 +10,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useTheme } from "../../../context/ThemeContext";
 import useReducedMotion from "../../../hooks/useReducedMotion";
+import { pointerEventsNativeOnly, withPointerEventsStyle } from "../../../utils/pointerEventsStyle";
 
 /** Brief brass checkmark pulse after successful avatar upload. */
 export default function BrassCheckPulse({ active, size = 96 }) {
@@ -50,17 +51,20 @@ export default function BrassCheckPulse({ active, size = 96 }) {
 
   return (
     <Animated.View
-      pointerEvents="none"
-      style={[
-        StyleSheet.absoluteFillObject,
-        {
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "rgba(255,255,255,0.55)",
-          borderRadius: size / 2,
-        },
-        animStyle,
-      ]}
+      style={withPointerEventsStyle(
+        [
+          StyleSheet.absoluteFillObject,
+          {
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "rgba(255,255,255,0.55)",
+            borderRadius: size / 2,
+          },
+          animStyle,
+        ],
+        "none"
+      )}
+      {...pointerEventsNativeOnly("none")}
     >
       <View
         style={{

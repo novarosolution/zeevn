@@ -21,7 +21,7 @@ export default function BlogIndexScreen({ navigation }) {
   const cols = width >= 1100 ? 3 : width >= 640 ? 2 : 1;
 
   return (
-    <Screen navigation={navigation} title="Journal" breadcrumbLabel="Journal">
+    <Screen navigation={navigation} breadcrumbLabel="Journal">
       {featured ? (
         <Pressable
           onPress={() => navigation.navigate("BlogPost", { slug: featured.slug })}

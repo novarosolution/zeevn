@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useTheme } from "../../../context/ThemeContext";
+import { pointerEventsNativeOnly, withPointerEventsStyle } from "../../../utils/pointerEventsStyle";
 import useReducedMotion from "../../../hooks/useReducedMotion";
 import { fonts } from "../../../theme/tokens";
 
@@ -57,8 +58,11 @@ export default function AccountSidebarNavItem({ item, active, hovered, onPress, 
         ]}
       />
       <Animated.View
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFillObject, { backgroundColor: semanticPalette.surfaceAlt, borderRadius: 0 }, bgStyle]}
+        style={withPointerEventsStyle(
+          [StyleSheet.absoluteFillObject, { backgroundColor: semanticPalette.surfaceAlt, borderRadius: 0 }, bgStyle],
+          "none"
+        )}
+        {...pointerEventsNativeOnly("none")}
       />
       <Ionicons name={item.icon} size={18} color={iconColor} style={styles.icon} />
       <Text

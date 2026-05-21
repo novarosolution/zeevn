@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
 import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
+import OpsDataTable from "../../components/ops/OpsDataTable";
+import OpsStatCard from "../../components/ops/OpsStatCard";
 import OrderStatusBadge from "../../components/ops/OrderStatusBadge";
 import PaymentStatusBadge from "../../components/ops/PaymentStatusBadge";
 import OpsListSkeleton from "../../components/ops/OpsListSkeleton";
@@ -15,7 +17,7 @@ import {
 } from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
 import { adminPanel } from "../../theme/adminLayout";
-import { getSemanticColors, layout, radius, spacing } from "../../theme/tokens";
+import { fonts, getSemanticColors, layout, radius, spacing } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
 import {
   ALL_ORDER_STATUSES,
@@ -34,6 +36,8 @@ import ConfirmDialog from "../../components/ui/ConfirmDialog";
 const STATUSES = ["all", ...ALL_ORDER_STATUSES];
 
 export default function AdminOrdersScreen({ navigation, route }) {
+  const { width } = useWindowDimensions();
+  const useTable = Platform.OS === "web" && width >= 768;
   const { token, user } = useAuth();
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState(route?.params?.query || "");
@@ -48,7 +52,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
   const [renderCount, setRenderCount] = useState(30);
   const [ordersLoading, setOrdersLoading] = useState(true);
 
-  const { colors: c, shadowPremium } = useTheme();
+  const { colors: c, shadowPremium, semanticPalette, SPACING } = useTheme();
   const semantic = useMemo(() => getSemanticColors(c), [c]);
   const styles = useMemo(
     () => createAdminOrdersStyles(c, shadowPremium, semantic),
@@ -251,23 +255,98 @@ export default function AdminOrdersScreen({ navigation, route }) {
     }
   };
 
-  function MetricCard({ label, value }) {
+  function SectionTitle({ icon, label }) {
     return (
-      <View style={styles.metricCard}>
-        <Text style={styles.metricValue}>{value}</Text>
-        <Text style={styles.metricLabel}>{label}</Text>
+      <View style={styles.sectionTitleRow}>
+        <Ionicons name={icon} size={14} color={semanticPalette.inkMuted} />
+        <Text style={[styles.sectionTitleText, { color: semanticPalette.ink }]}>{label}</Text>
       </View>
     );
   }
 
-  function SectionTitle({ icon, label }) {
-    return (
-      <View style={styles.sectionTitleRow}>
-        <Ionicons name={icon} size={14} color={c.primary} />
-        <Text style={styles.sectionTitleText}>{label}</Text>
-      </View>
-    );
-  }
+  const orderColumns = useMemo(
+    () => [
+      {
+        key: "id",
+        label: "Order",
+        flex: 0.8,
+        sortable: true,
+        sortValue: (row) => row._id,
+        render: (row) => (
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: semanticPalette.ink }}>
+            #{String(row._id).slice(-6).toUpperCase()}
+          </Text>
+        ),
+      },
+      {
+        key: "customer",
+        label: "Customer",
+        flex: 1.2,
+        sortable: true,
+        sortValue: (row) => row.user?.name || "",
+        render: (row) => (
+          <View>
+            <Text style={{ fontFamily: fonts.medium, fontSize: 13, color: semanticPalette.ink }} numberOfLines={1}>
+              {row.user?.name || "User"}
+            </Text>
+            <Text style={{ fontFamily: fonts.regular, fontSize: 11, color: semanticPalette.inkSoft }} numberOfLines={1}>
+              {row.user?.email || "—"}
+            </Text>
+          </View>
+        ),
+      },
+      {
+        key: "status",
+        label: "Status",
+        flex: 1,
+        sortable: true,
+        sortValue: (row) => row.status,
+        render: (row) => (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+            <OrderStatusBadge status={row.status} context="admin" />
+            <PaymentStatusBadge paymentStatus={row.paymentStatus} />
+          </View>
+        ),
+      },
+      {
+        key: "total",
+        label: "Total",
+        flex: 0.7,
+        sortable: true,
+        sortValue: (row) => Number(row.totalPrice || 0),
+        render: (row) => (
+          <Text style={{ fontFamily: fonts.semibold, fontSize: 13, color: semanticPalette.ink }}>
+            {formatINR(Number(row.totalPrice || 0))}
+          </Text>
+        ),
+      },
+      {
+        key: "actions",
+        label: "",
+        flex: 1.1,
+        minWidth: 160,
+        render: (row) => (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+            <Button
+              label={expandedOrderId === row._id ? "Hide" : "View"}
+              variant="secondary"
+              size="sm"
+              onPress={() => setExpandedOrderId((current) => (current === row._id ? "" : row._id))}
+            />
+            <Button
+              label="Delete"
+              variant="destructive"
+              size="sm"
+              loading={busyOrderId === row._id}
+              disabled={busyOrderId === row._id}
+              onPress={() => setConfirmDeleteOrderId(row._id)}
+            />
+          </View>
+        ),
+      },
+    ],
+    [busyOrderId, expandedOrderId, semanticPalette.ink, semanticPalette.inkSoft]
+  );
 
   return (
     <OpsAdminScreen navigation={navigation} activeRoute="AdminOrders" sectionTitle="Manage orders">
@@ -282,12 +361,12 @@ export default function AdminOrdersScreen({ navigation, route }) {
             </View>
           ) : null}
 
-          <View style={styles.statsGrid}>
-            <MetricCard label="Total" value={stats.total} />
-            <MetricCard label="New" value={stats.newOrders} />
-            <MetricCard label="In kitchen" value={stats.inKitchen} />
-            <MetricCard label="Out / pickup" value={stats.outForDelivery} />
-            <MetricCard label="Delivered" value={stats.delivered} />
+          <View style={[styles.statsGrid, { gap: SPACING.sm }]}>
+            <OpsStatCard label="Total" value={String(stats.total)} style={{ flex: 1, minWidth: 100 }} />
+            <OpsStatCard label="New" value={String(stats.newOrders)} style={{ flex: 1, minWidth: 100 }} />
+            <OpsStatCard label="In kitchen" value={String(stats.inKitchen)} style={{ flex: 1, minWidth: 100 }} />
+            <OpsStatCard label="Out / pickup" value={String(stats.outForDelivery)} style={{ flex: 1, minWidth: 100 }} />
+            <OpsStatCard label="Delivered" value={String(stats.delivered)} style={{ flex: 1, minWidth: 100 }} />
           </View>
 
           <View style={styles.actionsRow}>
@@ -347,24 +426,30 @@ export default function AdminOrdersScreen({ navigation, route }) {
 
           {ordersLoading && orders.length === 0 ? <OpsListSkeleton rows={5} /> : null}
 
+          {useTable && !ordersLoading && renderedOrders.length > 0 ? (
+            <View style={{ marginBottom: SPACING.md }}>
+              <OpsDataTable
+                columns={orderColumns}
+                data={renderedOrders}
+                keyExtractor={(row) => row._id}
+                pageSize={15}
+                emptyMessage="No orders to show."
+              />
+            </View>
+          ) : null}
+
           <View style={styles.listContent}>
             {!ordersLoading &&
             renderedOrders.map((item) => {
-              const accentBorder =
-                item.status === "delivered"
-                  ? c.secondary
-                  : item.status === "cancelled"
-                    ? c.danger
-                    : ["shipped", "out_for_delivery"].includes(item.status)
-                      ? c.accentGold || c.primary
-                      : c.border;
+              if (useTable && item._id !== expandedOrderId) return null;
+              if (useTable && !expandedOrderId) return null;
+              const accentBorder = semanticPalette.lineSoft;
               return (
               <Card
                 key={item._id}
                 variant="muted"
                 padding="md"
-                goldAccent={["shipped", "out_for_delivery"].includes(item.status)}
-                style={[styles.orderCardShell, { borderLeftWidth: 4, borderLeftColor: accentBorder }]}
+                style={[styles.orderCardShell, { borderLeftWidth: 3, borderLeftColor: accentBorder }]}
               >
                 <View style={styles.orderTopRow}>
                   <View style={styles.orderMain}>
@@ -414,7 +499,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                   <Button
                     label={expandedOrderId === item._id ? "Hide details" : "View full details"}
                     iconLeft={expandedOrderId === item._id ? "chevron-up-outline" : "chevron-down-outline"}
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
                     onPress={() =>
                       setExpandedOrderId((current) => (current === item._id ? "" : item._id))
@@ -654,7 +739,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
               </Card>
             );
             })}
-            {renderedOrders.length < visibleOrders.length ? (
+            {renderedOrders.length < visibleOrders.length && !useTable ? (
               <Button
                 label={`Load more (${visibleOrders.length - renderedOrders.length} remaining)`}
                 variant="ghost"

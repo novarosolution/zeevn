@@ -7,14 +7,16 @@ import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/tokens";
 import { WEB_Z_INDEX } from "../../theme/web";
 import { OBSERVABILITY_UI } from "../../content/appContent";
+import { useWebBrowserOffline } from "../../hooks/useWebBrowserOffline";
 
 export default function OfflineBanner() {
   const connectivity = useConnectivityOptional();
   const { semanticPalette, TYPE, SPACING } = useTheme();
   const insets = useSafeAreaInsets();
+  const { web, offline: webOffline } = useWebBrowserOffline();
 
-  const isOffline = connectivity?.isOffline;
-  const isFlushing = connectivity?.isFlushing;
+  const isOffline = web ? webOffline : Boolean(connectivity?.isOffline);
+  const isFlushing = web ? false : Boolean(connectivity?.isFlushing);
 
   const styles = useMemo(
     () =>

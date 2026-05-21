@@ -13,13 +13,20 @@ const dist = path.join(root, "dist");
 const marker = path.join(dist, ".nojekyll");
 
 function copySeoAssets(destRoot) {
-  const srcDir = path.join(root, "assets", "seo");
-  const destDir = path.join(destRoot, "assets", "seo");
-  if (!fs.existsSync(srcDir)) return;
-  fs.mkdirSync(destDir, { recursive: true });
-  for (const name of fs.readdirSync(srcDir)) {
-    if (!name.endsWith(".png")) continue;
-    fs.copyFileSync(path.join(srcDir, name), path.join(destDir, name));
+  const srcDirs = [
+    path.join(root, "public", "seo"),
+    path.join(root, "assets", "seo"),
+  ];
+  for (const destSub of ["seo", "assets/seo"]) {
+    const destDir = path.join(destRoot, destSub);
+    fs.mkdirSync(destDir, { recursive: true });
+    for (const srcDir of srcDirs) {
+      if (!fs.existsSync(srcDir)) continue;
+      for (const name of fs.readdirSync(srcDir)) {
+        if (!name.endsWith(".png")) continue;
+        fs.copyFileSync(path.join(srcDir, name), path.join(destDir, name));
+      }
+    }
   }
 }
 
@@ -46,6 +53,35 @@ function copyPublicDir(subPath) {
   }
 }
 
+function optimizeIndexHtml() {
+  const indexPath = path.join(dist, "index.html");
+  if (!fs.existsSync(indexPath)) return;
+  let html = fs.readFileSync(indexPath, "utf8");
+
+  html = html.replace(
+    /<link rel="preload" href="\/_expo\/static\/css\/leaflet[^"]+" as="style">/g,
+    ""
+  );
+  html = html.replace(
+    /<link rel="stylesheet" href="(\/_expo\/static\/css\/leaflet[^"]+)">/g,
+    `<link rel="stylesheet" href="$1" media="print" onload="this.media='all'">`
+  );
+
+  const preloadTags = [
+    '<link rel="preload" as="image" href="/assets/hero/hero-960.webp" imagesrcset="/assets/hero/hero-640.webp 640w, /assets/hero/hero-960.webp 960w, /assets/hero/hero-1280.webp 1280w, /assets/hero/hero-1920.webp 1920w" imagesizes="100vw" fetchpriority="high">',
+    '<link rel="preload" as="font" type="font/woff2" href="/fonts/Inter-400.woff2" crossorigin>',
+    '<link rel="preload" as="font" type="font/woff2" href="/fonts/Inter-500.woff2" crossorigin>',
+    '<link rel="preload" as="font" type="font/woff2" href="/fonts/PlayfairDisplay-600.woff2" crossorigin>',
+  ].join("");
+
+  if (!html.includes('href="/assets/hero/hero-960.webp"')) {
+    html = html.replace("</head>", `${preloadTags}</head>`);
+  }
+
+  fs.writeFileSync(indexPath, html, "utf8");
+  console.log("[post-export-web] optimized dist/index.html preload + non-blocking CSS");
+}
+
 if (!fs.existsSync(dist)) {
   console.warn("[post-export-web] dist/ not found — run expo export first.");
   process.exit(0);
@@ -65,5 +101,14 @@ if (fs.existsSync(dist)) {
   copySeoAssets(dist);
   copyPublicDir("assets/hero");
   copyPublicDir("fonts");
-  console.log("[post-export-web] copied assets/seo, assets/hero, fonts → dist/");
+  optimizeIndexHtml();
+
+  const indexPath = path.join(dist, "index.html");
+  const notFoundPath = path.join(dist, "404.html");
+  if (fs.existsSync(indexPath)) {
+    fs.copyFileSync(indexPath, notFoundPath);
+    console.log("[post-export-web] copied index.html → 404.html (SPA deep links on GitHub Pages)");
+  }
+
+  console.log("[post-export-web] copied seo, assets/seo, assets/hero, fonts → dist/");
 }

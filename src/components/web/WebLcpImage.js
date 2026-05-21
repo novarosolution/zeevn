@@ -8,6 +8,8 @@ import { HERO_ASPECT_RATIO, HERO_INTRINSIC_HEIGHT, HERO_INTRINSIC_WIDTH } from "
 export default function WebLcpImage({
   src,
   srcSet,
+  fallbackSrc,
+  fallbackSrcSet,
   sizes = "100vw",
   alt = "",
   width = HERO_INTRINSIC_WIDTH,
@@ -25,24 +27,27 @@ export default function WebLcpImage({
 
   return (
     <View style={[styles.wrap, style, { aspectRatio: width / height }]}>
-      <img
-        src={src}
-        srcSet={srcSet || undefined}
-        sizes={srcSet ? sizes : undefined}
-        alt={alt}
-        width={typeof w === "number" ? w : HERO_INTRINSIC_WIDTH}
-        height={typeof h === "number" ? h : HERO_INTRINSIC_HEIGHT}
-        decoding={priority ? "sync" : "async"}
-        loading={lazy ? "lazy" : "eager"}
-        fetchPriority={priority ? "high" : "auto"}
-        className={className}
-        style={{
-          ...styles.img,
-          width: "100%",
-          height: "100%",
-          objectFit: flat.objectFit || "cover",
-        }}
-      />
+      <picture>
+        {srcSet ? <source srcSet={srcSet} sizes={sizes} type="image/webp" /> : null}
+        <img
+          src={fallbackSrc || src}
+          srcSet={fallbackSrcSet || undefined}
+          sizes={fallbackSrcSet ? sizes : undefined}
+          alt={alt}
+          width={typeof w === "number" ? w : HERO_INTRINSIC_WIDTH}
+          height={typeof h === "number" ? h : HERO_INTRINSIC_HEIGHT}
+          decoding="async"
+          loading={lazy ? "lazy" : "eager"}
+          fetchPriority={priority ? "high" : "auto"}
+          className={className}
+          style={{
+            ...styles.img,
+            width: "100%",
+            height: "100%",
+            objectFit: flat.objectFit || "cover",
+          }}
+        />
+      </picture>
     </View>
   );
 }

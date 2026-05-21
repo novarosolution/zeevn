@@ -1,5 +1,5 @@
-/**
- * @deprecated Use `Chip` from `components/ui` (or `@/components/ui`) instead.
- * This shim exists for backward compatibility during migration.
- */
-export { default } from "./Chip";
+/** @deprecated Use `Chip` from `@/components/ui`. */
+import Chip from "./Chip";
+
+const PremiumChip = Chip;
+export default PremiumChip;

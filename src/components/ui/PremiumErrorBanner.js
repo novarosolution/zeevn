@@ -1,5 +1,5 @@
-/**
- * @deprecated Use `ErrorBanner` from `components/ui` (or `@/components/ui`) instead.
- * This shim exists for backward compatibility during migration.
- */
-export { default } from "./ErrorBanner";
+/** @deprecated Use `ErrorBanner` from `@/components/ui`. */
+import ErrorBanner from "./ErrorBanner";
+
+const PremiumErrorBanner = ErrorBanner;
+export default PremiumErrorBanner;

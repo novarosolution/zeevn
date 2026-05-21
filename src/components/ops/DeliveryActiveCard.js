@@ -26,7 +26,7 @@ export default function DeliveryActiveCard({ order, onNavigate }) {
   const hasNav = (Number.isFinite(lat) && Number.isFinite(lng)) || Boolean(addressQuery);
 
   return (
-    <Card padding="md" style={{ marginBottom: SPACING.md, borderWidth: 1, borderColor: semanticPalette.accentSoft }}>
+    <Card padding="md" style={{ marginBottom: SPACING.md, borderWidth: 2, borderColor: semanticPalette.accent, backgroundColor: semanticPalette.accentSoft }}>
       <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: SPACING.md }}>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text

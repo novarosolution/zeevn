@@ -1,14 +1,18 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { Image } from "expo-image";
+import { Zap } from "lucide-react-native";
+import DecorativeExpoImage from "../ui/DecorativeExpoImage";
+import { LinearGradient } from "expo-linear-gradient";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { pointerEventsProp } from "../../utils/pointerEventsStyle";
+import { HOME_DEALS_RAIL } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
 import { formatINRWhole } from "../../utils/currency";
 import { spacing as homeSpacing } from "../../styles/spacing";
 import { homeType } from "../../styles/typography";
 
 const CARD_W = 148;
-const CARD_H = 240;
+const CARD_H = 248;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function getDiscountPercent(product) {
@@ -27,7 +31,7 @@ function formatEndsIn(remainingMs) {
   const totalMinutes = Math.max(0, Math.floor(remainingMs / (60 * 1000)));
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  return `Ends in ${hours}h ${minutes}m`;
+  return `${HOME_DEALS_RAIL.countdownPrefix || "Ends in"} ${hours}h ${minutes}m`;
 }
 
 export default function HomeDealsRail({
@@ -43,12 +47,21 @@ export default function HomeDealsRail({
   const { width } = useWindowDimensions();
   const brassAction = isDark ? c.accent : c.accentOnLight || c.accent;
   const [nowMs, setNowMs] = useState(Date.now());
+  const [flashDealId, setFlashDealId] = useState("");
+  const flashTimerRef = useRef(null);
   const styles = useMemo(() => createStyles(c, isDark, width >= 600), [c, isDark, width]);
 
   useEffect(() => {
     const timer = setInterval(() => setNowMs(Date.now()), 60 * 1000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(
+    () => () => {
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+    },
+    []
+  );
 
   const deals = useMemo(() => {
     const list = Array.isArray(products) ? products : [];
@@ -100,79 +113,72 @@ export default function HomeDealsRail({
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.headerRow}>
-        <View style={styles.headerCopy}>
-          <View style={styles.titleRow}>
-            <Text style={styles.title}>Deals</Text>
-            {hasEndingSoon ? (
-              <View style={styles.endingSoonPill}>
-                <Text style={styles.endingSoonText}>ENDING SOON</Text>
-              </View>
-            ) : null}
-          </View>
-          <Text style={styles.subtitle}>Limited-time pantry picks.</Text>
-        </View>
-        <Pressable
-          onPress={onSeeAllDeals}
-          style={({ pressed }) => [styles.seeAllBtn, pressed ? styles.seeAllPressed : null]}
-          accessibilityRole="button"
-          accessibilityLabel="See all deals"
-        >
-          <Text style={styles.seeAllText}>See all deals →</Text>
-        </Pressable>
-      </View>
-
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.row}
-        decelerationRate={Platform.OS === "ios" ? "fast" : 0.98}
-        snapToInterval={CARD_W + homeSpacing.sm}
-        snapToAlignment="start"
+      <LinearGradient
+        colors={["rgba(200,169,126,0.04)", "rgba(0,0,0,0)"]}
+        start={{ x: 0, y: 0.5 }}
+        end={{ x: 1, y: 0.5 }}
+        style={styles.gradientCard}
       >
-        {deals.map((item) => {
-          const quantity = Math.max(0, Number(getQuantity?.(item) || 0));
-          const price = Number(item?.price || 0);
-          const mrp = Number(item?.mrp || 0);
-          const hasSavings = mrp > price;
-          const saveAmount = Math.max(0, mrp - price);
-          const showCountdown = item.isEndingSoon && item.endsAtMs > nowMs;
-          return (
-            <View key={item.id} style={styles.cardWrap}>
-              <Pressable
-                onPress={() => onOpenProduct?.(item)}
-                style={({ pressed }) => [styles.card, pressed ? styles.cardPressed : null]}
-                accessibilityRole="button"
-                accessibilityLabel={`Open deal for ${item?.name || "product"}`}
-              >
+        <View style={styles.headerRow}>
+          <View style={styles.headerCopy}>
+            <View style={styles.overlineRow}>
+              <View style={styles.overlineSquare} />
+              <Text style={styles.overlineText}>DEALS</Text>
+            </View>
+            <View style={styles.titleRow}>
+              <Text style={styles.title}>{HOME_DEALS_RAIL.title || "Deals"}</Text>
+              {hasEndingSoon ? (
+                <View style={styles.endingSoonPill}>
+                  <Text style={styles.endingSoonText}>{String(HOME_DEALS_RAIL.endingSoon || "Ending soon").toUpperCase()}</Text>
+                </View>
+              ) : null}
+            </View>
+            <Text style={styles.subtitle}>{HOME_DEALS_RAIL.subtitle || "Limited-time pantry picks."}</Text>
+          </View>
+          <Pressable
+            onPress={onSeeAllDeals}
+            style={({ pressed }) => [styles.seeAllBtn, pressed ? styles.seeAllPressed : null]}
+            accessibilityRole="button"
+            accessibilityLabel={HOME_DEALS_RAIL.seeAll || "See all deals"}
+          >
+            <Text style={styles.seeAllText}>{`${HOME_DEALS_RAIL.seeAll || "See all deals"} →`}</Text>
+          </Pressable>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.row}
+          decelerationRate={Platform.OS === "ios" ? "fast" : 0.98}
+          snapToInterval={CARD_W + homeSpacing.sm}
+          snapToAlignment="start"
+        >
+          {deals.map((item) => {
+            const quantity = Math.max(0, Number(getQuantity?.(item) || 0));
+            const price = Number(item?.price || 0);
+            const mrp = Number(item?.mrp || 0);
+            const hasSavings = mrp > price;
+            const saveAmount = Math.max(0, mrp - price);
+            const showCountdown = item.isEndingSoon && item.endsAtMs > nowMs;
+            const countdownRatio = showCountdown ? Math.max(0, Math.min(1, (item.endsAtMs - nowMs) / DAY_MS)) : 0;
+            return (
+              <View key={item.id} style={styles.cardWrap}>
+                <View style={styles.card}>
+                  <Pressable
+                    onPress={() => onOpenProduct?.(item)}
+                    style={({ pressed }) => [styles.cardTap, pressed ? styles.cardPressed : null]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open deal for ${item?.name || "product"}`}
+                  >
                 <View style={styles.imageWrap}>
                   <View style={styles.discountBadge}>
+                    <Zap size={10} color={c.onPrimary} />
                     <Text style={styles.discountText}>{item.discountPct}% OFF</Text>
                   </View>
                   {item.image ? (
-                    <Image source={{ uri: item.image }} style={styles.image} contentFit="cover" transition={120} />
+                    <DecorativeExpoImage source={{ uri: item.image }} style={styles.image} contentFit="cover" transition={120} />
                   ) : (
                     <View style={styles.imageFallback} />
-                  )}
-                  {quantity > 0 ? (
-                    <View style={styles.qtyStepper}>
-                      <Pressable onPress={() => onDecrease?.(item)} style={styles.stepperBtn} accessibilityRole="button" accessibilityLabel={`Remove one ${item.name}`}>
-                        <Ionicons name="remove" size={12} color={brassAction} />
-                      </Pressable>
-                      <Text style={styles.qtyText}>{quantity}</Text>
-                      <Pressable onPress={() => onIncrease?.(item)} style={styles.stepperBtn} accessibilityRole="button" accessibilityLabel={`Add one ${item.name}`}>
-                        <Ionicons name="add" size={12} color={brassAction} />
-                      </Pressable>
-                    </View>
-                  ) : (
-                    <Pressable
-                      onPress={() => onIncrease?.(item)}
-                      style={({ pressed }) => [styles.addCircle, pressed ? styles.addCirclePressed : null]}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Add ${item.name} to bag`}
-                    >
-                      <Ionicons name="add" size={12} color={brassAction} />
-                    </Pressable>
                   )}
                 </View>
                 <View style={styles.meta}>
@@ -188,19 +194,56 @@ export default function HomeDealsRail({
                   <View style={styles.priceRow}>
                     <Text style={styles.price}>{formatINRWhole(price)}</Text>
                     {hasSavings ? <Text style={styles.mrp}>{formatINRWhole(mrp)}</Text> : null}
-                    {hasSavings ? <Text style={styles.saveTag}>{`Save ${formatINRWhole(saveAmount)}`}</Text> : null}
+                    {hasSavings ? (
+                      <View style={styles.saveTagPill}>
+                        <Text style={styles.saveTag}>{`${HOME_DEALS_RAIL.savePrefix || "Save"} ${formatINRWhole(saveAmount)}`}</Text>
+                      </View>
+                    ) : null}
                   </View>
                 </View>
                 {showCountdown ? (
                   <View style={styles.countdownBar}>
                     <Text style={styles.countdownText}>{formatEndsIn(item.endsAtMs - nowMs)}</Text>
+                    <View style={styles.countdownTrack}>
+                      <View style={[styles.countdownFill, { width: `${Math.round(countdownRatio * 100)}%` }]} />
+                    </View>
                   </View>
                 ) : null}
-              </Pressable>
-            </View>
-          );
-        })}
-      </ScrollView>
+                  </Pressable>
+                  {quantity > 0 ? (
+                    <View style={styles.qtyStepper}>
+                      <Pressable onPress={() => onDecrease?.(item)} style={styles.stepperBtn} accessibilityRole="button" accessibilityLabel={`Remove one ${item.name}`}>
+                        <Ionicons name="remove" size={12} color={brassAction} />
+                      </Pressable>
+                      <Text style={styles.qtyText}>{quantity}</Text>
+                      <Pressable onPress={() => onIncrease?.(item)} style={styles.stepperBtn} accessibilityRole="button" accessibilityLabel={`Add one ${item.name}`}>
+                        <Ionicons name="add" size={12} color={brassAction} />
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <Pressable
+                      onPress={() => {
+                        if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+                        setFlashDealId(item.id);
+                        flashTimerRef.current = setTimeout(() => setFlashDealId(""), 140);
+                        onIncrease?.(item);
+                      }}
+                      style={({ pressed }) => [styles.addCircle, pressed ? styles.addCirclePressed : null]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Add ${item.name} to bag`}
+                    >
+                      <Ionicons name="add" size={12} color={brassAction} />
+                    </Pressable>
+                  )}
+                  {flashDealId === item.id ? (
+                    <View style={styles.addFlashOverlay} {...pointerEventsProp("none")} />
+                  ) : null}
+                </View>
+              </View>
+            );
+          })}
+        </ScrollView>
+      </LinearGradient>
     </View>
   );
 }
@@ -209,6 +252,13 @@ function createStyles(c, isDark, isTablet) {
   const brassAction = isDark ? c.accent : c.accentOnLight || c.accent;
   return StyleSheet.create({
     wrap: { marginBottom: isTablet ? 40 : 32 },
+    gradientCard: {
+      borderRadius: 16,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+      paddingHorizontal: homeSpacing.base,
+      paddingVertical: homeSpacing.base,
+    },
     headerRow: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -222,6 +272,15 @@ function createStyles(c, isDark, isTablet) {
       alignItems: "center",
       gap: 8,
       marginBottom: 2,
+    },
+    overlineRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 },
+    overlineSquare: { width: 4, height: 4, borderRadius: 1, backgroundColor: brassAction },
+    overlineText: {
+      color: brassAction,
+      fontSize: 10,
+      fontFamily: homeType.uiSemibold.fontFamily,
+      letterSpacing: 1.2,
+      textTransform: "uppercase",
     },
     title: {
       color: c.textPrimary,
@@ -263,7 +322,7 @@ function createStyles(c, isDark, isTablet) {
     },
     row: {
       paddingVertical: homeSpacing.xs,
-      paddingRight: homeSpacing.sm,
+      paddingRight: homeSpacing.xs,
       gap: homeSpacing.sm,
     },
     cardWrap: {
@@ -271,6 +330,7 @@ function createStyles(c, isDark, isTablet) {
       height: CARD_H,
     },
     card: {
+      position: "relative",
       width: "100%",
       height: "100%",
       borderRadius: 14,
@@ -279,15 +339,21 @@ function createStyles(c, isDark, isTablet) {
       backgroundColor: c.surface,
       overflow: "hidden",
     },
+    cardTap: {
+      width: "100%",
+      height: "100%",
+      borderRadius: 14,
+      overflow: "hidden",
+    },
     cardPressed: { opacity: 0.9 },
     imageWrap: {
       width: CARD_W,
       height: CARD_W,
-      backgroundColor: c.surfaceAlt,
+      backgroundColor: c.surfaceAlt || c.surfaceMuted || c.surface,
       position: "relative",
     },
     image: { width: "100%", height: "100%" },
-    imageFallback: { width: "100%", height: "100%", backgroundColor: c.surfaceAlt },
+    imageFallback: { width: "100%", height: "100%", backgroundColor: c.surfaceAlt || c.surfaceMuted || c.surface },
     discountBadge: {
       position: "absolute",
       left: 8,
@@ -297,6 +363,9 @@ function createStyles(c, isDark, isTablet) {
       minHeight: 20,
       paddingHorizontal: 8,
       justifyContent: "center",
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 4,
       backgroundColor: c.danger,
     },
     discountText: {
@@ -308,7 +377,7 @@ function createStyles(c, isDark, isTablet) {
     addCircle: {
       position: "absolute",
       right: 8,
-      bottom: -16,
+      bottom: 8,
       width: 32,
       height: 32,
       borderRadius: 16,
@@ -319,10 +388,16 @@ function createStyles(c, isDark, isTablet) {
       justifyContent: "center",
     },
     addCirclePressed: { opacity: 0.84, transform: [{ scale: 0.97 }] },
+    addFlashOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      borderRadius: 14,
+      backgroundColor: "rgba(200,169,126,0.18)",
+      zIndex: 4,
+    },
     qtyStepper: {
       position: "absolute",
       right: 8,
-      bottom: -16,
+      bottom: 8,
       minWidth: 88,
       height: 32,
       borderRadius: 16,
@@ -373,22 +448,41 @@ function createStyles(c, isDark, isTablet) {
       textDecorationLine: "line-through",
     },
     saveTag: {
-      color: c.danger,
+      color: brassAction,
       fontSize: 10,
       fontFamily: homeType.uiSemibold.fontFamily,
     },
+    saveTagPill: {
+      borderWidth: 1,
+      borderColor: "rgba(200,169,126,0.24)",
+      borderRadius: 999,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    },
     countdownBar: {
-      minHeight: 20,
+      minHeight: 26,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: brassAction,
       backgroundColor: c.accentSoft || c.primarySoft,
       paddingHorizontal: 8,
       justifyContent: "center",
+      gap: 3,
     },
     countdownText: {
       color: brassAction,
       fontSize: 10,
       fontFamily: homeType.uiSemibold.fontFamily,
+    },
+    countdownTrack: {
+      height: 2,
+      borderRadius: 999,
+      backgroundColor: "rgba(14,23,41,0.16)",
+      overflow: "hidden",
+    },
+    countdownFill: {
+      height: "100%",
+      borderRadius: 999,
+      backgroundColor: brassAction,
     },
   });
 }

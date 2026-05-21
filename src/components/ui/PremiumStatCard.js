@@ -1,5 +1,5 @@
-/**
- * @deprecated Use `StatCard` from `components/ui` (or `@/components/ui`) instead.
- * This shim exists for backward compatibility during migration.
- */
-export { default } from "./StatCard";
+/** @deprecated Use `StatCard` from `@/components/ui`. */
+import StatCard from "./StatCard";
+
+const PremiumStatCard = StatCard;
+export default PremiumStatCard;

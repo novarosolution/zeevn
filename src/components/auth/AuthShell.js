@@ -23,9 +23,10 @@ import { fonts, spacing } from "../../theme/tokens";
 import { WEB_Z_INDEX, webDecorLayer, webElevatedLayer } from "../../theme/web";
 import { headingA11yProps } from "../../utils/a11y";
 import { pointerEventsProp } from "../../utils/pointerEventsStyle";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../../utils/webViewport";
 
 const SPLIT_BREAKPOINT = 768;
-const PHONE_BANNER_HEIGHT = 220;
+const PHONE_BANNER_HEIGHT = 200;
 const FORM_MAX_WIDTH = 420;
 const FORM_COLUMN_MAX_WIDTH = 480;
 
@@ -174,7 +175,7 @@ export default function AuthShell({
         scrollContent: {
           flexGrow: 1,
           ...Platform.select({
-            web: { minHeight: "100vh" },
+            web: { minHeight: APP_VIEWPORT_MIN_HEIGHT },
             default: {},
           }),
         },
@@ -183,7 +184,7 @@ export default function AuthShell({
           width: "100%",
           flex: Platform.OS === "web" && split ? 1 : undefined,
           ...Platform.select({
-            web: split ? { minHeight: "100vh", position: "relative", zIndex: 0 } : {},
+            web: split ? { minHeight: APP_VIEWPORT_MIN_HEIGHT, position: "relative", zIndex: 0 } : {},
             default: {},
           }),
         },
@@ -199,7 +200,7 @@ export default function AuthShell({
           paddingBottom: Math.max(insets.bottom, spacing.xl),
           justifyContent: split ? "center" : "flex-start",
           ...Platform.select({
-            web: split ? { minHeight: "100vh" } : {},
+            web: split ? { minHeight: APP_VIEWPORT_MIN_HEIGHT } : {},
             default: {},
           }),
         },
@@ -308,9 +309,10 @@ export default function AuthShell({
 
                 <View
                   nativeID="auth-main-content"
-                  accessibilityRole="main"
                   style={shellStyles.mainContent}
-                  {...(Platform.OS === "web" ? { tabIndex: -1, dataSet: { zvElevated: "true" } } : {})}
+                  {...(Platform.OS === "web"
+                    ? { tabIndex: -1, role: "region", "aria-label": "Authentication form", dataSet: { zvElevated: "true" } }
+                    : {})}
                 >
                   {!bareForm ? (
                     <>

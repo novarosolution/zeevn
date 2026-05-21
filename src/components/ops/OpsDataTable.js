@@ -64,7 +64,7 @@ export default function OpsDataTable({
       style={{
         flexDirection: "row",
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: semanticPalette.line,
+        borderBottomColor: semanticPalette.lineSoft,
         backgroundColor: semanticPalette.surface,
         paddingVertical: SPACING.sm,
         paddingHorizontal: SPACING.md,
@@ -118,7 +118,7 @@ export default function OpsDataTable({
             paddingVertical: SPACING.sm,
             paddingHorizontal: SPACING.md,
             borderTopWidth: idx === 0 ? 0 : StyleSheet.hairlineWidth,
-            borderTopColor: semanticPalette.line,
+            borderTopColor: semanticPalette.lineSoft,
             backgroundColor: semanticPalette.surface,
           },
         ];

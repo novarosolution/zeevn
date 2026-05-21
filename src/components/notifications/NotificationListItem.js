@@ -5,6 +5,7 @@ import Card from "../ui/Card";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon } from "../../theme/tokens";
 import { getNotificationCategory, getNotificationIcon } from "../../utils/notificationCategory";
+import { nativeDriverEnabled } from "../../utils/motion";
 
 function formatTimestamp(createdAt) {
   if (!createdAt) return "";
@@ -31,9 +32,9 @@ export default function NotificationListItem({ item, onPress, onDismiss }) {
       },
       onPanResponderRelease: (_, g) => {
         if (g.dx < -88) {
-          Animated.timing(translateX, { toValue: -420, duration: 180, useNativeDriver: true }).start(() => onDismiss?.());
+          Animated.timing(translateX, { toValue: -420, duration: 180, useNativeDriver: nativeDriverEnabled }).start(() => onDismiss?.());
         } else {
-          Animated.spring(translateX, { toValue: 0, useNativeDriver: true, damping: 18, stiffness: 220 }).start();
+          Animated.spring(translateX, { toValue: 0, useNativeDriver: nativeDriverEnabled, damping: 18, stiffness: 220 }).start();
         }
       },
     })

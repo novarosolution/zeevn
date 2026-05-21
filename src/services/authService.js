@@ -73,6 +73,15 @@ export function forgotPasswordRequest({ email, signal, captchaToken }) {
   });
 }
 
+export function validateResetTokenRequest({ email, token, signal, captchaToken }) {
+  return request("/users/validate-reset-token", {
+    method: "POST",
+    body: JSON.stringify({ email, token }),
+    signal,
+    captchaToken,
+  });
+}
+
 export function resetPasswordWithTokenRequest({ email, token, newPassword, signal, captchaToken }) {
   return request("/users/reset-password", {
     method: "POST",

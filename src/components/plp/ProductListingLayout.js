@@ -13,6 +13,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import ProductCard from "../ProductCard";
+import Button from "../ui/Button";
 import Badge from "../ui/Badge";
 import Screen from "../ui/Screen";
 import SkeletonBlock from "../ui/SkeletonBlock";
@@ -20,6 +21,7 @@ import { PLP_UI } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/tokens";
 import { CUSTOMER_PAGE_MAX_WIDTH } from "../../theme/screenLayout";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../../utils/webViewport";
 
 const SIDEBAR_W = 280;
 const DESKTOP_BREAKPOINT = 1024;
@@ -79,6 +81,12 @@ function ProductListingLayoutBase({
   sheetActiveFacetCount,
   chipsRow,
   listKeyPrefix = "plp-grid",
+  onClearAll,
+  activeFilterCount = 0,
+  onLoadMore,
+  hasMore = false,
+  totalCount = 0,
+  visibleCount = 0,
 }) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -127,7 +135,7 @@ function ProductListingLayoutBase({
               position: "sticky",
               top: 12,
               alignSelf: "flex-start",
-              maxHeight: "calc(100vh - 120px)",
+              maxHeight: `calc(${APP_VIEWPORT_MIN_HEIGHT} - 120px)`,
             },
             default: {
               maxHeight: 720,
@@ -277,6 +285,10 @@ function ProductListingLayoutBase({
         keyExtractor={(item, idx) => String(item?.id ?? `${listKeyPrefix}-${idx}`)}
         scrollEnabled
         style={{ flex: 1 }}
+        onEndReached={() => {
+          if (hasMore && onLoadMore) onLoadMore();
+        }}
+        onEndReachedThreshold={0.35}
         columnWrapperStyle={
           numColumns > 1
             ? {
@@ -289,6 +301,26 @@ function ProductListingLayoutBase({
           paddingBottom: SPACING["2xl"],
           flexGrow: 1,
         }}
+        ListFooterComponent={
+          phase === "results" && (hasMore || totalCount > 0) ? (
+            <View style={{ alignItems: "center", gap: SPACING.sm, paddingTop: SPACING.md }}>
+              {totalCount > 0 ? (
+                <Text
+                  style={{
+                    fontFamily: fonts.regular,
+                    fontSize: TYPE.caption.fontSize,
+                    color: semanticPalette.inkMuted,
+                  }}
+                >
+                  {PLP_UI.loadMoreShowing(visibleCount, totalCount)}
+                </Text>
+              ) : null}
+              {hasMore && onLoadMore ? (
+                <Button label={PLP_UI.loadMoreCta} variant="secondary" size="md" onPress={onLoadMore} />
+              ) : null}
+            </View>
+          ) : null
+        }
         renderItem={renderItem}
       />
     );
@@ -304,6 +336,12 @@ function ProductListingLayoutBase({
     listKeyPrefix,
     renderItem,
     SPACING,
+    TYPE.caption.fontSize,
+    hasMore,
+    onLoadMore,
+    totalCount,
+    visibleCount,
+    semanticPalette.inkMuted,
   ]);
 
   return (
@@ -322,7 +360,7 @@ function ProductListingLayoutBase({
           {showSidebar ? (
             <View style={styles.sidebarOuter}>
               <ScrollView style={styles.sidebarScroll} showsVerticalScrollIndicator={false}>
-                {renderFilterPanel()}
+                {renderFilterPanel({ onClearAll, activeFilterCount })}
               </ScrollView>
             </View>
           ) : null}
@@ -383,7 +421,9 @@ function ProductListingLayoutBase({
                   <Ionicons name="close-outline" size={26} color={semanticPalette.inkMuted} />
                 </Pressable>
               </View>
-              <ScrollView showsVerticalScrollIndicator={false}>{renderFilterPanel()}</ScrollView>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                {renderFilterPanel({ onClearAll, activeFilterCount })}
+              </ScrollView>
             </View>
           </View>
         </Modal>

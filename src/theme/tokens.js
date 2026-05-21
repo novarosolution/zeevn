@@ -18,7 +18,8 @@ export const COLORS = {
   bgDeepAlt: "#14203A",
   ink: "#0E0E0E",
   inkSoft: "#4A4A4A",
-  inkMuted: "#8A8A8A",
+  inkBody: "#5C5C5C",
+  inkMuted: "#757575",
   inkInverse: "#FFFFFF",
   inkInverseSoft: "rgba(255,255,255,0.72)",
   inkInverseMuted: "rgba(255,255,255,0.46)",
@@ -26,6 +27,7 @@ export const COLORS = {
   lineSoft: "rgba(14,23,41,0.06)",
   lineInverse: "rgba(255,255,255,0.08)",
   accent: "#C8A97E",
+  accentOnLight: "#8A6F45",
   accentSoft: "rgba(200,169,126,0.16)",
   accentDeep: "#1F3A2E",
   sale: "#B23A3A",
@@ -42,7 +44,8 @@ export const COLORS_DARK = {
   bgDeepAlt: COLORS.bgDeepAlt,
   ink: COLORS.inkInverse,
   inkSoft: COLORS.inkInverseSoft,
-  inkMuted: COLORS.inkInverseMuted,
+  inkBody: COLORS.inkInverseSoft,
+  inkMuted: "rgba(255,255,255,0.58)",
   inkInverse: COLORS.ink,
   inkInverseSoft: "rgba(14,14,14,0.72)",
   inkInverseMuted: "rgba(14,14,14,0.46)",
@@ -50,6 +53,7 @@ export const COLORS_DARK = {
   lineSoft: "rgba(255,255,255,0.06)",
   lineInverse: "rgba(14,23,41,0.12)",
   accent: COLORS.accent,
+  accentOnLight: COLORS.accentOnLight,
   accentSoft: COLORS.accentSoft,
   accentDeep: COLORS.accentDeep,
   sale: COLORS.sale,
@@ -124,6 +128,7 @@ export const SHADOWS = {
 };
 
 export const TYPE = {
+  serif: "Playfair Display",
   serifFamily: SERIF_FAMILY,
   uiFamily: "Inter",
   weights: {
@@ -132,7 +137,7 @@ export const TYPE = {
     semibold: "600",
     bold: "700",
   },
-  display: { fontSize: 48, lineHeight: 52, letterSpacing: -1.2 },
+  display: { fontSize: 44, lineHeight: 48, letterSpacing: -1.0 },
   h1: { fontSize: 32, lineHeight: 36, letterSpacing: -0.6 },
   h2: { fontSize: 24, lineHeight: 28, letterSpacing: -0.4 },
   h3: { fontSize: 20, lineHeight: 24, letterSpacing: -0.2 },

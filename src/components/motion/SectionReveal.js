@@ -36,7 +36,10 @@ export default function SectionReveal({
   pointerEvents,
   as,
 }) {
-  const pointerStyle = pointerEvents ? { pointerEvents } : null;
+  const pointerStyle =
+    pointerEvents && Platform.OS === "web" ? { pointerEvents } : null;
+  const pointerNativeProps =
+    pointerEvents && Platform.OS !== "web" ? { pointerEvents } : null;
 
   const reducedMotion = useReducedMotion();
   const computedDelay = useMemo(() => {
@@ -73,7 +76,7 @@ export default function SectionReveal({
   if (reducedMotion) {
     const Container = as || View;
     return (
-      <Container style={[style, pointerStyle]}>
+      <Container style={[style, pointerStyle]} {...pointerNativeProps}>
         {children}
       </Container>
     );
@@ -88,7 +91,7 @@ export default function SectionReveal({
 
   const Container = as || Animated.View;
   return (
-    <Container entering={entering} style={[style, pointerStyle]}>
+    <Container entering={entering} style={[style, pointerStyle]} {...pointerNativeProps}>
       {children}
     </Container>
   );

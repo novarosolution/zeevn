@@ -111,7 +111,7 @@ export const APP_META = {
   brand: {
     name: "Zeevan",
     legalName: "Zeevan Pantry Private Limited",
-    logo: "/assets/seo/icon-512.png",
+    logo: "/seo/icon-512.png",
     sameAs: [
       "https://www.instagram.com/zeevan",
       "https://www.facebook.com/zeevan",
@@ -137,7 +137,7 @@ export const APP_META = {
     titleFallback: "Zeevan — Heritage Pantry Essentials, Delivered",
     description:
       "Small-batch staples, traceable sourcing, and reliable doorstep delivery from Zeevan — the premium pantry for modern Indian kitchens.",
-    ogImage: "/assets/seo/og-image.png",
+    ogImage: "/seo/og-image.png",
     ogImageAlt: "Zeevan — Heritage Pantry Essentials",
     locale: "en_IN",
     type: "website",
@@ -446,9 +446,11 @@ export const HOME_CATEGORY_UI = {
 };
 
 export const HOME_REORDER_STRIP = {
-  overline: "",
-  title: "Order again",
-  subtitle: "Your usual basket",
+  overline: "Order again",
+  title: "Your usual basket",
+  subtitle: "Restock your weekly essentials",
+  seeAll: "See all",
+  restockLabel: "Time to restock",
   emptyHidden: true,
 };
 
@@ -460,8 +462,19 @@ export const HOME_TOAST = {
 };
 
 export const HOME_OFFERS_BAND = {
-  primary: "Replenish now",
-  cta: "15% off on repeat orders",
+  overline: "Replenish",
+  title: "15% off your favourite restocks",
+  subtitle: "When you order an item you've bought twice before.",
+  cta: "Open my pantry",
+};
+
+export const HOME_DEALS_RAIL = {
+  title: "Deals",
+  subtitle: "Limited-time pantry picks.",
+  endingSoon: "Ending soon",
+  seeAll: "See all deals",
+  savePrefix: "Save",
+  countdownPrefix: "Ends in",
 };
 
 export const HOME_EMPTY_STATES = {
@@ -640,9 +653,34 @@ export const PLP_UI = {
   resultsForQuery: (q) => `Results for “${q}”`,
   browseCategoryTitle: (label) => (label ? `Browse ${label}` : "Browse category"),
   sortFeatured: "Featured",
+  sortNewest: "Newest",
   sortPriceAsc: "Price · Low to high",
   sortPriceDesc: "Price · High to low",
+  sortRating: "Best rated",
+  sortPopular: "Most popular",
   sortName: "Name A–Z",
+  clearAllFiltersCta: "Clear all",
+  sectionPrice: "Price",
+  sectionSize: "Size",
+  sectionColor: "Color",
+  sectionBrand: "Brand",
+  sectionRating: "Rating",
+  sectionDiscount: "Discount",
+  discountOnly: "On sale only",
+  priceMinLabel: "Min",
+  priceMaxLabel: "Max",
+  priceUnderTemplate: (amount) => `Under ₹${amount}`,
+  priceOverTemplate: (amount) => `Over ₹${amount}`,
+  ratingChipTemplate: (stars) => `${stars}+ stars`,
+  searchSuggestionsLabel: "Try searching for",
+  popularCategoriesLabel: "Popular categories",
+  loadMoreCta: "Load more",
+  loadMoreShowing: (shown, total) => `Showing ${shown} of ${total}`,
+  categoryEmpty: {
+    title: "No products in this category yet",
+    body: "We're stocking up — browse other categories in the meantime.",
+    browseCta: "Browse categories",
+  },
   chipRemoveA11y: "Remove filter",
   filterSheetCloseA11y: "Close filters",
   sortSheetCloseA11y: "Close sort options",
@@ -1686,6 +1724,9 @@ export const AUTH_SCREEN = {
     successBody: "Your password was updated. Sign in with your new password.",
     successSubtitle: "You're all set",
     signInCta: "Sign in",
+    errorTitle: "Reset link expired",
+    requestNewLinkCta: "Request new link",
+    validating: "Validating reset link...",
     missingParams: "This reset link is incomplete. Request a new link from Forgot password.",
     passwordTooShort: "Password must be at least 6 characters.",
     passwordMismatch: "Passwords do not match.",
@@ -2039,6 +2080,11 @@ export const CART_UI = {
   placeOrderError: "Unable to place order.",
   couponRequired: "Enter coupon code.",
   couponApplyError: "Unable to apply coupon.",
+  couponAppliedChip: "{code} applied",
+  giftWrapLabel: "Add as a gift",
+  giftWrapHint: "Include a short gift message at checkout.",
+  giftMessageLabel: "Gift message",
+  movedToWishlist: "Moved to wishlist.",
   locationError: "Unable to get current location.",
 };
 
@@ -2048,18 +2094,21 @@ export const CART_DRAWER_UI = {
   closeA11y: "Close cart",
   freeShippingDone: "You’ve unlocked free shipping on this order.",
   freeShippingAway: "{amount} away from free shipping",
+  freeShippingProgress: "Add {amount} more for free shipping · {percent}%",
   subtotal: "Subtotal",
   checkoutCta: "Checkout",
   viewBagCta: "View bag",
   emptyTitle: "Your bag is empty",
-  emptyDescription: "Browse the shop and add items you love.",
-  browseCta: "Browse shop",
+  emptyDescription: "Add your first essentials to continue.",
+  browseCta: "Continue shopping",
   removeLineA11y: "Remove line",
+  moveToWishlist: "Move to wishlist",
 };
 
 /** Single-page checkout (Cart screen when `checkout` param is true). */
 export const CHECKOUT_UI = {
   secureLine: "Secure checkout",
+  contactLine: "Need help? support@zeevan.com",
   stepContact: "Contact & shipping",
   stepDelivery: "Delivery method",
   stepPayment: "Payment",
@@ -2080,7 +2129,7 @@ export const CHECKOUT_UI = {
   paymentTabCod: "Cash on delivery",
   paymentTabOnline: "Online payment",
   paymentOnlineComingSoon: "Coming soon",
-  paymentOnlineHint: "Online payment is coming soon. Please choose Cash on Delivery for now.",
+  paymentOnlineHint: "You will be redirected to a secure payment page.",
   validationRequired: "Required",
   invalidPhone: "Enter a valid phone number",
   invalidPostal: "Enter a valid postal code",
@@ -2093,6 +2142,8 @@ export const CHECKOUT_UI = {
   summaryTotal: "Total",
   addonsOverline: "Complete your order",
   addonsTitle: "Recommended add-ons",
+  successRecommendationsOverline: "Pair with this order",
+  successRecommendationsTitle: "Recommended products",
 };
 
 /** Cart — deliver-to panel and profile address prompts. */
@@ -2105,8 +2156,10 @@ export const CART_ADDRESS = {
   useGps: "Use GPS",
   useGpsLoading: "Locating…",
   gpsFillSuccess: "Filled from your location.",
+  pincodeFillSuccess: "Address auto-filled from pincode.",
   fullNameLabel: "Full name",
   phoneLabel: "Phone",
+  phonePrefix: "+91",
   line1Label: "Address line",
   cityLabel: "City",
   stateLabel: "State",
@@ -2341,6 +2394,7 @@ export const PRODUCT_SCREEN = {
   pincodeDeliversBy: "Delivers by {date}",
   pincodeDispatchNote: "Order in next {hours}h {minutes}m for same-day dispatch",
   pincodeNotServiceable: "Not serviceable yet. Notify me?",
+  pincodeUnavailable: "We could not verify this pincode right now. Please try again shortly.",
   pincodeCheckMockShort: "Enter a valid 6-digit pincode.",
   accordionDescription: "Description",
   accordionMaterial: "Material & care",
@@ -2611,4 +2665,34 @@ export const OBSERVABILITY_UI = {
   errorBoundaryRetry: "Try again",
   offlineBanner: "You're offline. Changes will sync when you're back online.",
   offlineSyncing: "Back online — syncing your changes…",
+};
+
+/** Android-web diagnostics and development HUD copy. */
+export const DEV_DEBUG_UI = {
+  routeTitle: "Device debug",
+  lockedTitle: "Debug key required",
+  lockedBody: "Use /dev-debug?key=zeevan-debug on the target Android browser.",
+  keyLabel: "Access key",
+  snapshotTitle: "Runtime snapshot",
+  refresh: "Refresh",
+  notesTitle: "How to report",
+  notesBody: "Capture this page + the broken screen on the same device.",
+  ua: "User Agent",
+  windowSize: "window.inner",
+  docSize: "document.client",
+  viewportSize: "visualViewport",
+  dpr: "DPR",
+  touch: "Touch",
+  supportsBackdrop: "backdrop-filter",
+  supportsDvh: "100dvh",
+  supportsLvh: "100lvh",
+  supportsVhVar: "--app-vh",
+  yes: "Yes",
+  no: "No",
+  unavailable: "n/a",
+  missing: "missing",
+  hudFps: "FPS",
+  hudScroll: "scrollY",
+  hudWindow: "inner",
+  hudViewport: "visualViewport",
 };

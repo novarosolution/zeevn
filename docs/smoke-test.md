@@ -62,6 +62,33 @@ Run this checklist **before every production deploy** (or after any change to au
 
 If any box fails, **do not deploy**. File an issue with: step number, URL, screenshot, browser/device, and API/network errors from devtools.
 
+## Automated checks (before deploy)
+
+```bash
+npm run check:contrast    # WCAG AA token pairs
+npm run test:a11y         # axe on 6 routes (needs dist served)
+npm run measure:final     # Lighthouse desktop + mobile + bundle table
+npm run test:unit && npm run lint
+```
+
+Serve static web build for a11y/Lighthouse:
+
+```bash
+npm run export:web
+npx serve dist -l 8080
+# another terminal:
+A11Y_BASE_URL=http://127.0.0.1:8080 npm run test:a11y
+LHCI_BASE_URL=http://127.0.0.1:8080 npm run measure:final
+```
+
+## Keyboard & screen reader (manual)
+
+- [ ] Tab through header → main → footer on Home, Shop, Login (focus visible)
+- [ ] Login: email → password → submit without mouse; errors announced
+- [ ] Cart drawer: Esc closes; trap focus while open (web)
+- [ ] Checkout: address fields labeled; Razorpay iframe reachable
+- [ ] VoiceOver / NVDA: Login headings read as h1; cart “Add to bag” button name includes product
+
 ## Related docs
 
 - [README](../README.md) — local setup

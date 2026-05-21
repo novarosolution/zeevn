@@ -59,7 +59,7 @@ function ScreenBase({
 
   const body = (
     <>
-      {title ? (
+      {title || breadcrumbLabel || kicker || headerRight ? (
         <PageHeader
           navigation={navigation}
           title={title}

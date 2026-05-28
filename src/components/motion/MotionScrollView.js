@@ -1,23 +1,16 @@
-import React, { forwardRef, useMemo } from "react";
+import React, { forwardRef, useCallback, useMemo } from "react";
 import { Platform, ScrollView, StyleSheet } from "react-native";
 import Animated, { runOnJS, useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
 import { ScrollOffsetProvider, useScrollOffsetContextValue } from "../../hooks/useScrollOffset";
 
 const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
+const useNativeDriverScroll = Platform.OS !== "web";
 
 /**
  * Drop-in ScrollView that:
- *  - Mounts a `ScrollOffsetContext.Provider` so descendants (`HeroParallax`,
- *    shell orbs, header) can react to scroll without their own listeners.
- *  - Provides smooth web scroll affordances without touching native props.
- *
- * Optionally accepts an `onScrollJS` callback (regular JS function) that runs
- * after the internal worklet has updated `scrollY`. Use this for screens that
- * need to react to scroll on the JS thread (e.g. setState).
- *
- *   <MotionScrollView contentContainerStyle={...}>
- *     <HeroParallax>...</HeroParallax>
- *   </MotionScrollView>
+ *  - Mounts a `ScrollOffsetContext.Provider` so descendants can react to scroll.
+ *  - Web: plain `ScrollView` (Reanimated scroll views often fail to scroll on RN Web).
+ *  - Native: Reanimated scroll handler for smooth worklet updates.
  */
 const MotionScrollView = forwardRef(function MotionScrollView(
   {
@@ -25,14 +18,23 @@ const MotionScrollView = forwardRef(function MotionScrollView(
     contentContainerStyle,
     style,
     scrollEventThrottle = 16,
-    smoothScroll = true,
+    smoothScroll = false,
     onScrollJS,
     ...rest
   },
   ref,
 ) {
   const scrollY = useSharedValue(0);
-  const scrollHandler = useAnimatedScrollHandler(
+
+  const publishScroll = useCallback(
+    (y) => {
+      scrollY.value = y;
+      onScrollJS?.(y);
+    },
+    [onScrollJS, scrollY],
+  );
+
+  const nativeScrollHandler = useAnimatedScrollHandler(
     {
       onScroll: (event) => {
         "worklet";
@@ -44,11 +46,19 @@ const MotionScrollView = forwardRef(function MotionScrollView(
     },
     [onScrollJS],
   );
+
+  const webScrollHandler = useCallback(
+    (event) => {
+      publishScroll(event.nativeEvent.contentOffset.y);
+    },
+    [publishScroll],
+  );
+
   const ctxValue = useScrollOffsetContextValue(scrollY, "internal");
 
   const webStyle = useMemo(() => {
     if (Platform.OS !== "web") return null;
-    return [smoothScroll ? styles.webSmooth : null, styles.webContain];
+    return [styles.webScroll, smoothScroll ? styles.webSmooth : null, styles.webContain];
   }, [smoothScroll]);
 
   const mergedStyle = useMemo(() => {
@@ -56,23 +66,40 @@ const MotionScrollView = forwardRef(function MotionScrollView(
     return [webStyle, style];
   }, [style, webStyle]);
 
+  const ScrollComponent = useNativeDriverScroll ? AnimatedScrollView : ScrollView;
+  const scrollProps = useNativeDriverScroll
+    ? { onScroll: nativeScrollHandler }
+    : { onScroll: webScrollHandler };
+
   return (
     <ScrollOffsetProvider value={ctxValue}>
-      <AnimatedScrollView
+      <ScrollComponent
         ref={ref}
         style={mergedStyle}
         contentContainerStyle={contentContainerStyle}
-        onScroll={scrollHandler}
         scrollEventThrottle={scrollEventThrottle}
+        {...(Platform.OS === "web" ? { dataSet: { zvScroll: "vertical" } } : {})}
+        {...scrollProps}
         {...rest}
       >
         {children}
-      </AnimatedScrollView>
+      </ScrollComponent>
     </ScrollOffsetProvider>
   );
 });
 
 const styles = StyleSheet.create({
+  webScroll: Platform.select({
+    web: {
+      flex: 1,
+      minHeight: 0,
+      width: "100%",
+      overflowY: "auto",
+      WebkitOverflowScrolling: "touch",
+      touchAction: "pan-y",
+    },
+    default: {},
+  }),
   webSmooth: Platform.select({
     web: { scrollBehavior: "smooth" },
     default: {},

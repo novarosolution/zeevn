@@ -270,7 +270,7 @@ export default function SearchSuggestionsPopover({
         accessibilityElementsHidden
         importantForAccessibility="no-hide-descendants"
         onPress={onClose}
-        style={[styles.scrim, { zIndex: WEB_Z_INDEX.overlay - 1 }]}
+        style={[styles.scrim, { zIndex: WEB_Z_INDEX.dropdownScrim }]}
       />
       <View
         nativeID="search-suggestions-popover-root"
@@ -312,6 +312,8 @@ const styles = StyleSheet.create({
           left: 0,
           right: 0,
           bottom: 0,
+          transform: "translateZ(0)",
+          willChange: "transform",
         }
       : {}),
     backgroundColor: "transparent",
@@ -324,6 +326,8 @@ const styles = StyleSheet.create({
     ...(Platform.OS === "web"
       ? {
           boxShadow: "0 16px 40px rgba(15, 23, 42, 0.14)",
+          transform: "translateZ(0)",
+          willChange: "transform",
         }
       : {}),
   },

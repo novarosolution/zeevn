@@ -12,6 +12,7 @@ import {
 import ProductImage from "../ui/ProductImage";
 import GalleryHeroVideo from "./GalleryHeroVideo";
 import { Ionicons } from "@expo/vector-icons";
+import { Zap } from "lucide-react-native";
 import Animated, {
   Easing,
   runOnJS,
@@ -19,8 +20,6 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-
-const FADE_MS = 200;
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useTheme } from "../../context/ThemeContext";
 import { getImageUriCandidates } from "../../utils/image";
@@ -31,6 +30,7 @@ import { regionA11yProps } from "../../utils/a11y";
 import { PRODUCT_SCREEN, fillProductScreen } from "../../content/appContent";
 import ProductGalleryZoomModal from "./ProductGalleryZoomModal";
 
+const FADE_MS = 200;
 const THUMB_GAP = 8;
 const RAIL_WIDTH = 84;
 const THUMB_HEIGHT_DESKTOP = Math.round((RAIL_WIDTH * 5) / 4);
@@ -180,6 +180,8 @@ function GalleryThumbnail({
   }));
 
   const posterUri = slide.type === "video" ? slide.poster || slide.uri : slide.uri;
+  const shouldPrioritize = selected || thumbIndex < 2;
+  const shouldLazyLoad = !shouldPrioritize;
 
   return (
     <Animated.View style={animStyle}>
@@ -215,7 +217,7 @@ function GalleryThumbnail({
               }
             : undefined
         }
-        style={[
+        style={({ hovered, focused }) => [
           styles.thumb,
           {
             width,
@@ -223,9 +225,17 @@ function GalleryThumbnail({
             borderColor: selected ? semanticPalette.accent : semanticPalette.lineSoft,
             borderWidth: selected ? 1.5 : 1,
           },
+          hovered && Platform.OS === "web" && !selected ? styles.thumbHover : null,
+          focused && Platform.OS === "web" ? styles.thumbFocus : null,
         ]}
       >
-        <GalleryHeroImage sourceUri={posterUri} style={StyleSheet.absoluteFill} contentFit="cover" />
+        <GalleryHeroImage
+          sourceUri={posterUri}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          priority={shouldPrioritize}
+          lazy={shouldLazyLoad}
+        />
         {selected ? (
           <View style={[styles.thumbDot, { backgroundColor: semanticPalette.accent }]} />
         ) : null}
@@ -250,7 +260,7 @@ export default function ProductGallery({
   isOutOfStock = false,
 }) {
   const { width: windowWidth } = useWindowDimensions();
-  const { semanticPalette, RADII, SHADOWS, SPACING } = useTheme();
+  const { semanticPalette, SHADOWS, SPACING } = useTheme();
   const reducedMotion = useReducedMotion();
   const isDesktop = windowWidth >= 768;
 
@@ -262,6 +272,9 @@ export default function ProductGallery({
   const [videoMuted, setVideoMuted] = useState(true);
   const [lens, setLens] = useState(null);
   const thumbRefs = useRef([]);
+  const lensFrameRef = useRef(null);
+  const lensPointRef = useRef(null);
+  const lastLensRef = useRef({ x: -1, y: -1 });
 
   const rtl = I18nManager.isRTL;
   const dragX = useSharedValue(0);
@@ -334,6 +347,15 @@ export default function ProductGallery({
 
   const showSlideTrack = !isDesktop && heroMode === "slide" && slides.length > 1;
 
+  useEffect(
+    () => () => {
+      if (lensFrameRef.current != null) {
+        cancelAnimationFrame(lensFrameRef.current);
+      }
+    },
+    []
+  );
+
   const heroTrackStyle = useAnimatedStyle(() => {
     const w = heroWidth || 1;
     const base = -slideIndex.value * w;
@@ -362,9 +384,10 @@ export default function ProductGallery({
   );
 
   const panGesture = useMemo(() => {
-    if (isDesktop || slides.length < 2) return null;
+    if (Platform.OS === "web" || isDesktop || slides.length < 2) return null;
     return Gesture.Pan()
       .activeOffsetX([-12, 12])
+      .failOffsetY([-14, 14])
       .onUpdate((event) => {
         dragX.value = event.translationX;
       })
@@ -389,6 +412,15 @@ export default function ProductGallery({
 
   const badge = String(badgeText || "").trim();
   const saleBadge = badge && isSaleBadge(badge);
+  const expandBtnBaseStyle = useMemo(
+    () => ({
+      backgroundColor: Platform.OS === "web"
+        ? (semanticPalette.mode === "dark" ? "rgba(14,23,41,0.88)" : "rgba(255,255,255,0.94)")
+        : (semanticPalette.mode === "dark" ? "rgba(14,23,41,0.9)" : "rgba(255,255,255,0.92)"),
+      borderColor: semanticPalette.mode === "dark" ? "rgba(255,255,255,0.2)" : "rgba(14,23,41,0.12)",
+    }),
+    [semanticPalette.mode]
+  );
 
   const heroA11y = fillProductScreen(PRODUCT_SCREEN.galleryA11y, {
     current: String(selectedIndex + 1),
@@ -410,6 +442,7 @@ export default function ProductGallery({
             : { backgroundColor: semanticPalette.accent, borderColor: semanticPalette.accent },
         ]}
       >
+        {saleBadge ? <Zap size={12} color="#FFFFFF" strokeWidth={2.2} /> : null}
         <Text style={styles.badgeText}>{badge}</Text>
       </View>
     );
@@ -478,23 +511,43 @@ export default function ProductGallery({
             onMouseMove: (event) => {
               if (!isDesktop || currentSlide?.type === "video" || imageFailed) {
                 setLens(null);
+                lensPointRef.current = null;
+                lastLensRef.current = { x: -1, y: -1 };
                 return;
               }
               const { locationX, locationY } = event.nativeEvent;
-              const w = heroWidth || 1;
-              const h = w / HERO_ASPECT;
-              const lensSize = 200;
-              const bgX = ((locationX - lensSize / 2) / Math.max(w - lensSize, 1)) * 100;
-              const bgY = ((locationY - lensSize / 2) / Math.max(h - lensSize, 1)) * 100;
-              setLens({
-                left: locationX - lensSize / 2,
-                top: locationY - lensSize / 2,
-                uri: imageUris[0] || currentUri,
-                bgX: clampPercent(bgX),
-                bgY: clampPercent(bgY),
+              lensPointRef.current = { x: locationX, y: locationY };
+              if (lensFrameRef.current != null) return;
+              lensFrameRef.current = requestAnimationFrame(() => {
+                lensFrameRef.current = null;
+                const point = lensPointRef.current;
+                if (!point) return;
+                if (
+                  Math.abs(point.x - lastLensRef.current.x) < 1 &&
+                  Math.abs(point.y - lastLensRef.current.y) < 1
+                ) {
+                  return;
+                }
+                lastLensRef.current = point;
+                const w = heroWidth || 1;
+                const h = w / HERO_ASPECT;
+                const lensSize = 200;
+                const bgX = ((point.x - lensSize / 2) / Math.max(w - lensSize, 1)) * 100;
+                const bgY = ((point.y - lensSize / 2) / Math.max(h - lensSize, 1)) * 100;
+                setLens({
+                  left: point.x - lensSize / 2,
+                  top: point.y - lensSize / 2,
+                  uri: imageUris[0] || currentUri,
+                  bgX: clampPercent(bgX),
+                  bgY: clampPercent(bgY),
+                });
               });
             },
-            onMouseLeave: () => setLens(null),
+            onMouseLeave: () => {
+              lensPointRef.current = null;
+              lastLensRef.current = { x: -1, y: -1 };
+              setLens(null);
+            },
           }
         : {})}
     >
@@ -536,6 +589,7 @@ export default function ProductGallery({
                     backgroundImage: `url(${lens.uri})`,
                     backgroundPosition: `${lens.bgX}% ${lens.bgY}%`,
                     backgroundSize: `${heroWidth * 2}px ${(heroWidth / HERO_ASPECT) * 2}px`,
+                    borderColor: semanticPalette.mode === "dark" ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.95)",
                   },
                 ]}
               />
@@ -554,7 +608,13 @@ export default function ProductGallery({
       ) : null}
       {currentSlide?.type === "image" && imageUris[0] && !imageFailed ? (
         <Pressable
-          style={styles.expandBtn}
+          style={({ hovered, focused, pressed }) => [
+            styles.expandBtn,
+            expandBtnBaseStyle,
+            hovered && Platform.OS === "web" ? styles.expandBtnHover : null,
+            focused && Platform.OS === "web" ? styles.expandBtnFocus : null,
+            pressed ? styles.expandBtnPressed : null,
+          ]}
           onPress={() => openZoom(imageUris[0])}
           accessibilityRole="button"
           accessibilityLabel={PRODUCT_SCREEN.zoomInA11y}
@@ -570,7 +630,7 @@ export default function ProductGallery({
 
   const thumbList = slides.map((slide, index) => (
     <GalleryThumbnail
-      key={`${slide.type}-${slide.uri}`}
+      key={`${slide.type}-${slide.uri}-${index}`}
       slide={slide}
       selected={index === selectedIndex}
       thumbIndex={index}
@@ -699,6 +759,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     maxWidth: "78%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
   badgeText: {
     fontFamily: fonts.semibold,
@@ -720,6 +783,19 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.92)",
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(14,23,41,0.12)",
+  },
+  expandBtnHover: {
+    opacity: 0.96,
+  },
+  expandBtnFocus: {
+    ...Platform.select({
+      web: { boxShadow: "0 0 0 2px rgba(200,169,126,0.28)" },
+      default: {},
+    }),
+  },
+  expandBtnPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.97 }],
   },
   lens: {
     position: "absolute",
@@ -752,13 +828,24 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(14,23,41,0.04)",
     position: "relative",
   },
+  thumbHover: {
+    borderColor: "rgba(200,169,126,0.62)",
+  },
+  thumbFocus: {
+    ...Platform.select({
+      web: { boxShadow: "0 0 0 2px rgba(200,169,126,0.25)" },
+      default: {},
+    }),
+  },
   thumbDot: {
     position: "absolute",
     top: 6,
     right: 6,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.92)",
     zIndex: 2,
   },
   thumbPlay: {

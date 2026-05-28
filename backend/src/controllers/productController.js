@@ -1,6 +1,6 @@
 const Product = require("../models/Product");
 const Order = require("../models/Order");
-const cloudinary = require("../config/cloudinary");
+const { getCloudinary, isCloudinaryConfigured } = require("../config/cloudinary");
 const CLOUDINARY_PRODUCT_FOLDER =
   String(process.env.CLOUDINARY_PRODUCT_FOLDER || process.env.CLOUDINARY_UPLOAD_PREFIX || "").trim() ||
   "zeevan/products";
@@ -109,6 +109,8 @@ async function createProduct(req, res, next) {
       productType,
       showOnHome,
       homeOrder,
+      featuredDeal,
+      dealEndsAt,
       brand,
       sku,
       unit,
@@ -161,6 +163,8 @@ async function createProduct(req, res, next) {
       productType: productType || category || "General",
       showOnHome: toBoolean(showOnHome, true),
       homeOrder: toNumber(homeOrder, 0),
+      featuredDeal: toBoolean(featuredDeal, false),
+      dealEndsAt: dealEndsAt ? new Date(dealEndsAt) : null,
       brand: brand || "",
       sku: sku || "",
       unit: unit || "1 pc",
@@ -212,6 +216,8 @@ async function updateProduct(req, res, next) {
       productType,
       showOnHome,
       homeOrder,
+      featuredDeal,
+      dealEndsAt,
       brand,
       sku,
       unit,
@@ -251,6 +257,10 @@ async function updateProduct(req, res, next) {
     if (productType !== undefined) product.productType = productType;
     if (showOnHome !== undefined) product.showOnHome = toBoolean(showOnHome, product.showOnHome);
     if (homeOrder !== undefined) product.homeOrder = toNumber(homeOrder, product.homeOrder);
+    if (featuredDeal !== undefined) product.featuredDeal = toBoolean(featuredDeal, product.featuredDeal);
+    if (dealEndsAt !== undefined) {
+      product.dealEndsAt = dealEndsAt ? new Date(dealEndsAt) : null;
+    }
     if (brand !== undefined) product.brand = brand;
     if (sku !== undefined) product.sku = sku;
     if (unit !== undefined) product.unit = unit;
@@ -309,6 +319,12 @@ async function deleteProduct(req, res, next) {
 
 async function uploadProductImage(req, res, next) {
   try {
+    if (!isCloudinaryConfigured()) {
+      return res.status(503).json({
+        error: "image_uploads_disabled",
+        message: "Image uploads are not configured in this environment.",
+      });
+    }
     const { imageBase64, mimeType } = req.body || {};
 
     if (!imageBase64 || typeof imageBase64 !== "string") {
@@ -323,7 +339,7 @@ async function uploadProductImage(req, res, next) {
       ? imageBase64
       : `data:${safeMime};base64,${imageBase64}`;
 
-    const uploaded = await cloudinary.uploader.upload(uploadSource, {
+    const uploaded = await getCloudinary().uploader.upload(uploadSource, {
       folder: CLOUDINARY_PRODUCT_FOLDER,
       resource_type: "image",
     });
@@ -437,6 +453,12 @@ async function createOrUpdateProductReview(req, res, next) {
 
 async function uploadReviewPhoto(req, res, next) {
   try {
+    if (!isCloudinaryConfigured()) {
+      return res.status(503).json({
+        error: "image_uploads_disabled",
+        message: "Image uploads are not configured in this environment.",
+      });
+    }
     const { id } = req.params;
     const product = await Product.findById(id).select("_id");
     if (!product) {
@@ -453,7 +475,7 @@ async function uploadReviewPhoto(req, res, next) {
     const uploadSource = hasDataPrefix ? imageBase64 : `data:${safeMime};base64,${imageBase64}`;
     const folder = `${CLOUDINARY_PRODUCT_FOLDER}/reviews`;
 
-    const uploaded = await cloudinary.uploader.upload(uploadSource, {
+    const uploaded = await getCloudinary().uploader.upload(uploadSource, {
       folder,
       resource_type: "image",
     });

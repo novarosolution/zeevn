@@ -16,6 +16,8 @@ import { fonts, loadingColors, loadingMotion, loadingRadius } from "../theme/tok
 import { FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
 import { usePrefersReducedMotion } from "../utils/motion";
 import ProgressRing from "./feedback/ProgressRing";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../utils/webViewport";
+import { pointerEventsProp } from "../utils/pointerEventsStyle";
 
 const PHASE_STATES = {
   pending: "pending",
@@ -218,7 +220,12 @@ export default function AppStartupScreen({ phaseStates, onRetry }) {
       accessibilityLabel={STARTUP.a11yAnnouncement}
     >
       <View style={styles.root}>
-        <View style={styles.glowWrap} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <View
+          style={styles.glowWrap}
+          {...pointerEventsProp("none")}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
           <Svg width={600} height={600}>
             <Defs>
               <RadialGradient id="startup-accent-glow" cx="50%" cy="50%" r="50%">
@@ -285,7 +292,7 @@ const styles = StyleSheet.create({
     backgroundColor: loadingColors.bgDeep,
     paddingHorizontal: 20,
     ...Platform.select({
-      web: { minHeight: "100vh" },
+      web: { minHeight: APP_VIEWPORT_MIN_HEIGHT },
       default: {},
     }),
   },

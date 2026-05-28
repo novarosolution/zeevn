@@ -47,16 +47,16 @@ import {
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
 import { fonts, layout, lineHeight, radius, semanticRadius, spacing, typography } from "../theme/tokens";
 import { formatINR } from "../utils/currency";
-import PremiumEmptyState from "../components/ui/PremiumEmptyState";
-import PremiumLoader from "../components/ui/PremiumLoader";
-import PremiumInput from "../components/ui/PremiumInput";
-import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
-import PremiumChip from "../components/ui/PremiumChip";
-import PremiumStatCard from "../components/ui/PremiumStatCard";
+import EmptyState from "../components/ui/EmptyState";
+import Loader from "../components/ui/Loader";
+import Input from "../components/ui/Input";
+import ErrorBanner from "../components/ui/ErrorBanner";
+import Chip from "../components/ui/Chip";
+import StatCard from "../components/ui/StatCard";
 import SkeletonBlock from "../components/ui/SkeletonBlock";
-import PremiumButton from "../components/ui/PremiumButton";
-import PremiumCard from "../components/ui/PremiumCard";
-import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import SectionHeader from "../components/ui/SectionHeader";
 import GoldHairline from "../components/ui/GoldHairline";
 import {
   ORDER_PROGRESS_STEPS,
@@ -1188,7 +1188,7 @@ export default function MyOrdersScreen({ navigation, route }) {
           subtitle={MY_ORDERS_UI.pageSubtitle}
           right={
             isPhoneCompact ? undefined : (
-            <PremiumButton
+            <Button
               label={MY_ORDERS_UI.refreshCta}
               iconLeft="refresh-outline"
               size="sm"
@@ -1200,12 +1200,12 @@ export default function MyOrdersScreen({ navigation, route }) {
         />
         {error ? (
           <View style={styles.flashBar}>
-            <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} />
+            <ErrorBanner severity="error" message={error} onClose={() => setError("")} />
           </View>
         ) : null}
         {success ? (
           <View style={styles.flashBar}>
-            <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} />
+            <ErrorBanner severity="success" message={success} onClose={() => setSuccess("")} />
           </View>
         ) : null}
 
@@ -1213,7 +1213,7 @@ export default function MyOrdersScreen({ navigation, route }) {
           <SectionReveal preset="fade-up" delay={60}>
             <View style={styles.statsGrid}>
               <View style={styles.statsGridCell}>
-                <PremiumStatCard
+                <StatCard
                   iconName="receipt-outline"
                   label={MY_ORDERS_UI.statsTotalLabel}
                   value={String(Math.round(totalOrdersCount))}
@@ -1222,7 +1222,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                 />
               </View>
               <View style={styles.statsGridCell}>
-                <PremiumStatCard
+                <StatCard
                   iconName="rocket-outline"
                   label={MY_ORDERS_UI.statsInFlightLabel}
                   value={String(Math.round(inFlightCount))}
@@ -1231,7 +1231,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                 />
               </View>
               <View style={styles.statsGridCell}>
-                <PremiumStatCard
+                <StatCard
                   iconName="checkmark-done-outline"
                   label={MY_ORDERS_UI.statsDeliveredLabel}
                   value={String(Math.round(deliveredCount))}
@@ -1240,7 +1240,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                 />
               </View>
               <View style={styles.statsGridCell}>
-                <PremiumStatCard
+                <StatCard
                   iconName="wallet-outline"
                   label={MY_ORDERS_UI.statsSpendLabel}
                   value={formatINR(Math.round(totalSpentCount))}
@@ -1270,7 +1270,7 @@ export default function MyOrdersScreen({ navigation, route }) {
             </View>
             <SkeletonBlock width="100%" height={140} rounded="xl" />
             <SkeletonBlock width="100%" height={140} rounded="xl" />
-            <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.orders} />
+            <Loader size="sm" caption={APP_LOADING_UI.inline.orders} />
           </View>
         ) : orders.length === 0 ? (
           <View style={[styles.panel, styles.emptyPanel]}>
@@ -1284,7 +1284,7 @@ export default function MyOrdersScreen({ navigation, route }) {
               end={{ x: 1, y: 1 }}
               style={styles.emptyGradient}
             >
-              <PremiumEmptyState
+              <EmptyState
                 iconName="cube-outline"
                 title={MY_ORDERS_UI.emptyTitle}
                 description={MY_ORDERS_UI.emptyDescriptionShort}
@@ -1311,7 +1311,7 @@ export default function MyOrdersScreen({ navigation, route }) {
               const active = filter === chip.key;
               const label = chip.count > 0 ? `${chip.label} · ${chip.count}` : chip.label;
               return (
-                <PremiumChip
+                <Chip
                   key={chip.key}
                   label={label}
                   tone={active ? chip.tone : "neutral"}
@@ -1326,7 +1326,7 @@ export default function MyOrdersScreen({ navigation, route }) {
 
           {isWide && filter === "all" && activeOrders.length > 0 ? (
             <View style={styles.inFlightSection}>
-              <PremiumSectionHeader
+              <SectionHeader
                 compact
                 overline={MY_ORDERS_UI.inFlightOverline}
                 title={MY_ORDERS_UI.inFlightTitle}
@@ -1341,7 +1341,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                   : {})}
               >
                 {activeOrders.map((order) => (
-                  <PremiumCard
+                  <Card
                     key={order._id}
                     variant="panel"
                     padding="md"
@@ -1364,19 +1364,19 @@ export default function MyOrdersScreen({ navigation, route }) {
                       {(order.products || []).reduce((s, p) => s + Number(p.quantity || 0), 0)} items ·{" "}
                       {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : ""}
                     </Text>
-                  </PremiumCard>
+                  </Card>
                 ))}
               </ScrollView>
               <View style={styles.historyHeaderRow}>
                 <View style={styles.historyHeaderTitle}>
-                  <PremiumSectionHeader
+                  <SectionHeader
                     compact
                     overline={MY_ORDERS_UI.historyOverline}
                     title={MY_ORDERS_UI.historyTitle}
                     count={historyOrders.length}
                   />
                 </View>
-                <PremiumButton
+                <Button
                   iconLeft={historyExpanded ? "chevron-up-outline" : "chevron-down-outline"}
                   variant="ghost"
                   size="sm"
@@ -1522,7 +1522,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                 </View>
               ) : null}
               <View style={styles.rowButtons}>
-                <PremiumButton
+                <Button
                   label={
                     expandedOrderId === item._id ? MY_ORDERS_UI.detailsCollapse : MY_ORDERS_UI.detailsExpand
                   }
@@ -1533,7 +1533,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                   onPress={() => setExpandedOrderId((current) => (current === item._id ? "" : item._id))}
                 />
                 {canEditAddress(item) ? (
-                  <PremiumButton
+                  <Button
                     label={MY_ORDERS_UI.changeAddress}
                     iconLeft="location-outline"
                     size="sm"
@@ -1542,7 +1542,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                     onPress={() => openEditAddress(item)}
                   />
                 ) : null}
-                <PremiumButton
+                <Button
                   label={
                     downloadingOrderId === item._id ? MY_ORDERS_UI.generatingInvoiceCta : MY_ORDERS_UI.downloadInvoiceCta
                   }
@@ -1554,7 +1554,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                   onPress={() => handleDownloadInvoice(item)}
                 />
                 {isDeliveredOrder(item.status) ? (
-                  <PremiumButton
+                  <Button
                     label={
                       item.reward?.claimedAt
                         ? fillPlaceholders(MY_ORDERS_UI.rewardClaimedCta, {
@@ -1645,7 +1645,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                 <View style={styles.editBox}>
                   <Text style={styles.detailTitle}>{MY_ORDERS_UI.editAddressTitle}</Text>
                   <View style={styles.editFieldGap}>
-                    <PremiumInput
+                    <Input
                       label={MY_ORDERS_UI.addressFullNameLabel}
                       value={addressForm.fullName}
                       onChangeText={(value) => setAddressForm((current) => ({ ...current, fullName: value }))}
@@ -1654,7 +1654,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                     />
                   </View>
                   <View style={styles.editFieldGap}>
-                    <PremiumInput
+                    <Input
                       label={MY_ORDERS_UI.addressPhoneLabel}
                       value={addressForm.phone}
                       onChangeText={(value) => setAddressForm((current) => ({ ...current, phone: value }))}
@@ -1663,7 +1663,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                     />
                   </View>
                   <View style={styles.editFieldGap}>
-                    <PremiumInput
+                    <Input
                       label={MY_ORDERS_UI.addressLine1Label}
                       value={addressForm.line1}
                       onChangeText={(value) => setAddressForm((current) => ({ ...current, line1: value }))}
@@ -1673,7 +1673,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                   </View>
                   <View style={styles.splitRow}>
                     <View style={[styles.editFieldGap, styles.editHalfField]}>
-                      <PremiumInput
+                      <Input
                         label={MY_ORDERS_UI.addressCityLabel}
                         value={addressForm.city}
                         onChangeText={(value) => setAddressForm((current) => ({ ...current, city: value }))}
@@ -1681,7 +1681,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                       />
                     </View>
                     <View style={[styles.editFieldGap, styles.editHalfField]}>
-                      <PremiumInput
+                      <Input
                         label={MY_ORDERS_UI.addressStateLabel}
                         value={addressForm.state}
                         onChangeText={(value) => setAddressForm((current) => ({ ...current, state: value }))}
@@ -1691,7 +1691,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                   </View>
                   <View style={styles.splitRow}>
                     <View style={[styles.editFieldGap, styles.editHalfField]}>
-                      <PremiumInput
+                      <Input
                         label={MY_ORDERS_UI.addressPostalCodeLabel}
                         value={addressForm.postalCode}
                         onChangeText={(value) => setAddressForm((current) => ({ ...current, postalCode: value }))}
@@ -1699,7 +1699,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                       />
                     </View>
                     <View style={[styles.editFieldGap, styles.editHalfField]}>
-                      <PremiumInput
+                      <Input
                         label={MY_ORDERS_UI.addressCountryLabel}
                         value={addressForm.country}
                         onChangeText={(value) => setAddressForm((current) => ({ ...current, country: value }))}
@@ -1708,7 +1708,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                     </View>
                   </View>
                   <View style={styles.editFieldGap}>
-                    <PremiumInput
+                    <Input
                       label={MY_ORDERS_UI.addressNoteLabel}
                       value={addressForm.note}
                       onChangeText={(value) => setAddressForm((current) => ({ ...current, note: value }))}
@@ -1716,14 +1716,14 @@ export default function MyOrdersScreen({ navigation, route }) {
                     />
                   </View>
                   <View style={styles.rowButtons}>
-                    <PremiumButton
+                    <Button
                       label={savingOrderId === item._id ? MY_ORDERS_UI.savingAddressCta : MY_ORDERS_UI.saveAddressCta}
                       size="sm"
                       variant="primary"
                       onPress={() => handleSaveAddress(item._id)}
                       disabled={savingOrderId === item._id}
                     />
-                    <PremiumButton
+                    <Button
                       label={MY_ORDERS_UI.cancelCta}
                       size="sm"
                       variant="ghost"
@@ -1732,7 +1732,7 @@ export default function MyOrdersScreen({ navigation, route }) {
                   </View>
                 </View>
               ) : null}
-              <PremiumButton
+              <Button
                 label={reorderingOrderId === item._id ? MY_ORDERS_UI.reorderingCta : MY_ORDERS_UI.reorderCta}
                 iconLeft="refresh-outline"
                 variant="primary"
@@ -1759,7 +1759,7 @@ export default function MyOrdersScreen({ navigation, route }) {
             );
           })}
           {displayedOrderViewModels.length < allDisplayedOrders.length ? (
-            <PremiumButton
+            <Button
               label={`Load more orders (${allDisplayedOrders.length - displayedOrderViewModels.length} remaining)`}
               variant="subtle"
               size="md"

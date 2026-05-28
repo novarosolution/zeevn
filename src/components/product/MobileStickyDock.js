@@ -9,6 +9,7 @@ import { PRODUCT_SCREEN } from "../../content/appContent";
 import { fonts } from "../../theme/tokens";
 import { formatINR, formatINRWhole } from "../../utils/currency";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import { pointerEventsNativeOnly, withPointerEventsStyle } from "../../utils/pointerEventsStyle";
 
 const THUMB_SIZE = 44;
 const DOCK_ANIM_MS = 240;
@@ -145,8 +146,8 @@ function MobileStickyDockBase({
 
   return (
     <Animated.View
-      pointerEvents={visible ? "auto" : "none"}
-      style={[styles.dock, { bottom: bottomOffset }, animStyle]}
+      style={withPointerEventsStyle([styles.dock, { bottom: bottomOffset }, animStyle], visible ? "auto" : "none")}
+      {...pointerEventsNativeOnly(visible ? "auto" : "none")}
       accessibilityElementsHidden={!visible}
     >
       <Pressable

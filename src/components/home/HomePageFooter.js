@@ -1,12 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { Linking, Platform, Pressable, StyleSheet, Text, TextInput, useWindowDimensions, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { MapPin, RotateCcw, Truck } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 import { navigateCustomerNav } from "../../navigation/accountRoutes";
-import {
-  APP_DISPLAY_NAME,
-  HOME_FOOTER,
-} from "../../content/appContent";
+import { APP_DISPLAY_NAME, HOME_FOOTER } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, getSemanticColors, layout, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
 import { homeType } from "../../styles/typography";
@@ -27,6 +25,7 @@ export default function HomePageFooter({ colors: c, compact = false }) {
   const [openKeys, setOpenKeys] = useState(() => new Set(["shop"]));
   const semantic = getSemanticColors(c);
   const styles = useMemo(() => createStyles(c, isDark, semantic, compact), [c, compact, isDark, semantic]);
+  const brassAction = isDark ? c.accent : c.accentOnLight || c.accent;
   const isDesktop = width >= 1200;
   const isMobile = width < 768;
   const footerColumns = (HOME_FOOTER.sections || [])
@@ -37,6 +36,11 @@ export default function HomePageFooter({ colors: c, compact = false }) {
     .filter((col) => String(col.title || "").trim() && col.links.length > 0);
   const social = (HOME_FOOTER.social || []).filter((s) => s?.icon);
   const paymentIcons = HOME_FOOTER.bottom?.paymentIcons || [];
+  const trustPills = [
+    { key: "shipping", label: "Free shipping over ₹1,499", Icon: Truck },
+    { key: "local", label: "Same-day in Ahmedabad", Icon: MapPin },
+    { key: "returns", label: "30-day returns", Icon: RotateCcw },
+  ];
 
   const submitNewsletter = () => {
     if (!String(email || "").trim()) return;
@@ -54,7 +58,12 @@ export default function HomePageFooter({ colors: c, compact = false }) {
   };
 
   return (
-    <View style={styles.shell}>
+    <View
+      style={styles.shell}
+      {...Platform.select({
+        web: { role: "region", "aria-label": "Site footer" },
+      })}
+    >
       <View style={styles.newsletterStrip}>
         <View style={styles.newsletterTextCol}>
           <Text style={styles.newsletterTitle}>{HOME_FOOTER.newsletter.title}</Text>
@@ -62,22 +71,26 @@ export default function HomePageFooter({ colors: c, compact = false }) {
           {toast ? <Text style={styles.newsletterToast}>{toast}</Text> : null}
         </View>
         <View style={styles.newsletterFormRow}>
-          <TextInput
+          <TextInput accessibilityLabel="Text input field"
             value={email}
             onChangeText={setEmail}
             placeholder={HOME_FOOTER.newsletter.inputPlaceholder}
-            placeholderTextColor="rgba(203,213,225,0.7)"
+            placeholderTextColor={c.textMuted}
             style={styles.newsletterInput}
             keyboardType="email-address"
             autoCapitalize="none"
           />
           <Pressable
             onPress={submitNewsletter}
-            style={({ pressed }) => [styles.newsletterBtn, pressed ? styles.newsletterBtnPressed : null]}
+            style={({ pressed }) => [
+              styles.newsletterBtn,
+              { borderColor: brassAction },
+              pressed ? styles.newsletterBtnPressed : null,
+            ]}
             accessibilityRole="button"
             accessibilityLabel={HOME_FOOTER.newsletter.cta}
           >
-            <Text style={styles.newsletterBtnText}>{HOME_FOOTER.newsletter.cta}</Text>
+            <Text style={[styles.newsletterBtnText, { color: brassAction }]}>{HOME_FOOTER.newsletter.cta}</Text>
           </Pressable>
         </View>
       </View>
@@ -95,8 +108,20 @@ export default function HomePageFooter({ colors: c, compact = false }) {
             accessibilityRole={item.url ? "link" : "button"}
             accessibilityLabel={item.key}
           >
-            <Ionicons name={item.icon} size={20} color="#E2E8F0" />
+            <Ionicons name={item.icon} size={20} color={c.textSecondary} />
           </Pressable>
+        ))}
+      </View>
+
+      <View style={styles.trustPillsRow}>
+        {trustPills.map((item, index) => (
+          <React.Fragment key={item.key}>
+            <View style={styles.trustPillItem}>
+              <item.Icon size={12} color={c.inkInverseSoft || "rgba(226,232,240,0.9)"} />
+              <Text style={styles.trustPillText}>{item.label}</Text>
+            </View>
+            {index < trustPills.length - 1 ? <View style={styles.trustSeparator} /> : null}
+          </React.Fragment>
         ))}
       </View>
 
@@ -113,12 +138,12 @@ export default function HomePageFooter({ colors: c, compact = false }) {
                   accessibilityLabel={`${open ? "Collapse" : "Expand"} ${column.title}`}
                 >
                   <Text style={styles.colTitle}>{column.title}</Text>
-                  <Ionicons name={open ? "chevron-up" : "chevron-down"} size={16} color="#E2E8F0" />
+                  <Ionicons name={open ? "chevron-up" : "chevron-down"} size={16} color={c.textSecondary} />
                 </Pressable>
                 {open ? (
                   <View style={styles.accordionBody}>
                     {column.links.map((link) => (
-                      <Pressable
+                      <Pressable accessibilityRole="button"
                         key={`${column.key}-${link.label}`}
                         onPress={() => {
                           if (link.url) void Linking.openURL(link.url);
@@ -141,7 +166,7 @@ export default function HomePageFooter({ colors: c, compact = false }) {
             <View key={column.key} style={[styles.col, isDesktop ? styles.colDesktop : styles.colTablet]}>
               <Text style={styles.colTitle}>{column.title}</Text>
               {column.links.map((link) => (
-                <Pressable
+                <Pressable accessibilityRole="button"
                   key={`${column.key}-${link.label}`}
                   onPress={() => {
                     if (link.url) void Linking.openURL(link.url);
@@ -166,7 +191,7 @@ export default function HomePageFooter({ colors: c, compact = false }) {
         <View style={styles.bottomRight}>
           <View style={styles.paymentRow}>
             {paymentIcons.map((name) => (
-              <Ionicons key={name} name={name} size={16} color="#E2E8F0" />
+              <Ionicons key={name} name={name} size={16} color={c.textSecondary} />
             ))}
           </View>
           <Text style={styles.meta}>{HOME_FOOTER.bottom?.madeWithCare}</Text>
@@ -184,7 +209,7 @@ function createStyles(c, isDark, semantic, compact) {
       paddingHorizontal: Platform.select({ web: homeSpacing["2xl"], default: homeSpacing.xl }),
       paddingBottom: homeSpacing["3xl"],
       borderRadius: semanticRadius.panel,
-      backgroundColor: isDark ? "#09090B" : "#111827",
+      backgroundColor: c.navy || c.bgDeep,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: "rgba(226,232,240,0.2)",
       maxWidth: layout.maxContentWidth,
@@ -218,17 +243,17 @@ function createStyles(c, isDark, semantic, compact) {
       fontSize: 28,
       lineHeight: Math.round(28 * 1.1),
       letterSpacing: -(28 * 0.025),
-      color: "#F8FAFC",
+      color: c.onPrimary,
       fontWeight: "500",
     },
     newsletterSub: {
-      color: "rgba(203,213,225,0.92)",
+      color: c.textSecondary,
       fontSize: 14,
       fontFamily: homeType.uiRegular.fontFamily,
       lineHeight: Math.round(14 * 1.5),
     },
     newsletterToast: {
-      color: "#A7F3D0",
+      color: c.accent,
       fontSize: typography.caption,
       fontFamily: fonts.semibold,
       marginTop: homeSpacing.xs,
@@ -249,7 +274,7 @@ function createStyles(c, isDark, semantic, compact) {
       borderColor: "rgba(203,213,225,0.24)",
       backgroundColor: "rgba(15,23,42,0.45)",
       paddingHorizontal: homeSpacing.sm,
-      color: "#F8FAFC",
+      color: c.onPrimary,
       fontFamily: homeType.uiRegular.fontFamily,
       fontSize: 14,
     },
@@ -271,7 +296,7 @@ function createStyles(c, isDark, semantic, compact) {
       opacity: 0.84,
     },
     newsletterBtnText: {
-      color: "#F8FAFC",
+      color: c.accent,
       fontSize: 13,
       fontFamily: homeType.uiSemibold.fontFamily,
       lineHeight: Math.round(13 * 1.4),
@@ -303,7 +328,33 @@ function createStyles(c, isDark, semantic, compact) {
       flexDirection: "row",
       alignItems: "center",
       gap: homeSpacing.md,
+      marginBottom: homeSpacing.md,
+    },
+    trustPillsRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      columnGap: homeSpacing.sm,
       marginBottom: homeSpacing.lg,
+      paddingBottom: homeSpacing.base,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: "rgba(226,232,240,0.14)",
+    },
+    trustPillItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+    },
+    trustSeparator: {
+      width: 1,
+      height: 12,
+      borderWidth: 1,
+      borderColor: c.lineInverse || "rgba(226,232,240,0.3)",
+    },
+    trustPillText: {
+      color: c.inkInverseSoft || "rgba(226,232,240,0.9)",
+      fontSize: 12,
+      fontFamily: homeType.uiMedium.fontFamily,
+      lineHeight: 16,
     },
     grid: {
       flexDirection: "row",
@@ -346,7 +397,7 @@ function createStyles(c, isDark, semantic, compact) {
     colTitle: {
       fontSize: 11,
       fontFamily: homeType.overline.fontFamily,
-      color: "#E2E8F0",
+      color: c.textSecondary,
       textTransform: "uppercase",
       letterSpacing: 1.4,
       marginBottom: spacing.sm,
@@ -363,7 +414,7 @@ function createStyles(c, isDark, semantic, compact) {
       fontSize: 13,
       fontFamily: homeType.uiRegular.fontFamily,
       lineHeight: Math.round(13 * 1.5),
-      color: "#F8FAFC",
+      color: c.onPrimary,
     },
     bottomBar: {
       borderTopWidth: StyleSheet.hairlineWidth,

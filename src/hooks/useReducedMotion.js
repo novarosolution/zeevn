@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { AccessibilityInfo, Platform } from "react-native";
+import useWebLiteMode from "./useWebLiteMode";
 
 /**
  * Returns true when the user has requested reduced motion at the OS level.
@@ -7,6 +8,7 @@ import { AccessibilityInfo, Platform } from "react-native";
  * - Native: `AccessibilityInfo.isReduceMotionEnabled()` plus listener.
  */
 export default function useReducedMotion() {
+  const webLite = useWebLiteMode();
   const [reduced, setReduced] = useState(false);
 
   useEffect(() => {
@@ -58,5 +60,5 @@ export default function useReducedMotion() {
     };
   }, []);
 
-  return reduced;
+  return reduced || webLite;
 }

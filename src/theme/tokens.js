@@ -1,20 +1,174 @@
 import { Platform } from "react-native";
+import { FONT_DISPLAY } from "./customerAlchemy";
 
 /**
- * Brand: ink + brass accent, neutral slate secondary. Sale red reserved for errors/discounts only.
- * Customer UI uses `useTheme()` for light/dark; semantic palette in `styles/designSystem.js`.
+ * Single source of truth for design tokens.
+ * Brand: navy `bgDeep` + brass `accent`; sale/success/warning are restricted semantic roles only.
+ * Legacy keys (`spacing`, `radius`, `typography`) remain as aliases during migration.
  */
 
-/** @type {const} 8px-based spacing */
+const SERIF_FAMILY = FONT_DISPLAY;
+
+/** Light semantic palette — use `getSemanticPalette(isDark)` or `useTheme().c` at runtime. */
+export const COLORS = {
+  bg: "#FAFAF7",
+  surface: "#FFFFFF",
+  surfaceAlt: "#F4F2EC",
+  bgDeep: "#0E1729",
+  bgDeepAlt: "#14203A",
+  ink: "#0E0E0E",
+  inkSoft: "#4A4A4A",
+  inkBody: "#5C5C5C",
+  inkMuted: "#757575",
+  inkInverse: "#FFFFFF",
+  inkInverseSoft: "rgba(255,255,255,0.72)",
+  inkInverseMuted: "rgba(255,255,255,0.46)",
+  line: "#E8E6E1",
+  lineSoft: "rgba(14,23,41,0.06)",
+  lineInverse: "rgba(255,255,255,0.08)",
+  accent: "#C8A97E",
+  accentOnLight: "#8A6F45",
+  accentSoft: "rgba(200,169,126,0.16)",
+  accentDeep: "#1F3A2E",
+  sale: "#B23A3A",
+  success: "#2E7D5B",
+  warning: "#B17B27",
+  info: "#3A6BB2",
+};
+
+export const COLORS_DARK = {
+  /** Page canvas — must match `darkColors.background` and web `body` chrome. */
+  bg: "#0B1120",
+  surface: COLORS.bgDeepAlt,
+  surfaceAlt: "rgba(255,255,255,0.06)",
+  bgDeep: COLORS.bgDeep,
+  bgDeepAlt: COLORS.bgDeepAlt,
+  ink: COLORS.inkInverse,
+  inkSoft: COLORS.inkInverseSoft,
+  inkBody: COLORS.inkInverseSoft,
+  inkMuted: "rgba(255,255,255,0.58)",
+  inkInverse: COLORS.ink,
+  inkInverseSoft: "rgba(14,14,14,0.72)",
+  inkInverseMuted: "rgba(14,14,14,0.46)",
+  line: COLORS.lineInverse,
+  lineSoft: "rgba(255,255,255,0.06)",
+  lineInverse: "rgba(14,23,41,0.12)",
+  accent: COLORS.accent,
+  accentOnLight: COLORS.accentOnLight,
+  accentSoft: COLORS.accentSoft,
+  accentDeep: COLORS.accentDeep,
+  sale: COLORS.sale,
+  success: COLORS.success,
+  warning: COLORS.warning,
+  info: COLORS.info,
+};
+
+export function getSemanticPalette(isDark) {
+  if (isDark) {
+    return { ...COLORS_DARK, mode: "dark" };
+  }
+  return { ...COLORS, mode: "light" };
+}
+
+export const RADII = {
+  xs: 6,
+  sm: 10,
+  md: 14,
+  lg: 18,
+  xl: 24,
+  pill: 999,
+};
+
+/** 4px grid: 4 / 8 / 12 / 16 / 20 / 24 / 32 / 40 / 56 / 72 / 96 */
+export const SPACING = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  base: 16,
+  lg: 20,
+  xl: 24,
+  "2xl": 32,
+  "3xl": 40,
+  "4xl": 56,
+  "5xl": 72,
+  "6xl": 96,
+};
+
+export const SHADOWS = {
+  none: {},
+  soft: Platform.select({
+    web: { boxShadow: "0 1px 2px rgba(14,23,41,0.04)" },
+    default: {
+      shadowColor: "#0E1729",
+      shadowOpacity: 0.04,
+      shadowRadius: 2,
+      shadowOffset: { width: 0, height: 1 },
+      elevation: 1,
+    },
+  }),
+  lifted: Platform.select({
+    web: { boxShadow: "0 8px 24px rgba(14,23,41,0.06)" },
+    default: {
+      shadowColor: "#0E1729",
+      shadowOpacity: 0.06,
+      shadowRadius: 16,
+      shadowOffset: { width: 0, height: 8 },
+      elevation: 4,
+    },
+  }),
+  popover: Platform.select({
+    web: { boxShadow: "0 12px 32px rgba(14,23,41,0.10)" },
+    default: {
+      shadowColor: "#0E1729",
+      shadowOpacity: 0.1,
+      shadowRadius: 24,
+      shadowOffset: { width: 0, height: 12 },
+      elevation: 8,
+    },
+  }),
+};
+
+export const TYPE = {
+  serif: "Playfair Display",
+  serifFamily: SERIF_FAMILY,
+  uiFamily: "Inter",
+  weights: {
+    regular: "400",
+    medium: "500",
+    semibold: "600",
+    bold: "700",
+  },
+  display: { fontSize: 44, lineHeight: 48, letterSpacing: -1.0 },
+  h1: { fontSize: 32, lineHeight: 36, letterSpacing: -0.6 },
+  h2: { fontSize: 24, lineHeight: 28, letterSpacing: -0.4 },
+  h3: { fontSize: 20, lineHeight: 24, letterSpacing: -0.2 },
+  h4: { fontSize: 17, lineHeight: 22 },
+  bodyLg: { fontSize: 16, lineHeight: 24 },
+  body: { fontSize: 14, lineHeight: 20 },
+  small: { fontSize: 13, lineHeight: 18 },
+  caption: { fontSize: 12, lineHeight: 16 },
+  micro: { fontSize: 11, lineHeight: 14 },
+  overline: { fontSize: 11, fontWeight: "600", letterSpacing: 1.8, textTransform: "uppercase" },
+};
+
+export const MOTION = {
+  fast: { duration: 120, easing: "easeOut" },
+  base: { duration: 220, easing: "easeOut" },
+  slow: { duration: 320, easing: "easeOut" },
+  page: { duration: 240, easing: "easeInOut" },
+  spring: { damping: 14, stiffness: 220, mass: 0.9 },
+};
+
+/** @deprecated Use SPACING — legacy 8px names */
 export const spacing = {
-  xxs: 4,
+  xxs: SPACING.xs,
   xxxs: 2,
-  xs: 8,
-  sm: 12,
-  md: 16,
-  lg: 24,
-  xl: 32,
-  xxl: 40,
+  xs: SPACING.sm,
+  sm: SPACING.md,
+  md: SPACING.base,
+  lg: SPACING.xl,
+  xl: SPACING["2xl"],
+  xxl: SPACING["3xl"],
 };
 
 /** Inter (loaded in App.js) — fallback to system when undefined */
@@ -47,21 +201,22 @@ export const lineHeight = {
   overline: 15,
 };
 
+/** @deprecated Use RADII */
 export const radius = {
-  xs: 8,
-  sm: 12,
-  md: 16,
-  lg: 20,
-  xl: 24,
-  xxl: 26,
-  pill: 999,
+  xs: RADII.sm,
+  sm: RADII.md,
+  md: RADII.lg,
+  lg: RADII.xl,
+  xl: RADII.xl,
+  xxl: RADII.xl,
+  pill: RADII.pill,
 };
 
 export const semanticRadius = {
-  control: radius.md,
-  card: radius.xxl,
-  panel: radius.xxl,
-  full: radius.pill,
+  control: RADII.md,
+  card: RADII.xl,
+  panel: RADII.xl,
+  full: RADII.pill,
 };
 
 /**
@@ -106,6 +261,7 @@ export const lightColors = {
   primary: "#C8A97E",
   primaryBright: "#D4B896",
   primaryDark: "#A8895E",
+  accentOnLight: "#8A6F45",
   primarySoft: "rgba(200, 169, 126, 0.16)",
   primaryBorder: "rgba(200, 169, 126, 0.38)",
   secondary: "#475569",
@@ -164,6 +320,7 @@ export const darkColors = {
   primary: "#D4B896",
   primaryBright: "#E2C9A8",
   primaryDark: "#C8A97E",
+  accentOnLight: "#C8A97E",
   primarySoft: "rgba(200, 169, 126, 0.18)",
   primaryBorder: "rgba(200, 169, 126, 0.32)",
   secondary: "#94A3B8",
@@ -435,3 +592,22 @@ export function getSemanticColors(c) {
 export const shadow = getShadow(false);
 export const shadowLift = getShadowLift(false);
 export const shadowPremium = getShadowPremium(false);
+
+/**
+ * Web glass scrims — header, modal/drawer backdrops, cart drawer.
+ * Change blur/saturation here once; consumers use helpers in `webStacking.js`.
+ */
+export const WEB_BACKDROP = {
+  blurPx: 14,
+  /** CSS `saturate()` multiplier (160% → 1.6). */
+  saturate: "160%",
+  filter: "saturate(160%) blur(14px)",
+  scrimLight: "rgba(14, 23, 41, 0.45)",
+  scrimDark: "rgba(6, 10, 18, 0.52)",
+  /** Brass selection + ink text (premium chrome). */
+  selectionBackground: "rgba(200, 169, 126, 0.35)",
+  selectionColor: COLORS.ink,
+  focusRing: "rgba(200, 169, 126, 0.55)",
+  scrollbarThumb: COLORS.accent,
+  scrollbarTrack: "rgba(14, 23, 41, 0.06)",
+};

@@ -3,7 +3,6 @@ import { Text, View } from "react-native";
 import Screen from "../../components/ui/Screen";
 import Input from "../../components/ui/Input";
 import AppFooter from "../../components/AppFooter";
-import EditorialHero from "../../components/editorial/EditorialHero";
 import FaqAccordionCard from "../../components/editorial/FaqAccordionCard";
 import { FAQ_PAGE } from "../../content/editorialContent";
 import { useTheme } from "../../context/ThemeContext";
@@ -27,8 +26,7 @@ export default function FaqScreen({ navigation }) {
   }, [query]);
 
   return (
-    <Screen navigation={navigation} title="FAQ" breadcrumbLabel="Help">
-      <EditorialHero kicker={FAQ_PAGE.kicker} headline={FAQ_PAGE.headline} subline={FAQ_PAGE.subline} />
+    <Screen navigation={navigation} breadcrumbLabel="Help">
       <View style={{ marginBottom: SPACING.xl }}>
         <Input
           label={FAQ_PAGE.searchPlaceholder}

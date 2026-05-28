@@ -11,8 +11,8 @@ export function pointerEventsProp(value) {
   return { pointerEvents: value };
 }
 
-/** Append pointer-events to an existing style array/object. */
-export function withPointerEvents(style, value) {
+/** Merge pointer-events into `style` on web; leave style unchanged on native. */
+export function withPointerEventsStyle(style, value) {
   if (!value) return style;
   if (Platform.OS === "web") {
     const pe = { pointerEvents: value };
@@ -22,8 +22,13 @@ export function withPointerEvents(style, value) {
   return style;
 }
 
-/** Native-only prop (when style array is used on web). */
-export function pointerEventsNativeProp(value) {
+/** Append pointer-events to an existing style array/object. */
+export function withPointerEvents(style, value) {
+  return withPointerEventsStyle(style, value);
+}
+
+/** Native-only `pointerEvents` prop (pair with `withPointerEventsStyle` on Animated.View). */
+export function pointerEventsNativeOnly(value) {
   if (Platform.OS === "web" || !value) return {};
   return { pointerEvents: value };
 }

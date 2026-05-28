@@ -1,71 +1,220 @@
-# Zeevan (Expo React Native)
+# Zeevan
 
-A beginner-friendly e-commerce starter app built with Expo and React Native.
+Zeevan is a heritage pantry e-commerce app for discovering staples, managing delivery addresses, checking out with Razorpay, and tracking orders—on **iOS**, **Android**, and **web** from a single Expo (React Native) codebase. An Express + MongoDB API powers auth, catalog, cart sync, payments, admin ops, and live delivery features.
 
-## Features
+## Stack
 
-- Clean folder structure (`screens`, `components`, `navigation`, `services`, `context`, `data`)
-- Native stack navigation with React Navigation
-- Screens:
-  - `LoginScreen`
-  - `HomeScreen` (product list via `FlatList`)
-  - `ProductScreen`
-  - `CartScreen`
-- Reusable `ProductCard` component
-- Cart management with Context API (add/remove/clear)
-- Modern minimal UI styling
-- Web-friendly layout constraints for future React Native Web support
+| Layer | Technology | Role |
+| --- | --- | --- |
+| **Client** | Expo SDK 53, React Native 0.79, React 19 | Cross-platform UI (native + web) |
+| **Navigation** | React Navigation 7 (native stack) | Screen routing, deep links |
+| **Styling** | Design tokens (`src/theme/tokens.js`), `useTheme()` | Navy + brass palette, locked spacing/type |
+| **State** | React Context | Auth, cart, wishlist, cart drawer, theme |
+| **Persistence** | AsyncStorage, Secure Store | Session, theme mode, drafts |
+| **Maps** | react-native-maps, Leaflet (web) | Delivery tracking |
+| **Payments** | Razorpay (client key + server verify/webhook) | Checkout |
+| **API** | Express 5, Mongoose 8 | REST backend |
+| **Database** | MongoDB | Users, products, orders, analytics |
+| **Media** | Cloudinary | Product images, avatars |
+| **Email** | Nodemailer (SMTP) | Verify email, password reset |
+| **Auth** | JWT (access + refresh), bcrypt | Login, sessions, roles |
+| **Build** | EAS (optional), `expo export --platform web` | Native builds, static web |
+| **Quality** | ESLint, `check:tokens`, Husky pre-commit | Lint + design-token drift warnings |
 
-## Project Structure
+## Quick start
 
-```txt
-.
-├── App.js
-├── app.json
-├── index.js
-├── src
-│   ├── components
-│   │   └── ProductCard.js
-│   ├── context
-│   │   └── CartContext.js
-│   ├── data
-│   │   └── products.js
-│   ├── navigation
-│   │   └── AppNavigator.js
-│   ├── screens
-│   │   ├── CartScreen.js
-│   │   ├── HomeScreen.js
-│   │   ├── LoginScreen.js
-│   │   └── ProductScreen.js
-│   └── services
-│       └── productService.js
-└── package.json
-```
+### Prerequisites
 
-## Run
+- Node.js 20+ and npm
+- MongoDB (local or Atlas)
+- [Expo Go](https://expo.dev/go) or simulators for mobile; Chrome for web
+
+### 1. Clone and install
 
 ```bash
+git clone <repo-url> zeevan
+cd zeevan
 npm install
+cd backend && npm install && cd ..
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+cp backend/.env.example backend/.env
+```
+
+Edit both files—see [Environment](#environment). Minimum for local dev:
+
+- `MONGO_URI` in `backend/.env`
+- `JWT_SECRET` in `backend/.env`
+- `EXPO_PUBLIC_API_URL=http://127.0.0.1:5001` in root `.env`
+
+### 3. Start the API
+
+```bash
+cd backend
+npm run dev
+```
+
+API listens on **http://127.0.0.1:5001** by default. Routes are mounted at `/` and `/api/*` (e.g. `/products` and `/api/products`).
+Health is available at `GET /health` and reports integration readiness (Mongo, Cloudinary, Razorpay, SMTP).
+
+### 4. Start the app
+
+In a second terminal, from the repo root:
+
+```bash
 npm run start
 ```
 
-Then press:
-- `i` for iOS simulator
-- `a` for Android emulator
-- `w` for web
+Then press **`w`** for web, **`i`** for iOS simulator, or **`a`** for Android emulator.
 
-### API URL (fix “Route not found” / 404)
+Or run web directly:
 
-1. **Start the backend** from `backend/` (default port **5001**): `npm run dev`
-2. **Optional:** create `.env` in the app root with:
-   - `EXPO_PUBLIC_API_URL=http://127.0.0.1:5001` (local)
-   - Or, if your API is under a path: `EXPO_PUBLIC_API_URL=https://yourdomain.com/api`
-3. **Production builds** default to `https://novarosolution.com/api`. If your API is at the **domain root** (e.g. `https://novarosolution.com/products`), set:
-   - `EXPO_PUBLIC_API_URL=https://novarosolution.com`
-4. Restart Expo after changing `.env`.
+```bash
+npm run web
+```
 
-The server exposes routes at both `/products` and `/api/products` (same for users, orders, admin, etc.).
+Restart Expo after changing any `EXPO_PUBLIC_*` variable.
 
-### Razorpay (online checkout)
+### First admin user
 
-Set **`EXPO_PUBLIC_RAZORPAY_KEY_ID`** in the app root `.env` to the same **Key ID** as backend `RAZORPAY_KEY_ID` (safe to expose — it is public). Restart Expo after changing. The backend still requires `RAZORPAY_KEY_SECRET` and `RAZORPAY_WEBHOOK_SECRET`; see `backend/README.md`.
+The **first registered account** is promoted to admin automatically. Use that account to access admin screens.
+
+### API URL troubleshooting
+
+If you see “Route not found” or network errors:
+
+1. Confirm the backend is running (`npm run dev` in `backend/`).
+2. Set `EXPO_PUBLIC_API_URL=http://127.0.0.1:5001` (no trailing slash unless your deploy uses a path prefix).
+3. For production web builds, set the same variable to your public API origin before `npm run export:web`.
+
+## Project structure
+
+### Frontend (`src/`)
+
+| Path | Purpose |
+| --- | --- |
+| `App.js` | Providers, fonts, deep linking, startup shell |
+| `app.config.js` | Expo config; injects `EXPO_PUBLIC_*` into `extra.publicConfig` |
+| `src/navigation/` | `AppNavigator`, account routes, stack groups |
+| `src/screens/` | Route screens (home, PDP, cart, auth, account, admin, editorial) |
+| `src/components/` | UI primitives (`ui/`), product cards, cart drawer, web header |
+| `src/context/` | Auth, Cart, Wishlist, CartDrawer, Theme |
+| `src/services/` | API clients (`apiBase.js`, orders, users, payments) |
+| `src/theme/` | `tokens.js` (canonical design tokens), `customerAlchemy.js`, web chrome |
+| `src/hooks/` | Auth submit, debounced search, keyboard shortcuts |
+| `src/content/` | Copy strings (`appContent.js`) |
+| `src/constants/` | Runtime config, auth feature flags |
+| `scripts/` | `check-tokens.js`, web export post-process |
+
+### Backend (`backend/`)
+
+| Path | Purpose |
+| --- | --- |
+| `backend/server.js` | Express app, CORS, route mounting, port |
+| `backend/src/config/` | MongoDB, Cloudinary |
+| `backend/src/controllers/` | Users, products, orders, admin, analytics, home view |
+| `backend/src/routes/` | REST route definitions |
+| `backend/src/models/` | Mongoose schemas |
+| `backend/src/middleware/` | JWT auth, errors |
+| `backend/src/services/` | Razorpay, Google Directions |
+| `backend/src/utils/` | JWT, email, mail transport |
+
+### Docs
+
+| Path | Purpose |
+| --- | --- |
+| `docs/architecture.md` | System diagram and context overview |
+| `docs/home-architecture.md` | Home composition diagram, hooks, and section ownership |
+| `docs/home-redesign-2026-05.md` | Home redesign screenshots and final verification checklist |
+| `docs/audit-2026-05.md` | Codebase audit (May 2026) |
+| `docs/ui-migration.md` | Premium → canonical UI checklist |
+| `docs/smoke-test.md` | Pre-deploy manual checklist |
+| `docs/known-issues.md` | Platform edge cases |
+| `docs/a11y-report.json` | Latest automated a11y smoke |
+| `docs/perf/final-summary.json` | Lighthouse + bundle snapshot |
+
+## Environment
+
+Copy the examples—**never commit real secrets**.
+
+| File | Description |
+| --- | --- |
+| [`.env.example`](./.env.example) | Expo app / build-time public config (`EXPO_PUBLIC_*`, EAS) |
+| [`backend/.env.example`](./backend/.env.example) | API server secrets and integrations |
+
+The backend also reads a root `.env` if present (shared monorepo setup).
+
+Backend integrations are feature-gated:
+- Cloudinary missing -> image upload routes return `503 image_uploads_disabled`
+- SMTP missing -> verify/reset mail falls back to non-production dev-link behavior
+- Razorpay missing -> online payment flow unavailable, COD path still works
+
+## Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run start` | Start Expo dev server (all platforms) |
+| `npm run web` | Start Expo for web only |
+| `npm run export:web` | Production static web build + post-process |
+| `npm run check:tokens` | Audit off-palette colors and off-scale spacing (warn baseline) |
+| `npm test` | Unit tests with coverage + design-token audit |
+| `npm run test:unit` | Jest unit tests (cart, coupons, auth, orders) + HTML/LCOV coverage in `coverage/` |
+| `npm run test:a11y` | Playwright + axe on 6 customer routes (requires `dist/` served) |
+| `npm run check:contrast` | WCAG AA contrast audit for semantic palette pairs |
+| `npm run measure:final` | Lighthouse desktop + mobile + bundle top-chunks → `docs/perf/final-summary.json` |
+| `npm run lint` | ESLint via Expo |
+| `npm run lighthouse:autorun` | Lighthouse CI autorun (requires Chrome) |
+| `npm run lhci:collect` | Collect Lighthouse runs only |
+| `npm run lhci:assert` | Assert LHCI thresholds only |
+| `cd backend && npm run dev` | API with nodemon |
+
+Other useful scripts: `npm run doctor`, `npm run deploy:check`, `npm run build:android`, `npm run build:ios`.
+
+### Lighthouse CI
+
+- Local LHCI needs a Chrome binary available.
+  - macOS: Google Chrome install is typically auto-detected.
+  - Linux: install `google-chrome-stable` or set `CHROME_PATH`.
+- CI setup and required token (`LHCI_GITHUB_APP_TOKEN`) are documented in [docs/ci.md](./docs/ci.md).
+
+### Unit tests (Jest)
+
+Money-critical paths: cart line pricing (`src/utils/productCart.js`), product normalization (`src/services/normalizeProduct.js`), coupon math (`backend/src/utils/coupon.js`), auth session (`src/context/AuthContext.js`), and order creation (`backend/src/controllers/orderController.js`).
+
+```bash
+npm run test:unit
+open coverage/lcov-report/index.html   # optional HTML report
+```
+
+CI uploads the `coverage/` artifact from [`.github/workflows/unit-tests.yml`](./.github/workflows/unit-tests.yml).
+
+## Contributing
+
+- **Branches:** `feat/`, `fix/`, `chore/` (e.g. `feat/account-wishlist-sync`)
+- **Commits:** [Conventional Commits](https://www.conventionalcommits.org/) — `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`
+- **Pull requests:** Use the template at [`.github/pull_request_template.md`](./.github/pull_request_template.md)
+- **Design tokens:** Prefer `useTheme()` → `{ c, S, R, SH, T }`; run `npm run check:tokens` before pushing
+- **UI imports:** Prefer `@/components/ui` over deprecated `Premium*` components ([`docs/ui-migration.md`](./docs/ui-migration.md))
+
+## Architecture decisions
+
+High-level system design, context boundaries, and links to audits live in **[`docs/architecture.md`](./docs/architecture.md)**.
+
+## New developer: first commit in ~30 minutes
+
+1. **Clone** the repo and run `npm install` (root + `backend/`).
+2. **Copy env files:** `cp .env.example .env` and `cp backend/.env.example backend/.env`.
+3. **Set minimum backend vars:** `MONGO_URI`, `JWT_SECRET` (use a long random string).
+4. **Set minimum app vars:** `EXPO_PUBLIC_API_URL=http://127.0.0.1:5001`.
+5. **Start MongoDB** locally or paste an Atlas URI into `MONGO_URI`.
+6. **Terminal A:** `cd backend && npm run dev` — wait for “MongoDB connected”.
+7. **Terminal B:** `npm run web` — open the URL Expo prints (usually `http://localhost:8081`).
+8. **Register** a test user (first user = admin).
+9. **Smoke checks:** browse home → open a product → add to cart → run `npm test` and `npm run lint`.
+10. **Branch:** `git checkout -b chore/onboarding-smoke-test`, make a tiny doc fix if you like, commit with `docs: note local setup verified`, push, open a PR using the template.
+
+You do not need Razorpay, SMTP, or Cloudinary for basic browsing; those unlock checkout, email flows, and image uploads respectively.

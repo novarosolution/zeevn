@@ -24,15 +24,15 @@ import {
   customerScrollFill,
 } from "../theme/screenLayout";
 import { Ionicons } from "@expo/vector-icons";
-import PremiumInput from "../components/ui/PremiumInput";
-import PremiumButton from "../components/ui/PremiumButton";
-import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
-import PremiumCard from "../components/ui/PremiumCard";
-import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
+import ErrorBanner from "../components/ui/ErrorBanner";
+import Card from "../components/ui/Card";
+import SectionHeader from "../components/ui/SectionHeader";
 import { ALCHEMY } from "../theme/customerAlchemy";
 import MotionScrollView from "../components/motion/MotionScrollView";
 import SectionReveal from "../components/motion/SectionReveal";
-import PremiumStickyBar from "../components/ui/PremiumStickyBar";
+import StickyBar from "../components/ui/StickyBar";
 import { MANAGE_ADDRESS_SCREEN } from "../content/appContent";
 
 export default function ManageAddressScreen({ navigation }) {
@@ -203,7 +203,7 @@ export default function ManageAddressScreen({ navigation }) {
             <View style={styles.desktopColPreview}>
               <SectionReveal delay={40} preset="fade-up">
                 <View style={styles.previewWrap}>
-                  <PremiumCard goldAccent variant="accent" padding="lg">
+                  <Card goldAccent variant="accent" padding="lg">
                     <View style={styles.previewHead}>
                       <View style={styles.previewIconWrap}>
                         <Ionicons name="location" size={18} color={ALCHEMY.brown} />
@@ -228,7 +228,7 @@ export default function ManageAddressScreen({ navigation }) {
                         <Text style={styles.gpsBadgeText}>GPS verified</Text>
                       </View>
                     ) : null}
-                  </PremiumCard>
+                  </Card>
                 </View>
               </SectionReveal>
             </View>
@@ -239,7 +239,7 @@ export default function ManageAddressScreen({ navigation }) {
               <View style={styles.panel}>
             <SectionReveal delay={100}>
               <View style={styles.sectionIntro}>
-                <PremiumSectionHeader
+                <SectionHeader
                   overline="Delivery"
                   title={(line1 || city) ? MANAGE_ADDRESS_SCREEN.cardTitleWhenFilled : MANAGE_ADDRESS_SCREEN.cardTitleWhenEmpty}
                   subtitle={MANAGE_ADDRESS_SCREEN.cardSubtitle}
@@ -249,17 +249,17 @@ export default function ManageAddressScreen({ navigation }) {
             </SectionReveal>
             {error ? (
               <View style={styles.bannerWrap}>
-                <PremiumErrorBanner severity="error" message={error} compact />
+                <ErrorBanner severity="error" message={error} compact />
               </View>
             ) : null}
             {success ? (
               <View style={styles.bannerWrap}>
-                <PremiumErrorBanner severity="success" message={success} compact />
+                <ErrorBanner severity="success" message={success} compact />
               </View>
             ) : null}
 
             <SectionReveal delay={140}>
-              <PremiumButton
+              <Button
                 label={detecting ? "Detecting…" : "Use current location"}
                 iconLeft="locate"
                 variant="ghost"
@@ -274,7 +274,7 @@ export default function ManageAddressScreen({ navigation }) {
 
             <View style={styles.fieldStack}>
               <SectionReveal delay={180}>
-                <PremiumInput
+                <Input
                   label="Address line"
                   value={line1}
                   onChangeText={setLine1}
@@ -285,27 +285,27 @@ export default function ManageAddressScreen({ navigation }) {
               <SectionReveal delay={220}>
                 <View style={[styles.row, isCompact ? styles.rowCompact : null]}>
                   <View style={styles.half}>
-                    <PremiumInput label="City" value={city} onChangeText={setCity} errorText={fieldErrors.city} />
+                    <Input label="City" value={city} onChangeText={setCity} errorText={fieldErrors.city} />
                   </View>
                   <View style={styles.half}>
-                    <PremiumInput label="State" value={state} onChangeText={setState} errorText={fieldErrors.state} />
+                    <Input label="State" value={state} onChangeText={setState} errorText={fieldErrors.state} />
                   </View>
                 </View>
               </SectionReveal>
               <SectionReveal delay={260}>
                 <View style={[styles.row, isCompact ? styles.rowCompact : null]}>
                   <View style={styles.half}>
-                    <PremiumInput label="Postal code" value={postalCode} onChangeText={setPostalCode} keyboardType="number-pad" errorText={fieldErrors.postalCode} />
+                    <Input label="Postal code" value={postalCode} onChangeText={setPostalCode} keyboardType="number-pad" errorText={fieldErrors.postalCode} />
                   </View>
                   <View style={styles.half}>
-                    <PremiumInput label="Country" value={country} onChangeText={setCountry} errorText={fieldErrors.country} />
+                    <Input label="Country" value={country} onChangeText={setCountry} errorText={fieldErrors.country} />
                   </View>
                 </View>
               </SectionReveal>
             </View>
 
             <SectionReveal delay={320}>
-              <PremiumButton
+              <Button
                 label={saving ? "Saving…" : "Save address"}
                 iconLeft="save-outline"
                 variant="primary"
@@ -325,8 +325,8 @@ export default function ManageAddressScreen({ navigation }) {
         <AppFooter />
       </MotionScrollView>
       {Platform.OS !== "web" && showStickySave ? (
-        <PremiumStickyBar>
-          <PremiumButton
+        <StickyBar>
+          <Button
             label={saving ? "Saving…" : "Save address"}
             iconLeft="save-outline"
             variant="primary"
@@ -336,7 +336,7 @@ export default function ManageAddressScreen({ navigation }) {
             disabled={saving}
             onPress={handleSave}
           />
-        </PremiumStickyBar>
+        </StickyBar>
       ) : null}
       <BottomNavBar />
     </CustomerScreenShell>

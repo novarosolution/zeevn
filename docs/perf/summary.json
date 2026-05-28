@@ -1,0 +1,30 @@
+{
+  "before": {
+    "perf": 74,
+    "a11y": 96,
+    "fcp": 1332.3221,
+    "lcp": 3500.416,
+    "cls": 0.054416,
+    "tbt": 40
+  },
+  "after": {
+    "perf": 85,
+    "a11y": 91,
+    "fcp": 607.2228,
+    "lcp": 2549.0235000000002,
+    "cls": 0.054484,
+    "tbt": 14
+  },
+  "bundle": {
+    "beforeGzipBytes": 1961129,
+    "afterGzipBytes": 1027820,
+    "afterEntryFile": "dist/_expo/static/js/web/index-09e48a2a5b187f51fe61c30f40cd88a6.js"
+  },
+  "diff": {
+    "perf": 11,
+    "fcpMs": -725,
+    "lcpMs": -951,
+    "tbtMs": -26,
+    "bundleBytes": -933309
+  }
+}

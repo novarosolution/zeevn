@@ -2,17 +2,27 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
+const mongoose = require("mongoose");
 
-// Prefer backend-local env, but also accept the workspace root `.env` when the
-// user keeps shared config there.
 dotenv.config({ path: path.join(__dirname, ".env") });
 dotenv.config({ path: path.join(__dirname, "..", ".env") });
 
+const { initSentry } = require("./src/observability/sentry");
+initSentry();
+
 const connectDB = require("./src/config/db");
+const logger = require("./src/utils/logger");
+const { isCloudinaryConfigured } = require("./src/config/cloudinary");
+const { isSmtpConfigured } = require("./src/utils/mailTransport");
+const { isRazorpayConfigured } = require("./src/services/razorpayService");
+const { requestIdMiddleware } = require("./src/middleware/requestId");
+const { requestLogger } = require("./src/middleware/requestLogger");
+const healthRoutes = require("./src/routes/healthRoutes");
 const { getProducts } = require("./src/controllers/productController");
 const { getPublicHomeViewConfig } = require("./src/controllers/homeViewController");
 const { loginUser, registerUser } = require("./src/controllers/userController");
-const { sweepExpiredPendingPayments } = require("./src/controllers/orderController");
+const { sweepExpiredPendingPayments, razorpayWebhook } = require("./src/controllers/orderController");
+const { startWebhookReplayLoop } = require("./src/services/webhookReplayService");
 const userRoutes = require("./src/routes/userRoutes");
 const orderRoutes = require("./src/routes/orderRoutes");
 const productRoutes = require("./src/routes/productRoutes");
@@ -67,21 +77,46 @@ const corsOptions = {
     return callback(new Error("Not allowed by CORS"));
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Session-Id", "X-Captcha-Token"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Session-Id",
+    "X-Captcha-Token",
+    "X-Request-Id",
+  ],
+  exposedHeaders: ["X-Request-Id"],
 };
 
 app.use(cors(corsOptions));
-// Express 5: use a regex path (not '*') so every path answers CORS preflight
 app.options(/.*/, cors(corsOptions));
+app.use(requestIdMiddleware);
+app.use(requestLogger);
+
+app.use(healthRoutes);
+app.use("/api", healthRoutes);
+
+function mountRazorpayWebhook(path) {
+  app.post(
+    path,
+    express.raw({ type: "application/json", limit: "1mb" }),
+    (req, _res, next) => {
+      req.rawBody = req.body;
+      next();
+    },
+    razorpayWebhook
+  );
+}
+
+mountRazorpayWebhook("/orders/razorpay-webhook");
+mountRazorpayWebhook("/api/orders/razorpay-webhook");
 
 app.use(express.json({ limit: "15mb" }));
 app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
 app.get("/", (req, res) => {
-  res.json({ message: "E-commerce API is running", ok: true });
+  res.json({ message: "E-commerce API is running", ok: true, requestId: req.requestId });
 });
 
-/* Register high-traffic routes directly (reliable on Express 5 + clear for debugging) */
 app.get("/products", getProducts);
 app.get("/api/products", getProducts);
 app.get("/home-view", getPublicHomeViewConfig);
@@ -107,11 +142,13 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5001;
 
-/**
- * Razorpay-backed orders are created with status `pending_payment` and a
- * `paymentExpiresAt` timestamp ~30m in the future. This loop flips any
- * abandoned ones to `cancelled` so admin dashboards stay clean.
- */
+function mongoStartupState() {
+  const state = mongoose.connection.readyState;
+  if (state === 1) return "up";
+  if (state === 2) return "connecting";
+  return "down";
+}
+
 function startExpiredPaymentSweeper() {
   const interval = setInterval(() => {
     sweepExpiredPendingPayments().catch(() => {});
@@ -124,13 +161,25 @@ function startExpiredPaymentSweeper() {
 async function start() {
   await connectDB();
   startExpiredPaymentSweeper();
+  startWebhookReplayLoop();
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Zeevan API on port ${PORT} (listening on 0.0.0.0)`);
-    console.log("Try: GET http://127.0.0.1:" + PORT + "/products");
+    const mongoState = mongoStartupState();
+    const cloudinaryState = isCloudinaryConfigured() ? "configured" : "not-configured";
+    const razorpayState = isRazorpayConfigured() ? "configured" : "not-configured";
+    const smtpState = isSmtpConfigured() ? "configured" : "not-configured";
+    console.log(
+      "[zeevan-api] starting on :%d | mongo=%s cloudinary=%s razorpay=%s smtp=%s",
+      PORT,
+      mongoState,
+      cloudinaryState,
+      razorpayState,
+      smtpState
+    );
+    logger.info({ port: PORT }, "Zeevan API listening");
   });
 }
 
 start().catch((err) => {
-  console.error("Failed to start:", err.message);
+  logger.error({ err: err.message }, "Failed to start API");
   process.exit(1);
 });

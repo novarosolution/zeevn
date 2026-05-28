@@ -329,7 +329,7 @@ export default function ForgotPasswordScreen({ navigation }) {
   );
 
   return (
-    <AuthShell variant="forgot" navigation={navigation} bareForm showSocialRow={false}>
+    <AuthShell variant="forgot" navigation={navigation} bareForm>
       <Toast
         visible={lifecycle.toastVisible}
         message={lifecycle.toastMessage}

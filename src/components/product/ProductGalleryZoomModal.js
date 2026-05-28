@@ -17,7 +17,7 @@ function clamp(value, min, max) {
 
 export default function ProductGalleryZoomModal({ visible, uri, onClose }) {
   const { width, height } = useWindowDimensions();
-  const { semanticPalette, SPACING } = useTheme();
+  const { semanticPalette } = useTheme();
   const reducedMotion = useReducedMotion();
   useEscapeKey(onClose, visible);
 
@@ -123,7 +123,7 @@ export default function ProductGalleryZoomModal({ visible, uri, onClose }) {
           <Ionicons name="close-outline" size={32} color={semanticPalette.inkInverse} />
         </Pressable>
         <GestureDetector gesture={composed}>
-          <Animated.View style={[styles.stage, { width, height: height * 0.82 }]}>
+          <Animated.View style={[styles.stage, { width, height }]}>
             <AnimatedImage source={{ uri }} style={[styles.image, imageStyle]} contentFit="contain" transition={180} />
           </Animated.View>
         </GestureDetector>
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   image: {
-    width: "92%",
+    width: "100%",
     height: "100%",
   },
 });

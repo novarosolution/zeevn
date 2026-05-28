@@ -61,7 +61,6 @@ export default function VerifyEmailScreen({ navigation }) {
       navigation={navigation}
       formTitle={status === "loading" ? copy.title : status === "success" ? copy.successTitle : copy.errorTitle}
       formSubtitle={status === "loading" ? copy.subtitle : message}
-      showSocialRow={false}
       bareForm
     >
       <View style={{ alignItems: "center", gap: SPACING.lg, paddingVertical: SPACING.md }}>

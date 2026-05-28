@@ -39,6 +39,8 @@ export default function useModalA11y({ visible, onClose, triggerRef, containerRe
     wasVisible.current = true;
 
     if (Platform.OS === "web" && typeof document !== "undefined") {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
       previousFocusRef.current = document.activeElement;
       const root = containerRef?.current;
       const focusables = getFocusableElements(root);
@@ -72,7 +74,10 @@ export default function useModalA11y({ visible, onClose, triggerRef, containerRe
         }
       };
       window.addEventListener("keydown", onKey);
-      return () => window.removeEventListener("keydown", onKey);
+      return () => {
+        window.removeEventListener("keydown", onKey);
+        document.body.style.overflow = prevOverflow;
+      };
     }
 
     if (Platform.OS === "android") {

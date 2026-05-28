@@ -2,7 +2,10 @@ import React, { useEffect, useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { MotiView } from "moti";
 import { useTheme } from "../../context/ThemeContext";
+import { pointerEventsNativeOnly, pointerEventsProp, withPointerEventsStyle } from "../../utils/pointerEventsStyle";
 import { HOME_LIVE_ORDER_CARD } from "../../content/appContent";
 import { fonts, radius, typography } from "../../theme/tokens";
 import useReducedMotion from "../../hooks/useReducedMotion";
@@ -32,6 +35,7 @@ export default function HomeLiveOrderPinnedCard({ order, onPress }) {
   const reducedMotion = useReducedMotion();
   const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
   const pulse = useSharedValue(1);
+  const sheenX = useSharedValue(-80);
 
   const stepLabels = Array.isArray(HOME_LIVE_ORDER_CARD.stepLabels)
     ? HOME_LIVE_ORDER_CARD.stepLabels
@@ -54,8 +58,20 @@ export default function HomeLiveOrderPinnedCard({ order, onPress }) {
     );
   }, [pulse, reducedMotion]);
 
+  useEffect(() => {
+    if (reducedMotion) {
+      sheenX.value = -80;
+      return;
+    }
+    sheenX.value = -80;
+    sheenX.value = withRepeat(withTiming(220, { duration: 2400 }), -1, false);
+  }, [reducedMotion, sheenX]);
+
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulse.value }],
+  }));
+  const sheenStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: sheenX.value }],
   }));
 
   return (
@@ -65,11 +81,28 @@ export default function HomeLiveOrderPinnedCard({ order, onPress }) {
       accessibilityRole="button"
       accessibilityLabel={`Order #${shortId}, ${getOrderStatusLabel(order?.status)}, ${etaLabel}`}
     >
+      <LinearGradient
+        {...pointerEventsProp("none")}
+        colors={["rgba(200,169,126,0.2)", "rgba(200,169,126,0.08)", "rgba(200,169,126,0)"]}
+        locations={[0, 0.35, 1]}
+        start={{ x: 0.9, y: 0 }}
+        end={{ x: 0.4, y: 1 }}
+        style={styles.brassGlow}
+      />
       <View style={styles.topRow}>
         <View style={styles.statusPill}>
+          <MotiView
+            from={{ opacity: 0.4, scale: 1 }}
+            animate={{ opacity: 1, scale: 1.4 }}
+            transition={{ type: "timing", duration: 900, loop: true, repeatReverse: true }}
+            style={styles.statusPulseDot}
+          />
           <Text style={styles.statusPillText}>{getOrderStatusLabel(order?.status)}</Text>
         </View>
-        <Text style={styles.etaText}>{etaLabel}</Text>
+        <View style={styles.etaWrap}>
+          <Text style={styles.etaLabelSmall}>Arrives by</Text>
+          <Text style={styles.etaTime}>{String(etaLabel).replace(/^Arrives by\s*/i, "")}</Text>
+        </View>
       </View>
 
       <View style={styles.stepsRow}>
@@ -103,6 +136,10 @@ export default function HomeLiveOrderPinnedCard({ order, onPress }) {
 
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: `${Math.round(progressRatio * 100)}%` }]} />
+        <Animated.View
+          style={withPointerEventsStyle([styles.progressSheen, sheenStyle], "none")}
+          {...pointerEventsNativeOnly("none")}
+        />
       </View>
     </Pressable>
   );
@@ -111,6 +148,7 @@ export default function HomeLiveOrderPinnedCard({ order, onPress }) {
 function createStyles(c, isDark) {
   return StyleSheet.create({
     card: {
+      position: "relative",
       width: "100%",
       borderRadius: 14,
       borderWidth: StyleSheet.hairlineWidth,
@@ -125,6 +163,14 @@ function createStyles(c, isDark) {
         default: {},
       }),
     },
+    brassGlow: {
+      position: "absolute",
+      right: -50,
+      top: -50,
+      width: 180,
+      height: 180,
+      borderRadius: 180,
+    },
     cardPressed: {
       opacity: 0.9,
       transform: [{ scale: 0.995 }],
@@ -136,12 +182,21 @@ function createStyles(c, isDark) {
       gap: homeSpacing.sm,
     },
     statusPill: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
       borderRadius: radius.pill,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: isDark ? "rgba(248,113,113,0.45)" : "rgba(220,38,38,0.28)",
       backgroundColor: isDark ? "rgba(220,38,38,0.14)" : "rgba(255,255,255,0.72)",
       paddingHorizontal: homeSpacing.sm,
       paddingVertical: homeSpacing.xs,
+    },
+    statusPulseDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 999,
+      backgroundColor: c.primary,
     },
     statusPillText: {
       fontFamily: fonts.semibold,
@@ -155,6 +210,23 @@ function createStyles(c, isDark) {
       color: c.textSecondary,
       textAlign: "right",
       flexShrink: 1,
+    },
+    etaWrap: {
+      alignItems: "flex-end",
+      gap: 1,
+      flexShrink: 0,
+    },
+    etaLabelSmall: {
+      fontFamily: fonts.regular,
+      fontSize: 10,
+      color: c.textSecondary,
+      letterSpacing: 0.3,
+    },
+    etaTime: {
+      fontFamily: fonts.semibold,
+      fontSize: 16,
+      color: c.textPrimary,
+      lineHeight: 18,
     },
     stepsRow: {
       flexDirection: "row",
@@ -214,6 +286,7 @@ function createStyles(c, isDark) {
       color: c.primary,
     },
     progressTrack: {
+      position: "relative",
       height: 3,
       borderRadius: 999,
       overflow: "hidden",
@@ -223,6 +296,15 @@ function createStyles(c, isDark) {
       height: "100%",
       borderRadius: 999,
       backgroundColor: c.primary,
+    },
+    progressSheen: {
+      position: "absolute",
+      top: 0,
+      bottom: 0,
+      left: -80,
+      width: 64,
+      backgroundColor: "rgba(255,255,255,0.28)",
+      borderRadius: 999,
     },
   });
 }

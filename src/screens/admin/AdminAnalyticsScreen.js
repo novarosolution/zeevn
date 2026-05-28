@@ -8,7 +8,7 @@ import { useAuth } from "../../context/AuthContext";
 import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
 import { fetchAdminAnalytics } from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
-import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
+import { FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
 import { adminPanel } from "../../theme/adminLayout";
 import MotionScrollView from "../../components/motion/MotionScrollView";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
@@ -17,14 +17,14 @@ import { formatINR } from "../../utils/currency";
 import { exportAnalyticsReport } from "../../utils/adminAnalyticsPdf";
 import { exportAnalyticsCsv } from "../../utils/adminAnalyticsCsv";
 import { ALL_ORDER_STATUSES, getOrderStatusLabel } from "../../utils/orderStatus";
-import PremiumLoader from "../../components/ui/PremiumLoader";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumCard from "../../components/ui/PremiumCard";
-import PremiumSectionHeader from "../../components/ui/PremiumSectionHeader";
-import PremiumStatCard from "../../components/ui/PremiumStatCard";
-import PremiumChip from "../../components/ui/PremiumChip";
-import PremiumInput from "../../components/ui/PremiumInput";
+import Loader from "../../components/ui/Loader";
+import ErrorBanner from "../../components/ui/ErrorBanner";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import SectionHeader from "../../components/ui/SectionHeader";
+import StatCard from "../../components/ui/StatCard";
+import Chip from "../../components/ui/Chip";
+import Input from "../../components/ui/Input";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { APP_LOADING_UI } from "../../content/appContent";
 
@@ -180,7 +180,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
 
   function MetricCard({ label, value, icon, tone = "gold" }) {
     return (
-      <PremiumStatCard
+      <StatCard
         compact
         iconName={icon}
         label={label}
@@ -260,10 +260,10 @@ export default function AdminAnalyticsScreen({ navigation }) {
     };
   }, [analytics]);
 
-  const hairline = isDark ? c.border : ALCHEMY.pillInactive;
+  const hairline = isDark ? c.border : c.border;
   const heroColors = isDark
     ? [c.surfaceMuted, "#1a1714"]
-    : [ALCHEMY.creamAlt, ALCHEMY.cardBg];
+    : [c.surfaceMuted, c.surface];
   const isFiltered = Boolean(analytics?.range?.filtered);
 
   return (
@@ -273,7 +273,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
       sectionTitle="Analytics"
       headerRight={
         <View style={styles.heroActionsRow}>
-          <PremiumButton
+          <Button
             label="Refresh"
             iconLeft="refresh-outline"
             variant="ghost"
@@ -281,7 +281,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
             onPress={loadAnalytics}
             style={styles.heroActionBtn}
           />
-          <PremiumButton
+          <Button
             label="Export PDF"
             iconLeft="document-text-outline"
             variant="secondary"
@@ -290,7 +290,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
             disabled={!analytics}
             style={styles.heroActionBtn}
           />
-          <PremiumButton
+          <Button
             label="Export CSV"
             iconLeft="download-outline"
             variant="secondary"
@@ -304,11 +304,11 @@ export default function AdminAnalyticsScreen({ navigation }) {
     >
       {error ? (
         <View style={styles.bannerSpacer}>
-          <PremiumErrorBanner severity="error" message={error} compact />
+          <ErrorBanner severity="error" message={error} compact />
         </View>
       ) : null}
 
-      <PremiumCard variant="muted" padding="md" style={styles.filterCard}>
+      <Card variant="muted" padding="md" style={styles.filterCard}>
         <Text style={[styles.filterTitle, { color: c.textSecondary }]}>Date range</Text>
         {Platform.OS === "web" ? (
           <View style={styles.filterChipScroll}>
@@ -324,7 +324,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
               { key: "legacy", label: "Full history" },
               { key: "custom", label: "Custom" },
             ].map((item) => (
-              <PremiumChip
+              <Chip
                 key={item.key}
                 label={item.label}
                 tone="gold"
@@ -349,7 +349,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
               { key: "legacy", label: "Full history" },
               { key: "custom", label: "Custom" },
             ].map((item) => (
-              <PremiumChip
+              <Chip
                 key={item.key}
                 label={item.label}
                 tone="gold"
@@ -368,7 +368,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
             { key: "day", label: "Daily" },
             { key: "month", label: "Monthly" },
           ].map((item) => (
-            <PremiumChip
+            <Chip
               key={item.key}
               label={item.label}
               tone="neutral"
@@ -383,7 +383,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
           <View style={styles.customRangeBlock}>
             <View style={styles.customInputs}>
               <View style={styles.customInputGrow}>
-                <PremiumInput
+                <Input
                   label="From (YYYY-MM-DD)"
                   value={customFrom}
                   onChangeText={setCustomFrom}
@@ -392,7 +392,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 />
               </View>
               <View style={styles.customInputGrow}>
-                <PremiumInput
+                <Input
                   label="To (YYYY-MM-DD)"
                   value={customTo}
                   onChangeText={setCustomTo}
@@ -401,7 +401,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 />
               </View>
             </View>
-            <PremiumButton label="Apply range" variant="primary" size="sm" onPress={applyCustomRange} fullWidth />
+            <Button label="Apply range" variant="primary" size="sm" onPress={applyCustomRange} fullWidth />
           </View>
         ) : null}
         {analytics?.range?.filtered ? (
@@ -414,18 +414,18 @@ export default function AdminAnalyticsScreen({ navigation }) {
         ) : analytics && !analytics.range ? (
           <Text style={[styles.rangeFootnote, { color: c.textMuted }]}>Legacy snapshot · rolling 7/14-day charts</Text>
         ) : null}
-      </PremiumCard>
+      </Card>
 
       {loading ? (
         <View style={styles.loaderWrap}>
-          <PremiumLoader size="md" caption={APP_LOADING_UI.inline.admin} />
+          <Loader size="md" caption={APP_LOADING_UI.inline.admin} />
         </View>
       ) : analytics ? (
         <>
-          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
-            <PremiumSectionHeader title="Overview" compact />
+          <Card variant="muted" padding="lg" style={styles.sectionCard}>
+            <SectionHeader title="Overview" compact />
             <View style={styles.summaryGrid}>
-              <PremiumStatCard
+              <StatCard
                 compact
                 iconName="cash-outline"
                 label="Total revenue"
@@ -433,7 +433,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 tone="gold"
                 style={styles.summaryStatTile}
               />
-              <PremiumStatCard
+              <StatCard
                 compact
                 iconName="trending-up-outline"
                 label={isFiltered ? "Delivered (period)" : "30-day revenue"}
@@ -443,7 +443,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 tone="green"
                 style={styles.summaryStatTile}
               />
-              <PremiumStatCard
+              <StatCard
                 compact
                 iconName="checkmark-done-outline"
                 label="Delivery rate"
@@ -451,7 +451,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 tone="gold"
                 style={styles.summaryStatTile}
               />
-              <PremiumStatCard
+              <StatCard
                 compact
                 iconName="cart-outline"
                 label="Active carts"
@@ -460,10 +460,10 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 style={styles.summaryStatTile}
               />
             </View>
-          </PremiumCard>
+          </Card>
 
-          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
-            <PremiumSectionHeader title="Advanced insights" compact />
+          <Card variant="muted" padding="lg" style={styles.sectionCard}>
+            <SectionHeader title="Advanced insights" compact />
             <View style={styles.metricGrid}>
               <MetricCard
                 icon="person-circle-outline"
@@ -497,10 +497,10 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 isLast
               />
             </View>
-          </PremiumCard>
+          </Card>
 
-          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
-            <PremiumSectionHeader title="Totals" compact />
+          <Card variant="muted" padding="lg" style={styles.sectionCard}>
+            <SectionHeader title="Totals" compact />
             <View style={styles.metricGrid}>
               <MetricCard icon="receipt-outline" label="Orders" value={analytics.totals?.orders || 0} />
               <MetricCard icon="cube-outline" label="Products" value={analytics.totals?.products || 0} />
@@ -511,10 +511,10 @@ export default function AdminAnalyticsScreen({ navigation }) {
               />
               <MetricCard icon="shield-checkmark-outline" label="Admins" value={analytics.totals?.admins || 0} />
             </View>
-          </PremiumCard>
+          </Card>
 
-          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
-            <PremiumSectionHeader title={isFiltered ? "Period activity" : "Recent activity"} compact />
+          <Card variant="muted" padding="lg" style={styles.sectionCard}>
+            <SectionHeader title={isFiltered ? "Period activity" : "Recent activity"} compact />
             <View style={styles.statList}>
               {isFiltered ? (
                 <>
@@ -537,10 +537,10 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 </>
               )}
             </View>
-          </PremiumCard>
+          </Card>
 
-          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
-            <PremiumSectionHeader title="Revenue" compact />
+          <Card variant="muted" padding="lg" style={styles.sectionCard}>
+            <SectionHeader title="Revenue" compact />
             <View style={styles.statList}>
               <StatRow label="Total revenue (all orders)" value={formatINR(analytics.revenue?.total || 0)} />
               <StatRow label="Delivered revenue" value={formatINR(analytics.revenue?.delivered || 0)} />
@@ -584,21 +584,21 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 />
               </ScrollView>
             </ChartFrame>
-          </PremiumCard>
+          </Card>
 
-          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
-            <PremiumSectionHeader title="Conversion & coupons" compact />
+          <Card variant="muted" padding="lg" style={styles.sectionCard}>
+            <SectionHeader title="Conversion & coupons" compact />
             <View style={styles.statList}>
               <StatRow label="Delivered orders" value={String(analytics.funnel?.deliveredOrders ?? 0)} />
               <StatRow label="Cancelled orders" value={String(analytics.funnel?.cancelledOrders ?? 0)} />
               <StatRow label="Delivery rate" value={`${analytics.funnel?.deliveryRatePercent ?? 0}%`} />
               <StatRow label="Coupon penetration" value={`${analytics.funnel?.couponPenetrationPercent ?? 0}%`} isLast />
             </View>
-          </PremiumCard>
+          </Card>
 
           {(analytics.trends?.rangeSeries?.labels || []).length >= 2 ? (
-            <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
-              <PremiumSectionHeader
+            <Card variant="muted" padding="lg" style={styles.sectionCard}>
+              <SectionHeader
                 title={`Orders trend (${analytics.range?.bucket || "day"})`}
                 compact
               />
@@ -632,12 +632,12 @@ export default function AdminAnalyticsScreen({ navigation }) {
                   style={styles.chart}
                 />
               </ChartFrame>
-            </PremiumCard>
+            </Card>
           ) : null}
 
           {!isFiltered && (analytics.trends?.last7Days?.labels || []).length > 0 ? (
-            <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
-              <PremiumSectionHeader title="7-day trend" compact />
+            <Card variant="muted" padding="lg" style={styles.sectionCard}>
+              <SectionHeader title="7-day trend" compact />
               <Text style={styles.chartCaption}>Orders per day</Text>
               <ChartFrame>
                 <LineChart
@@ -668,12 +668,12 @@ export default function AdminAnalyticsScreen({ navigation }) {
                   style={styles.chart}
                 />
               </ChartFrame>
-            </PremiumCard>
+            </Card>
           ) : null}
 
           {!isFiltered && (analytics.trends?.last14Days?.labels || []).length > 0 ? (
-            <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
-              <PremiumSectionHeader title="14-day order volume" compact />
+            <Card variant="muted" padding="lg" style={styles.sectionCard}>
+              <SectionHeader title="14-day order volume" compact />
               <ChartFrame>
                 <BarChart
                   data={{
@@ -689,11 +689,11 @@ export default function AdminAnalyticsScreen({ navigation }) {
                   showValuesOnTopOfBars={false}
                 />
               </ChartFrame>
-            </PremiumCard>
+            </Card>
           ) : null}
 
-          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
-            <PremiumSectionHeader title="Coupon insights" compact />
+          <Card variant="muted" padding="lg" style={styles.sectionCard}>
+            <SectionHeader title="Coupon insights" compact />
             <View style={styles.statList}>
               <StatRow label="Orders with coupon" value={String(analytics.coupons?.couponOrders || 0)} />
               <StatRow label="Total discount given" value={formatINR(analytics.coupons?.totalDiscount || 0)} />
@@ -747,10 +747,10 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 <Text style={styles.emptyHintText}>No coupon usage data yet.</Text>
               </View>
             )}
-          </PremiumCard>
+          </Card>
 
-          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
-            <PremiumSectionHeader title="Catalog & stock" compact />
+          <Card variant="muted" padding="lg" style={styles.sectionCard}>
+            <SectionHeader title="Catalog & stock" compact />
             <View style={styles.statList}>
               <StatRow label="SKUs in stock" value={String(analytics.inventory?.inStockProducts ?? 0)} />
               <StatRow label="Low stock (≤5 units)" value={String(analytics.inventory?.lowStockProducts || 0)} />
@@ -782,19 +782,19 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 </View>
               </>
             ) : null}
-          </PremiumCard>
+          </Card>
 
-          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
-            <PremiumSectionHeader title="Carts" compact />
+          <Card variant="muted" padding="lg" style={styles.sectionCard}>
+            <SectionHeader title="Carts" compact />
             <View style={styles.statList}>
               <StatRow label="Users with items in cart" value={String(analytics.carts?.usersWithActiveCart || 0)} />
               <StatRow label="Total cart line items" value={String(analytics.carts?.totalCartItems || 0)} />
               <StatRow label="Estimated cart value" value={formatINR(analytics.carts?.estimatedCartValue || 0)} isLast />
             </View>
-          </PremiumCard>
+          </Card>
 
-          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
-            <PremiumSectionHeader title="Order status" compact />
+          <Card variant="muted" padding="lg" style={styles.sectionCard}>
+            <SectionHeader title="Order status" compact />
             {statusEntries.length === 0 ? (
               <View style={styles.emptyHint}>
                 <Ionicons name="information-circle-outline" size={20} color={c.textMuted} />
@@ -831,10 +831,10 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 </ChartFrame>
               </>
             )}
-          </PremiumCard>
+          </Card>
 
-          <PremiumCard variant="muted" padding="lg" style={styles.sectionCard}>
-            <PremiumSectionHeader title="Top products" compact />
+          <Card variant="muted" padding="lg" style={styles.sectionCard}>
+            <SectionHeader title="Top products" compact />
             {(analytics.topProducts || []).length === 0 ? (
               <View style={styles.emptyHint}>
                 <Ionicons name="information-circle-outline" size={20} color={c.textMuted} />
@@ -881,7 +881,7 @@ export default function AdminAnalyticsScreen({ navigation }) {
                 ))}
               </>
             )}
-          </PremiumCard>
+          </Card>
         </>
       ) : null}
     </OpsAdminScreen>
@@ -889,8 +889,8 @@ export default function AdminAnalyticsScreen({ navigation }) {
 }
 
 function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDark) {
-  const cardBg = isDark ? c.surface : ALCHEMY.cardBg;
-  const hairline = isDark ? c.border : ALCHEMY.pillInactive;
+  const cardBg = isDark ? c.surface : c.surface;
+  const hairline = isDark ? c.border : c.border;
   return StyleSheet.create({
   screen: {
     flex: 1,
@@ -1029,7 +1029,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
+    backgroundColor: isDark ? c.surfaceMuted : c.surfaceMuted,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: hairline,
   },
@@ -1066,8 +1066,8 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     justifyContent: "center",
   },
   heroIconWrapLight: {
-    borderColor: ALCHEMY.pillInactive,
-    backgroundColor: c.frostTint || ALCHEMY.creamAlt,
+    borderColor: c.border,
+    backgroundColor: c.frostTint || c.surfaceMuted,
   },
   heroTextCol: {
     flex: 1,
@@ -1084,8 +1084,8 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     height: 30,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: isDark ? c.primaryBorder : ALCHEMY.pillInactive,
-    backgroundColor: isDark ? c.primarySoft : ALCHEMY.creamAlt,
+    borderColor: isDark ? c.primaryBorder : c.border,
+    backgroundColor: isDark ? c.primarySoft : c.surfaceMuted,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -1096,7 +1096,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     letterSpacing: -0.35,
   },
   titleLight: {
-    color: ALCHEMY.brown,
+    color: c.textPrimary,
   },
   subtitle: {
     marginTop: spacing.xs,
@@ -1138,7 +1138,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     paddingHorizontal: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: c.border,
-    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
+    backgroundColor: isDark ? c.surfaceMuted : c.surfaceMuted,
   },
   categoryRowLast: {
     borderBottomWidth: 0,
@@ -1151,7 +1151,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     marginRight: spacing.md,
   },
   categoryRowCount: {
-    color: isDark ? c.primary : ALCHEMY.brown,
+    color: isDark ? c.primary : c.textPrimary,
     fontFamily: fonts.extrabold,
     fontSize: typography.bodySmall,
   },
@@ -1177,7 +1177,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     borderWidth: 1,
     borderColor: hairline,
     borderRadius: semanticRadius.card,
-    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
+    backgroundColor: isDark ? c.surfaceMuted : c.surfaceMuted,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xs,
     alignItems: "center",
@@ -1202,7 +1202,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     marginBottom: 6,
   },
   metricValue: {
-    color: isDark ? c.primary : ALCHEMY.brown,
+    color: isDark ? c.primary : c.textPrimary,
     fontSize: typography.h3,
     fontFamily: fonts.extrabold,
   },
@@ -1217,7 +1217,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     borderWidth: 1,
     borderColor: hairline,
     borderRadius: semanticRadius.card,
-    backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
+    backgroundColor: isDark ? c.surfaceMuted : c.surfaceMuted,
     overflow: "hidden",
     marginBottom: spacing.sm,
   },
@@ -1266,7 +1266,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
   },
   listCardRank: {
     width: 36,
-    backgroundColor: isDark ? c.primarySoft : ALCHEMY.goldSoft,
+    backgroundColor: isDark ? c.primarySoft : c.primarySoft,
     borderRightWidth: 1,
     borderRightColor: c.primaryBorder,
     alignItems: "center",

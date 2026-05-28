@@ -9,7 +9,7 @@ const {
   touchSession,
 } = require("../utils/accountSecurity");
 const { resolveProductLineFromRaw } = require("../utils/productLine");
-const cloudinary = require("../config/cloudinary");
+const { getCloudinary, isCloudinaryConfigured } = require("../config/cloudinary");
 const Product = require("../models/Product");
 const User = require("../models/User");
 const generateTokenModule = require("../utils/generateToken");
@@ -122,6 +122,32 @@ async function requestPasswordReset(req, res, next) {
       message: "If an account exists for that email, reset instructions have been sent.",
       ...(devLink ? { devLink } : {}),
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** Check reset link token before showing the new-password form. */
+async function validateResetToken(req, res, next) {
+  try {
+    const email = normalizeEmailInput(req.body?.email);
+    const token = String(req.body?.token || "").trim();
+
+    if (!email || !EMAIL_RE.test(email) || !token) {
+      return res.status(400).json({ message: "Invalid or expired reset link.", valid: false });
+    }
+
+    const user = await User.findOne({ email }).select("+passwordResetToken +passwordResetExpires");
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired reset link.", valid: false });
+    }
+
+    const hash = crypto.createHash("sha256").update(token).digest("hex");
+    if (user.passwordResetToken !== hash || !user.passwordResetExpires || user.passwordResetExpires < new Date()) {
+      return res.status(400).json({ message: "Invalid or expired reset link.", valid: false });
+    }
+
+    res.json({ valid: true });
   } catch (error) {
     next(error);
   }
@@ -577,6 +603,12 @@ async function getAccountActivity(req, res, next) {
 
 async function uploadUserAvatar(req, res, next) {
   try {
+    if (!isCloudinaryConfigured()) {
+      return res.status(503).json({
+        error: "image_uploads_disabled",
+        message: "Image uploads are not configured in this environment.",
+      });
+    }
     const { imageBase64, mimeType } = req.body || {};
 
     if (!imageBase64 || typeof imageBase64 !== "string") {
@@ -591,7 +623,7 @@ async function uploadUserAvatar(req, res, next) {
       ? imageBase64
       : `data:${safeMime};base64,${imageBase64}`;
 
-    const uploaded = await cloudinary.uploader.upload(uploadSource, {
+    const uploaded = await getCloudinary().uploader.upload(uploadSource, {
       folder: CLOUDINARY_AVATAR_FOLDER,
       resource_type: "image",
     });
@@ -803,6 +835,7 @@ module.exports = {
   registerUser,
   loginUser,
   requestPasswordReset,
+  validateResetToken,
   resetPasswordWithToken,
   verifyEmailWithToken,
   refreshAccessToken,

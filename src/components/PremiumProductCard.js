@@ -218,7 +218,9 @@ function PremiumProductCardBase({
                     style={styles.image}
                     contentFit="contain"
                     transition={260}
-                    recyclingKey={`${product?.id || "p"}:${imageUri}`}
+                    {...(Platform.OS !== "web"
+                      ? { recyclingKey: `${product?.id || "p"}:${imageUri}` }
+                      : {})}
                     onError={handleImageError}
                     priority={imagePriority}
                     accessible={false}

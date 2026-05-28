@@ -6,7 +6,7 @@ import {
   Switch,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   View,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -16,16 +16,16 @@ import OpsAdminScreen from "../../components/ops/OpsAdminScreen";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminProducts, patchAdminProductStock } from "../../services/adminService";
 import { adminModuleSection } from "../../theme/adminLayout";
-import { ALCHEMY, FONT_DISPLAY } from "../../theme/customerAlchemy";
+import { FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
 import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
-import PremiumLoader from "../../components/ui/PremiumLoader";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumInput from "../../components/ui/PremiumInput";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumChip from "../../components/ui/PremiumChip";
-import PremiumCard from "../../components/ui/PremiumCard";
+import Loader from "../../components/ui/Loader";
+import ErrorBanner from "../../components/ui/ErrorBanner";
+import EmptyState from "../../components/ui/EmptyState";
+import Input from "../../components/ui/Input";
+import Button from "../../components/ui/Button";
+import Chip from "../../components/ui/Chip";
+import Card from "../../components/ui/Card";
 import { ADMIN_SCREEN_COPY, APP_LOADING_UI } from "../../content/appContent";
 
 /** Counts as “low stock” when qty is 1..LOW_STOCK_MAX and still sellable. */
@@ -159,7 +159,7 @@ export default function AdminInventoryScreen({ navigation }) {
       <OpsAdminScreen navigation={navigation} activeRoute="AdminInventory" sectionTitle="Inventory & stock">
         <Text style={styles.deniedTitle}>Sign in</Text>
         <Text style={styles.deniedSub}>Log in with an admin account to manage inventory.</Text>
-        <PremiumButton label="Go to login" variant="secondary" onPress={() => navigation.navigate("Login")} style={styles.gateCta} />
+        <Button label="Go to login" variant="secondary" onPress={() => navigation.navigate("Login")} style={styles.gateCta} />
       </OpsAdminScreen>
     );
   }
@@ -195,7 +195,7 @@ export default function AdminInventoryScreen({ navigation }) {
 
             {error ? (
               <View style={styles.bannerSpacer}>
-                <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+                <ErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
               </View>
             ) : null}
 
@@ -205,7 +205,7 @@ export default function AdminInventoryScreen({ navigation }) {
                 {FILTERS.map((f) => {
                   const active = filter === f.id;
                   return (
-                    <PremiumChip
+                    <Chip
                       key={f.id}
                       label={f.label}
                       tone={active ? "gold" : "neutral"}
@@ -218,7 +218,7 @@ export default function AdminInventoryScreen({ navigation }) {
               </View>
               <View style={styles.searchRow}>
                 <View style={styles.searchInputFlex}>
-                  <PremiumInput
+                  <Input
                     label={ADMIN_SCREEN_COPY.inventory.searchLabel}
                     value={search}
                     onChangeText={setSearch}
@@ -228,7 +228,7 @@ export default function AdminInventoryScreen({ navigation }) {
                     autoCapitalize="none"
                   />
                 </View>
-                <PremiumButton
+                <Button
                   label={ADMIN_SCREEN_COPY.refreshCta}
                   iconLeft="refresh-outline"
                   variant="secondary"
@@ -241,7 +241,7 @@ export default function AdminInventoryScreen({ navigation }) {
 
             {loading ? (
               <View style={styles.loadRow}>
-                <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} inline />
+                <Loader size="sm" caption={APP_LOADING_UI.inline.admin} inline />
               </View>
             ) : null}
             <Text style={styles.listCount}>
@@ -252,7 +252,7 @@ export default function AdminInventoryScreen({ navigation }) {
         ListEmptyComponent={
           !loading ? (
             <View style={styles.emptyWrap}>
-              <PremiumEmptyState
+              <EmptyState
                 iconName="file-tray-outline"
                 title="No products match this view"
                 description="Try another filter or clear your search."
@@ -272,7 +272,7 @@ export default function AdminInventoryScreen({ navigation }) {
             <View
               style={[
                 styles.rowCard,
-                { borderColor: c.border, backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt },
+                { borderColor: c.border, backgroundColor: isDark ? c.surfaceMuted : c.surfaceMuted },
                 s.out ? styles.rowWarn : null,
               ]}
             >
@@ -283,20 +283,20 @@ export default function AdminInventoryScreen({ navigation }) {
                   </Text>
                   <Text style={styles.pSku}>{p.sku ? `SKU: ${p.sku}` : "No SKU"}</Text>
                 </View>
-                {s.low ? <PremiumChip label="Low" tone="gold" size="xs" /> : null}
-                {s.out ? <PremiumChip label="Out" tone="red" size="xs" /> : null}
+                {s.low ? <Chip label="Low" tone="gold" size="xs" /> : null}
+                {s.out ? <Chip label="Out" tone="red" size="xs" /> : null}
               </View>
 
               <View style={styles.qtyRow}>
                 <View style={styles.stepper}>
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.stepBtn}
                     onPress={() => onDelta(p, -1)}
                     disabled={busy}
                     accessibilityLabel="Decrease stock"
                   >
                     <Ionicons name="remove" size={20} color={c.textPrimary} />
-                  </TouchableOpacity>
+                  </Pressable>
                   <TextInput
                     style={[
                       styles.qtyField,
@@ -309,9 +309,9 @@ export default function AdminInventoryScreen({ navigation }) {
                     onSubmitEditing={() => onApplyQty(p)}
                     onBlur={() => onApplyQty(p)}
                   />
-                  <TouchableOpacity style={styles.stepBtn} onPress={() => onDelta(p, 1)} disabled={busy} accessibilityLabel="Increase stock">
+                  <Pressable style={styles.stepBtn} onPress={() => onDelta(p, 1)} disabled={busy} accessibilityLabel="Increase stock">
                     <Ionicons name="add" size={20} color={c.textPrimary} />
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
 
                 <View style={styles.switchBlock}>
@@ -330,10 +330,10 @@ export default function AdminInventoryScreen({ navigation }) {
               <View style={styles.rowFoot}>
                 {busy ? (
                   <View style={styles.busyInline}>
-                    <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} inline />
+                    <Loader size="sm" caption={APP_LOADING_UI.inline.admin} inline />
                   </View>
                 ) : null}
-                <PremiumButton
+                <Button
                   label="Edit full product"
                   iconLeft="create-outline"
                   variant="ghost"
@@ -346,7 +346,7 @@ export default function AdminInventoryScreen({ navigation }) {
         }}
         ListFooterComponent={
           <View>
-            <PremiumCard
+            <Card
               padding="lg"
               interactive
               onPress={() => navigation.navigate("AdminAddProduct")}
@@ -360,7 +360,7 @@ export default function AdminInventoryScreen({ navigation }) {
                   <Text style={[styles.footCtaD, { color: c.textSecondary }]}>Set initial stock in the form.</Text>
                 </View>
               </View>
-            </PremiumCard>
+            </Card>
           </View>
         }
         showsVerticalScrollIndicator={false}
@@ -386,7 +386,7 @@ function createStyles(c, shadowPremium) {
     titleRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
     h1: {
       fontSize: typography.h1,
-      fontFamily: FONT_DISPLAY,
+      fontFamily: FONT_DISPLAY_SEMI,
       color: c.textPrimary,
       letterSpacing: -0.4,
     },
@@ -469,7 +469,7 @@ function createStyles(c, shadowPremium) {
     footCtaD: { fontSize: typography.caption, marginTop: 2, fontFamily: fonts.regular },
     emptyWrap: { marginBottom: spacing.md },
     denied: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.sm },
-    deniedTitle: { fontSize: typography.h2, fontFamily: FONT_DISPLAY, color: c.textPrimary, marginTop: spacing.md },
+    deniedTitle: { fontSize: typography.h2, fontFamily: FONT_DISPLAY_SEMI, color: c.textPrimary, marginTop: spacing.md },
     deniedSub: { color: c.textSecondary, textAlign: "center", paddingHorizontal: spacing.xl, fontFamily: fonts.regular },
     gateCta: { marginTop: spacing.md },
   });

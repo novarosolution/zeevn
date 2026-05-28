@@ -19,9 +19,9 @@ import { formatLiveLocationUpdatedLine } from "../../utils/formatLiveLocationUpd
 import { fonts, icon, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { platformShadow } from "../../theme/shadowPlatform";
-import PremiumCard from "../ui/PremiumCard";
-import PremiumButton from "../ui/PremiumButton";
-import PremiumSectionHeader from "../ui/PremiumSectionHeader";
+import Card from "../ui/Card";
+import Button from "../ui/Button";
+import SectionHeader from "../ui/SectionHeader";
 import { openMapsDirections, POLL_MS, STALE_MS } from "./orderLiveMapShared";
 
 /** Minimal Google Maps styling for Android dark mode (fewer POIs, muted roads). */
@@ -194,21 +194,21 @@ export default function OrderLiveMapCard({ orderId }) {
 
   if (loading && !data) {
     return (
-      <PremiumCard variant="panel" padding="md" style={styles.wrap}>
+      <Card variant="panel" padding="md" style={styles.wrap}>
         <View style={styles.loadingRow}>
           <ActivityIndicator color={c.primary} />
           <Text style={[styles.body, { color: c.textSecondary }]}>{ORDER_LIVE_TRACKING.loading}</Text>
         </View>
-      </PremiumCard>
+      </Card>
     );
   }
 
   if (error && !data) {
     return (
-      <PremiumCard variant="panel" padding="md" style={styles.wrap}>
+      <Card variant="panel" padding="md" style={styles.wrap}>
         <Text style={[styles.title, { color: c.textPrimary }]}>{ORDER_LIVE_TRACKING.errorTitle}</Text>
         <Text style={[styles.body, { color: c.danger }]}>{error}</Text>
-      </PremiumCard>
+      </Card>
     );
   }
 
@@ -216,9 +216,9 @@ export default function OrderLiveMapCard({ orderId }) {
   const partnerSubtitle = [partnerLabel, data?.partner?.phone?.trim()].filter(Boolean).join(" · ");
 
   return (
-    <PremiumCard goldAccent variant="accent" padding="none" style={styles.wrap}>
+    <Card goldAccent variant="accent" padding="none" style={styles.wrap}>
       <View style={styles.sectionHeaderPad}>
-        <PremiumSectionHeader
+        <SectionHeader
           compact
           overline={ORDER_LIVE_TRACKING.overline}
           title={ORDER_LIVE_TRACKING.title}
@@ -388,7 +388,7 @@ export default function OrderLiveMapCard({ orderId }) {
       ) : null}
 
       <View style={styles.actions}>
-        <PremiumButton
+        <Button
           label={ORDER_LIVE_TRACKING.openMapsCta}
           iconLeft="map-outline"
           variant="secondary"
@@ -403,7 +403,7 @@ export default function OrderLiveMapCard({ orderId }) {
           disabled={!hasPartner && !hasDest}
         />
       </View>
-    </PremiumCard>
+    </Card>
   );
 }
 

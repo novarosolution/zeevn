@@ -53,6 +53,7 @@ function ButtonBase({
 
   const palette = useMemo(() => {
     const ink = semanticPalette.ink;
+    const navy = semanticPalette.bgDeep;
     const surface = semanticPalette.surface;
     const line = semanticPalette.line;
     const sale = semanticPalette.sale;
@@ -69,7 +70,7 @@ function ButtonBase({
     if (variant === "accent") {
       return { bg: semanticPalette.accent, border: semanticPalette.accent, color: ink };
     }
-    return { bg: ink, border: ink, color: inverse };
+    return { bg: navy, border: navy, color: inverse };
   }, [semanticPalette, variant]);
 
   useEffect(() => {

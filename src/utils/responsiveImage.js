@@ -9,7 +9,7 @@ function isCloudinaryUrl(uri) {
 function cloudinaryTransform(uri, width) {
   const url = String(uri || "");
   if (!url.includes("/upload/")) return url;
-  return url.replace("/upload/", `/upload/c_limit,w_${width},f_auto,q_auto/`);
+  return url.replace("/upload/", `/upload/c_limit,w_${width},f_webp,q_auto/`);
 }
 
 /**

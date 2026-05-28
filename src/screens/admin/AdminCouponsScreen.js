@@ -10,14 +10,14 @@ import MotionScrollView from "../../components/motion/MotionScrollView";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
 import { layout, radius, spacing } from "../../theme/tokens";
-import PremiumLoader from "../../components/ui/PremiumLoader";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumInput from "../../components/ui/PremiumInput";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumCard from "../../components/ui/PremiumCard";
-import PremiumChip from "../../components/ui/PremiumChip";
-import PremiumSwitch from "../../components/ui/PremiumSwitch";
+import Loader from "../../components/ui/Loader";
+import EmptyState from "../../components/ui/EmptyState";
+import ErrorBanner from "../../components/ui/ErrorBanner";
+import Input from "../../components/ui/Input";
+import Button from "../../components/ui/Button";
+import Card from "../../components/ui/Card";
+import Chip from "../../components/ui/Chip";
+import Switch from "../../components/ui/Switch";
 import { ADMIN_SCREEN_COPY, APP_LOADING_UI } from "../../content/appContent";
 
 export default function AdminCouponsScreen({ navigation }) {
@@ -134,21 +134,21 @@ export default function AdminCouponsScreen({ navigation }) {
     <OpsAdminScreen navigation={navigation} activeRoute="AdminCoupons" sectionTitle="Manage coupons">
           {error ? (
             <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+              <ErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
             </View>
           ) : null}
           {success ? (
             <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
+              <ErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
             </View>
           ) : null}
           
           <View style={isWideWeb ? styles.workspaceGrid : null}>
           <View style={isWideWeb ? styles.workspacePrimary : null}>
-                    <PremiumCard padding="lg" style={styles.formCard}>
+                    <Card padding="lg" style={styles.formCard}>
             <Text style={[styles.formTitle, { color: c.textPrimary }]}>{ADMIN_SCREEN_COPY.coupons.createTitle}</Text>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Coupon code"
                 value={form.code}
                 onChangeText={(value) => setForm((current) => ({ ...current, code: value }))}
@@ -158,7 +158,7 @@ export default function AdminCouponsScreen({ navigation }) {
               />
             </View>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Title (optional)"
                 value={form.title}
                 onChangeText={(value) => setForm((current) => ({ ...current, title: value }))}
@@ -166,7 +166,7 @@ export default function AdminCouponsScreen({ navigation }) {
               />
             </View>
             <View style={styles.typeRow}>
-              <PremiumChip
+              <Chip
                 label="Percent"
                 tone="gold"
                 size="md"
@@ -174,7 +174,7 @@ export default function AdminCouponsScreen({ navigation }) {
                 onPress={() => setForm((current) => ({ ...current, type: "percent" }))}
                 style={styles.typeChipFlex}
               />
-              <PremiumChip
+              <Chip
                 label="Flat"
                 tone="gold"
                 size="md"
@@ -184,7 +184,7 @@ export default function AdminCouponsScreen({ navigation }) {
               />
             </View>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label={form.type === "percent" ? "Discount %" : "Flat discount amount"}
                 value={form.value}
                 onChangeText={(value) => setForm((current) => ({ ...current, value }))}
@@ -194,7 +194,7 @@ export default function AdminCouponsScreen({ navigation }) {
               />
             </View>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Minimum order amount (optional)"
                 value={form.minOrderAmount}
                 onChangeText={(value) => setForm((current) => ({ ...current, minOrderAmount: value }))}
@@ -203,7 +203,7 @@ export default function AdminCouponsScreen({ navigation }) {
               />
             </View>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Max discount amount (optional)"
                 value={form.maxDiscountAmount}
                 onChangeText={(value) => setForm((current) => ({ ...current, maxDiscountAmount: value }))}
@@ -212,7 +212,7 @@ export default function AdminCouponsScreen({ navigation }) {
               />
             </View>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Usage limit (optional)"
                 value={form.usageLimit}
                 onChangeText={(value) => setForm((current) => ({ ...current, usageLimit: value }))}
@@ -221,7 +221,7 @@ export default function AdminCouponsScreen({ navigation }) {
               />
             </View>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Expiry (YYYY-MM-DD, optional)"
                 value={form.expiresAt}
                 onChangeText={(value) => setForm((current) => ({ ...current, expiresAt: value }))}
@@ -231,7 +231,7 @@ export default function AdminCouponsScreen({ navigation }) {
               />
             </View>
             <View style={styles.toggleRow}>
-              <PremiumSwitch
+              <Switch
                 label="Active"
                 hint="Coupon can be applied at checkout"
                 value={Boolean(form.isActive)}
@@ -239,7 +239,7 @@ export default function AdminCouponsScreen({ navigation }) {
               />
             </View>
             <View style={styles.toggleRow}>
-              <PremiumSwitch
+              <Switch
                 label="Show to users at checkout"
                 hint="Visible while browsing offers and checkout"
                 value={Boolean(form.isVisibleToUsers)}
@@ -249,7 +249,7 @@ export default function AdminCouponsScreen({ navigation }) {
               />
             </View>
             <View style={styles.toggleRow}>
-              <PremiumSwitch
+              <Switch
                 label="One time per user"
                 hint="Prevent repeat redemption from the same account"
                 value={Boolean(form.isOneTimePerUser)}
@@ -258,7 +258,7 @@ export default function AdminCouponsScreen({ navigation }) {
                 }
               />
             </View>
-            <PremiumButton
+            <Button
               label={submitting ? "Creating..." : "Create Coupon"}
               variant="primary"
               size="md"
@@ -268,15 +268,15 @@ export default function AdminCouponsScreen({ navigation }) {
               fullWidth
               style={styles.createBtnMargin}
             />
-          </PremiumCard>
+          </Card>
                     </View>
 
           <View style={isWideWeb ? styles.workspaceSecondary : null}>
                     <Text style={[styles.listTitle, { color: c.textPrimary }]}>{ADMIN_SCREEN_COPY.coupons.listTitle}</Text>
           {loading ? (
-            <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.admin} />
+            <Loader size="sm" caption={APP_LOADING_UI.inline.admin} />
           ) : coupons.length === 0 ? (
-            <PremiumEmptyState
+            <EmptyState
               iconName="pricetag-outline"
               title={ADMIN_SCREEN_COPY.coupons.emptyTitle}
               description={ADMIN_SCREEN_COPY.coupons.emptyDescription}
@@ -284,10 +284,10 @@ export default function AdminCouponsScreen({ navigation }) {
             />
           ) : (
             coupons.map((coupon) => (
-              <PremiumCard key={coupon._id} padding="md" style={styles.couponCard}>
+              <Card key={coupon._id} padding="md" style={styles.couponCard}>
                 <View style={styles.couponTopRow}>
                   <Text style={[styles.couponCode, { color: c.textPrimary }]}>{coupon.code}</Text>
-                  <PremiumChip
+                  <Chip
                     label={coupon.isActive ? "Active" : "Inactive"}
                     tone={coupon.isActive ? "green" : "neutral"}
                     size="xs"
@@ -309,28 +309,28 @@ export default function AdminCouponsScreen({ navigation }) {
                 </Text>
                 <View style={styles.rowSwitches}>
                   <View style={styles.switchRow}>
-                    <PremiumSwitch
+                    <Switch
                       label="Active"
                       value={Boolean(coupon.isActive)}
                       onChange={() => handleToggleActive(coupon)}
                     />
                   </View>
                   <View style={styles.switchRow}>
-                    <PremiumSwitch
+                    <Switch
                       label="Visible"
                       value={Boolean(coupon.isVisibleToUsers)}
                       onChange={() => handleToggleVisibility(coupon)}
                     />
                   </View>
                   <View style={styles.switchRow}>
-                    <PremiumSwitch
+                    <Switch
                       label="One-Time"
                       value={Boolean(coupon.isOneTimePerUser)}
                       onChange={() => handleToggleOneTime(coupon)}
                     />
                   </View>
                 </View>
-              </PremiumCard>
+              </Card>
             ))
           )}
                     </View>

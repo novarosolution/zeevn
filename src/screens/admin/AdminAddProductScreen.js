@@ -16,13 +16,13 @@ import { adminPanel } from "../../theme/adminLayout";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
 import { radius, spacing } from "../../theme/tokens";
 import { getImageUriCandidates, PRODUCT_HERO_BLURHASH } from "../../utils/image";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import ErrorBanner from "../../components/ui/ErrorBanner";
 import MotionScrollView from "../../components/motion/MotionScrollView";
 import SectionReveal from "../../components/motion/SectionReveal";
-import PremiumInput from "../../components/ui/PremiumInput";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumChip from "../../components/ui/PremiumChip";
-import PremiumSectionHeader from "../../components/ui/PremiumSectionHeader";
+import Input from "../../components/ui/Input";
+import Button from "../../components/ui/Button";
+import Chip from "../../components/ui/Chip";
+import SectionHeader from "../../components/ui/SectionHeader";
 
 function dedupeUrls(urls = []) {
   const seen = new Set();
@@ -309,20 +309,20 @@ export default function AdminAddProductScreen({ navigation, route }) {
     <OpsAdminScreen navigation={navigation} activeRoute="AdminAddProduct" sectionTitle="Add product">
         {error ? (
           <View style={styles.fieldGap}>
-            <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+            <ErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
           </View>
         ) : null}
         {uploadMessage ? (
           <View style={styles.fieldGap}>
-            <PremiumErrorBanner severity="success" message={uploadMessage} onClose={() => setUploadMessage("")} compact />
+            <ErrorBanner severity="success" message={uploadMessage} onClose={() => setUploadMessage("")} compact />
           </View>
         ) : null}
 
         <View style={styles.fieldGap}>
-          <PremiumInput label="Product name" value={name} onChangeText={setName} iconLeft="cube-outline" />
+          <Input label="Product name" value={name} onChangeText={setName} iconLeft="cube-outline" />
         </View>
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <Input
             label="Price (sale)"
             value={price}
             onChangeText={setPrice}
@@ -331,7 +331,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
           />
         </View>
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <Input
             label="MRP (optional)"
             value={mrp}
             onChangeText={setMrp}
@@ -341,8 +341,8 @@ export default function AdminAddProductScreen({ navigation, route }) {
           />
         </View>
 
-        <PremiumSectionHeader title="Product photos" compact />
-        <PremiumButton
+        <SectionHeader title="Product photos" compact />
+        <Button
           label={isUploadingImage ? "Uploading…" : "Upload photo"}
           iconLeft="cloud-upload-outline"
           variant="secondary"
@@ -355,7 +355,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
 
         <View style={styles.manualUrlRow}>
           <View style={styles.manualUrlInputFlex}>
-            <PremiumInput
+            <Input
               label="Or paste image URL"
               value={manualPhotoUrl}
               onChangeText={setManualPhotoUrl}
@@ -364,7 +364,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
               iconLeft="link-outline"
             />
           </View>
-          <PremiumButton
+          <Button
             label="Add"
             variant="ghost"
             size="sm"
@@ -393,14 +393,14 @@ export default function AdminAddProductScreen({ navigation, route }) {
             <View style={styles.thumbCard}>
               <RetryImage sourceUri={item} style={styles.thumbImage} />
               <View style={styles.thumbActions}>
-                <PremiumButton
+                <Button
                   label="Cover"
                   variant={primaryImage === item ? "primary" : "ghost"}
                   size="sm"
                   onPress={() => setPrimaryImage(item)}
                   style={styles.thumbCoverBtn}
                 />
-                <PremiumButton
+                <Button
                   iconLeft="trash-outline"
                   variant="destructive"
                   size="sm"
@@ -414,10 +414,10 @@ export default function AdminAddProductScreen({ navigation, route }) {
         />
 
         <View style={styles.fieldGap}>
-          <PremiumInput label="Category" value={category} onChangeText={setCategory} placeholder="e.g. Dairy" iconLeft="folder-outline" />
+          <Input label="Category" value={category} onChangeText={setCategory} placeholder="e.g. Dairy" iconLeft="folder-outline" />
         </View>
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <Input
             label="Home section"
             value={homeSection}
             onChangeText={setHomeSection}
@@ -426,7 +426,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
           />
         </View>
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <Input
             label="Product type"
             value={productType}
             onChangeText={setProductType}
@@ -436,7 +436,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
         </View>
         <View style={styles.row}>
           <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput
+            <Input
               label="Home order"
               value={homeOrder}
               onChangeText={setHomeOrder}
@@ -444,7 +444,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
               placeholder="0, 1, 2…"
             />
           </View>
-          <PremiumChip
+          <Chip
             label={showOnHome ? "Show on Home: ON" : "Show on Home: OFF"}
             tone="gold"
             size="sm"
@@ -457,7 +457,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
           <Text style={styles.categoryHintText}>Quick categories:</Text>
           <View style={styles.categoryChipsRow}>
             {CATEGORY_OPTIONS.map((item) => (
-              <PremiumChip
+              <Chip
                 key={item}
                 label={item}
                 tone="gold"
@@ -470,25 +470,25 @@ export default function AdminAddProductScreen({ navigation, route }) {
         </View>
         <View style={styles.row}>
           <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Brand" value={brand} onChangeText={setBrand} placeholder="e.g. Amul" />
+            <Input label="Brand" value={brand} onChangeText={setBrand} placeholder="e.g. Amul" />
           </View>
           <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="SKU" value={sku} onChangeText={setSku} placeholder="e.g. MLK-1L-001" autoCapitalize="none" />
+            <Input label="SKU" value={sku} onChangeText={setSku} placeholder="e.g. MLK-1L-001" autoCapitalize="none" />
           </View>
         </View>
         <View style={styles.row}>
           <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Unit" value={unit} onChangeText={setUnit} placeholder="e.g. 1 kg" />
+            <Input label="Unit" value={unit} onChangeText={setUnit} placeholder="e.g. 1 kg" />
           </View>
           <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Optional note" value={eta} onChangeText={setEta} placeholder="e.g. batch" />
+            <Input label="Optional note" value={eta} onChangeText={setEta} placeholder="e.g. batch" />
           </View>
         </View>
         <View style={styles.row}>
           <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Stock quantity" value={stockQty} onChangeText={setStockQty} keyboardType="number-pad" />
+            <Input label="Stock quantity" value={stockQty} onChangeText={setStockQty} keyboardType="number-pad" />
           </View>
-          <PremiumChip
+          <Chip
             label={inStock ? "In Stock: ON" : "In Stock: OFF"}
             tone="gold"
             size="sm"
@@ -497,7 +497,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
             style={styles.halfInputChip}
           />
         </View>
-        <PremiumChip
+        <Chip
           label={isSpecial ? "Special product: ON" : "Special product: OFF"}
           tone="gold"
           size="sm"
@@ -506,12 +506,12 @@ export default function AdminAddProductScreen({ navigation, route }) {
           style={styles.toggleChipFull}
         />
 
-        <PremiumSectionHeader
+        <SectionHeader
           title="Rich product page (optional)"
           subtitle="Adds badge, ratings, variants, story, and usage sections when filled."
           compact
         />
-        <PremiumChip
+        <Chip
           label={richProductPage ? "Use rich layout: ON" : "Use rich layout: OFF"}
           tone="gold"
           size="sm"
@@ -521,7 +521,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
         />
         <View style={styles.row}>
           <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput
+            <Input
               label="Rating avg (0–5)"
               value={ratingAverage}
               onChangeText={setRatingAverage}
@@ -529,7 +529,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
             />
           </View>
           <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput
+            <Input
               label="Review count"
               value={reviewCount}
               onChangeText={setReviewCount}
@@ -538,10 +538,10 @@ export default function AdminAddProductScreen({ navigation, route }) {
           </View>
         </View>
         <View style={styles.fieldGap}>
-          <PremiumInput label="Hero badge" value={badgeText} onChangeText={setBadgeText} placeholder="e.g. HAND CHURNED" />
+          <Input label="Hero badge" value={badgeText} onChangeText={setBadgeText} placeholder="e.g. HAND CHURNED" />
         </View>
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <Input
             label="Lifestyle image URL"
             value={lifestyleImage}
             onChangeText={setLifestyleImage}
@@ -550,7 +550,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
           />
         </View>
 
-        <PremiumSectionHeader
+        <SectionHeader
           title="Size / price variants"
           subtitle="Leave empty for one price. Each row needs a label and price."
           compact
@@ -559,7 +559,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
           <View key={`v-${idx}`} style={styles.variantRowWrap}>
             <View style={styles.row}>
               <View style={[styles.fieldGap, styles.halfInput]}>
-                <PremiumInput
+                <Input
                   label="Label"
                   value={row.label}
                   onChangeText={(t) =>
@@ -569,7 +569,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
                 />
               </View>
               <View style={[styles.fieldGap, styles.halfInput]}>
-                <PremiumInput
+                <Input
                   label="Price"
                   value={row.price}
                   onChangeText={(t) =>
@@ -579,7 +579,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
                 />
               </View>
             </View>
-            <PremiumButton
+            <Button
               label="Remove variant"
               variant="destructive"
               size="sm"
@@ -588,7 +588,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
             />
           </View>
         ))}
-        <PremiumButton
+        <Button
           label="Add variant"
           iconLeft="add-outline"
           variant="ghost"
@@ -597,11 +597,11 @@ export default function AdminAddProductScreen({ navigation, route }) {
           style={styles.addRowBtn}
         />
 
-        <PremiumSectionHeader title="Selling points (USPs)" compact />
+        <SectionHeader title="Selling points (USPs)" compact />
         {uspRows.map((row, idx) => (
           <View key={`usp-${idx}`} style={styles.blockCard}>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Ionicons name"
                 value={row.icon}
                 onChangeText={(t) =>
@@ -612,7 +612,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
               />
             </View>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Title"
                 value={row.title}
                 onChangeText={(t) =>
@@ -621,7 +621,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
               />
             </View>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Description"
                 value={row.description}
                 onChangeText={(t) =>
@@ -631,7 +631,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
                 numberOfLines={3}
               />
             </View>
-            <PremiumButton
+            <Button
               label="Remove"
               variant="destructive"
               size="sm"
@@ -640,7 +640,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
             />
           </View>
         ))}
-        <PremiumButton
+        <Button
           label="Add USP"
           iconLeft="add-outline"
           variant="ghost"
@@ -649,9 +649,9 @@ export default function AdminAddProductScreen({ navigation, route }) {
           style={styles.addRowBtn}
         />
 
-        <PremiumSectionHeader title="Process story" compact />
+        <SectionHeader title="Process story" compact />
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <Input
             label="Process section title"
             value={processTitle}
             onChangeText={setProcessTitle}
@@ -659,7 +659,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
           />
         </View>
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <Input
             label="Process steps"
             value={processStepsText}
             onChangeText={setProcessStepsText}
@@ -669,7 +669,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
           />
         </View>
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <Input
             label="Highlight quote"
             value={highlightQuote}
             onChangeText={setHighlightQuote}
@@ -678,11 +678,11 @@ export default function AdminAddProductScreen({ navigation, route }) {
           />
         </View>
 
-        <PremiumSectionHeader title="Usage & rituals" compact />
+        <SectionHeader title="Usage & rituals" compact />
         {usageRows.map((row, idx) => (
           <View key={`use-${idx}`} style={styles.blockCard}>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Ionicons name"
                 value={row.icon}
                 onChangeText={(t) =>
@@ -692,7 +692,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
               />
             </View>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Title"
                 value={row.title}
                 onChangeText={(t) =>
@@ -701,7 +701,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
               />
             </View>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Description"
                 value={row.description}
                 onChangeText={(t) =>
@@ -711,7 +711,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
                 numberOfLines={3}
               />
             </View>
-            <PremiumButton
+            <Button
               label="Remove"
               variant="destructive"
               size="sm"
@@ -720,7 +720,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
             />
           </View>
         ))}
-        <PremiumButton
+        <Button
           label="Add usage card"
           iconLeft="add-outline"
           variant="ghost"
@@ -730,7 +730,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
         />
 
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <Input
             label="Description"
             value={description}
             onChangeText={setDescription}
@@ -740,7 +740,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
           />
         </View>
 
-        <PremiumButton
+        <Button
           label={isSaving ? "Saving…" : "Save product"}
           iconLeft="save-outline"
           variant="primary"

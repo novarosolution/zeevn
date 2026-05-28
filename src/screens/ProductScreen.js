@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Platform,
-  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,7 +10,6 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -27,6 +25,7 @@ import GalleryScrollFab from "../components/product/GalleryScrollFab";
 import MobileStickyDock from "../components/product/MobileStickyDock";
 import ProductPurchaseColumn from "../components/product/ProductPurchaseColumn";
 import ProductReviews from "../components/product/ProductReviews";
+import HomeTestimonials from "../components/home/HomeTestimonials";
 import ProductRichDetails, { hasRichProductContent } from "../components/product/ProductRichDetails";
 import ProductCard from "../components/ProductCard";
 import Card from "../components/ui/Card";
@@ -44,11 +43,12 @@ import {
   CUSTOMER_BOTTOM_NAV_BAR_HEIGHT,
   customerFloatingNavOffset,
   customerInnerPageScrollContent,
+  customerNestedScrollViewStyle,
   customerScrollPaddingBottom,
-  customerScrollPaddingTop,
+  customerScrollPaddingTopBelowPageHeader,
   customerWebStickyTop,
 } from "../theme/screenLayout";
-import { fonts, icon as sz } from "../theme/tokens";
+import { fonts } from "../theme/tokens";
 import { formatINR } from "../utils/currency";
 import { getImageUriCandidates } from "../utils/image";
 import { matchesShelfProduct } from "../utils/shelfMatch";
@@ -60,7 +60,6 @@ import { buildProductRouteMetaOverrides } from "../utils/productMeta";
 import LiveRegion from "../components/a11y/LiveRegion";
 import { injectProductPrintStyles } from "../styles/productPrint.web";
 import { navigateToLogin } from "../components/auth/authNavigation";
-
 const RECENT_PRODUCT_IDS_KEY = "@zeevan_recent_product_ids";
 const RECENT_PRODUCT_VIEWS_KEY = "@zeevan_recent_product_views";
 const VIEWED_RECENTLY_MS = 7 * 24 * 60 * 60 * 1000;
@@ -77,7 +76,7 @@ export default function ProductScreen({ route, navigation }) {
   const goLogin = useCallback(() => {
     navigateToLogin(navigation, { returnTo: loginReturnTo });
   }, [loginReturnTo, navigation]);
-  const { semanticPalette, TYPE, SPACING, RADII, SHADOWS } = useTheme();
+  const { semanticPalette, colors, TYPE, SPACING, RADII, SHADOWS, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const { width, height: windowHeight } = useWindowDimensions();
@@ -115,6 +114,9 @@ export default function ProductScreen({ route, navigation }) {
   const richContentAnchorRef = useRef(null);
   const reviewsSectionRef = useRef(null);
   const scrollRaf = useRef(null);
+  const stickyMeasureAtRef = useRef(0);
+  const galleryFabVisibleRef = useRef(false);
+  const stickyCtaVisibleRef = useRef(false);
   const flyX = useSharedValue(0);
   const flyY = useSharedValue(0);
   const flyScale = useSharedValue(1);
@@ -281,17 +283,31 @@ export default function ProductScreen({ route, navigation }) {
   const checkStickyDock = useCallback(
     (scrollY = scrollYRef.current) => {
       if (width >= 768) {
-        setShowStickyCta(false);
-        setShowGalleryFab(false);
+        if (stickyCtaVisibleRef.current) {
+          stickyCtaVisibleRef.current = false;
+          setShowStickyCta(false);
+        }
+        if (galleryFabVisibleRef.current) {
+          galleryFabVisibleRef.current = false;
+          setShowGalleryFab(false);
+        }
         return;
       }
       const atTop = scrollY < 32;
 
       const finishDock = (pastGallery, railsVisible, pastRich) => {
-        setShowGalleryFab(!atTop && pastRich);
+        const nextGalleryFab = !atTop && pastRich;
+        if (galleryFabVisibleRef.current !== nextGalleryFab) {
+          galleryFabVisibleRef.current = nextGalleryFab;
+          setShowGalleryFab(nextGalleryFab);
+        }
         mainCtaRef.current?.measureInWindow((_, y, __, h) => {
           const ctaOffScreen = y + h < 88;
-          setShowStickyCta(!atTop && pastGallery && ctaOffScreen && !railsVisible);
+          const nextSticky = !atTop && pastGallery && ctaOffScreen && !railsVisible;
+          if (stickyCtaVisibleRef.current !== nextSticky) {
+            stickyCtaVisibleRef.current = nextSticky;
+            setShowStickyCta(nextSticky);
+          }
         });
       };
 
@@ -314,14 +330,21 @@ export default function ProductScreen({ route, navigation }) {
       scrollYRef.current = scrollY;
       if (isTwoColumn) setPurchaseElevated(scrollY > 48);
       if (bagToastVisible) setBagToastVisible(false);
-      reviewsSectionRef.current?.measureInWindow((_, reviewsY) => {
-        if (reviewsY < windowHeight + 240) {
-          loadReviewsDeferred();
-        }
-      });
+      // Avoid layout reads on every tick; once reviews load starts this path is skipped.
+      if (!reviewsFetchedRef.current) {
+        reviewsSectionRef.current?.measureInWindow((_, reviewsY) => {
+          if (reviewsY < windowHeight + 240) {
+            loadReviewsDeferred();
+          }
+        });
+      }
       if (scrollRaf.current != null) return;
       scrollRaf.current = requestAnimationFrame(() => {
         scrollRaf.current = null;
+        const now = Date.now();
+        const minInterval = Platform.OS === "web" ? 120 : 80;
+        if (now - stickyMeasureAtRef.current < minInterval) return;
+        stickyMeasureAtRef.current = now;
         checkStickyDock(scrollY);
       });
     },
@@ -332,6 +355,14 @@ export default function ProductScreen({ route, navigation }) {
     const t = setTimeout(() => checkStickyDock(scrollYRef.current), 120);
     return () => clearTimeout(t);
   }, [checkStickyDock, product?.id, isTwoColumn]);
+
+  useEffect(() => {
+    galleryFabVisibleRef.current = showGalleryFab;
+  }, [showGalleryFab]);
+
+  useEffect(() => {
+    stickyCtaVisibleRef.current = showStickyCta;
+  }, [showStickyCta]);
 
   useEffect(() => {
     if (Platform.OS !== "web") return undefined;
@@ -349,10 +380,12 @@ export default function ProductScreen({ route, navigation }) {
         web: isTwoColumn
           ? {
               position: "sticky",
-              top: customerWebStickyTop(24),
+              top: customerWebStickyTop(16),
               alignSelf: "flex-start",
-              maxHeight: "calc(100vh - 160px)",
+              maxHeight: "calc(100dvh - 160px)",
               overflowY: "auto",
+              WebkitOverflowScrolling: "touch",
+              touchAction: "pan-y",
             }
           : {},
         default: {},
@@ -423,12 +456,15 @@ export default function ProductScreen({ route, navigation }) {
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        shell: { flex: 1, backgroundColor: semanticPalette.bg },
+        shell: { flex: 1, minHeight: 0, backgroundColor: colors.background },
         rowMain: {
           flexDirection: isTwoColumn ? "row" : "column",
           gap: SPACING.xl,
           alignItems: "flex-start",
           width: "100%",
+          maxWidth: 1240,
+          alignSelf: "center",
+          paddingTop: SPACING.xs,
         },
         galleryCol: {
           flex: isTwoColumn ? 3 : undefined,
@@ -451,6 +487,10 @@ export default function ProductScreen({ route, navigation }) {
                 : {},
             default: {},
           }),
+        },
+        railSection: {
+          width: "100%",
+          gap: SPACING.lg,
         },
         galleryRow: {
           flexDirection: isTwoColumn ? "row" : "column-reverse",
@@ -661,6 +701,7 @@ export default function ProductScreen({ route, navigation }) {
       SPACING,
       RADII,
       SHADOWS,
+      colors.background,
       heroMainHeight,
       isTwoColumn,
       semanticPalette,
@@ -868,17 +909,22 @@ export default function ProductScreen({ route, navigation }) {
         <LiveRegion message={bagLiveMessage} />
         <MotionScrollView
           ref={scrollRef}
-          style={{ flex: 1 }}
+          style={customerNestedScrollViewStyle}
+          nestedScrollEnabled
           {...(Platform.OS === "web" ? { "data-print-pdp": "true" } : {})}
           contentContainerStyle={customerInnerPageScrollContent(insets, {
             paddingHorizontal: SPACING.lg,
             paddingBottom: customerScrollPaddingBottom(insets) + (width < 768 ? 96 : 0),
-            paddingTop: customerScrollPaddingTop(insets, { nativeMin: SPACING.xs, webMin: SPACING.sm }),
+            paddingTop: customerScrollPaddingTopBelowPageHeader(insets, {
+              nativeMin: SPACING.xs,
+              webMin: SPACING.sm,
+            }),
             gap: SPACING["2xl"],
           })}
-          scrollEventThrottle={16}
+          scrollEventThrottle={Platform.OS === "web" ? 32 : 16}
           onScrollJS={onScrollJS}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={Platform.OS === "web"}
+          keyboardShouldPersistTaps="handled"
         >
           <View style={styles.rowMain}>
             {galleryBlock}
@@ -941,17 +987,21 @@ export default function ProductScreen({ route, navigation }) {
             />
           </View>
 
-          <View style={{ gap: SPACING.lg }}>
+          <View style={{ width: "100%" }}>
+            <HomeTestimonials c={semanticPalette} isDark={isDark} />
+          </View>
+
+          <View style={styles.railSection}>
             <SectionHeader overline={PRODUCT_SCREEN.completeLookOverline} title={PRODUCT_SCREEN.completeLookTitle} headingLevel={2} />
             {renderProductRail(completeLookItems)}
           </View>
 
-          <View style={{ gap: SPACING.lg }}>
+          <View style={styles.railSection}>
             <SectionHeader overline={PRODUCT_SCREEN.youMayAlsoLikeOverline} title={PRODUCT_SCREEN.youMayAlsoLikeTitle} headingLevel={2} />
             {renderProductRail(youMayAlsoLikeItems)}
           </View>
 
-          <View style={{ gap: SPACING.lg }}>
+          <View style={styles.railSection}>
             <SectionHeader overline={PRODUCT_SCREEN.recentlyViewedOverline} title={PRODUCT_SCREEN.recentlyViewedTitle} headingLevel={2} />
             {renderProductRail(recentlyViewedProducts)}
           </View>

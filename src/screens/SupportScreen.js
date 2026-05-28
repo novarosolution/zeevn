@@ -23,11 +23,11 @@ import {
 import { SUPPORT_EMAIL_DISPLAY, SUPPORT_SCREEN } from "../content/appContent";
 import { ALCHEMY } from "../theme/customerAlchemy";
 import { fonts, icon, radius, spacing, typography } from "../theme/tokens";
-import PremiumEmptyState from "../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
-import PremiumInput from "../components/ui/PremiumInput";
-import PremiumButton from "../components/ui/PremiumButton";
-import PremiumCard from "../components/ui/PremiumCard";
+import EmptyState from "../components/ui/EmptyState";
+import ErrorBanner from "../components/ui/ErrorBanner";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
 import SkeletonBlock from "../components/ui/SkeletonBlock";
 
 function buildSupportContactLinks() {
@@ -176,7 +176,7 @@ export default function SupportScreen({ navigation }) {
           subtitle={SUPPORT_SCREEN.pageHeaderSubtitle}
           right={
             Platform.OS !== "web" ? (
-              <PremiumButton
+              <Button
                 label={SUPPORT_SCREEN.refreshCta}
                 iconLeft="refresh-outline"
                 variant="ghost"
@@ -191,7 +191,7 @@ export default function SupportScreen({ navigation }) {
             {buildSupportContactLinks().map((link) => {
               const palette = getContactPalette(link.accent, c, isDark);
               return (
-                <PremiumCard
+                <Card
                   key={link.key}
                   onPress={() => handleContactPress(link)}
                   goldAccent={link.accent === "gold"}
@@ -211,7 +211,7 @@ export default function SupportScreen({ navigation }) {
                     </Text>
                     <Ionicons name="arrow-forward" size={14} color={palette.icon} />
                   </View>
-                </PremiumCard>
+                </Card>
               );
             })}
           </View>
@@ -219,7 +219,7 @@ export default function SupportScreen({ navigation }) {
         {error ? (
           <SectionReveal preset="fade-up" delay={40}>
             <View style={styles.bannerWrap}>
-              <PremiumErrorBanner severity="error" message={error} compact />
+              <ErrorBanner severity="error" message={error} compact />
             </View>
           </SectionReveal>
         ) : null}
@@ -257,7 +257,7 @@ export default function SupportScreen({ navigation }) {
               </View>
             ) : null}
             {(thread?.messages || []).length === 0 ? (
-              <PremiumEmptyState
+              <EmptyState
                 iconName="chatbubbles-outline"
                 title={SUPPORT_SCREEN.emptyThreadTitle}
                 description={SUPPORT_SCREEN.emptyThreadDescription}
@@ -297,7 +297,7 @@ export default function SupportScreen({ navigation }) {
                 <Text style={styles.composerTitle}>{SUPPORT_SCREEN.composerTitle}</Text>
                 <Text style={styles.composerHint}>{SUPPORT_SCREEN.composerHint}</Text>
               </View>
-              <PremiumInput
+              <Input
                 label={SUPPORT_SCREEN.composerLabel}
                 value={message}
                 onChangeText={setMessage}
@@ -306,7 +306,7 @@ export default function SupportScreen({ navigation }) {
                 iconLeft="chatbox-ellipses-outline"
               />
             </View>
-            <PremiumButton
+            <Button
               label={sending ? SUPPORT_SCREEN.sendingCta : SUPPORT_SCREEN.sendCta}
               iconRight="paper-plane"
               variant="primary"

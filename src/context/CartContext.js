@@ -2,6 +2,8 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { useAuth } from "./AuthContext";
 import { fetchMyCart, replaceMyCart } from "../services/userService";
 import { cartLineKey } from "../utils/productCart";
+import { isDeviceOffline } from "../utils/authNetwork";
+import { WRITE_TYPES, enqueueCriticalWrite } from "../utils/criticalWriteQueue";
 
 const CartContext = createContext(undefined);
 
@@ -169,10 +171,15 @@ export function CartProvider({ children }) {
     if (syncTimerRef.current) {
       clearTimeout(syncTimerRef.current);
     }
-    syncTimerRef.current = setTimeout(() => {
-      replaceMyCart(token, cartItems).catch(() => {
-        // Ignore sync error; user can continue using cart offline.
-      });
+    syncTimerRef.current = setTimeout(async () => {
+      try {
+        await replaceMyCart(token, cartItems);
+      } catch (err) {
+        const offline = err?.code === "OFFLINE" || (await isDeviceOffline().catch(() => false));
+        if (offline) {
+          await enqueueCriticalWrite(WRITE_TYPES.CART_SYNC, { items: cartItems });
+        }
+      }
     }, 300);
 
     return () => {

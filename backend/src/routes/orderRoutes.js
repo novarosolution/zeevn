@@ -6,7 +6,6 @@ const {
   reorderMyOrder,
   updateMyOrderAddress,
   verifyPayment,
-  razorpayWebhook,
   cancelPendingOrder,
   claimMyOrderReward,
 } = require("../controllers/orderController");
@@ -14,20 +13,7 @@ const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-/**
- * Razorpay webhook needs the RAW body for HMAC verification, so we use
- * express.raw() and stash it on req.rawBody. This MUST be registered before
- * any JSON middleware that might consume the stream.
- */
-router.post(
-  "/razorpay-webhook",
-  express.raw({ type: "application/json", limit: "1mb" }),
-  (req, _res, next) => {
-    req.rawBody = req.body;
-    next();
-  },
-  razorpayWebhook
-);
+/** Razorpay webhook is mounted on `server.js` before `express.json()` for raw body verification. */
 
 router.post("/", protect, createOrder);
 router.get("/available-coupons", protect, getAvailableCouponsForCart);

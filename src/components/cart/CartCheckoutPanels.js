@@ -6,7 +6,7 @@ import Card from "../ui/Card";
 import { CHECKOUT_UI } from "../../content/appContent";
 import { fonts } from "../../theme/tokens";
 
-export function CheckoutStrippedHeader({ onBack, semanticPalette, TYPE, SPACING }) {
+export function CheckoutStrippedHeader({ onBack, semanticPalette, TYPE, SPACING, contactLine }) {
   return (
     <View style={{ width: "100%", paddingVertical: SPACING.md }}>
       {onBack ? (
@@ -35,6 +35,11 @@ export function CheckoutStrippedHeader({ onBack, semanticPalette, TYPE, SPACING 
         <Text style={{ fontFamily: fonts.medium, fontSize: TYPE.micro.fontSize, letterSpacing: 1.2, color: semanticPalette.inkMuted, textTransform: "uppercase" }}>
           {CHECKOUT_UI.secureLine}
         </Text>
+        {contactLine ? (
+          <Text style={{ fontFamily: fonts.regular, fontSize: TYPE.caption.fontSize, color: semanticPalette.inkMuted }}>
+            {contactLine}
+          </Text>
+        ) : null}
       </View>
     </View>
   );
@@ -129,11 +134,11 @@ export function DeliveryMethodCards({ value, onChange, semanticPalette, TYPE, SP
 }
 
 const PAYMENT_TABS = [
-  { key: "upi", label: CHECKOUT_UI.paymentTabUpi },
-  { key: "cards", label: CHECKOUT_UI.paymentTabCards },
-  { key: "netbanking", label: CHECKOUT_UI.paymentTabNetbanking },
-  { key: "wallet", label: CHECKOUT_UI.paymentTabWallet },
-  { key: "cod", label: CHECKOUT_UI.paymentTabCod },
+  { key: "upi", label: CHECKOUT_UI.paymentTabUpi, disabled: false },
+  { key: "cards", label: CHECKOUT_UI.paymentTabCards, disabled: false },
+  { key: "netbanking", label: CHECKOUT_UI.paymentTabNetbanking, disabled: false },
+  { key: "wallet", label: CHECKOUT_UI.paymentTabWallet, disabled: false },
+  { key: "cod", label: CHECKOUT_UI.paymentTabCod, disabled: false },
 ];
 
 export function PaymentTabsRow({ activeTab, onChange, semanticPalette, TYPE, SPACING, RADII }) {
@@ -146,6 +151,7 @@ export function PaymentTabsRow({ activeTab, onChange, semanticPalette, TYPE, SPA
             <Pressable
               key={t.key}
               onPress={() => onChange(t.key)}
+              disabled={t.disabled}
               style={{
                 paddingHorizontal: SPACING.md,
                 paddingVertical: SPACING.sm,
@@ -153,9 +159,26 @@ export function PaymentTabsRow({ activeTab, onChange, semanticPalette, TYPE, SPA
                 borderWidth: StyleSheet.hairlineWidth,
                 borderColor: on ? semanticPalette.accent : semanticPalette.line,
                 backgroundColor: on ? semanticPalette.accentSoft : semanticPalette.surfaceAlt,
+                opacity: t.disabled ? 0.72 : 1,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
               }}
             >
               <Text style={{ fontFamily: fonts.semibold, fontSize: TYPE.caption.fontSize, color: semanticPalette.ink }}>{t.label}</Text>
+              {t.badge ? (
+                <Text
+                  style={{
+                    fontFamily: fonts.semibold,
+                    fontSize: TYPE.micro.fontSize,
+                    color: semanticPalette.accent,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  {t.badge}
+                </Text>
+              ) : null}
             </Pressable>
           );
         })}

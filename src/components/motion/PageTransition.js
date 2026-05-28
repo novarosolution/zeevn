@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import useSlowRenderProbe from "../../hooks/useSlowRenderProbe";
 
 /**
  * Web-only screen-level focus transition. Wrap your screen content in this
@@ -11,10 +12,24 @@ import useReducedMotion from "../../hooks/useReducedMotion";
  *
  * On native or under reduced-motion this is a transparent passthrough.
  */
-export default function PageTransition({ children, style, distance = 12, duration = 320 }) {
+export default function PageTransition({ children, style, distance = 12, duration = 320, screenName }) {
   const reducedMotion = useReducedMotion();
+  const onLayout = useSlowRenderProbe(screenName || "PageTransition");
   const ref = useRef(null);
   const firstFocusRef = useRef(true);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      return () => {
+        if (Platform.OS === "web" && typeof document !== "undefined") {
+          const active = document.activeElement;
+          if (active instanceof HTMLElement && typeof active.blur === "function") {
+            active.blur();
+          }
+        }
+      };
+    }, [])
+  );
 
   useFocusEffect(
     React.useCallback(() => {
@@ -55,10 +70,14 @@ export default function PageTransition({ children, style, distance = 12, duratio
   }, [reducedMotion]);
 
   if (Platform.OS !== "web") {
-    return <View style={[styles.fill, style]}>{children}</View>;
+    return (
+      <View style={[styles.fill, style]} onLayout={onLayout}>
+        {children}
+      </View>
+    );
   }
   return (
-    <View ref={ref} style={[styles.fill, style]}>
+    <View ref={ref} style={[styles.fill, style]} onLayout={onLayout}>
       {children}
     </View>
   );

@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { AccessibilityInfo, Platform } from "react-native";
 
+/** RN Animated `useNativeDriver` is unsupported on web — avoids console noise + fallback jank. */
+export const nativeDriverEnabled = Platform.OS !== "web";
+
 /**
  * Returns true when the user requests reduced motion.
  * - Native: AccessibilityInfo reduce-motion flag + change event

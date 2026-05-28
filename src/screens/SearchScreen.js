@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useWindowDimensions } from "react-native";
 import PlpFilterPanel from "../components/plp/PlpFilterPanel";
+import PlpEmptyStates from "../components/plp/PlpEmptyStates";
 import ProductListingLayout from "../components/plp/ProductListingLayout";
 import Badge from "../components/ui/Badge";
 import EmptyState from "../components/ui/EmptyState";
 import useRouteMeta from "../hooks/useRouteMeta";
+import usePlpCatalog from "../hooks/usePlpCatalog";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
@@ -14,22 +16,6 @@ import { filterProductsByQuery } from "../utils/filterProductsByQuery";
 import { productToCartLine } from "../utils/productCart";
 import { HOME_CATALOG_ALL, matchesShelfProduct } from "../utils/shelfMatch";
 import { CUSTOMER_PAGE_MAX_WIDTH } from "../theme/screenLayout";
-
-function sortPlProducts(items, sortKey) {
-  const copy = [...items];
-  if (sortKey === "priceAsc") copy.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
-  else if (sortKey === "priceDesc") copy.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
-  else if (sortKey === "name") copy.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
-  else {
-    copy.sort((a, b) => {
-      const oa = Number.isFinite(Number(a.homeOrder)) ? Number(a.homeOrder) : 0;
-      const ob = Number.isFinite(Number(b.homeOrder)) ? Number(b.homeOrder) : 0;
-      if (oa !== ob) return oa - ob;
-      return String(a.name || "").localeCompare(String(b.name || ""));
-    });
-  }
-  return copy;
-}
 
 export default function SearchScreen({ navigation, route }) {
   const { SPACING } = useTheme();
@@ -48,16 +34,6 @@ export default function SearchScreen({ navigation, route }) {
   const [error, setError] = useState("");
   const [cardStyle, setCardStyle] = useState(HOME_VIEW_DEFAULTS.productCardStyle || "compact");
   const [refreshTick, setRefreshTick] = useState(0);
-  const [sortKey, setSortKey] = useState("featured");
-  const [selectedCategories, setSelectedCategories] = useState(() => new Set());
-  const [selectedTypes, setSelectedTypes] = useState(() => new Set());
-  const [inStockOnly, setInStockOnly] = useState(false);
-
-  useEffect(() => {
-    setSelectedCategories(new Set());
-    setSelectedTypes(new Set());
-    setInStockOnly(false);
-  }, [routeQ, routeCategory]);
 
   useEffect(() => {
     let cancelled = false;
@@ -68,9 +44,7 @@ export default function SearchScreen({ navigation, route }) {
         const [data, viewConfig] = await Promise.all([getProducts(), getHomeViewConfig()]);
         if (cancelled) return;
         setProducts(Array.isArray(data) ? data : []);
-        if (viewConfig?.productCardStyle) {
-          setCardStyle(viewConfig.productCardStyle);
-        }
+        if (viewConfig?.productCardStyle) setCardStyle(viewConfig.productCardStyle);
       } catch (e) {
         if (!cancelled) {
           setError(String(e?.message || "Unable to load products."));
@@ -100,41 +74,39 @@ export default function SearchScreen({ navigation, route }) {
         return pc.includes(catTerm) || pt.includes(catTerm);
       });
     }
-    list = filterProductsByQuery(list, routeQ);
-    return list;
+    return filterProductsByQuery(list, routeQ);
   }, [catalogProducts, routeCategory, routeQ]);
 
-  const facetCategories = useMemo(() => {
-    const set = new Set();
-    baseMatches.forEach((p) => {
-      const c = String(p.category || "").trim();
-      if (c) set.add(c);
-    });
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }, [baseMatches]);
+  const routeContext = useMemo(
+    () => ({ q: routeQ, category: routeCategory, categoryLabel: routeCategoryLabel }),
+    [routeCategory, routeCategoryLabel, routeQ]
+  );
 
-  const facetTypes = useMemo(() => {
-    const set = new Set();
-    baseMatches.forEach((p) => {
-      const t = String(p.productType || "").trim();
-      if (t) set.add(t);
-    });
-    return [...set].sort((a, b) => a.localeCompare(b));
-  }, [baseMatches]);
+  const {
+    facets,
+    filters,
+    sortKey,
+    filtered,
+    visibleItems,
+    hasMore,
+    loadMore,
+    activeFilterCount,
+    updateFilters,
+    setSort,
+    clearFilters,
+    resetForRoute,
+    toggleSet,
+    priceBounds,
+  } = usePlpCatalog({
+    navigation,
+    route,
+    baseProducts: baseMatches,
+    routeContext,
+  });
 
-  const filtered = useMemo(() => {
-    let list = baseMatches;
-    if (selectedCategories.size > 0) {
-      list = list.filter((p) => selectedCategories.has(String(p.category || "").trim()));
-    }
-    if (selectedTypes.size > 0) {
-      list = list.filter((p) => selectedTypes.has(String(p.productType || "").trim()));
-    }
-    if (inStockOnly) {
-      list = list.filter((p) => p.inStock !== false && Number(p.stockQty || 0) > 0);
-    }
-    return sortPlProducts(list, sortKey);
-  }, [baseMatches, inStockOnly, selectedCategories, selectedTypes, sortKey]);
+  useEffect(() => {
+    resetForRoute();
+  }, [routeQ, routeCategory, resetForRoute]);
 
   const gutter = useMemo(() => {
     if (windowWidth >= 1024) return SPACING["4xl"];
@@ -152,44 +124,12 @@ export default function SearchScreen({ navigation, route }) {
 
   const cardWidth = useMemo(() => {
     const innerMax =
-      typeof CUSTOMER_PAGE_MAX_WIDTH === "number"
-        ? Math.min(windowWidth, CUSTOMER_PAGE_MAX_WIDTH)
-        : windowWidth;
+      typeof CUSTOMER_PAGE_MAX_WIDTH === "number" ? Math.min(windowWidth, CUSTOMER_PAGE_MAX_WIDTH) : windowWidth;
     const sidebar = windowWidth >= 1024 ? 280 + SPACING.xl : 0;
     const gridOuterWidth = innerMax - gutter * 2 - sidebar;
     const totalGap = gridGap * Math.max(0, numColumns - 1);
     return Math.max(120, Math.floor((gridOuterWidth - totalGap) / numColumns));
   }, [gridGap, gutter, numColumns, windowWidth, SPACING.xl]);
-
-  const sheetActiveFacetCount =
-    selectedCategories.size + selectedTypes.size + (inStockOnly ? 1 : 0);
-
-  const toggleCategory = useCallback((cat) => {
-    setSelectedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(cat)) next.delete(cat);
-      else next.add(cat);
-      return next;
-    });
-  }, []);
-
-  const toggleType = useCallback((t) => {
-    setSelectedTypes((prev) => {
-      const next = new Set(prev);
-      if (next.has(t)) next.delete(t);
-      else next.add(t);
-      return next;
-    });
-  }, []);
-
-  const clearFilters = useCallback(() => {
-    setSelectedCategories(new Set());
-    setSelectedTypes(new Set());
-    setInStockOnly(false);
-    if (baseMatches.length === 0) {
-      navigation.setParams({ q: "", category: "", categoryLabel: "" });
-    }
-  }, [baseMatches.length, navigation]);
 
   const handleCatalogAddToCart = useCallback(
     (product) => {
@@ -237,47 +177,43 @@ export default function SearchScreen({ navigation, route }) {
   const sortOptions = useMemo(
     () => [
       { key: "featured", label: PLP_UI.sortFeatured },
+      { key: "newest", label: PLP_UI.sortNewest },
       { key: "priceAsc", label: PLP_UI.sortPriceAsc },
       { key: "priceDesc", label: PLP_UI.sortPriceDesc },
-      { key: "name", label: PLP_UI.sortName },
+      { key: "rating", label: PLP_UI.sortRating },
+      { key: "popular", label: PLP_UI.sortPopular },
     ],
     []
   );
 
   const renderFilterPanel = useCallback(
-    () => (
+    ({ onClearAll, activeFilterCount: panelActiveCount } = {}) => (
       <PlpFilterPanel
-        facetCategories={facetCategories}
-        facetTypes={facetTypes}
-        selectedCategories={selectedCategories}
-        selectedTypes={selectedTypes}
-        onToggleCategory={toggleCategory}
-        onToggleType={toggleType}
-        inStockOnly={inStockOnly}
-        onToggleInStock={() => setInStockOnly((v) => !v)}
+        facets={facets}
+        filters={filters}
+        priceBounds={priceBounds}
+        activeFilterCount={panelActiveCount ?? activeFilterCount}
+        onClearAll={onClearAll ?? clearFilters}
+        onToggleCategory={(cat) => toggleSet("categories", cat)}
+        onToggleType={(t) => toggleSet("types", t)}
+        onToggleBrand={(b) => toggleSet("brands", b)}
+        onToggleSize={(s) => toggleSet("sizes", s)}
+        onToggleColor={(c) => toggleSet("colors", c)}
+        onPriceMinChange={(n) => updateFilters((prev) => ({ ...prev, priceMin: n }))}
+        onPriceMaxChange={(n) => updateFilters((prev) => ({ ...prev, priceMax: n }))}
+        onRatingChange={(r) => updateFilters((prev) => ({ ...prev, minRating: r }))}
+        onToggleDiscount={(v) => updateFilters((prev) => ({ ...prev, discountOnly: v }))}
+        onToggleInStock={(v) => updateFilters((prev) => ({ ...prev, inStockOnly: v }))}
       />
     ),
-    [
-      facetCategories,
-      facetTypes,
-      inStockOnly,
-      selectedCategories,
-      selectedTypes,
-      toggleCategory,
-      toggleType,
-    ]
+    [activeFilterCount, clearFilters, facets, filters, priceBounds, toggleSet, updateFilters]
   );
 
   const chipsRow = useMemo(() => {
     const nodes = [];
     if (routeQ) {
       nodes.push(
-        <Badge
-          key="chip-q"
-          variant="neutral"
-          onDismiss={() => navigation.setParams({ q: "" })}
-          dismissAccessibilityLabel={PLP_UI.chipRemoveA11y}
-        >
+        <Badge key="chip-q" variant="neutral" onDismiss={() => navigation.setParams({ q: "" })} dismissAccessibilityLabel={PLP_UI.chipRemoveA11y}>
           {routeQ}
         </Badge>
       );
@@ -294,55 +230,59 @@ export default function SearchScreen({ navigation, route }) {
         </Badge>
       );
     }
-    [...selectedCategories].forEach((cat) => {
+    [...filters.categories].forEach((cat) => {
       nodes.push(
-        <Badge
-          key={`chip-cat-${cat}`}
-          variant="neutral"
-          onDismiss={() => toggleCategory(cat)}
-          dismissAccessibilityLabel={PLP_UI.chipRemoveA11y}
-        >
+        <Badge key={`chip-cat-${cat}`} variant="neutral" onDismiss={() => toggleSet("categories", cat)} dismissAccessibilityLabel={PLP_UI.chipRemoveA11y}>
           {cat}
         </Badge>
       );
     });
-    [...selectedTypes].forEach((t) => {
+    [...filters.brands].forEach((b) => {
       nodes.push(
-        <Badge
-          key={`chip-type-${t}`}
-          variant="neutral"
-          onDismiss={() => toggleType(t)}
-          dismissAccessibilityLabel={PLP_UI.chipRemoveA11y}
-        >
-          {t}
+        <Badge key={`chip-brand-${b}`} variant="neutral" onDismiss={() => toggleSet("brands", b)} dismissAccessibilityLabel={PLP_UI.chipRemoveA11y}>
+          {b}
         </Badge>
       );
     });
-    if (inStockOnly) {
+    [...filters.sizes].forEach((s) => {
       nodes.push(
-        <Badge
-          key="chip-stock"
-          variant="neutral"
-          onDismiss={() => setInStockOnly(false)}
-          dismissAccessibilityLabel={PLP_UI.chipRemoveA11y}
-        >
+        <Badge key={`chip-size-${s}`} variant="neutral" onDismiss={() => toggleSet("sizes", s)} dismissAccessibilityLabel={PLP_UI.chipRemoveA11y}>
+          {s}
+        </Badge>
+      );
+    });
+    [...filters.colors].forEach((c) => {
+      const sw = facets.colors.find((x) => x.key === c);
+      nodes.push(
+        <Badge key={`chip-color-${c}`} variant="neutral" onDismiss={() => toggleSet("colors", c)} dismissAccessibilityLabel={PLP_UI.chipRemoveA11y}>
+          {sw?.label || c}
+        </Badge>
+      );
+    });
+    if (filters.minRating != null) {
+      nodes.push(
+        <Badge key="chip-rating" variant="neutral" onDismiss={() => updateFilters((p) => ({ ...p, minRating: null }))} dismissAccessibilityLabel={PLP_UI.chipRemoveA11y}>
+          {PLP_UI.ratingChipTemplate(filters.minRating)}
+        </Badge>
+      );
+    }
+    if (filters.discountOnly) {
+      nodes.push(
+        <Badge key="chip-discount" variant="neutral" onDismiss={() => updateFilters((p) => ({ ...p, discountOnly: false }))} dismissAccessibilityLabel={PLP_UI.chipRemoveA11y}>
+          {PLP_UI.discountOnly}
+        </Badge>
+      );
+    }
+    if (filters.inStockOnly) {
+      nodes.push(
+        <Badge key="chip-stock" variant="neutral" onDismiss={() => updateFilters((p) => ({ ...p, inStockOnly: false }))} dismissAccessibilityLabel={PLP_UI.chipRemoveA11y}>
           {PLP_UI.inStockOnly}
         </Badge>
       );
     }
     if (nodes.length === 0) return null;
     return <>{nodes}</>;
-  }, [
-    inStockOnly,
-    navigation,
-    routeCategory,
-    routeCategoryLabel,
-    routeQ,
-    selectedCategories,
-    selectedTypes,
-    toggleCategory,
-    toggleType,
-  ]);
+  }, [facets.colors, filters, navigation, routeCategory, routeCategoryLabel, routeQ, toggleSet, updateFilters]);
 
   const showIntro = !routeQ && !routeCategory;
   const phase = showIntro
@@ -375,15 +315,18 @@ export default function SearchScreen({ navigation, route }) {
     />
   );
 
-  const emptySlot = (
-    <EmptyState
-      iconName="search-outline"
-      title={PLP_UI.noMatchesTitle}
-      description={PLP_UI.noMatchesBody}
-      ctaLabel={PLP_UI.clearFiltersCta}
-      onCtaPress={clearFilters}
-    />
-  );
+  const emptySlot =
+    routeQ && !routeCategory ? (
+      <PlpEmptyStates
+        variant="search"
+        query={routeQ}
+        catalog={catalogProducts}
+        navigation={navigation}
+        onClearSearch={() => navigation.setParams({ q: "" })}
+      />
+    ) : (
+      <PlpEmptyStates variant="category" categoryLabel={routeCategoryLabel || routeCategory} navigation={navigation} />
+    );
 
   return (
     <ProductListingLayout
@@ -394,7 +337,7 @@ export default function SearchScreen({ navigation, route }) {
       introSlot={introSlot}
       errorSlot={errorSlot}
       emptySlot={emptySlot}
-      filteredItems={filtered}
+      filteredItems={visibleItems}
       numColumns={numColumns}
       gridGap={gridGap}
       cardWidth={cardWidth}
@@ -406,10 +349,16 @@ export default function SearchScreen({ navigation, route }) {
       renderFilterPanel={renderFilterPanel}
       sortOptions={sortOptions}
       sortKey={sortKey}
-      onSortChange={setSortKey}
-      sheetActiveFacetCount={sheetActiveFacetCount}
+      onSortChange={setSort}
+      sheetActiveFacetCount={activeFilterCount}
       chipsRow={chipsRow}
       listKeyPrefix="search-plp"
+      onClearAll={clearFilters}
+      activeFilterCount={activeFilterCount}
+      onLoadMore={loadMore}
+      hasMore={hasMore}
+      totalCount={filtered.length}
+      visibleCount={visibleItems.length}
     />
   );
 }

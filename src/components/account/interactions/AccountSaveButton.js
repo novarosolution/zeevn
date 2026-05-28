@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import ProgressRing from "../../ui/ProgressRing";
+import { pointerEventsNativeOnly, withPointerEventsStyle } from "../../../utils/pointerEventsStyle";
 import { WebNativeButton } from "../../ui/inputWebHelpers";
 import { useTheme } from "../../../context/ThemeContext";
 import useReducedMotion from "../../../hooks/useReducedMotion";
@@ -143,7 +144,14 @@ export default function AccountSaveButton({
     );
   };
 
-  return <Animated.View style={[animWrap, style]} pointerEvents={dirty ? "auto" : "none"}>{content()}</Animated.View>;
+  return (
+    <Animated.View
+      style={withPointerEventsStyle([animWrap, style], dirty ? "auto" : "none")}
+      {...pointerEventsNativeOnly(dirty ? "auto" : "none")}
+    >
+      {content()}
+    </Animated.View>
+  );
 }
 
 const styles = StyleSheet.create({

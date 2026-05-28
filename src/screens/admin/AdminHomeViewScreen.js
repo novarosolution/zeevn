@@ -11,11 +11,11 @@ import MotionScrollView from "../../components/motion/MotionScrollView";
 import { adminInnerPageScrollContent, customerScrollFill } from "../../theme/screenLayout";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
 import { ADMIN_HOME_VIEW_COPY, HOME_VIEW_DEFAULTS } from "../../content/appContent";
-import PremiumInput from "../../components/ui/PremiumInput";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumChip from "../../components/ui/PremiumChip";
-import PremiumCard from "../../components/ui/PremiumCard";
+import Input from "../../components/ui/Input";
+import ErrorBanner from "../../components/ui/ErrorBanner";
+import Button from "../../components/ui/Button";
+import Chip from "../../components/ui/Chip";
+import Card from "../../components/ui/Card";
 
 function Section({ label, hint, children, styles }) {
   return (
@@ -116,21 +116,21 @@ export default function AdminHomeViewScreen({ navigation }) {
     <OpsAdminScreen navigation={navigation} activeRoute="AdminHomeView" sectionTitle="Manage storefront content">
           {error ? (
             <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+              <ErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
             </View>
           ) : null}
           {success ? (
             <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
+              <ErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
             </View>
           ) : null}
 
           <Section label={copy.heroSection} hint={copy.heroHint} styles={styles}>
             <View style={styles.fieldGap}>
-              <PremiumInput label="Hero title" value={heroTitle} onChangeText={setHeroTitle} iconLeft="sparkles-outline" />
+              <Input label="Hero title" value={heroTitle} onChangeText={setHeroTitle} iconLeft="sparkles-outline" />
             </View>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Hero subtitle"
                 value={heroSubtitle}
                 onChangeText={setHeroSubtitle}
@@ -143,7 +143,7 @@ export default function AdminHomeViewScreen({ navigation }) {
 
           <Section label={copy.sectionTitles} hint={copy.sectionTitlesHint} styles={styles}>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Prime section title"
                 value={primeSectionTitle}
                 onChangeText={setPrimeSectionTitle}
@@ -152,7 +152,7 @@ export default function AdminHomeViewScreen({ navigation }) {
               />
             </View>
             <View style={styles.fieldGap}>
-              <PremiumInput
+              <Input
                 label="Product type strip title"
                 value={productTypeTitle}
                 onChangeText={setProductTypeTitle}
@@ -163,7 +163,7 @@ export default function AdminHomeViewScreen({ navigation }) {
           </Section>
 
           <Section label={copy.visibilitySection} hint={copy.visibilityHint} styles={styles}>
-            <PremiumCard
+            <Card
               padding="md"
               interactive
               onPress={() => setShowPrimeSection((current) => !current)}
@@ -176,9 +176,9 @@ export default function AdminHomeViewScreen({ navigation }) {
               <Text style={[styles.toggleDetail, { color: c.textSecondary }]}>
                 Controls the main prime section on Home.
               </Text>
-            </PremiumCard>
+            </Card>
 
-            <PremiumCard
+            <Card
               padding="md"
               interactive
               onPress={() => setShowHomeSections((current) => !current)}
@@ -191,9 +191,9 @@ export default function AdminHomeViewScreen({ navigation }) {
               <Text style={[styles.toggleDetail, { color: c.textSecondary }]}>
                 Shows section-based groups on Home.
               </Text>
-            </PremiumCard>
+            </Card>
 
-            <PremiumCard
+            <Card
               padding="md"
               interactive
               onPress={() => setShowProductTypeSections((current) => !current)}
@@ -206,12 +206,12 @@ export default function AdminHomeViewScreen({ navigation }) {
               <Text style={[styles.toggleDetail, { color: c.textSecondary }]}>
                 Shows the product type strip on Home.
               </Text>
-            </PremiumCard>
+            </Card>
           </Section>
 
           <Section label={copy.cardLayoutSection} hint={copy.cardLayoutHint} styles={styles}>
             <View style={styles.row}>
-              <PremiumChip
+              <Chip
                 label="Compact"
                 tone="gold"
                 size="md"
@@ -219,7 +219,7 @@ export default function AdminHomeViewScreen({ navigation }) {
                 onPress={() => setProductCardStyle("compact")}
                 style={styles.modeChip}
               />
-              <PremiumChip
+              <Chip
                 label="Comfortable"
                 tone="gold"
                 size="md"
@@ -252,7 +252,7 @@ export default function AdminHomeViewScreen({ navigation }) {
             </View>
           </Section>
 
-          <PremiumButton
+          <Button
             label={saving ? "Saving…" : "Save storefront settings"}
             variant="primary"
             size="lg"

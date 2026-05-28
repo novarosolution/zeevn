@@ -12,7 +12,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { useAnimatedReaction, runOnJS, useAnimatedStyle, useSharedValue, withSequence, withSpring } from "react-native-reanimated";
-import { gsap } from "gsap";
+import { loadGsap } from "../utils/loadGsap";
+import { nativeDriverEnabled } from "../utils/motion";
 import {
   breakpoints,
   fonts,
@@ -23,10 +24,11 @@ import {
   typography,
 } from "../theme/tokens";
 import { useCartDrawer } from "../context/CartDrawerContext";
+import LiveRegion from "./a11y/LiveRegion";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-import { WEB_HEADER_BAND, WEB_Z_INDEX } from "../theme/web";
+import { WEB_HEADER_BAND, WEB_Z_INDEX, webBackdropFilterStyle } from "../theme/web";
 import { CUSTOMER_PAGE_MAX_WIDTH } from "../theme/screenLayout";
 import { CUSTOMER_NAV_LINKS, SEARCH_PLACEHOLDERS, WEB_HEADER_UI } from "../content/appContent";
 import { ACCOUNT_NESTED } from "../navigation/accountRoutes";
@@ -102,11 +104,12 @@ const SkipToMainLink = () => {
         if (el && typeof el.focus === "function") el.focus({ preventScroll: false });
         if (el && typeof el.scrollIntoView === "function") el.scrollIntoView({ behavior: "smooth", block: "start" });
       }}
-      style={[styles.skipPress, { opacity: visible ? 1 : 0.01 }]}
+      style={[styles.skipPress, { opacity: visible ? 1 : 0, pointerEvents: visible ? "auto" : "none" }]}
       accessibilityRole="link"
       accessibilityLabel={WEB_HEADER_UI.skipToContentLabel}
+      {...(Platform.OS === "web" ? { "aria-hidden": !visible, tabIndex: visible ? 0 : -1 } : {})}
     >
-      <Text style={styles.skipText}>{WEB_HEADER_UI.skipToContentLabel}</Text>
+      <Text style={[styles.skipText, visible ? null : { color: "transparent" }]}>{WEB_HEADER_UI.skipToContentLabel}</Text>
     </Pressable>
   );
 };
@@ -127,6 +130,7 @@ export default function WebAppHeader({ navigationRef }) {
   const searchInputRef = useRef(null);
   const navRefs = useRef([]);
   const prevTotalItemsRef = useRef(totalItems);
+  const [cartCountAnnouncement, setCartCountAnnouncement] = useState("");
   const [compact, setCompact] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false);
@@ -350,14 +354,14 @@ export default function WebAppHeader({ navigationRef }) {
       RNAnimated.timing(placeholderOpacity, {
         toValue: 0,
         duration: 200,
-        useNativeDriver: true,
+        useNativeDriver: nativeDriverEnabled,
       }).start(({ finished }) => {
         if (!finished) return;
         setPlaceholderIndex((i) => (i + 1) % placeholders.length);
         RNAnimated.timing(placeholderOpacity, {
           toValue: 1,
           duration: 200,
-          useNativeDriver: true,
+          useNativeDriver: nativeDriverEnabled,
         }).start();
       });
     };
@@ -369,19 +373,28 @@ export default function WebAppHeader({ navigationRef }) {
 
   useEffect(() => {
     if (Platform.OS !== "web" || reducedMotion) return undefined;
-    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
-    if (shellRef.current) tl.fromTo(shellRef.current, { y: -26 }, { y: 0, duration: 0.52 });
-    if (brandRef.current) tl.fromTo(brandRef.current, { x: -14 }, { x: 0, duration: 0.34 }, "-=0.36");
-    if (searchChromeRef.current) tl.fromTo(searchChromeRef.current, { y: -8 }, { y: 0, duration: 0.3 }, "-=0.25");
-    if (navRefs.current.length) {
-      tl.fromTo(
-        navRefs.current.filter(Boolean),
-        { y: -8 },
-        { y: 0, duration: 0.24, stagger: 0.045 },
-        "-=0.24"
-      );
-    }
-    return () => tl.kill();
+    let cancelled = false;
+    let tl;
+    (async () => {
+      const gsap = await loadGsap();
+      if (cancelled || !gsap) return;
+      tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+      if (shellRef.current) tl.fromTo(shellRef.current, { y: -26 }, { y: 0, duration: 0.52 });
+      if (brandRef.current) tl.fromTo(brandRef.current, { x: -14 }, { x: 0, duration: 0.34 }, "-=0.36");
+      if (searchChromeRef.current) tl.fromTo(searchChromeRef.current, { y: -8 }, { y: 0, duration: 0.3 }, "-=0.25");
+      if (navRefs.current.length) {
+        tl.fromTo(
+          navRefs.current.filter(Boolean),
+          { y: -8 },
+          { y: 0, duration: 0.24, stagger: 0.045 },
+          "-=0.24"
+        );
+      }
+    })();
+    return () => {
+      cancelled = true;
+      tl?.kill?.();
+    };
   }, [itemCount, reducedMotion]);
 
   const updateChrome = useCallback((y) => {
@@ -421,9 +434,25 @@ export default function WebAppHeader({ navigationRef }) {
   useEffect(() => {
     const prev = prevTotalItemsRef.current;
     prevTotalItemsRef.current = totalItems;
+    if (totalItems !== prev) {
+      const label =
+        totalItems === 0
+          ? "Cart is empty"
+          : totalItems === 1
+            ? "Cart updated, 1 item"
+            : `Cart updated, ${totalItems} items`;
+      setCartCountAnnouncement(label);
+    }
     if (totalItems <= prev || reducedMotion) return;
     pulseCartBadge();
   }, [pulseCartBadge, reducedMotion, totalItems]);
+
+  const cartA11yLabel = useMemo(() => {
+    const base = CUSTOMER_NAV_LINKS.cart.label;
+    if (totalItems <= 0) return base;
+    if (totalItems > 9) return `${base}, more than 9 items`;
+    return `${base}, ${totalItems} item${totalItems === 1 ? "" : "s"}`;
+  }, [totalItems]);
 
   const cartBadgeAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: cartBadgeScale.value }],
@@ -439,8 +468,7 @@ export default function WebAppHeader({ navigationRef }) {
     ? {
         ...(Platform.OS === "web"
           ? {
-              backdropFilter: "blur(18px) saturate(1.08)",
-              WebkitBackdropFilter: "blur(18px) saturate(1.08)",
+              ...webBackdropFilterStyle(),
               borderBottomWidth: StyleSheet.hairlineWidth + 1,
               boxShadow: isDark ? "0 10px 30px rgba(0,0,0,0.35)" : "0 12px 32px rgba(15,23,42,0.08)",
               borderBottomColor: lineSoft,
@@ -602,6 +630,7 @@ export default function WebAppHeader({ navigationRef }) {
           style={itemStyle}
           accessibilityRole="tab"
           accessibilityState={{ selected: active }}
+          accessibilityLabel={item.key === "Cart" ? cartA11yLabel : item.label}
         >
           {iconLabel}
         </Pressable>
@@ -610,6 +639,7 @@ export default function WebAppHeader({ navigationRef }) {
 
   return (
     <>
+      <LiveRegion message={cartCountAnnouncement} politeness="polite" />
       <View
         ref={shellRef}
         style={[
@@ -675,10 +705,10 @@ export default function WebAppHeader({ navigationRef }) {
                     onPress={cartItem.onPress}
                     style={({ pressed }) => [styles.iconHit, pressed && { opacity: 0.85 }]}
                     accessibilityRole="button"
-                    accessibilityLabel={CUSTOMER_NAV_LINKS.cart.label}
+                    accessibilityLabel={cartA11yLabel}
                   >
-                    <View style={styles.navIconWrap}>
-                      <Ionicons name="bag-outline" size={icon.webNav} color={colors.textPrimary} />
+                    <View style={styles.navIconWrap} importantForAccessibility="no-hide-descendants">
+                      <Ionicons name="bag-outline" size={icon.webNav} color={colors.textPrimary} importantForAccessibility="no" />
                       {cartItem.badge ? (
                         <Animated.View
                           style={[
@@ -686,8 +716,12 @@ export default function WebAppHeader({ navigationRef }) {
                             { backgroundColor: colors.textPrimary, top: -4, right: -4 },
                             cartBadgeAnimatedStyle,
                           ]}
+                          importantForAccessibility="no"
                         >
-                          <Text style={[styles.badgeText, { fontFamily: fonts.extrabold, color: colors.surface }]}>
+                          <Text
+                            style={[styles.badgeText, { fontFamily: fonts.extrabold, color: colors.surface }]}
+                            importantForAccessibility="no"
+                          >
                             {cartItem.badge}
                           </Text>
                         </Animated.View>
@@ -739,7 +773,7 @@ export default function WebAppHeader({ navigationRef }) {
                         { pointerEvents: "none" },
                         styles.searchPlaceholderOverlay,
                         {
-                          color: colors.textMuted,
+                          color: colors.textSecondary,
                           fontFamily: fonts.medium,
                           opacity: searchQuery.trim().length > 0 ? 0 : placeholderOpacity,
                         },
@@ -748,7 +782,7 @@ export default function WebAppHeader({ navigationRef }) {
                     >
                       {placeholders[placeholderIndex % placeholders.length] || ""}
                     </RNAnimated.Text>
-                    <Text style={[styles.kbdHint, { color: colors.textMuted, fontFamily: fonts.medium }]}>{shortcutDisplay}</Text>
+                    <Text style={[styles.kbdHint, { color: semantic.text.primary, fontFamily: fonts.medium }]}>{shortcutDisplay}</Text>
                   </View>
                   <SearchSuggestionsPopover
                     visible={suggestionsOpen}
@@ -764,7 +798,13 @@ export default function WebAppHeader({ navigationRef }) {
                   />
                 </View>
 
-                <View style={styles.navRow}>{navCluster({ phoneMode: false })}</View>
+                <View
+                  style={styles.navRow}
+                  accessibilityRole="tablist"
+                  accessibilityLabel={WEB_HEADER_UI.primaryNavigationLabel}
+                >
+                  {navCluster({ phoneMode: false })}
+                </View>
               </>
             )}
           </View>
@@ -817,10 +857,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: WEB_Z_INDEX.header,
-    ...Platform.select({
-      web: { WebkitBackdropFilter: "blur(12px)", backdropFilter: "blur(12px) saturate(1.04)" },
-      default: {},
-    }),
+    transform: Platform.OS === "web" ? "translateZ(0)" : undefined,
+    willChange: Platform.OS === "web" ? "transform" : undefined,
+    ...webBackdropFilterStyle(),
   },
   skipPress: {
     ...(Platform.OS === "web"
@@ -942,7 +981,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     minHeight: 22,
-    fontSize: typography.caption,
+    fontSize: Platform.OS === "web" ? 16 : typography.caption,
     paddingVertical: Platform.OS === "web" ? 4 : 0,
     ...(Platform.OS === "web"
       ? {
@@ -956,11 +995,10 @@ const styles = StyleSheet.create({
     right: 56,
     top: "50%",
     marginTop: -9,
-    fontSize: typography.caption,
+    fontSize: Platform.OS === "web" ? 16 : typography.caption,
   },
   kbdHint: {
-    fontSize: 10,
-    opacity: 0.75,
+    fontSize: 11,
     paddingHorizontal: 4,
   },
   navRow: {

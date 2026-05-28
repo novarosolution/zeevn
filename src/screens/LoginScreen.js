@@ -7,17 +7,17 @@ import {
   View,
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import AuthShell from "../components/auth/AuthShell";
 import AuthErrorCard from "../components/auth/AuthErrorCard";
+import AuthSocialSection from "../components/auth/AuthSocialSection";
 import { navigateAfterAuth } from "../components/auth/authNavigation";
 import Button from "../components/ui/Button";
+import Checkbox from "../components/ui/Checkbox";
 import Input from "../components/ui/Input";
 import { AUTH_SCREEN, fillPlaceholders } from "../content/appContent";
-import { FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
-import { fonts, icon, spacing } from "../theme/tokens";
+import { fonts, spacing } from "../theme/tokens";
 import { isValidEmail, normalizeEmail } from "../utils/authValidation";
 import useAuthSubmit from "../hooks/useAuthSubmit";
 import useAuthScreenLifecycle from "../hooks/useAuthScreenLifecycle";
@@ -35,80 +35,6 @@ import { WebTextLink } from "../components/ui/inputWebHelpers";
 const copy = AUTH_SCREEN.login;
 const shared = AUTH_SCREEN.shared;
 
-function RememberMeCheckbox({ checked, onToggle, label }) {
-  const { semanticPalette, TYPE } = useTheme();
-  const box = (
-    <View
-      style={{
-        width: 18,
-        height: 18,
-        borderRadius: 4,
-        borderWidth: 1,
-        borderColor: checked ? semanticPalette.ink : semanticPalette.line,
-        backgroundColor: checked ? semanticPalette.ink : semanticPalette.surface,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      {checked ? <Ionicons name="checkmark" size={12} color={semanticPalette.inkInverse} /> : null}
-    </View>
-  );
-  const labelText = (
-    <Text
-      style={{
-        fontFamily: fonts.regular,
-        fontSize: TYPE.small.fontSize,
-        lineHeight: TYPE.small.lineHeight,
-        color: semanticPalette.inkSoft,
-      }}
-    >
-      {label}
-    </Text>
-  );
-
-  if (Platform.OS === "web") {
-    return (
-      <button
-        type="button"
-        role="checkbox"
-        aria-checked={checked}
-        aria-label={label}
-        onClick={onToggle}
-        className="zv-web-text-link"
-        style={{
-          display: "inline-flex",
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 8,
-          flex: "0 0 auto",
-          width: "auto",
-          height: "auto",
-          background: "none",
-          border: "none",
-          padding: 0,
-          cursor: "pointer",
-        }}
-      >
-        {box}
-        {label}
-      </button>
-    );
-  }
-
-  return (
-    <Pressable
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked }}
-      accessibilityLabel={label}
-      onPress={onToggle}
-      style={({ pressed }) => [{ flexDirection: "row", alignItems: "center", gap: 8, opacity: pressed ? 0.75 : 1 }]}
-    >
-      {box}
-      {labelText}
-    </Pressable>
-  );
-}
-
 export default function LoginScreen({ navigation }) {
   const route = useRoute();
   const [email, setEmail] = useState("");
@@ -116,12 +42,10 @@ export default function LoginScreen({ navigation }) {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
-  const [forgotHover, setForgotHover] = useState(false);
-  const [footerLinkHover, setFooterLinkHover] = useState(false);
   const [biometricReady, setBiometricReady] = useState(false);
   const [biometricLabel, setBiometricLabel] = useState("Biometrics");
   const { loginWithCredentials } = useAuth();
-  const { semanticPalette, TYPE, SPACING } = useTheme();
+  const { semanticPalette, TYPE } = useTheme();
   const passwordRef = useRef(null);
 
   const {
@@ -134,7 +58,6 @@ export default function LoginScreen({ navigation }) {
     rateLimitUntil,
     isRateLimited,
     clearErrors,
-    setServerError,
   } = useAuthSubmit();
 
   const handleDraftLoaded = useCallback((draft) => {
@@ -184,21 +107,6 @@ export default function LoginScreen({ navigation }) {
   const styles = useMemo(
     () =>
       StyleSheet.create({
-        title: {
-          fontFamily: FONT_DISPLAY_SEMI,
-          fontSize: 28,
-          lineHeight: 34,
-          fontWeight: "500",
-          color: semanticPalette.ink,
-        },
-        subtitle: {
-          marginTop: 4,
-          marginBottom: spacing.lg,
-          fontFamily: fonts.regular,
-          fontSize: 14,
-          lineHeight: 20,
-          color: semanticPalette.inkSoft,
-        },
         stack: {
           gap: spacing.md,
         },
@@ -216,84 +124,14 @@ export default function LoginScreen({ navigation }) {
           fontFamily: fonts.medium,
           fontSize: TYPE.small.fontSize,
           lineHeight: TYPE.small.lineHeight,
-          color: semanticPalette.accent,
-          ...Platform.select({
-            web: {
-              textDecorationLine: forgotHover ? "underline" : "none",
-              textDecorationColor: semanticPalette.accent,
-            },
-            default: {},
-          }),
+          color: semanticPalette.ink,
+          textDecorationLine: "underline",
         },
         ctaBlock: {
           marginTop: spacing.lg,
         },
-        dividerWrap: {
-          marginTop: spacing.lg,
-          flexDirection: "row",
-          alignItems: "center",
-          gap: SPACING.sm,
-        },
-        dividerHairline: {
-          flex: 1,
-          height: StyleSheet.hairlineWidth,
-          backgroundColor: semanticPalette.lineSoft,
-        },
-        dividerLabel: {
-          fontFamily: fonts.semibold,
-          ...TYPE.micro,
-          letterSpacing: 1.4,
-          textTransform: "uppercase",
-          color: semanticPalette.inkMuted,
-        },
-        socialStack: {
-          marginTop: spacing.sm,
-          gap: spacing.sm,
-        },
-        footerRow: {
-          marginTop: spacing.xl,
-          flexDirection: "row",
-          flexWrap: "wrap",
-          justifyContent: "center",
-          alignItems: "center",
-          gap: 4,
-        },
-        footerLead: {
-          fontFamily: fonts.regular,
-          fontSize: 13,
-          lineHeight: 18,
-          color: semanticPalette.inkSoft,
-        },
-        footerLink: {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 2,
-        },
-        footerLinkText: {
-          fontFamily: fonts.semibold,
-          fontSize: 13,
-          lineHeight: 18,
-          color: semanticPalette.accent,
-          ...Platform.select({
-            web: {
-              textDecorationLine: footerLinkHover ? "underline" : "none",
-              textDecorationColor: semanticPalette.accent,
-            },
-            default: {},
-          }),
-        },
       }),
-    [
-      TYPE.micro,
-      SPACING.sm,
-      forgotHover,
-      footerLinkHover,
-      semanticPalette.accent,
-      semanticPalette.ink,
-      semanticPalette.inkMuted,
-      semanticPalette.inkSoft,
-      semanticPalette.lineSoft,
-    ]
+    [TYPE.small, semanticPalette.ink]
   );
 
   const clearServerErrors = useCallback(() => {
@@ -332,7 +170,7 @@ export default function LoginScreen({ navigation }) {
     const em = normalizeEmail(email);
     const pw = password;
 
-    const ok = await runSubmit(async (signal) => {
+    await runSubmit(async (signal) => {
       await loginWithCredentials({
         email: em,
         password: pw,
@@ -350,7 +188,6 @@ export default function LoginScreen({ navigation }) {
     lifecycle,
     loginWithCredentials,
     navigation,
-    networkError,
     password,
     rememberMe,
     route,
@@ -389,24 +226,8 @@ export default function LoginScreen({ navigation }) {
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [handleLogin]);
 
-  const socialProviders = useMemo(() => {
-    const apple = {
-      key: "apple",
-      label: copy.socialApple,
-      icon: <Ionicons name="logo-apple" size={18} color={semanticPalette.ink} />,
-    };
-    const google = {
-      key: "google",
-      label: copy.socialGoogle,
-      icon: <Ionicons name="logo-google" size={18} color={semanticPalette.ink} />,
-    };
-    return Platform.OS === "ios" ? [apple, google] : [google, apple];
-  }, [semanticPalette.ink]);
-
-  const noopOAuth = () => {};
-
   return (
-    <AuthShell variant="login" navigation={navigation} bareForm showSocialRow={false}>
+    <AuthShell variant="login" navigation={navigation}>
       <Toast
         visible={lifecycle.toastVisible}
         message={lifecycle.toastMessage}
@@ -417,7 +238,7 @@ export default function LoginScreen({ navigation }) {
       {biometricReady ? (
         <View style={{ marginBottom: spacing.md }}>
           <Button
-            variant="primary"
+            variant="secondary"
             size="lg"
             fullWidth
             label={fillPlaceholders(shared.signInWithBiometric, { label: biometricLabel })}
@@ -426,10 +247,6 @@ export default function LoginScreen({ navigation }) {
           />
         </View>
       ) : null}
-      <Text accessibilityRole="header" style={styles.title}>
-        {copy.formTitle}
-      </Text>
-      <Text style={styles.subtitle}>{copy.formSubtitle}</Text>
 
       <View style={styles.stack}>
         <Input
@@ -485,10 +302,11 @@ export default function LoginScreen({ navigation }) {
       </View>
 
       <View style={styles.helperRow}>
-        <RememberMeCheckbox
+        <Checkbox
           checked={rememberMe}
           onToggle={() => setRememberMe((v) => !v)}
           label={copy.rememberMe}
+          testID="login-remember-me"
         />
         {Platform.OS === "web" ? (
           <WebTextLink
@@ -501,11 +319,9 @@ export default function LoginScreen({ navigation }) {
                 fontFamily: fonts.medium,
                 fontSize: TYPE.small.fontSize,
                 lineHeight: `${TYPE.small.lineHeight}px`,
-                color: semanticPalette.accent,
-                textDecoration: forgotHover ? "underline" : "none",
+                color: semanticPalette.ink,
+                textDecoration: "underline",
               }}
-              onMouseEnter={() => setForgotHover(true)}
-              onMouseLeave={() => setForgotHover(false)}
             >
               {copy.forgotLink}
             </span>
@@ -516,8 +332,6 @@ export default function LoginScreen({ navigation }) {
             accessibilityRole="link"
             accessibilityHint="Opens password recovery"
             onPress={() => navigation.navigate("ForgotPassword")}
-            onHoverIn={() => Platform.OS === "web" && setForgotHover(true)}
-            onHoverOut={() => Platform.OS === "web" && setForgotHover(false)}
           >
             <Text style={styles.forgotText}>{copy.forgotLink}</Text>
           </Pressable>
@@ -559,7 +373,7 @@ export default function LoginScreen({ navigation }) {
               textAlign: "center",
               fontFamily: fonts.regular,
               fontSize: 12,
-              color: semanticPalette.inkMuted,
+              color: semanticPalette.inkSoft,
             }}
           >
             {shared.stillTrying}
@@ -567,65 +381,14 @@ export default function LoginScreen({ navigation }) {
         ) : null}
       </View>
 
-      <View style={styles.dividerWrap} accessibilityRole="text">
-        <View style={styles.dividerHairline} />
-        <Text style={styles.dividerLabel}>{copy.socialDivider}</Text>
-        <View style={styles.dividerHairline} />
-      </View>
-
-      <View style={styles.socialStack}>
-        {socialProviders.map((provider) => (
-          <Button
-            key={provider.key}
-            variant="secondary"
-            size="lg"
-            fullWidth
-            label={provider.label}
-            onPress={noopOAuth}
-            iconLeft={provider.icon}
-            accessibilityHint={copy.oauthUnavailableHint}
-            interactionProfile="authSocial"
-          />
-        ))}
-      </View>
-
-      <View style={styles.footerRow}>
-        <Text style={styles.footerLead}>{copy.footerLabel}</Text>
-        {Platform.OS === "web" ? (
-          <WebTextLink
-            onPress={() => navigation.navigate("Register")}
-            ariaLabel={copy.footerLink}
-            style={[styles.footerLink, { display: "inline-flex", flexDirection: "row", alignItems: "center", gap: 2 }]}
-          >
-            <span
-              style={{
-                fontFamily: fonts.semibold,
-                fontSize: 13,
-                lineHeight: "18px",
-                color: semanticPalette.accent,
-                textDecoration: footerLinkHover ? "underline" : "none",
-              }}
-              onMouseEnter={() => setFooterLinkHover(true)}
-              onMouseLeave={() => setFooterLinkHover(false)}
-            >
-              {copy.footerLink}
-            </span>
-            <Ionicons name="chevron-forward" size={14} color={semanticPalette.accent} />
-          </WebTextLink>
-        ) : (
-          <Pressable
-            accessibilityRole="link"
-            accessibilityHint="Opens registration"
-            onPress={() => navigation.navigate("Register")}
-            onHoverIn={() => Platform.OS === "web" && setFooterLinkHover(true)}
-            onHoverOut={() => Platform.OS === "web" && setFooterLinkHover(false)}
-            style={styles.footerLink}
-          >
-            <Text style={styles.footerLinkText}>{copy.footerLink}</Text>
-            <Ionicons name="chevron-forward" size={14} color={semanticPalette.accent} />
-          </Pressable>
-        )}
-      </View>
+      <AuthSocialSection
+        dividerLabel={copy.socialDivider}
+        googleLabel={copy.socialGoogle}
+        appleLabel={copy.socialApple}
+        disabled={isSubmitting || isRateLimited}
+        onGooglePress={() => {}}
+        onApplePress={() => {}}
+      />
     </AuthShell>
   );
 }

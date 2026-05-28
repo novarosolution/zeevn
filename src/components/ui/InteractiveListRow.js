@@ -1,7 +1,7 @@
 import React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import PremiumCard from "./PremiumCard";
+import Card from "./Card";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, spacing, typography } from "../../theme/tokens";
 import { HERITAGE } from "../../theme/customerAlchemy";
@@ -11,7 +11,7 @@ export default function InteractiveListRow({ iconName, title, subtitle, onPress,
   const isDanger = tone === "danger";
   const isAccent = tone === "accent";
   return (
-    <PremiumCard
+    <Card
       onPress={onPress}
       variant={isDanger ? "danger" : "list"}
       padding="md"
@@ -57,7 +57,7 @@ export default function InteractiveListRow({ iconName, title, subtitle, onPress,
           style={styles.chevron}
         />
       )}
-    </PremiumCard>
+    </Card>
   );
 }
 

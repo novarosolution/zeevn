@@ -223,6 +223,8 @@ const styles = StyleSheet.create({
     ...Platform.select({
       web: {
         boxShadow: "0 16px 40px rgba(15, 23, 42, 0.14), 0 4px 12px rgba(15, 23, 42, 0.08)",
+        transform: "translateZ(0)",
+        willChange: "transform",
       },
       default: {},
     }),

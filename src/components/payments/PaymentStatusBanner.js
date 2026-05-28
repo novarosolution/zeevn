@@ -13,8 +13,8 @@ import {
   openRazorpayCheckout,
   verifyOrderPayment,
 } from "../../services/paymentService";
-import PremiumErrorBanner from "../ui/PremiumErrorBanner";
-import PremiumButton from "../ui/PremiumButton";
+import ErrorBanner from "../ui/ErrorBanner";
+import Button from "../ui/Button";
 
 function formatMmSs(ms) {
   const totalSec = Math.max(0, Math.floor(ms / 1000));
@@ -125,10 +125,10 @@ export default function PaymentStatusBanner({ order, token, user, onRefresh }) {
           </Text>
         </View>
 
-        {localError ? <PremiumErrorBanner message={localError} severity="error" compact /> : null}
+        {localError ? <ErrorBanner message={localError} severity="error" compact /> : null}
 
         <View style={styles.actions}>
-          <PremiumButton
+          <Button
             label="Pay now"
             iconLeft="card-outline"
             variant="primary"
@@ -137,7 +137,7 @@ export default function PaymentStatusBanner({ order, token, user, onRefresh }) {
             disabled={busy || expired}
             onPress={handlePay}
           />
-          <PremiumButton
+          <Button
             label="Cancel order"
             variant="ghost"
             size="md"

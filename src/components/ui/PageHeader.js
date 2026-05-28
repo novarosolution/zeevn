@@ -23,15 +23,27 @@ function PageHeaderBase({
   brandSlot,
   headingLevel = 1,
 }) {
-  const { semanticPalette, TYPE, SPACING } = useTheme();
+  const { semanticPalette, TYPE, SPACING, isDark } = useTheme();
 
   const canGoBack = typeof navigation?.canGoBack === "function" && navigation.canGoBack();
   const showBack = !hideBackButton && canGoBack;
 
-  const isDarkSurface = variant === "dark";
-  const ink = isDarkSurface ? semanticPalette.inkInverse : semanticPalette.ink;
-  const muted = isDarkSurface ? semanticPalette.inkInverseMuted : semanticPalette.inkMuted;
-  const soft = isDarkSurface ? semanticPalette.inkInverseSoft : semanticPalette.inkSoft;
+  const isDarkSurface = variant === "dark" && !isDark;
+  const ink = isDark
+    ? semanticPalette.ink
+    : isDarkSurface
+      ? semanticPalette.inkInverse
+      : semanticPalette.ink;
+  const muted = isDark
+    ? semanticPalette.inkMuted
+    : isDarkSurface
+      ? semanticPalette.inkInverseMuted
+      : semanticPalette.inkSoft;
+  const soft = isDark
+    ? semanticPalette.inkSoft
+    : isDarkSurface
+      ? semanticPalette.inkInverseSoft
+      : semanticPalette.inkSoft;
 
   const handleBack = () => {
     if (onBack) {
@@ -46,8 +58,16 @@ function PageHeaderBase({
       StyleSheet.create({
         root: {
           width: "100%",
-          paddingBottom: SPACING.sm,
+          paddingBottom: SPACING.md,
           gap: SPACING.sm,
+          ...Platform.select({
+            web: {
+              borderBottomWidth: StyleSheet.hairlineWidth,
+              borderBottomColor: isDark ? semanticPalette.line : semanticPalette.lineSoft,
+              marginBottom: SPACING.xs,
+            },
+            default: {},
+          }),
         },
         brandRow: {
           width: "100%",
@@ -68,7 +88,16 @@ function PageHeaderBase({
           justifyContent: "center",
           marginLeft: Platform.OS === "web" ? -6 : -4,
           ...Platform.select({
-            web: { cursor: "pointer", borderRadius: 999 },
+            web: { cursor: "pointer", borderRadius: 999, transition: "background-color 160ms ease, box-shadow 160ms ease" },
+            default: {},
+          }),
+        },
+        backHitHover: {
+          backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(14,23,41,0.05)",
+        },
+        backHitFocus: {
+          ...Platform.select({
+            web: { boxShadow: isDark ? "0 0 0 2px rgba(200,169,126,0.28)" : "0 0 0 2px rgba(200,169,126,0.25)" },
             default: {},
           }),
         },
@@ -78,7 +107,7 @@ function PageHeaderBase({
           fontFamily: fonts.medium,
           fontSize: TYPE.caption.fontSize,
           lineHeight: TYPE.caption.lineHeight,
-          letterSpacing: 1.4,
+          letterSpacing: Platform.OS === "web" ? 1.1 : 1.4,
           textTransform: "uppercase",
           color: muted,
         },
@@ -100,7 +129,7 @@ function PageHeaderBase({
           color: ink,
         },
       }),
-    [TYPE, SPACING, ink, muted, soft]
+    [TYPE, SPACING, ink, isDark, muted, semanticPalette.line, semanticPalette.lineSoft, soft]
   );
 
   if (brandSlot) {
@@ -131,7 +160,12 @@ function PageHeaderBase({
             hitSlop={12}
             accessibilityRole="button"
             accessibilityLabel="Go back"
-            style={({ pressed }) => [styles.backHit, pressed ? { opacity: 0.75 } : null]}
+            style={({ pressed, hovered, focused }) => [
+              styles.backHit,
+              hovered && Platform.OS === "web" ? styles.backHitHover : null,
+              focused && Platform.OS === "web" ? styles.backHitFocus : null,
+              pressed ? { opacity: 0.75 } : null,
+            ]}
           >
             <Ionicons name="chevron-back" size={24} color={ink} />
           </Pressable>

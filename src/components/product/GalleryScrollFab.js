@@ -5,6 +5,7 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from "
 import { useTheme } from "../../context/ThemeContext";
 import { PRODUCT_SCREEN } from "../../content/appContent";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import { pointerEventsNativeOnly, withPointerEventsStyle } from "../../utils/pointerEventsStyle";
 
 function GalleryScrollFabBase({ visible, bottomOffset = 96, onPress }) {
   const { semanticPalette } = useTheme();
@@ -23,27 +24,32 @@ function GalleryScrollFabBase({ visible, bottomOffset = 96, onPress }) {
     transform: [{ scale: 0.88 + shown.value * 0.12 }, { translateY: (1 - shown.value) * 12 }],
   }));
 
+  const pe = visible ? "auto" : "none";
+
   return (
     <Animated.View
-      pointerEvents={visible ? "auto" : "none"}
-      style={[
-        styles.wrap,
-        {
-          bottom: bottomOffset,
-          backgroundColor: semanticPalette.accent,
-          ...Platform.select({
-            web: { boxShadow: "0 8px 24px rgba(14,23,41,0.2)" },
-            ios: {
-              shadowColor: "#0E1729",
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.22,
-              shadowRadius: 10,
-            },
-            android: { elevation: 8 },
-          }),
-        },
-        animStyle,
-      ]}
+      style={withPointerEventsStyle(
+        [
+          styles.wrap,
+          {
+            bottom: bottomOffset,
+            backgroundColor: semanticPalette.accent,
+            ...Platform.select({
+              web: { boxShadow: "0 8px 24px rgba(14,23,41,0.2)" },
+              ios: {
+                shadowColor: "#0E1729",
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.22,
+                shadowRadius: 10,
+              },
+              android: { elevation: 8 },
+            }),
+          },
+          animStyle,
+        ],
+        pe
+      )}
+      {...pointerEventsNativeOnly(pe)}
     >
       <Pressable
         onPress={onPress}

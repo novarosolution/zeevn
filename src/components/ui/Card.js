@@ -39,12 +39,12 @@ function CardBase({
       borderRadius: RADII.md,
       backgroundColor: semanticPalette.surface,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: semanticPalette.line,
+      borderColor: semanticPalette.lineSoft,
       ...SHADOWS.soft,
       overflow: "hidden",
       position: "relative",
     }),
-    [RADII.md, SHADOWS, semanticPalette.line, semanticPalette.surface]
+    [RADII.md, SHADOWS, semanticPalette.lineSoft, semanticPalette.surface]
   );
 
   const handleIn = () => {

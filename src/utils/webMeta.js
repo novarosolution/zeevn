@@ -3,10 +3,10 @@ import { APP_META } from "../content/appContent";
 
 const MANAGED_ATTR = "zeevan-meta";
 const SCHEMA_MANAGED_PREFIX = "zeevan-meta-schema-";
-const FAVICON_16_PATH = "/assets/seo/favicon-16.png";
-const FAVICON_32_PATH = "/assets/seo/favicon-32.png";
-const APPLE_TOUCH_ICON_PATH = "/assets/seo/apple-touch-icon.png";
-const PWA_ICON_512_PATH = "/assets/seo/icon-512.png";
+const FAVICON_16_PATH = "/seo/favicon-16.png";
+const FAVICON_32_PATH = "/seo/favicon-32.png";
+const APPLE_TOUCH_ICON_PATH = "/seo/apple-touch-icon.png";
+const PWA_ICON_512_PATH = "/seo/icon-512.png";
 
 const ROUTE_KEYS = new Set([
   "home",
@@ -39,6 +39,9 @@ function removeManagedTags() {
 
 function appendManaged(tagName, attrs = {}) {
   if (typeof document === "undefined") return null;
+  if (tagName === "link" && attrs.href != null && !String(attrs.href).trim()) {
+    return null;
+  }
   const node = document.createElement(tagName);
   node.setAttribute("data-managed", MANAGED_ATTR);
   Object.entries(attrs).forEach(([k, v]) => {
@@ -512,19 +515,20 @@ export function applyRouteMeta(routeKey, dynamicOverrides = {}) {
   const lcpImage = dynamicOverrides.lcpImage;
   if (lcpImage) {
     const lcpHref = toAbsolute(siteUrl, lcpImage);
-    const preloadAttrs = {
-      rel: "preload",
-      as: "image",
-      href: lcpHref,
-      fetchpriority: "high",
-    };
-    if (dynamicOverrides.lcpImageSrcSet) {
-      preloadAttrs.imagesrcset = String(dynamicOverrides.lcpImageSrcSet);
+    if (lcpHref && /^https?:\/\//i.test(lcpHref)) {
+      const link = appendLink({ rel: "preload", as: "image", href: lcpHref });
+      if (link) {
+        if ("fetchPriority" in link) {
+          link.fetchPriority = "high";
+        }
+        if (dynamicOverrides.lcpImageSrcSet) {
+          link.setAttribute("imagesrcset", String(dynamicOverrides.lcpImageSrcSet));
+        }
+        if (dynamicOverrides.lcpImageSizes) {
+          link.setAttribute("imagesizes", String(dynamicOverrides.lcpImageSizes));
+        }
+      }
     }
-    if (dynamicOverrides.lcpImageSizes) {
-      preloadAttrs.imagesizes = String(dynamicOverrides.lcpImageSizes);
-    }
-    appendLink(preloadAttrs);
   }
 
   if (safeRouteKey === "home") {

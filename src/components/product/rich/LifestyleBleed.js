@@ -2,6 +2,7 @@ import React, { memo, useMemo } from "react";
 import { Platform, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import ProductImage from "../../ui/ProductImage";
 import { useTheme } from "../../../context/ThemeContext";
+import { pointerEventsProp } from "../../../utils/pointerEventsStyle";
 
 function LifestyleBleedBase({ imageUri, caption, gutter = 0 }) {
   const { width } = useWindowDimensions();
@@ -52,7 +53,7 @@ function LifestyleBleedBase({ imageUri, caption, gutter = 0 }) {
     <View style={styles.bleed}>
       <ProductImage uri={uri} style={styles.image} contentFit="cover" transition={240} lazy />
       {cap ? (
-        <View style={styles.captionWrap} pointerEvents="none">
+        <View style={styles.captionWrap} {...pointerEventsProp("none")}>
           <Text style={styles.caption}>{cap}</Text>
         </View>
       ) : null}

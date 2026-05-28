@@ -3,6 +3,8 @@ import { adminPanel } from "./adminLayout";
 import { ALCHEMY } from "./customerAlchemy";
 import { container, layout, semanticRadius, spacing } from "./tokens";
 import { WEB_HEADER_HEIGHT, WEB_STICKY_TOP_OFFSET } from "./web";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../utils/webViewport";
+import { isWebLiteMode } from "../utils/webPerformance";
 
 export const CUSTOMER_PAGE_MAX_WIDTH = Platform.select({ web: layout.maxContentWidth + 24, default: "100%" });
 export const ADMIN_PAGE_MAX_WIDTH = Platform.select({ web: layout.maxContentWidth + 96, default: "100%" });
@@ -30,15 +32,21 @@ export function customerPanel(c, shadowPremium, isDark) {
           borderTopColor: ALCHEMY.lineStrong,
         }),
     ...Platform.select({
-      web: {
-        backgroundImage: isDark
-          ? undefined
-          : "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,248,244,0.98))",
-        boxShadow: isDark
-          ? "0 14px 30px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.04)"
-          : "0 10px 22px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255,255,255,0.94)",
-        transition: "box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease",
-      },
+      web: isWebLiteMode()
+        ? {
+            boxShadow: isDark
+              ? "0 8px 20px rgba(0,0,0,0.18)"
+              : "0 6px 16px rgba(15, 23, 42, 0.05)",
+          }
+        : {
+            backgroundImage: isDark
+              ? undefined
+              : "linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,248,244,0.98))",
+            boxShadow: isDark
+              ? "0 14px 30px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.04)"
+              : "0 10px 22px rgba(15, 23, 42, 0.06), inset 0 1px 0 rgba(255,255,255,0.94)",
+            transition: "box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease",
+          },
       default: {},
     }),
   };
@@ -144,6 +152,22 @@ export function customerWebStickyTop(extra = 0) {
 }
 
 /**
+ * Top padding when `PageHeader` sits *above* the scroll view (not inside it).
+ * Avoids double-counting `WEB_HEADER_HEIGHT` on web.
+ */
+export function customerScrollPaddingTopBelowPageHeader(insets, opts = {}) {
+  const { nativeMin = spacing.sm, webMin = spacing.md } = opts;
+  const floor = Platform.OS === "web" ? webMin : nativeMin;
+  return Math.max(insets?.top ?? 0, floor);
+}
+
+/** Style for nested scroll views inside `Screen` with `noScroll` (product, cart, etc.). */
+export const customerNestedScrollViewStyle = Platform.select({
+  web: { flex: 1, minHeight: 0, width: "100%" },
+  default: { flex: 1, minHeight: 0 },
+});
+
+/**
  * Standard `ScrollView` content for customer pages (width cap + horizontal padding + bottom inset).
  * Merge with `{ paddingTop: … }` and optional `{ paddingBottom: … }` when a screen needs extra room.
  */
@@ -185,10 +209,6 @@ export function customerInnerPageScrollContent(insets, extra = {}) {
       paddingTop: customerScrollPaddingTop(insets),
       paddingBottom: customerScrollPaddingBottom(insets),
       gap: CUSTOMER_PREMIUM_SECTION_GAP,
-      ...Platform.select({
-        web: { flexGrow: 1 },
-        default: {},
-      }),
       ...extra,
     },
   ];
@@ -203,7 +223,7 @@ export function adminInnerPageScrollContent(insets, extra = {}) {
       paddingBottom: adminScrollPaddingBottom(insets),
       gap: CUSTOMER_PREMIUM_SECTION_GAP,
       ...Platform.select({
-        web: { flexGrow: 1 },
+        web: {},
         default: {},
       }),
       ...extra,
@@ -225,7 +245,7 @@ export const authScrollContent = {
       paddingTop: customerScrollPaddingTop(),
       paddingBottom: spacing.xxl,
       flexGrow: 1,
-      minHeight: `calc(100dvh - ${customerScrollPaddingTop()}px)`,
+      minHeight: `calc(${APP_VIEWPORT_MIN_HEIGHT} - ${customerScrollPaddingTop()}px)`,
       justifyContent: "center",
     },
     default: {

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useCallback } from "react";
 import {
   Animated,
   Modal,
@@ -10,50 +10,37 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Button from "../ui/Button";
-import Card from "../ui/Card";
 import EmptyState from "../ui/EmptyState";
+import CartItem from "./CartItem";
 import PageHeader from "../ui/PageHeader";
 import { useCart } from "../../context/CartContext";
 import { useTheme } from "../../context/ThemeContext";
+import { useWishlistOptional } from "../../context/WishlistContext";
 import { FREE_SHIPPING_PROGRESS_GOAL_INR } from "../../constants/cartConstants";
 import { CART_DRAWER_UI } from "../../content/appContent";
 import { fonts } from "../../theme/tokens";
+import { nativeDriverEnabled } from "../../utils/motion";
+import { WEB_Z_INDEX, webOverlayPanelStyle, webOverlayRootStyle, webOverlayScrimStyle } from "../../theme/web";
+import useModalA11y from "../../hooks/useModalA11y";
 import { formatINR } from "../../utils/currency";
-import { getImageUriCandidates } from "../../utils/image";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../../utils/webViewport";
 
-function DrawerCartThumb({ uri, width: w, height: h, semanticPalette }) {
-  const candidates = useMemo(() => getImageUriCandidates(uri), [uri]);
-  const [idx, setIdx] = React.useState(0);
-  useEffect(() => setIdx(0), [uri]);
-  const current = candidates[idx] || "";
-  if (!current) {
-    return (
-      <View style={[styles.thumbPlaceholder, { width: w, height: h, borderColor: semanticPalette.line }]}>
-        <Ionicons name="image-outline" size={22} color={semanticPalette.inkMuted} />
-      </View>
-    );
-  }
-  return (
-    <Image
-      source={{ uri: current }}
-      style={{ width: w, height: h, borderRadius: 10 }}
-      contentFit="cover"
-      onError={() => setIdx((i) => i + 1)}
-    />
-  );
-}
-
-export default function CartDrawer({ visible, onClose, navigationRef }) {
+export default function CartDrawer({ visible, onClose, navigationRef, triggerRef }) {
   const insets = useSafeAreaInsets();
   const { width: winW } = useWindowDimensions();
   const { semanticPalette, TYPE, SPACING, RADII } = useTheme();
   const { cartItems, totalAmount, addToCart, removeFromCart, removeLineFromCart } = useCart();
+  const wishlist = useWishlistOptional();
 
   const slide = useRef(new Animated.Value(0)).current;
+  const rootRef = useRef(null);
+  const panelRef = useRef(null);
+  const handleClose = useCallback(() => onClose?.(), [onClose]);
+
+  useModalA11y({ visible, onClose: handleClose, triggerRef, containerRef: panelRef });
 
   useEffect(() => {
     if (!visible) return;
@@ -61,7 +48,7 @@ export default function CartDrawer({ visible, onClose, navigationRef }) {
     Animated.timing(slide, {
       toValue: 1,
       duration: 260,
-      useNativeDriver: true,
+      useNativeDriver: nativeDriverEnabled,
     }).start();
   }, [slide, visible]);
 
@@ -97,12 +84,19 @@ export default function CartDrawer({ visible, onClose, navigationRef }) {
   };
 
   return (
-    <Modal visible={visible} animationType="none" transparent onRequestClose={onClose}>
-      <View style={styles.root}>
-        <Pressable style={styles.scrim} onPress={onClose} accessibilityLabel={CART_DRAWER_UI.closeA11y} />
+    <Modal visible={visible} animationType="none" transparent onRequestClose={handleClose}>
+      <View ref={rootRef} style={[styles.root, webOverlayRootStyle(WEB_Z_INDEX.overlay)]}>
+        <Pressable
+          style={[styles.scrim, webOverlayScrimStyle(false)]}
+          onPress={handleClose}
+          accessibilityRole="button"
+          accessibilityLabel={CART_DRAWER_UI.closeA11y}
+        />
         <Animated.View
+          ref={panelRef}
           style={[
             styles.panel,
+            webOverlayPanelStyle(),
             {
               width: panelWidth,
               maxWidth: winW,
@@ -145,7 +139,9 @@ export default function CartDrawer({ visible, onClose, navigationRef }) {
                 />
               </View>
               <Text style={{ marginTop: SPACING.xs, fontFamily: fonts.regular, fontSize: TYPE.caption.fontSize, color: semanticPalette.inkMuted }}>
-                {progress >= 1 ? CART_DRAWER_UI.freeShippingDone : fillAway(CART_DRAWER_UI.freeShippingAway, remainder)}
+                {progress >= 1
+                  ? CART_DRAWER_UI.freeShippingDone
+                  : fillProgress(CART_DRAWER_UI.freeShippingProgress, remainder, Math.round(progress * 100))}
               </Text>
             </View>
 
@@ -163,40 +159,18 @@ export default function CartDrawer({ visible, onClose, navigationRef }) {
                 />
               ) : (
                 cartItems.map((item) => (
-                  <Card key={`${item.id}-${item.variantLabel || ""}`} padding="md" style={{ marginBottom: SPACING.md }}>
-                    <View style={{ flexDirection: "row", gap: SPACING.md }}>
-                      <DrawerCartThumb uri={item.image || ""} width={80} height={100} semanticPalette={semanticPalette} />
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <Text style={{ fontFamily: fonts.semibold, fontSize: TYPE.body.fontSize, color: semanticPalette.ink }} numberOfLines={2}>
-                          {item.name}
-                        </Text>
-                        {item.variantLabel ? (
-                          <Text style={{ marginTop: 4, fontFamily: fonts.medium, fontSize: TYPE.caption.fontSize, color: semanticPalette.inkMuted }}>
-                            {item.variantLabel}
-                          </Text>
-                        ) : null}
-                        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: SPACING.sm }}>
-                          <View style={{ flexDirection: "row", alignItems: "center", borderWidth: StyleSheet.hairlineWidth, borderColor: semanticPalette.line, borderRadius: RADII.pill }}>
-                            <Pressable
-                              style={{ paddingHorizontal: 12, paddingVertical: 8 }}
-                              onPress={() => removeFromCart(item.id, item.variantLabel)}
-                              accessibilityRole="button"
-                              accessibilityLabel="Decrease quantity"
-                            >
-                              <Ionicons name="remove" size={18} color={semanticPalette.ink} />
-                            </Pressable>
-                            <Text style={{ fontFamily: fonts.semibold, minWidth: 24, textAlign: "center", color: semanticPalette.ink }}>{item.quantity}</Text>
-                            <Pressable style={{ paddingHorizontal: 12, paddingVertical: 8 }} onPress={() => addToCart(item)} accessibilityRole="button" accessibilityLabel="Increase quantity">
-                              <Ionicons name="add" size={18} color={semanticPalette.ink} />
-                            </Pressable>
-                          </View>
-                          <Pressable onPress={() => removeLineFromCart(item.id, item.variantLabel)} hitSlop={8} accessibilityRole="button" accessibilityLabel={CART_DRAWER_UI.removeLineA11y}>
-                            <Ionicons name="trash-outline" size={20} color={semanticPalette.inkMuted} />
-                          </Pressable>
-                        </View>
-                      </View>
-                    </View>
-                  </Card>
+                  <CartItem
+                    key={`${item.id}-${item.variantLabel || ""}`}
+                    item={item}
+                    showLineTotal={false}
+                    onDecrease={() => removeFromCart(item.id, item.variantLabel)}
+                    onIncrease={() => addToCart(item)}
+                    onRemove={() => removeLineFromCart(item.id, item.variantLabel)}
+                    onMoveToWishlist={() => {
+                      wishlist?.add?.(item.id);
+                      removeLineFromCart(item.id, item.variantLabel);
+                    }}
+                  />
                 ))
               )}
             </ScrollView>
@@ -217,9 +191,9 @@ export default function CartDrawer({ visible, onClose, navigationRef }) {
                 <Text style={{ fontFamily: fonts.medium, fontSize: TYPE.body.fontSize, color: semanticPalette.inkMuted }}>{CART_DRAWER_UI.subtotal}</Text>
                 <Text style={{ fontFamily: fonts.semibold, fontSize: TYPE.body.fontSize, color: semanticPalette.ink }}>{formatINR(totalAmount)}</Text>
               </View>
-              <Button label={CART_DRAWER_UI.checkoutCta} variant="primary" size="lg" fullWidth onPress={goCheckout} />
-              <View style={{ height: SPACING.sm }} />
               <Button label={CART_DRAWER_UI.viewBagCta} variant="ghost" size="md" fullWidth onPress={goBag} />
+              <View style={{ height: SPACING.sm }} />
+              <Button label={CART_DRAWER_UI.checkoutCta} variant="primary" size="lg" fullWidth onPress={goCheckout} />
             </View>
           ) : null}
         </Animated.View>
@@ -232,21 +206,24 @@ function fillAway(template, amount) {
   return String(template || "").replace(/\{amount\}/g, formatINR(amount));
 }
 
+function fillProgress(template, amount, percent) {
+  return String(template || "")
+    .replace(/\{amount\}/g, formatINR(amount))
+    .replace(/\{percent\}/g, String(percent));
+}
+
 const styles = StyleSheet.create({
   root: {
     flex: 1,
     flexDirection: "row",
     justifyContent: "flex-end",
   },
-  scrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(14,23,41,0.45)",
-  },
+  scrim: {},
   panel: {
     flex: 1,
     maxHeight: "100%",
     ...Platform.select({
-      web: { maxHeight: "100vh" },
+      web: { maxHeight: APP_VIEWPORT_MIN_HEIGHT },
       default: {},
     }),
   },

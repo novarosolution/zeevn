@@ -1,5 +1,4 @@
 import { Platform, StyleSheet } from "react-native";
-import { ALCHEMY } from "./customerAlchemy";
 import { darkColors, getSemanticColors, layout, semanticRadius, spacing } from "./tokens";
 
 function themeIsDark(c) {

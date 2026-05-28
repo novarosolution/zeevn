@@ -5,7 +5,15 @@ import { CUSTOMER_NAV_LINKS } from "../../content/appContent";
 import { navigateCustomerNav } from "../../navigation/accountRoutes";
 import { fonts, icon, semanticRadius, spacing, typography } from "../../theme/tokens";
 import { HERITAGE } from "../../theme/customerAlchemy";
-import { WEB_Z_INDEX } from "../../theme/web";
+import {
+  WEB_Z_INDEX,
+  webOverlayPanelStyle,
+  webOverlayRootStyle,
+  webOverlayScrimStyle,
+} from "../../theme/web";
+import useModalA11y from "../../hooks/useModalA11y";
+import { pointerEventsProp } from "../../utils/pointerEventsStyle";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../../utils/webViewport";
 
 const BASE_DRAWER = [
   { route: "Home", label: CUSTOMER_NAV_LINKS.home.label, icon: "home-outline", auth: false },
@@ -41,6 +49,9 @@ export default function WebHeaderDrawer({
   onOpenSearch,
 }) {
   const slide = React.useRef(new Animated.Value(0)).current;
+  const panelRef = React.useRef(null);
+
+  useModalA11y({ visible, onClose, containerRef: panelRef });
 
   useEffect(() => {
     if (!visible) {
@@ -54,20 +65,6 @@ export default function WebHeaderDrawer({
       useNativeDriver: Platform.OS !== "web",
     }).start();
   }, [slide, visible]);
-
-  useEffect(() => {
-    if (!visible || Platform.OS !== "web" || typeof window === "undefined") return undefined;
-    const onKey = (e) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-    };
-  }, [onClose, visible]);
 
   const go = (item) => {
     onClose();
@@ -106,15 +103,18 @@ export default function WebHeaderDrawer({
 
   const panel = (
     <Animated.View
-      pointerEvents="auto"
+      ref={panelRef}
       style={[
         styles.panel,
+        webOverlayPanelStyle(),
         {
           transform: [{ translateX }],
           backgroundColor: colors.surface,
           borderRightColor: border,
         },
+        Platform.OS === "web" ? { pointerEvents: "auto" } : null,
       ]}
+      {...(Platform.OS === "web" ? {} : pointerEventsProp("auto"))}
     >
       <View style={[styles.panelHeader, { borderBottomColor: border }]}>
         <Text style={[styles.menuTitle, { color: colors.textPrimary, fontFamily: fonts.semibold }]}>Menu</Text>
@@ -164,9 +164,12 @@ export default function WebHeaderDrawer({
 
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose} statusBarTranslucent>
-      <View style={styles.root} pointerEvents="box-none">
+      <View
+        style={[styles.root, webOverlayRootStyle(WEB_Z_INDEX.overlay), Platform.OS === "web" ? { pointerEvents: "box-none" } : null]}
+        {...(Platform.OS === "web" ? {} : pointerEventsProp("box-none"))}
+      >
         <Pressable
-          style={styles.scrim}
+          style={[styles.scrim, webOverlayScrimStyle(isDark)]}
           onPress={onClose}
           accessibilityRole="button"
           accessibilityLabel="Close menu"
@@ -180,16 +183,12 @@ export default function WebHeaderDrawer({
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    position: "relative",
-    zIndex: WEB_Z_INDEX.overlay,
     ...Platform.select({
-      web: { minHeight: "100vh" },
+      web: { minHeight: APP_VIEWPORT_MIN_HEIGHT },
       default: {},
     }),
   },
   scrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(6, 10, 18, 0.45)",
     zIndex: 1,
     ...Platform.select({
       web: { cursor: "pointer" },
@@ -204,9 +203,8 @@ const styles = StyleSheet.create({
     width: 288,
     maxWidth: "88%",
     borderRightWidth: StyleSheet.hairlineWidth,
-    zIndex: 10,
     ...Platform.select({
-      web: { maxHeight: "100vh", boxShadow: "8px 0 32px rgba(15, 23, 42, 0.18)" },
+      web: { maxHeight: APP_VIEWPORT_MIN_HEIGHT, boxShadow: "8px 0 32px rgba(15, 23, 42, 0.18)" },
       default: { maxHeight: "100%" },
     }),
   },

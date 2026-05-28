@@ -10,22 +10,23 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BrandWordmark from "../BrandWordmark";
 import CustomerScreenShell from "../CustomerScreenShell";
-import Button from "../ui/Button";
 import { AUTH_SCREEN } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
 import { COLORS } from "../../styles/designSystem";
 import { FONT_DISPLAY_SEMI } from "../../theme/customerAlchemy";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, icon, spacing } from "../../theme/tokens";
+import { fonts, spacing } from "../../theme/tokens";
 import { WEB_Z_INDEX, webDecorLayer, webElevatedLayer } from "../../theme/web";
+import { headingA11yProps } from "../../utils/a11y";
+import { pointerEventsProp } from "../../utils/pointerEventsStyle";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../../utils/webViewport";
 
 const SPLIT_BREAKPOINT = 768;
-const PHONE_BANNER_HEIGHT = 220;
+const PHONE_BANNER_HEIGHT = 200;
 const FORM_MAX_WIDTH = 420;
 const FORM_COLUMN_MAX_WIDTH = 480;
 
@@ -45,11 +46,11 @@ function FooterAuthLink({ children, onPress, hint }) {
           fontFamily: fonts.medium,
           fontSize: TYPE.small.fontSize,
           lineHeight: TYPE.small.lineHeight,
-          color: semanticPalette.accent,
+          color: semanticPalette.ink,
           ...Platform.select({
             web: {
               textDecorationLine: hover ? "underline" : "none",
-              textDecorationColor: semanticPalette.accent,
+              textDecorationColor: semanticPalette.ink,
             },
             default: {},
           }),
@@ -95,29 +96,29 @@ function EditorialPane({ split, leftPane, heroImageUri, heroBannerA11y }) {
         split ? styles.editorialSplit : styles.editorialStacked,
         webDecorLayer(0),
       ]}
-      accessibilityLabel={heroBannerA11y}
-      accessible
-      {...(Platform.OS !== "web" ? { accessibilityRole: "image" } : {})}
+      accessible={false}
+      importantForAccessibility="no-hide-descendants"
       {...(Platform.OS === "web" ? { dataSet: { zvDecor: "true" } } : {})}
     >
       <Image
         source={{ uri: heroImageUri }}
         style={[StyleSheet.absoluteFill, styles.editorialHeroImage]}
         contentFit="cover"
-        {...(Platform.OS === "web" ? { pointerEvents: "none" } : {})}
+        accessibilityLabel={heroBannerA11y}
+        accessible
+        {...(Platform.OS === "web" ? { alt: heroBannerA11y } : { accessibilityRole: "image" })}
+        {...pointerEventsProp("none")}
       />
       <LinearGradient
         colors={["rgba(200,169,126,0.10)", "transparent"]}
         start={{ x: 1, y: 0 }}
         end={{ x: 0.35, y: 0.65 }}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}
       />
       <LinearGradient
         colors={["rgba(14,23,41,0.2)", "rgba(14,23,41,0.88)"]}
         locations={[0.15, 1]}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
+        style={[StyleSheet.absoluteFill, { pointerEvents: "none" }]}
       />
 
       <View style={[styles.editorialInner, split ? styles.editorialInnerSplit : styles.editorialInnerStacked]}>
@@ -150,7 +151,6 @@ export default function AuthShell({
   footerLabel,
   footerLinkLabel,
   footerLinkOnPress,
-  showSocialRow,
   showBackLink = true,
   bareForm = false,
 }) {
@@ -167,9 +167,6 @@ export default function AuthShell({
   const resolvedSubtitle = formSubtitle ?? copy.formSubtitle;
   const resolvedFooterLabel = footerLabel ?? copy.footerLabel;
   const resolvedFooterLink = footerLinkLabel ?? copy.footerLink;
-  const socialVisible =
-    !bareForm && (showSocialRow ?? (variant === "login" || variant === "register"));
-  const noopOAuth = () => {};
 
   const shellStyles = useMemo(
     () =>
@@ -178,7 +175,7 @@ export default function AuthShell({
         scrollContent: {
           flexGrow: 1,
           ...Platform.select({
-            web: { minHeight: "100vh" },
+            web: { minHeight: APP_VIEWPORT_MIN_HEIGHT },
             default: {},
           }),
         },
@@ -187,7 +184,7 @@ export default function AuthShell({
           width: "100%",
           flex: Platform.OS === "web" && split ? 1 : undefined,
           ...Platform.select({
-            web: split ? { minHeight: "100vh", position: "relative", zIndex: 0 } : {},
+            web: split ? { minHeight: APP_VIEWPORT_MIN_HEIGHT, position: "relative", zIndex: 0 } : {},
             default: {},
           }),
         },
@@ -203,7 +200,7 @@ export default function AuthShell({
           paddingBottom: Math.max(insets.bottom, spacing.xl),
           justifyContent: split ? "center" : "flex-start",
           ...Platform.select({
-            web: split ? { minHeight: "100vh" } : {},
+            web: split ? { minHeight: APP_VIEWPORT_MIN_HEIGHT } : {},
             default: {},
           }),
         },
@@ -228,7 +225,7 @@ export default function AuthShell({
           lineHeight: TYPE.micro.lineHeight,
           letterSpacing: 1.2,
           textTransform: "uppercase",
-          color: semanticPalette.inkMuted,
+          color: semanticPalette.inkSoft,
         },
         formTitle: {
           fontFamily: TYPE.serifFamily,
@@ -243,28 +240,6 @@ export default function AuthShell({
           color: semanticPalette.inkSoft,
           maxWidth: FORM_MAX_WIDTH,
         },
-        dividerWrap: {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: SPACING.sm,
-          marginVertical: SPACING.base,
-        },
-        dividerHairline: {
-          flex: 1,
-          height: StyleSheet.hairlineWidth,
-          backgroundColor: semanticPalette.line,
-        },
-        dividerLabel: {
-          fontFamily: fonts.semibold,
-          ...TYPE.micro,
-          letterSpacing: 1.4,
-          textTransform: "uppercase",
-          color: semanticPalette.inkMuted,
-        },
-        oauthStack: {
-          gap: SPACING.sm,
-          width: "100%",
-        },
         footerLeadRow: {
           flexDirection: "row",
           flexWrap: "wrap",
@@ -277,7 +252,7 @@ export default function AuthShell({
           fontFamily: fonts.regular,
           fontSize: TYPE.small.fontSize,
           lineHeight: TYPE.small.lineHeight,
-          color: semanticPalette.inkMuted,
+          color: semanticPalette.inkSoft,
         },
       }),
     [TYPE, SPACING, insets.bottom, semanticPalette, split]
@@ -297,8 +272,6 @@ export default function AuthShell({
       if (variant === "login") navigation.navigate("Register");
       else navigation.navigate("Login");
     });
-
-  const socialHints = copy.oauthUnavailableHint ?? AUTH_SCREEN.login.oauthUnavailableHint;
 
   return (
     <CustomerScreenShell variant="auth" topAccent={false}>
@@ -336,13 +309,14 @@ export default function AuthShell({
 
                 <View
                   nativeID="auth-main-content"
-                  accessibilityRole="main"
                   style={shellStyles.mainContent}
-                  {...(Platform.OS === "web" ? { tabIndex: -1, dataSet: { zvElevated: "true" } } : {})}
+                  {...(Platform.OS === "web"
+                    ? { tabIndex: -1, role: "region", "aria-label": "Authentication form", dataSet: { zvElevated: "true" } }
+                    : {})}
                 >
                   {!bareForm ? (
                     <>
-                      <Text accessibilityRole="header" style={shellStyles.formTitle}>
+                      <Text {...headingA11yProps(1)} style={shellStyles.formTitle}>
                         {resolvedTitle}
                       </Text>
                       {resolvedSubtitle ? (
@@ -352,42 +326,6 @@ export default function AuthShell({
                   ) : null}
 
                   {children}
-
-                  {socialVisible && copy.socialDivider ? (
-                    <>
-                      <View style={shellStyles.dividerWrap} accessibilityRole="text">
-                        <View style={shellStyles.dividerHairline} />
-                        <Text style={shellStyles.dividerLabel}>{copy.socialDivider}</Text>
-                        <View style={shellStyles.dividerHairline} />
-                      </View>
-                      <View style={shellStyles.oauthStack}>
-                        <Button
-                          variant="secondary"
-                          size="lg"
-                          fullWidth
-                          label={copy.socialGoogle}
-                          onPress={noopOAuth}
-                          iconLeft={
-                            <Ionicons name="logo-google" size={icon.md} color={semanticPalette.ink} />
-                          }
-                          accessibilityHint={socialHints}
-                        />
-                        {copy.socialApple ? (
-                          <Button
-                            variant="secondary"
-                            size="lg"
-                            fullWidth
-                            label={copy.socialApple}
-                            onPress={noopOAuth}
-                            iconLeft={
-                              <Ionicons name="logo-apple" size={icon.md} color={semanticPalette.ink} />
-                            }
-                            accessibilityHint={socialHints}
-                          />
-                        ) : null}
-                      </View>
-                    </>
-                  ) : null}
                 </View>
 
                 {!bareForm && resolvedFooterLabel && resolvedFooterLink ? (

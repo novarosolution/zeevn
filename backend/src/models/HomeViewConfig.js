@@ -40,6 +40,27 @@ const homeViewConfigSchema = new mongoose.Schema(
       enum: ["compact", "comfortable"],
       default: "compact",
     },
+    /** Optional merchandiser-curated deals list for Home deals rail. */
+    dealsRail: {
+      type: [
+        {
+          productId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Product",
+            required: true,
+          },
+          endsAt: {
+            type: Date,
+            default: null,
+          },
+          rank: {
+            type: Number,
+            default: 0,
+          },
+        },
+      ],
+      default: [],
+    },
   },
   { timestamps: true }
 );

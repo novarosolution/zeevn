@@ -20,14 +20,14 @@ import { customerInnerPageScrollContent, customerScrollFill } from "../theme/scr
 import { ALCHEMY } from "../theme/customerAlchemy";
 import { icon, layout, radius, spacing, typography } from "../theme/tokens";
 import { formatINR } from "../utils/currency";
-import PremiumButton from "../components/ui/PremiumButton";
-import PremiumCard from "../components/ui/PremiumCard";
-import PremiumChip from "../components/ui/PremiumChip";
-import PremiumEmptyState from "../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../components/ui/PremiumLoader";
-import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
-import PremiumStatCard from "../components/ui/PremiumStatCard";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import Chip from "../components/ui/Chip";
+import EmptyState from "../components/ui/EmptyState";
+import ErrorBanner from "../components/ui/ErrorBanner";
+import Loader from "../components/ui/Loader";
+import SectionHeader from "../components/ui/SectionHeader";
+import StatCard from "../components/ui/StatCard";
 import MotionScrollView from "../components/motion/MotionScrollView";
 import SectionReveal from "../components/motion/SectionReveal";
 import { APP_LOADING_UI, REDEEM_REWARDS_SCREEN, fillPlaceholders } from "../content/appContent";
@@ -144,7 +144,7 @@ export default function RedeemRewardsScreen({ navigation }) {
         />
 
         <SectionReveal delay={40} preset="fade-up">
-          <PremiumStatCard
+          <StatCard
             compact
             align="center"
             iconName="sparkles-outline"
@@ -168,14 +168,14 @@ export default function RedeemRewardsScreen({ navigation }) {
         </SectionReveal>
 
         {error ? (
-          <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+          <ErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
         ) : null}
         {toast ? (
-          <PremiumErrorBanner severity="success" message={toast} onClose={() => setToast("")} compact />
+          <ErrorBanner severity="success" message={toast} onClose={() => setToast("")} compact />
         ) : null}
 
         {lastRedeem?.code ? (
-          <PremiumCard padding="lg" goldAccent variant="hero" style={styles.successCard}>
+          <Card padding="lg" goldAccent variant="hero" style={styles.successCard}>
             <Text style={[styles.successTitle, { color: c.textPrimary }]}>
               {REDEEM_REWARDS_SCREEN.successCouponTitle}
             </Text>
@@ -194,7 +194,7 @@ export default function RedeemRewardsScreen({ navigation }) {
               </Text>
             ) : null}
             <View style={styles.successRow}>
-              <PremiumButton
+              <Button
                 label={REDEEM_REWARDS_SCREEN.successCopyCta}
                 iconLeft="copy-outline"
                 variant="secondary"
@@ -202,7 +202,7 @@ export default function RedeemRewardsScreen({ navigation }) {
                 onPress={() => copyCode(lastRedeem.code, "Code")}
                 style={styles.successBtn}
               />
-              <PremiumButton
+              <Button
                 label={REDEEM_REWARDS_SCREEN.successCartCta}
                 iconLeft="cart-outline"
                 variant="primary"
@@ -211,21 +211,21 @@ export default function RedeemRewardsScreen({ navigation }) {
                 style={styles.successBtn}
               />
             </View>
-          </PremiumCard>
+          </Card>
         ) : null}
 
-        <PremiumSectionHeader
+        <SectionHeader
           title={REDEEM_REWARDS_SCREEN.codesSectionTitle}
           subtitle={REDEEM_REWARDS_SCREEN.codesSectionSubtitle}
           compact
         />
         {loading ? (
-          <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.rewards} />
+          <Loader size="sm" caption={APP_LOADING_UI.inline.rewards} />
         ) : wallet.length === 0 ? (
           <Text style={[styles.walletEmpty, { color: c.textMuted }]}>{REDEEM_REWARDS_SCREEN.walletEmpty}</Text>
         ) : (
           wallet.map((w) => (
-            <PremiumCard key={String(w._id || w.code)} padding="md" variant="panel" style={styles.walletCard}>
+            <Card key={String(w._id || w.code)} padding="md" variant="panel" style={styles.walletCard}>
               <View style={styles.walletRow}>
                 <View style={styles.walletLeft}>
                   <Text style={[styles.walletCode, { color: c.textPrimary }]}>{w.code}</Text>
@@ -238,13 +238,13 @@ export default function RedeemRewardsScreen({ navigation }) {
                   </Text>
                 </View>
                 <View style={styles.walletActions}>
-                  <PremiumButton
+                  <Button
                     label="Copy"
                     variant="ghost"
                     size="sm"
                     onPress={() => copyCode(w.code, "Code")}
                   />
-                  <PremiumButton
+                  <Button
                     label="Cart"
                     variant="secondary"
                     size="sm"
@@ -252,20 +252,20 @@ export default function RedeemRewardsScreen({ navigation }) {
                   />
                 </View>
               </View>
-            </PremiumCard>
+            </Card>
           ))
         )}
 
-        <PremiumSectionHeader
+        <SectionHeader
           title={REDEEM_REWARDS_SCREEN.catalogSectionTitle}
           subtitle={REDEEM_REWARDS_SCREEN.catalogSectionSubtitle}
           compact
         />
 
         {loading ? (
-          <PremiumLoader size="sm" caption={APP_LOADING_UI.inline.rewards} />
+          <Loader size="sm" caption={APP_LOADING_UI.inline.rewards} />
         ) : catalog.length === 0 ? (
-          <PremiumEmptyState
+          <EmptyState
             iconName="gift-outline"
             title={REDEEM_REWARDS_SCREEN.emptyCatalogTitle}
             description={REDEEM_REWARDS_SCREEN.emptyCatalogDescription}
@@ -273,7 +273,7 @@ export default function RedeemRewardsScreen({ navigation }) {
           />
         ) : (
           catalog.map((item) => (
-            <PremiumCard key={item._id} padding="md" variant="panel" style={styles.rewardCard}>
+            <Card key={item._id} padding="md" variant="panel" style={styles.rewardCard}>
               <View style={styles.rewardTop}>
                 <Text style={[styles.rewardTitle, { color: c.textPrimary }]}>{item.title}</Text>
                 <Text style={[styles.costPill, { color: c.primary, borderColor: c.primaryBorder }]}>
@@ -307,17 +307,17 @@ export default function RedeemRewardsScreen({ navigation }) {
               ) : null}
               <View style={styles.chipRow}>
                 {typeof item.pointsNeeded === "number" && item.pointsNeeded > 0 ? (
-                  <PremiumChip
+                  <Chip
                     label={`Need ${item.pointsNeeded} more pts`}
                     tone="neutral"
                     size="xs"
                   />
                 ) : null}
                 {item.disabledReason && !item.canRedeem ? (
-                  <PremiumChip label={item.disabledReason} tone="neutral" size="xs" />
+                  <Chip label={item.disabledReason} tone="neutral" size="xs" />
                 ) : null}
               </View>
-              <PremiumButton
+              <Button
                 label={busyId === item._id ? "Redeeming…" : "Redeem"}
                 iconLeft="gift-outline"
                 variant={item.canRedeem ? "primary" : "subtle"}
@@ -328,11 +328,11 @@ export default function RedeemRewardsScreen({ navigation }) {
                 fullWidth
                 style={styles.redeemBtn}
               />
-            </PremiumCard>
+            </Card>
           ))
         )}
 
-        <PremiumButton
+        <Button
           label="Open cart"
           iconLeft="cart-outline"
           variant="ghost"

@@ -37,11 +37,12 @@ function ScreenBase({
   accessibilityLabel,
 }) {
   const insets = useSafeAreaInsets();
-  const { semanticPalette } = useTheme();
+  const { semanticPalette, colors, isDark } = useTheme();
   const gutter = useHorizontalPagePadding();
 
-  const bgColor = background === "bgDeep" ? semanticPalette.bgDeep : semanticPalette.bg;
-  const headerVariant = background === "bgDeep" ? "dark" : "light";
+  const bgColor = background === "bgDeep" ? semanticPalette.bgDeep : colors.background;
+  /** PageHeader `variant` controls inverse ink on light-mode hero bands only. */
+  const headerVariant = background === "bgDeep" && !isDark ? "dark" : "light";
 
   const bottomPad = customerScrollPaddingBottom(insets);
 
@@ -52,26 +53,37 @@ function ScreenBase({
       width: "100%",
       alignSelf: "center",
       maxWidth: CUSTOMER_PAGE_MAX_WIDTH,
-      ...Platform.select({ web: { flexGrow: 1 }, default: {} }),
+      ...Platform.select({
+        web: noScroll ? { minHeight: 0 } : { flexGrow: 1 },
+        default: {},
+      }),
     }),
-    [bottomPad, gutter]
+    [bottomPad, gutter, noScroll]
   );
 
-  const body = (
+  const headerBlock =
+    title || breadcrumbLabel || kicker || headerRight ? (
+      <PageHeader
+        navigation={navigation}
+        title={title}
+        breadcrumbLabel={breadcrumbLabel}
+        kicker={kicker}
+        hideBackButton={hideHeaderBackButton}
+        onBack={onHeaderBack}
+        rightActions={headerRight}
+        variant={headerVariant}
+        headingLevel={1}
+      />
+    ) : null;
+
+  const body = noScroll ? (
     <>
-      {title ? (
-        <PageHeader
-          navigation={navigation}
-          title={title}
-          breadcrumbLabel={breadcrumbLabel}
-          kicker={kicker}
-          hideBackButton={hideHeaderBackButton}
-          onBack={onHeaderBack}
-          rightActions={headerRight}
-          variant={headerVariant}
-          headingLevel={1}
-        />
-      ) : null}
+      {headerBlock}
+      <View style={styles.noScrollBody}>{children}</View>
+    </>
+  ) : (
+    <>
+      {headerBlock}
       {children}
     </>
   );
@@ -83,13 +95,24 @@ function ScreenBase({
       accessibilityLabel={accessibilityLabel || title}
     >
       {noScroll ? (
-        <View style={[styles.flex, contentPadStyle, contentContainerStyle]}>{body}</View>
+        <View
+          style={[
+            styles.flex,
+            styles.noScrollHost,
+            contentPadStyle,
+            contentContainerStyle,
+          ]}
+        >
+          {body}
+        </View>
       ) : (
         <ScrollView
-          style={styles.flex}
+          style={[styles.flex, Platform.OS === "web" ? styles.webPageScroll : null]}
           contentContainerStyle={[contentPadStyle, contentContainerStyle]}
           refreshControl={refreshControl}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={Platform.OS === "web"}
+          {...(Platform.OS === "web" ? { dataSet: { zvScroll: "vertical" } } : {})}
           {...scrollViewProps}
         >
           {body}
@@ -101,6 +124,31 @@ function ScreenBase({
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  noScrollHost: Platform.select({
+    web: {
+      minHeight: 0,
+      overflow: "hidden",
+      flexDirection: "column",
+    },
+    default: {
+      minHeight: 0,
+      flexDirection: "column",
+    },
+  }),
+  noScrollBody: {
+    flex: 1,
+    minHeight: 0,
+    width: "100%",
+  },
+  webPageScroll: Platform.select({
+    web: {
+      minHeight: 0,
+      overflowY: "auto",
+      WebkitOverflowScrolling: "touch",
+      touchAction: "pan-y",
+    },
+    default: {},
+  }),
 });
 
 const Screen = memo(ScreenBase);

@@ -10,19 +10,18 @@ import {
   View,
 } from "react-native";
 import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AppFooter from "./AppFooter";
 import BrandWordmark from "./BrandWordmark";
 import CustomerScreenShell from "./CustomerScreenShell";
 import PageHeader from "./ui/PageHeader";
-import Button from "./ui/Button";
 import { APP_CONTENT_AUTH } from "../content/appContent";
 import { useTheme } from "../context/ThemeContext";
 import { FONT_DISPLAY } from "../theme/customerAlchemy";
 import { adminScrollPaddingBottom, customerScrollFill } from "../theme/screenLayout";
-import { fonts, icon } from "../theme/tokens";
+import { fonts } from "../theme/tokens";
+import { APP_VIEWPORT_MIN_HEIGHT } from "../utils/webViewport";
 
 function FooterAuthLink({ children, onPress, hint }) {
   const [hover, setHover] = useState(false);
@@ -67,7 +66,6 @@ export default function AuthPageScaffold({
   variant = "signIn",
   navigation,
   children,
-  showOAuthRow = true,
   showGuestLink,
   titleOverride,
   subtitleOverride,
@@ -78,8 +76,6 @@ export default function AuthPageScaffold({
   const editorial = APP_CONTENT_AUTH.layout;
   const copy = APP_CONTENT_AUTH[variant];
   const split = width >= SPLIT_BREAKPOINT;
-  const noopOAuth = () => {};
-
   const styles = useMemo(
     () =>
       StyleSheet.create({
@@ -97,7 +93,7 @@ export default function AuthPageScaffold({
           flexDirection: split ? "row" : "column",
           width: "100%",
           ...Platform.select({
-            web: split ? { flex: 1, minHeight: "calc(100vh - 80px)" } : {},
+            web: split ? { flex: 1, minHeight: `calc(${APP_VIEWPORT_MIN_HEIGHT} - 80px)` } : {},
             default: {},
           }),
         },
@@ -169,28 +165,6 @@ export default function AuthPageScaffold({
           color: semanticPalette.inkSoft,
           maxWidth: 420,
         },
-        dividerWrap: {
-          flexDirection: "row",
-          alignItems: "center",
-          gap: SPACING.sm,
-          marginVertical: SPACING.base,
-        },
-        dividerHairline: {
-          flex: 1,
-          height: StyleSheet.hairlineWidth,
-          backgroundColor: semanticPalette.line,
-        },
-        dividerLabel: {
-          fontFamily: fonts.semibold,
-          ...TYPE.micro,
-          letterSpacing: 1.4,
-          textTransform: "uppercase",
-          color: semanticPalette.inkMuted,
-        },
-        oauthStack: {
-          gap: SPACING.sm,
-          width: "100%",
-        },
         footerLeadRow: {
           flexDirection: "row",
           flexWrap: "wrap",
@@ -215,11 +189,6 @@ export default function AuthPageScaffold({
       }),
     [TYPE, SPACING, insets, semanticPalette, split]
   );
-
-  const socialHints =
-    copy.oauthUnavailableHint ||
-    APP_CONTENT_AUTH.signIn.oauthUnavailableHint ||
-    "Unavailable";
 
   return (
     <CustomerScreenShell style={styles.shell} variant="auth">
@@ -269,41 +238,6 @@ export default function AuthPageScaffold({
                 <Text style={styles.formSubtitle}>{subtitleOverride ?? copy.subtitle}</Text>
 
                 {children}
-
-                {showOAuthRow ? (
-                  <>
-                    <View style={styles.dividerWrap} accessibilityRole="text">
-                      <View style={styles.dividerHairline} />
-                      <Text style={styles.dividerLabel}>{copy.dividerContinueWith}</Text>
-                      <View style={styles.dividerHairline} />
-                    </View>
-
-                    <View style={styles.oauthStack}>
-                      <Button
-                        variant="secondary"
-                        size="lg"
-                        fullWidth
-                        label={copy.googleCta}
-                        onPress={noopOAuth}
-                        iconLeft={
-                          <Ionicons name="logo-google" size={icon.md} color={semanticPalette.ink} />
-                        }
-                        accessibilityHint={socialHints}
-                      />
-                      <Button
-                        variant="secondary"
-                        size="lg"
-                        fullWidth
-                        label={copy.appleCta}
-                        onPress={noopOAuth}
-                        iconLeft={
-                          <Ionicons name="logo-apple" size={icon.md} color={semanticPalette.ink} />
-                        }
-                        accessibilityHint={socialHints}
-                      />
-                    </View>
-                  </>
-                ) : null}
 
                 {variant === "signIn" ? (
                   <View style={styles.footerLeadRow}>

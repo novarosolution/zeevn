@@ -37,14 +37,14 @@ import {
 import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../theme/customerAlchemy";
 import { fonts, icon as glyphSize, layout, radius, spacing, typography } from "../theme/tokens";
 import { PROFILE_SCREEN, fillPlaceholders } from "../content/appContent";
-import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
-import PremiumButton from "../components/ui/PremiumButton";
-import PremiumCard from "../components/ui/PremiumCard";
-import PremiumChip from "../components/ui/PremiumChip";
-import PremiumStatCard from "../components/ui/PremiumStatCard";
+import ErrorBanner from "../components/ui/ErrorBanner";
+import Button from "../components/ui/Button";
+import Card from "../components/ui/Card";
+import Chip from "../components/ui/Chip";
+import StatCard from "../components/ui/StatCard";
 import GoldHairline from "../components/ui/GoldHairline";
 import SkeletonBlock from "../components/ui/SkeletonBlock";
-import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
+import SectionHeader from "../components/ui/SectionHeader";
 import ProfileQuickActionsList from "../components/profile/ProfileQuickActionsList";
 import MotionScrollView from "../components/motion/MotionScrollView";
 import SectionReveal from "../components/motion/SectionReveal";
@@ -82,7 +82,7 @@ function StatTile({ iconName, value, label, tone, active, reducedMotion, onPress
   const animated = useCountUp({ target, active, reducedMotion, duration: 1200 });
   return (
     <View style={styles.heroStatCol}>
-      <PremiumStatCard
+      <StatCard
         iconName={iconName}
         label={label}
         value={String(Math.round(animated))}
@@ -279,7 +279,7 @@ export default function ProfileScreen({ navigation }) {
             </Text>
           </View>
           <View style={profileStyles.heroChipRow}>
-            <PremiumChip
+            <Chip
               label={role.label}
               iconLeft={role.icon}
               tone={role.tone}
@@ -315,7 +315,7 @@ export default function ProfileScreen({ navigation }) {
           </View>
 
           <View style={profileStyles.heroActionRow}>
-            <PremiumButton
+            <Button
               label={PROFILE_SCREEN.editProfileCta}
               iconLeft="create-outline"
               variant="primary"
@@ -323,7 +323,7 @@ export default function ProfileScreen({ navigation }) {
               onPress={() => navigation.navigate("EditProfile")}
               style={profileStyles.heroPrimaryBtn}
             />
-            <PremiumButton
+            <Button
               label={hasAddress ? PROFILE_SCREEN.manageAddressCta : PROFILE_SCREEN.addressAddCta}
               iconLeft="location-outline"
               variant="secondary"
@@ -372,7 +372,7 @@ export default function ProfileScreen({ navigation }) {
   const addressBlock = (
     <SectionReveal delay={130} preset="fade-up">
       {hasAddress ? (
-        <PremiumCard goldAccent variant="accent" style={profileStyles.addressCard}>
+        <Card goldAccent variant="accent" style={profileStyles.addressCard}>
           <View style={profileStyles.addressHead}>
             <View style={profileStyles.addressIconWrap}>
               <Ionicons name="location-outline" size={glyphSize.md} color={c.secondary} />
@@ -398,7 +398,7 @@ export default function ProfileScreen({ navigation }) {
             </Text>
           ) : null}
           <View style={profileStyles.addressActionRow}>
-            <PremiumButton
+            <Button
               label={PROFILE_SCREEN.addressChangeCta}
               iconLeft="create-outline"
               variant="ghost"
@@ -406,9 +406,9 @@ export default function ProfileScreen({ navigation }) {
               onPress={() => navigation.navigate("ManageAddress")}
             />
           </View>
-        </PremiumCard>
+        </Card>
       ) : (
-        <PremiumCard goldAccent variant="accent" style={profileStyles.addressCard}>
+        <Card goldAccent variant="accent" style={profileStyles.addressCard}>
           <View style={profileStyles.addressHead}>
             <View style={profileStyles.addressIconWrap}>
               <Ionicons name="map-outline" size={glyphSize.md} color={c.secondary} />
@@ -424,7 +424,7 @@ export default function ProfileScreen({ navigation }) {
             {PROFILE_SCREEN.addressMissingHint}
           </Text>
           <View style={profileStyles.addressActionRow}>
-            <PremiumButton
+            <Button
               label={PROFILE_SCREEN.addressAddCta}
               iconLeft="add-circle-outline"
               variant="primary"
@@ -432,7 +432,7 @@ export default function ProfileScreen({ navigation }) {
               onPress={() => navigation.navigate("ManageAddress")}
             />
           </View>
-        </PremiumCard>
+        </Card>
       )}
     </SectionReveal>
   );
@@ -480,7 +480,7 @@ export default function ProfileScreen({ navigation }) {
       tone: unreadNotifications > 0 ? "accent" : "normal",
       rightSlot:
         unreadNotifications > 0 ? (
-          <PremiumChip label={String(unreadNotifications)} tone="gold" size="sm" selected />
+          <Chip label={String(unreadNotifications)} tone="gold" size="sm" selected />
         ) : null,
       onPress: () => navigation.navigate("Notifications"),
     },
@@ -502,21 +502,21 @@ export default function ProfileScreen({ navigation }) {
 
   const accountOptionsBlock = (
     <SectionReveal delay={170} preset="fade-up">
-      <PremiumCard variant="panel" style={profileStyles.accountHubCard} contentStyle={profileStyles.accountHubContent}>
-        <PremiumSectionHeader
+      <Card variant="panel" style={profileStyles.accountHubCard} contentStyle={profileStyles.accountHubContent}>
+        <SectionHeader
           overline={PROFILE_SCREEN.quickActionsEyebrow}
           title={PROFILE_SCREEN.quickActionsTitle}
           subtitle={PROFILE_SCREEN.quickActionsSubtitle}
           compact
         />
         <ProfileQuickActionsList profileStyles={profileStyles} items={accountOptions} />
-      </PremiumCard>
+      </Card>
     </SectionReveal>
   );
 
   const membershipBlock = (
     <SectionReveal delay={210} preset="fade-up">
-      <PremiumCard goldAccent gradient variant="hero" style={profileStyles.membershipCard}>
+      <Card goldAccent gradient variant="hero" style={profileStyles.membershipCard}>
         <View style={profileStyles.membershipTop}>
           <View style={profileStyles.membershipIconWrap}>
             <Ionicons name="diamond-outline" size={glyphSize.md} color={ALCHEMY.brown} />
@@ -525,7 +525,7 @@ export default function ProfileScreen({ navigation }) {
             <Text style={profileStyles.membershipEyebrow}>{PROFILE_SCREEN.membershipEyebrow}</Text>
             <Text style={profileStyles.membershipTitle}>{PROFILE_SCREEN.membershipTitle}</Text>
           </View>
-          <PremiumChip
+          <Chip
             label={
               deliveredOrders > 12
                 ? PROFILE_SCREEN.membershipTierPlatinum
@@ -540,14 +540,14 @@ export default function ProfileScreen({ navigation }) {
         </View>
         <Text style={profileStyles.membershipSub}>{PROFILE_SCREEN.membershipSubtitle}</Text>
         <View style={profileStyles.membershipCtaRow}>
-          <PremiumButton
+          <Button
             label={PROFILE_SCREEN.membershipBenefitsCta}
             iconLeft="sparkles-outline"
             variant="secondary"
             size="sm"
             onPress={() => navigation.navigate("Settings")}
           />
-          <PremiumButton
+          <Button
             label={PROFILE_SCREEN.membershipOrdersCta}
             iconLeft="bag-handle-outline"
             variant="ghost"
@@ -555,13 +555,13 @@ export default function ProfileScreen({ navigation }) {
             onPress={() => navigation.navigate("MyOrders")}
           />
         </View>
-      </PremiumCard>
+      </Card>
     </SectionReveal>
   );
 
   const loyaltyBlock = (
     <SectionReveal delay={250} preset="fade-up">
-      <PremiumCard variant="panel" style={profileStyles.loyaltyCard}>
+      <Card variant="panel" style={profileStyles.loyaltyCard}>
         <View style={profileStyles.loyaltyHead}>
           <View style={profileStyles.loyaltyBadgeRow}>
             <View style={profileStyles.loyaltyIconWrap}>
@@ -575,21 +575,21 @@ export default function ProfileScreen({ navigation }) {
         </View>
         <Text style={profileStyles.loyaltyHint}>{PROFILE_SCREEN.loyaltyHint}</Text>
         <View style={profileStyles.loyaltyCtaRow}>
-          <PremiumButton
+          <Button
             label={PROFILE_SCREEN.loyaltyRedeemCta}
             iconLeft="sparkles-outline"
             variant="primary"
             size="sm"
             onPress={() => navigation.navigate("RedeemRewards")}
           />
-          <PremiumButton
+          <Button
             label={PROFILE_SCREEN.loyaltyEarnCta}
             iconLeft="gift-outline"
             variant="ghost"
             size="sm"
             onPress={() => navigation.navigate("MyOrders", { initialFilter: "delivered", source: "rewards" })}
           />
-          <PremiumButton
+          <Button
             label={PROFILE_SCREEN.loyaltyNotificationsCta}
             iconLeft="notifications-outline"
             variant="subtle"
@@ -597,13 +597,13 @@ export default function ProfileScreen({ navigation }) {
             onPress={() => navigation.navigate("Notifications")}
           />
         </View>
-      </PremiumCard>
+      </Card>
     </SectionReveal>
   );
 
   const adminBlock = user?.isAdmin ? (
     <SectionReveal delay={290} preset="fade-up">
-      <PremiumCard
+      <Card
         goldAccent
         onPress={() => navigation.navigate("AdminDashboard")}
         padding="md"
@@ -622,13 +622,13 @@ export default function ProfileScreen({ navigation }) {
             <Ionicons name="chevron-forward" size={glyphSize.sm} color={c.textMuted} />
           </View>
         </View>
-      </PremiumCard>
+      </Card>
     </SectionReveal>
   ) : null;
 
   const deliveryBlock = user?.isDeliveryPartner ? (
     <SectionReveal delay={320} preset="fade-up">
-      <PremiumCard
+      <Card
         onPress={() => navigation.navigate("DeliveryDashboard")}
         padding="md"
         style={profileStyles.ribbonCard}
@@ -646,7 +646,7 @@ export default function ProfileScreen({ navigation }) {
             <Ionicons name="chevron-forward" size={glyphSize.sm} color={c.textMuted} />
           </View>
         </View>
-      </PremiumCard>
+      </Card>
     </SectionReveal>
   ) : null;
 
@@ -660,7 +660,7 @@ export default function ProfileScreen({ navigation }) {
           <Text style={profileStyles.dangerTitle}>{PROFILE_SCREEN.dangerTitle}</Text>
         </View>
         <Text style={profileStyles.dangerHint}>{PROFILE_SCREEN.dangerHint}</Text>
-        <PremiumButton
+        <Button
           label={isSigningOut ? "Signing out..." : PROFILE_SCREEN.signOutLabel}
           iconLeft="log-out-outline"
           variant="danger"
@@ -714,7 +714,7 @@ export default function ProfileScreen({ navigation }) {
               <View style={[isDesktop ? profileStyles.profileRightCol : null, profileStyles.profileStack]}>
                 {error ? (
                   <View style={profileStyles.errorBannerWrap}>
-                    <PremiumErrorBanner severity="error" message={error} />
+                    <ErrorBanner severity="error" message={error} />
                   </View>
                 ) : null}
 

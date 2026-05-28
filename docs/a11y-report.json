@@ -1,0 +1,54 @@
+{
+  "base": "http://127.0.0.1:8080",
+  "routes": [
+    {
+      "name": "Home",
+      "path": "/",
+      "url": "http://127.0.0.1:8080/",
+      "violationCount": 0,
+      "seriousCount": 0,
+      "violations": []
+    },
+    {
+      "name": "Login",
+      "path": "/login",
+      "url": "http://127.0.0.1:8080/login",
+      "violationCount": 0,
+      "seriousCount": 0,
+      "violations": []
+    },
+    {
+      "name": "Shop",
+      "path": "/shop",
+      "url": "http://127.0.0.1:8080/shop",
+      "violationCount": 0,
+      "seriousCount": 0,
+      "violations": []
+    },
+    {
+      "name": "Search",
+      "path": "/search",
+      "url": "http://127.0.0.1:8080/search",
+      "violationCount": 0,
+      "seriousCount": 0,
+      "violations": []
+    },
+    {
+      "name": "Cart",
+      "path": "/cart",
+      "url": "http://127.0.0.1:8080/cart",
+      "violationCount": 0,
+      "seriousCount": 0,
+      "violations": []
+    },
+    {
+      "name": "Register",
+      "path": "/register",
+      "url": "http://127.0.0.1:8080/register",
+      "violationCount": 0,
+      "seriousCount": 0,
+      "violations": []
+    }
+  ],
+  "failures": []
+}

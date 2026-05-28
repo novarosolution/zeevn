@@ -5,33 +5,31 @@ export const OPS_DELIVERY_KICKER = "Delivery";
 
 export const OPS_ADMIN_OVERVIEW = {
   route: "AdminDashboard",
-  label: "Overview",
+  label: "Dashboard",
   icon: "speedometer-outline",
 };
 
+/** Flat admin sidebar — matches ops shell IA. */
+export const OPS_ADMIN_FLAT_NAV = [
+  OPS_ADMIN_OVERVIEW,
+  { route: "AdminProducts", label: "Products", icon: "cube-outline" },
+  { route: "AdminInventory", label: "Inventory", icon: "layers-outline" },
+  { route: "AdminOrders", label: "Orders", icon: "receipt-outline" },
+  { route: "AdminUsers", label: "Users", icon: "people-outline" },
+  { route: "AdminAnalytics", label: "Analytics", icon: "bar-chart-outline" },
+  { route: "AdminCoupons", label: "Coupons", icon: "pricetag-outline" },
+  { route: "AdminRewards", label: "Rewards", icon: "gift-outline" },
+  { route: "AdminNotifications", label: "Notifications", icon: "notifications-outline" },
+  { route: "AdminSupport", label: "Support", icon: "chatbubbles-outline" },
+  { route: "AdminHomeView", label: "HomeView", icon: "home-outline" },
+];
+
 export function getOpsAdminSidebarSections() {
-  return [
-    { id: "overview", items: [OPS_ADMIN_OVERVIEW] },
-    ...ADMIN_MANAGE_SECTIONS.map((sec) => ({
-      id: sec.id,
-      label: sec.label,
-      items: sec.items.map((item) => ({
-        route: item.route,
-        label: item.title,
-        icon: item.icon,
-      })),
-    })),
-  ];
+  return [{ id: "admin", items: OPS_ADMIN_FLAT_NAV }];
 }
 
 export function getOpsAdminFlatRoutes() {
-  const routes = [OPS_ADMIN_OVERVIEW.route];
-  for (const sec of ADMIN_MANAGE_SECTIONS) {
-    for (const item of sec.items) {
-      routes.push(item.route);
-    }
-  }
-  return routes;
+  return OPS_ADMIN_FLAT_NAV.map((item) => item.route);
 }
 
 export const OPS_DELIVERY_NAV = [
@@ -40,10 +38,11 @@ export const OPS_DELIVERY_NAV = [
 ];
 
 export function getOpsAdminSectionTitle(route) {
-  if (route === OPS_ADMIN_OVERVIEW.route) return OPS_ADMIN_OVERVIEW.label;
+  const item = OPS_ADMIN_FLAT_NAV.find((i) => i.route === route);
+  if (item) return item.label;
   for (const sec of ADMIN_MANAGE_SECTIONS) {
-    for (const item of sec.items) {
-      if (item.route === route) return item.title;
+    for (const navItem of sec.items) {
+      if (navItem.route === route) return navItem.title;
     }
   }
   return "Admin";

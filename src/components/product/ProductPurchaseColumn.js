@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { RotateCcw, ShieldCheck, Truck, Wallet, Star } from "lucide-react-native";
 import Animated, {
   Easing,
   FadeIn,
@@ -26,13 +27,13 @@ import Badge from "../ui/Badge";
 import Button from "../ui/Button";
 import Card from "../ui/Card";
 import Input from "../ui/Input";
-import WishlistHeartButton from "./motion/WishlistHeartButton";
 import AnimatedCheckmark from "./motion/AnimatedCheckmark";
 import { useTheme } from "../../context/ThemeContext";
 import { useWishlistOptional } from "../../context/WishlistContext";
 import { PRODUCT_SCREEN, fillProductScreen } from "../../content/appContent";
 import { RUNTIME_SUPPORT_EMAIL, RUNTIME_SUPPORT_WHATSAPP_URL } from "../../constants/runtimeConfig";
 import { checkPincodeServiceability } from "../../services/pincodeService";
+import { pointerEventsProp } from "../../utils/pointerEventsStyle";
 import { fonts } from "../../theme/tokens";
 import { formatINRWhole } from "../../utils/currency";
 import useReducedMotion from "../../hooks/useReducedMotion";
@@ -54,6 +55,23 @@ function isVariantOutOfStock(product, variantLabel) {
   const match = variants.find((v) => String(v?.label || "").trim() === String(variantLabel || "").trim());
   if (match && match.inStock === false) return true;
   return false;
+}
+
+function RatingStars({ value, semanticPalette }) {
+  const rounded = Math.max(0, Math.min(5, Math.round(Number(value) || 0)));
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+      {[1, 2, 3, 4, 5].map((index) => (
+        <Star
+          key={index}
+          size={13}
+          color={index <= rounded ? semanticPalette.accent : semanticPalette.inkMuted}
+          fill={index <= rounded ? semanticPalette.accent : "transparent"}
+          strokeWidth={1.8}
+        />
+      ))}
+    </View>
+  );
 }
 
 function PurchaseVariantChip({ label, selected, disabled, onPress, onPressWhenDisabled, semanticPalette, reducedMotion, forceDisabled }) {
@@ -133,7 +151,7 @@ function PurchaseVariantChip({ label, selected, disabled, onPress, onPressWhenDi
             backgroundColor: semanticPalette.inkMuted,
             transform: [{ rotate: "-12deg" }],
           }}
-          pointerEvents="none"
+          {...pointerEventsProp("none")}
         />
       ) : null}
       <Text
@@ -245,7 +263,9 @@ function PincodeResultPanel({ pincodeResult, styles, semanticPalette, reducedMot
           <Text style={styles.pinResultText}>
             {pincodeResult.errorKey === "invalid"
               ? PRODUCT_SCREEN.pincodeCheckMockShort
-              : PRODUCT_SCREEN.pincodeNotServiceable}
+              : pincodeResult.errorKey === "unavailable"
+                ? PRODUCT_SCREEN.pincodeUnavailable
+                : PRODUCT_SCREEN.pincodeNotServiceable}
           </Text>
         </View>
       )}
@@ -399,6 +419,12 @@ export default function ProductPurchaseColumn({
           width: isTwoColumn ? undefined : "100%",
           minWidth: 0,
           gap: 0,
+          paddingHorizontal: isTwoColumn ? SPACING.lg : 0,
+          paddingVertical: isTwoColumn ? SPACING.md : 0,
+          borderRadius: isTwoColumn ? RADII.lg : 0,
+          borderWidth: isTwoColumn ? StyleSheet.hairlineWidth : 0,
+          borderColor: isTwoColumn ? semanticPalette.lineSoft : "transparent",
+          backgroundColor: isTwoColumn ? semanticPalette.surface : "transparent",
           ...(stickyStyle || {}),
         },
         shelfAccent: {
@@ -419,7 +445,7 @@ export default function ProductPurchaseColumn({
         title: {
           fontFamily: TYPE.serifFamily,
           fontSize: titleSize,
-          lineHeight: titleSize * 1.1,
+          lineHeight: titleSize * 1.14,
           fontWeight: "500",
           letterSpacing: titleSize * -0.025,
           color: semanticPalette.ink,
@@ -509,28 +535,18 @@ export default function ProductPurchaseColumn({
         secondaryRow: {
           marginTop: 12,
           flexDirection: "row",
+          flexWrap: "wrap",
           gap: 8,
         },
-        secondaryBtn: { flex: 1, minWidth: 0 },
-        saveRow: {
+        actionBtn: {
           flex: 1,
           minWidth: 0,
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          paddingVertical: 10,
-          borderRadius: 999,
-        },
-        saveRowLabel: {
-          fontFamily: fonts.semibold,
-          fontSize: 13,
-          color: semanticPalette.ink,
         },
         trustCard: {
           marginTop: 24,
           borderWidth: StyleSheet.hairlineWidth,
           borderColor: semanticPalette.lineSoft,
+          backgroundColor: semanticPalette.surfaceAlt,
         },
         trustGrid: {
           flexDirection: "row",
@@ -555,7 +571,7 @@ export default function ProductPurchaseColumn({
           borderColor: semanticPalette.line,
           borderRadius: 14,
           padding: 14,
-          backgroundColor: semanticPalette.surface,
+          backgroundColor: semanticPalette.surfaceAlt,
         },
         pinHeading: {
           fontFamily: fonts.semibold,
@@ -635,10 +651,10 @@ export default function ProductPurchaseColumn({
 
   const trustItems = useMemo(
     () => [
-      { icon: "car-outline", label: PRODUCT_SCREEN.trustFreeShipping },
-      { icon: "return-down-back-outline", label: PRODUCT_SCREEN.trustEasyReturns },
-      { icon: "cash-outline", label: PRODUCT_SCREEN.trustCod },
-      { icon: "shield-checkmark-outline", label: PRODUCT_SCREEN.trustGenuine },
+      { Icon: Truck, label: PRODUCT_SCREEN.trustFreeShipping },
+      { Icon: RotateCcw, label: PRODUCT_SCREEN.trustEasyReturns },
+      { Icon: Wallet, label: PRODUCT_SCREEN.trustCod },
+      { Icon: ShieldCheck, label: PRODUCT_SCREEN.trustGenuine },
     ],
     []
   );
@@ -775,7 +791,7 @@ export default function ProductPurchaseColumn({
 
       {hasRating ? (
         <Pressable onPress={handleRatingPress} accessibilityRole="link" style={styles.ratingRow}>
-          <Ionicons name="star" size={14} color={semanticPalette.accent} />
+          <RatingStars value={ratingValue} semanticPalette={semanticPalette} />
           <Text style={styles.ratingText}>
             {ratingValue.toFixed(1)} ({reviewCount} {reviewCount === 1 ? PRODUCT_SCREEN.reviewSingular : PRODUCT_SCREEN.reviewPlural})
           </Text>
@@ -881,22 +897,22 @@ export default function ProductPurchaseColumn({
       </View>
 
       <View style={styles.secondaryRow}>
-        <Pressable
+        <Button
+          variant="ghost"
+          size="sm"
+          label={isSaved ? PRODUCT_SCREEN.savedLabel : PRODUCT_SCREEN.saveLabel}
+          iconLeft={<Ionicons name={isSaved ? "heart" : "heart-outline"} size={18} color={semanticPalette.ink} />}
           onPress={toggleWishlist}
-          style={[styles.secondaryBtn, styles.saveRow]}
-          accessibilityRole="button"
+          style={styles.actionBtn}
           accessibilityLabel={isSaved ? PRODUCT_SCREEN.removeWishlistA11y : PRODUCT_SCREEN.saveWishlistA11y}
-        >
-          <WishlistHeartButton saved={isSaved} onPress={toggleWishlist} accessibilityLabel="" />
-          <Text style={styles.saveRowLabel}>{isSaved ? PRODUCT_SCREEN.savedLabel : PRODUCT_SCREEN.saveLabel}</Text>
-        </Pressable>
+        />
         <Button
           variant="ghost"
           size="sm"
           label={PRODUCT_SCREEN.shareLabel}
           iconLeft={<Ionicons name="share-outline" size={18} color={semanticPalette.ink} />}
           onPress={handleShare}
-          style={styles.secondaryBtn}
+          style={styles.actionBtn}
         />
         <Button
           variant="ghost"
@@ -904,7 +920,7 @@ export default function ProductPurchaseColumn({
           label={PRODUCT_SCREEN.askLabel}
           iconLeft={<Ionicons name="help-circle-outline" size={18} color={semanticPalette.ink} />}
           onPress={() => setShowAskModal(true)}
-          style={styles.secondaryBtn}
+          style={styles.actionBtn}
         />
       </View>
 
@@ -916,7 +932,7 @@ export default function ProductPurchaseColumn({
         <View style={styles.trustGrid}>
           {trustItems.map((t) => (
             <View key={t.label} style={styles.trustCell}>
-              <Ionicons name={t.icon} size={18} color={semanticPalette.accent} />
+              <t.Icon size={18} color={semanticPalette.accent} strokeWidth={2} />
               <Text style={styles.trustLabel}>{t.label}</Text>
             </View>
           ))}

@@ -2,14 +2,14 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColorScheme } from "react-native";
 import {
-  RADII,
-  SPACING,
-  SHADOWS,
-  TYPE,
+  COLORS,
+  COLORS_DARK,
   MOTION,
+  RADII,
+  SHADOWS,
+  SPACING,
+  TYPE,
   getSemanticPalette,
-} from "../styles/designSystem";
-import {
   darkColors,
   fonts,
   getShadow,
@@ -18,6 +18,17 @@ import {
   lightColors,
 } from "../theme/tokens";
 import {
+  ALCHEMY,
+  FONT_DISPLAY,
+  FONT_DISPLAY_ITALIC,
+  FONT_DISPLAY_SEMI,
+  HERITAGE,
+  getCustomerShellGradient,
+  heritageBrandTrimGradient,
+  heritageBrandTrimGradientShort,
+  heritageHairlineGradient,
+} from "../theme/customerAlchemy";
+import {
   LEGACY_JEEVAN_THEME_MODE_KEY,
   LEGACY_THEME_MODE_KEY,
 } from "../constants/migrationKeys";
@@ -25,6 +36,18 @@ import {
 const STORAGE_KEY = "@zeevan_theme_mode";
 
 const ThemeContext = createContext(null);
+
+const customerAlchemy = {
+  ALCHEMY,
+  HERITAGE,
+  FONT_DISPLAY,
+  FONT_DISPLAY_SEMI,
+  FONT_DISPLAY_ITALIC,
+  getCustomerShellGradient,
+  heritageBrandTrimGradient,
+  heritageBrandTrimGradientShort,
+  heritageHairlineGradient,
+};
 
 export function ThemeProvider({ children }) {
   const systemScheme = useColorScheme();
@@ -92,6 +115,17 @@ export function ThemeProvider({ children }) {
       colors,
       fonts,
       semanticPalette,
+      COLORS: isDark ? COLORS_DARK : COLORS,
+      COLORS_LIGHT: COLORS,
+      COLORS_DARK,
+      /** Theme-resolved semantic palette (preferred). */
+      c: semanticPalette,
+      S: SPACING,
+      R: RADII,
+      SH: SHADOWS,
+      T: TYPE,
+      M: MOTION,
+      customerAlchemy,
       RADII,
       SPACING,
       SHADOWS,
@@ -102,34 +136,48 @@ export function ThemeProvider({ children }) {
       shadowPremium: getShadowPremium(isDark),
       hydrated,
     }),
-    [mode, setMode, isDark, colors, semanticPalette, hydrated, fonts]
+    [mode, setMode, isDark, colors, semanticPalette, hydrated]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
-const fallbackSemanticPalette = getSemanticPalette(false);
+const fallbackPalette = getSemanticPalette(false);
+
+function buildFallbackTheme() {
+  return {
+    mode: "light",
+    setMode: () => {},
+    isDark: false,
+    colors: lightColors,
+    fonts,
+    semanticPalette: fallbackPalette,
+    COLORS,
+    COLORS_LIGHT: COLORS,
+    COLORS_DARK,
+    c: fallbackPalette,
+    S: SPACING,
+    R: RADII,
+    SH: SHADOWS,
+    T: TYPE,
+    M: MOTION,
+    customerAlchemy,
+    RADII,
+    SPACING,
+    SHADOWS,
+    TYPE,
+    MOTION,
+    shadow: getShadow(false),
+    shadowLift: getShadowLift(false),
+    shadowPremium: getShadowPremium(false),
+    hydrated: true,
+  };
+}
 
 export function useTheme() {
   const ctx = useContext(ThemeContext);
   if (!ctx) {
-    return {
-      mode: "light",
-      setMode: () => {},
-      isDark: false,
-      colors: lightColors,
-      fonts,
-      semanticPalette: fallbackSemanticPalette,
-      RADII,
-      SPACING,
-      SHADOWS,
-      TYPE,
-      MOTION,
-      shadow: getShadow(false),
-      shadowLift: getShadowLift(false),
-      shadowPremium: getShadowPremium(false),
-      hydrated: true,
-    };
+    return buildFallbackTheme();
   }
   return ctx;
 }

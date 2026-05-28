@@ -38,10 +38,10 @@ function BadgeBase({
       return { bg: success, border: success, color: inv };
     }
     if (variant === "warning") {
-      return { bg: "rgba(177, 123, 39, 0.14)", border: "transparent", color: semanticPalette.warning };
+      return { bg: semanticPalette.accentSoft, border: accent, color: accent };
     }
     if (variant === "info") {
-      return { bg: "rgba(58, 107, 178, 0.12)", border: "transparent", color: semanticPalette.info };
+      return { bg: semanticPalette.surfaceAlt, border: line, color: ink };
     }
     return { bg: "transparent", border: line, color: ink };
   }, [semanticPalette, variant]);

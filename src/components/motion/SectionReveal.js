@@ -3,6 +3,7 @@ import { Platform, View } from "react-native";
 import Animated, { FadeInDown, FadeIn, FadeInRight, ZoomIn } from "react-native-reanimated";
 import useGsapReveal from "../../hooks/useGsapReveal";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import useWebLiteMode from "../../hooks/useWebLiteMode";
 import { motionDuration, staggerDelay } from "../../theme/motion";
 
 /**
@@ -36,9 +37,13 @@ export default function SectionReveal({
   pointerEvents,
   as,
 }) {
-  const pointerStyle = pointerEvents ? { pointerEvents } : null;
+  const pointerStyle =
+    pointerEvents && Platform.OS === "web" ? { pointerEvents } : null;
+  const pointerNativeProps =
+    pointerEvents && Platform.OS !== "web" ? { pointerEvents } : null;
 
   const reducedMotion = useReducedMotion();
+  const webLite = useWebLiteMode();
   const computedDelay = useMemo(() => {
     if (typeof delay === "number") return Math.max(0, delay);
     if (typeof index === "number") return staggerDelay(index);
@@ -50,6 +55,7 @@ export default function SectionReveal({
     start,
     delay: computedDelay / 1000,
     reducedMotion,
+    disabled: webLite,
   });
 
   const setRef = useCallback(
@@ -70,10 +76,10 @@ export default function SectionReveal({
     );
   }
 
-  if (reducedMotion) {
+  if (reducedMotion || webLite) {
     const Container = as || View;
     return (
-      <Container style={[style, pointerStyle]}>
+      <Container style={[style, pointerStyle]} {...pointerNativeProps}>
         {children}
       </Container>
     );
@@ -88,7 +94,7 @@ export default function SectionReveal({
 
   const Container = as || Animated.View;
   return (
-    <Container entering={entering} style={[style, pointerStyle]}>
+    <Container entering={entering} style={[style, pointerStyle]} {...pointerNativeProps}>
       {children}
     </Container>
   );

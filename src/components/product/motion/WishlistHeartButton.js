@@ -10,6 +10,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { useTheme } from "../../../context/ThemeContext";
+import { pointerEventsNativeOnly, withPointerEventsStyle } from "../../../utils/pointerEventsStyle";
 import useReducedMotion from "../../../hooks/useReducedMotion";
 import { hapticImpactLight } from "../../../utils/haptics";
 
@@ -30,7 +31,12 @@ function BurstDot({ offset, burst, color }) {
     ],
   }));
 
-  return <Animated.View pointerEvents="none" style={[styles.dot, { backgroundColor: color }, style]} />;
+  return (
+    <Animated.View
+      style={withPointerEventsStyle([styles.dot, { backgroundColor: color }, style], "none")}
+      {...pointerEventsNativeOnly("none")}
+    />
+  );
 }
 
 function WishlistHeartButtonBase({ saved, onPress, accessibilityLabel }) {

@@ -9,12 +9,18 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import useWebLiteMode from "../../hooks/useWebLiteMode";
+import { useTheme } from "../../context/ThemeContext";
 
 /**
  * Soft floating orbs behind the hero — navy/forest + neutral depth, no imagery.
  */
 export default function HomeAmbientOrbs({ isDark }) {
   const reduced = useReducedMotion();
+  const webLite = useWebLiteMode();
+  const { colors: c } = useTheme();
+  const hideOrbs = Platform.OS === "web" && webLite;
+
   const orb1Ref = useRef(null);
   const orb2Ref = useRef(null);
 
@@ -24,7 +30,7 @@ export default function HomeAmbientOrbs({ isDark }) {
   const orb2Op = useSharedValue(0.5);
 
   useEffect(() => {
-    if (Platform.OS === "web" || reduced) return undefined;
+    if (hideOrbs || Platform.OS === "web" || reduced) return undefined;
 
     orb1Y.value = withRepeat(
       withTiming(-12, { duration: 5400, easing: Easing.inOut(Easing.quad) }),
@@ -53,10 +59,10 @@ export default function HomeAmbientOrbs({ isDark }) {
       cancelAnimation(orb2Y);
       cancelAnimation(orb2Op);
     };
-  }, [orb1Op, orb1Y, orb2Op, orb2Y, reduced]);
+  }, [hideOrbs, orb1Op, orb1Y, orb2Op, orb2Y, reduced]);
 
   useEffect(() => {
-    if (Platform.OS !== "web" || reduced) return undefined;
+    if (hideOrbs || Platform.OS !== "web" || reduced) return undefined;
     let cancelled = false;
     let tween1;
     let tween2;
@@ -94,7 +100,7 @@ export default function HomeAmbientOrbs({ isDark }) {
       tween1?.kill?.();
       tween2?.kill?.();
     };
-  }, [reduced]);
+  }, [hideOrbs, reduced]);
 
   const orb1Style = useAnimatedStyle(() => ({
     transform: [{ translateY: orb1Y.value }],
@@ -106,14 +112,18 @@ export default function HomeAmbientOrbs({ isDark }) {
     opacity: orb2Op.value,
   }));
 
-  const redGlow = isDark ? "rgba(34, 197, 94, 0.12)" : "rgba(15, 23, 42, 0.18)";
-  const neutralGlow = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(24, 24, 27, 0.12)";
+  const brassGlow = isDark ? c.accentSoft : c.primarySoft;
+  const neutralGlow = isDark ? c.lineSoft : c.lineSoft;
+
+  if (hideOrbs) {
+    return null;
+  }
 
   return (
     <View style={[styles.layer, styles.peNone]} accessibilityElementsHidden>
       <Animated.View
         ref={orb1Ref}
-        style={[styles.orbA, { backgroundColor: redGlow }, Platform.OS === "web" ? null : orb1Style]}
+        style={[styles.orbA, { backgroundColor: brassGlow }, Platform.OS === "web" ? null : orb1Style]}
       />
       <Animated.View
         ref={orb2Ref}

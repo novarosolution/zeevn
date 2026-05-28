@@ -100,6 +100,7 @@ export const textInputWebStyle = Platform.select({
 });
 
 export function webDomInputStyle(semanticPalette, TYPE) {
+  const bodySize = Number(TYPE?.body?.fontSize || 16);
   return {
     flex: 1,
     minWidth: 0,
@@ -108,7 +109,7 @@ export function webDomInputStyle(semanticPalette, TYPE) {
     outline: "none",
     background: "transparent",
     fontFamily: fonts.regular,
-    fontSize: TYPE.body.fontSize,
+    fontSize: Math.max(16, bodySize),
     lineHeight: `${TYPE.body.lineHeight}px`,
     color: semanticPalette.ink,
     paddingTop: 8,

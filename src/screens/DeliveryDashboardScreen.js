@@ -5,7 +5,6 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import * as Location from "expo-location";
@@ -17,13 +16,15 @@ import BottomNavBar from "../components/BottomNavBar";
 import OpsLayout from "../components/ops/OpsLayout";
 import OpsStatCard from "../components/ops/OpsStatCard";
 import DeliveryActiveCard from "../components/ops/DeliveryActiveCard";
+import DeliveryOrderTimer from "../components/ops/DeliveryOrderTimer";
 import OrderStatusBadge from "../components/ops/OrderStatusBadge";
 import OrderLiveMapCard from "../components/orders/OrderLiveMapCard";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import EmptyState from "../components/ui/EmptyState";
 import Skeleton from "../components/ui/Skeleton";
-import PremiumSwitch from "../components/ui/PremiumSwitch";
+import Switch from "../components/ui/Switch";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
 import {
@@ -83,6 +84,7 @@ export default function DeliveryDashboardScreen({ navigation }) {
   const [orders, setOrders] = useState([]);
   const [renderCount, setRenderCount] = useState(20);
   const [busyOrderId, setBusyOrderId] = useState("");
+  const [confirmDeliverId, setConfirmDeliverId] = useState("");
   const [expandedId, setExpandedId] = useState("");
   const [shareLiveLocation, setShareLiveLocation] = useState(false);
   const [locError, setLocError] = useState("");
@@ -343,7 +345,7 @@ export default function DeliveryDashboardScreen({ navigation }) {
             <Text style={{ fontFamily: fonts.semibold, color: semanticPalette.ink }}>{DELIVERY_LIVE_SHARE.hintBold}</Text>
             {DELIVERY_LIVE_SHARE.hintAfterBold}
           </Text>
-          <PremiumSwitch
+          <Switch
             label={DELIVERY_LIVE_SHARE.switchA11yLabel}
             value={shareLiveLocation}
             onChange={(on) => {
@@ -432,7 +434,9 @@ export default function DeliveryDashboardScreen({ navigation }) {
               padding="md"
               style={{
                 marginBottom: SPACING.sm,
-                ...(isActive ? { borderColor: semanticPalette.accent, borderWidth: 1 } : {}),
+                ...(isActive
+                  ? { borderColor: semanticPalette.accent, borderWidth: 2, backgroundColor: semanticPalette.accentSoft }
+                  : {}),
               }}
             >
               <View style={{ flexDirection: "row", alignItems: "flex-start", gap: SPACING.sm }}>
@@ -449,6 +453,15 @@ export default function DeliveryDashboardScreen({ navigation }) {
                 </View>
                 <OrderStatusBadge status={item.status} context="delivery" />
               </View>
+
+              {canComplete ? (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: SPACING.sm, marginTop: SPACING.xs }}>
+                  <Text style={{ fontFamily: fonts.semibold, fontSize: TYPE.caption.fontSize, color: semanticPalette.inkMuted, textTransform: "uppercase" }}>
+                    {OPS_UI.delivery.elapsed}
+                  </Text>
+                  <DeliveryOrderTimer startedAt={item.updatedAt || item.createdAt} />
+                </View>
+              ) : null}
 
               <View
                 style={{
@@ -467,13 +480,14 @@ export default function DeliveryDashboardScreen({ navigation }) {
                   {addrSummary}
                 </Text>
                 {phone ? (
-                  <TouchableOpacity
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    label={phone}
+                    iconLeft={<Ionicons name="call-outline" size={icon.sm} color={semanticPalette.accent} />}
                     onPress={() => Linking.openURL(`tel:${phone.replace(/\s/g, "")}`)}
-                    style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: SPACING.xs }}
-                  >
-                    <Ionicons name="call-outline" size={icon.sm} color={semanticPalette.accent} />
-                    <Text style={{ fontFamily: fonts.semibold, fontSize: TYPE.small.fontSize, color: semanticPalette.accent }}>{phone}</Text>
-                  </TouchableOpacity>
+                    style={{ marginTop: SPACING.xs, alignSelf: "flex-start" }}
+                  />
                 ) : null}
                 {hasNavTarget ? (
                   <Button
@@ -501,7 +515,7 @@ export default function DeliveryDashboardScreen({ navigation }) {
                     label={busyOrderId === item._id ? "Saving…" : "Mark delivered"}
                     loading={busyOrderId === item._id}
                     disabled={busyOrderId === item._id}
-                    onPress={() => handleMarkDelivered(item._id)}
+                    onPress={() => setConfirmDeliverId(item._id)}
                     fullWidth
                   />
                 ) : (
@@ -542,6 +556,20 @@ export default function DeliveryDashboardScreen({ navigation }) {
           />
         ) : null}
       </OpsLayout>
+      <ConfirmDialog
+        visible={Boolean(confirmDeliverId)}
+        title="Mark as delivered?"
+        message="Confirm the customer received this order. This updates the order status permanently."
+        confirmLabel="Mark delivered"
+        confirmVariant="primary"
+        busy={busyOrderId === confirmDeliverId}
+        onCancel={() => setConfirmDeliverId("")}
+        onConfirm={() => {
+          const id = confirmDeliverId;
+          setConfirmDeliverId("");
+          handleMarkDelivered(id);
+        }}
+      />
       {Platform.OS !== "web" ? <BottomNavBar /> : null}
     </>
   );

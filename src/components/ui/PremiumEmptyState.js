@@ -1,38 +1,5 @@
-import React, { memo } from "react";
+/** @deprecated Use `EmptyState` from `@/components/ui`. */
 import EmptyState from "./EmptyState";
 
-/** @deprecated Prefer {@link EmptyState} — thin compatibility wrapper. */
-function PremiumEmptyStateBase({
-  iconName = "leaf-outline",
-  title,
-  description,
-  titleLines: _titleLines,
-  descriptionLines: _descriptionLines,
-  ctaLabel,
-  onCtaPress,
-  ctaVariant = "primary",
-  ctaIconLeft: _ctaIconLeft,
-  secondaryCtaLabel,
-  onSecondaryCtaPress,
-  compact: _compact,
-  style,
-}) {
-  return (
-    <EmptyState
-      iconName={iconName}
-      title={title}
-      description={description}
-      ctaLabel={ctaLabel}
-      onCtaPress={onCtaPress}
-      ctaVariant={ctaVariant === "danger" ? "destructive" : ctaVariant}
-      secondaryCtaLabel={secondaryCtaLabel}
-      onSecondaryCtaPress={onSecondaryCtaPress}
-      secondaryVariant="ghost"
-      style={style}
-    />
-  );
-}
-
-const PremiumEmptyState = memo(PremiumEmptyStateBase);
-
+const PremiumEmptyState = EmptyState;
 export default PremiumEmptyState;

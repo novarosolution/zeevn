@@ -1,5 +1,5 @@
 Zeevan token baseline violations
-Generated: 2026-05-28T11:36:56.810Z
+Generated: 2026-05-28T12:42:50.630Z
 Total: 1695
 
 src/components/AppStartupScreen.js:320 [rgba] Off-palette rgba rgba(200,169,126,0.24)

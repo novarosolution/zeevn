@@ -60,9 +60,10 @@ export default function HomeScreenBody({ navigation }) {
   const { add: addRecentSearch } = useRecentSearches();
   const { isAuthenticated, token, user } = useAuth();
   const { addToCart, removeFromCart, getItemQuantity, totalItems, totalAmount } = useCart();
-  const [scrollY, setScrollY] = useState(0);
   const scrollRafRef = useRef(null);
   const pendingScrollYRef = useRef(0);
+  const [headerScrolled, setHeaderScrolled] = useState(false);
+  const [stickyBarVisible, setStickyBarVisible] = useState(false);
   const [deliveryPromise, setDeliveryPromise] = useState("Reliable doorstep delivery");
   const catalogYRef = useRef(0);
   const scrollRef = useRef(null);
@@ -107,9 +108,16 @@ export default function HomeScreenBody({ navigation }) {
     }
   }, [route.params?.filterHomeCategory, route.params?.filterHomeSection, setCategoryFilter, setQuery, setSectionFilter]);
 
-  useEffect(() => {
-    setScrollYStore(scrollY);
-  }, [scrollY]);
+  const publishScroll = useCallback(
+    (y) => {
+      setScrollYStore(y);
+      const nextHeader = y > 24;
+      const nextSticky = totalItems > 0 && y > heroSlideHeight;
+      setHeaderScrolled((prev) => (prev === nextHeader ? prev : nextHeader));
+      setStickyBarVisible((prev) => (prev === nextSticky ? prev : nextSticky));
+    },
+    [heroSlideHeight, totalItems]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -257,6 +265,7 @@ export default function HomeScreenBody({ navigation }) {
       <ScrollView
         ref={scrollRef}
         style={styles.scrollMain}
+        {...(Platform.OS === "web" ? { dataSet: { zvScroll: "vertical" } } : {})}
         contentContainerStyle={[
           styles.scrollMain?.contentContainerStyle,
           {
@@ -265,6 +274,7 @@ export default function HomeScreenBody({ navigation }) {
             width: contentMaxWidth ? "100%" : undefined,
             maxWidth: contentMaxWidth,
             alignSelf: contentMaxWidth ? "center" : undefined,
+            ...Platform.select({ web: { flexGrow: 1 }, default: {} }),
           },
         ]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onPullRefresh} />}
@@ -273,10 +283,10 @@ export default function HomeScreenBody({ navigation }) {
           if (scrollRafRef.current != null) return;
           scrollRafRef.current = requestAnimationFrame(() => {
             scrollRafRef.current = null;
-            setScrollY(pendingScrollYRef.current);
+            publishScroll(pendingScrollYRef.current);
           });
         }}
-        scrollEventThrottle={16}
+        scrollEventThrottle={Platform.OS === "web" ? 32 : 16}
         showsVerticalScrollIndicator={Platform.OS === "web"}
       >
         <View style={styles.headerWrap}>
@@ -313,7 +323,7 @@ export default function HomeScreenBody({ navigation }) {
             isDark={isDark}
             deliveryAddress={deliveryAddress}
             deliveryPromise={deliveryPromise}
-            isScrolled={scrollY > 24}
+            isScrolled={headerScrolled}
             unreadCount={notifications.unreadNotificationCount}
             onPressAddress={() => navigation.navigate("Profile")}
             onPressBell={() => navigation.navigate("Notifications")}
@@ -373,6 +383,17 @@ export default function HomeScreenBody({ navigation }) {
           onPressViewAll={() => navigation.navigate("Categories")}
         />
 
+        {webLite ? (
+          <HomeDealsRail
+            products={products}
+            homeViewConfig={homeViewConfig}
+            getQuantity={getDealQuantity}
+            onIncrease={onIncreaseDeal}
+            onDecrease={onDecreaseDeal}
+            onOpenProduct={(item) => navigation.navigate("Product", { productId: item.id })}
+            onSeeAllDeals={goToCatalog}
+          />
+        ) : (
         <SectionReveal index={1} preset="fade-up">
           <HomeDealsRail
             products={products}
@@ -384,9 +405,32 @@ export default function HomeScreenBody({ navigation }) {
             onSeeAllDeals={goToCatalog}
           />
         </SectionReveal>
+        )}
 
+        {webLite ? (
+          <View
+            onLayout={(e) => (catalogYRef.current = e.nativeEvent.layout.y)}
+            {...(Platform.OS === "web" ? { dataSet: { zvSection: "true" } } : {})}
+          >
+            <HomeCatalogSections
+              sections={sections}
+              styles={styles}
+              navigation={navigation}
+              getItemQuantity={getItemQuantity}
+              onAddToCart={onAddCatalog}
+              onRemoveFromCart={onRemoveCatalog}
+              cardStyle={homeViewConfig.productCardStyle}
+              numColumns={gridColumns}
+              gridGap={gridGap}
+              cardWidth={gridCardWidth}
+            />
+          </View>
+        ) : (
         <SectionReveal index={2} preset="fade-up">
-          <View onLayout={(e) => (catalogYRef.current = e.nativeEvent.layout.y)}>
+          <View
+            onLayout={(e) => (catalogYRef.current = e.nativeEvent.layout.y)}
+            {...(Platform.OS === "web" ? { dataSet: { zvSection: "true" } } : {})}
+          >
             <HomeCatalogSections
               sections={sections}
               styles={styles}
@@ -401,14 +445,19 @@ export default function HomeScreenBody({ navigation }) {
             />
           </View>
         </SectionReveal>
+        )}
 
+        {webLite ? (
+          <HomeOffersBand />
+        ) : (
         <SectionReveal index={3} preset="fade-up">
           <HomeOffersBand />
         </SectionReveal>
+        )}
         <HomePageFooter colors={c} />
       </ScrollView>
       <HomeStickyAddToBagBar
-        visible={totalItems > 0 && scrollY > heroSlideHeight}
+        visible={stickyBarVisible}
         totalItems={totalItems}
         totalAmount={totalAmount}
         styles={styles}
@@ -457,10 +506,9 @@ export default function HomeScreenBody({ navigation }) {
           <Text style={localStyles.errorText}>{error}</Text>
         </View>
       ) : null}
-      {loading ? <View style={localStyles.loadingPad} /> : null}
-      {Platform.OS === "web" && __DEV__ ? (
-        <View style={localStyles.scrollHud} pointerEvents="none">
-          <Text style={localStyles.scrollHudText}>scrollY: {Math.round(scrollY)}</Text>
+      {loading && products.length === 0 ? (
+        <View style={[localStyles.loadingShell, { backgroundColor: c.surface }]} pointerEvents="none">
+          <Text style={[localStyles.loadingText, { color: c.textMuted }]}>Loading your storefront…</Text>
         </View>
       ) : null}
     </View>
@@ -469,19 +517,17 @@ export default function HomeScreenBody({ navigation }) {
 const localStyles = StyleSheet.create({
   errorWrap: { position: "absolute", left: 16, right: 16, top: 12, alignItems: "center" },
   errorText: { fontSize: 12, color: "#B23A3A" },
-  loadingPad: { height: 1 },
-  scrollHud: {
+  loadingShell: {
     position: "absolute",
-    right: 12,
-    bottom: 96,
-    borderRadius: 8,
-    backgroundColor: "rgba(0,0,0,0.72)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    left: 20,
+    right: 20,
+    top: "42%",
+    borderRadius: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    alignItems: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(0,0,0,0.06)",
   },
-  scrollHudText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "600",
-  },
+  loadingText: { fontSize: 14, fontWeight: "500" },
 });

@@ -1,9 +1,9 @@
-import React from "react";
-import { View } from "react-native";
+import React, { memo } from "react";
+import { Platform, View } from "react-native";
 import HomeSectionHeader from "./HomeSectionHeader";
 import { HomeCatalogResponsiveGrid } from "./HomeCatalogProductViews";
 
-export default function HomeCatalogSections({
+function HomeCatalogSections({
   sections = [],
   styles,
   navigation,
@@ -27,6 +27,7 @@ export default function HomeCatalogSections({
             styles?.catalogSurface,
             index < sections.length - 1 ? { marginBottom: sectionGap } : null,
           ]}
+          {...(Platform.OS === "web" ? { dataSet: { zvSection: "true" } } : {})}
         >
           <HomeSectionHeader
             overline="Shop"
@@ -60,3 +61,5 @@ export default function HomeCatalogSections({
     </View>
   );
 }
+
+export default memo(HomeCatalogSections);

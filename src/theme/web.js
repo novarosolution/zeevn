@@ -47,7 +47,24 @@ export const webRootStyle = Platform.select({
   },
 });
 
+const WEB_CHROME_STYLE_VERSION = "3";
 let premiumChromeInjected = false;
+
+function ensurePremiumChromeStyles(cssText) {
+  if (typeof document === "undefined") return;
+  const existing = document.querySelector('style[data-zeevan="premium-chrome"]');
+  if (existing?.getAttribute("data-version") === WEB_CHROME_STYLE_VERSION) {
+    premiumChromeInjected = true;
+    return;
+  }
+  existing?.remove();
+  const style = document.createElement("style");
+  style.setAttribute("data-zeevan", "premium-chrome");
+  style.setAttribute("data-version", WEB_CHROME_STYLE_VERSION);
+  style.textContent = cssText;
+  document.head.appendChild(style);
+  premiumChromeInjected = true;
+}
 
 /**
  * Web-only: calm page backdrop, font smoothing, selection & focus rings.
@@ -117,17 +134,35 @@ export function applyWebPremiumChrome(isDark, backgroundSolid, liteMode) {
   body.style.textRendering = lite ? "auto" : "optimizeLegibility";
   body.style.fontFeatureSettings = lite ? "normal" : '"cv11","ss01","ss03"';
 
-  if (!premiumChromeInjected) {
-    premiumChromeInjected = true;
-    const style = document.createElement("style");
-    style.setAttribute("data-zeevan", "premium-chrome");
-    style.textContent = `
+  if (!premiumChromeInjected || document.querySelector('style[data-zeevan="premium-chrome"]')?.getAttribute("data-version") !== WEB_CHROME_STYLE_VERSION) {
+    ensurePremiumChromeStyles(`
       html {
         scroll-behavior: auto;
         scrollbar-color: rgba(200,169,126,0.32) transparent;
         scrollbar-width: thin;
         -webkit-text-size-adjust: 100%;
         text-size-adjust: 100%;
+      }
+      html, body, #root {
+        height: 100%;
+        min-height: ${APP_VIEWPORT_MIN_HEIGHT};
+      }
+      #root {
+        display: flex;
+        flex-direction: column;
+      }
+      #main-content {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      #main-content > div {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
       }
       body {
         overscroll-behavior-y: none;
@@ -139,6 +174,28 @@ export function applyWebPremiumChrome(isDark, backgroundSolid, liteMode) {
       /* Prevent RN web touch-action:none from blocking page scroll after taps. */
       [class*="r-touchAction-"] {
         touch-action: pan-y !important;
+      }
+      /* RN Web ScrollView defaults to overflow-y:hidden — restore vertical page scroll. */
+      [data-zv-scroll="vertical"],
+      [data-zv-scroll="vertical"] [class*="r-overflowY-"] {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        min-height: 0 !important;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y;
+      }
+      [data-zv-scroll="horizontal"] {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        touch-action: pan-x pan-y;
+      }
+      /* RN Web: unmarked vertical scroll areas (flex grow + overflow-y hidden) */
+      [class*="r-flexGrow-"][class*="r-overflowY-"]:not([data-zv-scroll="horizontal"]) {
+        overflow-y: auto !important;
+        min-height: 0 !important;
+      }
+      img {
+        decoding: async;
       }
       @media (pointer: coarse) {
         input, textarea, select {
@@ -230,7 +287,6 @@ export function applyWebPremiumChrome(isDark, backgroundSolid, liteMode) {
       html.zv-lite .zv-no-lite-shadow {
         box-shadow: none !important;
       }
-    `;
-    document.head.appendChild(style);
+    `);
   }
 }

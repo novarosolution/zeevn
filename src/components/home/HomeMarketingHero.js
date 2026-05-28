@@ -362,6 +362,7 @@ export default function HomeMarketingHero({
           <ScrollView
             ref={heroSliderRef}
             horizontal
+            {...(Platform.OS === "web" ? { dataSet: { zvScroll: "horizontal" } } : {})}
             pagingEnabled
             showsHorizontalScrollIndicator={false}
             scrollEventThrottle={16}

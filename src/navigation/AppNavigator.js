@@ -299,7 +299,13 @@ const styles = StyleSheet.create({
     width: "100%",
     minHeight: 0,
     ...Platform.select({
-      web: { position: "relative", zIndex: 0 },
+      web: {
+        position: "relative",
+        zIndex: 0,
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+      },
       default: {},
     }),
   },

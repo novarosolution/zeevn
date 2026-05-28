@@ -78,6 +78,7 @@ const MotionScrollView = forwardRef(function MotionScrollView(
         style={mergedStyle}
         contentContainerStyle={contentContainerStyle}
         scrollEventThrottle={scrollEventThrottle}
+        {...(Platform.OS === "web" ? { dataSet: { zvScroll: "vertical" } } : {})}
         {...scrollProps}
         {...rest}
       >

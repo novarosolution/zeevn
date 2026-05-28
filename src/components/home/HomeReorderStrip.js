@@ -154,6 +154,7 @@ function HomeReorderStripBase({
         data={capped}
         keyExtractor={(item) => String(item.key || item.id)}
         horizontal
+        {...(Platform.OS === "web" ? { dataSet: { zvScroll: "horizontal" } } : {})}
         showsHorizontalScrollIndicator={false}
         decelerationRate={Platform.OS === "ios" ? "fast" : 0.98}
         snapToInterval={CARD_WIDTH + homeSpacing.sm}

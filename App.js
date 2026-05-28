@@ -46,6 +46,10 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 const safeAreaRootStyle = { flex: 1, width: "100%" };
 const gestureRootStyle = { flex: 1 };
 
+function getBootstrapBackground() {
+  return Appearance.getColorScheme() === "dark" ? darkColors.background : lightColors.background;
+}
+
 const navigationRef = createNavigationContainerRef();
 
 const linking = {
@@ -330,7 +334,8 @@ function AppNavigationShell() {
 export default function App() {
   const [nativeFontsLoaded, nativeFontError] = useFonts(nativeAppFonts);
   const [fontLoadTimeoutReached, setFontLoadTimeoutReached] = useState(false);
-  const fontsLoaded = Platform.OS === "web" ? true : nativeFontsLoaded || Boolean(nativeFontError) || fontLoadTimeoutReached;
+  const fontsLoaded =
+    Platform.OS === "web" ? true : nativeFontsLoaded || Boolean(nativeFontError) || fontLoadTimeoutReached;
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -340,9 +345,16 @@ export default function App() {
 
   useEffect(() => {
     if (Platform.OS === "web" || nativeFontsLoaded || nativeFontError) return undefined;
-    const timer = setTimeout(() => setFontLoadTimeoutReached(true), 3000);
+    const timer = setTimeout(() => setFontLoadTimeoutReached(true), 1500);
     return () => clearTimeout(timer);
   }, [nativeFontError, nativeFontsLoaded]);
+
+  useEffect(() => {
+    const splashFailsafe = setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {});
+    }, 6000);
+    return () => clearTimeout(splashFailsafe);
+  }, []);
   const [bootFootnote, setBootFootnote] = useState("Loading your storefront…");
 
   const bootstrapColors = Appearance.getColorScheme() === "dark" ? darkColors : lightColors;
@@ -388,10 +400,12 @@ export default function App() {
     }
   }, [fontsLoaded]);
 
+  const rootBackground = getBootstrapBackground();
+
   if (!fontsLoaded) {
     return (
       <SafeAreaProvider style={safeAreaRootStyle}>
-        <View style={webRootStyle}>
+        <View style={[webRootStyle, { backgroundColor: rootBackground }]}>
           <StatusBar style={Appearance.getColorScheme() === "dark" ? "light" : "dark"} />
           <AppStartupScreen
             colors={bootstrapColors}
@@ -408,7 +422,7 @@ export default function App() {
     <AppErrorBoundary>
       <GestureHandlerRootView style={gestureRootStyle}>
         <SafeAreaProvider style={safeAreaRootStyle}>
-          <View style={webRootStyle}>
+          <View style={[webRootStyle, { backgroundColor: rootBackground }]}>
             <ThemeProvider>
               <AuthProvider>
                 <ConnectivityBridge>

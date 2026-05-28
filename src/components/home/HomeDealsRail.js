@@ -147,6 +147,7 @@ export default function HomeDealsRail({
 
         <ScrollView
           horizontal
+          {...(Platform.OS === "web" ? { dataSet: { zvScroll: "horizontal" } } : {})}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.row}
           decelerationRate={Platform.OS === "ios" ? "fast" : 0.98}

@@ -59,7 +59,7 @@ export default function HomeAmbientOrbs({ isDark }) {
       cancelAnimation(orb2Y);
       cancelAnimation(orb2Op);
     };
-  }, [orb1Op, orb1Y, orb2Op, orb2Y, reduced]);
+  }, [hideOrbs, orb1Op, orb1Y, orb2Op, orb2Y, reduced]);
 
   useEffect(() => {
     if (hideOrbs || Platform.OS !== "web" || reduced) return undefined;
@@ -100,7 +100,7 @@ export default function HomeAmbientOrbs({ isDark }) {
       tween1?.kill?.();
       tween2?.kill?.();
     };
-  }, [reduced]);
+  }, [hideOrbs, reduced]);
 
   const orb1Style = useAnimatedStyle(() => ({
     transform: [{ translateY: orb1Y.value }],

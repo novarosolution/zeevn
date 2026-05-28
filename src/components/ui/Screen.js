@@ -112,6 +112,7 @@ function ScreenBase({
           refreshControl={refreshControl}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={Platform.OS === "web"}
+          {...(Platform.OS === "web" ? { dataSet: { zvScroll: "vertical" } } : {})}
           {...scrollViewProps}
         >
           {body}

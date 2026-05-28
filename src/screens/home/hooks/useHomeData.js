@@ -13,15 +13,18 @@ export default function useHomeData() {
   const [refreshing, setRefreshing] = useState(false);
   const [showingCachedItems, setShowingCachedItems] = useState(false);
 
-  const load = useCallback(async (isPullRefresh = false) => {
+  const load = useCallback(async (isPullRefresh = false, { background = false } = {}) => {
     if (isPullRefresh) setRefreshing(true);
-    else setLoading(true);
-    setError("");
-    setShowingCachedItems(false);
+    else if (!background) setLoading(true);
+    if (!background) {
+      setError("");
+      setShowingCachedItems(false);
+    }
     try {
       const [data, viewConfig] = await Promise.all([getProducts(), getHomeViewConfig()]);
       setProducts(Array.isArray(data) ? data : []);
       setHomeViewConfig(viewConfig && typeof viewConfig === "object" ? viewConfig : { ...HOME_VIEW_DEFAULTS });
+      setShowingCachedItems(false);
       try {
         await AsyncStorage.setItem(
           HOME_CACHE_KEY,
@@ -61,7 +64,31 @@ export default function useHomeData() {
   }, [load]);
 
   useEffect(() => {
-    load(false);
+    let cancelled = false;
+    (async () => {
+      let cachedProducts = [];
+      try {
+        const raw = await AsyncStorage.getItem(HOME_CACHE_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        cachedProducts = Array.isArray(parsed?.products) ? parsed.products : [];
+        if (!cancelled && cachedProducts.length > 0) {
+          setProducts(cachedProducts);
+          if (parsed?.viewConfig && typeof parsed.viewConfig === "object") {
+            setHomeViewConfig((prev) => ({ ...prev, ...parsed.viewConfig }));
+          }
+          setShowingCachedItems(true);
+          setLoading(false);
+        }
+      } catch {
+        // cache read is best effort
+      }
+      if (!cancelled) {
+        await load(false, { background: cachedProducts.length > 0 });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [load]);
 
   return {

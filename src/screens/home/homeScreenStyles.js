@@ -24,6 +24,10 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth = 0,
       alignSelf: "stretch",
       maxWidth: "100%",
       backgroundColor: c.background,
+      ...Platform.select({
+        web: { minHeight: "100%", height: "100%" },
+        default: {},
+      }),
     },
     gradientFill: {
       flex: 1,
@@ -32,6 +36,15 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth = 0,
     scrollMain: {
       flex: 1,
       width: "100%",
+      ...Platform.select({
+        web: {
+          minHeight: 0,
+          overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
+          touchAction: "pan-y",
+        },
+        default: {},
+      }),
     },
     headerWrap: {
       paddingBottom: Platform.select({ web: homeSpacing.base, default: homeSpacing.sm }),

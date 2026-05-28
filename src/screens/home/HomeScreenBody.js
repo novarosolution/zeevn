@@ -14,6 +14,7 @@ import HomeCategoryGrid from "../../components/home/HomeCategoryGrid";
 import HomeMarketingHero from "../../components/home/HomeMarketingHero";
 import HomeDealsRail from "../../components/home/HomeDealsRail";
 import HomeCatalogSections from "../../components/home/HomeCatalogSections";
+import HomePrimeProductsSection from "../../components/home/HomePrimeProductsSection";
 import HomeOffersBand from "../../components/home/HomeOffersBand";
 import HomeStickyAddToBagBar from "../../components/home/HomeStickyAddToBagBar";
 import HomePageFooter from "../../components/home/HomePageFooter";
@@ -97,7 +98,7 @@ export default function HomeScreenBody({ navigation }) {
     safeBottomInset: Number(insets?.bottom || 0),
     reducedMotion,
   });
-  const { query, setQuery, setSectionFilter, setCategoryFilter, sections } = filters;
+  const { query, setQuery, setSectionFilter, setCategoryFilter, sections, primeSection, showPrimeSection } = filters;
   useEffect(() => {
     const section = route.params?.filterHomeSection;
     const category = route.params?.filterHomeCategory;
@@ -407,50 +408,84 @@ export default function HomeScreenBody({ navigation }) {
         </SectionReveal>
         )}
 
-        {webLite ? (
-          <View
-            onLayout={(e) => (catalogYRef.current = e.nativeEvent.layout.y)}
-            {...(Platform.OS === "web" ? { dataSet: { zvSection: "true" } } : {})}
-          >
-            <HomeCatalogSections
-              sections={sections}
-              styles={styles}
-              navigation={navigation}
-              getItemQuantity={getItemQuantity}
-              onAddToCart={onAddCatalog}
-              onRemoveFromCart={onRemoveCatalog}
-              cardStyle={homeViewConfig.productCardStyle}
-              numColumns={gridColumns}
-              gridGap={gridGap}
-              cardWidth={gridCardWidth}
-            />
-          </View>
-        ) : (
-        <SectionReveal index={2} preset="fade-up">
-          <View
-            onLayout={(e) => (catalogYRef.current = e.nativeEvent.layout.y)}
-            {...(Platform.OS === "web" ? { dataSet: { zvSection: "true" } } : {})}
-          >
-            <HomeCatalogSections
-              sections={sections}
-              styles={styles}
-              navigation={navigation}
-              getItemQuantity={getItemQuantity}
-              onAddToCart={onAddCatalog}
-              onRemoveFromCart={onRemoveCatalog}
-              cardStyle={homeViewConfig.productCardStyle}
-              numColumns={gridColumns}
-              gridGap={gridGap}
-              cardWidth={gridCardWidth}
-            />
-          </View>
-        </SectionReveal>
-        )}
+        {showPrimeSection && primeSection ? (
+          webLite ? (
+            <View onLayout={(e) => (catalogYRef.current = e.nativeEvent.layout.y)}>
+              <HomePrimeProductsSection
+                title={primeSection.title}
+                products={primeSection.items}
+                navigation={navigation}
+                getItemQuantity={getItemQuantity}
+                onAddToCart={onAddCatalog}
+                onRemoveFromCart={onRemoveCatalog}
+                cardStyle={homeViewConfig.productCardStyle}
+                numColumns={gridColumns}
+                gridGap={gridGap}
+                cardWidth={gridCardWidth}
+                windowWidth={windowWidth}
+              />
+            </View>
+          ) : (
+            <SectionReveal index={2} preset="fade-up">
+              <View onLayout={(e) => (catalogYRef.current = e.nativeEvent.layout.y)}>
+                <HomePrimeProductsSection
+                  title={primeSection.title}
+                  products={primeSection.items}
+                  navigation={navigation}
+                  getItemQuantity={getItemQuantity}
+                  onAddToCart={onAddCatalog}
+                  onRemoveFromCart={onRemoveCatalog}
+                  cardStyle={homeViewConfig.productCardStyle}
+                  numColumns={gridColumns}
+                  gridGap={gridGap}
+                  cardWidth={gridCardWidth}
+                  windowWidth={windowWidth}
+                />
+              </View>
+            </SectionReveal>
+          )
+        ) : null}
+
+        {sections.length > 0 ? (
+          webLite ? (
+            <View {...(Platform.OS === "web" ? { dataSet: { zvSection: "true" } } : {})}>
+              <HomeCatalogSections
+                sections={sections}
+                styles={styles}
+                navigation={navigation}
+                getItemQuantity={getItemQuantity}
+                onAddToCart={onAddCatalog}
+                onRemoveFromCart={onRemoveCatalog}
+                cardStyle={homeViewConfig.productCardStyle}
+                numColumns={gridColumns}
+                gridGap={gridGap}
+                cardWidth={gridCardWidth}
+              />
+            </View>
+          ) : (
+            <SectionReveal index={3} preset="fade-up">
+              <View {...(Platform.OS === "web" ? { dataSet: { zvSection: "true" } } : {})}>
+                <HomeCatalogSections
+                  sections={sections}
+                  styles={styles}
+                  navigation={navigation}
+                  getItemQuantity={getItemQuantity}
+                  onAddToCart={onAddCatalog}
+                  onRemoveFromCart={onRemoveCatalog}
+                  cardStyle={homeViewConfig.productCardStyle}
+                  numColumns={gridColumns}
+                  gridGap={gridGap}
+                  cardWidth={gridCardWidth}
+                />
+              </View>
+            </SectionReveal>
+          )
+        ) : null}
 
         {webLite ? (
           <HomeOffersBand />
         ) : (
-        <SectionReveal index={3} preset="fade-up">
+        <SectionReveal index={4} preset="fade-up">
           <HomeOffersBand />
         </SectionReveal>
         )}

@@ -12,10 +12,18 @@ function sortByHomeOrder(a, b) {
   return String(a?.name || "").localeCompare(String(b?.name || ""));
 }
 
+function normalizePrimeKey(homeViewConfig) {
+  return String(homeViewConfig?.primeSectionTitle || "Prime Products")
+    .trim()
+    .toLowerCase();
+}
+
 export default function useHomeFilters({ products = [], homeViewConfig = {} }) {
   const [query, setQuery] = useState("");
   const [sectionFilter, setSectionFilter] = useState(null);
   const [categoryFilter, setCategoryFilter] = useState(null);
+
+  const primeKey = useMemo(() => normalizePrimeKey(homeViewConfig), [homeViewConfig?.primeSectionTitle]);
 
   const filteredProducts = useMemo(() => {
     const searchTerm = String(query || "").trim().toLowerCase();
@@ -49,14 +57,6 @@ export default function useHomeFilters({ products = [], homeViewConfig = {} }) {
       .sort((a, b) => a.title.localeCompare(b.title));
   }, [filteredProducts]);
 
-  const primeKey = useMemo(
-    () =>
-      String(homeViewConfig?.primeSectionTitle || "Prime Products")
-        .trim()
-        .toLowerCase(),
-    [homeViewConfig?.primeSectionTitle]
-  );
-
   const primeProducts = useMemo(() => {
     const primeSection = groupedSections.find(
       (section) => String(section?.title || "").trim().toLowerCase() === primeKey
@@ -71,13 +71,23 @@ export default function useHomeFilters({ products = [], homeViewConfig = {} }) {
     return primeProducts.length > 0;
   }, [homeViewConfig?.showPrimeSection, primeProducts.length, query]);
 
+  const primeSection = useMemo(() => {
+    if (!showPrimeSection) return null;
+    const configuredTitle = String(homeViewConfig?.primeSectionTitle || "Prime Products").trim() || "Prime Products";
+    return {
+      title: configuredTitle,
+      items: primeProducts,
+    };
+  }, [homeViewConfig?.primeSectionTitle, primeProducts, showPrimeSection]);
+
+  /** Catalog sections excluding Prime — Prime renders via HomePrimeProductsSection. */
   const sections = useMemo(() => {
-    const visible = showPrimeSection
-      ? groupedSections
-      : groupedSections.filter((section) => String(section.title || "").trim().toLowerCase() !== primeKey);
-    if (!sectionFilter) return visible;
-    return visible.filter((section) => String(section.title || "").trim() === String(sectionFilter).trim());
-  }, [groupedSections, primeKey, sectionFilter, showPrimeSection]);
+    const withoutPrime = groupedSections.filter(
+      (section) => String(section.title || "").trim().toLowerCase() !== primeKey
+    );
+    if (!sectionFilter) return withoutPrime;
+    return withoutPrime.filter((section) => String(section.title || "").trim() === String(sectionFilter).trim());
+  }, [groupedSections, primeKey, sectionFilter]);
 
   const clearFilters = useCallback(() => {
     setQuery("");
@@ -95,6 +105,8 @@ export default function useHomeFilters({ products = [], homeViewConfig = {} }) {
     clearFilters,
     filteredProducts,
     showPrimeSection,
+    primeSection,
+    primeProducts,
     sections,
   };
 }

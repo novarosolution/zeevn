@@ -34,6 +34,24 @@ describe("useHomeFilters prime section visibility", () => {
     );
 
     expect(result.current.showPrimeSection).toBe(true);
+    expect(result.current.primeSection?.items).toHaveLength(1);
+    expect(result.current.sections).toHaveLength(0);
+  });
+
+  it("keeps prime out of generic catalog sections", () => {
+    const { result } = renderHook(() =>
+      useHomeFilters({
+        products: [
+          buildProduct({ id: "2", name: "Prime Ghee", homeSection: "Prime Products" }),
+          buildProduct({ id: "3", name: "Rice", homeSection: "Daily Staples" }),
+        ],
+        homeViewConfig: { showPrimeSection: true, primeSectionTitle: "Prime Products" },
+      })
+    );
+
+    expect(result.current.primeSection?.items).toHaveLength(1);
+    expect(result.current.sections).toHaveLength(1);
+    expect(result.current.sections[0].title).toBe("Daily Staples");
   });
 
   it("hides prime section while an active search query exists", () => {

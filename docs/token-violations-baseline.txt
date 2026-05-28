@@ -1,5 +1,5 @@
 Zeevan token baseline violations
-Generated: 2026-05-28T12:42:50.630Z
+Generated: 2026-05-28T15:03:08.189Z
 Total: 1695
 
 src/components/AppStartupScreen.js:320 [rgba] Off-palette rgba rgba(200,169,126,0.24)
@@ -297,19 +297,19 @@ src/components/home/HomeCategoryGrid.js:247 [spacing] Off-scale spacing paddingV
 src/components/home/HomeCategoryGrid.js:270 [shadowRadius] shadowRadius 6 not from SHADOWS
 src/components/home/HomeDealsRail.js:117 [rgba] Off-palette rgba rgba(200,169,126,0.04)
 src/components/home/HomeDealsRail.js:117 [rgba] Off-palette rgba rgba(0,0,0,0)
-src/components/home/HomeDealsRail.js:394 [rgba] Off-palette rgba rgba(200,169,126,0.18)
-src/components/home/HomeDealsRail.js:457 [rgba] Off-palette rgba rgba(200,169,126,0.24)
-src/components/home/HomeDealsRail.js:479 [rgba] Off-palette rgba rgba(14,23,41,0.16)
-src/components/home/HomeDealsRail.js:274 [spacing] Off-scale spacing marginBottom=2 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeDealsRail.js:433 [spacing] Off-scale spacing marginBottom=2 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeDealsRail.js:440 [spacing] Off-scale spacing marginBottom=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeDealsRail.js:417 [spacing] Off-scale spacing paddingTop=10 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeDealsRail.js:416 [spacing] Off-scale spacing paddingHorizontal=10 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeDealsRail.js:459 [spacing] Off-scale spacing paddingHorizontal=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeDealsRail.js:460 [spacing] Off-scale spacing paddingVertical=2 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeDealsRail.js:276 [spacing] Off-scale spacing gap=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeDealsRail.js:442 [spacing] Off-scale spacing gap=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeDealsRail.js:469 [spacing] Off-scale spacing gap=3 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeDealsRail.js:395 [rgba] Off-palette rgba rgba(200,169,126,0.18)
+src/components/home/HomeDealsRail.js:458 [rgba] Off-palette rgba rgba(200,169,126,0.24)
+src/components/home/HomeDealsRail.js:480 [rgba] Off-palette rgba rgba(14,23,41,0.16)
+src/components/home/HomeDealsRail.js:275 [spacing] Off-scale spacing marginBottom=2 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeDealsRail.js:434 [spacing] Off-scale spacing marginBottom=2 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeDealsRail.js:441 [spacing] Off-scale spacing marginBottom=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeDealsRail.js:418 [spacing] Off-scale spacing paddingTop=10 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeDealsRail.js:417 [spacing] Off-scale spacing paddingHorizontal=10 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeDealsRail.js:460 [spacing] Off-scale spacing paddingHorizontal=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeDealsRail.js:461 [spacing] Off-scale spacing paddingVertical=2 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeDealsRail.js:277 [spacing] Off-scale spacing gap=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeDealsRail.js:443 [spacing] Off-scale spacing gap=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeDealsRail.js:470 [spacing] Off-scale spacing gap=3 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
 src/components/home/HomeLiveOrderPinnedCard.js:86 [rgba] Off-palette rgba rgba(200,169,126,0.2)
 src/components/home/HomeLiveOrderPinnedCard.js:86 [rgba] Off-palette rgba rgba(200,169,126,0.08)
 src/components/home/HomeLiveOrderPinnedCard.js:86 [rgba] Off-palette rgba rgba(200,169,126,0)
@@ -337,8 +337,8 @@ src/components/home/HomeMarketingHero.js:231 [rgba] Off-palette rgba rgba(200,16
 src/components/home/HomeMarketingHero.js:270 [rgba] Off-palette rgba rgba(200,169,126,0.32)
 src/components/home/HomeMarketingHero.js:293 [rgba] Off-palette rgba rgba(200,169,126,0.6)
 src/components/home/HomeMarketingHero.js:294 [rgba] Off-palette rgba rgba(14,23,41,0.45)
-src/components/home/HomeMarketingHero.js:406 [rgba] Off-palette rgba rgba(14,23,41,0.48)
-src/components/home/HomeMarketingHero.js:406 [rgba] Off-palette rgba rgba(14,23,41,0.82)
+src/components/home/HomeMarketingHero.js:407 [rgba] Off-palette rgba rgba(14,23,41,0.48)
+src/components/home/HomeMarketingHero.js:407 [rgba] Off-palette rgba rgba(14,23,41,0.82)
 src/components/home/HomeOffersBand.js:20 [rgba] Off-palette rgba rgba(0,0,0,0)
 src/components/home/HomePageFooter.js:120 [rgba] Off-palette rgba rgba(226,232,240,0.9)
 src/components/home/HomePageFooter.js:214 [rgba] Off-palette rgba rgba(226,232,240,0.2)
@@ -365,14 +365,14 @@ src/components/home/HomePageFooter.js:451 [rgba] Off-palette rgba rgba(203,213,2
 src/components/home/HomePageFooter.js:345 [spacing] Off-scale spacing gap=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
 src/components/home/HomePageFooter.js:220 [boxShadow] boxShadow "0 20px 40px rgba(2,6,23,0.22)" not from SHADOWS
 src/components/home/HomePageFooter.js:322 [boxShadow] boxShadow "0 6px 14px rgba(2,6,23,0.3)" not from SHADOWS
-src/components/home/HomeReorderStrip.js:329 [rgba] Off-palette rgba rgba(200,169,126,0.18)
-src/components/home/HomeReorderStrip.js:208 [spacing] Off-scale spacing marginBottom=2 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeReorderStrip.js:273 [spacing] Off-scale spacing paddingTop=10 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeReorderStrip.js:274 [spacing] Off-scale spacing paddingBottom=10 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeReorderStrip.js:272 [spacing] Off-scale spacing paddingHorizontal=10 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeReorderStrip.js:188 [spacing] Off-scale spacing gap=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeReorderStrip.js:275 [spacing] Off-scale spacing gap=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/components/home/HomeReorderStrip.js:293 [spacing] Off-scale spacing gap=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeReorderStrip.js:330 [rgba] Off-palette rgba rgba(200,169,126,0.18)
+src/components/home/HomeReorderStrip.js:209 [spacing] Off-scale spacing marginBottom=2 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeReorderStrip.js:274 [spacing] Off-scale spacing paddingTop=10 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeReorderStrip.js:275 [spacing] Off-scale spacing paddingBottom=10 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeReorderStrip.js:273 [spacing] Off-scale spacing paddingHorizontal=10 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeReorderStrip.js:189 [spacing] Off-scale spacing gap=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeReorderStrip.js:276 [spacing] Off-scale spacing gap=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/components/home/HomeReorderStrip.js:294 [spacing] Off-scale spacing gap=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
 src/components/home/HomeSearchHeader.js:242 [rgba] Off-palette rgba rgba(200,169,126,0.40)
 src/components/home/HomeSearchHeader.js:309 [rgba] Off-palette rgba rgba(14,23,41,0.08)
 src/components/home/HomeSearchHeader.js:351 [rgba] Off-palette rgba rgba(14,23,41,0.08)
@@ -1383,235 +1383,235 @@ src/screens/admin/AdminUsersScreen.js:560 [spacing] Off-scale spacing gap=6 (all
 src/screens/admin/AdminUsersScreen.js:486 [fontWeight] fontWeight "800" not in 400/500/600/700
 src/screens/admin/AdminUsersScreen.js:565 [fontWeight] fontWeight "800" not in 400/500/600/700
 src/screens/editorial/BlogIndexScreen.js:34 [rgba] Off-palette rgba rgba(14,23,41,0.85)
-src/screens/home/HomeScreenBody.js:478 [rgba] Off-palette rgba rgba(0,0,0,0.72)
-src/screens/home/HomeScreenBody.js:264 [spacing] Off-scale spacing paddingBottom=topOffset + 70 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/screens/home/HomeScreenBody.js:479 [spacing] Off-scale spacing paddingHorizontal=10 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/screens/home/HomeScreenBody.js:480 [spacing] Off-scale spacing paddingVertical=6 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/screens/home/homeScreenStyles.js:51 [hex] Off-palette hex #18181B
-src/screens/home/homeScreenStyles.js:163 [hex] Off-palette hex #18181B
-src/screens/home/homeScreenStyles.js:231 [hex] Off-palette hex #000000
-src/screens/home/homeScreenStyles.js:349 [hex] Off-palette hex #0F172A
-src/screens/home/homeScreenStyles.js:426 [hex] Off-palette hex #09090B
-src/screens/home/homeScreenStyles.js:442 [hex] Off-palette hex #0B1120
-src/screens/home/homeScreenStyles.js:442 [hex] Off-palette hex #111827
-src/screens/home/homeScreenStyles.js:452 [hex] Off-palette hex #120D0A
-src/screens/home/homeScreenStyles.js:628 [hex] Off-palette hex #FEF2F2
-src/screens/home/homeScreenStyles.js:782 [hex] Off-palette hex #110B07
-src/screens/home/homeScreenStyles.js:791 [hex] Off-palette hex #09090B
-src/screens/home/homeScreenStyles.js:803 [hex] Off-palette hex #0A0705
-src/screens/home/homeScreenStyles.js:818 [hex] Off-palette hex #120D08
-src/screens/home/homeScreenStyles.js:1269 [hex] Off-palette hex #18181B
-src/screens/home/homeScreenStyles.js:1342 [hex] Off-palette hex #000000
-src/screens/home/homeScreenStyles.js:1746 [hex] Off-palette hex #18181B
-src/screens/home/homeScreenStyles.js:1813 [hex] Off-palette hex #18181B
-src/screens/home/homeScreenStyles.js:2115 [hex] Off-palette hex #000
-src/screens/home/homeScreenStyles.js:59 [rgba] Off-palette rgba rgba(0,0,0,0.32)
-src/screens/home/homeScreenStyles.js:59 [rgba] Off-palette rgba rgba(255,255,255,0.05)
-src/screens/home/homeScreenStyles.js:60 [rgba] Off-palette rgba rgba(9, 9, 11, 0.09)
-src/screens/home/homeScreenStyles.js:60 [rgba] Off-palette rgba rgba(24, 24, 27, 0.04)
-src/screens/home/homeScreenStyles.js:60 [rgba] Off-palette rgba rgba(255, 253, 251, 0.95)
-src/screens/home/homeScreenStyles.js:60 [rgba] Off-palette rgba rgba(255,255,255,0.45)
-src/screens/home/homeScreenStyles.js:169 [rgba] Off-palette rgba rgba(24, 24, 27, 0.06)
-src/screens/home/homeScreenStyles.js:182 [rgba] Off-palette rgba rgba(100, 116, 139, 0.16)
-src/screens/home/homeScreenStyles.js:183 [rgba] Off-palette rgba rgba(255, 255, 255, 0.88)
-src/screens/home/homeScreenStyles.js:208 [rgba] Off-palette rgba rgba(255,255,255,0.12)
-src/screens/home/homeScreenStyles.js:208 [rgba] Off-palette rgba rgba(63,63,70,0.2)
-src/screens/home/homeScreenStyles.js:211 [rgba] Off-palette rgba rgba(0,0,0,0.04)
-src/screens/home/homeScreenStyles.js:225 [rgba] Off-palette rgba rgba(255,255,255,0.12)
-src/screens/home/homeScreenStyles.js:225 [rgba] Off-palette rgba rgba(63,63,70,0.2)
-src/screens/home/homeScreenStyles.js:229 [rgba] Off-palette rgba rgba(0,0,0,0.04)
-src/screens/home/homeScreenStyles.js:240 [rgba] Off-palette rgba rgba(255,255,255,0.14)
-src/screens/home/homeScreenStyles.js:259 [rgba] Off-palette rgba rgba(248,250,252,0.92)
-src/screens/home/homeScreenStyles.js:261 [rgba] Off-palette rgba rgba(255,255,255,0.16)
-src/screens/home/homeScreenStyles.js:261 [rgba] Off-palette rgba rgba(100,116,139,0.2)
-src/screens/home/homeScreenStyles.js:296 [rgba] Off-palette rgba rgba(255,255,255,0.16)
-src/screens/home/homeScreenStyles.js:296 [rgba] Off-palette rgba rgba(100,116,139,0.2)
-src/screens/home/homeScreenStyles.js:297 [rgba] Off-palette rgba rgba(255,255,255,0.98)
-src/screens/home/homeScreenStyles.js:313 [rgba] Off-palette rgba rgba(255,255,255,0.16)
-src/screens/home/homeScreenStyles.js:313 [rgba] Off-palette rgba rgba(100,116,139,0.2)
-src/screens/home/homeScreenStyles.js:316 [rgba] Off-palette rgba rgba(248,250,252,0.92)
-src/screens/home/homeScreenStyles.js:343 [rgba] Off-palette rgba rgba(255,255,255,0.14)
-src/screens/home/homeScreenStyles.js:343 [rgba] Off-palette rgba rgba(100,116,139,0.2)
-src/screens/home/homeScreenStyles.js:347 [rgba] Off-palette rgba rgba(15,23,42,0.08)
-src/screens/home/homeScreenStyles.js:398 [rgba] Off-palette rgba rgba(0,0,0,0.35)
-src/screens/home/homeScreenStyles.js:399 [rgba] Off-palette rgba rgba(15, 23, 42, 0.08)
-src/screens/home/homeScreenStyles.js:399 [rgba] Off-palette rgba rgba(15, 23, 42, 0.05)
-src/screens/home/homeScreenStyles.js:415 [rgba] Off-palette rgba rgba(255,255,255,0.1)
-src/screens/home/homeScreenStyles.js:415 [rgba] Off-palette rgba rgba(100, 116, 139, 0.14)
-src/screens/home/homeScreenStyles.js:422 [rgba] Off-palette rgba rgba(0,0,0,0.45)
-src/screens/home/homeScreenStyles.js:422 [rgba] Off-palette rgba rgba(0,0,0,0.25)
-src/screens/home/homeScreenStyles.js:423 [rgba] Off-palette rgba rgba(15, 23, 42, 0.11)
-src/screens/home/homeScreenStyles.js:423 [rgba] Off-palette rgba rgba(15, 23, 42, 0.06)
-src/screens/home/homeScreenStyles.js:451 [rgba] Off-palette rgba rgba(255, 252, 248, 0.12)
-src/screens/home/homeScreenStyles.js:500 [rgba] Off-palette rgba rgba(255,255,255,0.32)
-src/screens/home/homeScreenStyles.js:503 [rgba] Off-palette rgba rgba(255,255,255,0.95)
-src/screens/home/homeScreenStyles.js:521 [rgba] Off-palette rgba rgba(255,255,255,0.65)
-src/screens/home/homeScreenStyles.js:536 [rgba] Off-palette rgba rgba(8, 6, 4, 0.52)
-src/screens/home/homeScreenStyles.js:538 [rgba] Off-palette rgba rgba(255, 252, 248, 0.22)
-src/screens/home/homeScreenStyles.js:555 [rgba] Off-palette rgba rgba(255, 252, 248, 0.55)
-src/screens/home/homeScreenStyles.js:568 [rgba] Off-palette rgba rgba(255, 252, 248, 0.92)
-src/screens/home/homeScreenStyles.js:574 [rgba] Off-palette rgba rgba(8, 6, 4, 0.55)
-src/screens/home/homeScreenStyles.js:576 [rgba] Off-palette rgba rgba(8, 6, 4, 0.55)
-src/screens/home/homeScreenStyles.js:599 [rgba] Off-palette rgba rgba(255,255,255,0.10)
-src/screens/home/homeScreenStyles.js:601 [rgba] Off-palette rgba rgba(255,255,255,0.16)
-src/screens/home/homeScreenStyles.js:612 [rgba] Off-palette rgba rgba(255,255,255,0.18)
-src/screens/home/homeScreenStyles.js:616 [rgba] Off-palette rgba rgba(255,255,255,0.18)
-src/screens/home/homeScreenStyles.js:624 [rgba] Off-palette rgba rgba(255,255,255,0.24)
-src/screens/home/homeScreenStyles.js:624 [rgba] Off-palette rgba rgba(255,255,255,0.28)
-src/screens/home/homeScreenStyles.js:625 [rgba] Off-palette rgba rgba(8, 6, 4, 0.34)
-src/screens/home/homeScreenStyles.js:643 [rgba] Off-palette rgba rgba(8, 6, 4, 0.45)
-src/screens/home/homeScreenStyles.js:644 [rgba] Off-palette rgba rgba(255, 255, 255, 0.6)
-src/screens/home/homeScreenStyles.js:647 [rgba] Off-palette rgba rgba(8, 6, 4, 0.45)
-src/screens/home/homeScreenStyles.js:647 [rgba] Off-palette rgba rgba(255, 255, 255, 0.6)
-src/screens/home/homeScreenStyles.js:656 [rgba] Off-palette rgba rgba(8, 6, 4, 0.65)
-src/screens/home/homeScreenStyles.js:658 [rgba] Off-palette rgba rgba(8, 6, 4, 0.65)
-src/screens/home/homeScreenStyles.js:672 [rgba] Off-palette rgba rgba(8, 6, 4, 0.35)
-src/screens/home/homeScreenStyles.js:674 [rgba] Off-palette rgba rgba(8, 6, 4, 0.35)
-src/screens/home/homeScreenStyles.js:681 [rgba] Off-palette rgba rgba(255, 252, 248, 0.86)
-src/screens/home/homeScreenStyles.js:683 [rgba] Off-palette rgba rgba(8, 6, 4, 0.55)
-src/screens/home/homeScreenStyles.js:685 [rgba] Off-palette rgba rgba(8, 6, 4, 0.55)
-src/screens/home/homeScreenStyles.js:694 [rgba] Off-palette rgba rgba(255, 252, 248, 0.84)
-src/screens/home/homeScreenStyles.js:699 [rgba] Off-palette rgba rgba(8, 6, 4, 0.45)
-src/screens/home/homeScreenStyles.js:701 [rgba] Off-palette rgba rgba(8, 6, 4, 0.45)
-src/screens/home/homeScreenStyles.js:722 [rgba] Off-palette rgba rgba(255, 252, 248, 0.22)
-src/screens/home/homeScreenStyles.js:723 [rgba] Off-palette rgba rgba(8, 6, 4, 0.34)
-src/screens/home/homeScreenStyles.js:748 [rgba] Off-palette rgba rgba(255,255,255,0.98)
-src/screens/home/homeScreenStyles.js:755 [rgba] Off-palette rgba rgba(255,255,255,0.2)
-src/screens/home/homeScreenStyles.js:755 [rgba] Off-palette rgba rgba(8, 6, 4, 0.34)
-src/screens/home/homeScreenStyles.js:779 [rgba] Off-palette rgba rgba(255,255,255,0.12)
-src/screens/home/homeScreenStyles.js:779 [rgba] Off-palette rgba rgba(100, 116, 139, 0.14)
-src/screens/home/homeScreenStyles.js:781 [rgba] Off-palette rgba rgba(255,255,255,0.12)
-src/screens/home/homeScreenStyles.js:787 [rgba] Off-palette rgba rgba(0,0,0,0.56)
-src/screens/home/homeScreenStyles.js:787 [rgba] Off-palette rgba rgba(0,0,0,0.3)
-src/screens/home/homeScreenStyles.js:788 [rgba] Off-palette rgba rgba(15, 23, 42, 0.14)
-src/screens/home/homeScreenStyles.js:788 [rgba] Off-palette rgba rgba(15, 23, 42, 0.08)
-src/screens/home/homeScreenStyles.js:788 [rgba] Off-palette rgba rgba(255,255,255,0.76)
-src/screens/home/homeScreenStyles.js:805 [rgba] Off-palette rgba rgba(255, 252, 248, 0.14)
-src/screens/home/homeScreenStyles.js:805 [rgba] Off-palette rgba rgba(255, 252, 248, 0.24)
-src/screens/home/homeScreenStyles.js:809 [rgba] Off-palette rgba rgba(255, 252, 248, 0.08)
-src/screens/home/homeScreenStyles.js:810 [rgba] Off-palette rgba rgba(255, 252, 248, 0.4)
-src/screens/home/homeScreenStyles.js:836 [rgba] Off-palette rgba rgba(255, 252, 248, 0.48)
-src/screens/home/homeScreenStyles.js:837 [rgba] Off-palette rgba rgba(12, 9, 7, 0.66)
-src/screens/home/homeScreenStyles.js:841 [rgba] Off-palette rgba rgba(8, 6, 4, 0.5)
-src/screens/home/homeScreenStyles.js:841 [rgba] Off-palette rgba rgba(255, 252, 248, 0.28)
-src/screens/home/homeScreenStyles.js:856 [rgba] Off-palette rgba rgba(255, 252, 248, 0.76)
-src/screens/home/homeScreenStyles.js:857 [rgba] Off-palette rgba rgba(12, 9, 7, 0.78)
-src/screens/home/homeScreenStyles.js:860 [rgba] Off-palette rgba rgba(8, 6, 4, 0.56)
-src/screens/home/homeScreenStyles.js:860 [rgba] Off-palette rgba rgba(255, 252, 248, 0.4)
-src/screens/home/homeScreenStyles.js:885 [rgba] Off-palette rgba rgba(255,255,255,0.22)
-src/screens/home/homeScreenStyles.js:885 [rgba] Off-palette rgba rgba(63, 63, 70, 0.16)
-src/screens/home/homeScreenStyles.js:886 [rgba] Off-palette rgba rgba(15, 12, 10, 0.72)
-src/screens/home/homeScreenStyles.js:886 [rgba] Off-palette rgba rgba(255, 252, 247, 0.86)
-src/screens/home/homeScreenStyles.js:892 [rgba] Off-palette rgba rgba(0,0,0,0.42)
-src/screens/home/homeScreenStyles.js:892 [rgba] Off-palette rgba rgba(255,255,255,0.04)
-src/screens/home/homeScreenStyles.js:893 [rgba] Off-palette rgba rgba(63, 63, 70, 0.12)
-src/screens/home/homeScreenStyles.js:893 [rgba] Off-palette rgba rgba(255,255,255,0.7)
-src/screens/home/homeScreenStyles.js:918 [rgba] Off-palette rgba rgba(148,163,184,0.16)
-src/screens/home/homeScreenStyles.js:919 [rgba] Off-palette rgba rgba(148,163,184,0.42)
-src/screens/home/homeScreenStyles.js:923 [rgba] Off-palette rgba rgba(148,163,184,0.16)
-src/screens/home/homeScreenStyles.js:924 [rgba] Off-palette rgba rgba(63, 63, 70, 0.14)
-src/screens/home/homeScreenStyles.js:973 [rgba] Off-palette rgba rgba(255,255,255,0.2)
-src/screens/home/homeScreenStyles.js:973 [rgba] Off-palette rgba rgba(63, 63, 70, 0.14)
-src/screens/home/homeScreenStyles.js:1034 [rgba] Off-palette rgba rgba(63, 63, 70, 0.2)
-src/screens/home/homeScreenStyles.js:1035 [rgba] Off-palette rgba rgba(255,255,255,0.04)
-src/screens/home/homeScreenStyles.js:1035 [rgba] Off-palette rgba rgba(255,255,255,0.64)
-src/screens/home/homeScreenStyles.js:1222 [rgba] Off-palette rgba rgba(63, 63, 70, 0.1)
-src/screens/home/homeScreenStyles.js:1234 [rgba] Off-palette rgba rgba(134, 239, 172, 0.12)
-src/screens/home/homeScreenStyles.js:1236 [rgba] Off-palette rgba rgba(134, 239, 172, 0.24)
-src/screens/home/homeScreenStyles.js:1265 [rgba] Off-palette rgba rgba(63, 63, 70, 0.1)
-src/screens/home/homeScreenStyles.js:1266 [rgba] Off-palette rgba rgba(255,255,255,0.03)
-src/screens/home/homeScreenStyles.js:1266 [rgba] Off-palette rgba rgba(255, 255, 255, 0.55)
-src/screens/home/homeScreenStyles.js:1277 [rgba] Off-palette rgba rgba(0,0,0,0.2)
-src/screens/home/homeScreenStyles.js:1277 [rgba] Off-palette rgba rgba(255,255,255,0.04)
-src/screens/home/homeScreenStyles.js:1278 [rgba] Off-palette rgba rgba(28, 25, 23, 0.05)
-src/screens/home/homeScreenStyles.js:1278 [rgba] Off-palette rgba rgba(255,255,255,0.88)
-src/screens/home/homeScreenStyles.js:1335 [rgba] Off-palette rgba rgba(255,255,255,0.2)
-src/screens/home/homeScreenStyles.js:1339 [rgba] Off-palette rgba rgba(15,23,42,0.28)
-src/screens/home/homeScreenStyles.js:1448 [rgba] Off-palette rgba rgba(0,0,0,0.28)
-src/screens/home/homeScreenStyles.js:1448 [rgba] Off-palette rgba rgba(255,255,255,0.04)
-src/screens/home/homeScreenStyles.js:1449 [rgba] Off-palette rgba rgba(24, 24, 27, 0.08)
-src/screens/home/homeScreenStyles.js:1449 [rgba] Off-palette rgba rgba(255,255,255,0.86)
-src/screens/home/homeScreenStyles.js:1455 [rgba] Off-palette rgba rgba(63, 63, 70, 0.12)
-src/screens/home/homeScreenStyles.js:1456 [rgba] Off-palette rgba rgba(255, 253, 249, 0.94)
-src/screens/home/homeScreenStyles.js:1473 [rgba] Off-palette rgba rgba(148,163,184,0.16)
-src/screens/home/homeScreenStyles.js:1480 [rgba] Off-palette rgba rgba(148,163,184,0.1)
-src/screens/home/homeScreenStyles.js:1480 [rgba] Off-palette rgba rgba(255,255,255,0.75)
-src/screens/home/homeScreenStyles.js:1484 [rgba] Off-palette rgba rgba(0,0,0,0.2)
-src/screens/home/homeScreenStyles.js:1484 [rgba] Off-palette rgba rgba(255,255,255,0.04)
-src/screens/home/homeScreenStyles.js:1485 [rgba] Off-palette rgba rgba(24, 24, 27, 0.08)
-src/screens/home/homeScreenStyles.js:1485 [rgba] Off-palette rgba rgba(255,255,255,0.9)
-src/screens/home/homeScreenStyles.js:1638 [rgba] Off-palette rgba rgba(255,255,255,0.16)
-src/screens/home/homeScreenStyles.js:1638 [rgba] Off-palette rgba rgba(100,116,139,0.2)
-src/screens/home/homeScreenStyles.js:1639 [rgba] Off-palette rgba rgba(24,24,27,0.98)
-src/screens/home/homeScreenStyles.js:1643 [rgba] Off-palette rgba rgba(15,23,42,0.08)
-src/screens/home/homeScreenStyles.js:1661 [rgba] Off-palette rgba rgba(255,255,255,0.1)
-src/screens/home/homeScreenStyles.js:1661 [rgba] Off-palette rgba rgba(100,116,139,0.18)
-src/screens/home/homeScreenStyles.js:1683 [rgba] Off-palette rgba rgba(255,255,255,0.14)
-src/screens/home/homeScreenStyles.js:1683 [rgba] Off-palette rgba rgba(100,116,139,0.2)
-src/screens/home/homeScreenStyles.js:1684 [rgba] Off-palette rgba rgba(255,255,255,0.03)
-src/screens/home/homeScreenStyles.js:1684 [rgba] Off-palette rgba rgba(248,250,252,0.72)
-src/screens/home/homeScreenStyles.js:1707 [rgba] Off-palette rgba rgba(248,113,113,0.35)
-src/screens/home/homeScreenStyles.js:1707 [rgba] Off-palette rgba rgba(220,38,38,0.22)
-src/screens/home/homeScreenStyles.js:1708 [rgba] Off-palette rgba rgba(220,38,38,0.1)
-src/screens/home/homeScreenStyles.js:1708 [rgba] Off-palette rgba rgba(220,38,38,0.06)
-src/screens/home/homeScreenStyles.js:1754 [rgba] Off-palette rgba rgba(0,0,0,0.3)
-src/screens/home/homeScreenStyles.js:1754 [rgba] Off-palette rgba rgba(255,255,255,0.06)
-src/screens/home/homeScreenStyles.js:1755 [rgba] Off-palette rgba rgba(15, 23, 42, 0.07)
-src/screens/home/homeScreenStyles.js:1755 [rgba] Off-palette rgba rgba(24, 24, 27, 0.04)
-src/screens/home/homeScreenStyles.js:1755 [rgba] Off-palette rgba rgba(255,255,255,0.94)
-src/screens/home/homeScreenStyles.js:1769 [rgba] Off-palette rgba rgba(255,255,255,0.1)
-src/screens/home/homeScreenStyles.js:1769 [rgba] Off-palette rgba rgba(63, 63, 70, 0.08)
-src/screens/home/homeScreenStyles.js:1800 [rgba] Off-palette rgba rgba(148,163,184,0.18)
-src/screens/home/homeScreenStyles.js:1820 [rgba] Off-palette rgba rgba(24, 24, 27, 0.09)
-src/screens/home/homeScreenStyles.js:1827 [rgba] Off-palette rgba rgba(148,163,184,0.16)
-src/screens/home/homeScreenStyles.js:1827 [rgba] Off-palette rgba rgba(255,255,255,0.95)
-src/screens/home/homeScreenStyles.js:1830 [rgba] Off-palette rgba rgba(24, 24, 27, 0.12)
-src/screens/home/homeScreenStyles.js:1873 [rgba] Off-palette rgba rgba(10,10,10,0.55)
-src/screens/home/homeScreenStyles.js:1873 [rgba] Off-palette rgba rgba(255,255,255,0.85)
-src/screens/home/homeScreenStyles.js:1885 [rgba] Off-palette rgba rgba(200,169,126,0.4)
-src/screens/home/homeScreenStyles.js:1935 [rgba] Off-palette rgba rgba(255,255,255,0.55)
-src/screens/home/homeScreenStyles.js:2098 [rgba] Off-palette rgba rgba(12, 10, 8, 0.5)
-src/screens/home/homeScreenStyles.js:2122 [rgba] Off-palette rgba rgba(12, 10, 8, 0.28)
-src/screens/home/homeScreenStyles.js:2171 [rgba] Off-palette rgba rgba(255,255,255,0.06)
-src/screens/home/homeScreenStyles.js:2171 [rgba] Off-palette rgba rgba(63, 63, 70, 0.08)
-src/screens/home/homeScreenStyles.js:2174 [rgba] Off-palette rgba rgba(148,163,184,0.08)
-src/screens/home/homeScreenStyles.js:2174 [rgba] Off-palette rgba rgba(100, 116, 139, 0.08)
-src/screens/home/homeScreenStyles.js:2189 [rgba] Off-palette rgba rgba(255,255,255,0.1)
-src/screens/home/homeScreenStyles.js:2189 [rgba] Off-palette rgba rgba(63, 63, 70, 0.16)
-src/screens/home/homeScreenStyles.js:2238 [rgba] Off-palette rgba rgba(0,0,0,0.4)
-src/screens/home/homeScreenStyles.js:148 [spacing] Off-scale spacing marginTop=-2 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/screens/home/homeScreenStyles.js:1670 [spacing] Off-scale spacing marginHorizontal=-2 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
-src/screens/home/homeScreenStyles.js:165 [shadowOpacity] shadowOpacity 0.08 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
-src/screens/home/homeScreenStyles.js:351 [shadowOpacity] shadowOpacity 0.08 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
-src/screens/home/homeScreenStyles.js:1344 [shadowOpacity] shadowOpacity 0.24 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
-src/screens/home/homeScreenStyles.js:2117 [shadowOpacity] shadowOpacity 0.28 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
-src/screens/home/homeScreenStyles.js:169 [boxShadow] boxShadow "0 1px 4px rgba(24, 24, 27, 0.06)" not from SHADOWS
-src/screens/home/homeScreenStyles.js:211 [boxShadow] boxShadow "0 2px 8px rgba(0,0,0,0.04)" not from SHADOWS
-src/screens/home/homeScreenStyles.js:229 [boxShadow] boxShadow "0 2px 8px rgba(0,0,0,0.04)" not from SHADOWS
-src/screens/home/homeScreenStyles.js:347 [boxShadow] boxShadow "0 8px 24px rgba(15,23,42,0.08)" not from SHADOWS
-src/screens/home/homeScreenStyles.js:755 [boxShadow] boxShadow "inset 0 1px 0 rgba(255,255,255,0.2), 0 10px 24px rgba(8, 6, 4, 0.34)" not from SHADOWS
-src/screens/home/homeScreenStyles.js:841 [boxShadow] boxShadow "0 8px 20px rgba(8, 6, 4, 0.5), inset 0 1px 0 rgba(255, 252, 248, 0.28)" not from SHADOWS
-src/screens/home/homeScreenStyles.js:860 [boxShadow] boxShadow "0 10px 24px rgba(8, 6, 4, 0.56), inset 0 1px 0 rgba(255, 252, 248, 0.4)" not from SHADOWS
-src/screens/home/homeScreenStyles.js:1339 [boxShadow] boxShadow "0 12px 24px rgba(15,23,42,0.28)" not from SHADOWS
-src/screens/home/homeScreenStyles.js:1643 [boxShadow] boxShadow "0 4px 12px rgba(15,23,42,0.08)" not from SHADOWS
-src/screens/home/homeScreenStyles.js:1820 [boxShadow] boxShadow "0 6px 16px rgba(24, 24, 27, 0.09)" not from SHADOWS
-src/screens/home/homeScreenStyles.js:1830 [boxShadow] boxShadow "0 10px 22px rgba(24, 24, 27, 0.12)" not from SHADOWS
-src/screens/home/homeScreenStyles.js:2122 [boxShadow] boxShadow "0 20px 50px rgba(12, 10, 8, 0.28)" not from SHADOWS
-src/screens/home/homeScreenStyles.js:54 [shadowRadius] shadowRadius 20 not from SHADOWS
-src/screens/home/homeScreenStyles.js:234 [shadowRadius] shadowRadius 8 not from SHADOWS
-src/screens/home/homeScreenStyles.js:352 [shadowRadius] shadowRadius 16 not from SHADOWS
-src/screens/home/homeScreenStyles.js:393 [shadowRadius] shadowRadius 16 not from SHADOWS
-src/screens/home/homeScreenStyles.js:794 [shadowRadius] shadowRadius 18 not from SHADOWS
-src/screens/home/homeScreenStyles.js:1228 [shadowRadius] shadowRadius 4 not from SHADOWS
-src/screens/home/homeScreenStyles.js:1272 [shadowRadius] shadowRadius 10 not from SHADOWS
-src/screens/home/homeScreenStyles.js:1345 [shadowRadius] shadowRadius 16 not from SHADOWS
-src/screens/home/homeScreenStyles.js:1749 [shadowRadius] shadowRadius 18 not from SHADOWS
-src/screens/home/homeScreenStyles.js:1816 [shadowRadius] shadowRadius 6 not from SHADOWS
-src/screens/home/homeScreenStyles.js:354 [elevation] elevation 3 not from SHADOWS
-src/screens/home/homeScreenStyles.js:1323 [elevation] elevation 24 not from SHADOWS
-src/screens/home/homeScreenStyles.js:1348 [elevation] elevation 10 not from SHADOWS
-src/screens/home/homeScreenStyles.js:1818 [elevation] elevation 2 not from SHADOWS
-src/screens/home/homeScreenStyles.js:2120 [elevation] elevation 14 not from SHADOWS
+src/screens/home/HomeScreenBody.js:530 [rgba] Off-palette rgba rgba(0,0,0,0.06)
+src/screens/home/HomeScreenBody.js:273 [spacing] Off-scale spacing paddingBottom=topOffset + 70 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/screens/home/HomeScreenBody.js:527 [spacing] Off-scale spacing paddingHorizontal=18 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/screens/home/HomeScreenBody.js:526 [spacing] Off-scale spacing paddingVertical=14 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/screens/home/homeScreenStyles.js:64 [hex] Off-palette hex #18181B
+src/screens/home/homeScreenStyles.js:176 [hex] Off-palette hex #18181B
+src/screens/home/homeScreenStyles.js:244 [hex] Off-palette hex #000000
+src/screens/home/homeScreenStyles.js:362 [hex] Off-palette hex #0F172A
+src/screens/home/homeScreenStyles.js:439 [hex] Off-palette hex #09090B
+src/screens/home/homeScreenStyles.js:455 [hex] Off-palette hex #0B1120
+src/screens/home/homeScreenStyles.js:455 [hex] Off-palette hex #111827
+src/screens/home/homeScreenStyles.js:465 [hex] Off-palette hex #120D0A
+src/screens/home/homeScreenStyles.js:641 [hex] Off-palette hex #FEF2F2
+src/screens/home/homeScreenStyles.js:795 [hex] Off-palette hex #110B07
+src/screens/home/homeScreenStyles.js:804 [hex] Off-palette hex #09090B
+src/screens/home/homeScreenStyles.js:816 [hex] Off-palette hex #0A0705
+src/screens/home/homeScreenStyles.js:831 [hex] Off-palette hex #120D08
+src/screens/home/homeScreenStyles.js:1282 [hex] Off-palette hex #18181B
+src/screens/home/homeScreenStyles.js:1355 [hex] Off-palette hex #000000
+src/screens/home/homeScreenStyles.js:1759 [hex] Off-palette hex #18181B
+src/screens/home/homeScreenStyles.js:1826 [hex] Off-palette hex #18181B
+src/screens/home/homeScreenStyles.js:2128 [hex] Off-palette hex #000
+src/screens/home/homeScreenStyles.js:72 [rgba] Off-palette rgba rgba(0,0,0,0.32)
+src/screens/home/homeScreenStyles.js:72 [rgba] Off-palette rgba rgba(255,255,255,0.05)
+src/screens/home/homeScreenStyles.js:73 [rgba] Off-palette rgba rgba(9, 9, 11, 0.09)
+src/screens/home/homeScreenStyles.js:73 [rgba] Off-palette rgba rgba(24, 24, 27, 0.04)
+src/screens/home/homeScreenStyles.js:73 [rgba] Off-palette rgba rgba(255, 253, 251, 0.95)
+src/screens/home/homeScreenStyles.js:73 [rgba] Off-palette rgba rgba(255,255,255,0.45)
+src/screens/home/homeScreenStyles.js:182 [rgba] Off-palette rgba rgba(24, 24, 27, 0.06)
+src/screens/home/homeScreenStyles.js:195 [rgba] Off-palette rgba rgba(100, 116, 139, 0.16)
+src/screens/home/homeScreenStyles.js:196 [rgba] Off-palette rgba rgba(255, 255, 255, 0.88)
+src/screens/home/homeScreenStyles.js:221 [rgba] Off-palette rgba rgba(255,255,255,0.12)
+src/screens/home/homeScreenStyles.js:221 [rgba] Off-palette rgba rgba(63,63,70,0.2)
+src/screens/home/homeScreenStyles.js:224 [rgba] Off-palette rgba rgba(0,0,0,0.04)
+src/screens/home/homeScreenStyles.js:238 [rgba] Off-palette rgba rgba(255,255,255,0.12)
+src/screens/home/homeScreenStyles.js:238 [rgba] Off-palette rgba rgba(63,63,70,0.2)
+src/screens/home/homeScreenStyles.js:242 [rgba] Off-palette rgba rgba(0,0,0,0.04)
+src/screens/home/homeScreenStyles.js:253 [rgba] Off-palette rgba rgba(255,255,255,0.14)
+src/screens/home/homeScreenStyles.js:272 [rgba] Off-palette rgba rgba(248,250,252,0.92)
+src/screens/home/homeScreenStyles.js:274 [rgba] Off-palette rgba rgba(255,255,255,0.16)
+src/screens/home/homeScreenStyles.js:274 [rgba] Off-palette rgba rgba(100,116,139,0.2)
+src/screens/home/homeScreenStyles.js:309 [rgba] Off-palette rgba rgba(255,255,255,0.16)
+src/screens/home/homeScreenStyles.js:309 [rgba] Off-palette rgba rgba(100,116,139,0.2)
+src/screens/home/homeScreenStyles.js:310 [rgba] Off-palette rgba rgba(255,255,255,0.98)
+src/screens/home/homeScreenStyles.js:326 [rgba] Off-palette rgba rgba(255,255,255,0.16)
+src/screens/home/homeScreenStyles.js:326 [rgba] Off-palette rgba rgba(100,116,139,0.2)
+src/screens/home/homeScreenStyles.js:329 [rgba] Off-palette rgba rgba(248,250,252,0.92)
+src/screens/home/homeScreenStyles.js:356 [rgba] Off-palette rgba rgba(255,255,255,0.14)
+src/screens/home/homeScreenStyles.js:356 [rgba] Off-palette rgba rgba(100,116,139,0.2)
+src/screens/home/homeScreenStyles.js:360 [rgba] Off-palette rgba rgba(15,23,42,0.08)
+src/screens/home/homeScreenStyles.js:411 [rgba] Off-palette rgba rgba(0,0,0,0.35)
+src/screens/home/homeScreenStyles.js:412 [rgba] Off-palette rgba rgba(15, 23, 42, 0.08)
+src/screens/home/homeScreenStyles.js:412 [rgba] Off-palette rgba rgba(15, 23, 42, 0.05)
+src/screens/home/homeScreenStyles.js:428 [rgba] Off-palette rgba rgba(255,255,255,0.1)
+src/screens/home/homeScreenStyles.js:428 [rgba] Off-palette rgba rgba(100, 116, 139, 0.14)
+src/screens/home/homeScreenStyles.js:435 [rgba] Off-palette rgba rgba(0,0,0,0.45)
+src/screens/home/homeScreenStyles.js:435 [rgba] Off-palette rgba rgba(0,0,0,0.25)
+src/screens/home/homeScreenStyles.js:436 [rgba] Off-palette rgba rgba(15, 23, 42, 0.11)
+src/screens/home/homeScreenStyles.js:436 [rgba] Off-palette rgba rgba(15, 23, 42, 0.06)
+src/screens/home/homeScreenStyles.js:464 [rgba] Off-palette rgba rgba(255, 252, 248, 0.12)
+src/screens/home/homeScreenStyles.js:513 [rgba] Off-palette rgba rgba(255,255,255,0.32)
+src/screens/home/homeScreenStyles.js:516 [rgba] Off-palette rgba rgba(255,255,255,0.95)
+src/screens/home/homeScreenStyles.js:534 [rgba] Off-palette rgba rgba(255,255,255,0.65)
+src/screens/home/homeScreenStyles.js:549 [rgba] Off-palette rgba rgba(8, 6, 4, 0.52)
+src/screens/home/homeScreenStyles.js:551 [rgba] Off-palette rgba rgba(255, 252, 248, 0.22)
+src/screens/home/homeScreenStyles.js:568 [rgba] Off-palette rgba rgba(255, 252, 248, 0.55)
+src/screens/home/homeScreenStyles.js:581 [rgba] Off-palette rgba rgba(255, 252, 248, 0.92)
+src/screens/home/homeScreenStyles.js:587 [rgba] Off-palette rgba rgba(8, 6, 4, 0.55)
+src/screens/home/homeScreenStyles.js:589 [rgba] Off-palette rgba rgba(8, 6, 4, 0.55)
+src/screens/home/homeScreenStyles.js:612 [rgba] Off-palette rgba rgba(255,255,255,0.10)
+src/screens/home/homeScreenStyles.js:614 [rgba] Off-palette rgba rgba(255,255,255,0.16)
+src/screens/home/homeScreenStyles.js:625 [rgba] Off-palette rgba rgba(255,255,255,0.18)
+src/screens/home/homeScreenStyles.js:629 [rgba] Off-palette rgba rgba(255,255,255,0.18)
+src/screens/home/homeScreenStyles.js:637 [rgba] Off-palette rgba rgba(255,255,255,0.24)
+src/screens/home/homeScreenStyles.js:637 [rgba] Off-palette rgba rgba(255,255,255,0.28)
+src/screens/home/homeScreenStyles.js:638 [rgba] Off-palette rgba rgba(8, 6, 4, 0.34)
+src/screens/home/homeScreenStyles.js:656 [rgba] Off-palette rgba rgba(8, 6, 4, 0.45)
+src/screens/home/homeScreenStyles.js:657 [rgba] Off-palette rgba rgba(255, 255, 255, 0.6)
+src/screens/home/homeScreenStyles.js:660 [rgba] Off-palette rgba rgba(8, 6, 4, 0.45)
+src/screens/home/homeScreenStyles.js:660 [rgba] Off-palette rgba rgba(255, 255, 255, 0.6)
+src/screens/home/homeScreenStyles.js:669 [rgba] Off-palette rgba rgba(8, 6, 4, 0.65)
+src/screens/home/homeScreenStyles.js:671 [rgba] Off-palette rgba rgba(8, 6, 4, 0.65)
+src/screens/home/homeScreenStyles.js:685 [rgba] Off-palette rgba rgba(8, 6, 4, 0.35)
+src/screens/home/homeScreenStyles.js:687 [rgba] Off-palette rgba rgba(8, 6, 4, 0.35)
+src/screens/home/homeScreenStyles.js:694 [rgba] Off-palette rgba rgba(255, 252, 248, 0.86)
+src/screens/home/homeScreenStyles.js:696 [rgba] Off-palette rgba rgba(8, 6, 4, 0.55)
+src/screens/home/homeScreenStyles.js:698 [rgba] Off-palette rgba rgba(8, 6, 4, 0.55)
+src/screens/home/homeScreenStyles.js:707 [rgba] Off-palette rgba rgba(255, 252, 248, 0.84)
+src/screens/home/homeScreenStyles.js:712 [rgba] Off-palette rgba rgba(8, 6, 4, 0.45)
+src/screens/home/homeScreenStyles.js:714 [rgba] Off-palette rgba rgba(8, 6, 4, 0.45)
+src/screens/home/homeScreenStyles.js:735 [rgba] Off-palette rgba rgba(255, 252, 248, 0.22)
+src/screens/home/homeScreenStyles.js:736 [rgba] Off-palette rgba rgba(8, 6, 4, 0.34)
+src/screens/home/homeScreenStyles.js:761 [rgba] Off-palette rgba rgba(255,255,255,0.98)
+src/screens/home/homeScreenStyles.js:768 [rgba] Off-palette rgba rgba(255,255,255,0.2)
+src/screens/home/homeScreenStyles.js:768 [rgba] Off-palette rgba rgba(8, 6, 4, 0.34)
+src/screens/home/homeScreenStyles.js:792 [rgba] Off-palette rgba rgba(255,255,255,0.12)
+src/screens/home/homeScreenStyles.js:792 [rgba] Off-palette rgba rgba(100, 116, 139, 0.14)
+src/screens/home/homeScreenStyles.js:794 [rgba] Off-palette rgba rgba(255,255,255,0.12)
+src/screens/home/homeScreenStyles.js:800 [rgba] Off-palette rgba rgba(0,0,0,0.56)
+src/screens/home/homeScreenStyles.js:800 [rgba] Off-palette rgba rgba(0,0,0,0.3)
+src/screens/home/homeScreenStyles.js:801 [rgba] Off-palette rgba rgba(15, 23, 42, 0.14)
+src/screens/home/homeScreenStyles.js:801 [rgba] Off-palette rgba rgba(15, 23, 42, 0.08)
+src/screens/home/homeScreenStyles.js:801 [rgba] Off-palette rgba rgba(255,255,255,0.76)
+src/screens/home/homeScreenStyles.js:818 [rgba] Off-palette rgba rgba(255, 252, 248, 0.14)
+src/screens/home/homeScreenStyles.js:818 [rgba] Off-palette rgba rgba(255, 252, 248, 0.24)
+src/screens/home/homeScreenStyles.js:822 [rgba] Off-palette rgba rgba(255, 252, 248, 0.08)
+src/screens/home/homeScreenStyles.js:823 [rgba] Off-palette rgba rgba(255, 252, 248, 0.4)
+src/screens/home/homeScreenStyles.js:849 [rgba] Off-palette rgba rgba(255, 252, 248, 0.48)
+src/screens/home/homeScreenStyles.js:850 [rgba] Off-palette rgba rgba(12, 9, 7, 0.66)
+src/screens/home/homeScreenStyles.js:854 [rgba] Off-palette rgba rgba(8, 6, 4, 0.5)
+src/screens/home/homeScreenStyles.js:854 [rgba] Off-palette rgba rgba(255, 252, 248, 0.28)
+src/screens/home/homeScreenStyles.js:869 [rgba] Off-palette rgba rgba(255, 252, 248, 0.76)
+src/screens/home/homeScreenStyles.js:870 [rgba] Off-palette rgba rgba(12, 9, 7, 0.78)
+src/screens/home/homeScreenStyles.js:873 [rgba] Off-palette rgba rgba(8, 6, 4, 0.56)
+src/screens/home/homeScreenStyles.js:873 [rgba] Off-palette rgba rgba(255, 252, 248, 0.4)
+src/screens/home/homeScreenStyles.js:898 [rgba] Off-palette rgba rgba(255,255,255,0.22)
+src/screens/home/homeScreenStyles.js:898 [rgba] Off-palette rgba rgba(63, 63, 70, 0.16)
+src/screens/home/homeScreenStyles.js:899 [rgba] Off-palette rgba rgba(15, 12, 10, 0.72)
+src/screens/home/homeScreenStyles.js:899 [rgba] Off-palette rgba rgba(255, 252, 247, 0.86)
+src/screens/home/homeScreenStyles.js:905 [rgba] Off-palette rgba rgba(0,0,0,0.42)
+src/screens/home/homeScreenStyles.js:905 [rgba] Off-palette rgba rgba(255,255,255,0.04)
+src/screens/home/homeScreenStyles.js:906 [rgba] Off-palette rgba rgba(63, 63, 70, 0.12)
+src/screens/home/homeScreenStyles.js:906 [rgba] Off-palette rgba rgba(255,255,255,0.7)
+src/screens/home/homeScreenStyles.js:931 [rgba] Off-palette rgba rgba(148,163,184,0.16)
+src/screens/home/homeScreenStyles.js:932 [rgba] Off-palette rgba rgba(148,163,184,0.42)
+src/screens/home/homeScreenStyles.js:936 [rgba] Off-palette rgba rgba(148,163,184,0.16)
+src/screens/home/homeScreenStyles.js:937 [rgba] Off-palette rgba rgba(63, 63, 70, 0.14)
+src/screens/home/homeScreenStyles.js:986 [rgba] Off-palette rgba rgba(255,255,255,0.2)
+src/screens/home/homeScreenStyles.js:986 [rgba] Off-palette rgba rgba(63, 63, 70, 0.14)
+src/screens/home/homeScreenStyles.js:1047 [rgba] Off-palette rgba rgba(63, 63, 70, 0.2)
+src/screens/home/homeScreenStyles.js:1048 [rgba] Off-palette rgba rgba(255,255,255,0.04)
+src/screens/home/homeScreenStyles.js:1048 [rgba] Off-palette rgba rgba(255,255,255,0.64)
+src/screens/home/homeScreenStyles.js:1235 [rgba] Off-palette rgba rgba(63, 63, 70, 0.1)
+src/screens/home/homeScreenStyles.js:1247 [rgba] Off-palette rgba rgba(134, 239, 172, 0.12)
+src/screens/home/homeScreenStyles.js:1249 [rgba] Off-palette rgba rgba(134, 239, 172, 0.24)
+src/screens/home/homeScreenStyles.js:1278 [rgba] Off-palette rgba rgba(63, 63, 70, 0.1)
+src/screens/home/homeScreenStyles.js:1279 [rgba] Off-palette rgba rgba(255,255,255,0.03)
+src/screens/home/homeScreenStyles.js:1279 [rgba] Off-palette rgba rgba(255, 255, 255, 0.55)
+src/screens/home/homeScreenStyles.js:1290 [rgba] Off-palette rgba rgba(0,0,0,0.2)
+src/screens/home/homeScreenStyles.js:1290 [rgba] Off-palette rgba rgba(255,255,255,0.04)
+src/screens/home/homeScreenStyles.js:1291 [rgba] Off-palette rgba rgba(28, 25, 23, 0.05)
+src/screens/home/homeScreenStyles.js:1291 [rgba] Off-palette rgba rgba(255,255,255,0.88)
+src/screens/home/homeScreenStyles.js:1348 [rgba] Off-palette rgba rgba(255,255,255,0.2)
+src/screens/home/homeScreenStyles.js:1352 [rgba] Off-palette rgba rgba(15,23,42,0.28)
+src/screens/home/homeScreenStyles.js:1461 [rgba] Off-palette rgba rgba(0,0,0,0.28)
+src/screens/home/homeScreenStyles.js:1461 [rgba] Off-palette rgba rgba(255,255,255,0.04)
+src/screens/home/homeScreenStyles.js:1462 [rgba] Off-palette rgba rgba(24, 24, 27, 0.08)
+src/screens/home/homeScreenStyles.js:1462 [rgba] Off-palette rgba rgba(255,255,255,0.86)
+src/screens/home/homeScreenStyles.js:1468 [rgba] Off-palette rgba rgba(63, 63, 70, 0.12)
+src/screens/home/homeScreenStyles.js:1469 [rgba] Off-palette rgba rgba(255, 253, 249, 0.94)
+src/screens/home/homeScreenStyles.js:1486 [rgba] Off-palette rgba rgba(148,163,184,0.16)
+src/screens/home/homeScreenStyles.js:1493 [rgba] Off-palette rgba rgba(148,163,184,0.1)
+src/screens/home/homeScreenStyles.js:1493 [rgba] Off-palette rgba rgba(255,255,255,0.75)
+src/screens/home/homeScreenStyles.js:1497 [rgba] Off-palette rgba rgba(0,0,0,0.2)
+src/screens/home/homeScreenStyles.js:1497 [rgba] Off-palette rgba rgba(255,255,255,0.04)
+src/screens/home/homeScreenStyles.js:1498 [rgba] Off-palette rgba rgba(24, 24, 27, 0.08)
+src/screens/home/homeScreenStyles.js:1498 [rgba] Off-palette rgba rgba(255,255,255,0.9)
+src/screens/home/homeScreenStyles.js:1651 [rgba] Off-palette rgba rgba(255,255,255,0.16)
+src/screens/home/homeScreenStyles.js:1651 [rgba] Off-palette rgba rgba(100,116,139,0.2)
+src/screens/home/homeScreenStyles.js:1652 [rgba] Off-palette rgba rgba(24,24,27,0.98)
+src/screens/home/homeScreenStyles.js:1656 [rgba] Off-palette rgba rgba(15,23,42,0.08)
+src/screens/home/homeScreenStyles.js:1674 [rgba] Off-palette rgba rgba(255,255,255,0.1)
+src/screens/home/homeScreenStyles.js:1674 [rgba] Off-palette rgba rgba(100,116,139,0.18)
+src/screens/home/homeScreenStyles.js:1696 [rgba] Off-palette rgba rgba(255,255,255,0.14)
+src/screens/home/homeScreenStyles.js:1696 [rgba] Off-palette rgba rgba(100,116,139,0.2)
+src/screens/home/homeScreenStyles.js:1697 [rgba] Off-palette rgba rgba(255,255,255,0.03)
+src/screens/home/homeScreenStyles.js:1697 [rgba] Off-palette rgba rgba(248,250,252,0.72)
+src/screens/home/homeScreenStyles.js:1720 [rgba] Off-palette rgba rgba(248,113,113,0.35)
+src/screens/home/homeScreenStyles.js:1720 [rgba] Off-palette rgba rgba(220,38,38,0.22)
+src/screens/home/homeScreenStyles.js:1721 [rgba] Off-palette rgba rgba(220,38,38,0.1)
+src/screens/home/homeScreenStyles.js:1721 [rgba] Off-palette rgba rgba(220,38,38,0.06)
+src/screens/home/homeScreenStyles.js:1767 [rgba] Off-palette rgba rgba(0,0,0,0.3)
+src/screens/home/homeScreenStyles.js:1767 [rgba] Off-palette rgba rgba(255,255,255,0.06)
+src/screens/home/homeScreenStyles.js:1768 [rgba] Off-palette rgba rgba(15, 23, 42, 0.07)
+src/screens/home/homeScreenStyles.js:1768 [rgba] Off-palette rgba rgba(24, 24, 27, 0.04)
+src/screens/home/homeScreenStyles.js:1768 [rgba] Off-palette rgba rgba(255,255,255,0.94)
+src/screens/home/homeScreenStyles.js:1782 [rgba] Off-palette rgba rgba(255,255,255,0.1)
+src/screens/home/homeScreenStyles.js:1782 [rgba] Off-palette rgba rgba(63, 63, 70, 0.08)
+src/screens/home/homeScreenStyles.js:1813 [rgba] Off-palette rgba rgba(148,163,184,0.18)
+src/screens/home/homeScreenStyles.js:1833 [rgba] Off-palette rgba rgba(24, 24, 27, 0.09)
+src/screens/home/homeScreenStyles.js:1840 [rgba] Off-palette rgba rgba(148,163,184,0.16)
+src/screens/home/homeScreenStyles.js:1840 [rgba] Off-palette rgba rgba(255,255,255,0.95)
+src/screens/home/homeScreenStyles.js:1843 [rgba] Off-palette rgba rgba(24, 24, 27, 0.12)
+src/screens/home/homeScreenStyles.js:1886 [rgba] Off-palette rgba rgba(10,10,10,0.55)
+src/screens/home/homeScreenStyles.js:1886 [rgba] Off-palette rgba rgba(255,255,255,0.85)
+src/screens/home/homeScreenStyles.js:1898 [rgba] Off-palette rgba rgba(200,169,126,0.4)
+src/screens/home/homeScreenStyles.js:1948 [rgba] Off-palette rgba rgba(255,255,255,0.55)
+src/screens/home/homeScreenStyles.js:2111 [rgba] Off-palette rgba rgba(12, 10, 8, 0.5)
+src/screens/home/homeScreenStyles.js:2135 [rgba] Off-palette rgba rgba(12, 10, 8, 0.28)
+src/screens/home/homeScreenStyles.js:2184 [rgba] Off-palette rgba rgba(255,255,255,0.06)
+src/screens/home/homeScreenStyles.js:2184 [rgba] Off-palette rgba rgba(63, 63, 70, 0.08)
+src/screens/home/homeScreenStyles.js:2187 [rgba] Off-palette rgba rgba(148,163,184,0.08)
+src/screens/home/homeScreenStyles.js:2187 [rgba] Off-palette rgba rgba(100, 116, 139, 0.08)
+src/screens/home/homeScreenStyles.js:2202 [rgba] Off-palette rgba rgba(255,255,255,0.1)
+src/screens/home/homeScreenStyles.js:2202 [rgba] Off-palette rgba rgba(63, 63, 70, 0.16)
+src/screens/home/homeScreenStyles.js:2251 [rgba] Off-palette rgba rgba(0,0,0,0.4)
+src/screens/home/homeScreenStyles.js:161 [spacing] Off-scale spacing marginTop=-2 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/screens/home/homeScreenStyles.js:1683 [spacing] Off-scale spacing marginHorizontal=-2 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
+src/screens/home/homeScreenStyles.js:178 [shadowOpacity] shadowOpacity 0.08 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
+src/screens/home/homeScreenStyles.js:364 [shadowOpacity] shadowOpacity 0.08 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
+src/screens/home/homeScreenStyles.js:1357 [shadowOpacity] shadowOpacity 0.24 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
+src/screens/home/homeScreenStyles.js:2130 [shadowOpacity] shadowOpacity 0.28 not in {0.04, 0.06, 0.10} (+ legacy theme helpers)
+src/screens/home/homeScreenStyles.js:182 [boxShadow] boxShadow "0 1px 4px rgba(24, 24, 27, 0.06)" not from SHADOWS
+src/screens/home/homeScreenStyles.js:224 [boxShadow] boxShadow "0 2px 8px rgba(0,0,0,0.04)" not from SHADOWS
+src/screens/home/homeScreenStyles.js:242 [boxShadow] boxShadow "0 2px 8px rgba(0,0,0,0.04)" not from SHADOWS
+src/screens/home/homeScreenStyles.js:360 [boxShadow] boxShadow "0 8px 24px rgba(15,23,42,0.08)" not from SHADOWS
+src/screens/home/homeScreenStyles.js:768 [boxShadow] boxShadow "inset 0 1px 0 rgba(255,255,255,0.2), 0 10px 24px rgba(8, 6, 4, 0.34)" not from SHADOWS
+src/screens/home/homeScreenStyles.js:854 [boxShadow] boxShadow "0 8px 20px rgba(8, 6, 4, 0.5), inset 0 1px 0 rgba(255, 252, 248, 0.28)" not from SHADOWS
+src/screens/home/homeScreenStyles.js:873 [boxShadow] boxShadow "0 10px 24px rgba(8, 6, 4, 0.56), inset 0 1px 0 rgba(255, 252, 248, 0.4)" not from SHADOWS
+src/screens/home/homeScreenStyles.js:1352 [boxShadow] boxShadow "0 12px 24px rgba(15,23,42,0.28)" not from SHADOWS
+src/screens/home/homeScreenStyles.js:1656 [boxShadow] boxShadow "0 4px 12px rgba(15,23,42,0.08)" not from SHADOWS
+src/screens/home/homeScreenStyles.js:1833 [boxShadow] boxShadow "0 6px 16px rgba(24, 24, 27, 0.09)" not from SHADOWS
+src/screens/home/homeScreenStyles.js:1843 [boxShadow] boxShadow "0 10px 22px rgba(24, 24, 27, 0.12)" not from SHADOWS
+src/screens/home/homeScreenStyles.js:2135 [boxShadow] boxShadow "0 20px 50px rgba(12, 10, 8, 0.28)" not from SHADOWS
+src/screens/home/homeScreenStyles.js:67 [shadowRadius] shadowRadius 20 not from SHADOWS
+src/screens/home/homeScreenStyles.js:247 [shadowRadius] shadowRadius 8 not from SHADOWS
+src/screens/home/homeScreenStyles.js:365 [shadowRadius] shadowRadius 16 not from SHADOWS
+src/screens/home/homeScreenStyles.js:406 [shadowRadius] shadowRadius 16 not from SHADOWS
+src/screens/home/homeScreenStyles.js:807 [shadowRadius] shadowRadius 18 not from SHADOWS
+src/screens/home/homeScreenStyles.js:1241 [shadowRadius] shadowRadius 4 not from SHADOWS
+src/screens/home/homeScreenStyles.js:1285 [shadowRadius] shadowRadius 10 not from SHADOWS
+src/screens/home/homeScreenStyles.js:1358 [shadowRadius] shadowRadius 16 not from SHADOWS
+src/screens/home/homeScreenStyles.js:1762 [shadowRadius] shadowRadius 18 not from SHADOWS
+src/screens/home/homeScreenStyles.js:1829 [shadowRadius] shadowRadius 6 not from SHADOWS
+src/screens/home/homeScreenStyles.js:367 [elevation] elevation 3 not from SHADOWS
+src/screens/home/homeScreenStyles.js:1336 [elevation] elevation 24 not from SHADOWS
+src/screens/home/homeScreenStyles.js:1361 [elevation] elevation 10 not from SHADOWS
+src/screens/home/homeScreenStyles.js:1831 [elevation] elevation 2 not from SHADOWS
+src/screens/home/homeScreenStyles.js:2133 [elevation] elevation 14 not from SHADOWS
 src/services/paymentService.js:135 [hex] Off-palette hex #C9A23A
 src/services/pushNotificationService.js:56 [hex] Off-palette hex #D4AF37
 src/theme/adminLayout.js:60 [hex] Off-palette hex #18181B
@@ -1656,22 +1656,22 @@ src/theme/screenLayout.js:68 [rgba] Off-palette rgba rgba(248, 113, 113, 0.28)
 src/theme/screenLayout.js:68 [rgba] Off-palette rgba rgba(178, 58, 58, 0.2)
 src/theme/screenLayout.js:69 [rgba] Off-palette rgba rgba(127, 29, 29, 0.12)
 src/theme/screenLayout.js:69 [rgba] Off-palette rgba rgba(178, 58, 58, 0.06)
-src/theme/web.js:57 [hex] Off-palette hex #0B1120
-src/theme/web.js:76 [hex] Off-palette hex #F8FAFC
-src/theme/web.js:99 [hex] Off-palette hex #060A12
-src/theme/web.js:99 [hex] Off-palette hex #0B1120
-src/theme/web.js:99 [hex] Off-palette hex #141B2B
-src/theme/web.js:106 [hex] Off-palette hex #FFFDFC
-src/theme/web.js:212 [hex] Off-palette hex #FAF8F4
-src/theme/web.js:75 [rgba] Off-palette rgba rgba(200,169,126,0.38)
-src/theme/web.js:75 [rgba] Off-palette rgba rgba(200,169,126,0.30)
-src/theme/web.js:99 [rgba] Off-palette rgba rgba(239,68,68,0.06)
-src/theme/web.js:99 [rgba] Off-palette rgba rgba(96,165,250,0.05)
-src/theme/web.js:106 [rgba] Off-palette rgba rgba(37,99,235,0.05)
-src/theme/web.js:127 [rgba] Off-palette rgba rgba(200,169,126,0.32)
-src/theme/web.js:156 [rgba] Off-palette rgba rgba(200,169,126,0.32)
-src/theme/web.js:160 [rgba] Off-palette rgba rgba(200,169,126,0.55)
-src/theme/web.js:163 [rgba] Off-palette rgba rgba(200,169,126,0.30)
+src/theme/web.js:74 [hex] Off-palette hex #0B1120
+src/theme/web.js:93 [hex] Off-palette hex #F8FAFC
+src/theme/web.js:116 [hex] Off-palette hex #060A12
+src/theme/web.js:116 [hex] Off-palette hex #0B1120
+src/theme/web.js:116 [hex] Off-palette hex #141B2B
+src/theme/web.js:123 [hex] Off-palette hex #FFFDFC
+src/theme/web.js:269 [hex] Off-palette hex #FAF8F4
+src/theme/web.js:92 [rgba] Off-palette rgba rgba(200,169,126,0.38)
+src/theme/web.js:92 [rgba] Off-palette rgba rgba(200,169,126,0.30)
+src/theme/web.js:116 [rgba] Off-palette rgba rgba(239,68,68,0.06)
+src/theme/web.js:116 [rgba] Off-palette rgba rgba(96,165,250,0.05)
+src/theme/web.js:123 [rgba] Off-palette rgba rgba(37,99,235,0.05)
+src/theme/web.js:141 [rgba] Off-palette rgba rgba(200,169,126,0.32)
+src/theme/web.js:213 [rgba] Off-palette rgba rgba(200,169,126,0.32)
+src/theme/web.js:217 [rgba] Off-palette rgba rgba(200,169,126,0.55)
+src/theme/web.js:220 [rgba] Off-palette rgba rgba(200,169,126,0.30)
 src/utils/a11y.js:21 [spacing] Off-scale spacing margin=-1 (allowed: 0, 4, 8, 12, 16, 20, 24, 32, 40, 56, 72, 96)
 src/utils/adminAnalyticsPdf.js:21 [hex] Off-palette hex #e5e7eb
 src/utils/adminAnalyticsPdf.js:21 [hex] Off-palette hex #e5e7eb

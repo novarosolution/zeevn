@@ -37,7 +37,8 @@ export const COLORS = {
 };
 
 export const COLORS_DARK = {
-  bg: COLORS.bgDeep,
+  /** Page canvas — must match `darkColors.background` and web `body` chrome. */
+  bg: "#0B1120",
   surface: COLORS.bgDeepAlt,
   surfaceAlt: "rgba(255,255,255,0.06)",
   bgDeep: COLORS.bgDeep,

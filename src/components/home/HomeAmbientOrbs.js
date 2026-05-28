@@ -9,6 +9,7 @@ import Animated, {
   cancelAnimation,
 } from "react-native-reanimated";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import useWebLiteMode from "../../hooks/useWebLiteMode";
 import { useTheme } from "../../context/ThemeContext";
 
 /**
@@ -16,7 +17,12 @@ import { useTheme } from "../../context/ThemeContext";
  */
 export default function HomeAmbientOrbs({ isDark }) {
   const reduced = useReducedMotion();
+  const webLite = useWebLiteMode();
   const { colors: c } = useTheme();
+
+  if (Platform.OS === "web" && webLite) {
+    return null;
+  }
   const orb1Ref = useRef(null);
   const orb2Ref = useRef(null);
 

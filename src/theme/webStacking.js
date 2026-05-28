@@ -1,6 +1,7 @@
 import { Platform, StyleSheet } from "react-native";
 import { WEB_BACKDROP } from "./tokens";
 import { APP_VIEWPORT_MIN_HEIGHT } from "../utils/webViewport";
+import { isWebLiteMode } from "../utils/webPerformance";
 
 /**
  * Web z-index ladder (bottom → top). Pair every z-index with non-static `position` on web
@@ -83,7 +84,7 @@ export function webFixedLayer(zIndex) {
 
 /** Shared `backdrop-filter` for header, drawer, and modal scrims. */
 export function webBackdropFilterStyle() {
-  if (Platform.OS !== "web") return {};
+  if (Platform.OS !== "web" || isWebLiteMode()) return {};
   return {
     WebkitBackdropFilter: WEB_BACKDROP.filter,
     backdropFilter: WEB_BACKDROP.filter,

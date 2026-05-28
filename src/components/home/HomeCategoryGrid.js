@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import DecorativeExpoImage from "../ui/DecorativeExpoImage";
@@ -18,7 +18,7 @@ const CATEGORY_PHOTOS = {
   spices: "https://images.unsplash.com/photo-1532336414038-cf19250c5757?auto=format&fit=crop&w=240&q=70",
   dairy: "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=240&q=70",
   sweets: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=240&q=70",
-  dryfruits: "https://images.unsplash.com/photo-1599599810694-57a0c1d2dcb1?auto=format&fit=crop&w=240&q=70",
+  dryfruits: "https://images.unsplash.com/photo-1508747703725-719777637510?auto=format&fit=crop&w=240&q=70",
   beverages: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=240&q=70",
   drinks: "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=240&q=70",
   wellness: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=240&q=70",
@@ -104,6 +104,11 @@ function CategoryTile({ item, compact, onPress, columns, isDesktop, isAllTile = 
     if (source) return source;
     return CATEGORY_PHOTOS[String(isAllTile ? "all" : item?.key || "").toLowerCase()] || "";
   }, [isAllTile, item?.image, item?.imageUrl, item?.key]);
+  const [photoFailed, setPhotoFailed] = useState(false);
+
+  useEffect(() => {
+    setPhotoFailed(false);
+  }, [imageUri]);
   const handlePress = useCallback(async () => {
     if (Platform.OS === "ios") {
       try {
@@ -149,8 +154,14 @@ function CategoryTile({ item, compact, onPress, columns, isDesktop, isAllTile = 
                   tileTint ? { backgroundColor: tileTint } : { backgroundColor: circleBg },
                 ]}
               >
-                {imageUri ? (
-                  <DecorativeExpoImage source={{ uri: imageUri }} style={styles.categoryPhoto} contentFit="cover" transition={100} />
+                {imageUri && !photoFailed ? (
+                  <DecorativeExpoImage
+                    source={{ uri: imageUri }}
+                    style={styles.categoryPhoto}
+                    contentFit="cover"
+                    transition={100}
+                    onError={() => setPhotoFailed(true)}
+                  />
                 ) : (
                   <CategoryArt categoryKey={isAllTile ? "all" : item.key} color={c.accentOnLight || c.primary} />
                 )}

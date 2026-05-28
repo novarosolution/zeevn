@@ -52,7 +52,7 @@ export default function ScreenPageHeader({
         style={[
           styles.headerCard,
           {
-            backgroundColor: isWeb ? (isDark ? c.surfaceOverlay || c.surface : ALCHEMY.cardBg) : "transparent",
+            backgroundColor: isWeb ? (isDark ? c.surface : ALCHEMY.cardBg) : "transparent",
             borderColor: isWeb ? (isDark ? semantic.border.divider || semantic.border.subtle : c.border) : "transparent",
           },
           isWeb ? shadowPremium : null,
@@ -79,9 +79,10 @@ export default function ScreenPageHeader({
           {backVisible ? (
             <Pressable
               onPress={handleBack}
-              style={({ pressed, hovered }) => [
+              style={({ pressed, hovered, focused }) => [
                 styles.backBtn,
                 hovered && Platform.OS === "web" ? styles.backBtnHover : null,
+                focused && Platform.OS === "web" ? styles.backBtnFocus : null,
                 pressed ? styles.backBtnPressed : null,
               ]}
               hitSlop={12}
@@ -204,6 +205,13 @@ function createStyles(rowMinH, isDark) {
       opacity: 0.92,
       transform: [{ scale: 0.98 }],
     },
+    backBtnFocus: {
+      borderColor: isDark ? "rgba(200,169,126,0.72)" : "rgba(200,169,126,0.82)",
+      ...Platform.select({
+        web: { boxShadow: isDark ? "0 0 0 2px rgba(200,169,126,0.28)" : "0 0 0 2px rgba(200,169,126,0.26)" },
+        default: {},
+      }),
+    },
     leadSpacer: {
       flexShrink: 0,
       height: 1,
@@ -254,6 +262,8 @@ function createStyles(rowMinH, isDark) {
       ...Platform.select({
         web: {
           marginLeft: "auto",
+          alignItems: "center",
+          rowGap: 6,
         },
         default: {
           marginLeft: spacing.xs,

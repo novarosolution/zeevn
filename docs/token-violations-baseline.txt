@@ -1,5 +1,5 @@
 Zeevan token baseline violations
-Generated: 2026-05-21T02:55:45.506Z
+Generated: 2026-05-21T03:00:28.772Z
 Total: 1666
 
 src/components/AppStartupScreen.js:320 [rgba] Off-palette rgba rgba(200,169,126,0.24)
@@ -278,7 +278,7 @@ src/components/editorial/WhatsAppFab.js:53 [shadowOpacity] shadowOpacity 0.18 no
 src/components/editorial/WhatsAppFab.js:46 [boxShadow] boxShadow "0 8px 24px rgba(14, 23, 41, 0.18)" not from SHADOWS
 src/components/editorial/WhatsAppFab.js:54 [shadowRadius] shadowRadius 12 not from SHADOWS
 src/components/editorial/WhatsAppFab.js:55 [elevation] elevation 6 not from SHADOWS
-src/components/errors/OfflineBanner.js:52 [rgba] Off-palette rgba rgba(177, 123, 39, 0.12)
+src/components/errors/OfflineBanner.js:30 [rgba] Off-palette rgba rgba(177, 123, 39, 0.12)
 src/components/feedback/ProgressRing.js:43 [rgba] Off-palette rgba rgba(255,255,255,0.10)
 src/components/feedback/ProgressRing.js:43 [rgba] Off-palette rgba rgba(14,14,14,0.08)
 src/components/home/HomeCategoryGrid.js:140 [rgba] Off-palette rgba rgba(200,169,126,0.04)

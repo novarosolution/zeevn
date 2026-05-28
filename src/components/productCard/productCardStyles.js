@@ -123,16 +123,32 @@ function createStyles(c, isDark, layoutFlags = {}) {
     },
     premiumCardPressable: {
       width: "100%",
+      ...Platform.select({
+        web: { touchAction: "pan-y" },
+        default: {},
+      }),
     },
     premiumImageHit: {
       ...StyleSheet.absoluteFillObject,
       zIndex: 0,
+      ...Platform.select({
+        web: { touchAction: "pan-y" },
+        default: {},
+      }),
     },
     premiumContentPressable: {
       width: "100%",
+      ...Platform.select({
+        web: { touchAction: "pan-y" },
+        default: {},
+      }),
     },
     premiumPriceHit: {
       flex: 1,
+      ...Platform.select({
+        web: { touchAction: "pan-y" },
+        default: {},
+      }),
     },
     premiumImageArea: {
       position: "relative",

@@ -21,6 +21,7 @@ const PRESETS = {
 };
 
 import { loadGsap } from "../utils/loadGsap";
+import { isWebLiteMode } from "../utils/webPerformance";
 
 /**
  * Web-only ScrollTrigger reveal helper. Returns `{ ref }` to attach to a View.
@@ -42,7 +43,7 @@ export default function useGsapReveal({
   }, []);
 
   useEffect(() => {
-    if (Platform.OS !== "web" || disabled || reducedMotion) {
+    if (Platform.OS !== "web" || disabled || reducedMotion || isWebLiteMode()) {
       const target = ref.current;
       if (target && target.style) {
         target.style.opacity = "1";

@@ -6,7 +6,6 @@ import { CUSTOMER_BOTTOM_NAV_BAR_HEIGHT } from "../../theme/screenLayout";
 import { spacing as homeSpacing } from "../../styles/spacing";
 import { BRAND_HOME_TOP_BAR_LAYOUT_HEIGHT } from "../../constants/brand";
 
-const HOME_HEADER_BG_LIGHT = ALCHEMY.cream;
 const HOME_HEADER_INK = "#0E0E0E";
 const HOME_LINE = "#E8E6E1";
 
@@ -16,12 +15,15 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth = 0,
   const productGridGap = windowWidth >= 600 ? 14 : 10;
   const safeTopInset = Number(insets?.top || 0);
   const safeBottomInset = Number(insets?.bottom || 0);
+  const homeHeaderBg = isDark ? c.surface : ALCHEMY.cream;
+  const homeLine = c.border;
   return StyleSheet.create({
     screen: {
       flex: 1,
       width: "100%",
       alignSelf: "stretch",
       maxWidth: "100%",
+      backgroundColor: c.background,
     },
     gradientFill: {
       flex: 1,
@@ -66,24 +68,24 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth = 0,
       }),
     },
     headerAmbientCardLight: {
-      borderColor: HOME_LINE,
-      backgroundColor: HOME_HEADER_BG_LIGHT,
+      borderColor: homeLine,
+      backgroundColor: homeHeaderBg,
       ...Platform.select({
         web: {
           backdropFilter: "none",
         },
         default: {
-          backgroundColor: HOME_HEADER_BG_LIGHT,
+          backgroundColor: homeHeaderBg,
         },
       }),
     },
     headerAmbientCardScrolled: {
       borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: HOME_LINE,
+      borderBottomColor: homeLine,
     },
     headerAmbientCardDark: {
-      borderColor: HOME_LINE,
-      backgroundColor: HOME_HEADER_BG_LIGHT,
+      borderColor: homeLine,
+      backgroundColor: homeHeaderBg,
     },
     topBarShellNested: {
       paddingTop: 4,
@@ -95,10 +97,10 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth = 0,
       marginHorizontal: spacing.lg,
       marginTop: spacing.xs,
       marginBottom: spacing.sm,
-      backgroundColor: HOME_LINE,
+      backgroundColor: homeLine,
     },
     headerInnerDividerDark: {
-      backgroundColor: "rgba(255, 255, 255, 0.1)",
+      backgroundColor: c.border,
     },
     cartBtnInner: {
       width: 44,
@@ -1597,7 +1599,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth = 0,
       flexShrink: 0,
     },
     catalogViewToggleBtnTouch: {
-      borderRadius: 10,
+      borderRadius: 12,
       ...Platform.select({
         web: { cursor: "pointer" },
         default: {},
@@ -1606,7 +1608,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth = 0,
     catalogViewToggleBtn: {
       width: 36,
       height: 36,
-      borderRadius: 10,
+      borderRadius: 12,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: c.border,
       alignItems: "center",
@@ -1870,7 +1872,7 @@ function createHomeStyles(c, shadowLift, shadowPremium, isDark, windowWidth = 0,
       zIndex: WEB_Z_INDEX.sticky + 5,
       backgroundColor: isDark ? "rgba(10,10,10,0.55)" : "rgba(255,255,255,0.85)",
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: HOME_LINE,
+      borderColor: homeLine,
     },
     stickyBagBar: {
       position: "absolute",

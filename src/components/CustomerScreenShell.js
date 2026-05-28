@@ -18,8 +18,7 @@ import { getSemanticColors } from "../theme/tokens";
 import { webElevatedLayer } from "../theme/webStacking";
 import { useScrollOffsetValue } from "../hooks/useScrollOffset";
 import useReducedMotion from "../hooks/useReducedMotion";
-import { APP_VIEWPORT_MIN_HEIGHT } from "../utils/webViewport";
-
+import useWebLiteMode from "../hooks/useWebLiteMode";
 const AnimatedView = Animated.createAnimatedComponent(View);
 
 /**
@@ -46,6 +45,7 @@ export default function CustomerScreenShell({
 }) {
   const { colors: c, isDark } = useTheme();
   const reducedMotion = useReducedMotion();
+  const webLite = useWebLiteMode();
   const shellColors = getCustomerShellGradient(isDark, c);
   const semantic = getSemanticColors(c);
   const alchemy = getAlchemyPalette(c, isDark);
@@ -53,7 +53,9 @@ export default function CustomerScreenShell({
   const isWeb = Platform.OS === "web";
   const isAdminVariant = variant === "admin";
   const isAuthVariant = variant === "auth";
-  const showCursorSpotlight = isWeb && !reducedMotion && !isAuthVariant;
+  const showWebDecor = isWeb && !webLite;
+  const showCursorSpotlight = showWebDecor && !reducedMotion && !isAuthVariant;
+  const webDecorProps = isWeb ? { dataSet: { zvDecor: "true" } } : {};
 
   const cursorX = useSharedValue(-1000);
   const cursorY = useSharedValue(-1000);
@@ -170,7 +172,7 @@ export default function CustomerScreenShell({
         : ["rgba(255,255,255,0.28)", "transparent", "rgba(63, 63, 70, 0.02)"];
 
   return (
-    <View style={[styles.base, { backgroundColor: c.background }]}>
+    <View style={[styles.base, { backgroundColor: c.background, ...(isWeb ? { minHeight: "100%" } : null) }]}>
       <LinearGradient
         colors={shellColors}
         locations={CUSTOMER_SHELL_GRADIENT_LOCATIONS}
@@ -178,7 +180,7 @@ export default function CustomerScreenShell({
         end={{ x: 0.94, y: 1 }}
         style={StyleSheet.absoluteFill}
       />
-      {isWeb ? (
+      {showWebDecor ? (
         <>
           <LinearGradient
             colors={ambientWashColors}
@@ -186,6 +188,7 @@ export default function CustomerScreenShell({
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={[styles.ambientWash, styles.peNone]}
+            {...webDecorProps}
           />
           <LinearGradient
             colors={edgeVignetteColors}
@@ -193,6 +196,7 @@ export default function CustomerScreenShell({
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
             style={[styles.edgeVignette, styles.peNone]}
+            {...webDecorProps}
           />
           <AnimatedView
             style={[
@@ -209,6 +213,7 @@ export default function CustomerScreenShell({
               isAuthVariant ? styles.orbTopAuth : null,
               orbTopStyle,
             ]}
+            {...webDecorProps}
           />
           <AnimatedView
             style={[
@@ -223,6 +228,7 @@ export default function CustomerScreenShell({
               isAuthVariant ? styles.orbBottomAuth : null,
               orbBottomStyle,
             ]}
+            {...webDecorProps}
           />
         </>
       ) : null}
@@ -253,13 +259,14 @@ export default function CustomerScreenShell({
           ]}
         />
       ) : null}
-      {isWeb && topAccent ? (
+      {showWebDecor && topAccent ? (
         <LinearGradient
           colors={topSheenColors}
           locations={[0, 0.36, 1]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
           style={[styles.topSheen, styles.peNone]}
+          {...webDecorProps}
         />
       ) : null}
       <View
@@ -292,7 +299,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     top: -64,
     right: -52,
-    opacity: 0.32,
+    opacity: 0.24,
     ...Platform.select({
       web: { filter: "blur(30px)" },
       default: {},
@@ -305,7 +312,7 @@ const styles = StyleSheet.create({
     borderRadius: 118,
     left: -96,
     bottom: -96,
-    opacity: 0.26,
+    opacity: 0.22,
     ...Platform.select({
       web: { filter: "blur(34px)" },
       default: {},
@@ -350,6 +357,7 @@ const styles = StyleSheet.create({
     width: 480,
     height: 480,
     borderRadius: 240,
+    opacity: 0.82,
     ...Platform.select({
       web: { filter: "blur(80px)" },
       default: {},
@@ -358,7 +366,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     width: "100%",
-    minHeight: Platform.OS === "web" ? APP_VIEWPORT_MIN_HEIGHT : undefined,
+    minHeight: 0,
     ...Platform.select({
       web: { position: "relative", zIndex: 1 },
       default: {},

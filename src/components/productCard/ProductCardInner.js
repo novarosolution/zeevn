@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   Modal,
   Platform,
@@ -38,7 +38,7 @@ import { ALCHEMY, FONT_DISPLAY, FONT_DISPLAY_SEMI } from "../../theme/customerAl
 import { usePrefersReducedMotion } from "../../utils/motion";
 import { isLowEndWebDevice } from "../../utils/webPerf";
 
-export default function ProductCardInner({
+function ProductCardInner({
   product,
   onPress,
   onAddToCart,
@@ -74,6 +74,8 @@ export default function ProductCardInner({
   const scale = useSharedValue(1);
   const isList = variant === "list";
   const isWeb = Platform.OS === "web";
+  const webPanY = isWeb ? { touchAction: "pan-y" } : null;
+  const pressInDelayMs = isWeb ? 0 : 110;
   const isWebGrid = isWeb && !isList;
   const reducedMotion = usePrefersReducedMotion();
   const lowEndWeb = isLowEndWebDevice();
@@ -249,6 +251,7 @@ export default function ProductCardInner({
     onRemoveFromCart?.();
   };
   const onCardPressIn = () => {
+    if (isWeb) return;
     cardPress.value = withTiming(1, { duration: 240, easing: Easing.out(Easing.cubic) });
     if (!isWeb && hasSecondaryImage) {
       previewTimerRef.current = setTimeout(() => {
@@ -257,6 +260,7 @@ export default function ProductCardInner({
     }
   };
   const onCardPressOut = () => {
+    if (isWeb) return;
     cardPress.value = withTiming(0, { duration: 240, easing: Easing.out(Easing.cubic) });
     setLongPressRaised(false);
     if (previewTimerRef.current) {
@@ -391,8 +395,9 @@ export default function ProductCardInner({
             >
               <Pressable
                 onPress={handleCardPress}
-                onPressIn={onCardPressIn}
-                onPressOut={onCardPressOut}
+                delayPressIn={pressInDelayMs}
+                onPressIn={isWeb ? undefined : onCardPressIn}
+                onPressOut={isWeb ? undefined : onCardPressOut}
                 onLongPress={() => {
                   setLongPressRaised(true);
                   if (!isWeb && hasSecondaryImage) {
@@ -404,7 +409,7 @@ export default function ProductCardInner({
                 onHoverOut={onHoverOutImage}
                 accessibilityRole="button"
                 accessibilityLabel={cardA11yLabel}
-                style={styles.premiumImageHit}
+                style={[styles.premiumImageHit, webPanY]}
               >
               <Animated.View style={[styles.premiumImageScaleWrap, hoverImageScaleStyle]}>
                 <View style={styles.premiumImageFrame}>
@@ -420,7 +425,7 @@ export default function ProductCardInner({
                       />
                     </View>
                   ) : null}
-                  {!reducedMotion && !primaryLoaded ? (
+                  {!reducedMotion && !primaryLoaded && !isWeb ? (
                     <Animated.View style={[styles.shimmerSweep, shimmerStyle, { pointerEvents: "none" }]}>
                       <LinearGradient
                         colors={["rgba(255,255,255,0)", "rgba(255,255,255,0.45)", "rgba(255,255,255,0)"]}
@@ -552,11 +557,12 @@ export default function ProductCardInner({
             <View style={styles.premiumContent}>
               <Pressable
                 onPress={handleCardPress}
-                onPressIn={onCardPressIn}
-                onPressOut={onCardPressOut}
+                delayPressIn={pressInDelayMs}
+                onPressIn={isWeb ? undefined : onCardPressIn}
+                onPressOut={isWeb ? undefined : onCardPressOut}
                 accessible={false}
                 importantForAccessibility="no-hide-descendants"
-                style={styles.premiumContentPressable}
+                style={[styles.premiumContentPressable, webPanY]}
               >
                 {showCategory && !compact ? (
                   <Text style={[styles.categoryPremium, { color: mutedColor }]} numberOfLines={1}>
@@ -582,9 +588,10 @@ export default function ProductCardInner({
               </Pressable>
               <Pressable
                 onPress={handleCardPress}
+                delayPressIn={pressInDelayMs}
                 accessible={false}
                 importantForAccessibility="no-hide-descendants"
-                style={styles.premiumPriceHit}
+                style={[styles.premiumPriceHit, webPanY]}
               >
                 <View style={styles.gridPriceRow}>
                   <Text style={[styles.gridPriceCurrent, { color: inkColor }]}>{formatINRWhole(safePrice)}</Text>
@@ -663,11 +670,13 @@ export default function ProductCardInner({
         >
           <TouchableOpacity
             activeOpacity={0.94}
+            delayPressIn={pressInDelayMs}
             onPress={onPress}
             onPressIn={isWeb ? undefined : handlePressIn}
             onPressOut={isWeb ? undefined : handlePressOut}
             accessibilityRole="button"
             accessibilityLabel={isList ? `${product.name}, ${formatINRWhole(safePrice)}` : undefined}
+            style={webPanY}
           >
             <View
               style={[
@@ -769,11 +778,13 @@ export default function ProductCardInner({
           >
             <TouchableOpacity
               activeOpacity={0.94}
+              delayPressIn={pressInDelayMs}
               onPress={onPress}
               onPressIn={isWeb ? undefined : handlePressIn}
               onPressOut={isWeb ? undefined : handlePressOut}
               accessibilityRole="button"
               accessibilityLabel={`${product.name}, ${formatINRWhole(safePrice)}`}
+              style={webPanY}
             >
               {showCategory ? (
                 <Text
@@ -955,10 +966,12 @@ export default function ProductCardInner({
         ) : (
           <TouchableOpacity
             activeOpacity={0.94}
+            delayPressIn={pressInDelayMs}
             onPress={onPress}
             onPressIn={isWeb ? undefined : handlePressIn}
             onPressOut={isWeb ? undefined : handlePressOut}
             accessibilityRole="button"
+            style={webPanY}
           >
             <View
               style={[
@@ -1025,6 +1038,8 @@ export default function ProductCardInner({
     </Root>
   );
 }
+
+export default memo(ProductCardInner);
 import createStyles from "./productCardStyles";
 import {
   getRatingMeta,

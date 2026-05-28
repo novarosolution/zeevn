@@ -47,7 +47,8 @@ import {
   adminScrollPaddingBottom,
   customerInnerPageScrollContent,
   customerScrollPaddingBottom,
-  customerScrollPaddingTop,
+  customerNestedScrollViewStyle,
+  customerScrollPaddingTopBelowPageHeader,
   customerWebStickyTop,
 } from "../theme/screenLayout";
 import { fonts, icon, layout } from "../theme/tokens";
@@ -824,15 +825,18 @@ export default function CartScreen({ navigation, route }) {
         contentContainerStyle={{ flex: 1, paddingHorizontal: 0 }}
       >
         <MotionScrollView
-          style={{ flex: 1 }}
+          style={customerNestedScrollViewStyle}
           contentContainerStyle={customerInnerPageScrollContent(insets, {
             paddingHorizontal: SPACING.lg,
             paddingBottom: scrollBottomPad,
-            paddingTop: customerScrollPaddingTop(insets, { nativeMin: SPACING.xs, webMin: SPACING.sm }),
+            paddingTop: customerScrollPaddingTopBelowPageHeader(insets, {
+              nativeMin: SPACING.xs,
+              webMin: SPACING.sm,
+            }),
             gap: SPACING.lg,
           })}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={Platform.OS === "web"}
         >
           {checkoutMode ? (
             <>

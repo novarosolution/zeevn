@@ -17,7 +17,9 @@ import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import AppStartupScreen from "./src/components/AppStartupScreen";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { darkColors, lightColors } from "./src/theme/tokens";
-import { applyWebPremiumChrome, webRootStyle } from "./src/theme/web";
+import { syncWebThemeDocument, webRootStyle } from "./src/theme/web";
+import { bindWebPerformanceListeners } from "./src/utils/webPerformance";
+import useWebLiteMode from "./src/hooks/useWebLiteMode";
 import { registerProductCacheServiceWorker } from "./src/utils/registerServiceWorker.web";
 import { initWebVitalsReporting } from "./src/utils/reportWebVitals";
 import { enforceMobileViewportMeta, injectSelfHostedFontFaces, preloadCriticalWebFonts } from "./src/utils/webHead";
@@ -197,6 +199,7 @@ setupNotificationHandlerIfSupported();
 
 function WebBodySync() {
   const { colors, isDark } = useTheme();
+  const webLite = useWebLiteMode();
 
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return undefined;
@@ -206,13 +209,29 @@ function WebBodySync() {
     const cleanupViewport = installWebViewportWorkarounds();
     registerProductCacheServiceWorker();
     initWebVitalsReporting();
-    return () => cleanupViewport?.();
-  }, []);
+    const cleanupPerf = bindWebPerformanceListeners((profile) => {
+      syncWebThemeDocument({
+        isDark,
+        background: colors.background,
+        surface: colors.surface,
+        liteMode: profile.lite,
+      });
+    });
+    return () => {
+      cleanupViewport?.();
+      cleanupPerf?.();
+    };
+  }, [colors.background, colors.surface, isDark]);
 
   useEffect(() => {
     if (Platform.OS !== "web" || typeof document === "undefined") return;
-    applyWebPremiumChrome(isDark, colors.background);
-  }, [colors.background, isDark]);
+    syncWebThemeDocument({
+      isDark,
+      background: colors.background,
+      surface: colors.surface,
+      liteMode: webLite,
+    });
+  }, [colors.background, colors.surface, isDark, webLite]);
 
   return null;
 }

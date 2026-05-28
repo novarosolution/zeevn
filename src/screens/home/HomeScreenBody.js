@@ -19,6 +19,7 @@ import HomeStickyAddToBagBar from "../../components/home/HomeStickyAddToBagBar";
 import HomePageFooter from "../../components/home/HomePageFooter";
 import SectionReveal from "../../components/motion/SectionReveal";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import useWebLiteMode from "../../hooks/useWebLiteMode";
 import useRecentSearches from "../../hooks/useRecentSearches";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
@@ -55,10 +56,13 @@ export default function HomeScreenBody({ navigation }) {
     [c, insets, isDark, shadowLift, shadowPremium, windowWidth]
   );
   const reducedMotion = useReducedMotion();
+  const webLite = useWebLiteMode();
   const { add: addRecentSearch } = useRecentSearches();
   const { isAuthenticated, token, user } = useAuth();
   const { addToCart, removeFromCart, getItemQuantity, totalItems, totalAmount } = useCart();
   const [scrollY, setScrollY] = useState(0);
+  const scrollRafRef = useRef(null);
+  const pendingScrollYRef = useRef(0);
   const [deliveryPromise, setDeliveryPromise] = useState("Reliable doorstep delivery");
   const catalogYRef = useRef(0);
   const scrollRef = useRef(null);
@@ -231,14 +235,25 @@ export default function HomeScreenBody({ navigation }) {
     catalogSurfacePadding * 2 -
     gridGap * (gridColumns - 1);
   const gridCardWidth = Math.max(132, Math.floor(usableGridWidth / gridColumns));
+
+  useEffect(
+    () => () => {
+      if (scrollRafRef.current != null) {
+        cancelAnimationFrame(scrollRafRef.current);
+      }
+    },
+    []
+  );
   return (
     <View style={styles.screen}>
-      <LinearGradient
-        colors={[c.background, c.backgroundGradientEnd || c.surfaceMuted, c.background]}
-        locations={[0, 0.45, 1]}
-        style={StyleSheet.absoluteFillObject}
-        pointerEvents="none"
-      />
+      {!webLite ? (
+        <LinearGradient
+          colors={[c.background, c.backgroundGradientEnd || c.surfaceMuted, c.background]}
+          locations={[0, 0.45, 1]}
+          style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
+        />
+      ) : null}
       <ScrollView
         ref={scrollRef}
         style={styles.scrollMain}
@@ -254,11 +269,15 @@ export default function HomeScreenBody({ navigation }) {
         ]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onPullRefresh} />}
         onScroll={(event) => {
-          const next = Number(event.nativeEvent.contentOffset.y || 0);
-          setScrollY(next);
+          pendingScrollYRef.current = Number(event.nativeEvent.contentOffset.y || 0);
+          if (scrollRafRef.current != null) return;
+          scrollRafRef.current = requestAnimationFrame(() => {
+            scrollRafRef.current = null;
+            setScrollY(pendingScrollYRef.current);
+          });
         }}
         scrollEventThrottle={16}
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator={Platform.OS === "web"}
       >
         <View style={styles.headerWrap}>
           {showMobileTopBar ? (

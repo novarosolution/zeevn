@@ -7,7 +7,6 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
-import { HOME_HEADER_INK } from "../../screens/home/homeScreenStyles";
 
 function CatalogViewToggleButton({
   isActive,
@@ -27,8 +26,8 @@ function CatalogViewToggleButton({
   }, [isActive, progress]);
 
   const animatedButtonStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(progress.value, [0, 1], [c.surface, HOME_HEADER_INK]),
-    borderColor: interpolateColor(progress.value, [0, 1], [c.border, HOME_HEADER_INK]),
+    backgroundColor: interpolateColor(progress.value, [0, 1], [c.surface, c.textPrimary]),
+    borderColor: interpolateColor(progress.value, [0, 1], [c.border, c.textPrimary]),
   }));
 
   const activeIconStyle = useAnimatedStyle(() => ({

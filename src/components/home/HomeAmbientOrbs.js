@@ -19,10 +19,8 @@ export default function HomeAmbientOrbs({ isDark }) {
   const reduced = useReducedMotion();
   const webLite = useWebLiteMode();
   const { colors: c } = useTheme();
+  const hideOrbs = Platform.OS === "web" && webLite;
 
-  if (Platform.OS === "web" && webLite) {
-    return null;
-  }
   const orb1Ref = useRef(null);
   const orb2Ref = useRef(null);
 
@@ -32,7 +30,7 @@ export default function HomeAmbientOrbs({ isDark }) {
   const orb2Op = useSharedValue(0.5);
 
   useEffect(() => {
-    if (Platform.OS === "web" || reduced) return undefined;
+    if (hideOrbs || Platform.OS === "web" || reduced) return undefined;
 
     orb1Y.value = withRepeat(
       withTiming(-12, { duration: 5400, easing: Easing.inOut(Easing.quad) }),
@@ -64,7 +62,7 @@ export default function HomeAmbientOrbs({ isDark }) {
   }, [orb1Op, orb1Y, orb2Op, orb2Y, reduced]);
 
   useEffect(() => {
-    if (Platform.OS !== "web" || reduced) return undefined;
+    if (hideOrbs || Platform.OS !== "web" || reduced) return undefined;
     let cancelled = false;
     let tween1;
     let tween2;
@@ -116,6 +114,10 @@ export default function HomeAmbientOrbs({ isDark }) {
 
   const brassGlow = isDark ? c.accentSoft : c.primarySoft;
   const neutralGlow = isDark ? c.lineSoft : c.lineSoft;
+
+  if (hideOrbs) {
+    return null;
+  }
 
   return (
     <View style={[styles.layer, styles.peNone]} accessibilityElementsHidden>

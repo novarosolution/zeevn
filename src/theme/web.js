@@ -136,8 +136,8 @@ export function applyWebPremiumChrome(isDark, backgroundSolid, liteMode) {
       button, [role="button"], a {
         touch-action: manipulation;
       }
-      /* Emergency override: prevent RN web touch-action:none from trapping page scroll. */
-      .r-touchAction-19z077z {
+      /* Prevent RN web touch-action:none from blocking page scroll after taps. */
+      [class*="r-touchAction-"] {
         touch-action: pan-y !important;
       }
       @media (pointer: coarse) {

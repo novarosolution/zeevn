@@ -48,11 +48,11 @@ function createStyles(c, isDark, selected) {
           : ALCHEMY.gold
         : isDark
         ? "rgba(255, 255, 255, 0.16)"
-        : "rgba(116, 79, 28, 0.18)",
+        : "rgba(22, 69, 51, 0.18)",
       backgroundColor: selected
         ? isDark
-          ? "rgba(232, 200, 90, 0.14)"
-          : "rgba(255, 244, 219, 0.95)"
+          ? "rgba(52, 211, 153, 0.14)"
+          : "rgba(232, 245, 238, 0.95)"
         : isDark
         ? "rgba(255, 255, 255, 0.04)"
         : "rgba(255, 251, 244, 0.96)",

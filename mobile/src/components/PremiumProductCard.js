@@ -170,7 +170,7 @@ function PremiumProductCardBase({
         <LinearGradient
           colors={
             isDark
-              ? ["rgba(232, 200, 90, 0.16)", "rgba(28, 25, 23, 0)", "rgba(28, 25, 23, 0)"]
+              ? ["rgba(52, 211, 153, 0.16)", "rgba(28, 25, 23, 0)", "rgba(28, 25, 23, 0)"]
               : ["rgba(255, 255, 255, 0.92)", "rgba(255, 252, 246, 0.6)", "rgba(255, 248, 234, 0.92)"]
           }
           locations={[0, 0.45, 1]}
@@ -201,13 +201,13 @@ function PremiumProductCardBase({
                 {
                   backgroundColor: isDark
                     ? semantic.accent.heroGlow
-                    : "rgba(231, 200, 90, 0.32)",
+                    : "rgba(52, 211, 153, 0.32)",
                 },
                 styles.peNone,
               ]}
             />
             <LinearGradient
-              colors={[ALCHEMY.gold, "rgba(212, 175, 55, 0.42)", "rgba(116, 79, 28, 0.18)"]}
+              colors={[ALCHEMY.gold, "rgba(212, 175, 55, 0.42)", "rgba(22, 69, 51, 0.18)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={[styles.imageRing, styles.peNone]}
@@ -218,8 +218,8 @@ function PremiumProductCardBase({
                 {
                   backgroundColor: isDark ? "rgba(28, 25, 23, 0.96)" : "#FFFFFF",
                   borderColor: isDark
-                    ? "rgba(232, 200, 90, 0.18)"
-                    : "rgba(116, 79, 28, 0.1)",
+                    ? "rgba(52, 211, 153, 0.18)"
+                    : "rgba(22, 69, 51, 0.1)",
                 },
               ]}
             >
@@ -289,10 +289,10 @@ function PremiumProductCardBase({
                   styles.metaPill,
                   {
                     borderColor: isDark
-                      ? "rgba(232, 200, 90, 0.22)"
-                      : "rgba(116, 79, 28, 0.14)",
+                      ? "rgba(52, 211, 153, 0.22)"
+                      : "rgba(22, 69, 51, 0.14)",
                     backgroundColor: isDark
-                      ? "rgba(201, 162, 39, 0.1)"
+                      ? "rgba(31, 92, 71, 0.1)"
                       : "rgba(255, 252, 248, 0.92)",
                   },
                 ]}
@@ -312,10 +312,10 @@ function PremiumProductCardBase({
                     styles.metaPill,
                     {
                       borderColor: isDark
-                        ? "rgba(232, 200, 90, 0.32)"
-                        : "rgba(201, 162, 39, 0.28)",
+                        ? "rgba(52, 211, 153, 0.32)"
+                        : "rgba(31, 92, 71, 0.28)",
                       backgroundColor: isDark
-                        ? "rgba(201, 162, 39, 0.16)"
+                        ? "rgba(31, 92, 71, 0.16)"
                         : ALCHEMY.goldSoft,
                     },
                   ]}
@@ -388,7 +388,7 @@ function PremiumProductCardBase({
                 {
                   borderColor: isDark ? ALCHEMY.goldBright : ALCHEMY.gold,
                   backgroundColor: isDark
-                    ? "rgba(201, 162, 39, 0.14)"
+                    ? "rgba(31, 92, 71, 0.14)"
                     : "rgba(255, 252, 248, 0.96)",
                 },
               ]}
@@ -502,12 +502,12 @@ function createStyles(c, isDark, compact = false) {
     web: {
       boxShadow: isDark
         ? "0 28px 64px rgba(0,0,0,0.55), 0 8px 22px rgba(0,0,0,0.32), inset 0 1px 0 rgba(232,200,90,0.16)"
-        : "0 24px 56px rgba(61, 42, 18, 0.13), 0 6px 18px rgba(28, 25, 23, 0.06), inset 0 1px 0 rgba(255,255,255,0.95), inset 0 0 0 1px rgba(199, 154, 58, 0.08)",
+        : "0 24px 56px rgba(22, 69, 51, 0.13), 0 6px 18px rgba(28, 25, 23, 0.06), inset 0 1px 0 rgba(255,255,255,0.95), inset 0 0 0 1px rgba(199, 154, 58, 0.08)",
       transition: "transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease",
     },
   });
   const discountShadow = platformShadow({
-    web: { boxShadow: "0 8px 18px rgba(98, 64, 20, 0.35)" },
+    web: { boxShadow: "0 8px 18px rgba(22, 69, 51, 0.35)" },
     ios: {
       shadowColor: "#3D2A12",
       shadowOffset: { width: 0, height: 4 },
@@ -525,7 +525,7 @@ function createStyles(c, isDark, compact = false) {
     },
     android: { elevation: 5 },
     web: {
-      boxShadow: "0 14px 28px rgba(98, 64, 20, 0.32), inset 0 1px 0 rgba(255,255,255,0.18)",
+      boxShadow: "0 14px 28px rgba(22, 69, 51, 0.32), inset 0 1px 0 rgba(255,255,255,0.18)",
       transition: "transform 0.18s ease, box-shadow 0.18s ease",
       cursor: "pointer",
     },
@@ -790,7 +790,7 @@ function createStyles(c, isDark, compact = false) {
       ...Platform.select({
         web: {
           transform: [{ translateY: -1 }],
-          boxShadow: "0 18px 34px rgba(98, 64, 20, 0.42), inset 0 1px 0 rgba(255,255,255,0.22)",
+          boxShadow: "0 18px 34px rgba(22, 69, 51, 0.42), inset 0 1px 0 rgba(255,255,255,0.22)",
         },
         default: {},
       }),

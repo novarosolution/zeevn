@@ -391,7 +391,7 @@ function createNotificationsStyles(c, shadowPremium, shadowLift, isDark, layoutF
       web: {
         borderRadius: radius.xxl,
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: isDark ? "rgba(232, 200, 90, 0.14)" : "rgba(116, 79, 28, 0.1)"},
+        borderColor: isDark ? "rgba(52, 211, 153, 0.14)" : "rgba(22, 69, 51, 0.1)"},
       default: {}})},
   headerRow: {
     flexDirection: "row",
@@ -418,7 +418,7 @@ function createNotificationsStyles(c, shadowPremium, shadowLift, isDark, layoutF
     paddingVertical: 8,
     ...Platform.select({
       web: {
-        boxShadow: isDark ? "0 10px 20px rgba(0,0,0,0.24)" : "0 8px 16px rgba(61, 42, 18, 0.1)"},
+        boxShadow: isDark ? "0 10px 20px rgba(0,0,0,0.24)" : "0 8px 16px rgba(22, 69, 51, 0.1)"},
       default: {}})},
   refreshBtnText: {
     color: c.primary,
@@ -474,7 +474,7 @@ function createNotificationsStyles(c, shadowPremium, shadowLift, isDark, layoutF
       web: {
         boxShadow: isDark
           ? "0 14px 30px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.03)"
-          : "0 12px 26px rgba(61, 42, 18, 0.09), inset 0 1px 0 rgba(255,255,255,0.85)"},
+          : "0 12px 26px rgba(22, 69, 51, 0.09), inset 0 1px 0 rgba(255,255,255,0.85)"},
       default: {}})},
   noticeCardUnread: {
     borderColor: c.primaryBorder,

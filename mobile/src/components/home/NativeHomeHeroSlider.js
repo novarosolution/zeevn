@@ -1,14 +1,13 @@
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { HOME_HERO_MOBILE_SLIDER_SLIDES } from "../../constants/marketingAssets";
 import { HOME_SCREEN_UI, HOME_TRUST_STRIP } from "../../content/appContent";
+import { resolveNativeHomeHeroSlides } from "../../utils/homeHeroSlides";
 import { FIGMA } from "../../theme/figmaApp";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, spacing, typography } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
-import { getAppHeroSlides, getAppMarketingHeroSlides } from "../../utils/homeViewMedia";
 import HeroMediaSlider from "./HeroMediaSlider";
 
 const cardShadow = platformShadow({
@@ -22,14 +21,13 @@ const cardShadow = platformShadow({
 });
 
 /** Single premium native home slider + trust strip in one card. */
-export default function NativeHomeHeroSlider({ navigation, heroSlides = [] }) {
+export default function NativeHomeHeroSlider({ navigation, heroSlides = [], products = [] }) {
   const { isDark } = useTheme();
 
-  const activeSlides = useMemo(() => {
-    const adminSlides = getAppHeroSlides(heroSlides);
-    if (adminSlides.length) return adminSlides;
-    return getAppMarketingHeroSlides(HOME_HERO_MOBILE_SLIDER_SLIDES);
-  }, [heroSlides]);
+  const activeSlides = useMemo(
+    () => resolveNativeHomeHeroSlides({ heroSlides, products }),
+    [heroSlides, products]
+  );
 
   if (!activeSlides.length) return null;
 
@@ -91,10 +89,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: "#14110e",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(201, 162, 39, 0.32)",
+    borderColor: "rgba(31, 92, 71, 0.32)",
   },
   cardDark: {
-    borderColor: "rgba(214, 173, 91, 0.28)",
+    borderColor: "rgba(42, 117, 89, 0.28)",
   },
   cardPressed: {
     opacity: 0.96,
@@ -105,7 +103,7 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "rgba(214, 173, 91, 0.5)",
+    backgroundColor: "rgba(42, 117, 89, 0.5)",
     zIndex: 2,
   },
   trustRow: {
@@ -117,11 +115,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm + 4,
     backgroundColor: "rgba(255, 253, 248, 0.98)",
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(201, 162, 39, 0.16)",
+    borderTopColor: "rgba(31, 92, 71, 0.16)",
   },
   trustRowDark: {
     backgroundColor: "rgba(20, 17, 14, 0.98)",
-    borderTopColor: "rgba(214, 173, 91, 0.14)",
+    borderTopColor: "rgba(42, 117, 89, 0.14)",
   },
   trustChip: {
     flex: 1,

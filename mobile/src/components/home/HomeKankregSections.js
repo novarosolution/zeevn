@@ -1,18 +1,14 @@
 import React, { useEffect, useMemo } from "react";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { getCategoryGridCellStyle, useKankregLayout } from "../../theme/kankregBreakpoints";
 import PremiumButton from "../ui/PremiumButton";
-import PremiumEmptyState from "../ui/PremiumEmptyState";
 import { SectionHeader } from "./editorial";
 import {
   HOME_EYEBROW_LETTER_SPACING,
   HOME_SPACE,
   HOME_TYPE,
-  homeEditorialInk,
-  homeEditorialMuted,
 } from "../../theme/homeEditorial";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
@@ -21,101 +17,104 @@ import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";
 import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import { HOME_SCREEN_UI } from "../../content/appContent";
+import { CATEGORY_SECTION_UI } from "../../content/categorySectionContent";
 import { formatINR } from "../../utils/currency";
 import { isWebLean } from "../../theme/webLean";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
-
-const CATEGORY_GRADIENTS = [
-  ["#f3e7cc", "#e3cfa6"],
-  ["#e7eee6", "#cdddcf"],
-  ["#f1e3d6", "#dcc3ad"],
-  ["#eee7dd", "#d6c7b1"],
-];
+import { buildHomeCategories } from "../../utils/homeCategories";
+import { HomeCatalogViewAllLink } from "./HomeCatalogProductViews";
 
 const MARQUEE_CSS_ID = "kankreg-home-marquee-keyframes";
 const MARQUEE_CLASS = "kankreg-home-marquee";
 
-const CAT_CARD_CSS_ID = "kankreg-home-category-card";
-const CAT_CARD_CLASS = "kankreg-cat-card";
-const CAT_PHOTO_CLASS = "kankreg-cat-photo";
+const CAT_CARD_CSS_ID = "kankreg-home-category-card-v6";
+const CAT_CARD_CLASS = "kankreg-cat-card-v6";
 
-/** Uniform lookbook tile aspect ratio (image frame). */
-const CATEGORY_IMAGE_ASPECT = 4 / 5;
-
-function useCategoryCardHoverCss() {
+function useCategorySectionCss() {
   useEffect(() => {
     injectWebCssOnce(
       CAT_CARD_CSS_ID,
       `.${CAT_CARD_CLASS} {
-  transition: transform 0.38s ease, box-shadow 0.38s ease;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease, border-color 0.28s ease;
+  border: 1px solid rgba(92, 104, 52, 0.14);
 }
 .${CAT_CARD_CLASS}:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 20px 44px -28px rgba(25, 20, 15, 0.28);
-}
-.${CAT_PHOTO_CLASS} {
-  transition: transform 0.6s ease-out;
-}
-.${CAT_CARD_CLASS}:hover .${CAT_PHOTO_CLASS} {
-  transform: scale(1.04);
+  transform: translateY(-4px);
+  box-shadow: 0 24px 48px -32px rgba(36, 68, 36, 0.24);
+  border-color: rgba(220, 172, 116, 0.5);
 }
 @media (prefers-reduced-motion: reduce) {
-  .${CAT_CARD_CLASS}, .${CAT_PHOTO_CLASS} { transition: none !important; }
-  .${CAT_CARD_CLASS}:hover { transform: none; box-shadow: 0 8px 24px -20px rgba(25, 20, 15, 0.18); }
-  .${CAT_CARD_CLASS}:hover .${CAT_PHOTO_CLASS} { transform: none; }
+  .${CAT_CARD_CLASS} { transition: none !important; }
+  .${CAT_CARD_CLASS}:hover { transform: none; }
 }`
     );
   }, []);
 }
 
-function CategoryLookbookCard({ cat, cellStyle, onPress, isDark }) {
-  const ink = homeEditorialInk(isDark);
-  const muted = homeEditorialMuted(isDark);
+function CategoryIconCard({ cat, onPress, isDark, compact = false }) {
   const isWeb = Platform.OS === "web";
+  const metaLine = cat.tagline || cat.description || CATEGORY_SECTION_UI.browseLabel;
+  const accent = cat.accent || KANKREG_PALETTE.green;
+  const ink = isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink;
+  const muted = isDark ? "rgba(250, 248, 244, 0.72)" : KANKREG_PALETTE.inkSoft;
+  const cardMinH = CATEGORY_SECTION_UI.cardMinHeight || 168;
+  const cardMaxH = CATEGORY_SECTION_UI.cardMaxHeight || 192;
 
   return (
     <Pressable
       onPress={onPress}
       className={isWeb ? CAT_CARD_CLASS : undefined}
-      style={({ focused }) => [
+      style={({ focused, hovered }) => [
         styles.catCard,
-        cellStyle,
         isDark && styles.catCardDark,
         focused && isWeb ? styles.catCardFocus : null,
+        hovered && isWeb ? styles.catCardHover : null,
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`Browse ${cat.label}`}
+      accessibilityLabel={`${cat.label} — ${metaLine}`}
     >
-      <View style={styles.catImageFrame}>
-        <LinearGradient colors={cat.gradient} style={StyleSheet.absoluteFillObject} />
-        {cat.image ? (
-          <Image
-            source={{ uri: cat.image }}
-            className={isWeb ? CAT_PHOTO_CLASS : undefined}
-            style={styles.catPhoto}
-            contentFit="cover"
-            contentPosition="center"
-            transition={280}
-          />
-        ) : null}
-        {cat.icon ? (
-          <View style={[styles.catIconRing, isDark && styles.catIconRingDark]} pointerEvents="none">
-            <Ionicons
-              name={cat.icon}
-              size={icon.lg}
-              color={isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.gold}
-            />
+      <View style={[styles.catCardInner, { minHeight: cardMinH, maxHeight: cardMaxH }]}>
+        <LinearGradient
+          colors={isDark && cat.gradientDark ? cat.gradientDark : cat.gradient}
+          style={StyleSheet.absoluteFillObject}
+        />
+        {cat.count > 0 ? (
+          <View style={[styles.catCountBadge, isDark && styles.catCountBadgeDark]} pointerEvents="none">
+            <Text style={[styles.catCountText, isDark && styles.catCountTextDark]}>{cat.count}</Text>
           </View>
         ) : null}
-      </View>
-      <View style={styles.catCopy}>
-        <View style={[styles.catGoldMark, isDark && styles.catGoldMarkDark]} />
-        <Text style={[styles.catLabel, { color: ink }]} numberOfLines={2}>
-          {cat.label.toUpperCase()}
-        </Text>
-        <Text style={[styles.catMeta, { color: muted }]} numberOfLines={1}>
-          {cat.count} {HOME_SCREEN_UI.categories.itemsSuffix}
-        </Text>
+        <View style={styles.catIconHero} pointerEvents="none">
+          <View
+            style={[
+              styles.catIconRing,
+              compact && styles.catIconRingCompact,
+              {
+                borderColor: `${accent}55`,
+                backgroundColor: isDark ? "rgba(252, 248, 240, 0.08)" : "rgba(252, 248, 240, 0.82)",
+              },
+            ]}
+          >
+            <Ionicons
+              name={cat.icon || "grid-outline"}
+              size={compact ? icon.lg : icon.xl + 4}
+              color={accent}
+            />
+          </View>
+        </View>
+        <View style={[styles.catCopy, isDark && styles.catCopyDark]} pointerEvents="none">
+          <Text style={[styles.catLabel, { color: ink }]} numberOfLines={1}>
+            {cat.label}
+          </Text>
+          <Text style={[styles.catMeta, { color: muted }]} numberOfLines={compact ? 1 : 2}>
+            {metaLine}
+          </Text>
+          <View style={styles.catCtaRow}>
+            <Text style={[styles.catCtaText, { color: accent }]}>
+              {cat.cta || CATEGORY_SECTION_UI.shopCta}
+            </Text>
+            <Ionicons name="arrow-forward" size={icon.xs} color={accent} />
+          </View>
+        </View>
       </View>
     </Pressable>
   );
@@ -145,7 +144,7 @@ export function HomeMarqueeTicker() {
         <View style={styles.marqueeTrack}>
           <View className={MARQUEE_CLASS} style={styles.marqueeScroller}>
             <Text
-              style={[styles.marqueeText, styles.marqueeTextWeb, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.inkSoft }]}
+              style={[styles.marqueeText, styles.marqueeTextWeb, { color: isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.green }]}
             >
               {segment}
               {segment}
@@ -165,56 +164,58 @@ export function HomeMarqueeTicker() {
   );
 }
 
-/** Category lookbook grid — categories present on products from API. */
+/** Category lookbook grid — API categories merged with Zeevan defaults. */
 export function HomeCategoryCards({ products = [], onBrowse, onOpenShop, productTypeTitle = "" }) {
   const { isDark } = useTheme();
-  const { categoryCols } = useKankregLayout();
+  const { categoryCols, isMobileWeb } = useKankregLayout();
   const cellStyle = getCategoryGridCellStyle(categoryCols);
-  useCategoryCardHoverCss();
+  useCategorySectionCss();
 
-  const categories = useMemo(() => {
-    const tileIcons = HOME_SCREEN_UI.categories.webTileIcons || [];
-    const fromProducts = [...new Set(products.map((p) => String(p.category || "").trim()).filter(Boolean))].slice(0, 4);
-    return fromProducts.map((label, i) => ({
-      key: label,
-      label,
-      count: products.filter((p) => p.category === label).length,
-      gradient: CATEGORY_GRADIENTS[i % CATEGORY_GRADIENTS.length],
-      image: products.find((p) => p.category === label)?.image,
-      icon: tileIcons[i % tileIcons.length] || "grid-outline",
-    }));
-  }, [products]);
+  const categories = useMemo(
+    () => buildHomeCategories(products, { max: CATEGORY_SECTION_UI.maxCoreTiles }),
+    [products]
+  );
 
-  if (!categories.length) {
-    return (
-      <PremiumEmptyState
-        iconName="grid-outline"
-        title={HOME_SCREEN_UI.empty.categoriesTitle}
-        description={HOME_SCREEN_UI.empty.categoriesDescription}
-        ctaLabel={HOME_SCREEN_UI.empty.categoriesCta}
-        onCtaPress={onOpenShop}
-      />
-    );
-  }
-
-  const sectionTitle = productTypeTitle || HOME_SCREEN_UI.categories.webTitleFallback;
+  const sectionTitle = productTypeTitle || CATEGORY_SECTION_UI.title;
+  const sectionKicker = CATEGORY_SECTION_UI.subtitle;
 
   return (
-    <View style={styles.catSection}>
-      <SectionHeader
-        eyebrow={HOME_SCREEN_UI.categories.webShopBy}
-        title={sectionTitle}
-      />
-      <View style={styles.catGrid}>
-        {categories.map((cat) => (
-          <CategoryLookbookCard
-            key={cat.key}
-            cat={cat}
-            cellStyle={cellStyle}
-            isDark={isDark}
-            onPress={() => onBrowse?.(cat.label)}
-          />
-        ))}
+    <View
+      style={[styles.catSection, isDark && styles.catSectionDark]}
+      nativeID="home-categories"
+      accessibilityRole={Platform.OS === "web" ? "region" : undefined}
+      accessibilityLabel={CATEGORY_SECTION_UI.title}
+    >
+      <View
+        style={[
+          Platform.OS === "web" && styles.catSectionInner,
+          Platform.OS === "web" && isDark && styles.catSectionInnerDark,
+        ]}
+      >
+        <SectionHeader
+          eyebrow={CATEGORY_SECTION_UI.eyebrow}
+          title={sectionTitle}
+          kicker={sectionKicker}
+          hairline
+          right={
+            <HomeCatalogViewAllLink
+              label={CATEGORY_SECTION_UI.viewAllLabel}
+              onPress={() => onOpenShop?.()}
+            />
+          }
+        />
+        <View style={styles.catGrid}>
+          {categories.map((cat) => (
+            <View key={cat.key} style={cellStyle}>
+              <CategoryIconCard
+                cat={cat}
+                compact={isMobileWeb}
+                isDark={isDark}
+                onPress={() => onBrowse?.(cat.label)}
+              />
+            </View>
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -316,7 +317,7 @@ export function HomeEditorialHero({ navigation, featuredProduct, heroTitle, hero
           <View
             style={[
               styles.editorialStats,
-              isDark && { borderTopColor: "rgba(232, 200, 90, 0.18)" },
+              isDark && { borderTopColor: "rgba(52, 211, 153, 0.18)" },
             ]}
           >
             {HOME_SCREEN_UI.web.heroStats.map((stat) => (
@@ -344,7 +345,7 @@ export function HomeEditorialHero({ navigation, featuredProduct, heroTitle, hero
             styles.floatA,
             isDark && {
               backgroundColor: "rgba(24, 21, 19, 0.92)",
-              borderColor: "rgba(232, 200, 90, 0.22)",
+              borderColor: "rgba(52, 211, 153, 0.22)",
             },
           ]}
         >
@@ -359,7 +360,7 @@ export function HomeEditorialHero({ navigation, featuredProduct, heroTitle, hero
             styles.floatB,
             isDark && {
               backgroundColor: "rgba(24, 21, 19, 0.92)",
-              borderColor: "rgba(232, 200, 90, 0.22)",
+              borderColor: "rgba(52, 211, 153, 0.22)",
             },
           ]}
         >
@@ -381,14 +382,17 @@ export function HomeEditorialHero({ navigation, featuredProduct, heroTitle, hero
 const styles = StyleSheet.create({
   marqueeWrap: {
     marginTop: spacing.lg,
-    paddingVertical: spacing.sm + 2,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.line,
+    paddingVertical: spacing.sm + 4,
+    backgroundColor: "rgba(15, 46, 36, 0.04)",
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "rgba(31, 92, 71, 0.12)",
     overflow: "hidden",
+    borderRadius: 12,
   },
   marqueeWrapDark: {
-    borderColor: "#3f3933",
+    backgroundColor: "rgba(42, 117, 89, 0.06)",
+    borderColor: "rgba(42, 117, 89, 0.14)",
   },
   marqueeTrack: {
     width: "100%",
@@ -409,38 +413,158 @@ const styles = StyleSheet.create({
   },
   catSection: {
     width: "100%",
+    paddingTop: HOME_SPACE.lg,
+    paddingBottom: HOME_SPACE.xl,
+    paddingHorizontal: 0,
   },
-  catGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: HOME_SPACE.lg,
-    width: "100%",
-    ...Platform.select({
-      web: { rowGap: HOME_SPACE.lg, columnGap: HOME_SPACE.lg },
-      default: { gap: HOME_SPACE.md },
-    }),
-  },
-  catCard: {
-    overflow: "hidden",
-    borderRadius: radius.lg,
+  catSectionDark: {},
+  catSectionInner: {
+    position: "relative",
+    zIndex: 1,
+    paddingHorizontal: HOME_SPACE.lg,
+    paddingTop: HOME_SPACE.lg,
+    paddingBottom: HOME_SPACE.lg + 4,
+    borderRadius: 24,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.line,
+    borderColor: "rgba(92, 104, 52, 0.1)",
     backgroundColor: KANKREG_PALETTE.card,
     ...Platform.select({
       web: {
-        boxShadow: "0 8px 24px -20px rgba(25, 20, 15, 0.18)",
+        boxShadow: "0 1px 0 rgba(252, 248, 240, 0.8) inset",
+      },
+      default: {},
+    }),
+  },
+  catSectionInnerDark: {
+    backgroundColor: "rgba(30, 36, 24, 0.55)",
+    borderColor: "rgba(168, 184, 108, 0.12)",
+  },
+  catGrid: {
+    width: "100%",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: HOME_SPACE.md,
+  },
+  catCard: {
+    width: "100%",
+    borderRadius: radius.lg + 2,
+    overflow: "hidden",
+    backgroundColor: KANKREG_PALETTE.card,
+    ...Platform.select({
+      web: {
         cursor: "pointer",
+        boxShadow: "0 8px 28px -20px rgba(36, 68, 36, 0.18)",
       },
       default: {},
     }),
   },
   catCardDark: {
-    backgroundColor: "#181513",
-    borderColor: "#3f3933",
     ...Platform.select({
-      web: { boxShadow: "0 12px 32px -24px rgba(0, 0, 0, 0.42)" },
+      web: { boxShadow: "0 12px 32px -20px rgba(0, 0, 0, 0.38)" },
       default: {},
     }),
+  },
+  catCardHover: {
+    ...Platform.select({
+      web: {},
+      default: {},
+    }),
+  },
+  catCardInner: {
+    width: "100%",
+    position: "relative",
+    overflow: "hidden",
+    flexDirection: "column",
+    justifyContent: "flex-end",
+  },
+  catCountBadge: {
+    position: "absolute",
+    top: HOME_SPACE.sm,
+    right: HOME_SPACE.sm,
+    zIndex: 3,
+    minWidth: 26,
+    height: 26,
+    paddingHorizontal: 7,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(252, 248, 240, 0.92)",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(92, 104, 52, 0.18)",
+  },
+  catCountBadgeDark: {
+    backgroundColor: "rgba(30, 36, 24, 0.72)",
+    borderColor: "rgba(168, 184, 108, 0.2)",
+  },
+  catCountText: {
+    fontFamily: FONT_PRICE,
+    fontSize: HOME_TYPE.eyebrow,
+    color: KANKREG_PALETTE.greenDeep,
+  },
+  catCountTextDark: {
+    color: KANKREG_PALETTE.goldBright,
+  },
+  catIconHero: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingBottom: HOME_SPACE.xl + 8,
+  },
+  catIconRing: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    ...Platform.select({
+      web: { backdropFilter: "blur(6px)" },
+      default: {},
+    }),
+  },
+  catIconRingCompact: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+  },
+  catCopy: {
+    paddingHorizontal: HOME_SPACE.sm + 2,
+    paddingTop: HOME_SPACE.sm,
+    paddingBottom: HOME_SPACE.sm + 2,
+    gap: 2,
+    backgroundColor: "rgba(252, 248, 240, 0.92)",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(92, 104, 52, 0.1)",
+  },
+  catCopyDark: {
+    backgroundColor: "rgba(18, 24, 16, 0.72)",
+    borderTopColor: "rgba(168, 184, 108, 0.12)",
+  },
+  catLabel: {
+    fontFamily: FONT_HEADING,
+    fontSize: HOME_TYPE.kicker,
+    lineHeight: 20,
+    letterSpacing: -0.15,
+  },
+  catMeta: {
+    fontFamily: fonts.regular,
+    fontSize: HOME_TYPE.eyebrow + 1,
+    lineHeight: 16,
+  },
+  catCtaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 4,
+  },
+  catCtaText: {
+    fontFamily: fonts.semibold,
+    fontSize: HOME_TYPE.eyebrow,
+    letterSpacing: 0.2,
   },
   catCardFocus: {
     ...Platform.select({
@@ -452,67 +576,6 @@ const styles = StyleSheet.create({
       },
       default: {},
     }),
-  },
-  catImageFrame: {
-    width: "100%",
-    aspectRatio: CATEGORY_IMAGE_ASPECT,
-    overflow: "hidden",
-    backgroundColor: KANKREG_PALETTE.paper2,
-  },
-  catPhoto: {
-    width: "100%",
-    height: "100%",
-  },
-  catIconRing: {
-    position: "absolute",
-    alignSelf: "center",
-    top: "32%",
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255, 253, 248, 0.72)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(169, 119, 46, 0.28)",
-    ...Platform.select({
-      web: { backdropFilter: "blur(6px)" },
-      default: {},
-    }),
-  },
-  catIconRingDark: {
-    backgroundColor: "rgba(24, 21, 19, 0.62)",
-    borderColor: "rgba(232, 200, 90, 0.22)",
-  },
-  catCopy: {
-    paddingHorizontal: HOME_SPACE.md,
-    paddingTop: HOME_SPACE.sm + 2,
-    paddingBottom: HOME_SPACE.md,
-    gap: HOME_SPACE.xs,
-  },
-  catGoldMark: {
-    width: 22,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: KANKREG_PALETTE.gold,
-    opacity: 0.55,
-    marginBottom: 2,
-  },
-  catGoldMarkDark: {
-    backgroundColor: KANKREG_PALETTE.goldBright,
-    opacity: 0.42,
-  },
-  catLabel: {
-    fontFamily: fonts.semibold,
-    fontSize: HOME_TYPE.eyebrow,
-    lineHeight: HOME_TYPE.eyebrow + 4,
-    letterSpacing: HOME_EYEBROW_LETTER_SPACING,
-  },
-  catMeta: {
-    fontFamily: fonts.regular,
-    fontSize: HOME_TYPE.kicker - 1,
-    lineHeight: 18,
-    letterSpacing: 0.15,
   },
   feature: {
     flexDirection: "row",

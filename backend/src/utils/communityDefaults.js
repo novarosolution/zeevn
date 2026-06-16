@@ -10,7 +10,7 @@ const COMMUNITY_DEFAULT_POSTS = [
     views: "12.3k",
     likes: "1.2k",
     quote: "",
-    author: { name: "kankreg_ghee", subtitle: "The golden pour", avatar: "K", brand: true },
+    author: { name: "zeevan", subtitle: "The golden pour", avatar: "K", brand: true },
   },
   {
     id: "customer-ramesh",
@@ -34,7 +34,7 @@ const COMMUNITY_DEFAULT_POSTS = [
     views: "8.1k",
     likes: "980",
     quote: "",
-    author: { name: "kankreg_ghee", subtitle: "Meet our herd", avatar: "K", brand: true },
+    author: { name: "zeevan", subtitle: "Meet our herd", avatar: "K", brand: true },
   },
   {
     id: "reel-recipe",
@@ -46,7 +46,7 @@ const COMMUNITY_DEFAULT_POSTS = [
     views: "5.6k",
     likes: "742",
     quote: "",
-    author: { name: "kankreg_ghee", subtitle: "Ghee dal tadka", avatar: "K", brand: true },
+    author: { name: "zeevan", subtitle: "Ghee dal tadka", avatar: "K", brand: true },
   },
   {
     id: "customer-priya",
@@ -67,11 +67,11 @@ const COMMUNITY_SECTION_DEFAULTS = {
   eyebrow: "Our Community",
   title: "Loved by families, shared every day",
   instagram: {
-    handle: "kankreg_ghee",
-    displayHandle: "@kankreg_ghee",
+    handle: "zeevan",
+    displayHandle: "@zeevan",
     followersLabel: "18.4k followers",
     followLabel: "Follow",
-    url: "https://instagram.com/kankreg_ghee",
+    url: "https://instagram.com/zeevan",
   },
   posts: COMMUNITY_DEFAULT_POSTS,
 };

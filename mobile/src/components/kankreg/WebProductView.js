@@ -46,6 +46,16 @@ import { getComingSoonImageBlurStyle } from "../../utils/comingSoonImageStyle";
 import ComingSoonProductOverlay from "../product/ComingSoonProductOverlay";
 import ComingSoonPurchasePanel from "../product/ComingSoonPurchasePanel";
 import { resolveProductPageContent } from "../../utils/resolveProductPageContent";
+import {
+  ProductFaqSection,
+  ProductIngredientsCard,
+  ProductPullQuoteBlock,
+  ProductShippingCard,
+  ProductSpecsGrid,
+  ProductStorageCard,
+  ProductUsageGrid,
+  ProductWhyZeevan,
+} from "../product/ProductPageExtras";
 import { fonts, icon as sz, layout, radius, spacing, typography } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 
@@ -76,7 +86,7 @@ if (Platform.OS === "web") {
   transition: border-color 0.22s ease, box-shadow 0.22s ease;
 }
 .${PRODUCT_FEAT_CLASS}:hover {
-  border-color: rgba(214, 173, 91, 0.35) !important;
+  border-color: rgba(42, 117, 89, 0.35) !important;
   box-shadow: 0 10px 28px -12px rgba(80, 60, 25, 0.12) !important;
 }
 .${PRODUCT_BTN_CART_CLASS}, .${PRODUCT_BTN_BUY_CLASS} {
@@ -281,6 +291,24 @@ export default function WebProductView({
     reviewsSection,
     showStorySection,
     showNutritionSection,
+    ui: pageUi,
+    specs,
+    ingredients,
+    storage,
+    shipping,
+    whyZeevan,
+    faq,
+    usageRituals: usageRitualsContent,
+    processSteps: processStepsContent,
+    processTitle,
+    highlightQuote,
+    showRichExtras,
+    showSpecs,
+    showIngredients,
+    showStorage,
+    showShipping,
+    showWhyZeevan,
+    showFaq,
   } = pageContent;
 
 
@@ -296,7 +324,14 @@ export default function WebProductView({
     }
     navigation.navigate("Shop");
   };
-  const usageRituals = Array.isArray(product?.usageRituals) ? product.usageRituals.filter(Boolean) : [];
+  const usageRituals =
+    Array.isArray(product?.usageRituals) && product.usageRituals.length
+      ? product.usageRituals.filter(Boolean)
+      : usageRitualsContent;
+  const processSteps =
+    Array.isArray(product?.processSteps) && product.processSteps.length
+      ? product.processSteps
+      : processStepsContent;
   const lifestyleImage = useMemo(() => {
     const raw = String(product?.lifestyleImage || "").trim();
     return raw ? getProductSectionImageUri(raw) : "";
@@ -480,7 +515,7 @@ export default function WebProductView({
                   onPress={onBuyNow}
                 >
                   <LinearGradient
-                    colors={["#D4A843", "#9A6B1F"]}
+                    colors={["#788844", "#244424"]}
                     style={styles.btnBuyGrad}
                     start={{ x: 0, y: 0.5 }}
                     end={{ x: 1, y: 0.5 }}
@@ -534,8 +569,8 @@ export default function WebProductView({
       <LinearGradient
         colors={
           isDark
-            ? ["rgba(214, 173, 91, 0.05)", "transparent"]
-            : ["rgba(214, 173, 91, 0.1)", "transparent", "rgba(60, 98, 72, 0.04)"]
+            ? ["rgba(42, 117, 89, 0.05)", "transparent"]
+            : ["rgba(42, 117, 89, 0.1)", "transparent", "rgba(60, 98, 72, 0.04)"]
         }
         locations={[0, 0.45, 1]}
         style={styles.pageWash}
@@ -584,6 +619,19 @@ export default function WebProductView({
       </View>
       </SectionReveal>
 
+      {showSpecs ? (
+        <SectionReveal immediate delay={240} preset="fade-up" style={styles.sectionBlock}>
+          <View style={[styles.secBlock, isDark && styles.secBlockDark]}>
+            <ProductSpecsGrid
+              specs={specs}
+              isDark={isDark}
+              eyebrow={pageUi.specsEyebrow}
+              title={pageUi.specsTitle}
+            />
+          </View>
+        </SectionReveal>
+      ) : null}
+
       {showStorySection ? (
         <SectionReveal immediate delay={260} preset="fade-up" style={styles.sectionBlock}>
           <View style={[styles.secBlock, isDark && styles.secBlockDark]}>
@@ -620,17 +668,17 @@ export default function WebProductView({
         </SectionReveal>
       ) : null}
 
-      {product?.richProductPage && (product?.highlightQuote || product?.processSteps?.length || lifestyleImage || usageRituals.length > 0) ? (
+      {showRichExtras || highlightQuote || processSteps.length || usageRituals.length || lifestyleImage ? (
         <SectionReveal immediate delay={320} preset="fade-up" style={styles.sectionBlock}>
           <View style={styles.richExtras}>
-            <ProductPullQuote quote={product?.highlightQuote} isDark={isDark} styles={styles} />
-            {product?.processSteps?.length ? (
+            <ProductPullQuoteBlock quote={highlightQuote || product?.highlightQuote} isDark={isDark} />
+            {processSteps.length ? (
               <View style={styles.processWrap}>
-                {product.processTitle ? (
-                  <Text style={[styles.processTitle, { color: muted }]}>{product.processTitle}</Text>
+                {processTitle ? (
+                  <Text style={[styles.processTitle, { color: muted }]}>{processTitle}</Text>
                 ) : null}
                 <View style={[styles.processGrid, isMd && styles.processGridDesktop]}>
-                  {product.processSteps.map((step, stepIdx) => (
+                  {processSteps.map((step, stepIdx) => (
                     <ProductProcessStep
                       key={`${step}-${stepIdx}`}
                       step={step}
@@ -654,21 +702,41 @@ export default function WebProductView({
               </View>
             ) : null}
             {usageRituals.length > 0 ? (
-              <View style={styles.usageWrap}>
-                <Text style={[styles.usageEyebrow, { color: muted }]}>Usage & rituals</Text>
-                <View style={[styles.usageGrid, isMd && styles.usageGridDesktop]}>
-                  {usageRituals.map((item, idx) => (
-                    <View key={`${item.title}-${idx}`} style={[styles.usageCard, isDark && styles.usageCardDark]}>
-                      <View style={styles.usageIcon}>
-                        <Ionicons name={item.icon || "sunny-outline"} size={18} color={KANKREG_PALETTE.green} />
-                      </View>
-                      <Text style={[styles.usageTitle, { color: ink }]}>{item.title}</Text>
-                      <Text style={[styles.usageBody, { color: muted }]}>{item.description}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
+              <ProductUsageGrid
+                items={usageRituals}
+                isDark={isDark}
+                eyebrow={pageUi.usageEyebrow}
+                title={pageUi.usageTitle}
+                ink={ink}
+                muted={muted}
+              />
             ) : null}
+          </View>
+        </SectionReveal>
+      ) : null}
+
+      {showIngredients ? (
+        <SectionReveal immediate delay={340} preset="fade-up" style={styles.sectionBlock}>
+          <View style={[styles.secBlock, isDark && styles.secBlockDark]}>
+            <ProductIngredientsCard
+              ingredients={ingredients}
+              isDark={isDark}
+              eyebrow={pageUi.ingredientsEyebrow}
+              title={pageUi.ingredientsTitle}
+            />
+          </View>
+        </SectionReveal>
+      ) : null}
+
+      {showStorage ? (
+        <SectionReveal immediate delay={360} preset="fade-up" style={styles.sectionBlock}>
+          <View style={[styles.secBlock, isDark && styles.secBlockDark]}>
+            <ProductStorageCard
+              storage={storage}
+              isDark={isDark}
+              eyebrow={pageUi.storageEyebrow}
+              title={pageUi.storageTitle}
+            />
           </View>
         </SectionReveal>
       ) : null}
@@ -724,6 +792,40 @@ export default function WebProductView({
                 ) : null}
               </View>
             ) : null}
+          </View>
+        </SectionReveal>
+      ) : null}
+
+      {showShipping ? (
+        <SectionReveal immediate delay={400} preset="fade-up" style={styles.sectionBlock}>
+          <View style={[styles.secBlock, isDark && styles.secBlockDark]}>
+            <ProductShippingCard
+              shipping={shipping}
+              isDark={isDark}
+              eyebrow={pageUi.shippingEyebrow}
+              title={pageUi.shippingTitle}
+            />
+          </View>
+        </SectionReveal>
+      ) : null}
+
+      {showWhyZeevan ? (
+        <SectionReveal immediate delay={420} preset="fade-up" style={styles.sectionBlock}>
+          <View style={[styles.secBlock, isDark && styles.secBlockDark]}>
+            <ProductWhyZeevan
+              whyZeevan={whyZeevan}
+              isDark={isDark}
+              eyebrow={pageUi.whyEyebrow}
+              title={pageUi.whyTitle}
+            />
+          </View>
+        </SectionReveal>
+      ) : null}
+
+      {showFaq ? (
+        <SectionReveal immediate delay={430} preset="fade-up" style={styles.sectionBlock}>
+          <View style={[styles.secBlock, isDark && styles.secBlockDark]}>
+            <ProductFaqSection faq={faq} isDark={isDark} eyebrow={pageUi.faqEyebrow} title={pageUi.faqTitle} />
           </View>
         </SectionReveal>
       ) : null}
@@ -819,7 +921,7 @@ export default function WebProductView({
 
       {relatedProducts.length > 0 ? (
         <SectionReveal immediate delay={500} preset="fade-up" style={styles.sectionBlock}>
-          <SectionHeader eyebrow="Catalog" title="You may also like" compact />
+          <SectionHeader eyebrow={pageUi.relatedEyebrow} title={pageUi.relatedTitle} compact />
           <CatalogGridReveal>
             {relatedProducts.map((item, idx) => {
               const flags = getProductCardFlags(item, PRODUCT_SCREEN.comingSoonNoteFallback);
@@ -858,7 +960,7 @@ function createStyles(c, isDark) {
     web: {
       boxShadow: isDark
         ? "0 12px 40px rgba(0,0,0,0.32)"
-        : "0 12px 36px rgba(61, 42, 18, 0.07), 0 4px 14px rgba(28, 25, 23, 0.04)",
+        : "0 12px 36px rgba(22, 69, 51, 0.07), 0 4px 14px rgba(28, 25, 23, 0.04)",
     },
   });
 
@@ -1111,7 +1213,7 @@ function createStyles(c, isDark) {
       padding: 16,
       borderRadius: 16,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(201, 162, 39, 0.28)",
+      borderColor: "rgba(31, 92, 71, 0.28)",
       borderTopWidth: 2,
       borderTopColor: KANKREG_PALETTE.gold,
       backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(255, 253, 249, 0.96)",
@@ -1120,14 +1222,14 @@ function createStyles(c, isDark) {
         web: {
           boxShadow: isDark
             ? "0 10px 28px rgba(0,0,0,0.22)"
-            : "0 8px 24px rgba(61, 42, 18, 0.06), inset 0 1px 0 rgba(255,255,255,0.92)",
+            : "0 8px 24px rgba(22, 69, 51, 0.06), inset 0 1px 0 rgba(255,255,255,0.92)",
         },
         default: {},
       }),
     },
     pricePanelDark: {
-      borderColor: "rgba(232, 200, 90, 0.22)",
-      borderTopColor: "rgba(232, 200, 90, 0.55)",
+      borderColor: "rgba(52, 211, 153, 0.22)",
+      borderTopColor: "rgba(52, 211, 153, 0.55)",
     },
     inBagPill: {
       alignSelf: "flex-start",
@@ -1250,7 +1352,7 @@ function createStyles(c, isDark) {
         web: {
           boxShadow: isDark
             ? "0 12px 32px rgba(0,0,0,0.2)"
-            : "0 10px 28px rgba(61, 42, 18, 0.07)",
+            : "0 10px 28px rgba(22, 69, 51, 0.07)",
         },
         default: {},
       }),
@@ -1265,7 +1367,7 @@ function createStyles(c, isDark) {
       borderColor: "rgba(199, 154, 58, 0.34)",
     },
     comingSoonPanelDark: {
-      borderColor: "rgba(231, 200, 90, 0.28)",
+      borderColor: "rgba(52, 211, 153, 0.28)",
     },
     comingSoonPanelGrad: {
       flexDirection: "row",
@@ -1722,7 +1824,7 @@ function createStyles(c, isDark) {
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: radius.pill,
-      backgroundColor: "rgba(214, 173, 91, 0.14)",
+      backgroundColor: "rgba(42, 117, 89, 0.14)",
     },
     processBadgeText: {
       fontFamily: fonts.bold,

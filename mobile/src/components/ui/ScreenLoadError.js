@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(169, 119, 46, 0.12)",
+    backgroundColor: "rgba(31, 92, 71, 0.12)",
   },
   title: {
     fontFamily: fonts.bold,
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     width: "100%",
     borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: "rgba(169, 119, 46, 0.22)",
+    borderColor: "rgba(31, 92, 71, 0.22)",
     backgroundColor: "#fffdf8",
     padding: spacing.md,
     gap: spacing.xs,

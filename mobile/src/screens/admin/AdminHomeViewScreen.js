@@ -31,14 +31,8 @@ import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumChip from "../../components/ui/PremiumChip";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
-import AdminHomeMediaEditor from "../../components/admin/AdminHomeMediaEditor";
-import {
-  normalizeAboutSection,
-  normalizeCommunitySection,
-  normalizeCompareSection,
-  normalizeProcessSection,
-  normalizeHeroSlides,
-} from "../../utils/homeViewMedia";
+import AdminHomeHeroEditor from "../../components/admin/AdminHomeHeroEditor";
+import { normalizeHeroSlides } from "../../utils/homeViewMedia";
 
 function Section({ label, hint, children, styles, revealIndex = 0 }) {
   return (
@@ -85,7 +79,6 @@ export default function AdminHomeViewScreen({ navigation, route }) {
   const [primeSectionTitle, setPrimeSectionTitle] = useState(HOME_VIEW_DEFAULTS.primeSectionTitle);
   const [productTypeTitle, setProductTypeTitle] = useState(HOME_VIEW_DEFAULTS.productTypeTitle);
   const [showPrimeSection, setShowPrimeSection] = useState(true);
-  const [showHomeSections, setShowHomeSections] = useState(true);
   const [showProductTypeSections, setShowProductTypeSections] = useState(true);
   const [productCardStyle, setProductCardStyle] = useState("compact");
   const [shopName, setShopName] = useState(HOME_VIEW_DEFAULTS.shopLocation.name);
@@ -96,10 +89,6 @@ export default function AdminHomeViewScreen({ navigation, route }) {
   const [shopLatitude, setShopLatitude] = useState("");
   const [shopLongitude, setShopLongitude] = useState("");
   const [heroSlides, setHeroSlides] = useState([]);
-  const [aboutSection, setAboutSection] = useState(HOME_VIEW_DEFAULTS.aboutSection);
-  const [communitySection, setCommunitySection] = useState(HOME_VIEW_DEFAULTS.communitySection);
-  const [compareSection, setCompareSection] = useState(HOME_VIEW_DEFAULTS.compareSection);
-  const [processSection, setProcessSection] = useState(HOME_VIEW_DEFAULTS.processSection);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -114,7 +103,6 @@ export default function AdminHomeViewScreen({ navigation, route }) {
       setPrimeSectionTitle(data.primeSectionTitle || HOME_VIEW_DEFAULTS.primeSectionTitle);
       setProductTypeTitle(data.productTypeTitle || HOME_VIEW_DEFAULTS.productTypeTitle);
       setShowPrimeSection(data.showPrimeSection !== false);
-      setShowHomeSections(data.showHomeSections !== false);
       setShowProductTypeSections(data.showProductTypeSections !== false);
       setProductCardStyle(data.productCardStyle === "comfortable" ? "comfortable" : "compact");
       const shop = data.shopLocation || HOME_VIEW_DEFAULTS.shopLocation;
@@ -130,10 +118,6 @@ export default function AdminHomeViewScreen({ navigation, route }) {
         Number.isFinite(Number(shop.longitude)) ? String(shop.longitude) : ""
       );
       setHeroSlides(normalizeHeroSlides(data.heroSlides));
-      setAboutSection(normalizeAboutSection(data.aboutSection));
-      setCommunitySection(normalizeCommunitySection(data.communitySection));
-      setCompareSection(normalizeCompareSection(data.compareSection));
-      setProcessSection(normalizeProcessSection(data.processSection));
     } catch (err) {
       setError(err.message || "Unable to load home view settings.");
     }
@@ -173,7 +157,6 @@ export default function AdminHomeViewScreen({ navigation, route }) {
         primeSectionTitle: primeSectionTitle.trim(),
         productTypeTitle: productTypeTitle.trim(),
         showPrimeSection,
-        showHomeSections,
         showProductTypeSections,
         productCardStyle,
         shopLocation: {
@@ -186,10 +169,6 @@ export default function AdminHomeViewScreen({ navigation, route }) {
           longitude: shopLongitude.trim() ? Number(shopLongitude) : null,
         },
         heroSlides,
-        aboutSection,
-        communitySection,
-        compareSection,
-        processSection,
       });
       setSuccess("Storefront settings saved.");
     } catch (err) {
@@ -253,18 +232,10 @@ export default function AdminHomeViewScreen({ navigation, route }) {
           </Section>
 
           <Section label={copy.heroMediaSection} hint={copy.heroMediaHint} styles={styles} revealIndex={1}>
-            <AdminHomeMediaEditor
+            <AdminHomeHeroEditor
               token={token}
               heroSlides={heroSlides}
               onHeroSlidesChange={setHeroSlides}
-              aboutSection={aboutSection}
-              onAboutSectionChange={setAboutSection}
-              communitySection={communitySection}
-              onCommunitySectionChange={setCommunitySection}
-              compareSection={compareSection}
-              onCompareSectionChange={setCompareSection}
-              processSection={processSection}
-              onProcessSectionChange={setProcessSection}
               onError={setError}
             />
           </Section>
@@ -301,12 +272,6 @@ export default function AdminHomeViewScreen({ navigation, route }) {
             subtitle="Show shop-by-category rail"
             value={showProductTypeSections}
             onValueChange={setShowProductTypeSections}
-          />
-          <AdminToggleRow
-            title="Editorial & quote"
-            subtitle="Featured block + brand quote"
-            value={showHomeSections}
-            onValueChange={setShowHomeSections}
             isLast
           />
           </AdminPanel>

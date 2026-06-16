@@ -91,7 +91,7 @@ function buildCheckoutOptions({ order, razorpayKeyId, user, themeColor }) {
     key: razorpayKeyId,
     amount: amountInPaise,
     currency: "INR",
-    name: "KankreG",
+    name: "Zeevan",
     description: `Order ${String(order?._id || "").slice(-8).toUpperCase()}`,
     order_id: order?.razorpay?.orderId || "",
     prefill: {

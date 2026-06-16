@@ -78,7 +78,7 @@ function createStyles(c, isDark, compact) {
     web: {
       boxShadow: isDark
         ? "0 14px 30px rgba(0,0,0,0.42), inset 0 1px 0 rgba(232,200,90,0.18)"
-        : "0 14px 30px rgba(98, 64, 20, 0.12), inset 0 1px 0 rgba(255,255,255,0.95)",
+        : "0 14px 30px rgba(22, 69, 51, 0.12), inset 0 1px 0 rgba(255,255,255,0.95)",
     },
     ios: {
       shadowColor: isDark ? "#000" : "#3D2A12",
@@ -103,9 +103,9 @@ function createStyles(c, isDark, compact) {
       borderRadius: radius.pill,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: isDark ? "rgba(201, 162, 39, 0.16)" : ALCHEMY.goldSoft,
+      backgroundColor: isDark ? "rgba(31, 92, 71, 0.16)" : ALCHEMY.goldSoft,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(232, 200, 90, 0.32)" : "rgba(201, 162, 39, 0.32)",
+      borderColor: isDark ? "rgba(52, 211, 153, 0.32)" : "rgba(31, 92, 71, 0.32)",
       marginBottom: spacing.xs,
       ...iconShadow,
     },

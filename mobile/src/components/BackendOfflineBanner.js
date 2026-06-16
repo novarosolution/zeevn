@@ -2,13 +2,14 @@ import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
+import { isLocalApiUrl } from "../services/apiBase";
 import { useApiHealth } from "../context/ApiHealthContext";
 import { useTheme } from "../context/ThemeContext";
 import { fonts, icon, spacing, typography } from "../theme/tokens";
 import useReducedMotion from "../hooks/useReducedMotion";
 
 /**
- * Shown when GET / health check fails — usually backend not running or wrong EXPO_PUBLIC_API_URL.
+ * Shown when the Zeevan API health check fails.
  */
 export default function BackendOfflineBanner() {
   const { isOnline, checking, apiBaseUrl, retry } = useApiHealth();
@@ -17,10 +18,9 @@ export default function BackendOfflineBanner() {
 
   if (isOnline || checking) return null;
 
-  const hint =
-    Platform.OS === "web"
-      ? `Start the API: npm run backend:dev (from repo root) and set EXPO_PUBLIC_API_URL in mobile/.env.`
-      : `Ensure the API is reachable at ${apiBaseUrl}`;
+  const hint = isLocalApiUrl(apiBaseUrl)
+    ? "Start the local API: npm run backend:dev (repo root), then retry."
+    : "Zeevan is temporarily unavailable. Check your connection and try again.";
 
   return (
     <Animated.View
@@ -30,18 +30,18 @@ export default function BackendOfflineBanner() {
         styles.wrap,
         {
           backgroundColor: isDark ? "rgba(28, 25, 23, 0.96)" : "rgba(255, 251, 245, 0.98)",
-          borderColor: isDark ? "rgba(232, 200, 90, 0.35)" : "rgba(169, 119, 46, 0.4)",
+          borderColor: isDark ? "rgba(168, 184, 108, 0.35)" : "rgba(92, 104, 52, 0.4)",
         },
       ]}
       accessibilityRole="alert"
     >
-      <Ionicons name="cloud-offline-outline" size={icon.md} color={isDark ? "#e8c878" : "#8a5f22"} />
+      <Ionicons name="cloud-offline-outline" size={icon.md} color={isDark ? "#C4D088" : "#244424"} />
       <View style={styles.textCol}>
         <Text style={[styles.title, { color: isDark ? "#f5efe4" : "#1a1510" }]}>Cannot reach server</Text>
         <Text style={[styles.body, { color: isDark ? "rgba(245,239,228,0.75)" : "#5c4d3a" }]} numberOfLines={3}>
           {hint}
         </Text>
-        <Text style={[styles.url, { color: isDark ? "#d6ad5b" : "#8a5f22" }]} numberOfLines={1}>
+        <Text style={[styles.url, { color: isDark ? "#788844" : "#244424" }]} numberOfLines={1}>
           {apiBaseUrl}
         </Text>
       </View>
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 10,
-    backgroundColor: "rgba(169, 119, 46, 0.15)",
+    backgroundColor: "rgba(92, 104, 52, 0.15)",
   },
-  retryText: { fontFamily: fonts.semibold, fontSize: 13, color: "#8a5f22" },
+  retryText: { fontFamily: fonts.semibold, fontSize: 13, color: "#244424" },
 });

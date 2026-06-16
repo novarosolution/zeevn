@@ -1,2 +1,2 @@
-/** Large brand film (~87 MB) — import only from deferred About section. */
-export const HOME_BRAND_PROMO_VIDEO = require("../../assets/marketing/home-hero-video.mp4");
+/** Bundled brand films removed — use admin `aboutSection.videoUrl` only when needed. */
+export const HOME_BRAND_PROMO_VIDEO = null;

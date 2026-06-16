@@ -23,7 +23,7 @@ const statsWrapShadow = platformShadow({
   android: { elevation: 3 },
   web: {
     boxShadow:
-      "0 14px 36px rgba(61, 42, 18, 0.07), 0 2px 10px rgba(28, 25, 23, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.94)",
+      "0 14px 36px rgba(22, 69, 51, 0.07), 0 2px 10px rgba(28, 25, 23, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.94)",
   },
 });
 
@@ -135,8 +135,8 @@ function StatCell({ item, active, reducedMotion, c, isDark, compact = false }) {
         style={[
           styles.iconBadge,
           {
-            backgroundColor: isDark ? "rgba(201, 162, 39, 0.14)" : ALCHEMY.goldSoft,
-            borderColor: isDark ? c.primaryBorder : "rgba(98, 64, 20, 0.12)",
+            backgroundColor: isDark ? "rgba(31, 92, 71, 0.14)" : ALCHEMY.goldSoft,
+            borderColor: isDark ? c.primaryBorder : "rgba(22, 69, 51, 0.12)",
           },
         ]}
       >
@@ -176,7 +176,7 @@ export default function HomeStatsStrip({ c, isDark }) {
       style={[
         styles.wrap,
         {
-          borderColor: isDark ? "rgba(232, 200, 90, 0.22)" : "rgba(116, 79, 28, 0.14)",
+          borderColor: isDark ? "rgba(52, 211, 153, 0.22)" : "rgba(22, 69, 51, 0.14)",
           backgroundColor: isDark ? "rgba(28, 25, 23, 0.62)" : "rgba(255, 253, 249, 0.96)",
         },
       ]}
@@ -184,8 +184,8 @@ export default function HomeStatsStrip({ c, isDark }) {
       <LinearGradient
         colors={
           isDark
-            ? ["rgba(201, 162, 39, 0.08)", "rgba(18, 16, 14, 0.32)", "rgba(8, 6, 5, 0.55)"]
-            : ["rgba(255, 254, 252, 0.94)", "rgba(252, 248, 240, 0.55)", "rgba(255, 253, 249, 0.92)"]
+            ? ["rgba(31, 92, 71, 0.08)", "rgba(18, 16, 14, 0.32)", "rgba(8, 6, 5, 0.55)"]
+            : ["rgba(255, 254, 252, 0.94)", "rgba(240, 248, 244, 0.55)", "rgba(255, 253, 249, 0.92)"]
         }
         locations={[0, 0.46, 1]}
         start={{ x: 0, y: 0 }}
@@ -203,7 +203,7 @@ export default function HomeStatsStrip({ c, isDark }) {
                 style={[
                   styles.divider,
                   isMobileWeb && styles.dividerMobileWeb,
-                  { backgroundColor: isDark ? "rgba(232, 200, 90, 0.28)" : "rgba(116, 79, 28, 0.16)" },
+                  { backgroundColor: isDark ? "rgba(52, 211, 153, 0.28)" : "rgba(22, 69, 51, 0.16)" },
                 ]}
               />
             ) : null}

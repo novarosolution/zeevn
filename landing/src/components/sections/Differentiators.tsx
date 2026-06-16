@@ -18,7 +18,7 @@ export default function Differentiators() {
       <div className="overflow-hidden rounded-2xl border border-charcoal/8 bg-cream shadow-card">
         <div className="grid grid-cols-3 border-b border-charcoal/8 bg-earth-green/5 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-charcoal/60 md:px-6">
           <span />
-          <span className="text-center text-earth-green">KankreG</span>
+          <span className="text-center text-earth-green">Zeevan</span>
           <span className="text-center">Ordinary ghee</span>
         </div>
         {differentiators.items.map((item, i) => (

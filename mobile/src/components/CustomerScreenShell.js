@@ -42,7 +42,7 @@ export default function CustomerScreenShell({ children, style, topAccent = true 
   const { colors: c, isDark } = useTheme();
   const reducedMotion = useReducedMotion();
   const { isMobileWeb } = useKankregLayout();
-  const liteWebChrome = Platform.OS === "web" && (reducedMotion || isMobileWeb);
+  const liteWebChrome = Platform.OS === "web";
   const shellColors = getCustomerShellGradient(isDark, c);
   const semantic = getSemanticColors(c);
   const alchemy = getAlchemyPalette(c, isDark);
@@ -163,7 +163,7 @@ export default function CustomerScreenShell({ children, style, topAccent = true 
         colors={
           isDark
             ? [alchemy.goldSoft, "transparent", semantic.bg.overlay, "rgba(0, 0, 0, 0.32)"]
-            : [alchemy.goldSoft, "transparent", semantic.bg.overlay, "rgba(116, 79, 28, 0.04)"]
+            : [alchemy.goldSoft, "transparent", semantic.bg.overlay, "rgba(22, 69, 51, 0.04)"]
         }
         locations={[0, 0.24, 0.52, 1]}
         start={{ x: 0, y: 0 }}
@@ -174,7 +174,7 @@ export default function CustomerScreenShell({ children, style, topAccent = true 
         colors={
           isDark
             ? ["rgba(0,0,0,0.15)", "transparent", "transparent", "rgba(0,0,0,0.4)"]
-            : ["rgba(116, 79, 28, 0.025)", "transparent", "transparent", "rgba(90, 62, 22, 0.045)"]
+            : ["rgba(22, 69, 51, 0.025)", "transparent", "transparent", "rgba(90, 62, 22, 0.045)"]
         }
         locations={[0, 0.2, 0.62, 1]}
         start={{ x: 0.5, y: 0 }}
@@ -216,7 +216,7 @@ export default function CustomerScreenShell({ children, style, topAccent = true 
           colors={
             isDark
               ? ["rgba(255,255,255,0.04)", "transparent", "rgba(0,0,0,0.12)"]
-              : ["rgba(255,255,255,0.62)", "transparent", "rgba(116, 79, 28, 0.05)"]
+              : ["rgba(255,255,255,0.62)", "transparent", "rgba(22, 69, 51, 0.05)"]
           }
           locations={[0, 0.5, 1]}
           start={{ x: 0.5, y: 0 }}
@@ -228,8 +228,8 @@ export default function CustomerScreenShell({ children, style, topAccent = true 
         <LinearGradient
           colors={
             isDark
-              ? ["rgba(232, 200, 90, 0.11)", "transparent", "rgba(0,0,0,0.1)"]
-              : ["rgba(255,255,255,0.5)", "transparent", "rgba(116, 79, 28, 0.04)"]
+              ? ["rgba(52, 211, 153, 0.11)", "transparent", "rgba(0,0,0,0.1)"]
+              : ["rgba(255,255,255,0.5)", "transparent", "rgba(22, 69, 51, 0.04)"]
           }
           locations={[0, 0.36, 1]}
           start={{ x: 0.5, y: 0 }}

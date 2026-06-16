@@ -41,10 +41,10 @@ export default function AddressTypeSelector({ value = "Home", onChange, label = 
                       : ALCHEMY.gold
                     : isDark
                       ? "rgba(255,255,255,0.12)"
-                      : "rgba(116, 79, 28, 0.16)",
+                      : "rgba(22, 69, 51, 0.16)",
                   backgroundColor: active
                     ? isDark
-                      ? "rgba(201, 162, 39, 0.16)"
+                      ? "rgba(31, 92, 71, 0.16)"
                       : ALCHEMY.goldSoft
                     : isDark
                       ? "rgba(255,255,255,0.04)"

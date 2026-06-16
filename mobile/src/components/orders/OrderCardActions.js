@@ -111,7 +111,7 @@ function OrderCardActionsBase({
         accessibilityLabel={MY_ORDERS_UI.reorder}
       >
         <LinearGradient
-          colors={isDark ? ["#c9a227", "#8a5a12"] : ["#d9b463", "#9c6b27"]}
+          colors={isDark ? ["#BC905C", "#8a5a12"] : ["#DCAC74", "#244424"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.reorderGradient}

@@ -1,6 +1,6 @@
 /**
  * Typography roles — serif for headings, sans-serif for body/UI.
- * Web headings: CIENUR. Native headings: Fraunces. Body: Hanken Grotesk.
+ * Web headings: Fraunces. Native headings: Fraunces. Body: Hanken Grotesk.
  */
 import { FONT_DISPLAY, FONT_DISPLAY_ITALIC, FONT_DISPLAY_SEMI } from "./customerAlchemy";
 import { fonts } from "./tokens";

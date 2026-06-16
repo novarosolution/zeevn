@@ -119,8 +119,8 @@ export default function OrderLiveMapLeaflet({
       style={[
         leafletChromeStyles.leafletWrap,
         {
-          borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(116, 79, 28, 0.15)",
-          borderTopColor: isDark ? "rgba(232, 200, 90, 0.42)" : "rgba(201, 162, 39, 0.45)",
+          borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(22, 69, 51, 0.15)",
+          borderTopColor: isDark ? "rgba(52, 211, 153, 0.42)" : "rgba(31, 92, 71, 0.45)",
         },
       ]}
     >

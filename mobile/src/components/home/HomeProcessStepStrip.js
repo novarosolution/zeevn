@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: "rgba(255, 253, 248, 0.92)",
     borderWidth: 1,
-    borderColor: "rgba(169, 119, 46, 0.14)",
+    borderColor: "rgba(31, 92, 71, 0.14)",
     ...Platform.select({
       web: { boxShadow: "0 1px 2px rgba(60, 45, 20, 0.04)" },
       default: {},
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   },
   itemDark: {
     backgroundColor: "rgba(24, 21, 19, 0.52)",
-    borderColor: "rgba(214, 173, 91, 0.14)",
+    borderColor: "rgba(42, 117, 89, 0.14)",
   },
   num: {
     fontFamily: fonts.semibold,
@@ -99,9 +99,9 @@ const styles = StyleSheet.create({
     width: 10,
     height: 1,
     marginHorizontal: 4,
-    backgroundColor: "rgba(169, 119, 46, 0.28)",
+    backgroundColor: "rgba(31, 92, 71, 0.28)",
   },
   connectorDark: {
-    backgroundColor: "rgba(214, 173, 91, 0.22)",
+    backgroundColor: "rgba(42, 117, 89, 0.22)",
   },
 });

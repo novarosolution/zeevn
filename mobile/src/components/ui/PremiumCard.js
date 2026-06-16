@@ -78,7 +78,7 @@ function PremiumCardBase({
         <LinearGradient
           colors={
             isDark
-              ? ["rgba(232, 200, 90, 0.08)", "rgba(28, 25, 23, 0)", "rgba(28, 25, 23, 0)"]
+              ? ["rgba(52, 211, 153, 0.08)", "rgba(28, 25, 23, 0)", "rgba(28, 25, 23, 0)"]
               : ["rgba(255, 255, 255, 0.85)", "rgba(255, 252, 246, 0.55)", "rgba(255, 248, 234, 0.85)"]
           }
           locations={[0, 0.5, 1]}
@@ -153,7 +153,7 @@ function createStyles(c, isDark, pad, variant, borderless) {
         web: {
           boxShadow: isDark
             ? "0 18px 38px rgba(0,0,0,0.42), 0 6px 14px rgba(0,0,0,0.24), inset 0 1px 0 rgba(232,200,90,0.1)"
-            : "0 16px 32px rgba(61, 42, 18, 0.08), 0 4px 12px rgba(28, 25, 23, 0.04), inset 0 1px 0 rgba(255,255,255,0.92), inset 0 0 0 1px rgba(199, 154, 58, 0.04)",
+            : "0 16px 32px rgba(22, 69, 51, 0.08), 0 4px 12px rgba(28, 25, 23, 0.04), inset 0 1px 0 rgba(255,255,255,0.92), inset 0 0 0 1px rgba(199, 154, 58, 0.04)",
           transition: "transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease",
         },
       });
@@ -179,8 +179,8 @@ function createStyles(c, isDark, pad, variant, borderless) {
           ? "rgba(248, 113, 113, 0.35)"
           : "rgba(220, 38, 38, 0.2)"
         : isDark
-          ? "rgba(232, 200, 90, 0.18)"
-          : "rgba(116, 79, 28, 0.14)",
+          ? "rgba(52, 211, 153, 0.18)"
+          : "rgba(22, 69, 51, 0.14)",
       overflow: Platform.OS === "web" ? "visible" : "hidden",
       position: "relative",
       ...cardShadow,
@@ -204,7 +204,7 @@ function createStyles(c, isDark, pad, variant, borderless) {
         web: {
           boxShadow: isDark
             ? "0 28px 58px rgba(0,0,0,0.55), 0 8px 22px rgba(0,0,0,0.32), inset 0 1px 0 rgba(232,200,90,0.16)"
-            : "0 22px 50px rgba(61, 42, 18, 0.12), 0 8px 18px rgba(28, 25, 23, 0.07), inset 0 1px 0 rgba(255,255,255,0.95), inset 0 0 0 1px rgba(199, 154, 58, 0.08)",
+            : "0 22px 50px rgba(22, 69, 51, 0.12), 0 8px 18px rgba(28, 25, 23, 0.07), inset 0 1px 0 rgba(255,255,255,0.95), inset 0 0 0 1px rgba(199, 154, 58, 0.08)",
         },
         default: {},
       }),

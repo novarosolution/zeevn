@@ -3,14 +3,7 @@
  * Edit defaults in Admin → Home View → Process journey.
  */
 
-export const PROCESS_STEP_IMAGE_FALLBACKS = {
-  "process-01": require("../../assets/marketing/ghee-process-step-01-pasture.png"),
-  "process-02": require("../../assets/marketing/ghee-process-step-02-milk.png"),
-  "process-03": require("../../assets/marketing/ghee-process-step-03-curd.png"),
-  "process-04": require("../../assets/marketing/ghee-process-step-04-bilona.png"),
-  "process-05": require("../../assets/marketing/ghee-process-step-05-woodfire.png"),
-  "process-06": require("../../assets/marketing/ghee-process-step-06-bottled.png"),
-};
+export const PROCESS_STEP_IMAGE_FALLBACKS = {};
 
 const DEFAULT_STEPS = [
   {

@@ -24,7 +24,7 @@ export function customerPanel(c, shadowPremium, isDark) {
       ? {
           backgroundColor: c.surface,
           borderColor: c.border,
-          borderTopColor: "rgba(232, 200, 90, 0.5)",
+          borderTopColor: "rgba(52, 211, 153, 0.5)",
         }
       : {
           backgroundColor: ALCHEMY.ivory,
@@ -38,7 +38,7 @@ export function customerPanel(c, shadowPremium, isDark) {
           : "linear-gradient(180deg, rgba(255,255,255,0.86), rgba(255,253,250,0.96))",
         boxShadow: isDark
           ? "0 22px 50px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.04)"
-          : "0 18px 40px rgba(61, 42, 18, 0.09), inset 0 1px 0 rgba(255,255,255,0.92)",
+          : "0 18px 40px rgba(22, 69, 51, 0.09), inset 0 1px 0 rgba(255,255,255,0.92)",
         transition: "box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease",
       },
       default: {},
@@ -105,7 +105,7 @@ export function authPanel(c, shadowPremium, isDark, opts = {}) {
       web: {
         boxShadow: isDark
           ? "0 16px 40px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.04)"
-          : "0 12px 32px rgba(61, 42, 18, 0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+          : "0 12px 32px rgba(22, 69, 51, 0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
       },
       ios: {
         shadowColor: "#3D2A12",

@@ -10,6 +10,12 @@ import { HOME_SPACE } from "../../theme/homeEditorial";
 import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
 import StoryImageFrame from "../home/StoryImageFrame";
 import GoldHairline from "../ui/GoldHairline";
+import SectionReveal from "../motion/SectionReveal";
+import {
+  ABOUT_PAGE_ANIM,
+  ABOUT_PAGE_SECTION_LABELS,
+  ABOUT_STORY_BLOCKS,
+} from "../../content/aboutPageContent";
 import { platformShadow } from "../../theme/shadowPlatform";
 
 const panelShadow = platformShadow({
@@ -22,6 +28,10 @@ const panelShadow = platformShadow({
   },
   android: { elevation: 3 },
 });
+
+function AboutSectionDivider() {
+  return <GoldHairline marginVertical={spacing.md} withDot={false} variant="subtle" />;
+}
 
 function StoryBlock({ eyebrow, title, body, isDark, surfaces, iconName }) {
   if (!body && !title) return null;
@@ -40,7 +50,7 @@ function StoryBlock({ eyebrow, title, body, isDark, surfaces, iconName }) {
       ) : null}
       {eyebrow ? <Text style={createKankregEyebrowStyle(isDark)}>{eyebrow}</Text> : null}
       {title ? <Text style={[styles.blockTitle, { color: surfaces.text }]}>{title}</Text> : null}
-      <GoldHairline marginVertical={spacing.sm} short />
+      <GoldHairline marginVertical={spacing.sm} withDot={false} variant="subtle" />
       {body ? <Text style={[styles.blockBody, { color: surfaces.textSoft }]}>{body}</Text> : null}
     </View>
   );
@@ -50,22 +60,25 @@ function ValuesGrid({ values, isDark, surfaces, isMd }) {
   if (!values?.length) return null;
   return (
     <View style={styles.valuesWrap}>
-      <Text style={createKankregEyebrowStyle(isDark)}>Our values</Text>
-      <Text style={[styles.valuesHeading, { color: surfaces.text }]}>What guides every jar</Text>
+      <Text style={createKankregEyebrowStyle(isDark)}>{ABOUT_PAGE_SECTION_LABELS.storyValues}</Text>
+      <Text style={[styles.valuesHeading, { color: surfaces.text }]}>
+        {ABOUT_PAGE_SECTION_LABELS.storyValuesTitle}
+      </Text>
       <View style={[styles.valuesGrid, isMd && styles.valuesGridWide]}>
-        {values.map((item) => (
-          <View
-            key={item.title}
-            style={[
-              styles.valueCard,
-              { backgroundColor: surfaces.card, borderColor: surfaces.border },
-              panelShadow,
-              isMd && styles.valueCardHalf,
-            ]}
-          >
-            <Text style={[styles.valueTitle, { color: surfaces.text }]}>{item.title}</Text>
-            <Text style={[styles.valueBody, { color: surfaces.textSoft }]}>{item.body}</Text>
-          </View>
+        {values.map((item, idx) => (
+          <SectionReveal key={item.title} index={ABOUT_PAGE_ANIM.values + idx} preset="scale-in">
+            <View
+              style={[
+                styles.valueCard,
+                { backgroundColor: surfaces.card, borderColor: surfaces.border },
+                panelShadow,
+                isMd && styles.valueCardHalf,
+              ]}
+            >
+              <Text style={[styles.valueTitle, { color: surfaces.text }]}>{item.title}</Text>
+              <Text style={[styles.valueBody, { color: surfaces.textSoft }]}>{item.body}</Text>
+            </View>
+          </SectionReveal>
         ))}
       </View>
     </View>
@@ -76,30 +89,33 @@ function PhotoGallery({ photos, isDark, isMd }) {
   if (!photos?.length) return null;
   return (
     <View style={styles.galleryWrap}>
-      <Text style={createKankregEyebrowStyle(isDark)}>Behind the craft</Text>
+      <Text style={createKankregEyebrowStyle(isDark)}>{ABOUT_PAGE_SECTION_LABELS.storyGallery}</Text>
       <Text style={[styles.galleryHeading, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
-        From pasture to pantry
+        {ABOUT_PAGE_SECTION_LABELS.storyGalleryTitle}
       </Text>
       <View style={[styles.galleryGrid, isMd && styles.galleryGridWide]}>
         {photos.map((photo, idx) => (
-          <View
+          <SectionReveal
             key={`${photo.url}-${idx}`}
-            style={[styles.galleryCell, isMd && photos.length > 1 && styles.galleryCellHalf]}
+            index={ABOUT_PAGE_ANIM.gallery + idx}
+            preset={idx % 2 === 0 ? "fade-up" : "slide-right"}
           >
-            <StoryImageFrame
-              source={photo.url}
-              caption={photo.caption}
-              aspectRatio={idx === 0 && photos.length === 1 ? 16 / 9 : 4 / 5}
-              isDark={isDark}
-            />
-          </View>
+            <View style={[styles.galleryCell, isMd && photos.length > 1 && styles.galleryCellHalf]}>
+              <StoryImageFrame
+                source={photo.url}
+                caption={photo.caption}
+                aspectRatio={idx === 0 && photos.length === 1 ? 16 / 9 : 4 / 5}
+                isDark={isDark}
+              />
+            </View>
+          </SectionReveal>
         ))}
       </View>
     </View>
   );
 }
 
-/** About page story — rich text + photos only (no video). */
+/** About page story — pull quote, intro, gallery, narrative blocks & values. */
 export default function AboutPageStory({ about }) {
   const { isDark, colors: c } = useTheme();
   const surfaces = getKankregSurfaces(isDark, c);
@@ -107,56 +123,69 @@ export default function AboutPageStory({ about }) {
 
   if (!about) return null;
 
+  const storyBlocks = ABOUT_STORY_BLOCKS.map((cfg, idx) => {
+    const data = about[cfg.dataKey];
+    if (!data?.title && !data?.body) return null;
+    return (
+      <SectionReveal
+        key={cfg.key}
+        index={ABOUT_PAGE_ANIM.storyBlockStart + idx}
+        preset={cfg.preset || "fade-up"}
+      >
+        <StoryBlock
+          eyebrow={data.eyebrow}
+          title={data.title}
+          body={data.body}
+          isDark={isDark}
+          surfaces={surfaces}
+          iconName={cfg.icon}
+        />
+      </SectionReveal>
+    );
+  }).filter(Boolean);
+
   return (
     <View style={styles.root}>
       {about.pullQuote ? (
-        <View style={[styles.pullQuote, isDark && styles.pullQuoteDark]}>
-          <View style={styles.pullQuoteRule} />
-          <Text style={[styles.pullQuoteText, { color: surfaces.text }]}>{about.pullQuote}</Text>
+        <SectionReveal index={ABOUT_PAGE_ANIM.pullQuote} preset="scale-in">
+          <View style={[styles.pullQuote, isDark && styles.pullQuoteDark]}>
+            <View style={styles.pullQuoteRule} />
+            <Text style={[styles.pullQuoteText, { color: surfaces.text }]}>{about.pullQuote}</Text>
+          </View>
+        </SectionReveal>
+      ) : null}
+
+      {about.body || about.bodyContinued ? (
+        <SectionReveal index={ABOUT_PAGE_ANIM.intro} preset="fade-up">
+          <View style={styles.leadWrap}>
+            {about.body ? (
+              <Text style={[styles.lead, { color: surfaces.text }]}>{about.body}</Text>
+            ) : null}
+            {about.bodyContinued ? (
+              <Text style={[styles.leadContinued, { color: surfaces.textSoft }]}>{about.bodyContinued}</Text>
+            ) : null}
+          </View>
+        </SectionReveal>
+      ) : null}
+
+      {about.photos?.length ? (
+        <SectionReveal index={ABOUT_PAGE_ANIM.gallery} preset="fade-in">
+          <PhotoGallery photos={about.photos} isDark={isDark} isMd={isMd} />
+        </SectionReveal>
+      ) : null}
+
+      {storyBlocks.length ? (
+        <View style={styles.storyBlocks}>
+          <AboutSectionDivider />
+          {storyBlocks}
         </View>
       ) : null}
 
-      {(about.body || about.bodyContinued) ? (
-        <View style={styles.leadWrap}>
-          {about.body ? (
-            <Text style={[styles.lead, { color: surfaces.text }]}>{about.body}</Text>
-          ) : null}
-          {about.bodyContinued ? (
-            <Text style={[styles.leadContinued, { color: surfaces.textSoft }]}>{about.bodyContinued}</Text>
-          ) : null}
-        </View>
+      {about.values?.length ? (
+        <SectionReveal index={ABOUT_PAGE_ANIM.values} preset="fade-up">
+          <ValuesGrid values={about.values} isDark={isDark} surfaces={surfaces} isMd={isMd} />
+        </SectionReveal>
       ) : null}
-
-      <PhotoGallery photos={about.photos} isDark={isDark} isMd={isMd} />
-
-      <StoryBlock
-        eyebrow={about.heritage?.eyebrow}
-        title={about.heritage?.title}
-        body={about.heritage?.body}
-        isDark={isDark}
-        surfaces={surfaces}
-        iconName="paw-outline"
-      />
-
-      <StoryBlock
-        eyebrow={about.bilona?.eyebrow}
-        title={about.bilona?.title}
-        body={about.bilona?.body}
-        isDark={isDark}
-        surfaces={surfaces}
-        iconName="flame-outline"
-      />
-
-      <StoryBlock
-        eyebrow={about.origin?.eyebrow}
-        title={about.origin?.title}
-        body={about.origin?.body}
-        isDark={isDark}
-        surfaces={surfaces}
-        iconName="home-outline"
-      />
-
-      <ValuesGrid values={about.values} isDark={isDark} surfaces={surfaces} isMd={isMd} />
     </View>
   );
 }
@@ -166,25 +195,28 @@ const styles = StyleSheet.create({
     width: "100%",
     gap: HOME_SPACE.lg,
   },
+  storyBlocks: {
+    gap: HOME_SPACE.md,
+  },
   pullQuote: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: spacing.md,
     padding: spacing.lg,
     borderRadius: radius.xl,
-    backgroundColor: "rgba(201, 146, 30, 0.06)",
+    backgroundColor: "rgba(31, 92, 71, 0.06)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(169, 119, 46, 0.2)",
+    borderColor: "rgba(31, 92, 71, 0.2)",
   },
   pullQuoteDark: {
-    backgroundColor: "rgba(201, 146, 30, 0.1)",
-    borderColor: "rgba(169, 119, 46, 0.28)",
+    backgroundColor: "rgba(52, 211, 153, 0.08)",
+    borderColor: "rgba(52, 211, 153, 0.22)",
   },
   pullQuoteRule: {
     width: 3,
     alignSelf: "stretch",
     borderRadius: 2,
-    backgroundColor: KANKREG_PALETTE.gold,
+    backgroundColor: KANKREG_PALETTE.green,
     opacity: 0.8,
   },
   pullQuoteText: {
@@ -219,13 +251,13 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: "rgba(169,119,46,0.12)",
+    backgroundColor: "rgba(31, 92, 71, 0.12)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing.xs,
   },
   blockIconDark: {
-    backgroundColor: "rgba(201,162,39,0.14)",
+    backgroundColor: "rgba(52, 211, 153, 0.12)",
   },
   blockTitle: {
     fontFamily: FONT_HEADING,

@@ -28,7 +28,7 @@ export default function ProcessTimeline() {
               <span className="flex h-10 w-10 items-center justify-center rounded-full bg-earth-green/10 text-earth-green">
                 <ProcessIcon name={step.icon} className="h-5 w-5" />
               </span>
-              <span className="font-display text-lg font-semibold text-ghee-gold">{step.step}</span>
+              <span className="font-display text-lg font-semibold text-brand-green">{step.step}</span>
             </div>
             <h3 className="font-display text-lg font-semibold text-charcoal">{step.title}</h3>
             <p className="mt-2 text-sm leading-relaxed text-charcoal/70">{step.description}</p>

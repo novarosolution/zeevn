@@ -1,7 +1,7 @@
 import React from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { SHOP_SCREEN_UI } from "../../content/appContent";
+import { SHOP_SCREEN_UI } from "../../content/shopPageContent";
 import { useTheme } from "../../context/ThemeContext";
 import { getShopTheme } from "../../theme/shopTheme";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
@@ -13,9 +13,15 @@ export default function ShopCategoryRail({ categories = [], selected = [], onTog
 
   if (!categories.length) return null;
 
+  const railTitle = SHOP_SCREEN_UI.categoryRailTitle;
+  const showTitle =
+    Boolean(railTitle) && SHOP_SCREEN_UI.layout?.showCategoryRailTitle !== false;
+
   return (
     <View style={[styles.wrap, compact && styles.wrapCompact]}>
-      <Text style={[styles.title, { color: t.accent }]}>{SHOP_SCREEN_UI.categoryRailTitle}</Text>
+      {showTitle ? (
+        <Text style={[styles.title, { color: t.accent }]}>{railTitle}</Text>
+      ) : null}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -45,7 +51,9 @@ export default function ShopCategoryRail({ categories = [], selected = [], onTog
                 {label}
               </Text>
               <View style={[styles.count, { backgroundColor: on ? "rgba(255,255,255,0.18)" : t.accentSoft }]}>
-                <Text style={[styles.countText, { color: on ? t.chipOnText : t.accent }]}>{count}</Text>
+                <Text style={[styles.countText, { color: on ? t.chipOnText : t.accent }]}>
+                {count > 0 ? count : "·"}
+              </Text>
               </View>
             </Pressable>
           );
@@ -63,6 +71,7 @@ const styles = StyleSheet.create({
   wrapCompact: {
     marginBottom: spacing.sm,
     paddingHorizontal: Platform.OS === "web" ? 0 : undefined,
+    gap: 0,
   },
   title: {
     fontFamily: fonts.semibold,

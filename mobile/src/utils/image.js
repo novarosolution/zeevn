@@ -200,17 +200,15 @@ function preferWebHeroBundlerVariant(uri, width) {
   if (!isBundled) return value;
 
   const mobile = width <= HERO_SLIDE_MOBILE_MAX_WIDTH;
-  const targetSuffix = mobile ? "-web-840.webp" : "-web-1200.webp";
 
+  // Only swap between committed *-web-*.webp siblings — never rewrite .png/.jpg (Metro 404s).
   if (value.includes("-web-1200.webp") && mobile) {
     return value.replace("-web-1200.webp", "-web-840.webp");
   }
   if (value.includes("-web-840.webp") && !mobile) {
     return value.replace("-web-840.webp", "-web-1200.webp");
   }
-  if (/\.(png|jpe?g)(\?|$)/i.test(value)) {
-    return value.replace(/\.(png|jpe?g)(\?.*)?$/i, (_, __, query) => `${targetSuffix}${query || ""}`);
-  }
+
   return value;
 }
 
@@ -307,12 +305,17 @@ export function getPreviewImageUri(rawUri, { width = 48, quality = "auto:low" } 
   const full = optimizeDisplayImageUrl(raw, { width: 1200, quality: "auto:good" });
   if (!full) return "";
 
+  // Bundled PNG/JPG — no `-preview-48.webp` sibling committed in repo.
+  if (isBundlerMediaPath(full) && !/-web-\d+\.webp/i.test(full)) {
+    return "";
+  }
+
   if (full.includes("res.cloudinary.com")) {
     return optimizeDisplayImageUrl(raw, { width, quality }) || "";
   }
 
-  const preview = full.replace(/-web-\d+\.(webp|jpe?g|jpg|png)/i, "-preview-48.webp");
-  if (preview !== full) return preview;
+  const preview = full.replace(/-web-\d+\.webp/i, "-preview-48.webp");
+  if (preview !== full && preview.includes("-preview-48.webp")) return preview;
 
   return optimizeDisplayImageUrl(raw, { width: Math.min(width, 64), quality }) || "";
 }

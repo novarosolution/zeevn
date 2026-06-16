@@ -42,7 +42,7 @@ export default function KankregCartSummaryCard({
         cardShadow,
       ]}
     >
-      <View style={[styles.accent, { backgroundColor: isDark ? "rgba(232, 200, 90, 0.55)" : KANKREG_PALETTE.gold }]} />
+      <View style={[styles.accent, { backgroundColor: isDark ? "rgba(52, 211, 153, 0.55)" : KANKREG_PALETTE.gold }]} />
       <Text style={[styles.title, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
         {CART_UI.summaryTitle}
       </Text>
@@ -120,7 +120,7 @@ export default function KankregCartSummaryCard({
 }
 
 const cardShadow = platformShadow({
-  web: { boxShadow: "0 12px 32px rgba(61, 42, 18, 0.08)" },
+  web: { boxShadow: "0 12px 32px rgba(22, 69, 51, 0.08)" },
   ios: {
     shadowColor: "#3D2A12",
     shadowOffset: { width: 0, height: 8 },

@@ -10,8 +10,8 @@ export default function AdminProductCell({ name, imageUri, index = 0 }) {
   const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
   const styles = useMemo(() => createStyles(chrome, isDark), [chrome, isDark]);
   const placeholderBg = isDark
-    ? `rgba(232, 200, 90, ${0.08 + (index % 4) * 0.03})`
-    : ["#f3e7cc", "#e7eee6", "#f1e3d6", "#e8e9ee"][index % 4];
+    ? `rgba(52, 211, 153, ${0.08 + (index % 4) * 0.03})`
+    : ["#e8f0eb", "#e7eee6", "#e7eee6", "#e8e9ee"][index % 4];
 
   return (
     <View style={styles.row}>

@@ -1,10 +1,8 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
-import { ALCHEMY } from "../../theme/customerAlchemy";
-import { FONT_HEADING, FONT_PRICE, FONT_BODY_SEMIBOLD } from "../../theme/typographyRoles";
 import { getKankregSurfaces, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
@@ -13,6 +11,11 @@ import { fonts, icon, layout, radius, spacing, typography } from "../../theme/to
 import { KankregSectionHead } from "../kankreg/KankregPageChrome";
 import GoldHairline from "../ui/GoldHairline";
 import PremiumButton from "../ui/PremiumButton";
+import {
+  ABOUT_PAGE_ANIM,
+  ABOUT_PAGE_SECTION_LABELS,
+} from "../../content/aboutPageContent";
+import SectionReveal from "../motion/SectionReveal";
 import { platformShadow, shadowStyleForPlatform } from "../../theme/shadowPlatform";
 
 const panelShadow = platformShadow({
@@ -26,6 +29,34 @@ const panelShadow = platformShadow({
   android: { elevation: 3 },
 });
 
+function AboutSectionDivider({ label }) {
+  if (!label) {
+    return <GoldHairline marginVertical={spacing.lg} withDot={false} variant="subtle" />;
+  }
+  return (
+    <View style={styles.sectionDivider}>
+      <GoldHairline marginVertical={0} withDot={false} variant="subtle" style={styles.sectionDividerLine} />
+      <Text style={styles.sectionDividerLabel}>{label}</Text>
+    </View>
+  );
+}
+
+function SidebarCard({ children, animIndex, surfaces }) {
+  return (
+    <SectionReveal index={animIndex} preset="slide-right">
+      <View
+        style={[
+          styles.sidebarCard,
+          { backgroundColor: surfaces.card, borderColor: surfaces.border },
+          panelShadow,
+        ]}
+      >
+        {children}
+      </View>
+    </SectionReveal>
+  );
+}
+
 export function AboutSidebar({ about, sticky = false }) {
   const { isDark, colors: c } = useTheme();
   const surfaces = getKankregSurfaces(isDark, c);
@@ -34,55 +65,63 @@ export function AboutSidebar({ about, sticky = false }) {
   return (
     <View style={[styles.sidebar, sticky && isMd && styles.sidebarSticky]}>
       {about.sidebarStats?.length ? (
-        <View style={[styles.sidebarCard, { backgroundColor: surfaces.card, borderColor: surfaces.border }, panelShadow]}>
-          <Text style={createKankregEyebrowStyle(isDark)}>At a glance</Text>
+        <SidebarCard animIndex={ABOUT_PAGE_ANIM.sidebarStats} surfaces={surfaces}>
+          <Text style={createKankregEyebrowStyle(isDark)}>{ABOUT_PAGE_SECTION_LABELS.sidebarStats}</Text>
           <View style={styles.statsGrid}>
-            {about.sidebarStats.map((stat) => (
-              <View key={`${stat.value}-${stat.label}`} style={styles.statCell}>
-                <Text style={[styles.statValue, { color: KANKREG_PALETTE.gold }]}>{stat.value}</Text>
-                <Text style={[styles.statLabel, { color: surfaces.textMuted }]}>{stat.label}</Text>
-              </View>
+            {about.sidebarStats.map((stat, idx) => (
+              <SectionReveal key={`${stat.value}-${stat.label}`} index={ABOUT_PAGE_ANIM.sidebarStats + idx} preset="scale-in">
+                <View style={styles.statCell}>
+                  <Text style={[styles.statValue, { color: KANKREG_PALETTE.gold }]}>{stat.value}</Text>
+                  <Text style={[styles.statLabel, { color: surfaces.textMuted }]}>{stat.label}</Text>
+                </View>
+              </SectionReveal>
             ))}
           </View>
-        </View>
+        </SidebarCard>
       ) : null}
 
       {about.highlights?.length ? (
-        <View style={[styles.sidebarCard, { backgroundColor: surfaces.card, borderColor: surfaces.border }, panelShadow]}>
-          <Text style={createKankregEyebrowStyle(isDark)}>The promise</Text>
-          <Text style={[styles.sidebarTitle, { color: surfaces.text }]}>What every jar holds</Text>
-          <GoldHairline marginVertical={spacing.sm} short />
-          {about.highlights.map((item) => (
-            <View key={item.value} style={[styles.highlightRow, isDark && styles.highlightRowDark]}>
-              <View style={styles.highlightDot} />
-              <View style={styles.highlightCopy}>
-                <Text style={[styles.highlightValue, { color: surfaces.text }]}>{item.value}</Text>
-                <Text style={[styles.highlightLabel, { color: surfaces.textMuted }]}>{item.label}</Text>
-                {item.description ? (
-                  <Text style={[styles.highlightDesc, { color: surfaces.textSoft }]}>{item.description}</Text>
-                ) : null}
+        <SidebarCard animIndex={ABOUT_PAGE_ANIM.sidebarHighlights} surfaces={surfaces}>
+          <Text style={createKankregEyebrowStyle(isDark)}>{ABOUT_PAGE_SECTION_LABELS.sidebarPromise}</Text>
+          <Text style={[styles.sidebarTitle, { color: surfaces.text }]}>
+            {ABOUT_PAGE_SECTION_LABELS.sidebarPromiseTitle}
+          </Text>
+          <GoldHairline marginVertical={spacing.sm} withDot={false} variant="subtle" />
+          {about.highlights.map((item, idx) => (
+            <SectionReveal key={item.value} index={ABOUT_PAGE_ANIM.sidebarHighlights + idx} preset="fade-in">
+              <View style={[styles.highlightRow, isDark && styles.highlightRowDark]}>
+                <View style={styles.highlightDot} />
+                <View style={styles.highlightCopy}>
+                  <Text style={[styles.highlightValue, { color: surfaces.text }]}>{item.value}</Text>
+                  <Text style={[styles.highlightLabel, { color: surfaces.textMuted }]}>{item.label}</Text>
+                  {item.description ? (
+                    <Text style={[styles.highlightDesc, { color: surfaces.textSoft }]}>{item.description}</Text>
+                  ) : null}
+                </View>
               </View>
-            </View>
+            </SectionReveal>
           ))}
-        </View>
+        </SidebarCard>
       ) : null}
 
       {about.pillars?.length ? (
-        <View style={[styles.sidebarCard, { backgroundColor: surfaces.card, borderColor: surfaces.border }, panelShadow]}>
-          <Text style={createKankregEyebrowStyle(isDark)}>What we stand for</Text>
-          <Text style={[styles.sidebarTitle, { color: surfaces.text }]}>Four pillars</Text>
-          {about.pillars.filter((p) => p.enabled !== false).map((pillar) => (
-            <View key={pillar.id} style={styles.pillarRow}>
-              <View style={[styles.pillarIcon, isDark && styles.pillarIconDark]}>
-                <Ionicons name={pillar.icon || "leaf-outline"} size={icon.sm} color={KANKREG_PALETTE.goldBright} />
+        <SidebarCard animIndex={ABOUT_PAGE_ANIM.sidebarPillars} surfaces={surfaces}>
+          <Text style={createKankregEyebrowStyle(isDark)}>{ABOUT_PAGE_SECTION_LABELS.sidebarPillars}</Text>
+          <Text style={[styles.sidebarTitle, { color: surfaces.text }]}>{ABOUT_PAGE_SECTION_LABELS.sidebarPillarsTitle}</Text>
+          {about.pillars.filter((p) => p.enabled !== false).map((pillar, idx) => (
+            <SectionReveal key={pillar.id} index={ABOUT_PAGE_ANIM.sidebarPillars + idx} preset="fade-up">
+              <View style={styles.pillarRow}>
+                <View style={[styles.pillarIcon, isDark && styles.pillarIconDark]}>
+                  <Ionicons name={pillar.icon || "leaf-outline"} size={icon.sm} color={KANKREG_PALETTE.goldBright} />
+                </View>
+                <View style={styles.pillarCopy}>
+                  <Text style={[styles.pillarTitle, { color: surfaces.text }]}>{pillar.title}</Text>
+                  <Text style={[styles.pillarBody, { color: surfaces.textSoft }]}>{pillar.body}</Text>
+                </View>
               </View>
-              <View style={styles.pillarCopy}>
-                <Text style={[styles.pillarTitle, { color: surfaces.text }]}>{pillar.title}</Text>
-                <Text style={[styles.pillarBody, { color: surfaces.textSoft }]}>{pillar.body}</Text>
-              </View>
-            </View>
+            </SectionReveal>
           ))}
-        </View>
+        </SidebarCard>
       ) : null}
     </View>
   );
@@ -105,9 +144,9 @@ export function AboutMissionSection({ mission }) {
       <KankregSectionHead eyebrow={mission.eyebrow} title={mission.title} />
       <View style={[styles.missionBody, !isMd && styles.missionBodyStack]}>
         {mission.paragraphs.map((para, idx) => (
-          <Text key={idx} style={[styles.missionPara, { color: surfaces.textSoft }]}>
-            {para}
-          </Text>
+          <SectionReveal key={idx} index={ABOUT_PAGE_ANIM.mission + idx} preset="fade-up">
+            <Text style={[styles.missionPara, { color: surfaces.textSoft }]}>{para}</Text>
+          </SectionReveal>
         ))}
       </View>
     </View>
@@ -125,17 +164,22 @@ export function AboutCraftSection({ craft, sectionRef }) {
       <KankregSectionHead index={2} eyebrow={craft.eyebrow} title={craft.title} />
       <View style={[styles.craftTimeline, !isMd && styles.craftTimelineStack]}>
         {craft.steps.map((step, idx) => (
-          <View
+          <SectionReveal
             key={step.id}
-            style={[styles.craftStep, { backgroundColor: surfaces.card, borderColor: surfaces.border }, panelShadow]}
+            index={ABOUT_PAGE_ANIM.craftStepStart + idx}
+            preset={isMd ? "slide-right" : "fade-up"}
           >
-            <View style={styles.craftStepHead}>
-              <Text style={[styles.craftStepNum, { color: KANKREG_PALETTE.gold }]}>{step.label}</Text>
-              {idx < craft.steps.length - 1 && isMd ? <View style={styles.craftConnector} /> : null}
+            <View
+              style={[styles.craftStep, { backgroundColor: surfaces.card, borderColor: surfaces.border }, panelShadow]}
+            >
+              <View style={styles.craftStepHead}>
+                <Text style={[styles.craftStepNum, { color: KANKREG_PALETTE.gold }]}>{step.label}</Text>
+                {idx < craft.steps.length - 1 && isMd ? <View style={styles.craftConnector} /> : null}
+              </View>
+              <Text style={[styles.craftStepTitle, { color: surfaces.text }]}>{step.title}</Text>
+              <Text style={[styles.craftStepBody, { color: surfaces.textSoft }]}>{step.body}</Text>
             </View>
-            <Text style={[styles.craftStepTitle, { color: surfaces.text }]}>{step.title}</Text>
-            <Text style={[styles.craftStepBody, { color: surfaces.textSoft }]}>{step.body}</Text>
-          </View>
+          </SectionReveal>
         ))}
       </View>
     </View>
@@ -149,8 +193,8 @@ export function AboutCtaSection({ ctaBand, navigation }) {
 
   return (
     <LinearGradient
-      colors={isDark ? ["#2a231c", "#1f1a15"] : ["#fffdf8", "#f0e6d4"]}
-      style={[styles.ctaWrap, isDark && { borderColor: "rgba(232, 200, 90, 0.2)" }]}
+      colors={isDark ? ["#1a2820", "#121816"] : ["#f0f5f2", "#e8f0eb"]}
+      style={[styles.ctaWrap, isDark && { borderColor: "rgba(52, 211, 153, 0.2)" }]}
     >
       <View style={[styles.ctaInner, stackFooterNewsletter && styles.ctaInnerStack]}>
         <View style={styles.ctaCopy}>
@@ -165,12 +209,12 @@ export function AboutCtaSection({ ctaBand, navigation }) {
         </View>
         <View style={[styles.ctaActions, stackFooterNewsletter && styles.ctaActionsStack]}>
           <PremiumButton
-            label={ctaBand.ctaLabel || "Browse the shop"}
-            variant="gold"
+            label={ctaBand.ctaLabel || "Shop"}
+            variant="primary"
             onPress={() => navigation.navigate("Shop")}
           />
           <PremiumButton
-            label={ctaBand.ctaSecondaryLabel || "Contact support"}
+            label={ctaBand.ctaSecondaryLabel || "Support"}
             variant="ghost"
             onPress={() => navigation.navigate("Support")}
           />
@@ -189,11 +233,25 @@ export default function AboutPageLayout({ about, navigation, children, craftRef 
     <View style={[styles.page, twoCol && styles.pageTwoCol]}>
       <View style={[styles.main, twoCol && styles.mainCol]}>
         {children}
-        <AboutMissionSection mission={about.mission} />
-        <AboutCraftSection craft={about.craft} sectionRef={craftRef} />
-        <AboutCtaSection ctaBand={about.ctaBand} navigation={navigation} />
+
+        {!twoCol ? <AboutSidebar about={about} /> : null}
+
+        <AboutSectionDivider label={ABOUT_PAGE_SECTION_LABELS.missionDivider} />
+        <SectionReveal preset="fade-up" index={ABOUT_PAGE_ANIM.mission}>
+          <AboutMissionSection mission={about.mission} />
+        </SectionReveal>
+
+        <AboutSectionDivider label={ABOUT_PAGE_SECTION_LABELS.craftDivider} />
+        <SectionReveal preset="fade-up" index={ABOUT_PAGE_ANIM.craft}>
+          <AboutCraftSection craft={about.craft} sectionRef={craftRef} />
+        </SectionReveal>
+
+        <SectionReveal preset="scale-in" index={ABOUT_PAGE_ANIM.cta}>
+          <AboutCtaSection ctaBand={about.ctaBand} navigation={navigation} />
+        </SectionReveal>
       </View>
-      <AboutSidebar about={about} sticky={twoCol} />
+
+      {twoCol ? <AboutSidebar about={about} sticky /> : null}
     </View>
   );
 }
@@ -212,11 +270,27 @@ const styles = StyleSheet.create({
   },
   main: {
     width: "100%",
-    gap: HOME_SPACE.lg,
+    gap: HOME_SPACE.md,
   },
   mainCol: {
     flex: 1,
     minWidth: 0,
+  },
+  sectionDivider: {
+    marginVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  sectionDividerLine: {
+    width: "100%",
+  },
+  sectionDividerLabel: {
+    fontFamily: fonts.semibold,
+    fontSize: 10,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    color: KANKREG_PALETTE.greenDeep,
+    textAlign: "center",
+    opacity: 0.85,
   },
   sidebar: {
     width: "100%",
@@ -394,6 +468,7 @@ const styles = StyleSheet.create({
     borderColor: KANKREG_PALETTE.line,
     overflow: "hidden",
     width: "100%",
+    marginTop: spacing.sm,
   },
   ctaInner: {
     flexDirection: "row",

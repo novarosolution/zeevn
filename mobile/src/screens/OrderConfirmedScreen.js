@@ -41,7 +41,7 @@ import { platformShadow } from "../theme/shadowPlatform";
 const COPY = ORDER_CELEBRATION_UI.screen;
 
 const heroShadow = platformShadow({
-  web: { boxShadow: "0 20px 48px -20px rgba(61, 42, 18, 0.18)" },
+  web: { boxShadow: "0 20px 48px -20px rgba(22, 69, 51, 0.18)" },
   ios: {
     shadowColor: "#3D2A12",
     shadowOffset: { width: 0, height: 10 },
@@ -322,7 +322,7 @@ function createStyles(c, shadowPremium, isDark) {
       ...heroShadow,
     },
     heroCardDark: {
-      borderColor: "rgba(214, 173, 91, 0.22)",
+      borderColor: "rgba(42, 117, 89, 0.22)",
     },
     eyebrow: {
       fontFamily: fonts.bold,
@@ -369,7 +369,7 @@ function createStyles(c, shadowPremium, isDark) {
     refBadgeDark: {
       backgroundColor: "rgba(255,255,255,0.06)",
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(214, 173, 91, 0.25)",
+      borderColor: "rgba(42, 117, 89, 0.25)",
     },
     refLabel: {
       fontFamily: fonts.semibold,
@@ -430,7 +430,7 @@ function createStyles(c, shadowPremium, isDark) {
     stepIconDark: {
       backgroundColor: "rgba(255,255,255,0.06)",
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(214, 173, 91, 0.2)",
+      borderColor: "rgba(42, 117, 89, 0.2)",
     },
     stepText: {
       flex: 1,

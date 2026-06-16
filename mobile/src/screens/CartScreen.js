@@ -645,7 +645,7 @@ export default function CartScreen({ navigation, route }) {
                 </View>
               ) : (
                 <LinearGradient
-                  colors={["#cba24e", "#a9772e", "#8a5f22"]}
+                  colors={["#788844", "#244424", "#244424"]}
                   locations={[0, 0.45, 1]}
                   start={{ x: 0, y: 0.5 }}
                   end={{ x: 1, y: 0.5 }}
@@ -733,7 +733,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     backgroundColor: isDark ? c.surface : ALCHEMY.cardBg,
     borderRadius: radius.xxl,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? "rgba(232, 200, 90, 0.14)" : ALCHEMY.pillInactive,
+    borderColor: isDark ? "rgba(52, 211, 153, 0.14)" : ALCHEMY.pillInactive,
     borderTopWidth: 3,
     borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
     marginBottom: spacing.md,
@@ -975,8 +975,8 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     overflow: "hidden",
     borderWidth: isDark ? StyleSheet.hairlineWidth : StyleSheet.hairlineWidth * 2,
     borderTopWidth: isDark ? StyleSheet.hairlineWidth : 3,
-    borderColor: isDark ? "rgba(232, 200, 90, 0.18)" : "rgba(138, 90, 18, 0.18)",
-    borderTopColor: isDark ? "rgba(232, 200, 90, 0.18)" : ALCHEMY.gold,
+    borderColor: isDark ? "rgba(52, 211, 153, 0.18)" : "rgba(138, 90, 18, 0.18)",
+    borderTopColor: isDark ? "rgba(52, 211, 153, 0.18)" : ALCHEMY.gold,
     backgroundColor: isDark ? "rgba(14, 12, 10, 0.88)" : "rgba(255, 251, 244, 0.96)",
     ...Platform.select({
       ios: {
@@ -988,7 +988,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
       web: {
         boxShadow: isDark
           ? "0 24px 48px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255, 230, 170, 0.08)"
-          : "0 24px 48px rgba(61, 42, 18, 0.14), inset 0 1px 0 rgba(255, 253, 251, 0.9)"},
+          : "0 24px 48px rgba(22, 69, 51, 0.14), inset 0 1px 0 rgba(255, 253, 251, 0.9)"},
       default: {}}),
     gap: spacing.sm + 4},
   checkoutCtaWrap: {
@@ -1001,7 +1001,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     right: -4,
     bottom: -8,
     borderRadius: semanticRadius.full,
-    backgroundColor: isDark ? "rgba(232, 200, 90, 0.42)" : "rgba(199, 154, 58, 0.4)",
+    backgroundColor: isDark ? "rgba(52, 211, 153, 0.42)" : "rgba(199, 154, 58, 0.4)",
     ...Platform.select({
       web: { filter: "blur(22px)" },
       default: {}}),
@@ -1013,8 +1013,8 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     ...Platform.select({
       web: {
         boxShadow: isDark
-          ? "0 16px 36px rgba(0,0,0,0.55), 0 4px 12px rgba(232, 200, 90, 0.12)"
-          : "0 14px 28px rgba(116, 79, 28, 0.22)"},
+          ? "0 16px 36px rgba(0,0,0,0.55), 0 4px 12px rgba(52, 211, 153, 0.12)"
+          : "0 14px 28px rgba(22, 69, 51, 0.22)"},
       ios: {
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 10 },
@@ -1084,11 +1084,11 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     alignSelf: "stretch",
     borderRadius: semanticRadius.full,
     borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: isDark ? "rgba(232, 200, 90, 0.62)" : "rgba(138, 90, 18, 0.5)",
-    backgroundColor: isDark ? "rgba(232, 200, 90, 0.08)" : "rgba(255, 251, 244, 1)"},
+    borderColor: isDark ? "rgba(52, 211, 153, 0.62)" : "rgba(138, 90, 18, 0.5)",
+    backgroundColor: isDark ? "rgba(52, 211, 153, 0.08)" : "rgba(255, 251, 244, 1)"},
   continueExploreInnerHover: Platform.select({
     web: {
-      backgroundColor: isDark ? "rgba(232, 200, 90, 0.14)" : "rgba(255, 244, 224, 1)"},
+      backgroundColor: isDark ? "rgba(52, 211, 153, 0.14)" : "rgba(255, 244, 224, 1)"},
     default: {}}),
   continueExploreText: {
     fontSize: 12,

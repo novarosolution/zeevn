@@ -39,8 +39,8 @@ export default function HomeTrustStrip({
         <LinearGradient
           colors={
             isDark
-              ? ["rgba(201, 162, 39, 0.07)", "rgba(18, 16, 14, 0.35)", "rgba(8, 6, 5, 0.55)"]
-              : ["rgba(255, 254, 252, 0.97)", "rgba(252, 248, 240, 0.65)", "rgba(255, 253, 249, 0.92)"]
+              ? ["rgba(31, 92, 71, 0.07)", "rgba(18, 16, 14, 0.35)", "rgba(8, 6, 5, 0.55)"]
+              : ["rgba(255, 254, 252, 0.97)", "rgba(240, 248, 244, 0.65)", "rgba(255, 253, 249, 0.92)"]
           }
           locations={[0, 0.42, 1]}
           start={{ x: 0, y: 0 }}

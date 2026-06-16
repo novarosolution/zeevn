@@ -10,7 +10,7 @@ import { useTheme } from "../../../context/ThemeContext";
 
 /**
  * Uppercase, letter-spaced micro-label above editorial sections.
- * Muted taupe — not gold (gold is reserved for hairlines & primary CTAs).
+ * Muted taupe — accent green is reserved for hairlines & primary CTAs.
  */
 function EyebrowBase({ children, align = "left", style, accessibilityLabel }) {
   const { isDark } = useTheme();

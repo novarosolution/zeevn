@@ -267,7 +267,7 @@ function DeliveredIcon({ styles }) {
         </>
       ) : null}
       <Animated.View style={iconStyle}>
-        <LinearGradient colors={["#d9b463", "#9c6b27"]} style={styles.iconDisc}>
+        <LinearGradient colors={["#DCAC74", "#244424"]} style={styles.iconDisc}>
           <Ionicons name="gift" size={42} color="#fff" />
         </LinearGradient>
       </Animated.View>

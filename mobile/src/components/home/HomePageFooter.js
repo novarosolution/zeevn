@@ -7,7 +7,6 @@ import {
   HOME_PAGE_FOOTER_META,
   HOME_PAGE_TRUST_BADGES,
 } from "../../content/appContent";
-import NovaRoEngineerCredit from "../brand/NovaRoEngineerCredit";
 import { BRAND_LOGO_SIZE } from "../../constants/brand";
 import { useTheme } from "../../context/ThemeContext";
 import { ALCHEMY } from "../../theme/customerAlchemy";
@@ -96,10 +95,9 @@ export default function HomePageFooter({ colors: c }) {
       <View style={styles.divider} />
 
       <View style={styles.bottomRow}>
-        <Text style={styles.copy}>© {new Date().getFullYear()}. All rights reserved.</Text>
+        <Text style={styles.copy}>© {new Date().getFullYear()} Zeevan. All rights reserved.</Text>
         {footerMeta ? <Text style={styles.meta}>{footerMeta}</Text> : null}
       </View>
-      <NovaRoEngineerCredit variant="ink" align="stretch" />
     </View>
   );
 }
@@ -122,7 +120,7 @@ function createStyles(c, shadowPremium, isDark, semantic) {
         web: {
           boxShadow: isDark
             ? "0 22px 52px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05)"
-            : "0 20px 46px rgba(61, 42, 18, 0.09), inset 0 1px 0 rgba(255,255,255,0.9)",
+            : "0 20px 46px rgba(22, 69, 51, 0.09), inset 0 1px 0 rgba(255,255,255,0.9)",
           transition: "box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease",
         },
         default: {},
@@ -137,7 +135,7 @@ function createStyles(c, shadowPremium, isDark, semantic) {
       marginBottom: spacing.md + 2,
       paddingBottom: spacing.sm,
       borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(116, 79, 28, 0.1)",
+      borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(22, 69, 51, 0.1)",
     },
     brandBlock: {
       flexDirection: "row",
@@ -169,7 +167,7 @@ function createStyles(c, shadowPremium, isDark, semantic) {
       borderColor: isDark ? semantic.border.accent : ALCHEMY.lineStrong,
       ...Platform.select({
         web: {
-          boxShadow: isDark ? "0 10px 18px rgba(0,0,0,0.24)" : "0 10px 18px rgba(61, 42, 18, 0.14)",
+          boxShadow: isDark ? "0 10px 18px rgba(0,0,0,0.24)" : "0 10px 18px rgba(22, 69, 51, 0.14)",
           transform: [{ translateY: -1 }],
         },
         default: {},
@@ -207,11 +205,11 @@ function createStyles(c, shadowPremium, isDark, semantic) {
       }),
     },
     linkRowHover: {
-      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(201, 162, 39, 0.1)",
+      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(31, 92, 71, 0.1)",
     },
     linkRowHoverLift: Platform.select({
       web: {
-        boxShadow: isDark ? "0 8px 16px rgba(0,0,0,0.2)" : "0 8px 16px rgba(61, 42, 18, 0.1)",
+        boxShadow: isDark ? "0 8px 16px rgba(0,0,0,0.2)" : "0 8px 16px rgba(22, 69, 51, 0.1)",
         transform: [{ translateY: -1 }],
       },
       default: {},

@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     borderWidth: 2.5,
     ...Platform.select({
-      web: { boxShadow: "0 2px 10px rgba(61, 42, 18, 0.2)" },
+      web: { boxShadow: "0 2px 10px rgba(22, 69, 51, 0.2)" },
       ios: {
         shadowColor: "#3D2A12",
         shadowOffset: { width: 0, height: 2 },

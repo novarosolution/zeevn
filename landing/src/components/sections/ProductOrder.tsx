@@ -27,10 +27,10 @@ export default function ProductOrder() {
                   {product.badge}
                 </span>
               ) : null}
-              <div className="relative aspect-square bg-gradient-to-br from-amber-50 to-amber-100">
+              <div className="relative aspect-square bg-gradient-to-br from-cream to-brand-green-leaf/15">
                 <Image
                   src={product.image}
-                  alt={`KankreG ghee ${product.size}`}
+                  alt={`Zeevan ghee ${product.size}`}
                   fill
                   className="object-cover"
                   sizes="(max-width: 768px) 100vw, 33vw"
@@ -38,13 +38,13 @@ export default function ProductOrder() {
               </div>
               <div className="flex flex-1 flex-col p-6">
                 <h3 className="font-display text-xl font-semibold text-charcoal">{product.size}</h3>
-                <p className="mt-1 font-display text-2xl font-semibold text-ghee-gold">{product.price}</p>
+                <p className="mt-1 font-display text-2xl font-semibold text-brand-green">{product.price}</p>
                 {product.priceNote ? (
                   <p className="text-sm text-charcoal/55">{product.priceNote}</p>
                 ) : null}
                 <div className="mt-auto flex flex-col gap-2 pt-6">
                   <Link
-                    href={`${waBase}${encodeURIComponent(`Hi, I'd like to order KankreG ghee ${product.size}.`)}`}
+                    href={`${waBase}${encodeURIComponent(`Hi, I'd like to order Zeevan ghee ${product.size}.`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="rounded-full border border-earth-green/30 px-4 py-2.5 text-center text-sm font-semibold text-earth-green transition hover:bg-earth-green/5"
@@ -55,7 +55,7 @@ export default function ProductOrder() {
                     href={`${waBase}${encodeURIComponent(`Order ${product.size} - ${product.price}`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="rounded-full bg-ghee-gold px-4 py-2.5 text-center text-sm font-semibold text-cream shadow-soft transition hover:bg-deep-amber"
+                    className="rounded-full bg-brand-green px-4 py-2.5 text-center text-sm font-semibold text-cream shadow-soft transition hover:bg-brand-green-deep"
                   >
                     {products.buyCta}
                   </Link>

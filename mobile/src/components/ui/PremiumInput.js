@@ -241,8 +241,8 @@ function createStyles(c, isDark, multiline) {
       ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 0 0 4px rgba(232, 200, 90, 0.18), 0 10px 22px rgba(0,0,0,0.34)"
-            : "0 0 0 4px rgba(201, 162, 39, 0.16), 0 10px 22px rgba(98, 64, 20, 0.1)",
+            ? "0 0 0 4px rgba(52, 211, 153, 0.18), 0 10px 22px rgba(0,0,0,0.34)"
+            : "0 0 0 4px rgba(31, 92, 71, 0.16), 0 10px 22px rgba(22, 69, 51, 0.1)",
         },
         default: {},
       }),
@@ -252,7 +252,7 @@ function createStyles(c, isDark, multiline) {
         web: {
           boxShadow: isDark
             ? "0 0 0 4px rgba(248, 113, 113, 0.18), 0 8px 18px rgba(0,0,0,0.28)"
-            : "0 0 0 4px rgba(220, 38, 38, 0.12), 0 8px 18px rgba(98, 64, 20, 0.06)",
+            : "0 0 0 4px rgba(220, 38, 38, 0.12), 0 8px 18px rgba(22, 69, 51, 0.06)",
         },
         default: {},
       }),

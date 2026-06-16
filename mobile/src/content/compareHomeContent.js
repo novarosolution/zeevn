@@ -1,33 +1,7 @@
 /**
- * “Ours vs ordinary ghee” — admin API shape + bundled image fallbacks.
- * Edit defaults in Admin → Home View → Compare section.
+ * “Ours vs ordinary ghee” — admin API shape; no bundled image fallbacks.
  */
-export const COMPARE_ROW_IMAGE_FALLBACKS = {
-  "compare-milk": {
-    ours: require("../../assets/marketing/hero-slide-04-wa.jpeg"),
-    ordinary: require("../../assets/marketing/hero-slide-08.png"),
-  },
-  "compare-method": {
-    ours: require("../../assets/marketing/hero-slide-1.jpg"),
-    ordinary: require("../../assets/marketing/hero-slide-3.jpg"),
-  },
-  "compare-feed": {
-    ours: require("../../assets/marketing/hero-slide-06-wa.jpeg"),
-    ordinary: require("../../assets/marketing/hero-slide-09.png"),
-  },
-  "compare-cooking": {
-    ours: require("../../assets/marketing/hero-slide-2.jpg"),
-    ordinary: require("../../assets/marketing/hero-slide-10.png"),
-  },
-  "compare-purity": {
-    ours: require("../../assets/marketing/hero-slide-05-wa.jpeg"),
-    ordinary: require("../../assets/marketing/hero-slide-11.png"),
-  },
-  "compare-packaging": {
-    ours: require("../../assets/marketing/hero-slide-05-wa.jpeg"),
-    ordinary: require("../../assets/marketing/hero-slide-12.png"),
-  },
-};
+export const COMPARE_ROW_IMAGE_FALLBACKS = {};
 
 const DEFAULT_ROWS = [
   {
@@ -103,16 +77,14 @@ export function buildCompareSectionDefaults() {
     storyChapter: "Chapter II",
     openingLine: "Two paths. One golden jar.",
     closingTagline: "A2 milk · Bilona-churned · open-grazed · hand-poured.",
-    oursLabel: "KankreG",
+    oursLabel: "Zeevan",
     ordinaryLabel: "Ordinary",
     rows: DEFAULT_ROWS.map((row) => ({ ...row })),
   };
 }
 
-export function getCompareRowImageFallback(rowId, variant = "ours") {
-  const pair = COMPARE_ROW_IMAGE_FALLBACKS[rowId];
-  if (!pair) return null;
-  return pair[variant] || null;
+export function getCompareRowImageFallback() {
+  return null;
 }
 
 /** Legacy export for `gheeHomeContent.js` static blocks. */
@@ -126,7 +98,7 @@ export const COMPARE_HOME_CONTENT = {
     label: row.label,
     ours: row.ours,
     ordinary: row.ordinary,
-    oursImage: getCompareRowImageFallback(row.id, "ours"),
-    ordinaryImage: getCompareRowImageFallback(row.id, "ordinary"),
+    oursImage: null,
+    ordinaryImage: null,
   })),
 };

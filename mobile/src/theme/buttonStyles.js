@@ -45,7 +45,7 @@ export function createButtonStyles(c, isDark) {
       gap: 8,
       ...Platform.select({
         web: {
-          boxShadow: "0 10px 20px rgba(61, 42, 18, 0.11), inset 0 1px 0 rgba(255,255,255,0.94)",
+          boxShadow: "0 10px 20px rgba(22, 69, 51, 0.11), inset 0 1px 0 rgba(255,255,255,0.94)",
           transitionProperty: "transform, box-shadow, background-color, border-color",
           transitionDuration: "180ms",
           minHeight: 44,
@@ -66,7 +66,7 @@ export function createButtonStyles(c, isDark) {
       gap: 6,
       ...Platform.select({
         web: {
-          boxShadow: "0 6px 12px rgba(61, 42, 18, 0.08), inset 0 1px 0 rgba(255,255,255,0.78)",
+          boxShadow: "0 6px 12px rgba(22, 69, 51, 0.08), inset 0 1px 0 rgba(255,255,255,0.78)",
           transitionProperty: "transform, box-shadow, background-color, border-color",
           transitionDuration: "180ms",
           minHeight: 40,

@@ -33,7 +33,7 @@ export function createQuoteBlockStyles(isDark = false) {
       left: spacing.lg,
       fontSize: 120,
       lineHeight: 72,
-      color: isDark ? "rgba(214, 173, 91, 0.18)" : "rgba(214, 173, 91, 0.2)",
+      color: isDark ? "rgba(42, 117, 89, 0.18)" : "rgba(42, 117, 89, 0.2)",
       fontFamily: FONT_HEADING,
     },
     block: { alignItems: "center" },

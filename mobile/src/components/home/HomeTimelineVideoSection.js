@@ -65,8 +65,8 @@ export default function HomeTimelineVideoSection() {
         <LinearGradient
           colors={
             isDark
-              ? ["rgba(214, 173, 91, 0.05)", "transparent"]
-              : ["rgba(214, 173, 91, 0.08)", "transparent"]
+              ? ["rgba(42, 117, 89, 0.05)", "transparent"]
+              : ["rgba(42, 117, 89, 0.08)", "transparent"]
           }
           locations={[0, 0.55]}
           style={styles.panelWash}
@@ -108,9 +108,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: HOME_SPACE.md + 2,
     backgroundColor: KANKREG_CHROME.cream,
     borderWidth: 1,
-    borderColor: "rgba(169, 119, 46, 0.16)",
+    borderColor: "rgba(31, 92, 71, 0.16)",
     borderTopWidth: 2,
-    borderTopColor: "rgba(201, 162, 39, 0.65)",
+    borderTopColor: "rgba(31, 92, 71, 0.65)",
     overflow: "hidden",
     position: "relative",
     gap: HOME_SPACE.sm,
@@ -131,8 +131,8 @@ const styles = StyleSheet.create({
   },
   panelDark: {
     backgroundColor: "rgba(24, 21, 19, 0.74)",
-    borderColor: "rgba(214, 173, 91, 0.15)",
-    borderTopColor: "rgba(214, 173, 91, 0.52)",
+    borderColor: "rgba(42, 117, 89, 0.15)",
+    borderTopColor: "rgba(42, 117, 89, 0.52)",
   },
   panelWash: {
     ...StyleSheet.absoluteFillObject,

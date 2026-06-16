@@ -1,5 +1,5 @@
 {
-  "name": "kankreg-ecommerce-app",
+  "name": "zeevan-ecommerce-app",
   "version": "1.0.0",
   "private": true,
   "main": "index.js",
@@ -29,7 +29,7 @@
     "optimize:web": "node scripts/optimize-marketing-web.js",
     "icons:generate": "node scripts/generate-app-icons.js",
     "icons:app": "node scripts/generate-app-icons.js",
-    "brand:generate": "node scripts/generate-brand-assets.js",
+    "brand:generate": "node scripts/generate-zeevan-brand-assets.js",
     "lint": "expo lint",
     "postinstall": "node scripts/ensure-vector-icons-vendor.js"
   },
@@ -88,7 +88,8 @@
     "react-native-svg": "15.11.2",
     "react-native-svg-transformer": "^1.5.3",
     "react-native-web": "^0.20.0",
-    "socket.io-client": "^4.8.3"
+    "socket.io-client": "^4.8.3",
+    "three": "^0.184.0"
   },
   "devDependencies": {
     "eslint": "^9.0.0",

@@ -149,25 +149,18 @@ function AppNavigationShell() {
 }
 
 export default function App() {
-  const fontMap =
-    Platform.OS === "web"
-      ? {
-          HankenGrotesk_400Regular,
-          HankenGrotesk_600SemiBold,
-          HankenGrotesk_700Bold,
-        }
-      : {
-          HankenGrotesk_400Regular,
-          HankenGrotesk_500Medium,
-          HankenGrotesk_600SemiBold,
-          HankenGrotesk_700Bold,
-          HankenGrotesk_800ExtraBold,
-          Fraunces_600SemiBold,
-          Fraunces_700Bold,
-          Fraunces_400Regular_Italic,
-        };
+  const fontMap = {
+    HankenGrotesk_400Regular,
+    HankenGrotesk_500Medium,
+    HankenGrotesk_600SemiBold,
+    HankenGrotesk_700Bold,
+    HankenGrotesk_800ExtraBold,
+    Fraunces_600SemiBold,
+    Fraunces_700Bold,
+    Fraunces_400Regular_Italic,
+  };
   const [fontsLoaded] = useFonts(fontMap);
-  const [bootFootnote, setBootFootnote] = useState("Preparing your boutique…");
+  const [bootFootnote, setBootFootnote] = useState("Loading Zeevan…");
 
   useEffect(() => {
     let cancelled = false;
@@ -176,9 +169,9 @@ export default function App() {
         const seen = await AsyncStorage.getItem(STARTUP_WELCOME_KEY);
         if (cancelled) return;
         if (seen === "1") {
-          setBootFootnote("Preparing your boutique…");
+          setBootFootnote("Loading Zeevan…");
         } else {
-          setBootFootnote("Welcome — preparing your shop…");
+          setBootFootnote("Loading Zeevan…");
           await AsyncStorage.setItem(STARTUP_WELCOME_KEY, "1");
         }
       } catch {
@@ -212,16 +205,18 @@ export default function App() {
     }
   }, [fontsLoaded]);
 
-  if (!fontsLoaded && Platform.OS !== "web") {
+  if (!fontsLoaded) {
     return (
       <SafeAreaProvider style={safeAreaRootStyle}>
         <View style={webRootStyle}>
           <StatusBar style={Appearance.getColorScheme() === "dark" ? "light" : "dark"} />
-          <AppStartupScreen
-            isDark={Appearance.getColorScheme() === "dark"}
-            useAppFonts={false}
-            footnote={bootFootnote}
-          />
+          {Platform.OS !== "web" ? (
+            <AppStartupScreen
+              isDark={Appearance.getColorScheme() === "dark"}
+              useAppFonts={false}
+              footnote={bootFootnote}
+            />
+          ) : null}
         </View>
       </SafeAreaProvider>
     );

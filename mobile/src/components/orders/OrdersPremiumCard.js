@@ -125,7 +125,7 @@ function OrdersPremiumCardBase({
       {!showLiveMap && isPast ? <StatusBand status={statusStr} isDark={isDark} /> : null}
       {isActive && !showLiveMap ? (
         <LinearGradient
-          colors={isDark ? ["#c9a227", "#8a5a12"] : ["#d9b463", "#9c6b27"]}
+          colors={isDark ? ["#BC905C", "#8a5a12"] : ["#DCAC74", "#244424"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.activeBar}
@@ -181,7 +181,7 @@ function OrdersPremiumCardBase({
 
         {showPartner ? (
           <View style={[styles.partnerRow, figmaRowBorder(isDark), { backgroundColor: isDark ? "#181513" : FIGMA.card }]}>
-            <LinearGradient colors={["#d9b463", "#9c6b27"]} style={styles.partnerAvatar}>
+            <LinearGradient colors={["#DCAC74", "#244424"]} style={styles.partnerAvatar}>
               <Text style={styles.partnerInitial}>{getPartnerInitial(partner.name)}</Text>
             </LinearGradient>
             <View style={styles.partnerText}>

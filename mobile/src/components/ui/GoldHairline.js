@@ -7,13 +7,13 @@ import { useTheme } from "../../context/ThemeContext";
 
 const GRADIENT = {
   default: {
-    dark: ["rgba(232, 200, 90, 0)", "rgba(232, 200, 90, 0.5)", "rgba(232, 200, 90, 0)"],
-    light: ["rgba(201, 162, 39, 0)", "rgba(201, 162, 39, 0.5)", "rgba(201, 162, 39, 0)"],
+    dark: ["rgba(232, 188, 132, 0)", "rgba(232, 188, 132, 0.5)", "rgba(232, 188, 132, 0)"],
+    light: ["rgba(220, 172, 116, 0)", "rgba(220, 172, 116, 0.55)", "rgba(220, 172, 116, 0)"],
   },
   /** Thin editorial rule — low-opacity gold, no dot. @see theme/homeEditorial.js */
   subtle: {
-    dark: ["rgba(232, 200, 90, 0)", "rgba(232, 200, 90, 0.28)", "rgba(232, 200, 90, 0)"],
-    light: ["rgba(201, 162, 39, 0)", "rgba(201, 162, 39, 0.32)", "rgba(201, 162, 39, 0)"],
+    dark: ["rgba(232, 188, 132, 0)", "rgba(232, 188, 132, 0.28)", "rgba(232, 188, 132, 0)"],
+    light: ["rgba(220, 172, 116, 0)", "rgba(220, 172, 116, 0.32)", "rgba(220, 172, 116, 0)"],
   },
 };
 

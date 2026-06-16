@@ -174,7 +174,7 @@ function createStyles(c, isDark) {
       borderRadius: radius.xxl,
       padding: spacing.md,
       borderWidth: StyleSheet.hairlineWidth * 2,
-      borderColor: isDark ? "rgba(232, 200, 90, 0.14)" : "rgba(116, 79, 28, 0.14)",
+      borderColor: isDark ? "rgba(52, 211, 153, 0.14)" : "rgba(22, 69, 51, 0.14)",
       backgroundColor: isDark ? c.surface : ALCHEMY.cardBg,
       ...Platform.select({
         web: {
@@ -198,7 +198,7 @@ function createStyles(c, isDark) {
         web: {
           boxShadow: isDark
             ? "0 12px 28px rgba(0,0,0,0.35), 0 0 0 1px rgba(232,200,90,0.35)"
-            : "0 14px 32px rgba(61, 42, 18, 0.12), 0 0 0 1px rgba(199, 154, 58, 0.35)",
+            : "0 14px 32px rgba(22, 69, 51, 0.12), 0 0 0 1px rgba(199, 154, 58, 0.35)",
         },
         default: {},
       }),
@@ -209,7 +209,7 @@ function createStyles(c, isDark) {
           transform: [{ translateY: -2 }],
           boxShadow: isDark
             ? "0 18px 36px rgba(0,0,0,0.4)"
-            : "0 18px 36px rgba(61, 42, 18, 0.14)",
+            : "0 18px 36px rgba(22, 69, 51, 0.14)",
         },
         default: {},
       }),
@@ -234,8 +234,8 @@ function createStyles(c, isDark) {
       borderWidth: StyleSheet.hairlineWidth,
     },
     iconCircleGold: {
-      backgroundColor: isDark ? "rgba(232, 200, 90, 0.12)" : "rgba(255, 244, 219, 1)",
-      borderColor: isDark ? "rgba(232, 200, 90, 0.35)" : ALCHEMY.gold,
+      backgroundColor: isDark ? "rgba(52, 211, 153, 0.12)" : "rgba(232, 245, 238, 1)",
+      borderColor: isDark ? "rgba(52, 211, 153, 0.35)" : ALCHEMY.gold,
     },
     iconCircleBrown: {
       backgroundColor: isDark ? c.secondarySoft : "#ECFDF3",
@@ -265,9 +265,9 @@ function createStyles(c, isDark) {
       paddingHorizontal: 7,
       paddingVertical: 2,
       borderRadius: radius.pill,
-      backgroundColor: isDark ? "rgba(232, 200, 90, 0.18)" : ALCHEMY.goldSoft,
+      backgroundColor: isDark ? "rgba(52, 211, 153, 0.18)" : ALCHEMY.goldSoft,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(232, 200, 90, 0.4)" : ALCHEMY.gold,
+      borderColor: isDark ? "rgba(52, 211, 153, 0.4)" : ALCHEMY.gold,
     },
     recBadgeText: {
       fontFamily: fonts.extrabold,

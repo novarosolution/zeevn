@@ -33,7 +33,7 @@ export default function AuthMobileShell({ children, artTitle, artSubtitle, mode 
     <View style={styles.root}>
       <View style={[styles.heroBlock, isXs && styles.heroBlockCompact]}>
         <LinearGradient
-          colors={["#f3e6c8", "#c9a227", "#2a241e", "#1a1714"]}
+          colors={["#f3e6c8", "#BC905C", "#2a241e", "#1a1714"]}
           locations={[0, 0.45, 0.78, 1]}
           start={{ x: 0.2, y: 0 }}
           end={{ x: 0.8, y: 1 }}
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     borderColor: KANKREG_PALETTE.line,
     ...Platform.select({
       web: {
-        boxShadow: "0 18px 48px rgba(61, 42, 18, 0.12)",
+        boxShadow: "0 18px 48px rgba(22, 69, 51, 0.12)",
       },
       default: {},
     }),
@@ -117,6 +117,6 @@ const styles = StyleSheet.create({
     height: 3,
     borderBottomLeftRadius: 3,
     borderBottomRightRadius: 3,
-    backgroundColor: "rgba(201, 162, 39, 0.65)",
+    backgroundColor: "rgba(31, 92, 71, 0.65)",
   },
 });

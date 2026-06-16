@@ -14,11 +14,11 @@ function buildTones(c, isDark) {
       color: c.success,
     },
     pend: {
-      bg: isDark ? "rgba(232, 200, 90, 0.16)" : "rgba(169,119,46,0.15)",
+      bg: isDark ? "rgba(52, 211, 153, 0.16)" : "rgba(169,119,46,0.15)",
       color: c.primaryDark,
     },
     soon: {
-      bg: isDark ? "rgba(232, 200, 90, 0.2)" : "rgba(231, 200, 90, 0.22)",
+      bg: isDark ? "rgba(52, 211, 153, 0.2)" : "rgba(52, 211, 153, 0.22)",
       color: c.primaryBright,
     },
     cancel: {

@@ -70,7 +70,7 @@ const COMPARE_SECTION_DEFAULTS = {
   storyChapter: "Chapter II",
   openingLine: "Two paths. One golden jar.",
   closingTagline: "A2 milk · Bilona-churned · open-grazed · hand-poured.",
-  oursLabel: "KankreG",
+  oursLabel: "Zeevan",
   ordinaryLabel: "Ordinary",
   rows: COMPARE_DEFAULT_ROWS,
 };

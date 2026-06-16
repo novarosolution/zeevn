@@ -141,12 +141,12 @@ export default function ScreenPageHeader({
                     styles.subtitlePill,
                     titleColor
                       ? {
-                          borderColor: "rgba(214, 173, 91, 0.35)",
+                          borderColor: "rgba(42, 117, 89, 0.35)",
                           backgroundColor: "rgba(255, 255, 255, 0.08)",
                         }
                       : {
-                          borderColor: isDark ? "rgba(232, 200, 90, 0.28)" : "rgba(116, 79, 28, 0.14)",
-                          backgroundColor: isDark ? "rgba(201, 162, 39, 0.09)" : "rgba(255, 252, 248, 0.9)",
+                          borderColor: isDark ? "rgba(52, 211, 153, 0.28)" : "rgba(22, 69, 51, 0.14)",
+                          backgroundColor: isDark ? "rgba(31, 92, 71, 0.09)" : "rgba(255, 252, 248, 0.9)",
                         },
                   ]}
                 >
@@ -194,7 +194,7 @@ function createStyles(rowMinH, isDark, compact) {
           cursor: "default",
           boxShadow: isDark
             ? "0 18px 40px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)"
-            : "0 14px 34px rgba(61, 42, 18, 0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+            : "0 14px 34px rgba(22, 69, 51, 0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
         },
         default: {},
       }),
@@ -223,7 +223,7 @@ function createStyles(rowMinH, isDark, compact) {
       alignItems: "center",
       justifyContent: "center",
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(116, 79, 28, 0.14)",
+      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(22, 69, 51, 0.14)",
       backgroundColor: isDark ? "rgba(255,255,255,0.07)" : "rgba(255,255,255,0.68)",
       ...Platform.select({
         web: { cursor: "pointer", transition: "background 0.2s ease, border-color 0.2s ease, transform 0.2s ease" },

@@ -1191,7 +1191,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
       web: {
         boxShadow: isDark
           ? "0 10px 24px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.04)"
-          : "0 10px 22px rgba(61, 42, 18, 0.08), inset 0 1px 0 rgba(255,255,255,0.88)"},
+          : "0 10px 22px rgba(22, 69, 51, 0.08), inset 0 1px 0 rgba(255,255,255,0.88)"},
       default: {}})},
   metricIconWrap: {
     width: 30,
@@ -1254,7 +1254,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
       web: {
         boxShadow: isDark
           ? "0 10px 22px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.03)"
-          : "0 8px 18px rgba(61, 42, 18, 0.08), inset 0 1px 0 rgba(255,255,255,0.88)"},
+          : "0 8px 18px rgba(22, 69, 51, 0.08), inset 0 1px 0 rgba(255,255,255,0.88)"},
       default: {}})},
   listCardRank: {
     width: 36,
@@ -1292,7 +1292,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
       web: {
         boxShadow: isDark
           ? "0 14px 34px rgba(0,0,0,0.3)"
-          : "0 12px 30px rgba(61, 42, 18, 0.1), inset 0 1px 0 rgba(255,255,255,0.85)"},
+          : "0 12px 30px rgba(22, 69, 51, 0.1), inset 0 1px 0 rgba(255,255,255,0.85)"},
       default: {}})},
   chartScrollContent: {
     minWidth: "100%",

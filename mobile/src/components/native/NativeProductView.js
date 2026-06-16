@@ -27,6 +27,16 @@ import {
 import { fonts, radius, spacing } from "../../theme/tokens";
 import { PRODUCT_SCREEN, fillProductScreen } from "../../content/appContent";
 import { resolveProductPageContent } from "../../utils/resolveProductPageContent";
+import {
+  ProductFaqSection,
+  ProductIngredientsCard,
+  ProductPullQuoteBlock,
+  ProductShippingCard,
+  ProductSpecsGrid,
+  ProductStorageCard,
+  ProductUsageGrid,
+  ProductWhyZeevan,
+} from "../product/ProductPageExtras";
 import NativeStickyBuyBar from "./NativeStickyBuyBar";
 import NativeProductCard from "./NativeProductCard";
 import GoldHairline from "../ui/GoldHairline";
@@ -135,7 +145,8 @@ export default function NativeProductView({
   const featureCards = pageContent.featureCards;
   const highlights = pageContent.highlights;
   const deliveryNote = pageContent.delivery;
-  const { story, showStoryLegend, trustChips } = pageContent;
+  const { story, showStoryLegend, trustChips, showStorySection } = pageContent;
+  const pageUi = pageContent.ui;
 
   const ratingSummary =
     liveRatingAvg > 0
@@ -395,6 +406,19 @@ export default function NativeProductView({
 
           <GoldHairline marginVertical={spacing.md} />
 
+          {pageContent.showSpecs ? (
+            <View style={styles.block}>
+              <ProductSpecsGrid
+                specs={pageContent.specs}
+                isDark={isDark}
+                eyebrow={pageUi.specsEyebrow}
+                title={pageUi.specsTitle}
+              />
+            </View>
+          ) : null}
+
+          {showStorySection ? (
+            <>
           <SectionHeader
             eyebrow={story.kick || PRODUCT_SCREEN.storyOverline}
             title={story.title || PRODUCT_SCREEN.storyTitle}
@@ -407,20 +431,17 @@ export default function NativeProductView({
             </Text>
           ) : null}
 
-          {product?.highlightQuote ? (
-            <View style={[styles.pullQuote, isDark && styles.pullQuoteDark]}>
-              <Text style={[styles.pullQuoteText, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
-                "{product.highlightQuote}"
-              </Text>
-            </View>
-          ) : null}
+          <ProductPullQuoteBlock
+            quote={pageContent.highlightQuote || product?.highlightQuote}
+            isDark={isDark}
+          />
 
-          {product?.richProductPage && product?.processSteps?.length ? (
+          {(pageContent.processSteps?.length || (product?.richProductPage && product?.processSteps?.length)) ? (
             <View style={styles.processWrap}>
-              {product.processTitle ? (
-                <Text style={styles.processEyebrow}>{product.processTitle}</Text>
+              {(pageContent.processTitle || product?.processTitle) ? (
+                <Text style={styles.processEyebrow}>{pageContent.processTitle || product.processTitle}</Text>
               ) : null}
-              {product.processSteps.map((step, idx) => (
+              {(pageContent.processSteps?.length ? pageContent.processSteps : product.processSteps).map((step, idx) => (
                 <View key={`${step}-${idx}`} style={[styles.processRow, isDark && styles.processRowDark]}>
                   <View style={styles.processNum}>
                     <Text style={styles.processNumText}>{String(idx + 1).padStart(2, "0")}</Text>
@@ -438,6 +459,100 @@ export default function NativeProductView({
               {featureCards.map((feat, idx) => (
                 <FeatureCard key={`${feat.title}-${idx}`} {...feat} isDark={isDark} c={c} />
               ))}
+            </View>
+          ) : null}
+            </>
+          ) : null}
+
+          {pageContent.showNutritionSection && pageContent.nutrition ? (
+            <View style={styles.block}>
+              <SectionHeader
+                eyebrow={pageContent.nutrition.kick}
+                title={pageContent.nutrition.title}
+                isDark={isDark}
+                c={c}
+              />
+              {pageContent.nutrition.rows?.map((row) => (
+                <View key={row.label} style={[styles.nutriRow, isDark && styles.nutriRowDark]}>
+                  <Text style={[styles.nutriLabel, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
+                    {row.label}
+                  </Text>
+                  <Text style={[styles.nutriValue, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
+                    {row.value}
+                  </Text>
+                </View>
+              ))}
+              {pageContent.nutrition.card?.body ? (
+                <Text style={[styles.desc, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft, marginTop: spacing.sm }]}>
+                  {pageContent.nutrition.card.body}
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
+
+          {pageContent.showIngredients ? (
+            <View style={styles.block}>
+              <ProductIngredientsCard
+                ingredients={pageContent.ingredients}
+                isDark={isDark}
+                eyebrow={pageUi.ingredientsEyebrow}
+                title={pageUi.ingredientsTitle}
+              />
+            </View>
+          ) : null}
+
+          {pageContent.usageRituals?.length ? (
+            <View style={styles.block}>
+              <ProductUsageGrid
+                items={pageContent.usageRituals}
+                isDark={isDark}
+                eyebrow={pageUi.usageEyebrow}
+                title={pageUi.usageTitle}
+              />
+            </View>
+          ) : null}
+
+          {pageContent.showStorage ? (
+            <View style={styles.block}>
+              <ProductStorageCard
+                storage={pageContent.storage}
+                isDark={isDark}
+                eyebrow={pageUi.storageEyebrow}
+                title={pageUi.storageTitle}
+              />
+            </View>
+          ) : null}
+
+          {pageContent.showShipping ? (
+            <View style={styles.block}>
+              <ProductShippingCard
+                shipping={pageContent.shipping}
+                isDark={isDark}
+                eyebrow={pageUi.shippingEyebrow}
+                title={pageUi.shippingTitle}
+              />
+            </View>
+          ) : null}
+
+          {pageContent.showWhyZeevan ? (
+            <View style={styles.block}>
+              <ProductWhyZeevan
+                whyZeevan={pageContent.whyZeevan}
+                isDark={isDark}
+                eyebrow={pageUi.whyEyebrow}
+                title={pageUi.whyTitle}
+              />
+            </View>
+          ) : null}
+
+          {pageContent.showFaq ? (
+            <View style={styles.block}>
+              <ProductFaqSection
+                faq={pageContent.faq}
+                isDark={isDark}
+                eyebrow={pageUi.faqEyebrow}
+                title={pageUi.faqTitle}
+              />
             </View>
           ) : null}
         </View>
@@ -545,7 +660,7 @@ export default function NativeProductView({
               ]}
             >
               <LinearGradient
-                colors={reviewBusy ? ["#9a9a9a", "#7a7a7a"] : ["#cba24e", "#9c6b27"]}
+                colors={reviewBusy ? ["#9a9a9a", "#7a7a7a"] : ["#788844", "#244424"]}
                 start={{ x: 0, y: 0.5 }}
                 end={{ x: 1, y: 0.5 }}
                 style={styles.reviewSubmitGrad}
@@ -652,11 +767,11 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(214, 173, 91, 0.22)",
+    borderColor: "rgba(120, 136, 68, 0.22)",
   },
   heroStageDark: {
     backgroundColor: "#1a1410",
-    borderColor: "rgba(214, 173, 91, 0.12)",
+    borderColor: "rgba(120, 136, 68, 0.12)",
   },
   heroGoldLineTop: {
     position: "absolute",
@@ -665,7 +780,7 @@ const styles = StyleSheet.create({
     right: 0,
     height: 1,
     zIndex: 4,
-    backgroundColor: "rgba(214, 173, 91, 0.55)",
+    backgroundColor: "rgba(120, 136, 68, 0.55)",
   },
   heroGoldLineBottom: {
     position: "absolute",
@@ -674,7 +789,7 @@ const styles = StyleSheet.create({
     right: 0,
     height: 1,
     zIndex: 4,
-    backgroundColor: "rgba(214, 173, 91, 0.55)",
+    backgroundColor: "rgba(120, 136, 68, 0.55)",
   },
   heroImage: {
     width: "100%",
@@ -1152,7 +1267,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: radius.pill,
-    backgroundColor: "rgba(214, 173, 91, 0.14)",
+    backgroundColor: "rgba(120, 136, 68, 0.14)",
   },
   processNumText: {
     fontFamily: fonts.bold,
@@ -1164,6 +1279,26 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 21,
+  },
+  nutriRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: KANKREG_PALETTE.lineSoft,
+  },
+  nutriRowDark: {
+    borderBottomColor: "rgba(255,255,255,0.08)",
+  },
+  nutriLabel: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    flex: 1,
+  },
+  nutriValue: {
+    fontFamily: fonts.semibold,
+    fontSize: 14,
+    textAlign: "right",
   },
   uspsWrap: {
     marginTop: spacing.md,

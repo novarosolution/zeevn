@@ -14,7 +14,7 @@ import { fonts, spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 
 const barShadow = platformShadow({
-  web: { boxShadow: "0 -10px 32px rgba(61, 42, 18, 0.1)" },
+  web: { boxShadow: "0 -10px 32px rgba(22, 69, 51, 0.1)" },
   ios: {
     shadowColor: "#3D2A12",
     shadowOffset: { width: 0, height: -6 },
@@ -77,7 +77,7 @@ export default function KankregCartPayBar({
       ]}
     >
       <LinearGradient
-        colors={["rgba(231, 200, 90, 0)", KANKREG_PALETTE.gold, "rgba(231, 200, 90, 0)"]}
+        colors={["rgba(52, 211, 153, 0)", KANKREG_PALETTE.gold, "rgba(52, 211, 153, 0)"]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={styles.hairline}
@@ -129,7 +129,7 @@ export default function KankregCartPayBar({
         accessibilityLabel={ctaLabel}
       >
         <LinearGradient
-          colors={disabled || loading ? ["#9a9a9a", "#7a7a7a"] : ["#D4A843", "#9A6B1F"]}
+          colors={disabled || loading ? ["#9a9a9a", "#7a7a7a"] : ["#788844", "#244424"]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
           style={styles.cta}

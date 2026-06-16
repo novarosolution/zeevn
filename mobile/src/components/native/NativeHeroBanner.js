@@ -73,7 +73,7 @@ export default function NativeHeroBanner({
         style={[
           styles.wrap,
           isDark ? heroShadowDark : heroShadow,
-          { borderColor: isDark ? "rgba(232, 200, 90, 0.22)" : "rgba(255,255,255,0.22)" },
+          { borderColor: isDark ? "rgba(168, 184, 108, 0.22)" : "rgba(255,255,255,0.22)" },
         ]}
       >
         <LinearGradient
@@ -120,7 +120,7 @@ export default function NativeHeroBanner({
               isDark
                 ? {
                     backgroundColor: "rgba(24, 21, 19, 0.92)",
-                    borderColor: "rgba(232, 200, 90, 0.35)",
+                    borderColor: "rgba(168, 184, 108, 0.35)",
                   }
                 : {
                     backgroundColor: "rgba(255,253,248,0.96)",
@@ -158,7 +158,7 @@ export default function NativeHeroBanner({
                   ? ["rgba(255,255,255,0.12)", "rgba(232,200,90,0.18)"]
                   : ["#ece3d2", "#e0d4bc"]
                 : isDark
-                  ? ["#d6ad5b", "#a9772e"]
+                  ? ["#788844", "#244424"]
                   : ["#fff", "#fffdf8"]
             }
             style={[styles.cta, !subtitle && styles.ctaSpaced]}

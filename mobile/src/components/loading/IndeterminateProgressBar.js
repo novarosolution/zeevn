@@ -31,7 +31,7 @@ export default function IndeterminateProgressBar({
   const track = trackColor || (light ? "rgba(255,255,255,0.18)" : palette.track);
   const fill =
     fillColor ||
-    (light ? "#fff" : isDark ? palette.fill : `linear-gradient(90deg, #cba24e, #9c6b27)`);
+    (light ? "#fff" : isDark ? palette.fill : `linear-gradient(90deg, #788844, #244424)`);
 
   useEffect(() => {
     if (reducedMotion) return undefined;

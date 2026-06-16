@@ -400,7 +400,7 @@ function createProfileStyles(c, isDark) {
         web: {
           boxShadow: isDark
             ? "0 14px 30px rgba(0,0,0,0.28)"
-            : "0 10px 24px rgba(61, 42, 18, 0.08)",
+            : "0 10px 24px rgba(22, 69, 51, 0.08)",
         },
         default: {},
       }),
@@ -416,7 +416,7 @@ function createProfileStyles(c, isDark) {
       borderRadius: radius.md,
       backgroundColor: ALCHEMY.goldSoft,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(201, 162, 39, 0.32)",
+      borderColor: "rgba(31, 92, 71, 0.32)",
       alignItems: "center",
       justifyContent: "center",
     },

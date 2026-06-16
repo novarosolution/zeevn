@@ -1,25 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --cream: #fbf6ec;
-  --cream-dark: #f3ead8;
-  --ghee-gold: #c9921e;
-  --deep-amber: #a67412;
-  --earth-green: #1f4d36;
-  --charcoal: #211b12;
+  --cream: #f8f0e0;
+  --cream-dark: #f0e8d8;
+  --brand-green: #5c6834;
+  --brand-green-bright: #788844;
+  --brand-green-deep: #244424;
+  --brand-green-leaf: #849448;
+  --brand-gold: #dcac74;
+  --brand-gold-bright: #e8bc84;
+  --brand-gold-deep: #bc905c;
+  --earth-green: #788844;
+  --charcoal: #1e2018;
 }
 
 @theme inline {
   --color-cream: var(--cream);
   --color-cream-dark: var(--cream-dark);
-  --color-ghee-gold: var(--ghee-gold);
-  --color-deep-amber: var(--deep-amber);
+  --color-brand-green: var(--brand-green);
+  --color-brand-green-bright: var(--brand-green-bright);
+  --color-brand-green-deep: var(--brand-green-deep);
+  --color-brand-green-leaf: var(--brand-green-leaf);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-gold-bright: var(--brand-gold-bright);
+  --color-brand-gold-deep: var(--brand-gold-deep);
   --color-earth-green: var(--earth-green);
   --color-charcoal: var(--charcoal);
   --font-sans: var(--font-hanken);
   --font-display: var(--font-fraunces);
-  --shadow-soft: 0 12px 32px -20px rgba(33, 27, 18, 0.18);
-  --shadow-card: 0 20px 48px -28px rgba(33, 27, 18, 0.22);
+  --shadow-soft: 0 12px 32px -20px rgba(36, 68, 36, 0.16);
+  --shadow-card: 0 20px 48px -28px rgba(36, 68, 36, 0.2);
 }
 
 html {

@@ -27,10 +27,10 @@ function buildOrderAlertText(order) {
   const adminUrl = String(process.env.ADMIN_APP_URL || "").trim();
   const footer = adminUrl
     ? `\n\nOpen admin: ${adminUrl.replace(/\/$/, "")}/admin/orders`
-    : "\n\nOpen the KankreG admin app → Orders to confirm and complete this order.";
+    : "\n\nOpen the Zeevan admin app → Orders to confirm and complete this order.";
 
   return [
-    "🛒 New KankreG order",
+    "🛒 New Zeevan order",
     `Order #${id}`,
     `Status: ${status}`,
     `Customer: ${customer}`,
@@ -62,7 +62,7 @@ async function notifyAdminNewOrder(orderId) {
 
     const text = buildOrderAlertText(order);
     const shortId = String(order._id || "").slice(-6).toUpperCase();
-    const subject = `New order #${shortId} — ${formatInr(order.totalPrice)} — KankreG`;
+    const subject = `New order #${shortId} — ${formatInr(order.totalPrice)} — Zeevan`;
 
     const [emailResult, whatsappResult] = await Promise.all([
       sendEmail({ subject, text }),

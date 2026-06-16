@@ -2,12 +2,8 @@ import React, { useMemo } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import GoldHairline from "../ui/GoldHairline";
-import {
-  HOME_HERO_MOBILE_SLIDER_SLIDES,
-  HOME_HERO_WEB_SLIDER_SLIDES,
-} from "../../constants/marketingAssets";
 import { HOME_SCREEN_UI, HOME_TRUST_STRIP } from "../../content/appContent";
-import { getActiveHeroSlides, mapMarketingSlidesToHero } from "../../utils/homeViewMedia";
+import { resolveWebHomeHeroSlides } from "../../utils/homeHeroSlides";
 import {
   GOLD_HAIRLINE_EDITORIAL,
   HOME_EYEBROW_LETTER_SPACING,
@@ -15,7 +11,7 @@ import {
   HOME_TYPE,
   homeEditorialMuted,
 } from "../../theme/homeEditorial";
-import { KANKREG_BP, useKankregLayout } from "../../theme/kankregBreakpoints";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon } from "../../theme/tokens";
@@ -51,31 +47,27 @@ function TrustRibbonDivider({ isDark }) {
 }
 
 /** Full-width premium top slider + trust ribbon (web home). */
-export default function WebPremiumHero({ navigation, heroSlides = [] }) {
+export default function WebPremiumHero({ navigation, heroSlides = [], products = [] }) {
   const { isDark } = useTheme();
-  const { pageGutterClamp, isXs, isMobileWeb, width } = useKankregLayout();
-  const useDesktopHeroSlides = width >= KANKREG_BP.news;
+  const { pageGutterClamp, isXs, isMobileWeb } = useKankregLayout();
   const muted = homeEditorialMuted(isDark);
   const showDividers = !isXs;
 
-  const activeSlides = useMemo(() => {
-    const adminSlides = getActiveHeroSlides(heroSlides);
-    if (adminSlides.length) return adminSlides;
-    if (Platform.OS === "web") {
-      const pool =
-        isMobileWeb && !useDesktopHeroSlides
-          ? HOME_HERO_MOBILE_SLIDER_SLIDES
-          : HOME_HERO_WEB_SLIDER_SLIDES;
-      return mapMarketingSlidesToHero(pool);
-    }
-    return [];
-  }, [heroSlides, isMobileWeb, useDesktopHeroSlides]);
+  const activeSlides = useMemo(
+    () =>
+      resolveWebHomeHeroSlides({
+        heroSlides,
+        products,
+        isMobileWeb,
+      }),
+    [heroSlides, products, isMobileWeb]
+  );
 
   if (Platform.OS !== "web" || !activeSlides.length) return null;
 
   const openShop = () => navigation.navigate("Shop");
   const showTrust = HOME_SCREEN_UI.web?.showHeroTrustChips !== false;
-  const heroEyebrow = HOME_SCREEN_UI.web?.heroEyebrow || "Curated heritage";
+  const heroEyebrow = HOME_SCREEN_UI.web?.heroEyebrow || "A2 ghee";
 
   /** Desktop: break out of centered 1280px scroll column. Phone web: scroll has no side gutter. */
   const fullBleedStyle =

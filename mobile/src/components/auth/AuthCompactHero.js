@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     fontSize: typography.overline,
     letterSpacing: 2.8,
     textTransform: "uppercase",
-    color: "#d6ad5b",
+    color: "#788844",
     marginBottom: spacing.xs,
   },
   title: {

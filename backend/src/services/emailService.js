@@ -25,7 +25,7 @@ function getTransporter() {
 }
 
 function mailFrom() {
-  return process.env.MAIL_FROM || process.env.SMTP_USER || "orders@kankreg.app";
+  return process.env.MAIL_FROM || process.env.SMTP_USER || "orders@zeevan.app";
 }
 
 async function sendEmail({ to, subject, text, html }) {

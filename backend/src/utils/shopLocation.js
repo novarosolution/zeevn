@@ -5,7 +5,7 @@ function normalizeShopLocation(raw) {
   const lat = Number(shop.latitude);
   const lng = Number(shop.longitude);
   return {
-    name: String(shop.name || "KankreG Shop").trim() || "KankreG Shop",
+    name: String(shop.name || "Zeevan Shop").trim() || "Zeevan Shop",
     line1: String(shop.line1 || "").trim(),
     city: String(shop.city || "").trim(),
     state: String(shop.state || "").trim(),

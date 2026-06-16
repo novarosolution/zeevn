@@ -61,7 +61,7 @@ function createStyles(c, isDark) {
     web: {
       boxShadow: isDark
         ? "0 10px 28px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.06)"
-        : "0 8px 22px rgba(61, 42, 18, 0.07), 0 2px 8px rgba(28, 25, 23, 0.04), inset 0 1px 0 rgba(255,253,251,0.92)",
+        : "0 8px 22px rgba(22, 69, 51, 0.07), 0 2px 8px rgba(28, 25, 23, 0.04), inset 0 1px 0 rgba(255,253,251,0.92)",
     },
     ios: {
       shadowColor: "#3D2A12",
@@ -83,8 +83,8 @@ function createStyles(c, isDark) {
       borderRadius: radius.xl + 6,
       borderWidth: StyleSheet.hairlineWidth,
       borderTopWidth: 2,
-      borderTopColor: isDark ? "rgba(232, 200, 90, 0.45)" : "rgba(201, 162, 39, 0.5)",
-      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(116, 79, 28, 0.14)",
+      borderTopColor: isDark ? "rgba(52, 211, 153, 0.45)" : "rgba(31, 92, 71, 0.5)",
+      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(22, 69, 51, 0.14)",
       backgroundColor: isDark ? "rgba(255,255,255,0.06)" : ALCHEMY.cardBg,
       ...lift,
       ...Platform.select({
@@ -96,16 +96,16 @@ function createStyles(c, isDark) {
       }),
     },
     rowEmpty: {
-      borderColor: isDark ? "rgba(232, 200, 90, 0.42)" : "rgba(201, 162, 39, 0.42)",
-      backgroundColor: isDark ? "rgba(201, 162, 39, 0.07)" : ALCHEMY.creamDeep,
+      borderColor: isDark ? "rgba(52, 211, 153, 0.42)" : "rgba(31, 92, 71, 0.42)",
+      backgroundColor: isDark ? "rgba(31, 92, 71, 0.07)" : ALCHEMY.creamDeep,
     },
     rowHovered: {
-      borderColor: isDark ? "rgba(232, 200, 90, 0.45)" : ALCHEMY.gold,
+      borderColor: isDark ? "rgba(52, 211, 153, 0.45)" : ALCHEMY.gold,
       backgroundColor: isDark ? "rgba(255,255,255,0.09)" : "#FFFFFF",
       ...(Platform.OS === "web"
         ? {
             boxShadow:
-              "0 12px 28px rgba(61, 42, 18, 0.1), inset 0 1px 0 rgba(255,253,251,0.95)",
+              "0 12px 28px rgba(22, 69, 51, 0.1), inset 0 1px 0 rgba(255,253,251,0.95)",
           }
         : {}),
     },
@@ -116,9 +116,9 @@ function createStyles(c, isDark) {
     iconRing: {
       padding: 2,
       borderRadius: radius.pill,
-      backgroundColor: isDark ? "rgba(201, 162, 39, 0.18)" : ALCHEMY.goldSoft,
+      backgroundColor: isDark ? "rgba(31, 92, 71, 0.18)" : ALCHEMY.goldSoft,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(232, 200, 90, 0.35)" : "rgba(201, 162, 39, 0.35)",
+      borderColor: isDark ? "rgba(52, 211, 153, 0.35)" : "rgba(31, 92, 71, 0.35)",
     },
     iconInner: {
       width: 38,

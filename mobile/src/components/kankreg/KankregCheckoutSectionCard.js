@@ -13,7 +13,7 @@ const cardShadow = platformShadow({
     shadowRadius: 12,
   },
   android: { elevation: 2 },
-  web: { boxShadow: "0 6px 18px rgba(61, 42, 18, 0.06)" },
+  web: { boxShadow: "0 6px 18px rgba(22, 69, 51, 0.06)" },
 });
 
 /** Figma checkout section shell — delivery, payment, etc. */

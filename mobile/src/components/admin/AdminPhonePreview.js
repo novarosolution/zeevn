@@ -27,7 +27,7 @@ export default function AdminPhonePreview({
             <>
               <Text style={styles.sectionLabel}>{categoryTitle || "Shop by category"}</Text>
               <View style={styles.catRow}>
-                {["#f3e7cc", "#e7eee6", "#f1e3d6"].map((bg) => (
+                {["#eef0e0", "#e8e4d0", "#e8e4d0"].map((bg) => (
                   <View key={bg} style={[styles.catTile, { backgroundColor: bg }]} />
                 ))}
               </View>
@@ -37,8 +37,8 @@ export default function AdminPhonePreview({
             <>
               <Text style={styles.sectionLabel}>{primeTitle || "Bestsellers"}</Text>
               <View style={styles.grid}>
-                <View style={[styles.gridTile, { backgroundColor: "#f4e6d2" }]} />
-                <View style={[styles.gridTile, { backgroundColor: "#e8e9ee" }]} />
+                <View style={[styles.gridTile, { backgroundColor: "#f4ecd8" }]} />
+                <View style={[styles.gridTile, { backgroundColor: "#e8e4d0" }]} />
               </View>
             </>
           ) : null}
@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     height: 80,
     padding: 12,
-    backgroundColor: "#cdb079",
+    backgroundColor: "#788844",
     justifyContent: "flex-end",
   },
   heroEyebrow: {

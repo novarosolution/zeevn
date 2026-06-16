@@ -19,7 +19,7 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={motionTransition}
         >
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ghee-gold">{hero.eyebrow}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-green">{hero.eyebrow}</p>
           <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.05] tracking-tight text-charcoal md:text-5xl lg:text-[3.4rem]">
             {hero.headline}
           </h1>
@@ -28,7 +28,7 @@ export default function Hero() {
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href={hero.primaryCta.href}
-              className="rounded-full bg-ghee-gold px-6 py-3 text-sm font-semibold text-cream shadow-soft transition hover:bg-deep-amber"
+              className="rounded-full bg-brand-green px-6 py-3 text-sm font-semibold text-cream shadow-soft transition hover:bg-brand-green-deep"
             >
               {hero.primaryCta.label}
             </Link>
@@ -43,7 +43,7 @@ export default function Hero() {
             {hero.badges.map((badge) => (
               <li
                 key={badge}
-                className="rounded-full border border-ghee-gold/25 bg-cream px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-earth-green"
+                className="rounded-full border border-brand-green/25 bg-cream px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-earth-green"
               >
                 {badge}
               </li>
@@ -57,8 +57,8 @@ export default function Hero() {
           transition={{ ...motionTransition, delay: 0.08 }}
           className="relative"
         >
-          <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-ghee-gold/20 via-transparent to-earth-green/10 blur-2xl" />
-          <div className="relative aspect-[4/5] overflow-hidden rounded-[1.75rem] border border-charcoal/8 bg-gradient-to-br from-amber-100 via-cream to-amber-200 shadow-card">
+          <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-brand-gold/25 via-transparent to-brand-green-leaf/15 blur-2xl" />
+          <div className="relative aspect-[4/5] overflow-hidden rounded-[1.75rem] border border-charcoal/8 bg-gradient-to-br from-cream via-cream-dark to-brand-green-leaf/20 shadow-card">
             <Image
               src={hero.image}
               alt={hero.imageAlt}

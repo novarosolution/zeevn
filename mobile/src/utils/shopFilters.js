@@ -1,5 +1,9 @@
 import { formatINR } from "./currency";
+import { matchProductLinePill } from "../content/zeevanCatalogContent";
+import { SHOP_PRICE_PRESETS } from "../content/shopPageContent";
 import { getShopCatalogProducts, isProductComingSoon } from "./productAvailability";
+
+export { SHOP_PRICE_PRESETS };
 
 /** Home / Figma labels → product `category` / `productType` values in the catalog. */
 const CATEGORY_ALIASES = {
@@ -9,15 +13,11 @@ const CATEGORY_ALIASES = {
   lifestyle: ["lifestyle"],
   accessories: ["accessories"],
   general: ["general"],
+  ghee: ["ghee", "a2 ghee", "bilona"],
+  tel: ["tel", "oil", "cooking oil"],
+  masala: ["masala", "spice", "spices"],
+  honey: ["honey", "haldar honey", "haldar"],
 };
-
-export const SHOP_PRICE_PRESETS = [
-  { id: "any", label: "Any price", min: null, max: null },
-  { id: "under-1k", label: "Under ₹1,000", min: 0, max: 999 },
-  { id: "1k-2.5k", label: "₹1,000 – ₹2,500", min: 1000, max: 2500 },
-  { id: "2.5k-5k", label: "₹2,500 – ₹5,000", min: 2500, max: 5000 },
-  { id: "5k-plus", label: "₹5,000+", min: 5000, max: null },
-];
 
 function normalizeCategoryLabel(value) {
   return String(value || "")
@@ -192,14 +192,16 @@ export function applyShopFilters(
     list = list.filter((p) => matchShopCategories(p, categories));
   }
 
-  if (pill === "On sale") {
+  if (pill === "Sale" || pill === "On sale") {
     list = list.filter(isProductOnSale);
   } else if (pill === "Premium") {
     list = list.filter(isProductPremium);
-  } else if (pill === "Coming soon") {
+  } else if (pill === "Soon" || pill === "Coming soon") {
     list = list.filter(isProductComingSoon);
-  } else if (pill === "New in") {
+  } else if (pill === "New" || pill === "New in") {
     list = [...list].sort((a, b) => getProductSortTime(b) - getProductSortTime(a)).slice(0, 8);
+  } else if (["Ghee", "Tel", "Masala", "Honey"].includes(pill)) {
+    list = list.filter((p) => matchProductLinePill(p, pill));
   }
 
   if (minRating >= 4) {
@@ -230,6 +232,7 @@ export function hasActiveShopFilters({
   minPrice = null,
   maxPrice = null,
   sortKey = "featured",
+  searchQuery = "",
 } = {}) {
   return (
     pill !== "All" ||
@@ -237,7 +240,8 @@ export function hasActiveShopFilters({
     minRating > 0 ||
     minPrice != null ||
     maxPrice != null ||
-    sortKey !== "featured"
+    sortKey !== "featured" ||
+    Boolean(String(searchQuery || "").trim())
   );
 }
 
@@ -249,11 +253,15 @@ export function countShopFilterBadge({
   minRating = 0,
   minPrice = null,
   maxPrice = null,
+  sortKey = "featured",
+  searchQuery = "",
 } = {}) {
   let n = 0;
   if (pill !== "All") n += 1;
   n += categories.length;
   if (minRating > 0) n += 1;
   if (minPrice != null || maxPrice != null) n += 1;
+  if (sortKey !== "featured") n += 1;
+  if (String(searchQuery || "").trim()) n += 1;
   return n;
 }

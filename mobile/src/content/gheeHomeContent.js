@@ -57,7 +57,7 @@ export const GHEE_HOME_CONTENT = {
         location: "Rajkot, Gujarat",
       },
       {
-        quote: "I switched from supermarket brands after tasting KankreG. You can tell it's Bilona — rich, golden, and honest.",
+        quote: "I switched from supermarket brands after tasting Zeevan. You can tell it's Bilona — rich, golden, and honest.",
         name: "Meera Desai",
         location: "Surat, Gujarat",
       },

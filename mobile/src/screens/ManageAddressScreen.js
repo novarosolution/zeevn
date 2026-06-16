@@ -428,9 +428,9 @@ function createManageStyles(c, shadowPremium, isDark) {
       borderRadius: 18,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: isDark ? "rgba(232, 200, 90, 0.16)" : ALCHEMY.goldSoft,
+      backgroundColor: isDark ? "rgba(52, 211, 153, 0.16)" : ALCHEMY.goldSoft,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(232, 200, 90, 0.32)" : "rgba(116, 79, 28, 0.18)"},
+      borderColor: isDark ? "rgba(52, 211, 153, 0.32)" : "rgba(22, 69, 51, 0.18)"},
     previewTitleCol: {
       flex: 1,
       minWidth: 0},
@@ -453,9 +453,9 @@ function createManageStyles(c, shadowPremium, isDark) {
       paddingHorizontal: 10,
       paddingVertical: 4,
       borderRadius: 999,
-      backgroundColor: isDark ? "rgba(232, 200, 90, 0.16)" : ALCHEMY.goldSoft,
+      backgroundColor: isDark ? "rgba(52, 211, 153, 0.16)" : ALCHEMY.goldSoft,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(232, 200, 90, 0.32)" : "rgba(116, 79, 28, 0.18)"},
+      borderColor: isDark ? "rgba(52, 211, 153, 0.32)" : "rgba(22, 69, 51, 0.18)"},
     previewRibbonText: {
       fontFamily: fonts.extrabold,
       fontSize: 10,

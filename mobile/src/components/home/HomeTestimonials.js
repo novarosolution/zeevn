@@ -27,7 +27,7 @@ const testimonialCardShadow = platformShadow({
   },
   android: { elevation: 2 },
   web: {
-    boxShadow: "0 12px 28px rgba(61, 42, 18, 0.07), inset 0 1px 0 rgba(255,255,255,0.92)",
+    boxShadow: "0 12px 28px rgba(22, 69, 51, 0.07), inset 0 1px 0 rgba(255,255,255,0.92)",
   },
 });
 
@@ -54,8 +54,8 @@ function Avatar({ name, isDark }) {
       style={[
         styles.avatar,
         {
-          backgroundColor: isDark ? "rgba(201, 162, 39, 0.14)" : ALCHEMY.goldSoft,
-          borderColor: isDark ? "rgba(232, 200, 90, 0.4)" : "rgba(98, 64, 20, 0.16)",
+          backgroundColor: isDark ? "rgba(31, 92, 71, 0.14)" : ALCHEMY.goldSoft,
+          borderColor: isDark ? "rgba(52, 211, 153, 0.4)" : "rgba(22, 69, 51, 0.16)",
         },
       ]}
     >
@@ -110,7 +110,7 @@ export default function HomeTestimonials({ c, isDark }) {
         styles.card,
         isMultiColumn ? styles.cardGridCell : { width: sliderWidth || "100%" },
         {
-          borderColor: isDark ? "rgba(232, 200, 90, 0.22)" : "rgba(116, 79, 28, 0.14)",
+          borderColor: isDark ? "rgba(52, 211, 153, 0.22)" : "rgba(22, 69, 51, 0.14)",
           backgroundColor: isDark ? c.surfaceOverlay : ALCHEMY.cardBg,
         },
       ]}
@@ -202,7 +202,7 @@ export default function HomeTestimonials({ c, isDark }) {
                         : {
                             backgroundColor: isDark
                               ? "rgba(255, 252, 248, 0.32)"
-                              : "rgba(116, 79, 28, 0.32)",
+                              : "rgba(22, 69, 51, 0.32)",
                           },
                     ]}
                   />

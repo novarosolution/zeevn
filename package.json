@@ -1,8 +1,8 @@
 {
-  "name": "kankreg",
+  "name": "zeevan",
   "version": "1.0.0",
   "private": true,
-  "description": "KankreG monorepo — mobile app (Expo) + backend API (Express)",
+  "description": "Zeevan monorepo — mobile app (Expo) + backend API (Express)",
   "scripts": {
     "install:all": "npm install --prefix mobile && npm install --prefix backend",
     "mobile:start": "npm run start --prefix mobile",

@@ -19,7 +19,7 @@ export default function AdminCategoryBar({ name, percent }) {
       </View>
       <View style={styles.track}>
         <LinearGradient
-          colors={isDark ? ["#e8c85a", "#b8862a"] : ["#cba24e", "#9c6b27"]}
+          colors={isDark ? ["#C4D088", "#5C6834"] : ["#788844", "#244424"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={[styles.fill, { width: `${pct}%` }]}

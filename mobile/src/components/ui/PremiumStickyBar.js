@@ -33,7 +33,7 @@ function PremiumStickyBarBase({
     <View style={[styles.wrap, style, styles.peBoxNone]} testID={testID}>
       {showHairline ? (
         <LinearGradient
-          colors={["rgba(231, 200, 90, 0)", ALCHEMY.gold, "rgba(231, 200, 90, 0)"]}
+          colors={["rgba(52, 211, 153, 0)", ALCHEMY.gold, "rgba(52, 211, 153, 0)"]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
           style={[styles.hairline, styles.peNone]}
@@ -63,7 +63,7 @@ function createStyles(c, isDark, bottomInset, variant, align, spacingHorizontal)
       WebkitBackdropFilter: isGlass ? "saturate(160%) blur(18px)" : "none",
       boxShadow: isDark
         ? "0 -16px 32px rgba(0,0,0,0.45)"
-        : "0 -14px 30px rgba(61, 42, 18, 0.06), 0 -2px 8px rgba(28, 25, 23, 0.04)",
+        : "0 -14px 30px rgba(22, 69, 51, 0.06), 0 -2px 8px rgba(28, 25, 23, 0.04)",
     },
   });
 
@@ -78,7 +78,7 @@ function createStyles(c, isDark, bottomInset, variant, align, spacingHorizontal)
           ? c.surface
           : "transparent",
       borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: isDark ? "rgba(232, 200, 90, 0.16)" : "rgba(116, 79, 28, 0.12)",
+      borderTopColor: isDark ? "rgba(52, 211, 153, 0.16)" : "rgba(22, 69, 51, 0.12)",
       paddingTop: spacing.sm,
       paddingBottom: spacing.sm + (bottomInset || 0),
       paddingHorizontal: horizontalPad,

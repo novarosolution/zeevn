@@ -9,7 +9,7 @@ import AuthRoutePills from "./AuthRoutePills";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 
 function AuthSocialDivider({ label, isDark }) {
-  const lineColor = isDark ? "rgba(232, 200, 90, 0.22)" : "rgba(201, 162, 39, 0.28)";
+  const lineColor = isDark ? "rgba(52, 211, 153, 0.22)" : "rgba(31, 92, 71, 0.28)";
   const textColor = isDark ? "#9a8f82" : KANKREG_PALETTE.inkFaint;
   return (
     <View style={dividerStyles.row}>

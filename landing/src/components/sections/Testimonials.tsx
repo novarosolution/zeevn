@@ -7,6 +7,8 @@ import FadeIn from "@/components/ui/FadeIn";
 export default function Testimonials() {
   const { testimonials } = site;
 
+  if (!testimonials.items.length) return null;
+
   return (
     <SectionShell
       id={testimonials.id}

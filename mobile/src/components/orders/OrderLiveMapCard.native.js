@@ -225,7 +225,7 @@ export default function OrderLiveMapCard({ orderId }) {
             styles.mapShell,
             {
               borderColor: c.border,
-              borderTopColor: isDark ? "rgba(232, 200, 90, 0.42)" : "rgba(201, 162, 39, 0.45)",
+              borderTopColor: isDark ? "rgba(52, 211, 153, 0.42)" : "rgba(31, 92, 71, 0.45)",
             },
           ]}
         >
@@ -303,7 +303,7 @@ export default function OrderLiveMapCard({ orderId }) {
                         web: {
                           boxShadow: isDark
                             ? "0 4px 12px rgba(0,0,0,0.35)"
-                            : "0 3px 10px rgba(61, 42, 18, 0.12)",
+                            : "0 3px 10px rgba(22, 69, 51, 0.12)",
                         },
                       }),
                     },

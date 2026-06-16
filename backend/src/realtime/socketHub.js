@@ -9,14 +9,10 @@ let io = null;
 function isAllowedOrigin(origin) {
   if (!origin) return true;
   const allowedOrigins = new Set([
-    "http://localhost:8081",
-    "http://localhost:8082",
-    "http://localhost:8083",
-    "http://127.0.0.1:8081",
-    "http://127.0.0.1:8082",
-    "http://127.0.0.1:8083",
     "https://novarosolution.com",
     "https://www.novarosolution.com",
+    "https://zeevan.app",
+    "https://www.zeevan.app",
   ]);
   if (allowedOrigins.has(origin)) return true;
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return true;

@@ -4,7 +4,6 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { getGsap } from "../utils/loadGsap";
 import { APP_FOOTER_NAV_LINKS, FOOTER_COMPACT } from "../content/appContent";
-import NovaRoEngineerCredit from "./brand/NovaRoEngineerCredit";
 import { useTheme } from "../context/ThemeContext";
 import { BRAND_LOGO_SIZE, SUPPORT_EMAIL_DISPLAY } from "../constants/brand";
 import { ALCHEMY } from "../theme/customerAlchemy";
@@ -70,7 +69,7 @@ export default function AppFooter({ webTight = false }) {
       <View style={styles.brandBlock}>
         <BrandLogo height={BRAND_LOGO_SIZE.footerCompact} style={styles.brandLogoMark} />
         <View style={styles.brandMeta}>
-          <Text style={styles.brandTitle}>KankreG</Text>
+          <Text style={styles.brandTitle}>Zeevan</Text>
           <Text style={styles.brandSub}>Curated everyday essentials</Text>
         </View>
       </View>
@@ -106,8 +105,6 @@ export default function AppFooter({ webTight = false }) {
           <Text style={styles.noteValue}>{supportMeta}</Text>
         </View>
       ) : null}
-
-      <NovaRoEngineerCredit variant={isDark ? "dark" : "light"} compact={webTight} align="stretch" />
     </View>
   );
 }
@@ -132,7 +129,7 @@ function createFooterStyles(c, shadowLift, isDark, semantic, webTight) {
             : "linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,251,247,1))",
           boxShadow: isDark
             ? "0 20px 44px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.05)"
-            : "0 18px 40px rgba(61, 42, 18, 0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
+            : "0 18px 40px rgba(22, 69, 51, 0.08), inset 0 1px 0 rgba(255,255,255,0.9)",
           maxWidth: 1280,
           alignSelf: "center",
           width: "100%",
@@ -185,13 +182,13 @@ function createFooterStyles(c, shadowLift, isDark, semantic, webTight) {
       borderRadius: semanticRadius.control,
     },
     linkPressHover: {
-      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(201, 162, 39, 0.14)",
+      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(31, 92, 71, 0.14)",
     },
     linkPressHoverLift: Platform.select({
       web: {
         boxShadow: isDark
           ? "0 10px 18px rgba(0,0,0,0.2)"
-          : "0 10px 18px rgba(61, 42, 18, 0.12)",
+          : "0 10px 18px rgba(22, 69, 51, 0.12)",
         transform: [{ translateY: -1 }],
       },
       default: {},

@@ -69,9 +69,6 @@ export const createAdminProduct = async (_token, payload) => {
 export const uploadAdminProductImage = (_token, { imageBase64, mimeType }) =>
   apiPost("/admin/uploads/image", { imageBase64, mimeType });
 
-export const uploadAdminMarketingVideo = (_token, { videoBase64, mimeType }) =>
-  apiPost("/admin/uploads/video", { videoBase64, mimeType });
-
 export const fetchAdminNotifications = (_token) => apiGet("/admin/notifications");
 
 export const sendAdminBroadcastNotification = (_token, payload) =>

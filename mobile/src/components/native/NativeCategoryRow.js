@@ -8,40 +8,7 @@ import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { fonts, spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 
-const DEFAULT_CATS = [
-  {
-    key: "home",
-    label: "Home",
-    icon: "home-outline",
-    colors: ["#f3e7cc", "#e3cfa6"],
-    colorsDark: ["#2e2820", "#1e1a16"],
-    accent: "#a9772e",
-  },
-  {
-    key: "wellness",
-    label: "Wellness",
-    icon: "leaf-outline",
-    colors: ["#e7eee6", "#cdddcf"],
-    colorsDark: ["#1e2a22", "#121816"],
-    accent: "#3c6248",
-  },
-  {
-    key: "lifestyle",
-    label: "Lifestyle",
-    icon: "sparkles-outline",
-    colors: ["#f1e3d6", "#dcc3ad"],
-    colorsDark: ["#2a221c", "#181412"],
-    accent: "#8a5f22",
-  },
-  {
-    key: "kitchen",
-    label: "Kitchen",
-    icon: "cafe-outline",
-    colors: ["#f4e6d2", "#e0b98f"],
-    colorsDark: ["#2c2618", "#1a1610"],
-    accent: "#a9772e",
-  },
-];
+import { buildNativeCategoryTiles } from "../../utils/homeCategories";
 
 const tileShadow = platformShadow({
   ios: {
@@ -70,22 +37,7 @@ export default function NativeCategoryRow({ categories, products, onPress }) {
   const safeProducts = Array.isArray(products) ? products : [];
   const tiles = useMemo(() => {
     if (Array.isArray(categories) && categories.length) return categories;
-    const labels = [
-      ...new Set(
-        safeProducts
-          .map((p) => String(p.category || p.productType || "").trim())
-          .filter(Boolean)
-      ),
-    ].slice(0, 6);
-    if (!labels.length) return DEFAULT_CATS;
-    return labels.map((label, i) => {
-      const seed = DEFAULT_CATS[i % DEFAULT_CATS.length];
-      return {
-        ...seed,
-        key: `${seed.key}-${label}`,
-        label,
-      };
-    });
+    return buildNativeCategoryTiles(safeProducts, { max: 6 });
   }, [categories, safeProducts]);
 
   if (Platform.OS === "web" && !isMobileWeb) return null;
@@ -137,7 +89,7 @@ export default function NativeCategoryRow({ categories, products, onPress }) {
                   <Ionicons
                     name={cat.icon}
                     size={26}
-                    color={isDark ? (cat.accent === "#3c6248" ? "#6ee7b7" : "#e8c878") : cat.accent}
+                    color={isDark ? (cat.accent || "#C4D088") : (cat.accent || "#5C6834")}
                   />
                 </View>
               </View>
@@ -180,7 +132,7 @@ const styles = StyleSheet.create({
     backgroundColor: FIGMA.card,
   },
   tileDark: {
-    borderColor: "rgba(232, 200, 90, 0.18)",
+    borderColor: "rgba(168, 184, 108, 0.18)",
     backgroundColor: "#181513",
   },
   iconRing: {

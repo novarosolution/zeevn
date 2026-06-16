@@ -22,6 +22,40 @@ import {
   figmaTextSecondary,
 } from "../../theme/figmaApp";
 import { fonts, spacing } from "../../theme/tokens";
+import { platformShadow } from "../../theme/platformStyles";
+
+const radarPlateShadow = platformShadow({
+  web: { boxShadow: "0 14px 28px rgba(22, 69, 51, 0.08)" },
+  ios: {
+    shadowColor: "#3d2a12",
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.08,
+    shadowRadius: 28,
+  },
+  android: { elevation: 6 },
+});
+
+const pinDiscShadow = platformShadow({
+  web: { boxShadow: "0 8px 14px rgba(22, 69, 51, 0.16)" },
+  ios: {
+    shadowColor: "#3d2a12",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.16,
+    shadowRadius: 14,
+  },
+  android: { elevation: 8 },
+});
+
+const cardShadow = platformShadow({
+  web: { boxShadow: "0 10px 18px rgba(22, 69, 51, 0.07)" },
+  ios: {
+    shadowColor: "#3d2a12",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.07,
+    shadowRadius: 18,
+  },
+  android: { elevation: 4 },
+});
 
 const RING_COUNT = 4;
 
@@ -167,7 +201,7 @@ export default function NativeFindLocationScene({ phase = "searching", snippet }
       </Animated.View>
 
       {showCard ? (
-        <Animated.View style={[styles.card, isDark && { borderColor: "rgba(232, 200, 90, 0.28)" }]}>
+        <Animated.View style={[styles.card, isDark && { borderColor: "rgba(52, 211, 153, 0.28)" }]}>
           <LinearGradient
             colors={isDark ? [c.surface, c.surfaceMuted] : ["#fffdf8", "#f8f0e4"]}
             style={StyleSheet.absoluteFill}
@@ -219,11 +253,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    shadowColor: "#3d2a12",
-    shadowOffset: { width: 0, height: 14 },
-    shadowOpacity: 0.08,
-    shadowRadius: 28,
-    elevation: 6,
+    ...radarPlateShadow,
   },
   ring: {
     position: "absolute",
@@ -266,11 +296,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#3d2a12",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.16,
-    shadowRadius: 14,
-    elevation: 8,
+    ...pinDiscShadow,
   },
   pinTail: {
     width: 2,
@@ -297,11 +323,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(176, 141, 87, 0.28)",
     padding: spacing.md + 2,
     overflow: "hidden",
-    shadowColor: "#3d2a12",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.07,
-    shadowRadius: 18,
-    elevation: 4,
+    ...cardShadow,
   },
   cardTop: {
     flexDirection: "row",

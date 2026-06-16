@@ -71,7 +71,7 @@ injectWebCssOnce(
   height: 1px;
   z-index: 4;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(214, 173, 91, 0.55), transparent);
+  background: linear-gradient(90deg, transparent, rgba(42, 117, 89, 0.55), transparent);
 }
 .${HERO_PRODUCT_FRAME_CLASS}::before { top: 0; }
 .${HERO_PRODUCT_FRAME_CLASS}::after { bottom: 0; }
@@ -88,8 +88,13 @@ injectWebCssOnce(
   height: 100%;
   display: block;
   pointer-events: none;
-  min-height: 100%;
-  min-width: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+.${HERO_MEDIA_CLASS} .kankreg-progressive-full,
+.${HERO_MEDIA_CLASS} .kankreg-progressive-preview {
+  object-fit: cover;
+  object-position: center center;
 }
 @media (prefers-reduced-motion: reduce) {
   .${KEN_BURNS_PRODUCT_CLASS} { animation: none !important; transform: none !important; }
@@ -127,7 +132,7 @@ function resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb }) {
 function resolveHeroImageFit(slide, { isTop, isMobileWebTop, isApp = false }) {
   if (isApp) return "cover";
   if (slide?.imageFit === "contain" || slide?.imageFit === "cover") return slide.imageFit;
-  if (isTop && !isMobileWebTop) return "contain";
+  if (isTop && !isMobileWebTop) return "cover";
   return "cover";
 }
 
@@ -208,6 +213,7 @@ function HeroSlideImage({
       <ProgressiveImage
         uri={uri}
         alt={label}
+        className={HERO_MEDIA_CLASS}
         style={styles.heroSlideImage}
         contentFit={imageFit}
         contentPosition={contentPosition || "center"}
@@ -225,7 +231,7 @@ function HeroSlideImage({
       <ProgressiveImage
         uri={uri}
         alt={label}
-        className={kenClass}
+        className={[HERO_MEDIA_CLASS, kenClass].filter(Boolean).join(" ")}
         imageClassName={kenClass}
         style={styles.heroSlideImage}
         contentFit={imageFit}
@@ -383,7 +389,11 @@ function HeroSlideCard({
     (slide.title || slide.subtitle ? "overlay" : slide.cta ? "cta-only" : "overlay");
   const captionZone = isPhoneBand ? slide.captionZone || "bottom" : "bottom";
   const showTextOverlay =
-    !isApp && !isCompact && captionMode === "overlay" && Boolean(slide.title || slide.subtitle);
+    captionMode !== "none" &&
+    !isApp &&
+    !isCompact &&
+    captionMode === "overlay" &&
+    Boolean(slide.title || slide.subtitle);
   const phoneCtaOnly = isPhoneBand && captionMode === "baked";
   const scrimMuted = homeHeroScrimMuted();
   const heroTitleSize = isMobileWebTop
@@ -392,8 +402,16 @@ function HeroSlideCard({
       ? Math.min(52, homeHeroTitleSize(layoutWidth) + 4)
       : homeHeroTitleSize(layoutWidth);
   const imageFit = resolveHeroImageFit(slide, { isTop, isMobileWebTop, isApp });
+  const isPackagingSlide = slide.id === "hero-packaging" || slide.key === "hero-packaging";
+  const marketingArtOnly = captionMode === "none";
   const kenBurns =
-    imageFit === "cover" && isTop && active && Platform.OS === "web" && !reducedMotion && !isMobileWebTop;
+    imageFit === "cover" &&
+    isTop &&
+    active &&
+    !isPackagingSlide &&
+    Platform.OS === "web" &&
+    !reducedMotion &&
+    !isMobileWebTop;
   const kenClass = isProduct && kenBurns ? KEN_BURNS_PRODUCT_CLASS : kenBurns ? KEN_BURNS_CLASS : undefined;
   const contentPosition = slide.contentPosition || "center";
   const captionLeft = isTop && !isMobileWebTop && slide.captionAlign !== "center";
@@ -406,7 +424,11 @@ function HeroSlideCard({
   return (
     <View
       className={isProduct && Platform.OS === "web" ? HERO_PRODUCT_FRAME_CLASS : undefined}
-      style={[styles.slideInner, isBanner && styles.slideInnerBanner, isProduct && styles.slideInnerProduct]}
+      style={[
+        styles.slideInner,
+        isBanner && styles.slideInnerBanner,
+        isProduct && styles.slideInnerProduct,
+      ]}
     >
       {hasImage ? null : (
         <LinearGradient
@@ -445,23 +467,32 @@ function HeroSlideCard({
         <View style={[styles.mediaFill, styles.videoPoster]} />
       ) : null}
 
-      {isProduct && slide.badge ? (
+      {isProduct && slide.badge && !marketingArtOnly ? (
         <View style={styles.productBadge} pointerEvents="none">
           <View style={styles.productBadgeDot} />
           <Text style={styles.productBadgeText}>{slide.badge}</Text>
         </View>
       ) : null}
 
+      {!marketingArtOnly ? (
       <HeroBottomScrim
-        editorial={!isCompact && !isApp && isTop && !isMobileWebTop && !isProduct && slide.layout !== "landscape"}
+        editorial={
+          !isCompact &&
+          !isApp &&
+          isTop &&
+          !isMobileWebTop &&
+          !isProduct &&
+          slide.layout !== "landscape"
+        }
         isBanner={isBanner && !isApp}
         isNative={isNative || isMobileWebTop}
         isProduct={isProduct || (isTop && !isMobileWebTop && slide.layout === "landscape")}
         phoneZone={isPhoneBand ? captionZone : undefined}
         phoneCtaOnly={phoneCtaOnly}
       />
+      ) : null}
 
-      {showTextOverlay || (showCta && slide.cta) ? (
+      {showTextOverlay || (showCta && slide.cta && captionMode !== "none") ? (
         <View
           style={[
             styles.slideCaption,
@@ -662,6 +693,7 @@ export default function HeroMediaSlider({
   const isApp = variant === "app";
   const isMobileWebTop = isTop && isMobileWeb && layoutWidth < KANKREG_BP.news;
   const isBanner = isTop || isNative || isCompact || isApp;
+  const useWebAspectFrame = isTop && Platform.OS === "web" && !isMobileWebTop;
 
   const scrollRef = useRef(null);
   const indexRef = useRef(0);
@@ -715,13 +747,13 @@ export default function HeroMediaSlider({
     }
     if (isTop) {
       if (isMobileWeb) {
-        const maxH = Math.min(720, viewportCap);
-        const minH = Math.max(420, Math.round(w * 0.58));
+        const maxH = Math.min(760, viewportCap);
+        const minH = Math.max(440, Math.round(w * 0.62));
         return Math.min(maxH, Math.max(minH, Math.max(natural, minH)));
       }
-      const maxH = Math.min(720, viewportCap);
-      const minH = Math.max(420, Math.round(w * HOME_HERO_PRODUCT_WIDE_HEIGHT_PER_WIDTH));
-      return Math.min(maxH, Math.max(minH, natural));
+      // 21:9 — height from width; only shrink on very short viewports
+      const vhCap = Math.round((layoutHeight || 900) * 0.85);
+      return Math.min(natural, vhCap);
     }
     return undefined;
   }, [
@@ -734,6 +766,7 @@ export default function HeroMediaSlider({
     isXs,
     layoutHeight,
     slideWidth,
+    slides,
   ]);
 
   useEffect(() => {
@@ -825,7 +858,8 @@ export default function HeroMediaSlider({
         shellStyle,
         isMobileWebTop && styles.shellMobileWeb,
         cardEmbedded && isApp && styles.shellAppEmbedded,
-        isBanner && bannerHeight ? { height: bannerHeight } : null,
+        isBanner && useWebAspectFrame && styles.shellAspect21x9,
+        isBanner && !useWebAspectFrame && bannerHeight ? { height: bannerHeight } : null,
         isBanner && styles.shellBannerBase,
       ]}
     >
@@ -860,10 +894,16 @@ export default function HeroMediaSlider({
         contentContainerStyle={slideWidth > 0 ? { width: slideWidth * count } : undefined}
       >
         {slides.map((slide, slideIndex) => {
+          /** Avoid <button> inside <button> — top slides use the inner CTA only. */
           const PageWrap = isTop ? View : Pressable;
           const pageWrapProps = isTop
             ? { style: styles.pagePress }
-            : { onPress, style: styles.pagePress, accessibilityRole: "button" };
+            : {
+                onPress,
+                style: styles.pagePress,
+                accessibilityRole: "button",
+                accessibilityLabel: slide.title || "Shop Zeevan",
+              };
 
           return (
             <View
@@ -1052,6 +1092,15 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
+  /** Desktop web — lock slider to 21:9 so images fill edge-to-edge without crop. */
+  shellAspect21x9: Platform.select({
+    web: {
+      width: "100%",
+      aspectRatio: 21 / 9,
+      maxHeight: "85vh",
+    },
+    default: {},
+  }),
   /** Phone web — same flat cinematic band as desktop (reference: full-bleed landscape hero). */
   shellMobileWeb: {
     width: "100%",
@@ -1075,7 +1124,7 @@ const styles = StyleSheet.create({
     aspectRatio: undefined,
     borderRadius: 24,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(169, 119, 46, 0.32)",
+    borderColor: "rgba(31, 92, 71, 0.32)",
     overflow: "hidden",
     position: "relative",
     backgroundColor: "#14110e",
@@ -1096,7 +1145,7 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(169, 119, 46, 0.24)",
+    borderColor: "rgba(31, 92, 71, 0.24)",
     overflow: "hidden",
     position: "relative",
     backgroundColor: "#14110e",
@@ -1120,7 +1169,7 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     borderRadius: 20,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(201, 162, 39, 0.36)",
+    borderColor: "rgba(31, 92, 71, 0.36)",
     overflow: "hidden",
     position: "relative",
     backgroundColor: "#14110e",
@@ -1188,7 +1237,7 @@ const styles = StyleSheet.create({
     left: 18,
     right: 18,
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "rgba(214, 173, 91, 0.45)",
+    backgroundColor: "rgba(42, 117, 89, 0.45)",
     zIndex: 6,
   },
   scroller: {
@@ -1261,7 +1310,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     zIndex: 1,
-    backgroundColor: "#2c2620",
+    backgroundColor: "transparent",
   },
   scrimLayer: {
     zIndex: 2,
@@ -1356,7 +1405,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(214, 173, 91, 0.45)",
+    borderColor: "rgba(42, 117, 89, 0.45)",
     backgroundColor: "rgba(0,0,0,0.28)",
     alignSelf: "flex-start",
   },
@@ -1375,7 +1424,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "rgba(0,0,0,0.42)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(214, 173, 91, 0.38)",
+    borderColor: "rgba(42, 117, 89, 0.38)",
   },
   appBadgeText: {
     fontFamily: fonts.semibold,

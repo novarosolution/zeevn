@@ -39,9 +39,9 @@ export function buildAnalyticsReportHtml(analytics) {
     .join("");
 
   return `<!DOCTYPE html>
-<html><head><meta charset="utf-8"/><title>KankreG Analytics</title></head>
+<html><head><meta charset="utf-8"/><title>Zeevan Analytics</title></head>
 <body style="font-family:system-ui,-apple-system,sans-serif;padding:24px;color:#1c1917;background:#fafaf9;">
-  <h1 style="margin:0 0 8px;font-size:22px;">KankreG · Analytics report</h1>
+  <h1 style="margin:0 0 8px;font-size:22px;">Zeevan · Analytics report</h1>
   <p style="margin:0 0 4px;color:#57534e;font-size:13px;">${escapeHtml(rangeTitle)}</p>
   <p style="margin:0 0 24px;color:#78716c;font-size:12px;">Generated ${escapeHtml(generated)}</p>
 
@@ -64,7 +64,7 @@ export function buildAnalyticsReportHtml(analytics) {
     ${topProducts || `<tr><td colspan="4" style="padding:8px;">No product data.</td></tr>`}
   </table>
 
-  <p style="margin-top:32px;font-size:11px;color:#a8a29e;">KankreG admin analytics · Confidential</p>
+  <p style="margin-top:32px;font-size:11px;color:#a8a29e;">Zeevan admin analytics · Confidential</p>
 </body></html>`;
 }
 

@@ -25,7 +25,10 @@ export default function Navbar() {
       }`}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4 md:px-8">
-        <Link href="#" className="font-display text-xl font-semibold tracking-tight text-charcoal">
+        <Link
+          href="#"
+          className="font-display bg-gradient-to-r from-charcoal via-brand-green-deep to-brand-gold bg-clip-text text-xl font-semibold tracking-tight text-transparent"
+        >
           {brand.name}
         </Link>
 
@@ -44,7 +47,7 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           <Link
             href="#order"
-            className="hidden rounded-full bg-ghee-gold px-5 py-2.5 text-sm font-semibold text-cream shadow-soft transition hover:bg-deep-amber md:inline-flex"
+            className="hidden rounded-full bg-brand-green px-5 py-2.5 text-sm font-semibold text-cream shadow-soft transition hover:bg-brand-green-deep md:inline-flex"
           >
             {nav.cta}
           </Link>
@@ -77,7 +80,7 @@ export default function Navbar() {
             ))}
             <Link
               href="#order"
-              className="mt-2 inline-flex rounded-full bg-ghee-gold px-5 py-2.5 text-center text-sm font-semibold text-cream"
+              className="mt-2 inline-flex rounded-full bg-brand-green px-5 py-2.5 text-center text-sm font-semibold text-cream"
               onClick={() => setOpen(false)}
             >
               {nav.cta}

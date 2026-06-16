@@ -2,30 +2,30 @@
  * Shared heritage palette + shell helpers (no platform font names).
  * Imported by `customerAlchemy.js` (native) and `customerAlchemy.web.js` (web).
  */
-import { KANKREG_PALETTE } from "./kankregWeb";
+import { KANKREG_PALETTE, ZEEVAN_GOLD, ZEEVAN_GREEN } from "./kankregWeb";
 
 export const ALCHEMY = {
   cream: KANKREG_PALETTE.paper,
   creamDeep: KANKREG_PALETTE.paper2,
   creamAlt: KANKREG_PALETTE.card,
-  creamAltDeep: "#f8f2e8",
+  creamAltDeep: "#f4ecd8",
   creamHighlight: KANKREG_PALETTE.card,
   ivory: "#ffffff",
   pearl: KANKREG_PALETTE.paper2,
   brown: KANKREG_PALETTE.inkSoft,
   brownMuted: KANKREG_PALETTE.inkFaint,
   brownInk: KANKREG_PALETTE.ink,
-  gold: KANKREG_PALETTE.gold,
-  goldDeep: KANKREG_PALETTE.goldDeep,
-  goldBright: KANKREG_PALETTE.goldBright,
-  goldSoft: "rgba(169, 119, 46, 0.13)",
-  goldMist: "rgba(214, 173, 91, 0.22)",
+  gold: ZEEVAN_GOLD.base,
+  goldDeep: ZEEVAN_GOLD.deep,
+  goldBright: ZEEVAN_GOLD.bright,
+  goldSoft: ZEEVAN_GOLD.soft,
+  goldMist: "rgba(220, 172, 116, 0.22)",
   pillInactive: KANKREG_PALETTE.lineSoft,
   cardBeige: KANKREG_PALETTE.paper,
   cardBg: KANKREG_PALETTE.card,
-  line: "rgba(169, 119, 46, 0.35)",
-  lineStrong: "rgba(138, 95, 34, 0.45)",
-  veil: "rgba(255, 253, 248, 0.85)",
+  line: ZEEVAN_GREEN.border,
+  lineStrong: "rgba(36, 68, 36, 0.4)",
+  veil: "rgba(248, 240, 224, 0.85)",
   green: KANKREG_PALETTE.green,
   danger: KANKREG_PALETTE.danger,
 };
@@ -36,7 +36,7 @@ export function getCustomerShellGradient(isDark, themeColors) {
   if (isDark) {
     return ["#050403", "#0B0806", "#17120F", c.backgroundGradientEnd];
   }
-  return [KANKREG_PALETTE.card, KANKREG_PALETTE.paper, KANKREG_PALETTE.paper2, "#e8e3d8"];
+  return [KANKREG_PALETTE.card, KANKREG_PALETTE.paper, KANKREG_PALETTE.paper2, "#E8E4D0"];
 }
 
 export function getAlchemyPalette(themeColors, isDark) {
@@ -46,11 +46,11 @@ export function getAlchemyPalette(themeColors, isDark) {
     cardBorder: isDark ? c.border : KANKREG_PALETTE.line,
     line: isDark ? c.dividerSoft || c.border : ALCHEMY.line,
     lineStrong: isDark ? c.borderStrong : ALCHEMY.lineStrong,
-    goldSoft: isDark ? c.primarySoft : ALCHEMY.goldSoft,
-    goldRing: isDark ? c.primaryBorder : ALCHEMY.gold,
-    glowPrimary: c.heroGlow || (isDark ? "rgba(214, 173, 91, 0.16)" : "rgba(214, 173, 91, 0.12)"),
+    goldSoft: isDark ? c.accentGoldSoft ?? c.primarySoft : ALCHEMY.goldSoft,
+    goldRing: isDark ? c.accentGold ?? c.primaryBright : ALCHEMY.gold,
+    glowPrimary: c.heroGlow || (isDark ? "rgba(168, 184, 108, 0.16)" : "rgba(92, 104, 52, 0.12)"),
     glowSecondary:
-      c.heroGlowSecondary || (isDark ? "rgba(60, 98, 72, 0.1)" : "rgba(60, 98, 72, 0.06)"),
+      c.heroGlowSecondary || (isDark ? "rgba(232, 188, 132, 0.1)" : "rgba(220, 172, 116, 0.08)"),
   };
 }
 

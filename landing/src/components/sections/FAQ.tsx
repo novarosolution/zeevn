@@ -33,7 +33,7 @@ export default function FAQ() {
                     {item.question}
                   </span>
                   <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-ghee-gold/30 text-ghee-gold transition ${open ? "rotate-45" : ""}`}
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-brand-green/30 text-brand-green transition ${open ? "rotate-45" : ""}`}
                     aria-hidden
                   >
                     +

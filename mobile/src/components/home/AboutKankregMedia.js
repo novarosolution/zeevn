@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { HOME_BRAND_PROMO_VIDEO } from "../../constants/marketingBrandVideo";
 import CinemaStoryPlayer from "./CinemaStoryPlayer";
 import StoryImageFrame from "./StoryImageFrame";
 import { SectionHeader } from "./editorial";
@@ -426,9 +425,8 @@ export default function AboutKankregMedia({
 
   const videoSource = useMemo(() => {
     if (about.videoUrl) return about.videoUrl;
-    if (!compact) return HOME_BRAND_PROMO_VIDEO;
     return null;
-  }, [about.videoUrl, compact]);
+  }, [about.videoUrl]);
 
   const leadPhoto = useMemo(() => {
     if (videoSource || !about.photos.length) return null;
@@ -614,7 +612,7 @@ export default function AboutKankregMedia({
 const cinemaShadowPremium = Platform.select({
   web: {
     boxShadow:
-      "0 32px 64px -36px rgba(8, 6, 4, 0.5), 0 12px 32px -16px rgba(25, 20, 15, 0.28), inset 0 1px 0 rgba(214, 173, 91, 0.22)",
+      "0 32px 64px -36px rgba(8, 6, 4, 0.5), 0 12px 32px -16px rgba(25, 20, 15, 0.28), inset 0 1px 0 rgba(42, 117, 89, 0.22)",
   },
   default: {},
 });
@@ -647,7 +645,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     backgroundColor: "rgba(250, 245, 233, 0.72)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(169, 119, 46, 0.14)",
+    borderColor: "rgba(31, 92, 71, 0.14)",
     marginBottom: HOME_SPACE.sm,
     ...Platform.select({
       web: {
@@ -898,7 +896,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     backgroundColor: "rgba(201, 146, 30, 0.05)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(169, 119, 46, 0.18)",
+    borderColor: "rgba(31, 92, 71, 0.18)",
   },
   pullQuotePhone: {
     flexDirection: "column",
@@ -917,7 +915,7 @@ const styles = StyleSheet.create({
   },
   pullQuoteDark: {
     backgroundColor: "rgba(201, 146, 30, 0.08)",
-    borderColor: "rgba(169, 119, 46, 0.22)",
+    borderColor: "rgba(31, 92, 71, 0.22)",
   },
   pullQuoteRule: {
     width: 3,
@@ -1121,7 +1119,7 @@ const styles = StyleSheet.create({
     }),
   },
   cinemaWrapLight: {
-    borderColor: "rgba(169, 119, 46, 0.38)",
+    borderColor: "rgba(31, 92, 71, 0.38)",
     ...cinemaShadowPremium,
   },
   cinemaWrapDark: {

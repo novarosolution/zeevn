@@ -70,7 +70,7 @@ function ProcessStepCard({ step, isDark, ink, muted, phone = false }) {
       <LinearGradient
         colors={
           isDark
-            ? ["rgba(214, 173, 91, 0.12)", "rgba(255, 253, 248, 0.02)"]
+            ? ["rgba(42, 117, 89, 0.12)", "rgba(255, 253, 248, 0.02)"]
             : ["rgba(255, 253, 248, 0.98)", "rgba(247, 241, 228, 0.72)"]
         }
         style={styles.imageWell}
@@ -206,8 +206,8 @@ export default function HomeProcessJourney({ processSection }) {
       <LinearGradient
         colors={
           isDark
-            ? ["rgba(214, 173, 91, 0.07)", "transparent", "rgba(60, 98, 72, 0.04)"]
-            : ["rgba(214, 173, 91, 0.1)", "transparent", "rgba(255, 253, 248, 0.5)"]
+            ? ["rgba(42, 117, 89, 0.07)", "transparent", "rgba(60, 98, 72, 0.04)"]
+            : ["rgba(42, 117, 89, 0.1)", "transparent", "rgba(255, 253, 248, 0.5)"]
         }
         locations={[0, 0.45, 1]}
         style={styles.sectionWash}
@@ -267,9 +267,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl + 10,
     backgroundColor: KANKREG_CHROME.cream,
     borderWidth: 1,
-    borderColor: "rgba(169, 119, 46, 0.2)",
+    borderColor: "rgba(31, 92, 71, 0.2)",
     borderTopWidth: 3,
-    borderTopColor: "rgba(201, 162, 39, 0.78)",
+    borderTopColor: "rgba(31, 92, 71, 0.78)",
     overflow: "hidden",
     position: "relative",
     gap: HOME_SPACE.md,
@@ -295,8 +295,8 @@ const styles = StyleSheet.create({
   },
   sectionDark: {
     backgroundColor: "rgba(24, 21, 19, 0.74)",
-    borderColor: "rgba(214, 173, 91, 0.16)",
-    borderTopColor: "rgba(214, 173, 91, 0.55)",
+    borderColor: "rgba(42, 117, 89, 0.16)",
+    borderTopColor: "rgba(42, 117, 89, 0.55)",
   },
   sectionWash: {
     ...StyleSheet.absoluteFillObject,
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: HOME_SPACE.md + 2,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: "rgba(169, 119, 46, 0.22)",
+    borderColor: "rgba(31, 92, 71, 0.22)",
     backgroundColor: "rgba(255, 253, 248, 0.88)",
     ...Platform.select({
       web: { boxShadow: "0 1px 2px rgba(60, 45, 20, 0.04)" },
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
   },
   journeyChipDark: {
     backgroundColor: "rgba(24, 21, 19, 0.55)",
-    borderColor: "rgba(214, 173, 91, 0.2)",
+    borderColor: "rgba(42, 117, 89, 0.2)",
   },
   journeyLabel: {
     fontFamily: fonts.semibold,
@@ -375,7 +375,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg + 6,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(169, 119, 46, 0.18)",
+    borderColor: "rgba(31, 92, 71, 0.18)",
     backgroundColor: "#FFFCF6",
     ...cardShadow,
   },
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
   },
   cardDark: {
     backgroundColor: "#181513",
-    borderColor: "rgba(214, 173, 91, 0.14)",
+    borderColor: "rgba(42, 117, 89, 0.14)",
   },
   imageWell: {
     padding: HOME_SPACE.sm + 2,
@@ -398,11 +398,11 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg + 2,
     backgroundColor: "#F3EBD8",
     borderWidth: 1,
-    borderColor: "rgba(169, 119, 46, 0.12)",
+    borderColor: "rgba(31, 92, 71, 0.12)",
   },
   imageFrameDark: {
     backgroundColor: "#1f1b18",
-    borderColor: "rgba(214, 173, 91, 0.1)",
+    borderColor: "rgba(42, 117, 89, 0.1)",
   },
   image: {
     ...StyleSheet.absoluteFillObject,
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     right: HOME_SPACE.sm,
     bottom: 0,
     height: 1,
-    backgroundColor: "rgba(214, 173, 91, 0.35)",
+    backgroundColor: "rgba(42, 117, 89, 0.35)",
   },
   stepBadge: {
     position: "absolute",

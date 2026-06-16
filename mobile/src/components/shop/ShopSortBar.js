@@ -1,7 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { SHOP_SCREEN_UI } from "../../content/appContent";
+import { SHOP_SCREEN_UI } from "../../content/shopPageContent";
 import { useTheme } from "../../context/ThemeContext";
 import { getShopTheme } from "../../theme/shopTheme";
 import { fonts, radius, typography } from "../../theme/tokens";

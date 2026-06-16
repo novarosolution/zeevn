@@ -35,7 +35,7 @@ function SkeletonBlockBase({ width = "100%", height = 16, rounded = "md", style 
   const borderRadius = typeof rounded === "number" ? rounded : ROUNDED_TOKENS[rounded] ?? radius.md;
   const baseColor = isDark ? LOADING_THEME.skeletonBaseDark : LOADING_THEME.skeletonBaseLight;
   const gradientColors = isDark ? LOADING_THEME.shimmerDark : LOADING_THEME.shimmerLight;
-  const borderColor = isDark ? LOADING_THEME.skeletonBorderDark : "rgba(116, 79, 28, 0.06)";
+  const borderColor = isDark ? LOADING_THEME.skeletonBorderDark : "rgba(22, 69, 51, 0.06)";
 
   const shellStyle = useMemo(
     () => [

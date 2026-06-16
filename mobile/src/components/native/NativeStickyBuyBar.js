@@ -51,7 +51,7 @@ export default function NativeStickyBuyBar({
         ]}
       >
         <LinearGradient
-          colors={["rgba(231, 200, 90, 0)", ALCHEMY.gold, "rgba(231, 200, 90, 0)"]}
+          colors={["rgba(220, 172, 116, 0)", ALCHEMY.gold, "rgba(220, 172, 116, 0)"]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
           style={styles.hairline}
@@ -113,7 +113,7 @@ export default function NativeStickyBuyBar({
                 accessibilityRole="button"
               >
                 <LinearGradient
-                  colors={disabled ? ["#9a9a9a", "#7a7a7a"] : ["#cba24e", "#9c6b27"]}
+                  colors={disabled ? ["#9a9a9a", "#7a7a7a"] : ["#788844", "#244424"]}
                   start={{ x: 0, y: 0.5 }}
                   end={{ x: 1, y: 0.5 }}
                   style={styles.cta}

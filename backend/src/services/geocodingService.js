@@ -3,7 +3,7 @@
  * Used when order shipping address has text but no GPS coordinates.
  */
 
-const USER_AGENT = "KankreG-OrderTracking/1.0";
+const USER_AGENT = "Zeevan-OrderTracking/1.0";
 
 function buildQuery(address) {
   const a = address && typeof address === "object" ? address : {};

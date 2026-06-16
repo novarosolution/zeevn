@@ -14,8 +14,8 @@ const TONE_PALETTE = {
   gold: {
     accent: ALCHEMY.gold,
     accentStrong: ALCHEMY.brown,
-    iconBg: "rgba(201, 162, 39, 0.16)",
-    iconBgDark: "rgba(232, 200, 90, 0.18)",
+    iconBg: "rgba(31, 92, 71, 0.16)",
+    iconBgDark: "rgba(52, 211, 153, 0.18)",
   },
   green: {
     accent: "#22C55E",
@@ -38,8 +38,8 @@ const TONE_PALETTE = {
   neutral: {
     accent: ALCHEMY.brown,
     accentStrong: ALCHEMY.brownInk,
-    iconBg: "rgba(116, 79, 28, 0.12)",
-    iconBgDark: "rgba(232, 200, 90, 0.16)",
+    iconBg: "rgba(22, 69, 51, 0.12)",
+    iconBgDark: "rgba(52, 211, 153, 0.16)",
   },
 };
 
@@ -209,7 +209,7 @@ function createStyles(c, isDark, palette, align, compact) {
     web: {
       boxShadow: isDark
         ? "0 14px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(232,200,90,0.1)"
-        : "0 14px 28px rgba(61, 42, 18, 0.07), 0 4px 10px rgba(28, 25, 23, 0.04), inset 0 1px 0 rgba(255,255,255,0.95)",
+        : "0 14px 28px rgba(22, 69, 51, 0.07), 0 4px 10px rgba(28, 25, 23, 0.04), inset 0 1px 0 rgba(255,255,255,0.95)",
       transition: "transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease",
     },
   });
@@ -222,7 +222,7 @@ function createStyles(c, isDark, palette, align, compact) {
       borderRadius: radius.xl,
       backgroundColor: isDark ? "#15110D" : ALCHEMY.cardBg,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(232, 200, 90, 0.18)" : "rgba(116, 79, 28, 0.14)",
+      borderColor: isDark ? "rgba(52, 211, 153, 0.18)" : "rgba(22, 69, 51, 0.14)",
       paddingVertical: padV,
       paddingHorizontal: padH,
       overflow: "hidden",
@@ -259,7 +259,7 @@ function createStyles(c, isDark, palette, align, compact) {
       justifyContent: "center",
       backgroundColor: isDark ? palette.iconBgDark : palette.iconBg,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(232, 200, 90, 0.22)" : "rgba(116, 79, 28, 0.12)",
+      borderColor: isDark ? "rgba(52, 211, 153, 0.22)" : "rgba(22, 69, 51, 0.12)",
       marginBottom: align === "center" ? 6 : 0,
     },
     body: {
@@ -324,7 +324,7 @@ function createStyles(c, isDark, palette, align, compact) {
         web: {
           boxShadow: isDark
             ? "0 22px 46px rgba(0,0,0,0.5), inset 0 1px 0 rgba(232,200,90,0.16)"
-            : "0 22px 44px rgba(61, 42, 18, 0.1), 0 6px 14px rgba(28, 25, 23, 0.06), inset 0 1px 0 rgba(255,255,255,0.95)",
+            : "0 22px 44px rgba(22, 69, 51, 0.1), 0 6px 14px rgba(28, 25, 23, 0.06), inset 0 1px 0 rgba(255,255,255,0.95)",
         },
         default: {},
       }),

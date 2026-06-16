@@ -13,14 +13,14 @@ const SECTION_ICONS = {
   sort: "swap-vertical-outline",
 };
 
-/** Premium filter group — compact by default to save vertical space. */
+/** Premium filter group — compact with section dividers. */
 export default function ShopFilterSection({ title, icon = "options-outline", children, last = false, dense = true }) {
   const { isDark } = useTheme();
   const t = getShopTheme(isDark);
   const iconName = SECTION_ICONS[icon] || icon;
 
   return (
-    <View style={[styles.wrap, dense ? styles.wrapDense : styles.wrapSpacious, !last && (dense ? styles.wrapGap : styles.wrapSpaced)]}>
+    <View style={[styles.wrap, dense ? styles.wrapDense : styles.wrapSpacious, !last && styles.wrapGap]}>
       <View style={[styles.head, dense && styles.headDense]}>
         <View style={[styles.iconRing, dense && styles.iconRingDense, { backgroundColor: t.accentSoft, borderColor: t.border }]}>
           <Ionicons name={iconName} size={dense ? 11 : 13} color={t.sectionIcon} />
@@ -28,6 +28,7 @@ export default function ShopFilterSection({ title, icon = "options-outline", chi
         <Text style={[styles.title, dense && styles.titleDense, { color: t.sectionIcon }]}>{title}</Text>
       </View>
       <View style={styles.body}>{children}</View>
+      {!last ? <View style={[styles.divider, { backgroundColor: t.border }]} /> : null}
     </View>
   );
 }
@@ -41,10 +42,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md + 4,
   },
   wrapGap: {
-    paddingBottom: spacing.sm,
-  },
-  wrapSpaced: {
-    paddingBottom: spacing.xs,
+    paddingBottom: spacing.sm + 2,
   },
   head: {
     flexDirection: "row",
@@ -80,4 +78,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1.1,
   },
   body: {},
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginTop: spacing.sm,
+    opacity: 0.85,
+  },
 });

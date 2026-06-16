@@ -10,6 +10,7 @@ import {
   HomeMarqueeTicker,
 } from "../components/home/HomeKankregSections";
 import WebPremiumHero from "../components/home/WebPremiumHero";
+import WebHomeIntroBand from "../components/home/WebHomeIntroBand";
 import {
   WebTimelineSection,
   WebProcessSection,
@@ -28,7 +29,7 @@ import HomeTestimonials from "../components/home/HomeTestimonials";
 import HomeComingSoonStrip from "../components/home/HomeComingSoonStrip";
 import { HomeCatalogGridCard, HomeCatalogViewAllLink } from "../components/home/HomeCatalogProductViews";
 import { SectionHeader, ScrollFadeUp } from "../components/home/editorial";
-import { KankregGrainOverlay, KankregPageWrap } from "../components/kankreg/KankregPageChrome";
+import { KankregPageWrap } from "../components/kankreg/KankregPageChrome";
 import KankregTrustStrip from "../components/kankreg/KankregTrustStrip";
 import CatalogGridReveal from "../components/kankreg/CatalogGridReveal";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
@@ -56,6 +57,7 @@ import { useAuth } from "../context/AuthContext";
 import { fetchMyNotifications } from "../services/userService";
 import { spacing } from "../theme/tokens";
 import { useDeliveryLocation } from "../hooks/useDeliveryLocation";
+import { getShopNavParamsForLabel } from "../utils/homeCategories";
 
 function useRedirectToFindLocationWhenNeeded(navigation, isAuthenticated) {
   const { bootstrapped, needsFindScreen } = useDeliveryLocation();
@@ -307,9 +309,13 @@ export default function KankregHomeScreen({ navigation }) {
               />
             </View>
           ) : null}
-
-          <NativeHomeHeroSlider navigation={navigation} heroSlides={homeView?.heroSlides} />
-
+          {HOME_SCREEN_UI.native?.showNativeHero !== false ? (
+            <NativeHomeHeroSlider
+              navigation={navigation}
+              heroSlides={homeView?.heroSlides}
+              products={homeCatalog}
+            />
+          ) : null}
           {loading ? <HomePageSkeleton showHeader={false} /> : null}
 
           {showCategories && ready ? (
@@ -322,7 +328,7 @@ export default function KankregHomeScreen({ navigation }) {
               />
               <NativeCategoryRow
                 products={shopCatalog}
-                onPress={(label) => navigation.navigate("Shop", { category: label })}
+                onPress={(label) => navigation.navigate("Shop", getShopNavParamsForLabel(label))}
               />
             </>
           ) : null}
@@ -360,24 +366,38 @@ export default function KankregHomeScreen({ navigation }) {
     );
   }
 
-  const showWebHero = HOME_SCREEN_UI.web?.showWebHero !== false;
-  const showCommunity = HOME_SCREEN_UI.web?.showCommunitySection !== false;
+  const webCfg = HOME_SCREEN_UI.web || {};
+  const webLean = webCfg.leanHome !== false;
+  const showWebHero = webCfg.showWebHero !== false;
   const showLegacyTrustStrip =
-    showHomeExtras && HOME_SCREEN_UI.web?.showTrustStrip && ready && !showWebHero;
+    !webLean && showHomeExtras && webCfg.showTrustStrip && ready && !showWebHero;
   const aboutSection = homeView?.aboutSection ?? DEFAULT_HOME_VIEW_CONFIG.aboutSection;
   const communitySection =
     homeView?.communitySection ?? DEFAULT_HOME_VIEW_CONFIG.communitySection;
-  const showAboutStory = ready && normalizeAboutSection(aboutSection).enabled;
+  const showAboutStory =
+    !webLean && webCfg.showAboutSection !== false && ready && normalizeAboutSection(aboutSection).enabled;
   const showCommunitySection =
-    showCommunity &&
+    !webLean &&
+    webCfg.showCommunitySection !== false &&
     ready &&
     normalizeCommunitySection(communitySection).enabled;
+  const showTimelineSection = !webLean && webCfg.showTimelineSection === true && ready;
+  const showWebProcess =
+    !webLean && webCfg.showProcessSection !== false && showProcessSection;
+  const showBottomBlock =
+    !webLean &&
+    (showAboutStory ||
+      showCommunitySection ||
+      webCfg.showMarquee ||
+      webCfg.showBrandQuote ||
+      webCfg.showTestimonials ||
+      webCfg.showFeaturedEditorial ||
+      webCfg.showStatsStrip);
   const webCreamShell =
     Platform.OS === "web" && !isDark ? { backgroundColor: KANKREG_CHROME.cream } : null;
 
   return (
     <CustomerScreenShell style={[{ flex: 1 }, webCreamShell]} topAccent={!showWebHero}>
-      <KankregGrainOverlay />
       <KankregScrollPage
         scrollVariant="page"
         flushWebGutter={isMobileWeb}
@@ -387,7 +407,15 @@ export default function KankregHomeScreen({ navigation }) {
         }
       >
         {showWebHero ? (
-          <WebPremiumHero navigation={navigation} heroSlides={homeView?.heroSlides} />
+          <WebPremiumHero
+            navigation={navigation}
+            heroSlides={homeView?.heroSlides}
+            products={homeCatalog}
+          />
+        ) : null}
+
+        {webCfg.showIntroBand !== false ? (
+          <WebHomeIntroBand navigation={navigation} />
         ) : null}
 
         <View
@@ -396,7 +424,7 @@ export default function KankregHomeScreen({ navigation }) {
             isMobileWeb && styles.webHomeBodyMobile,
             {
               paddingHorizontal: pageGutterClamp,
-              paddingTop: showWebHero ? HOME_SECTION_GAP : HOME_SPACE.lg,
+              paddingTop: HOME_SPACE.lg,
             },
           ]}
         >
@@ -430,14 +458,14 @@ export default function KankregHomeScreen({ navigation }) {
                     />
                     <NativeCategoryRow
                       products={shopCatalog}
-                      onPress={(label) => navigation.navigate("Shop", { category: label })}
+                      onPress={(label) => navigation.navigate("Shop", getShopNavParamsForLabel(label))}
                     />
                   </>
                 ) : (
                   <HomeCategoryCards
                     products={shopCatalog}
                     productTypeTitle={homeView?.productTypeTitle}
-                    onBrowse={(label) => navigation.navigate("Shop", { category: label })}
+                    onBrowse={(label) => navigation.navigate("Shop", getShopNavParamsForLabel(label))}
                     onOpenShop={() => navigation.navigate("Shop")}
                   />
                 )}
@@ -499,7 +527,7 @@ export default function KankregHomeScreen({ navigation }) {
               </ScrollFadeUp>
             ) : null}
 
-            {ready ? (
+            {showTimelineSection ? (
               <ScrollFadeUp index={2}>
                 <DeferredMount minHeight={320} rootMargin="320px 0px">
                   <WebTimelineSection />
@@ -507,7 +535,7 @@ export default function KankregHomeScreen({ navigation }) {
               </ScrollFadeUp>
             ) : null}
 
-            {showProcessSection ? (
+            {showWebProcess ? (
               <ScrollFadeUp index={3} immediate>
                 <WebProcessSection processSection={processSection} />
               </ScrollFadeUp>
@@ -516,6 +544,7 @@ export default function KankregHomeScreen({ navigation }) {
           </KankregPageWrap>
         </View>
 
+        {showBottomBlock ? (
         <View
           style={[
             styles.webHomeBody,
@@ -543,33 +572,34 @@ export default function KankregHomeScreen({ navigation }) {
               </DeferredMount>
             ) : null}
 
-            {showHomeExtras && HOME_SCREEN_UI.web?.showStatsStrip && !isMobileWeb && ready ? (
+            {showHomeExtras && webCfg.showStatsStrip && !isMobileWeb && ready ? (
               <ScrollFadeUp index={5}>
                 <HomeStatsStrip c={c} isDark={isDark} />
               </ScrollFadeUp>
             ) : null}
-            {showHomeExtras && HOME_SCREEN_UI.web?.showMarquee && !isMobileWeb && ready ? (
+            {showHomeExtras && webCfg.showMarquee && ready ? (
               <ScrollFadeUp index={6}>
                 <HomeMarqueeTicker />
               </ScrollFadeUp>
             ) : null}
-            {showHomeExtras && HOME_SCREEN_UI.web?.showFeaturedEditorial && featuredProduct && ready ? (
+            {showHomeExtras && webCfg.showFeaturedEditorial && featuredProduct && ready ? (
               <ScrollFadeUp index={7}>
                 <HomeFeaturedEditorial product={featuredProduct} navigation={navigation} />
               </ScrollFadeUp>
             ) : null}
-            {showHomeExtras && HOME_SCREEN_UI.web?.showTestimonials && !isMobileWeb && ready ? (
+            {showHomeExtras && webCfg.showTestimonials && !isMobileWeb && ready ? (
               <ScrollFadeUp index={8}>
                 <HomeTestimonials c={c} isDark={isDark} />
               </ScrollFadeUp>
             ) : null}
-            {showHomeExtras && HOME_SCREEN_UI.web?.showBrandQuote && !isMobileWeb && ready ? (
+            {showHomeExtras && webCfg.showBrandQuote && ready ? (
               <ScrollFadeUp index={9} preset="fade-in">
                 <HomeQuote isDark={isDark} />
               </ScrollFadeUp>
             ) : null}
           </KankregPageWrap>
         </View>
+        ) : null}
       </KankregScrollPage>
       <BottomNavBar />
     </CustomerScreenShell>

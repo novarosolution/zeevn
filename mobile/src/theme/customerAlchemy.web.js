@@ -1,6 +1,5 @@
 /**
- * Web display typography — CIENUR (CDN). Body stays Hanken Grotesk.
- * Native uses Fraunces via `customerAlchemy.js`.
+ * Web display typography — Fraunces (bundled in App.js). Body: Hanken Grotesk.
  */
 export {
   ALCHEMY,
@@ -9,8 +8,11 @@ export {
   CUSTOMER_SHELL_GRADIENT_LOCATIONS,
 } from "./customerAlchemy.shared";
 
-import { WEB_DISPLAY_FONT } from "./webFonts";
+import {
+  WEB_FONT_DISPLAY,
+  WEB_FONT_DISPLAY_SEMI,
+} from "./webTypography";
 
-export const FONT_DISPLAY = WEB_DISPLAY_FONT;
-export const FONT_DISPLAY_SEMI = WEB_DISPLAY_FONT;
-export const FONT_DISPLAY_ITALIC = WEB_DISPLAY_FONT;
+export const FONT_DISPLAY = WEB_FONT_DISPLAY;
+export const FONT_DISPLAY_SEMI = WEB_FONT_DISPLAY_SEMI;
+export const FONT_DISPLAY_ITALIC = WEB_FONT_DISPLAY_SEMI;

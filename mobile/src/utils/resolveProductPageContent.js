@@ -1,5 +1,9 @@
 import { PRODUCT_SCREEN } from "../content/appContent";
-import { GHEE_PRODUCT_CONTENT } from "../content/gheeProductContent";
+import {
+  getProductLinePageContent,
+  getProductPageGlobalContent,
+  resolveProductLineFromProduct,
+} from "../content/productPageContent";
 
 function pickString(productVal, fallback = "") {
   const v = String(productVal ?? "").trim();
@@ -37,16 +41,38 @@ function hasNutritionData(nutrition) {
   );
 }
 
+function buildSpecs(product, lineDefaults, ui) {
+  const line = resolveProductLineFromProduct(product);
+  const lineMeta = line ? getProductLinePageContent(line) : null;
+  const rows = [
+    { key: "brand", label: ui.specLabels.brand, value: pickString(product?.brand, ui.brandDefault) },
+    {
+      key: "category",
+      label: ui.specLabels.category,
+      value: pickString(product?.category || product?.productType, lineMeta?.eyebrow || PRODUCT_SCREEN.categoryFallback),
+    },
+    { key: "unit", label: ui.specLabels.unit, value: pickString(product?.unit, PRODUCT_SCREEN.unitFallback) },
+    product?.sku ? { key: "sku", label: ui.specLabels.sku, value: String(product.sku) } : null,
+    { key: "origin", label: ui.specLabels.origin, value: ui.originDefault },
+  ].filter(Boolean);
+  return rows.length ? rows : [];
+}
+
 /**
- * Merge product DB fields with optional ghee defaults (when shelfMatch).
+ * Merge product DB fields with Zeevan line defaults (ghee, tel, masala, honey).
  * Product/admin values always win when present.
  */
-export function resolveProductPageContent(product, { shelfMatch = false } = {}) {
-  const ghee = shelfMatch ? GHEE_PRODUCT_CONTENT : null;
+export function resolveProductPageContent(product, { shelfMatch = false, lineKey: lineKeyOverride } = {}) {
+  const detectedLine = lineKeyOverride || resolveProductLineFromProduct(product);
+  const lineDefaults =
+    getProductLinePageContent(detectedLine) ||
+    (shelfMatch ? getProductLinePageContent("ghee") : null);
+  const global = getProductPageGlobalContent();
+  const ui = global.ui;
   const description = String(product?.description ?? "").trim();
 
-  const trustChips = pickArray(product?.trustChips, ghee?.trustChips || []);
-  const highlights = pickArray(product?.highlights, ghee?.highlights || []);
+  const trustChips = pickArray(product?.trustChips, lineDefaults?.trustChips || []);
+  const highlights = pickArray(product?.highlights, lineDefaults?.highlights || []);
 
   const delivery =
     product?.deliveryTitle || product?.deliveryBody
@@ -54,12 +80,13 @@ export function resolveProductPageContent(product, { shelfMatch = false } = {}) 
           title: pickString(product.deliveryTitle, "Delivery"),
           body: pickString(product.deliveryBody),
         }
-      : ghee?.delivery || (product?.eta ? { title: "Delivery", body: String(product.eta) } : null);
+      : lineDefaults?.delivery ||
+        (product?.eta ? { title: "Delivery", body: String(product.eta) } : null);
 
-  const storyLegend = pickString(product?.storyLegend, ghee?.legacy?.legend || "");
+  const storyLegend = pickString(product?.storyLegend, lineDefaults?.legacy?.legend || "");
   const story = {
-    kick: pickString(product?.storyKick, ghee?.legacy?.kick || PRODUCT_SCREEN.storyOverline),
-    title: pickString(product?.storyTitle, ghee?.legacy?.title || PRODUCT_SCREEN.storyTitle),
+    kick: pickString(product?.storyKick, lineDefaults?.legacy?.kick || PRODUCT_SCREEN.storyOverline),
+    title: pickString(product?.storyTitle, lineDefaults?.legacy?.title || PRODUCT_SCREEN.storyTitle),
     legend: storyLegend,
   };
   const showStoryLegend =
@@ -67,43 +94,56 @@ export function resolveProductPageContent(product, { shelfMatch = false } = {}) 
 
   const usps = Array.isArray(product?.usps) ? product.usps.filter(Boolean) : [];
   const featureCards =
-    usps.length >= 1 ? mapUspsToFeatures(usps) : pickArray(ghee?.features, []);
+    usps.length >= 1 ? mapUspsToFeatures(usps) : pickArray(lineDefaults?.features, []);
 
   const nutritionRaw = product?.nutrition;
   const nutrition = hasNutritionData(nutritionRaw)
     ? {
-        kick: pickString(nutritionRaw.kick, ghee?.nutrition?.kick || "Nutrition"),
-        title: pickString(nutritionRaw.title, ghee?.nutrition?.title || "Nutritional Facts"),
-        tableHead: pickString(nutritionRaw.tableHead, ghee?.nutrition?.tableHead || "Per 100 g"),
-        tableSub: pickString(nutritionRaw.tableSub, ghee?.nutrition?.tableSub || ""),
-        rows: pickArray(nutritionRaw.rows, ghee?.nutrition?.rows || []),
+        kick: pickString(nutritionRaw.kick, lineDefaults?.nutrition?.kick || "Nutrition"),
+        title: pickString(nutritionRaw.title, lineDefaults?.nutrition?.title || "Nutritional Facts"),
+        tableHead: pickString(nutritionRaw.tableHead, lineDefaults?.nutrition?.tableHead || "Per 100 g"),
+        tableSub: pickString(nutritionRaw.tableSub, lineDefaults?.nutrition?.tableSub || ""),
+        rows: pickArray(nutritionRaw.rows, lineDefaults?.nutrition?.rows || []),
         card: {
-          title: pickString(nutritionRaw.cardTitle, ghee?.nutrition?.card?.title || ""),
-          body: pickString(nutritionRaw.cardBody, ghee?.nutrition?.card?.body || ""),
-          tags: pickArray(nutritionRaw.cardTags, ghee?.nutrition?.card?.tags || []),
-          footer: pickString(nutritionRaw.cardFooter, ghee?.nutrition?.card?.footer || ""),
+          title: pickString(nutritionRaw.cardTitle, lineDefaults?.nutrition?.card?.title || ""),
+          body: pickString(nutritionRaw.cardBody, lineDefaults?.nutrition?.card?.body || ""),
+          tags: pickArray(nutritionRaw.cardTags, lineDefaults?.nutrition?.card?.tags || []),
+          footer: pickString(nutritionRaw.cardFooter, lineDefaults?.nutrition?.card?.footer || ""),
         },
       }
-    : shelfMatch && ghee?.nutrition
+    : lineDefaults?.nutrition
       ? {
-          kick: ghee.nutrition.kick,
-          title: ghee.nutrition.title,
-          tableHead: ghee.nutrition.tableHead,
-          tableSub: ghee.nutrition.tableSub,
-          rows: ghee.nutrition.rows,
-          card: ghee.nutrition.card,
+          kick: lineDefaults.nutrition.kick,
+          title: lineDefaults.nutrition.title,
+          tableHead: lineDefaults.nutrition.tableHead,
+          tableSub: lineDefaults.nutrition.tableSub,
+          rows: lineDefaults.nutrition.rows,
+          card: lineDefaults.nutrition.card,
         }
       : null;
 
   const reviewsSection = {
-    kick: pickString(product?.reviewsKick, ghee?.reviewsKick || PRODUCT_SCREEN.reviewsOverline),
-    title: pickString(product?.reviewsTitle, ghee?.reviewsTitle || PRODUCT_SCREEN.reviewsTitle),
+    kick: pickString(product?.reviewsKick, lineDefaults?.reviewsKick || PRODUCT_SCREEN.reviewsOverline),
+    title: pickString(product?.reviewsTitle, lineDefaults?.reviewsTitle || PRODUCT_SCREEN.reviewsTitle),
   };
 
   const eyebrow = pickString(
     product?.pageEyebrow,
-    ghee?.eyebrow || product?.badgeText || product?.category || PRODUCT_SCREEN.categoryFallback
+    lineDefaults?.eyebrow || product?.badgeText || product?.category || PRODUCT_SCREEN.categoryFallback
   );
+
+  const usageRituals = pickArray(product?.usageRituals, lineDefaults?.usageRituals || []);
+  const processSteps = pickArray(product?.processSteps, lineDefaults?.processSteps || []);
+  const processTitle = pickString(product?.processTitle, lineDefaults?.processTitle || ui.processEyebrow);
+  const highlightQuote = pickString(product?.highlightQuote, lineDefaults?.highlightQuote || "");
+
+  const ingredients = lineDefaults?.ingredients || null;
+  const storage = lineDefaults?.storage || null;
+  const shipping = global.shipping;
+  const whyZeevan = global.whyZeevan;
+  const faq = pickArray(lineDefaults?.faq, global.faq);
+
+  const specs = buildSpecs(product, lineDefaults, ui);
 
   const hasDbStory =
     product?.storyKick ||
@@ -115,14 +155,24 @@ export function resolveProductPageContent(product, { shelfMatch = false } = {}) 
     product?.usps?.length;
 
   const showStorySection = Boolean(
+    lineDefaults ||
     shelfMatch ||
     product?.richProductPage ||
     hasDbStory ||
-    (product?.richProductPage && product?.processSteps?.length) ||
     featureCards.length > 0
   );
 
+  const showRichExtras = Boolean(
+    highlightQuote ||
+    processSteps.length ||
+    usageRituals.length ||
+    product?.lifestyleImage ||
+    (product?.richProductPage && (product?.highlightQuote || product?.processSteps?.length))
+  );
+
   return {
+    lineKey: detectedLine,
+    ui,
     eyebrow,
     lead: description,
     trustChips,
@@ -135,5 +185,22 @@ export function resolveProductPageContent(product, { shelfMatch = false } = {}) 
     reviewsSection,
     showStorySection,
     showNutritionSection: Boolean(nutrition),
+    usageRituals,
+    processSteps,
+    processTitle,
+    highlightQuote,
+    ingredients,
+    storage,
+    shipping,
+    whyZeevan,
+    faq,
+    specs,
+    showRichExtras,
+    showSpecs: specs.length > 0,
+    showIngredients: Boolean(ingredients?.body),
+    showStorage: Boolean(storage?.body),
+    showShipping: Boolean(shipping?.body),
+    showWhyZeevan: Boolean(whyZeevan?.body),
+    showFaq: faq.length > 0,
   };
 }

@@ -124,7 +124,7 @@ export function AboutPillarsGrid() {
   return (
     <View style={stylesPillars.wrap}>
       <Text style={createKankregEyebrowStyle(isDark)}>What we stand for</Text>
-      <Text style={[stylesPillars.heading, { color: surfaces.text }]}>Four pillars of KankreG</Text>
+      <Text style={[stylesPillars.heading, { color: surfaces.text }]}>Four pillars of Zeevan</Text>
       <GoldHairline marginVertical={spacing.sm} short />
       <View style={[stylesPillars.grid, isXs && stylesPillars.gridStack]}>
         {ABOUT_SCREEN_UI.pillars.map((pillar) => (
@@ -188,7 +188,7 @@ export function AboutCtaBand({ navigation }) {
   return (
     <LinearGradient
       colors={isDark ? ["#2a231c", "#1f1a15"] : ["#fffdf8", "#f0e6d4"]}
-      style={[stylesCta.wrap, isDark && { borderColor: "rgba(232, 200, 90, 0.2)" }]}
+      style={[stylesCta.wrap, isDark && { borderColor: "rgba(52, 211, 153, 0.2)" }]}
     >
       <View style={[stylesCta.inner, stackFooterNewsletter && stylesCta.innerStack]}>
         <View style={stylesCta.copy}>

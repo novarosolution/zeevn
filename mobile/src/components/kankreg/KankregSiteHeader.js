@@ -103,8 +103,8 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
     styles.topbar,
     isNative && styles.topbarNative,
     {
-      backgroundColor: isDark ? "rgba(20, 17, 15, 0.92)" : KANKREG_CHROME.topbarBg,
-      borderBottomColor: isDark ? c.border : KANKREG_PALETTE.lineSoft,
+      backgroundColor: isDark ? "rgba(20, 17, 15, 0.92)" : KANKREG_CHROME.topbarSolid,
+      borderBottomColor: isDark ? c.border : "rgba(31, 92, 71, 0.1)",
       paddingTop: Platform.OS === "web" ? 0 : insets.top,
       minHeight: isNative ? nativeHeaderHeight : WEB_HEADER_HEIGHT,
     },
@@ -118,6 +118,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
           ? { height: WEB_CHROME_TOP, position: "fixed", zIndex: WEB_Z_INDEX.header }
           : { minHeight: shellHeight, zIndex: WEB_Z_INDEX.header },
         !isDark && Platform.OS === "web" ? styles.shellLightWeb : null,
+        Platform.OS === "web" ? { backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" } : null,
         Platform.OS === "web" && isDark ? { backdropFilter: "blur(16px)" } : null,
       ]}
       accessibilityRole="header"
@@ -268,10 +269,9 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   shellLightWeb: {
-    backgroundColor: KANKREG_CHROME.topbarBg,
     ...Platform.select({
       web: {
-        boxShadow: "0 1px 0 rgba(227, 216, 196, 0.65)",
+        boxShadow: "0 1px 0 rgba(31, 92, 71, 0.08), 0 8px 32px -16px rgba(21, 18, 16, 0.08)",
       },
       default: {},
     }),
@@ -321,9 +321,9 @@ const styles = StyleSheet.create({
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
   navBtnActive: {
-    backgroundColor: KANKREG_CHROME.onAccent,
+    backgroundColor: "rgba(31, 92, 71, 0.1)",
     ...platformElevation({
-      web: { boxShadow: "0 1px 2px rgba(25, 20, 15, 0.04), 0 4px 14px -6px rgba(25, 20, 15, 0.12)" },
+      web: { boxShadow: "0 1px 2px rgba(21, 18, 16, 0.04), 0 4px 14px -6px rgba(31, 92, 71, 0.12)" },
       ios: {
         shadowColor: "#19140f",
         shadowOffset: { width: 0, height: 2 },
@@ -337,21 +337,22 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.08)",
   },
   navBtnHover: {
-    backgroundColor: "rgba(169, 119, 46, 0.1)",
+    backgroundColor: "rgba(31, 92, 71, 0.1)",
   },
   navBtnHoverDark: {
-    backgroundColor: "rgba(232, 200, 90, 0.1)",
+    backgroundColor: "rgba(52, 211, 153, 0.1)",
   },
   navBtnText: {
-    fontSize: 13.5,
+    fontSize: 14,
     fontFamily: fonts.medium,
     color: KANKREG_PALETTE.inkSoft,
+    letterSpacing: 0.01,
   },
   navBtnTextDark: {
     color: "rgba(245, 239, 228, 0.78)",
   },
   navBtnTextActive: {
-    color: KANKREG_PALETTE.ink,
+    color: KANKREG_PALETTE.green,
     fontFamily: fonts.semibold,
   },
   navBtnTextActiveDark: {
@@ -369,7 +370,7 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 21,
     borderWidth: 1,
-    borderColor: KANKREG_PALETTE.line,
+    borderColor: "rgba(31, 92, 71, 0.14)",
     backgroundColor: KANKREG_PALETTE.card,
     alignItems: "center",
     justifyContent: "center",
@@ -407,14 +408,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderRadius: 999,
-    backgroundColor: KANKREG_CHROME.buttonAccent,
+    backgroundColor: KANKREG_CHROME.buttonSecondary,
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
-  signInHover: { backgroundColor: KANKREG_CHROME.buttonAccentHover },
+  signInHover: { backgroundColor: KANKREG_CHROME.buttonSecondaryHover },
   signInText: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontFamily: fonts.semibold,
     color: KANKREG_CHROME.onAccent,
+    letterSpacing: 0.02,
   },
   hamb: {
     width: 44,

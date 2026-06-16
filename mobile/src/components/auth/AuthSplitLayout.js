@@ -21,13 +21,13 @@ export default function AuthSplitLayout({ artTitle, artSubtitle, mode = "login",
   }
 
   const formBg = isDark ? "#141110" : KANKREG_PALETTE.card;
-  const formBorder = isDark ? "rgba(232, 200, 90, 0.12)" : "rgba(201, 162, 39, 0.12)";
+  const formBorder = isDark ? "rgba(52, 211, 153, 0.12)" : "rgba(31, 92, 71, 0.12)";
 
   return (
     <View style={[styles.split, isXs && styles.splitStack]}>
       <View style={[styles.art, isXs && styles.artStack]}>
         <LinearGradient
-          colors={["#f3e6c8", "#c9a227", "#3d3228", "#1a1714"]}
+          colors={["#f3e6c8", "#BC905C", "#3d3228", "#1a1714"]}
           locations={[0, 0.38, 0.72, 1]}
           start={{ x: 0.15, y: 0 }}
           end={{ x: 0.85, y: 1 }}
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     ...Platform.select({
       web: {
-        boxShadow: "0 28px 64px rgba(61, 42, 18, 0.14), 0 0 0 1px rgba(201, 162, 39, 0.08)",
+        boxShadow: "0 28px 64px rgba(22, 69, 51, 0.14), 0 0 0 1px rgba(31, 92, 71, 0.08)",
         minHeight: 640,
         marginTop: 100,
       },

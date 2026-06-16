@@ -137,9 +137,11 @@ function PremiumButtonBase({
       return isDark
         ? [c.secondaryBright, c.secondary, c.secondaryDark]
         : [c.secondary, c.secondary, c.secondaryDark];
-    if (isGold) return ["#cba24e", KANKREG_PALETTE.gold, KANKREG_PALETTE.goldDeep];
-    if (isPrimary) return [KANKREG_PALETTE.ink, "#0d0a08", "#000000"];
-    return [ALCHEMY.goldBright, ALCHEMY.gold, ALCHEMY.brown];
+    if (isGold || isPrimary)
+      return isDark
+        ? [c.primaryBright, c.primary, c.primaryDark]
+        : [c.primaryBright, c.primary, c.primaryDark];
+    return [ALCHEMY.goldBright, ALCHEMY.gold, ALCHEMY.greenDeep];
   }, [disabled, loading, isDanger, isSecondary, isGold, isPrimary, isDark, c.secondary, c.secondaryDark, c.secondaryBright]);
 
   const textNode = label != null
@@ -179,8 +181,8 @@ function PremiumButtonBase({
         ? "rgba(110, 231, 183, 0.45)"
         : "rgba(34, 197, 94, 0.4)"
       : isDark
-        ? "rgba(232, 200, 90, 0.5)"
-        : "rgba(199, 154, 58, 0.45)";
+        ? "rgba(52, 211, 153, 0.5)"
+        : "rgba(31, 92, 71, 0.45)";
 
   return (
     <Animated.View style={[styles.outer, motionStyle, style]}>
@@ -239,7 +241,7 @@ function createStyles(c, isDark, t, fullWidth) {
     },
     android: { elevation: 4 },
     web: {
-      boxShadow: "0 14px 28px rgba(98, 64, 20, 0.28), inset 0 1px 0 rgba(255,255,255,0.18)",
+      boxShadow: "0 14px 28px rgba(22, 69, 51, 0.28), inset 0 1px 0 rgba(255,255,255,0.18)",
     },
   });
 
@@ -295,13 +297,13 @@ function createStyles(c, isDark, t, fullWidth) {
       paddingVertical: t.padV,
       paddingHorizontal: t.padH,
       borderWidth: 1,
-      borderColor: isDark ? "rgba(232, 200, 90, 0.4)" : "rgba(201, 162, 39, 0.45)",
-      backgroundColor: isDark ? "rgba(201, 162, 39, 0.1)" : "rgba(255, 246, 223, 0.5)",
+      borderColor: isDark ? "rgba(52, 211, 153, 0.4)" : "rgba(31, 92, 71, 0.35)",
+      backgroundColor: isDark ? "rgba(31, 92, 71, 0.14)" : "rgba(31, 92, 71, 0.08)",
       ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 6px 14px rgba(0,0,0,0.32), inset 0 1px 0 rgba(232, 200, 90, 0.14)"
-            : "0 6px 14px rgba(98, 64, 20, 0.08), inset 0 1px 0 rgba(255,255,255,0.92)",
+            ? "0 6px 14px rgba(0,0,0,0.32), inset 0 1px 0 rgba(52, 211, 153, 0.14)"
+            : "0 6px 14px rgba(22, 69, 51, 0.08), inset 0 1px 0 rgba(255,255,255,0.92)",
         },
         default: {},
       }),
@@ -311,11 +313,11 @@ function createStyles(c, isDark, t, fullWidth) {
       paddingVertical: t.padV,
       paddingHorizontal: t.padH,
       borderWidth: 1.5,
-      borderColor: isDark ? "rgba(232, 200, 90, 0.55)" : ALCHEMY.lineStrong,
+      borderColor: isDark ? "rgba(52, 211, 153, 0.55)" : ALCHEMY.lineStrong,
       backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "#fffdf9",
       ...Platform.select({
         web: {
-          boxShadow: "0 4px 12px rgba(61, 42, 18, 0.06), inset 0 1px 0 rgba(255,255,255,0.95)",
+          boxShadow: "0 4px 12px rgba(22, 69, 51, 0.06), inset 0 1px 0 rgba(255,255,255,0.95)",
         },
         default: {},
       }),
@@ -349,7 +351,7 @@ function createStyles(c, isDark, t, fullWidth) {
     hover: {
       ...Platform.select({
         web: {
-          boxShadow: "0 20px 36px rgba(98, 64, 20, 0.34), inset 0 1px 0 rgba(255,255,255,0.22)",
+          boxShadow: "0 20px 36px rgba(22, 69, 51, 0.34), inset 0 1px 0 rgba(255,255,255,0.22)",
         },
         default: {},
       }),

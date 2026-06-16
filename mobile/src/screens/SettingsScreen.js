@@ -484,7 +484,7 @@ function createSettingsStyles(c, shadowPremium, isDark, layoutFlags = {}) {
         web: {
           borderRadius: radius.xxl,
           borderWidth: StyleSheet.hairlineWidth,
-          borderColor: isDark ? "rgba(232, 200, 90, 0.14)" : "rgba(116, 79, 28, 0.1)"},
+          borderColor: isDark ? "rgba(52, 211, 153, 0.14)" : "rgba(22, 69, 51, 0.1)"},
         default: {}})},
     sectionTitle: {
       marginTop: spacing.md + 2,
@@ -524,7 +524,7 @@ function createSettingsStyles(c, shadowPremium, isDark, layoutFlags = {}) {
         web: {
           borderColor: c.primaryBorder,
           transform: [{ translateY: -1.5 }],
-          boxShadow: isDark ? "0 16px 32px rgba(0,0,0,0.34)" : "0 14px 28px rgba(61, 42, 18, 0.14)"},
+          boxShadow: isDark ? "0 16px 32px rgba(0,0,0,0.34)" : "0 14px 28px rgba(22, 69, 51, 0.14)"},
         default: {}})},
     itemHoverSweep: {
       position: "absolute",

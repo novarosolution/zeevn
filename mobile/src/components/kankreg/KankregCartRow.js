@@ -124,7 +124,7 @@ function createStyles(c, isDark) {
         web: {
           boxShadow: isDark
             ? "0 10px 28px rgba(0,0,0,0.22)"
-            : "0 8px 22px rgba(61, 42, 18, 0.07), inset 0 1px 0 rgba(255,255,255,0.92)",
+            : "0 8px 22px rgba(22, 69, 51, 0.07), inset 0 1px 0 rgba(255,255,255,0.92)",
         },
         ios: {
           shadowColor: "#3D2A12",
@@ -141,7 +141,7 @@ function createStyles(c, isDark) {
       left: 0,
       right: 0,
       height: 2,
-      backgroundColor: isDark ? "rgba(232, 200, 90, 0.55)" : KANKREG_PALETTE.gold,
+      backgroundColor: isDark ? "rgba(52, 211, 153, 0.55)" : KANKREG_PALETTE.gold,
     },
     thumbWrap: {
       width: 72,
@@ -150,7 +150,7 @@ function createStyles(c, isDark) {
       overflow: "hidden",
       flexShrink: 0,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(232, 200, 90, 0.2)" : "rgba(201, 162, 39, 0.22)",
+      borderColor: isDark ? "rgba(52, 211, 153, 0.2)" : "rgba(31, 92, 71, 0.22)",
     },
     thumbImage: {
       width: "100%",
@@ -178,9 +178,9 @@ function createStyles(c, isDark) {
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: 999,
-      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(169, 119, 46, 0.08)",
+      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(31, 92, 71, 0.08)",
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? c.border : "rgba(169, 119, 46, 0.15)",
+      borderColor: isDark ? c.border : "rgba(31, 92, 71, 0.15)",
     },
     variantText: {
       fontFamily: fonts.semibold,

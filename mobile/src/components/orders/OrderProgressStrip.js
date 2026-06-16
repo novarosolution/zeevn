@@ -58,7 +58,7 @@ function OrderProgressStripBase({ status, c, isDark, compact = false }) {
   return (
     <View style={[styles.trackShell, compact && styles.trackShellCompact]}>
       <LinearGradient colors={shellGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.trackGradient}>
-        <View style={[styles.trackGoldLine, { backgroundColor: isDark ? "rgba(232, 200, 90, 0.55)" : ALCHEMY.gold }]} />
+        <View style={[styles.trackGoldLine, { backgroundColor: isDark ? "rgba(52, 211, 153, 0.55)" : ALCHEMY.gold }]} />
         <View style={styles.trackHeadRow}>
           <View style={styles.trackHeadLeft}>
             <Ionicons name="locate-outline" size={compact ? 18 : 20} color={isDark ? c.primaryBright : ALCHEMY.brown} />
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(169, 119, 46, 0.22)",
+    borderColor: "rgba(31, 92, 71, 0.22)",
   },
   trackShellCompact: {
     marginBottom: 10,

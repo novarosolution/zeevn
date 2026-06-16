@@ -1,22 +1,17 @@
-import { buildCommunitySectionDefaults } from "./communityHomeContent";
-import { buildCompareSectionDefaults } from "./compareHomeContent";
-import { buildProcessSectionDefaults } from "./processHomeContent";
-
 /**
- * Full home-view defaults with bundled image fallbacks — admin + seeding only.
- * Do not import from customer screens (pulls heavy marketing assets).
+ * Admin home-view defaults — lean storefront (hero + catalog toggles only).
+ * Do not import from customer screens.
  */
 export const HOME_VIEW_DEFAULTS = {
-  heroTitle: "Pure Heritage in Every Drop",
-  heroSubtitle: "Slow-churned from the milk of grass-fed cows — golden clarity and aroma rooted in tradition.",
-  primeSectionTitle: "Prime Products",
-  productTypeTitle: "Shop by category",
+  heroTitle: "Ghee · Tel · Masala · Honey",
+  heroSubtitle: "Small batches, honest labels, live delivery tracking.",
+  primeSectionTitle: "Bestsellers",
+  productTypeTitle: "Categories",
   showPrimeSection: true,
-  showHomeSections: true,
   showProductTypeSections: true,
   productCardStyle: "compact",
   shopLocation: {
-    name: "KankreG Shop",
+    name: "Zeevan Shop",
     line1: "",
     city: "",
     state: "",
@@ -25,17 +20,4 @@ export const HOME_VIEW_DEFAULTS = {
     longitude: null,
   },
   heroSlides: [],
-  aboutSection: {
-    enabled: true,
-    eyebrow: "Our story",
-    title: "Craft rooted in tradition",
-    body:
-      "KankreG crafts pure A2 Kankrej cow ghee using the ancestral Bilona method — hand-churned, wood-fired, and bottled in small batches for families who value tradition and taste.",
-    videoUrl: "",
-    videoCaption: "From grass-fed Kankrej cows to golden, grainy ghee.",
-    photos: [],
-  },
-  communitySection: buildCommunitySectionDefaults(),
-  compareSection: buildCompareSectionDefaults(),
-  processSection: buildProcessSectionDefaults(),
 };

@@ -1,12 +1,5 @@
-/** Web-optimized process step images (WebP @ 720px). */
-export const PROCESS_STEP_IMAGE_FALLBACKS = {
-  "process-01": require("../../assets/marketing/ghee-process-step-01-pasture-web-720.webp"),
-  "process-02": require("../../assets/marketing/ghee-process-step-02-milk-web-720.webp"),
-  "process-03": require("../../assets/marketing/ghee-process-step-03-curd-web-720.webp"),
-  "process-04": require("../../assets/marketing/ghee-process-step-04-bilona-web-720.webp"),
-  "process-05": require("../../assets/marketing/ghee-process-step-05-woodfire-web-720.webp"),
-  "process-06": require("../../assets/marketing/ghee-process-step-06-bottled-web-720.webp"),
-};
+/** Web process step images removed — admin uploads only. */
+export const PROCESS_STEP_IMAGE_FALLBACKS = {};
 
 const DEFAULT_STEPS = [
   {

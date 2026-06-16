@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: "100%",
     ...Platform.select({
-      web: { minHeight: 34 },
+      web: { minHeight: 32 },
       default: {},
     }),
   },

@@ -1,6 +1,6 @@
 /**
- * Premium A2 ghee product page defaults — used when a product matches the ghee shelf.
- * Edit marketing copy here; product-specific fields from admin still take precedence.
+ * Premium A2 ghee product page defaults — used when a product matches the ghee line.
+ * Full PDP hub: `productPageContent.js` (all lines). Edit marketing copy there or here for ghee-only tweaks.
  */
 export const GHEE_PRODUCT_CONTENT = {
   eyebrow: "The Benchmark of Purity",
@@ -23,7 +23,7 @@ export const GHEE_PRODUCT_CONTENT = {
     kick: "Our Legacy of Purity",
     title: "Crafted the ancient way, delivered farm-to-table",
     legend:
-      "At KankreG, we preserve the ancient wisdom of India. Every jar is crafted using the traditional Bilona method from A2 milk of single-breed indigenous Kankrej cows — sourced directly from our farm, so every drop reflects purity, nutrition and authenticity.",
+      "At Zeevan, we preserve the ancient wisdom of India. Every jar is crafted using the traditional Bilona method from A2 milk of single-breed indigenous Kankrej cows — sourced directly from our farm, so every drop reflects purity, nutrition and authenticity.",
   },
   features: [
     { icon: "leaf-outline", title: "100% A2 Milk", subtitle: "Single-breed Kankrej" },
@@ -50,7 +50,7 @@ export const GHEE_PRODUCT_CONTENT = {
       title: "From our farm to your table",
       body: "Net Quantity: 1 L / 1000 ml · Best before 12 months from packed date. Store in a cool, dry place, away from direct sunlight.",
       tags: ["Single-Breed Kankrej", "Bilona Process", "Ethically Sourced", "Made with Ancient Wisdom"],
-      footer: "FSSAI Lic. No. 10021021000123 · Made & packed by KankreG, Banaskantha, Gujarat.",
+      footer: "FSSAI Lic. No. 10021021000123 · Made & packed by Zeevan, Banaskantha, Gujarat.",
     },
   },
   reviewsKick: "Customer Reviews",

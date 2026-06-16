@@ -1,14 +1,16 @@
 import { Platform } from "react-native";
-import { ALCHEMY } from "./customerAlchemy";
 import { KANKREG_CHROME } from "./kankregWeb";
-import { WEB_DISPLAY_FONT, WEB_DISPLAY_FONT_CDN } from "./webFonts";
+import {
+  WEB_FONT_STACK_BODY,
+  WEB_FONT_STACK_DISPLAY,
+} from "./webTypography";
 
-/** Fixed top bar height on web (kankreg.html `.topbar` ≈ 76px). */
-export const WEB_HEADER_HEIGHT = 76;
+/** Fixed top bar height on web. */
+export const WEB_HEADER_HEIGHT = 68;
 /** Slim in-flow header on native — bottom tab bar handles primary nav. */
 export const NATIVE_HEADER_HEIGHT = 52;
-/** kankreg.html `.announce` strip */
-export const WEB_ANNOUNCE_HEIGHT = 34;
+/** Announce strip */
+export const WEB_ANNOUNCE_HEIGHT = 32;
 /** Announce + sticky topbar — use for page scroll padding. */
 export const WEB_CHROME_TOP = WEB_HEADER_HEIGHT + WEB_ANNOUNCE_HEIGHT;
 /** Shared top offset for sticky page chrome below fixed header. */
@@ -36,36 +38,13 @@ export const webRootStyle = Platform.select({
 });
 
 let premiumChromeInjected = false;
-let displayFontInjected = false;
 
-/** Load CIENUR display face for web headings (dev + static export). */
-export function injectWebDisplayFont() {
-  if (Platform.OS !== "web" || typeof document === "undefined" || displayFontInjected) return;
-  displayFontInjected = true;
+/** No-op — display fonts load via Expo Google Fonts in App.js (faster than CDN). */
+export function injectWebDisplayFont() {}
 
-  const head = document.head;
-  if (!head) return;
-
-  if (!document.querySelector('link[data-kankreg="cienur-font"]')) {
-    const preconnect = document.createElement("link");
-    preconnect.rel = "preconnect";
-    preconnect.href = "https://fonts.cdnfonts.com";
-    preconnect.crossOrigin = "anonymous";
-    head.appendChild(preconnect);
-
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = WEB_DISPLAY_FONT_CDN;
-    link.setAttribute("data-kankreg", "cienur-font");
-    head.appendChild(link);
-  }
-}
-
-/** Web-only: description, theme-color, lang, and CIENUR display font. */
+/** Web-only: description, theme-color, lang. */
 export function injectWebDocumentMeta() {
   if (Platform.OS !== "web" || typeof document === "undefined") return;
-
-  injectWebDisplayFont();
 
   const html = document.documentElement;
   if (!html.getAttribute("lang")) {
@@ -82,7 +61,7 @@ export function injectWebDocumentMeta() {
 
   ensureMeta(
     "description",
-    "KankreG — premium A2 ghee and artisan pantry goods, delivered fresh to your door."
+    "Zeevan — premium A2 ghee and artisan pantry goods, delivered fresh to your door."
   );
   ensureMeta("theme-color", KANKREG_CHROME.cream);
   ensureMeta("color-scheme", "light dark");
@@ -107,7 +86,7 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
     html.style.background = backgroundSolid || "#0A0908";
     html.style.colorScheme = "dark";
   } else {
-    const g = `radial-gradient(1100px 560px at 88% -8%, rgba(214, 173, 91, 0.12), transparent 60%), radial-gradient(900px 500px at -8% 108%, rgba(60, 98, 72, 0.06), transparent 55%), ${KANKREG_CHROME.cream}`;
+    const g = `radial-gradient(1200px 620px at 92% -6%, rgba(120, 136, 68, 0.14), transparent 58%), radial-gradient(960px 540px at -6% 105%, rgba(36, 68, 36, 0.08), transparent 52%), linear-gradient(180deg, #FCF8F0 0%, ${KANKREG_CHROME.cream} 40%, #E8E4D0 100%)`;
     body.style.background = g;
     body.style.backgroundAttachment = "scroll";
     html.style.background = g;
@@ -150,6 +129,15 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
       body {
         overscroll-behavior-y: none;
         -webkit-tap-highlight-color: transparent;
+        font-family: ${WEB_FONT_STACK_BODY};
+        font-size: 15px;
+        line-height: 1.5;
+      }
+      #root, [data-expo-root] {
+        font-family: ${WEB_FONT_STACK_BODY};
+      }
+      [data-zeevan-display="true"] {
+        font-family: ${WEB_FONT_STACK_DISPLAY};
       }
       img {
         max-width: 100%;
@@ -173,28 +161,22 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
         background: rgba(100, 116, 139, 0.08);
       }
       ::-webkit-scrollbar-thumb {
-        background: rgba(138, 90, 18, 0.35);
+        background: rgba(92, 104, 52, 0.32);
         border-radius: 999px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: rgba(138, 90, 18, 0.5);
+        background: rgba(92, 104, 52, 0.45);
       }
       ::selection {
-        background: #d6ad5b;
-        color: #fff;
+        background: rgba(220, 172, 116, 0.28);
+        color: #1E2018;
       }
       *:focus-visible {
-        outline: 2px solid rgba(138, 90, 18, 0.48);
+        outline: 2px solid rgba(92, 104, 52, 0.42);
         outline-offset: 3px;
       }
       a, button, [role="button"], [role="tab"] {
-        transition: transform 180ms ease, box-shadow 180ms ease, opacity 180ms ease, background-color 180ms ease, border-color 180ms ease;
-      }
-      a:hover, button:hover, [role="button"]:hover, [role="tab"]:hover {
-        transform: translateY(-1px);
-      }
-      a:active, button:active, [role="button"]:active, [role="tab"]:active {
-        transform: translateY(0);
+        transition: opacity 140ms ease, background-color 140ms ease, border-color 140ms ease;
       }
       @media (max-width: 760px) {
         ::-webkit-scrollbar {
@@ -226,7 +208,7 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
       }
       [data-kankreg-display="true"],
       h1, h2, h3 {
-        font-family: '${WEB_DISPLAY_FONT}', Georgia, 'Times New Roman', serif;
+        font-family: ${WEB_FONT_STACK_DISPLAY};
       }
     `;
     document.head.appendChild(style);

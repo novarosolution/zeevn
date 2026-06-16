@@ -417,7 +417,7 @@ function createStyles(c, shadowPremium, isDark) {
         web: {
           borderRadius: radius.xxl,
           borderWidth: StyleSheet.hairlineWidth,
-          borderColor: isDark ? "rgba(232, 200, 90, 0.14)" : "rgba(116, 79, 28, 0.12)"},
+          borderColor: isDark ? "rgba(52, 211, 153, 0.14)" : "rgba(22, 69, 51, 0.12)"},
         default: {}})},
     sectionCard: {
       borderWidth: StyleSheet.hairlineWidth,
@@ -430,7 +430,7 @@ function createStyles(c, shadowPremium, isDark) {
         web: {
           boxShadow: isDark
             ? "0 14px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)"
-            : "0 12px 26px rgba(61, 42, 18, 0.09), inset 0 1px 0 rgba(255,255,255,0.82)"},
+            : "0 12px 26px rgba(22, 69, 51, 0.09), inset 0 1px 0 rgba(255,255,255,0.82)"},
         default: {}})},
     sectionTitle: {
       fontSize: typography.body + 1,
@@ -538,10 +538,10 @@ function createStyles(c, shadowPremium, isDark) {
       ...Platform.select({
         web: {
           borderWidth: 2,
-          borderColor: isDark ? "rgba(232, 200, 90, 0.44)" : c.secondaryBorder,
+          borderColor: isDark ? "rgba(52, 211, 153, 0.44)" : c.secondaryBorder,
           boxShadow: isDark
             ? "0 16px 34px rgba(0,0,0,0.33)"
-            : "0 12px 26px rgba(61, 42, 18, 0.14)"},
+            : "0 12px 26px rgba(22, 69, 51, 0.14)"},
         default: {}})},
     avatarImage: {
       width: "100%",

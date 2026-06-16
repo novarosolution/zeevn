@@ -46,7 +46,7 @@ function OrderDetailPanelBase({ order }) {
 
   const totalShadow = platformShadow({
     web: { boxShadow: "0 8px 24px -12px rgba(169,119,46,.35)" },
-    ios: { shadowColor: "#9c6b27", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 10 },
+    ios: { shadowColor: "#244424", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 10 },
     android: { elevation: 3 },
   });
 
@@ -105,7 +105,7 @@ function OrderDetailPanelBase({ order }) {
 
       <View style={[styles.totalBanner, totalShadow]}>
         <LinearGradient
-          colors={isDark ? ["#c9a227", "#8a5a12"] : ["#f3e4c4", "#d9b463"]}
+          colors={isDark ? ["#BC905C", "#8a5a12"] : ["#f3e4c4", "#DCAC74"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.totalGradient}

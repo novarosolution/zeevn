@@ -1,3 +1,4 @@
+import { HOME_CATEGORY_DEFAULTS } from "../content/appContent";
 import { parseCatalogBoolean } from "./catalogBoolean";
 import { getProductCategoryLabels, isProductOnSale, isProductPremium } from "./shopFilters";
 import { isProductComingSoon, isProductOutOfStock } from "./productAvailability";
@@ -31,7 +32,17 @@ export function buildShopCatalogSummary(products = []) {
   };
 }
 
-/** Category → product count for shop rail. */
+/** Category → product count for shop rail; falls back to Zeevan defaults when empty. */
+export function buildShopCategoryRail(products = [], { max = 8 } = {}) {
+  const fromProducts = getShopCategoryCounts(products);
+  if (fromProducts.length) return fromProducts.slice(0, max);
+  return HOME_CATEGORY_DEFAULTS.slice(0, max).map((def) => ({
+    label: def.label,
+    count: 0,
+  }));
+}
+
+/** @deprecated Use buildShopCategoryRail */
 export function getShopCategoryCounts(products = []) {
   const map = new Map();
   for (const p of products) {

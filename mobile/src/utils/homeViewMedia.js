@@ -60,7 +60,9 @@ export function getCompactHeroSlides(slides) {
 
 /** Map bundled marketing slides → hero slider shape (web fallback). */
 export function mapMarketingSlidesToHero(marketingSlides = []) {
-  return marketingSlides.map((slide, index) => ({
+  return marketingSlides
+    .filter((slide) => slide?.image)
+    .map((slide, index) => ({
     id: slide.key || `marketing-${index}`,
     order: index,
     mediaType: "image",
@@ -78,6 +80,7 @@ export function mapMarketingSlidesToHero(marketingSlides = []) {
     captionAlign: slide.captionAlign || "",
     captionMode: slide.captionMode || "",
     captionZone: slide.captionZone || "",
+    webBanner: Boolean(slide.webBanner),
   }));
 }
 
@@ -108,9 +111,9 @@ export const ABOUT_SECTION_DEFAULTS = {
   eyebrow: "Our story",
   title: "Craft rooted in tradition",
   body:
-    "KankreG crafts pure A2 Kankrej cow ghee using the ancestral Bilona method — hand-churned, wood-fired, and bottled in small batches for families who value tradition and taste.",
+    "Zeevan brings ghee, tel, masala & Haldar honey to your kitchen — small batches, honest labels, live delivery tracking.",
   videoUrl: "",
-  videoCaption: "From grass-fed Kankrej cows to golden, grainy ghee.",
+  videoCaption: "From farm to pantry.",
   photos: [],
 };
 
@@ -319,7 +322,7 @@ export function normalizeCommunityPost(post, index = 0) {
   const fallbackAuthor =
     type === "customer"
       ? { name: "", subtitle: "", avatar: "C", brand: false }
-      : { name: "kankreg_ghee", subtitle: "", avatar: "K", brand: true };
+      : { name: "zeevan", subtitle: "", avatar: "Z", brand: true };
   return {
     id,
     order: Number.isFinite(Number(post.order)) ? Number(post.order) : index,

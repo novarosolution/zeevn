@@ -18,7 +18,7 @@ export default function NativeProfileCard({ name, email, avatarUrl, memberTag })
       {avatar ? (
         <Image source={{ uri: avatar }} style={styles.avatarImage} contentFit="cover" />
       ) : (
-        <LinearGradient colors={["#d9b463", "#9c6b27"]} style={styles.avatar}>
+        <LinearGradient colors={["#DCAC74", "#244424"]} style={styles.avatar}>
           <Text style={[figmaDisplayTitle(24), styles.avatarText]}>{initial}</Text>
         </LinearGradient>
       )}

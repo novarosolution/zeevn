@@ -3,7 +3,8 @@ import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-n
 import Animated from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { SHOP_SCREEN_UI } from "../../content/appContent";
+import { SHOP_SCREEN_UI } from "../../content/shopPageContent";
+import { formatShopProductCount } from "../../utils/shopFormat";
 import { useTheme } from "../../context/ThemeContext";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { getShopTheme } from "../../theme/shopTheme";
@@ -17,11 +18,7 @@ import QCommerceSearchField from "../qcommerce/QCommerceSearchField";
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /** Readable product count — sans-serif digits (never display font). */
-export function formatShopProductCount(filtered, total) {
-  const shown = Math.max(0, Number(filtered) || 0);
-  const catalog = Math.max(0, Number(total) || 0);
-  return `${SHOP_SCREEN_UI.showingPrefix} ${shown} ${SHOP_SCREEN_UI.showingOf} ${catalog} ${SHOP_SCREEN_UI.showingSuffix}`;
-}
+export { formatShopProductCount } from "../../utils/shopFormat";
 
 export function ShopCollectionPills({
   selected,
@@ -122,6 +119,32 @@ export function ShopNativeMetaLine({ filtered, total }) {
 export function ShopTrustStrip({ compact = false }) {
   const { isDark } = useTheme();
   const t = getShopTheme(isDark);
+  const badges = SHOP_SCREEN_UI.trustBadges || [];
+  const line = SHOP_SCREEN_UI.trustLine;
+
+  if (badges.length) {
+    return (
+      <View style={[styles.trustBadgeRow, compact && styles.trustBadgeRowCompact]}>
+        {badges.map((badge) => (
+          <View
+            key={badge.label}
+            style={[
+              styles.trustBadge,
+              compact && styles.trustBadgeCompact,
+              { backgroundColor: t.surfaceMuted, borderColor: t.border },
+            ]}
+          >
+            <Ionicons name={badge.icon || "checkmark-circle-outline"} size={compact ? 12 : 13} color={t.accent} />
+            <Text style={[styles.trustBadgeText, compact && styles.trustBadgeTextCompact, { color: t.textMuted }]}>
+              {badge.label}
+            </Text>
+          </View>
+        ))}
+      </View>
+    );
+  }
+
+  if (!line) return null;
 
   return (
     <View
@@ -133,14 +156,14 @@ export function ShopTrustStrip({ compact = false }) {
     >
       <Ionicons name="shield-checkmark-outline" size={compact ? 12 : 14} color={t.accent} />
       <Text style={[styles.trustText, compact && styles.trustTextCompact, { color: t.textMuted }]}>
-        {SHOP_SCREEN_UI.trustLine}
+        {line}
       </Text>
     </View>
   );
 }
 
 /** Web / mobile-web catalog search — sits above filters and product grid. */
-export function ShopCatalogSearch({ value, onChangeText, inputRef, placeholder, onClear }) {
+export function ShopCatalogSearch({ value, onChangeText, inputRef, placeholder, onClear, premium = false }) {
   if (Platform.OS !== "web") return null;
 
   return (
@@ -151,6 +174,7 @@ export function ShopCatalogSearch({ value, onChangeText, inputRef, placeholder, 
         placeholder={placeholder}
         onClear={onClear}
         ref={inputRef}
+        premium={premium}
       />
     </View>
   );
@@ -175,81 +199,101 @@ export function ShopCompactToolbar({
   onClearAll,
   variant = "stack",
   useSortBar = true,
+  hideCollectionPills = false,
+  compactActions = false,
+  lean = false,
 }) {
   const { isDark } = useTheme();
   const t = getShopTheme(isDark);
-  const showPills = variant === "stack";
+  const showPills = variant === "stack" && !hideCollectionPills;
   const showFilterToggle = variant === "stack" && typeof onToggleFilters === "function";
   const showLegacySort = !useSortBar && typeof onSort === "function";
+  const countLabel = formatShopProductCount(filtered, total);
+  const showInlineSort = lean && useSortBar && typeof onSortChange === "function";
 
   return (
-    <View style={styles.compactToolbar}>
+    <View style={[styles.compactToolbar, lean && styles.compactToolbarLean]}>
       {showPills ? <ShopCollectionPills selected={pill} onSelect={onPill} compact scroll /> : null}
 
-      <View style={[styles.compactBar, { backgroundColor: t.surface, borderColor: t.border }, t.cardShadow]}>
-        <View style={styles.compactMeta}>
-          <Text style={[styles.compactCount, { color: t.textMuted }]} numberOfLines={1}>
-            {formatShopProductCount(filtered, total)}
+      <View
+        style={[
+          styles.compactBar,
+          lean && styles.compactBarLean,
+          { backgroundColor: t.surface, borderColor: t.border, borderTopColor: lean ? t.border : t.borderTopAccent },
+          !lean && t.cardShadow,
+        ]}
+      >
+        <View style={[styles.compactBarTop, lean && styles.compactBarTopLean]}>
+          <Text style={[styles.compactCount, lean && styles.compactCountLean, { color: t.textMuted }]} numberOfLines={1}>
+            {countLabel}
           </Text>
-        </View>
 
-        <View style={styles.compactActions}>
-          {showFilterToggle ? (
-            <Pressable
-              onPress={onToggleFilters}
-              style={({ pressed }) => [
-                styles.filterToggle,
-                {
-                  backgroundColor: filtersOpen ? t.chipOnBg : t.surfaceChip,
-                  borderColor: filtersOpen ? t.chipOnBorder : t.border,
-                },
-                pressed && styles.pillPressed,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={filtersOpen ? SHOP_SCREEN_UI.filtersClose : SHOP_SCREEN_UI.filtersOpen}
-            >
-              <Ionicons
-                name="options-outline"
-                size={14}
-                color={filtersOpen ? t.chipOnText : t.accent}
-              />
-              <Text
-                style={[
-                  styles.filterToggleText,
-                  { color: filtersOpen ? t.chipOnText : t.text },
+          <View style={styles.compactActions}>
+            {showFilterToggle ? (
+              <Pressable
+                onPress={onToggleFilters}
+                style={({ pressed }) => [
+                  compactActions || lean ? styles.filterToggleIcon : styles.filterToggle,
+                  {
+                    backgroundColor: filtersOpen ? t.chipOnBg : t.surfaceChip,
+                    borderColor: filtersOpen ? t.chipOnBorder : t.border,
+                  },
+                  pressed && styles.pillPressed,
                 ]}
+                accessibilityRole="button"
+                accessibilityLabel={filtersOpen ? SHOP_SCREEN_UI.filtersClose : SHOP_SCREEN_UI.filtersOpen}
               >
-                {filtersOpen ? SHOP_SCREEN_UI.filtersClose : SHOP_SCREEN_UI.filtersOpen}
-              </Text>
-              {filterBadgeCount > 0 && !filtersOpen ? (
-                <View style={[styles.filterCountBadge, styles.filterCountBadgeSm, { backgroundColor: t.chipOnBg }]}>
-                  <Text style={styles.filterCountText}>{filterBadgeCount > 9 ? "9+" : filterBadgeCount}</Text>
-                </View>
-              ) : null}
-            </Pressable>
-          ) : null}
+                <Ionicons
+                  name="options-outline"
+                  size={compactActions || lean ? 16 : 14}
+                  color={filtersOpen ? t.chipOnText : t.accent}
+                />
+                {!compactActions && !lean ? (
+                  <Text
+                    style={[
+                      styles.filterToggleText,
+                      { color: filtersOpen ? t.chipOnText : t.text },
+                    ]}
+                  >
+                    {filtersOpen ? SHOP_SCREEN_UI.filtersClose : SHOP_SCREEN_UI.filtersOpen}
+                  </Text>
+                ) : null}
+                {filterBadgeCount > 0 && !filtersOpen ? (
+                  <View style={[styles.filterCountBadge, styles.filterCountBadgeSm, { backgroundColor: t.chipOnBg }]}>
+                    <Text style={styles.filterCountText}>{filterBadgeCount > 9 ? "9+" : filterBadgeCount}</Text>
+                  </View>
+                ) : null}
+              </Pressable>
+            ) : null}
 
-          {showLegacySort ? (
-            <AnimatedPressable
-              onPress={onSort}
-              style={[
-                styles.sortBtnCompact,
-                { backgroundColor: t.surfaceChip, borderColor: t.border },
-                sortAnimStyle,
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={`${SHOP_SCREEN_UI.sortA11y}: ${sortLabel}`}
-            >
-              <Ionicons name="swap-vertical" size={13} color={t.accent} />
-              <Text style={[styles.sortLabelCompact, { color: t.text }]} numberOfLines={1}>
-                {sortLabel}
-              </Text>
-            </AnimatedPressable>
-          ) : null}
+            {showLegacySort ? (
+              <AnimatedPressable
+                onPress={onSort}
+                style={[
+                  styles.sortBtnCompact,
+                  { backgroundColor: t.surfaceChip, borderColor: t.border },
+                  sortAnimStyle,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel={`${SHOP_SCREEN_UI.sortA11y}: ${sortLabel}`}
+              >
+                <Ionicons name="swap-vertical" size={13} color={t.accent} />
+                <Text style={[styles.sortLabelCompact, { color: t.text }]} numberOfLines={1}>
+                  {sortLabel}
+                </Text>
+              </AnimatedPressable>
+            ) : null}
+          </View>
         </View>
+
+        {showInlineSort ? (
+          <View style={styles.compactSortSlot}>
+            <ShopSortBar value={sortKey} onChange={onSortChange} compact />
+          </View>
+        ) : null}
       </View>
 
-      {useSortBar && typeof onSortChange === "function" ? (
+      {useSortBar && !lean && typeof onSortChange === "function" ? (
         <ShopSortBar value={sortKey} onChange={onSortChange} compact />
       ) : null}
 
@@ -284,8 +328,8 @@ export function ShopResultToolbar({
       <LinearGradient
         colors={
           isDark
-            ? ["rgba(232, 200, 90, 0.5)", "rgba(201, 162, 39, 0.15)", "transparent"]
-            : ["rgba(201, 162, 39, 0.65)", "rgba(116, 79, 28, 0.1)", "transparent"]
+            ? ["rgba(52, 211, 153, 0.5)", "rgba(31, 92, 71, 0.15)", "transparent"]
+            : ["rgba(31, 92, 71, 0.65)", "rgba(22, 69, 51, 0.1)", "transparent"]
         }
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
@@ -451,11 +495,18 @@ const styles = StyleSheet.create({
     fontSize: typography.caption - 1,
   },
   catalogSearchWrap: {
+    marginBottom: 0,
+  },
+  shopCollectionRow: {
     marginBottom: spacing.sm,
   },
   compactToolbar: {
     gap: spacing.sm,
     marginBottom: spacing.sm,
+  },
+  compactToolbarLean: {
+    gap: spacing.xs,
+    marginBottom: spacing.xs,
   },
   compactBar: {
     flexDirection: "row",
@@ -464,18 +515,52 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: 2,
     paddingVertical: 8,
     paddingHorizontal: spacing.sm + 2,
   },
-  compactMeta: {
-    minWidth: 0,
-    flexShrink: 1,
+  compactBarLean: {
+    flexDirection: "column",
+    alignItems: "stretch",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.sm + 4,
+    gap: 10,
+    ...Platform.select({
+      web: {
+        boxShadow: "0 12px 32px -24px rgba(36, 68, 36, 0.18)",
+      },
+      default: {},
+    }),
+  },
+  compactBarTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  compactBarTopLean: {
+    minHeight: 36,
+  },
+  compactSortSlot: {
+    width: "100%",
   },
   compactCount: {
     fontFamily: fonts.medium,
     fontSize: typography.caption,
-    letterSpacing: 0.15,
+    letterSpacing: 0.1,
     lineHeight: 18,
+    flexShrink: 0,
+  },
+  compactCountLean: {
+    fontFamily: fonts.semibold,
+    fontSize: typography.caption - 1,
+    letterSpacing: 0.2,
+    textTransform: "uppercase",
+  },
+  compactCountMuted: {
+    fontFamily: fonts.medium,
   },
   compactActions: {
     flexDirection: "row",
@@ -496,6 +581,15 @@ const styles = StyleSheet.create({
   filterToggleText: {
     fontFamily: fonts.semibold,
     fontSize: typography.caption - 1,
+  },
+  filterToggleIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
   },
   sortBtnCompact: {
     flexDirection: "row",
@@ -585,6 +679,39 @@ const styles = StyleSheet.create({
   trustTextCompact: {
     fontSize: 11,
     lineHeight: 15,
+  },
+  trustBadgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  trustBadgeRowCompact: {
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+    paddingHorizontal: FIGMA.gutter,
+  },
+  trustBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: spacing.xs + 2,
+    paddingHorizontal: spacing.sm + 2,
+    borderRadius: radius.pill,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  trustBadgeCompact: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    gap: 4,
+  },
+  trustBadgeText: {
+    fontFamily: fonts.semibold,
+    fontSize: typography.caption - 1,
+    letterSpacing: 0.2,
+  },
+  trustBadgeTextCompact: {
+    fontSize: 10,
   },
   resultCard: {
     borderRadius: radius.lg + 4,

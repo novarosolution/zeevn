@@ -56,16 +56,16 @@ export type VideoConfig = {
 
 export const site = {
   brand: {
-    name: "KankreG",
-    tagline: "Pure A2 Kankrej Cow Ghee — hand-churned, wood-fired, ancestral.",
-    phone: "+91 98765 43210",
-    whatsapp: "919876543210",
-    email: "hello@kankreg.com",
+    name: "Zeevan",
+    tagline: "Pure heritage, delivered fresh — hand-churned A2 ghee from Gujarat.",
+    phone: "",
+    whatsapp: "",
+    email: "hello@zeevan.com",
     address: "Kutch, Gujarat, India",
     social: {
-      instagram: "https://instagram.com/kankreg",
-      facebook: "https://facebook.com/kankreg",
-      youtube: "https://youtube.com/@kankreg",
+      instagram: "https://instagram.com/zeevan",
+      facebook: "https://facebook.com/zeevan",
+      youtube: "https://youtube.com/@zeevan",
     },
   },
 
@@ -82,13 +82,13 @@ export const site = {
 
   hero: {
     eyebrow: "Artisanal · A2 · Bilona",
-    headline: "Pure A2 Kankrej Cow Ghee",
+    headline: "Zeevan — Pure A2 Kankrej Cow Ghee",
     subline:
       "Hand-churned from curd, slow-cooked on a wood fire — the ancestral Bilona method, bottled in small batches for your table.",
     primaryCta: { label: "Order Now", href: "#order" },
-    secondaryCta: { label: "Watch how it's made", href: "#video" },
+    secondaryCta: { label: "See the process", href: "#process" },
     image: "/images/hero-ghee.jpg",
-    imageAlt: "Glass jar of golden KankreG A2 ghee",
+    imageAlt: "Glass jar of golden Zeevan A2 ghee",
     badges: ["100% Pure", "A2 Desi", "No Preservatives"],
   },
 
@@ -96,8 +96,8 @@ export const site = {
     title: "How our ghee is made",
     caption: "From grass-fed Kankrej cows to golden, grainy ghee — every step honoured by hand.",
     poster: "/images/video-poster.jpg",
-    src: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    type: "youtube",
+    src: "",
+    type: "mp4",
   } satisfies VideoConfig,
 
   process: {
@@ -256,27 +256,8 @@ export const site = {
   testimonials: {
     id: "testimonials",
     eyebrow: "Testimonials",
-    title: "Loved across Gujarat",
-    items: [
-      {
-        quote:
-          "The grain and aroma remind me of my grandmother's kitchen. We use nothing else for our dal tadka now.",
-        name: "Priya Shah",
-        location: "Ahmedabad, Gujarat",
-      },
-      {
-        quote:
-          "Finally ghee I trust for my children — pure A2, no odd aftertaste. The glass bottle feels as premium as the ghee.",
-        name: "Ramesh Patel",
-        location: "Rajkot, Gujarat",
-      },
-      {
-        quote:
-          "I switched from supermarket brands after tasting KankreG. You can tell it's Bilona — rich, golden, and honest.",
-        name: "Meera Desai",
-        location: "Surat, Gujarat",
-      },
-    ] as Testimonial[],
+    title: "Loved by our customers",
+    items: [] as Testimonial[],
   },
 
   products: {
@@ -347,7 +328,7 @@ export const site = {
   footer: {
     id: "story",
     blurb:
-      "KankreG crafts pure A2 Kankrej cow ghee using the ancestral Bilona method — for families who value tradition, transparency, and taste.",
+      "Zeevan crafts pure A2 Kankrej cow ghee using the ancestral Bilona method — for families who value tradition, transparency, and taste.",
     quickLinks: [
       { label: "How It's Made", href: "#process" },
       { label: "Why Kankrej", href: "#why-kankrej" },
@@ -355,7 +336,7 @@ export const site = {
       { label: "Order", href: "#order" },
       { label: "FAQ", href: "#faq" },
     ] as NavLink[],
-    copyright: `© ${new Date().getFullYear()} KankreG. All rights reserved.`,
+    copyright: `© ${new Date().getFullYear()} Zeevan. All rights reserved.`,
   },
 } as const;
 

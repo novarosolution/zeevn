@@ -47,10 +47,8 @@ if (fs.existsSync(indexHtml)) {
   html = html.replace(/<link[^>]+leafletWeb[^>]*>\s*/gi, "");
 
   const headInject = [
-    '<link rel="preconnect" href="https://fonts.cdnfonts.com" crossorigin />',
-    '<link rel="stylesheet" href="https://fonts.cdnfonts.com/css/cienur" data-kankreg="cienur-font" />',
-    '<meta name="description" content="KankreG — premium A2 ghee and artisan pantry goods, delivered fresh to your door." />',
-    '<meta name="theme-color" content="#FDF9F0" />',
+    '<meta name="description" content="Zeevan — premium A2 ghee and artisan pantry goods, delivered fresh to your door." />',
+    '<meta name="theme-color" content="#FAF8F4" />',
     '<meta name="color-scheme" content="light dark" />',
   ];
 
@@ -75,7 +73,7 @@ if (fs.existsSync(indexHtml)) {
       "#kankreg-lcp-shell{position:fixed;top:110px;left:0;width:100%;height:clamp(420px,62vw,720px);object-fit:cover;object-position:center;display:block;background:#1a1410;z-index:0;pointer-events:none;}",
       "#root{position:relative;z-index:1;background:transparent;}",
       "</style>",
-      `<img id="kankreg-lcp-shell" src="${heroHref}" alt="KankreG premium A2 ghee" fetchpriority="high" decoding="async" width="840" height="1070" />`,
+      `<img id="kankreg-lcp-shell" src="${heroHref}" alt="Zeevan premium A2 ghee" fetchpriority="high" decoding="async" width="840" height="1070" />`,
     ].join("");
     html = html.replace(
       /<style id="kankreg-lcp-shell-style">[\s\S]*?<\/style>\s*<img id="kankreg-lcp-shell"[^>]*>\s*/gi,

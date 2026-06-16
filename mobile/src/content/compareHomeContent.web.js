@@ -77,7 +77,7 @@ export function buildCompareSectionDefaults() {
     storyChapter: "Chapter II",
     openingLine: "Two paths. One golden jar.",
     closingTagline: "A2 milk · Bilona-churned · open-grazed · hand-poured.",
-    oursLabel: "KankreG",
+    oursLabel: "Zeevan",
     ordinaryLabel: "Ordinary",
     rows: DEFAULT_ROWS.map((row) => ({ ...row })),
   };

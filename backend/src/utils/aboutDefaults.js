@@ -22,7 +22,7 @@ function buildAboutPageExtrasDefaults() {
       eyebrow: "Our roots",
       title: "Born in Gujarat, made for Indian kitchens",
       body:
-        "KankreG started with one conviction: families deserve ghee that tastes like memory — nutty, golden, and honest. We work with pastoral communities who raise Kankrej cows with care, pay fair prices, and bottle in small runs so freshness never waits on a warehouse shelf.",
+        "Zeevan started with one conviction: families deserve ghee that tastes like memory — nutty, golden, and honest. We work with pastoral communities who raise Kankrej cows with care, pay fair prices, and bottle in small runs so freshness never waits on a warehouse shelf.",
     },
     values: [
       {

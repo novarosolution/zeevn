@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
       web: {
         cursor: "pointer",
         transition: "background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease",
-        boxShadow: "0 6px 14px rgba(61, 42, 18, 0.09), inset 0 1px 0 rgba(255,255,255,0.86)",
+        boxShadow: "0 6px 14px rgba(22, 69, 51, 0.09), inset 0 1px 0 rgba(255,255,255,0.86)",
       },
       default: {},
     }),

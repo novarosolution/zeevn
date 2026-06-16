@@ -28,7 +28,7 @@ module.exports = {
       infoPlist: {
         ...expo.ios?.infoPlist,
         NSLocationWhenInUseUsageDescription:
-          "KankreG uses your location for delivery addresses and optional live location sharing while you deliver orders.",
+          "Zeevan uses your location for delivery addresses and optional live location sharing while you deliver orders.",
       },
     },
     android: {
@@ -38,10 +38,10 @@ module.exports = {
     splash: {
       image: "./assets/splash-icon.png",
       resizeMode: "contain",
-      backgroundColor: "#F7F2E8",
+      backgroundColor: "#FAF8F4",
       dark: {
         image: "./assets/splash-icon.png",
-        backgroundColor: "#1A1714",
+        backgroundColor: "#151210",
       },
     },
     icon: "./assets/app-icon-light.png",
@@ -68,7 +68,7 @@ module.exports = {
             ios: "./assets/app-icon-light.png",
             android: {
               foregroundImage: "./assets/app-icon-light.png",
-              backgroundColor: "#F5EFE4",
+              backgroundColor: "#FAF8F4",
             },
           },
           dark: {

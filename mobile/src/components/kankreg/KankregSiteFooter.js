@@ -1,29 +1,29 @@
-import React, { useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import React from "react";
+import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
+  APP_DISPLAY_NAME,
+  HOME_PAGE_TRUST_BADGES,
   KANKREG_FOOTER_COLUMNS,
   KANKREG_FOOTER_COPYRIGHT,
-  KANKREG_FOOTER_NEWSLETTER,
   KANKREG_FOOTER_TAGLINE,
+  SUPPORT_EMAIL_DISPLAY,
 } from "../../content/appContent";
-import NovaRoEngineerCredit from "../brand/NovaRoEngineerCredit";
+import BrandLogo from "../BrandLogo";
 import { useAuth } from "../../context/AuthContext";
+import { BRAND_LOGO_SIZE } from "../../constants/brand";
 import { FONT_HEADING } from "../../theme/typographyRoles";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { fonts, spacing } from "../../theme/tokens";
+import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { fonts, icon, spacing } from "../../theme/tokens";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import PremiumButton from "../ui/PremiumButton";
-import PremiumInput from "../ui/PremiumInput";
-/** kankreg.html `.foot` */
+
+/** Premium site footer — Zeevan brand, managed copy from `appContent.js`. */
 export default function KankregSiteFooter() {
   const navigation = useNavigation();
-  const { footerCols, isXs, stackFooterNewsletter, pageGutterClamp } = useKankregLayout();
+  const { footerCols, isXs, pageGutterClamp } = useKankregLayout();
   const { isAuthenticated } = useAuth();
-  const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
-  const brandColWidth = footerCols >= 4 ? "42%" : "100%";
 
   const handleLink = (link) => {
     if (!link.route) return;
@@ -34,48 +34,27 @@ export default function KankregSiteFooter() {
     navigation.navigate(link.route, link.params);
   };
 
-  const handleSubscribe = () => {
-    if (!String(email).trim()) return;
-    setSubscribed(true);
-    setEmail("");
+  const openEmail = () => {
+    Linking.openURL(`mailto:${SUPPORT_EMAIL_DISPLAY}`).catch(() => {});
   };
-
-  const showNewsletter = Platform.OS !== "web" || KANKREG_FOOTER_NEWSLETTER.showOnWeb === true;
 
   return (
     <View style={styles.shell}>
+      <LinearGradient
+        colors={[KANKREG_CHROME.footerFrom, KANKREG_CHROME.footerTo]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
       <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
-        {showNewsletter ? (
-        <View style={[styles.news, stackFooterNewsletter && styles.newsStack]}>
-          <View style={styles.newsCopy}>
-            <Text style={styles.newsTitle}>{KANKREG_FOOTER_NEWSLETTER.title}</Text>
-            <Text style={styles.newsBody}>{KANKREG_FOOTER_NEWSLETTER.body}</Text>
-            {subscribed ? (
-              <Text style={styles.newsSuccess}>{KANKREG_FOOTER_NEWSLETTER.successMessage}</Text>
-            ) : null}
-          </View>
-          {!subscribed ? (
-            <View style={[styles.newsForm, stackFooterNewsletter && styles.newsFormStack]}>
-              <View style={styles.newsInputWrap}>
-                <PremiumInput
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder={KANKREG_FOOTER_NEWSLETTER.placeholder}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  label=""
-                />
-              </View>
-              <PremiumButton
-                label={KANKREG_FOOTER_NEWSLETTER.cta}
-                variant="gold"
-                size="sm"
-                onPress={handleSubscribe}
-              />
+        <View style={styles.trustRow}>
+          {HOME_PAGE_TRUST_BADGES.map((badge) => (
+            <View key={badge.key} style={styles.trustChip}>
+              <Ionicons name={badge.icon} size={icon.xs} color={KANKREG_CHROME.footerAccent} />
+              <Text style={styles.trustChipText}>{badge.label}</Text>
             </View>
-          ) : null}
+          ))}
         </View>
-        ) : null}
 
         <View
           style={[
@@ -86,16 +65,19 @@ export default function KankregSiteFooter() {
             },
           ]}
         >
-          <View style={[styles.brandCol, { width: brandColWidth, minWidth: 200 }]}>
-            <View style={styles.brandRow}>
-              <LinearGradient
-                colors={["#d9b463", "#9c6b27"]}
-                style={styles.dot}
-              />
-              <Text style={styles.brandText}>kankreg</Text>
-            </View>
+          <View style={[styles.brandCol, { width: footerCols >= 4 ? "38%" : "100%", minWidth: 220 }]}>
+            <BrandLogo
+              height={BRAND_LOGO_SIZE.footerCompact}
+              variant="onDark"
+              glow={false}
+            />
             <Text style={styles.tagline}>{KANKREG_FOOTER_TAGLINE}</Text>
+            <Pressable onPress={openEmail} style={({ pressed }) => [styles.emailRow, pressed && { opacity: 0.8 }]}>
+              <Ionicons name="mail-outline" size={icon.xs} color={KANKREG_CHROME.footerAccent} />
+              <Text style={styles.emailText}>{SUPPORT_EMAIL_DISPLAY}</Text>
+            </Pressable>
           </View>
+
           {KANKREG_FOOTER_COLUMNS.map((column) => (
             <View
               key={column.title}
@@ -107,7 +89,11 @@ export default function KankregSiteFooter() {
                   key={link.label}
                   onPress={() => handleLink(link)}
                   disabled={!link.route}
-                  style={({ pressed }) => [styles.link, pressed && link.route && { opacity: 0.7 }]}
+                  style={({ hovered, pressed }) => [
+                    styles.link,
+                    link.route && hovered && styles.linkHover,
+                    pressed && link.route && { opacity: 0.75 },
+                  ]}
                 >
                   <Text style={[styles.linkText, !link.route && styles.linkMuted]}>{link.label}</Text>
                 </Pressable>
@@ -118,9 +104,8 @@ export default function KankregSiteFooter() {
 
         <View style={[styles.bottom, isXs && styles.bottomStack]}>
           <Text style={styles.bottomText}>{KANKREG_FOOTER_COPYRIGHT}</Text>
+          <Text style={styles.bottomBrand}>{APP_DISPLAY_NAME}</Text>
         </View>
-
-        <NovaRoEngineerCredit variant="ink" align="stretch" />
       </View>
     </View>
   );
@@ -128,11 +113,12 @@ export default function KankregSiteFooter() {
 
 const styles = StyleSheet.create({
   shell: {
-    backgroundColor: KANKREG_PALETTE.ink,
-    marginTop: 46,
-    paddingTop: Platform.OS === "web" ? "clamp(44px, 6vw, 64px)" : 44,
-    paddingBottom: 32,
+    marginTop: 48,
+    paddingTop: Platform.OS === "web" ? "clamp(48px, 6vw, 72px)" : 48,
+    paddingBottom: 36,
     width: "100%",
+    overflow: "hidden",
+    position: "relative",
   },
   inner: {
     maxWidth: 1280,
@@ -140,108 +126,91 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     paddingHorizontal: Platform.OS === "web" ? "clamp(18px, 4vw, 40px)" : spacing.lg,
   },
-  news: {
+  trustRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 20,
-    backgroundColor: "rgba(214, 173, 91, 0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(169, 119, 46, 0.25)",
-    borderRadius: 18,
-    paddingVertical: 26,
-    paddingHorizontal: 30,
-    marginTop: 10,
-  },
-  newsCopy: { flex: 1, minWidth: 200 },
-  newsTitle: {
-    fontFamily: FONT_HEADING,
-    fontSize: 22,
-    fontWeight: "500",
-    color: KANKREG_PALETTE.paper,
-    marginBottom: 4,
-  },
-  newsBody: {
-    fontSize: 13.5,
-    color: "#c8bdaf",
-    maxWidth: 400,
-  },
-  newsSuccess: {
-    marginTop: 8,
-    fontSize: 13,
-    color: KANKREG_PALETTE.goldBright,
-    fontFamily: fonts.semibold,
-  },
-  newsStack: {
-    flexDirection: "column",
-    alignItems: "stretch",
-  },
-  newsForm: {
-    flexDirection: "row",
-    alignItems: "flex-end",
     gap: 10,
-    flexWrap: "wrap",
+    marginBottom: 36,
+    paddingBottom: 28,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255,255,255,0.08)",
   },
-  newsFormStack: {
-    flexDirection: "column",
-    alignItems: "stretch",
-    width: "100%",
+  trustChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: "rgba(42, 117, 89, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(42, 117, 89, 0.18)",
   },
-  newsInputWrap: { minWidth: 200, flex: 1 },
+  trustChipText: {
+    fontFamily: fonts.medium,
+    fontSize: 12.5,
+    color: "rgba(250, 248, 244, 0.88)",
+  },
   cols: {
-    marginTop: 48,
     gap: 36,
   },
-  brandCol: {},
-  brandRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 14,
-  },
-  dot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-  },
-  brandText: {
-    fontFamily: FONT_HEADING,
-    fontSize: 26,
-    color: KANKREG_PALETTE.paper,
-    textTransform: "lowercase",
+  brandCol: {
+    gap: spacing.sm,
   },
   tagline: {
     fontSize: 14,
-    color: "#c8bdaf",
-    maxWidth: 280,
-    lineHeight: 20,
+    color: "rgba(250, 248, 244, 0.62)",
+    maxWidth: 300,
+    lineHeight: 22,
+    marginTop: 4,
+  },
+  emailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: spacing.sm,
+    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+  },
+  emailText: {
+    fontFamily: fonts.medium,
+    fontSize: 13.5,
+    color: KANKREG_CHROME.footerAccent,
+    textDecorationLine: "underline",
   },
   col: {
     flex: 1,
   },
   colTitle: {
-    fontSize: 11.5,
-    letterSpacing: 2,
+    fontSize: 11,
+    letterSpacing: 2.4,
     textTransform: "uppercase",
-    color: KANKREG_PALETTE.goldBright,
-    marginBottom: 15,
+    color: KANKREG_CHROME.footerAccent,
+    marginBottom: 16,
     fontFamily: fonts.semibold,
   },
-  link: { marginVertical: 9 },
+  link: {
+    marginVertical: 7,
+    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+  },
+  linkHover: {
+    transform: [{ translateX: 2 }],
+  },
   linkText: {
     fontSize: 14,
-    color: "#c8bdaf",
+    color: "rgba(250, 248, 244, 0.72)",
     fontFamily: fonts.medium,
   },
-  linkMuted: { opacity: 0.55 },
+  linkMuted: {
+    opacity: 0.45,
+  },
   bottom: {
     borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.1)",
-    marginTop: 42,
+    borderTopColor: "rgba(255,255,255,0.08)",
+    marginTop: 44,
     paddingTop: 22,
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     flexWrap: "wrap",
     gap: 10,
   },
@@ -251,6 +220,12 @@ const styles = StyleSheet.create({
   },
   bottomText: {
     fontSize: 12.5,
-    color: "#8a8076",
+    color: "rgba(250, 248, 244, 0.45)",
+  },
+  bottomBrand: {
+    fontFamily: FONT_HEADING,
+    fontSize: 14,
+    color: "rgba(42, 117, 89, 0.65)",
+    letterSpacing: 0.5,
   },
 });

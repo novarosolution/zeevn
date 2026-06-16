@@ -28,8 +28,8 @@ export default function AdminPageHeading({ title, subtitle, right, compact = fal
         <LinearGradient
           colors={
             isDark
-              ? ["rgba(232, 200, 90, 0.5)", "rgba(201, 162, 39, 0.2)", "rgba(232, 200, 90, 0)"]
-              : ["rgba(201, 162, 39, 0.55)", "rgba(116, 79, 28, 0.2)", "rgba(201, 162, 39, 0)"]
+              ? ["rgba(52, 211, 153, 0.5)", "rgba(31, 92, 71, 0.2)", "rgba(52, 211, 153, 0)"]
+              : ["rgba(31, 92, 71, 0.55)", "rgba(22, 69, 51, 0.2)", "rgba(31, 92, 71, 0)"]
           }
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}

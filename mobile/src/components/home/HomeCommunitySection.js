@@ -90,8 +90,8 @@ function CommunityPostCard({ post, isDark, index, cardWidth, phone = false }) {
         <LinearGradient
           colors={
             isDark
-              ? ["rgba(214, 173, 91, 0.16)", "transparent"]
-              : ["rgba(214, 173, 91, 0.24)", "transparent"]
+              ? ["rgba(42, 117, 89, 0.16)", "transparent"]
+              : ["rgba(42, 117, 89, 0.24)", "transparent"]
           }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
@@ -165,7 +165,7 @@ function CommunityPostCard({ post, isDark, index, cardWidth, phone = false }) {
         <View style={[styles.pfoot, isDark && styles.pfootDark]}>
           <LinearGradient
             colors={
-              post.author.brand ? ["#D8B36A", "#8A5F22"] : ["#7FB89A", "#235A40"]
+              post.author.brand ? ["#DCAC74", "#244424"] : ["#849448", "#244424"]
             }
             start={{ x: 0.2, y: 0 }}
             end={{ x: 0.9, y: 1 }}
@@ -234,8 +234,8 @@ export default function HomeCommunitySection({ communitySection }) {
         <LinearGradient
           colors={
             isDark
-              ? ["rgba(214, 173, 91, 0.05)", "transparent", "rgba(60, 98, 72, 0.04)"]
-              : ["rgba(214, 173, 91, 0.09)", "transparent", "rgba(60, 98, 72, 0.04)"]
+              ? ["rgba(42, 117, 89, 0.05)", "transparent", "rgba(60, 98, 72, 0.04)"]
+              : ["rgba(42, 117, 89, 0.09)", "transparent", "rgba(60, 98, 72, 0.04)"]
           }
           locations={[0, 0.5, 1]}
           style={styles.sectionWash}
@@ -358,9 +358,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl + 4,
     backgroundColor: KANKREG_CHROME.cream,
     borderWidth: 1,
-    borderColor: "rgba(169, 119, 46, 0.18)",
+    borderColor: "rgba(31, 92, 71, 0.18)",
     borderTopWidth: 3,
-    borderTopColor: "rgba(201, 162, 39, 0.78)",
+    borderTopColor: "rgba(31, 92, 71, 0.78)",
     overflow: "hidden",
     position: "relative",
     ...Platform.select({
@@ -378,8 +378,8 @@ const styles = StyleSheet.create({
   },
   sectionDark: {
     backgroundColor: "rgba(24, 21, 19, 0.68)",
-    borderColor: "rgba(214, 173, 91, 0.14)",
-    borderTopColor: "rgba(214, 173, 91, 0.5)",
+    borderColor: "rgba(42, 117, 89, 0.14)",
+    borderTopColor: "rgba(42, 117, 89, 0.5)",
   },
   sectionWash: {
     ...StyleSheet.absoluteFillObject,
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: HOME_SPACE.md,
     borderRadius: radius.lg + 2,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(169, 119, 46, 0.24)",
+    borderColor: "rgba(31, 92, 71, 0.24)",
     backgroundColor: "rgba(255, 253, 248, 0.78)",
     flexShrink: 0,
     ...Platform.select({
@@ -420,7 +420,7 @@ const styles = StyleSheet.create({
   },
   instagramCardDark: {
     backgroundColor: "rgba(24, 21, 19, 0.55)",
-    borderColor: "rgba(214, 173, 91, 0.2)",
+    borderColor: "rgba(42, 117, 89, 0.2)",
   },
   instagramIconWrap: {
     width: 40,
@@ -428,9 +428,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(169, 119, 46, 0.1)",
+    backgroundColor: "rgba(31, 92, 71, 0.1)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(169, 119, 46, 0.2)",
+    borderColor: "rgba(31, 92, 71, 0.2)",
   },
   instagramCopy: {
     gap: 2,
@@ -510,14 +510,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg + 6,
     overflow: "hidden",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(169, 119, 46, 0.16)",
+    borderColor: "rgba(31, 92, 71, 0.16)",
     backgroundColor: KANKREG_PALETTE.card,
     ...postShadow,
   },
   postPhone: {
     borderRadius: radius.xl + 4,
     borderWidth: 1,
-    borderColor: "rgba(169, 119, 46, 0.22)",
+    borderColor: "rgba(31, 92, 71, 0.22)",
     ...Platform.select({
       web: {
         boxShadow:
@@ -564,7 +564,7 @@ const styles = StyleSheet.create({
     right: HOME_SPACE.md,
     bottom: 0,
     height: 1,
-    backgroundColor: "rgba(214, 173, 91, 0.4)",
+    backgroundColor: "rgba(42, 117, 89, 0.4)",
     zIndex: 2,
   },
   tag: {
@@ -580,7 +580,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     backgroundColor: "rgba(27, 48, 34, 0.82)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(214, 173, 91, 0.28)",
+    borderColor: "rgba(42, 117, 89, 0.28)",
     ...Platform.select({
       web: { backdropFilter: "blur(8px)" },
       default: {},
@@ -622,7 +622,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(255, 253, 248, 0.94)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(169, 119, 46, 0.2)",
+    borderColor: "rgba(31, 92, 71, 0.2)",
     ...Platform.select({
       web: { boxShadow: "0 10px 28px rgba(0, 0, 0, 0.28)" },
       default: {},
@@ -661,7 +661,7 @@ const styles = StyleSheet.create({
     fontFamily: FONT_HEADING,
     fontSize: 28,
     lineHeight: 24,
-    color: "rgba(214, 173, 91, 0.75)",
+    color: "rgba(42, 117, 89, 0.75)",
   },
   quote: {
     fontFamily: FONT_BODY,

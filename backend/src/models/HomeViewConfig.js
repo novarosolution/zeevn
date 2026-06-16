@@ -42,7 +42,7 @@ const homeViewConfigSchema = new mongoose.Schema(
     },
     /** Admin shop / pickup pin — shown on customer order tracking maps. */
     shopLocation: {
-      name: { type: String, default: "KankreG Shop", trim: true },
+      name: { type: String, default: "Zeevan Shop", trim: true },
       line1: { type: String, default: "", trim: true },
       city: { type: String, default: "", trim: true },
       state: { type: String, default: "", trim: true },
@@ -68,11 +68,11 @@ const homeViewConfigSchema = new mongoose.Schema(
       eyebrow: { type: String, default: "Our Community", trim: true },
       title: { type: String, default: "Loved by families, shared every day", trim: true },
       instagram: {
-        handle: { type: String, default: "kankreg_ghee", trim: true },
-        displayHandle: { type: String, default: "@kankreg_ghee", trim: true },
+        handle: { type: String, default: "zeevan", trim: true },
+        displayHandle: { type: String, default: "@zeevan", trim: true },
         followersLabel: { type: String, default: "18.4k followers", trim: true },
         followLabel: { type: String, default: "Follow", trim: true },
-        url: { type: String, default: "https://instagram.com/kankreg_ghee", trim: true },
+        url: { type: String, default: "https://instagram.com/zeevan", trim: true },
       },
       posts: [
         {
@@ -116,7 +116,7 @@ const homeViewConfigSchema = new mongoose.Schema(
         default: "A2 milk · Bilona-churned · open-grazed · hand-poured.",
         trim: true,
       },
-      oursLabel: { type: String, default: "KankreG", trim: true },
+      oursLabel: { type: String, default: "Zeevan", trim: true },
       ordinaryLabel: { type: String, default: "Ordinary", trim: true },
       rows: [
         {
@@ -161,7 +161,7 @@ const homeViewConfigSchema = new mongoose.Schema(
         },
       ],
     },
-    /** About KankreG block on web home + about page (main story + sidebar extras). */
+    /** About Zeevan block on web home + about page (main story + sidebar extras). */
     aboutSection: {
       enabled: { type: Boolean, default: true },
       eyebrow: { type: String, default: "Our story", trim: true },
@@ -169,7 +169,7 @@ const homeViewConfigSchema = new mongoose.Schema(
       body: {
         type: String,
         default:
-          "KankreG crafts pure A2 Kankrej cow ghee using the ancestral Bilona method — hand-churned, wood-fired, and bottled in small batches for families who value tradition and taste.",
+          "Zeevan crafts pure A2 Kankrej cow ghee using the ancestral Bilona method — hand-churned, wood-fired, and bottled in small batches for families who value tradition and taste.",
         trim: true,
       },
       videoUrl: { type: String, default: "", trim: true },

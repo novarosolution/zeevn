@@ -93,14 +93,14 @@ function PremiumSectionHeaderBase({
           colors={
             isDark
               ? [
-                  "rgba(232, 200, 90, 0.46)",
-                  "rgba(201, 162, 39, 0.18)",
-                  "rgba(232, 200, 90, 0)",
+                  "rgba(52, 211, 153, 0.46)",
+                  "rgba(31, 92, 71, 0.18)",
+                  "rgba(52, 211, 153, 0)",
                 ]
               : [
-                  "rgba(201, 162, 39, 0.55)",
-                  "rgba(116, 79, 28, 0.18)",
-                  "rgba(201, 162, 39, 0)",
+                  "rgba(31, 92, 71, 0.55)",
+                  "rgba(22, 69, 51, 0.18)",
+                  "rgba(31, 92, 71, 0)",
                 ]
           }
           start={{ x: 0, y: 0.5 }}
@@ -154,8 +154,8 @@ function createStyles(c, isDark, align, compact) {
       ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 0 12px rgba(232, 200, 90, 0.55)"
-            : "0 0 10px rgba(201, 162, 39, 0.45)",
+            ? "0 0 12px rgba(52, 211, 153, 0.55)"
+            : "0 0 10px rgba(31, 92, 71, 0.45)",
         },
         default: {},
       }),
@@ -190,7 +190,7 @@ function createStyles(c, isDark, align, compact) {
       paddingVertical: 4,
       borderRadius: radius.pill,
       backgroundColor: isDark
-        ? "rgba(232, 200, 90, 0.22)"
+        ? "rgba(52, 211, 153, 0.22)"
         : c.primarySoft,
     },
     countText: {
@@ -215,11 +215,11 @@ function createStyles(c, isDark, align, compact) {
       borderRadius: radius.pill,
       borderWidth: 1,
       borderColor: isDark
-        ? "rgba(232, 200, 90, 0.4)"
-        : "rgba(201, 162, 39, 0.45)",
+        ? "rgba(52, 211, 153, 0.4)"
+        : "rgba(31, 92, 71, 0.45)",
       backgroundColor: isDark
-        ? "rgba(201, 162, 39, 0.12)"
-        : "rgba(255, 246, 223, 0.78)",
+        ? "rgba(31, 92, 71, 0.12)"
+        : "rgba(232, 245, 238, 0.78)",
       ...Platform.select({
         web: {
           transition: "transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease",
@@ -234,8 +234,8 @@ function createStyles(c, isDark, align, compact) {
         web: {
           transform: [{ translateY: -1 }],
           boxShadow: isDark
-            ? "0 10px 22px rgba(0,0,0,0.4), inset 0 1px 0 rgba(232, 200, 90, 0.18)"
-            : "0 10px 22px rgba(98, 64, 20, 0.14), inset 0 1px 0 rgba(255,255,255,0.95)",
+            ? "0 10px 22px rgba(0,0,0,0.4), inset 0 1px 0 rgba(52, 211, 153, 0.18)"
+            : "0 10px 22px rgba(22, 69, 51, 0.14), inset 0 1px 0 rgba(255,255,255,0.95)",
         },
         default: {},
       }),

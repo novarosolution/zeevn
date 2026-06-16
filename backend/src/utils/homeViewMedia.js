@@ -52,7 +52,7 @@ const ABOUT_DEFAULTS = {
   eyebrow: "Our story",
   title: "Craft rooted in tradition",
   body:
-    "KankreG crafts pure A2 Kankrej cow ghee using the ancestral Bilona method — hand-churned, wood-fired, and bottled in small batches for families who value tradition and taste.",
+    "Zeevan crafts pure A2 Kankrej cow ghee using the ancestral Bilona method — hand-churned, wood-fired, and bottled in small batches for families who value tradition and taste.",
   videoUrl: "",
   videoCaption: "From grass-fed Kankrej cows to golden, grainy ghee.",
   photos: [],
@@ -238,7 +238,7 @@ function normalizeCommunityPost(post, index = 0) {
   const fallbackAuthor =
     type === "customer"
       ? { name: "", subtitle: "", avatar: "C", brand: false }
-      : { name: "kankreg_ghee", subtitle: "", avatar: "K", brand: true };
+      : { name: "zeevan", subtitle: "", avatar: "K", brand: true };
   return {
     id,
     order: Number.isFinite(Number(post.order)) ? Number(post.order) : index,

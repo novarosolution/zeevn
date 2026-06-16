@@ -137,7 +137,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
     <View style={[styles.side, { backgroundColor: palette.sideBg }]}>
       <View style={styles.brandRow}>
         <View style={styles.brandDot} />
-        <Text style={[styles.brand, { color: palette.brand }]}>kankreg</Text>
+        <Text style={[styles.brand, { color: palette.brand }]}>Zeevan</Text>
       </View>
       <Text style={styles.badge}>ADMIN CONSOLE</Text>
       {NAV_GROUPS.map((group) => (
@@ -156,7 +156,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
             {user?.name || "Admin"}
           </Text>
           <Text style={[styles.meEmail, { color: palette.meEmail }]} numberOfLines={1}>
-            {user?.email || "admin@kankreg.com"}
+            {user?.email || "admin@zeevan.com"}
           </Text>
         </View>
       </View>
@@ -166,7 +166,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
   const topNavStrip = showTopNavStrip ? (
     <View style={[styles.sideRow, styles.topNavStrip, { backgroundColor: palette.sideBg }]}>
       <Text style={styles.brandRowLabel} numberOfLines={1}>
-        kankreg
+        Zeevan
       </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sideScrollContent}>
         {FLAT_LINKS.map((link) => renderLink(link, true))}

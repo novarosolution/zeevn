@@ -25,10 +25,10 @@ export function getAdminChrome(c, isDark) {
     shellBg: isDark ? c.surface : KANKREG_PALETTE.card,
     shellBorder: isDark ? c.border : KANKREG_PALETTE.line,
     linkMuted: isDark ? c.textMuted : "#bcb1a3",
-    linkOnBg: isDark ? "rgba(232, 200, 90, 0.14)" : "rgba(214, 173, 91, 0.16)",
-    linkOnBorder: isDark ? "rgba(232, 200, 90, 0.38)" : "rgba(214, 173, 91, 0.35)",
-    chipOnBg: isDark ? "rgba(232, 200, 90, 0.14)" : "rgba(214, 173, 91, 0.14)",
-    chipOnBorder: isDark ? "rgba(232, 200, 90, 0.38)" : "rgba(214, 173, 91, 0.35)",
+    linkOnBg: isDark ? "rgba(52, 211, 153, 0.14)" : "rgba(42, 117, 89, 0.16)",
+    linkOnBorder: isDark ? "rgba(52, 211, 153, 0.38)" : "rgba(42, 117, 89, 0.35)",
+    chipOnBg: isDark ? "rgba(52, 211, 153, 0.14)" : "rgba(42, 117, 89, 0.14)",
+    chipOnBorder: isDark ? "rgba(52, 211, 153, 0.38)" : "rgba(42, 117, 89, 0.35)",
     tabOnBg: isDark ? c.primarySoft : KANKREG_PALETTE.ink,
     tabOnBorder: isDark ? c.primaryBorder : KANKREG_PALETTE.ink,
     tabOnText: isDark ? c.primaryBright : KANKREG_PALETTE.paper,
@@ -211,7 +211,7 @@ export function adminModuleSection(isDark, c) {
       web: {
         boxShadow: isDark
           ? "0 14px 36px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.05)"
-          : "0 14px 36px rgba(61, 42, 18, 0.09), 0 4px 12px rgba(28, 25, 23, 0.045), inset 0 1px 0 rgba(255,253,251,0.88), inset 0 0 0 1px rgba(255,253,249,0.5)",
+          : "0 14px 36px rgba(22, 69, 51, 0.09), 0 4px 12px rgba(28, 25, 23, 0.045), inset 0 1px 0 rgba(255,253,251,0.88), inset 0 0 0 1px rgba(255,253,249,0.5)",
         transition: "box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease",
       },
       default: {},

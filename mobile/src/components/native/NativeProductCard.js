@@ -137,7 +137,7 @@ export default function NativeProductCard({
                   : isOutOfStock
                     ? ["#9a9a9a", "#7a7a7a"]
                     : isDark
-                      ? ["#d6ad5b", "#a9772e"]
+                      ? ["#788844", "#244424"]
                       : ["#2a241e", "#19140f"]
               }
               style={styles.addBtnGrad}
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   cardFeaturedDark: {
-    borderColor: "rgba(232, 200, 90, 0.42)",
+    borderColor: "rgba(168, 184, 108, 0.42)",
     borderWidth: 1.5,
   },
   cardPressed: {

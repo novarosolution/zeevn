@@ -72,8 +72,8 @@ export function useKankregLayout() {
       /** `.deliv-grid` */
       useDeliverySplit: width >= KANKREG_BP.md,
       catalogGridCol: getCatalogGridColStyle(width),
-      /** Home `.cats` grid — never 1-up (keeps tiles compact on phone web). */
-      categoryCols: width >= KANKREG_BP.lg ? 4 : width >= KANKREG_BP.md ? 3 : 2,
+      /** Home category grid — 4 lines on desktop, 2-up on phone web. */
+      categoryCols: width >= KANKREG_BP.lg ? 4 : 2,
       categoryCompact: width < KANKREG_BP.md,
       footerCols: width >= KANKREG_BP.md ? 4 : width >= KANKREG_BP.sm ? 2 : 1,
       pageGutter: width < KANKREG_BP.xs ? 14 : width < KANKREG_BP.sm ? 16 : width < KANKREG_BP.md ? 18 : 24,
@@ -102,13 +102,13 @@ export function getFlexGridCellStyle(colCount) {
   return { width: pct, maxWidth: pct, minWidth: colCount === 1 ? "100%" : 140, paddingHorizontal: 11 };
 }
 
-/** Home category tile width — accounts for `gap` in flex-wrap rows. */
+/** Home category tile width — flex-wrap row; percentages leave room for gap. */
 export function getCategoryGridCellStyle(colCount) {
   if (colCount >= 4) {
-    return { width: "23.5%", maxWidth: "23.5%", flexGrow: 0, flexShrink: 0 };
+    return { width: "23.5%", maxWidth: "23.5%", flexGrow: 0, flexShrink: 0, minWidth: 0 };
   }
   if (colCount === 3) {
-    return { width: "31%", maxWidth: "31%", flexGrow: 0, flexShrink: 0 };
+    return { width: "31%", maxWidth: "31%", flexGrow: 0, flexShrink: 0, minWidth: 0 };
   }
-  return { width: "48%", maxWidth: "48%", flexGrow: 0, flexShrink: 0 };
+  return { width: "48%", maxWidth: "48%", flexGrow: 0, flexShrink: 0, minWidth: 0 };
 }

@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 
 /**
- * Brand: gold primary, green secondary. Customer UI uses `useTheme()` for light/dark.
+ * Brand: olive green + harvest gold on warm cream (A2 ghee packaging). Customer UI uses `useTheme()`.
  */
 
 /** @type {const} 8px-based spacing */
@@ -90,54 +90,54 @@ export const icon = {
   promo: 30,
 };
 
-/** Light — kankreg.html palette */
+/** Light — Zeevan packaging palette */
 export const lightColors = {
-  background: "#f5efe4",
-  backgroundGradientEnd: "#ece3d2",
-  surface: "#fffdf8",
-  surfaceMuted: "#ece3d2",
-  surfaceGlass: "rgba(255,253,248,0.94)",
-  border: "#e3d8c4",
-  borderStrong: "#d4c9b4",
-  textPrimary: "#19140f",
-  textSecondary: "#574d42",
-  textMuted: "#938778",
-  primary: "#a9772e",
-  primaryBright: "#d6ad5b",
-  primaryDark: "#8a5f22",
-  primarySoft: "rgba(169, 119, 46, 0.13)",
-  primaryBorder: "rgba(169, 119, 46, 0.35)",
-  secondary: "#3c6248",
-  secondaryBright: "#4d7a5c",
-  secondaryDark: "#2f4d39",
-  secondarySoft: "rgba(60, 98, 72, 0.13)",
-  secondaryBorder: "rgba(60, 98, 72, 0.35)",
-  accentGold: "#d6ad5b",
-  accentGoldSoft: "rgba(169, 119, 46, 0.13)",
-  navy: "#19140f",
-  onPrimary: "#f5efe4",
-  onPrimaryMuted: "#ece3d2",
-  heroBackground: "#19140f",
-  heroForeground: "#f5efe4",
-  heroAccent: "#d6ad5b",
-  success: "#3c6248",
-  danger: "#a8442f",
-  accentGreen: "#3c6248",
-  brandYellow: "#d6ad5b",
-  brandYellowSoft: "rgba(169, 119, 46, 0.13)",
-  shadow: "#19140f",
-  searchBarFill: "#fffdf8",
-  searchBarBorder: "#e3d8c4",
-  onSecondary: "#fffdf8",
-  surfaceElevated: "#fffdf8",
-  surfaceOverlay: "rgba(255,253,248,0.88)",
-  focusRing: "rgba(169, 119, 46, 0.36)",
-  heroGlow: "rgba(214, 173, 91, 0.12)",
-  heroGlowSecondary: "rgba(60, 98, 72, 0.06)",
-  dividerSoft: "rgba(147, 135, 120, 0.2)",
+  background: "#F8F0E0",
+  backgroundGradientEnd: "#F0E8D8",
+  surface: "#FCF8F0",
+  surfaceMuted: "#F0E8D8",
+  surfaceGlass: "rgba(252, 248, 240, 0.94)",
+  border: "#E0D4C0",
+  borderStrong: "#D0C4A8",
+  textPrimary: "#1E2018",
+  textSecondary: "#5C5838",
+  textMuted: "#8A8468",
+  primary: "#5C6834",
+  primaryBright: "#788844",
+  primaryDark: "#244424",
+  primarySoft: "rgba(92, 104, 52, 0.12)",
+  primaryBorder: "rgba(92, 104, 52, 0.32)",
+  secondary: "#5C5838",
+  secondaryBright: "#787060",
+  secondaryDark: "#3E3828",
+  secondarySoft: "rgba(92, 88, 56, 0.1)",
+  secondaryBorder: "rgba(92, 88, 56, 0.28)",
+  accentGold: "#DCAC74",
+  accentGoldSoft: "rgba(220, 172, 116, 0.18)",
+  navy: "#1E2018",
+  onPrimary: "#FFFFFF",
+  onPrimaryMuted: "#F0E8D8",
+  heroBackground: "#244424",
+  heroForeground: "#F8F0E0",
+  heroAccent: "#DCAC74",
+  success: "#5C6834",
+  danger: "#B8442F",
+  accentGreen: "#788844",
+  brandYellow: "#DCAC74",
+  brandYellowSoft: "rgba(220, 172, 116, 0.18)",
+  shadow: "#1E2018",
+  searchBarFill: "#FCF8F0",
+  searchBarBorder: "#E0D4C0",
+  onSecondary: "#FFFFFF",
+  surfaceElevated: "#FCF8F0",
+  surfaceOverlay: "rgba(252, 248, 240, 0.88)",
+  focusRing: "rgba(92, 104, 52, 0.34)",
+  heroGlow: "rgba(92, 104, 52, 0.11)",
+  heroGlowSecondary: "rgba(220, 172, 116, 0.08)",
+  dividerSoft: "rgba(138, 132, 104, 0.18)",
 };
 
-/** Dark — warm gold on dark, mint green accents */
+/** Dark — olive + gold accents on warm charcoal */
 export const darkColors = {
   background: "#050403",
   backgroundGradientEnd: "#14110F",
@@ -149,38 +149,38 @@ export const darkColors = {
   textPrimary: "#FAFAF9",
   textSecondary: "#CEC7BF",
   textMuted: "#B2A89E",
-  primary: "#d6ad5b",
-  primaryBright: "#e8c878",
-  primaryDark: "#a9772e",
-  primarySoft: "rgba(212,175,55,0.12)",
-  primaryBorder: "rgba(232,200,90,0.35)",
-  secondary: "#34D399",
-  secondaryBright: "#6EE7B7",
-  secondaryDark: "#10B981",
-  secondarySoft: "rgba(16,185,129,0.12)",
-  secondaryBorder: "rgba(52,211,153,0.35)",
-  accentGold: "#E2BA5A",
-  accentGoldSoft: "rgba(212,175,55,0.12)",
+  primary: "#A8B86C",
+  primaryBright: "#C4D088",
+  primaryDark: "#788844",
+  primarySoft: "rgba(168, 184, 108, 0.12)",
+  primaryBorder: "rgba(168, 184, 108, 0.35)",
+  secondary: "#A8A29E",
+  secondaryBright: "#D6D3D1",
+  secondaryDark: "#78716C",
+  secondarySoft: "rgba(168, 162, 158, 0.12)",
+  secondaryBorder: "rgba(168, 162, 158, 0.28)",
+  accentGold: "#E8BC84",
+  accentGoldSoft: "rgba(232, 188, 132, 0.14)",
   navy: "#FAFAF9",
-  onPrimary: "#FFFCF8",
-  onPrimaryMuted: "#F5F0E1",
+  onPrimary: "#1E2018",
+  onPrimaryMuted: "#F0E8D8",
   heroBackground: "#0C0A09",
-  heroForeground: "#FFFBF0",
-  heroAccent: "#C79A3A",
-  success: "#34D399",
+  heroForeground: "#F8F0E0",
+  heroAccent: "#E8BC84",
+  success: "#A8B86C",
   danger: "#F87171",
-  accentGreen: "#4ADE80",
-  brandYellow: "#E8C547",
-  brandYellowSoft: "rgba(212,175,55,0.12)",
+  accentGreen: "#849448",
+  brandYellow: "#E8BC84",
+  brandYellowSoft: "rgba(232, 188, 132, 0.14)",
   shadow: "#000000",
   searchBarFill: "#292524",
   searchBarBorder: "#44403C",
-  onSecondary: "#FFFFFF",
+  onSecondary: "#1E2018",
   surfaceElevated: "#1A1612",
   surfaceOverlay: "rgba(18,16,14,0.9)",
-  focusRing: "rgba(232, 200, 90, 0.42)",
-  heroGlow: "rgba(232, 200, 90, 0.16)",
-  heroGlowSecondary: "rgba(52, 211, 153, 0.1)",
+  focusRing: "rgba(168, 184, 108, 0.42)",
+  heroGlow: "rgba(168, 184, 108, 0.16)",
+  heroGlowSecondary: "rgba(232, 188, 132, 0.1)",
   dividerSoft: "rgba(255,255,255,0.08)",
 };
 
@@ -219,7 +219,7 @@ function webShadowLift(isDark) {
   return {
     boxShadow: isDark
       ? "0 22px 58px rgba(0,0,0,0.54), 0 8px 22px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.07)"
-      : "0 18px 46px rgba(61, 42, 18, 0.1), 0 8px 20px rgba(28, 25, 23, 0.055), 0 0 0 1px rgba(199, 154, 58, 0.08), inset 0 1px 0 rgba(255, 253, 251, 0.98)",
+      : "0 18px 46px rgba(22, 69, 51, 0.1), 0 8px 20px rgba(28, 25, 23, 0.055), 0 0 0 1px rgba(31, 92, 71, 0.08), inset 0 1px 0 rgba(255, 253, 251, 0.98)",
   };
 }
 
@@ -227,7 +227,7 @@ function webShadowPremium(isDark) {
   return {
     boxShadow: isDark
       ? "0 44px 110px rgba(0,0,0,0.68), 0 20px 46px rgba(0,0,0,0.48), inset 0 1px 0 rgba(255,255,255,0.08)"
-      : "0 36px 88px rgba(61, 42, 18, 0.13), 0 16px 38px rgba(28, 25, 23, 0.07), 0 2px 9px rgba(116, 79, 28, 0.08), 0 0 0 1px rgba(199, 154, 58, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.92)",
+      : "0 36px 88px rgba(22, 69, 51, 0.13), 0 16px 38px rgba(28, 25, 23, 0.07), 0 2px 9px rgba(31, 92, 71, 0.08), 0 0 0 1px rgba(31, 92, 71, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.92)",
   };
 }
 
@@ -243,7 +243,7 @@ export function getShadow(isDark) {
     web: {
       boxShadow: isDark
         ? "0 8px 28px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.15)"
-        : "0 10px 30px rgba(61, 42, 18, 0.08), 0 3px 12px rgba(28, 25, 23, 0.05), inset 0 1px 0 rgba(255,255,255,0.75)",
+        : "0 10px 30px rgba(22, 69, 51, 0.08), 0 3px 12px rgba(28, 25, 23, 0.05), inset 0 1px 0 rgba(255,255,255,0.75)",
     },
   });
 }

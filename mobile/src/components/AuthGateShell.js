@@ -86,12 +86,12 @@ function createStyles(c, isDark, shadowPremium) {
       maxWidth: 420,
       alignSelf: "center",
       borderTopWidth: 3,
-      borderTopColor: isDark ? "rgba(232, 200, 90, 0.58)" : ALCHEMY.gold,
+      borderTopColor: isDark ? "rgba(52, 211, 153, 0.58)" : ALCHEMY.gold,
       ...Platform.select({
         web: {
           boxShadow: isDark
             ? "0 20px 44px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.04)"
-            : "0 16px 38px rgba(61, 42, 18, 0.09), inset 0 1px 0 rgba(255,255,255,0.92)",
+            : "0 16px 38px rgba(22, 69, 51, 0.09), inset 0 1px 0 rgba(255,255,255,0.92)",
         },
         default: {},
       }),
@@ -119,8 +119,8 @@ function createStyles(c, isDark, shadowPremium) {
       justifyContent: "center",
       marginBottom: spacing.sm,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(232, 200, 90, 0.35)" : ALCHEMY.pillInactive,
-      backgroundColor: isDark ? "rgba(232, 200, 90, 0.12)" : ALCHEMY.goldSoft,
+      borderColor: isDark ? "rgba(52, 211, 153, 0.35)" : ALCHEMY.pillInactive,
+      backgroundColor: isDark ? "rgba(52, 211, 153, 0.12)" : ALCHEMY.goldSoft,
     },
     primaryBtn: {
       marginBottom: spacing.sm,

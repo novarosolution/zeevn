@@ -11,7 +11,7 @@ export default function AdminRevenueBars({ labels = [], values = [], height = 16
   const styles = useMemo(() => createStyles(chrome), [chrome]);
   const nums = values.map((v) => Math.max(0, Number(v) || 0));
   const max = Math.max(...nums, 1);
-  const barColors = isDark ? ["#e8c85a", "#b8862a"] : ["#d9b463", "#9c6b27"];
+  const barColors = isDark ? ["#C4D088", "#5C6834"] : ["#DCAC74", "#244424"];
 
   return (
     <View style={[styles.chart, { height: height + 24 }]}>

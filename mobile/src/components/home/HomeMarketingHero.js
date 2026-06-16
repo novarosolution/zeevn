@@ -115,6 +115,7 @@ export default function HomeMarketingHero({
                   ) : null}
                   <BrandLogo
                     height={BRAND_LOGO_SIZE.homeHero}
+                    variant="onDark"
                     glow
                     style={[styles.heroBrandLogo, styles.heroBrandLogoOnPhoto]}
                   />

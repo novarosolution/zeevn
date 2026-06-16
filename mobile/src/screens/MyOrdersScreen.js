@@ -120,7 +120,7 @@ function buildInvoiceHtml(order) {
     <html>
       <head>
         <meta charset="utf-8" />
-        <title>KankreG Invoice ${htmlEscape(invoiceNumber)}</title>
+        <title>Zeevan Invoice ${htmlEscape(invoiceNumber)}</title>
         <style>
           :root {
             --gold: #C79A3A;
@@ -170,11 +170,11 @@ function buildInvoiceHtml(order) {
             background: linear-gradient(90deg, var(--gold-bright) 0%, var(--gold) 35%, var(--gold-deep) 100%);
           }
           .sheet::after {
-            content: "KankreG";
+            content: "Zeevan";
             position: absolute;
             right: 32px;
             bottom: 36px;
-            font-family: "CIENUR", Georgia, serif;
+            font-family: "Fraunces_700Bold", Georgia, serif;
             font-size: 90px;
             font-weight: 800;
             color: rgba(138, 90, 18, 0.05);
@@ -196,7 +196,7 @@ function buildInvoiceHtml(order) {
           }
           .brandCol { max-width: 58%; }
           .wordmark {
-            font-family: "CIENUR", Georgia, serif;
+            font-family: "Fraunces_700Bold", Georgia, serif;
             font-size: 36px;
             line-height: 1;
             font-weight: 800;
@@ -273,7 +273,7 @@ function buildInvoiceHtml(order) {
             color: var(--brown-ink);
           }
           .invoiceCard .invNumber {
-            font-family: "CIENUR", Georgia, serif;
+            font-family: "Fraunces_700Bold", Georgia, serif;
             font-size: 18px;
             font-weight: 800;
             letter-spacing: -0.3px;
@@ -332,7 +332,7 @@ function buildInvoiceHtml(order) {
             margin-bottom: 8px;
           }
           .metaCard .heading {
-            font-family: "CIENUR", Georgia, serif;
+            font-family: "Fraunces_700Bold", Georgia, serif;
             font-size: 16px;
             font-weight: 800;
             color: var(--brown-ink);
@@ -348,7 +348,7 @@ function buildInvoiceHtml(order) {
           .metaCard .line.muted { color: var(--muted); }
 
           .sectionTitle {
-            font-family: "CIENUR", Georgia, serif;
+            font-family: "Fraunces_700Bold", Georgia, serif;
             font-size: 17px;
             font-weight: 800;
             color: var(--brown-ink);
@@ -464,7 +464,7 @@ function buildInvoiceHtml(order) {
             border-top: 1.5px dashed var(--line-strong);
           }
           .totals .ttRow.grand .key {
-            font-family: "CIENUR", Georgia, serif;
+            font-family: "Fraunces_700Bold", Georgia, serif;
             font-weight: 800;
             font-size: 14px;
             color: var(--brown-ink);
@@ -508,7 +508,7 @@ function buildInvoiceHtml(order) {
             font-family: "Inter", sans-serif;
           }
           .footer .thanks {
-            font-family: "CIENUR", Georgia, serif;
+            font-family: "Fraunces_700Bold", Georgia, serif;
             font-size: 16px;
             font-weight: 800;
             color: var(--brown-ink);
@@ -536,7 +536,7 @@ function buildInvoiceHtml(order) {
               <div class="hairline"></div>
               <div class="companyMeta">
                 Crafted essentials, delivered with care.<br/>
-                support@kankreg.com &middot; +91 00000 00000
+                support@zeevan.com
               </div>
             </div>
             <div class="invoiceCard">
@@ -628,11 +628,11 @@ function buildInvoiceHtml(order) {
 
             <div class="footer">
               <div>
-                <div class="thanks">Thank you for shopping with KankreG.</div>
-                <div class="small">For any queries, write to us at support@kankreg.com.</div>
+                <div class="thanks">Thank you for shopping with Zeevan.</div>
+                <div class="small">For any queries, write to us at support@zeevan.com.</div>
               </div>
               <div class="small">
-                <strong>KankreG &middot; Premium grocery</strong><br/>
+                <strong>Zeevan &middot; Premium grocery</strong><br/>
                 GSTIN: <em>placeholder</em> &middot; PAN: <em>placeholder</em><br/>
                 This is a computer-generated invoice.
               </div>
@@ -1510,7 +1510,7 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     backgroundColor: c.border,
     minHeight: 8},
   trackBarMuted: {
-    backgroundColor: isDark ? "rgba(148,163,184,0.25)" : "rgba(116, 79, 28, 0.12)"},
+    backgroundColor: isDark ? "rgba(148,163,184,0.25)" : "rgba(22, 69, 51, 0.12)"},
   trackBarDone: {
     backgroundColor: c.secondary},
   trackTextCol: {

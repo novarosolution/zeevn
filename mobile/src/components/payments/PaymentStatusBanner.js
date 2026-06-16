@@ -97,7 +97,7 @@ export default function PaymentStatusBanner({ order, token, user, onRefresh }) {
       <LinearGradient
         colors={
           isDark
-            ? ["rgba(232, 200, 90, 0.14)", "rgba(28, 25, 23, 0.65)"]
+            ? ["rgba(52, 211, 153, 0.14)", "rgba(28, 25, 23, 0.65)"]
             : ["rgba(255, 248, 232, 0.98)", "rgba(255, 252, 246, 0.92)"]
         }
         start={{ x: 0, y: 0 }}
@@ -157,7 +157,7 @@ function createStyles(c, isDark) {
       borderRadius: radius.xl,
       overflow: "hidden",
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(232, 200, 90, 0.35)" : ALCHEMY.gold,
+      borderColor: isDark ? "rgba(52, 211, 153, 0.35)" : ALCHEMY.gold,
     },
     gradient: {
       padding: spacing.md,
@@ -174,9 +174,9 @@ function createStyles(c, isDark) {
       borderRadius: 20,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: isDark ? "rgba(232, 200, 90, 0.12)" : "rgba(255, 236, 196, 0.95)",
+      backgroundColor: isDark ? "rgba(52, 211, 153, 0.12)" : "rgba(224, 242, 234, 0.95)",
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(232, 200, 90, 0.35)" : ALCHEMY.gold,
+      borderColor: isDark ? "rgba(52, 211, 153, 0.35)" : ALCHEMY.gold,
     },
     titleCol: {
       flex: 1,

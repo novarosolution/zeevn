@@ -56,7 +56,7 @@ export default function KankregCartCouponStrip({
 
 function createStyles(isDark, c) {
   const bg = isDark ? c.surfaceMuted : "#FFFEFA";
-  const border = isDark ? "rgba(232, 200, 90, 0.25)" : "rgba(201, 162, 39, 0.35)";
+  const border = isDark ? "rgba(52, 211, 153, 0.25)" : "rgba(31, 92, 71, 0.35)";
   const text = isDark ? c.textPrimary : KANKREG_PALETTE.ink;
   const textSoft = isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft;
   const placeholderColor = isDark ? c.textMuted : KANKREG_PALETTE.inkFaint;
@@ -73,7 +73,7 @@ function createStyles(isDark, c) {
         borderWidth: StyleSheet.hairlineWidth,
         borderColor: isDark ? c.border : KANKREG_PALETTE.line,
         borderTopWidth: 2,
-        borderTopColor: isDark ? "rgba(232, 200, 90, 0.45)" : KANKREG_PALETTE.gold,
+        borderTopColor: isDark ? "rgba(52, 211, 153, 0.45)" : KANKREG_PALETTE.gold,
         backgroundColor: bg,
       },
       iconWrap: {
@@ -82,7 +82,7 @@ function createStyles(isDark, c) {
         borderRadius: 16,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: isDark ? "rgba(232, 200, 90, 0.12)" : "rgba(201, 162, 39, 0.1)",
+        backgroundColor: isDark ? "rgba(52, 211, 153, 0.12)" : "rgba(31, 92, 71, 0.1)",
       },
       input: {
         flex: 1,
@@ -104,10 +104,10 @@ function createStyles(isDark, c) {
         borderRadius: 999,
         borderWidth: StyleSheet.hairlineWidth,
         borderColor: isDark ? c.primaryBorder : KANKREG_PALETTE.gold,
-        backgroundColor: isDark ? "rgba(232, 200, 90, 0.12)" : "rgba(201, 162, 39, 0.1)",
+        backgroundColor: isDark ? "rgba(52, 211, 153, 0.12)" : "rgba(31, 92, 71, 0.1)",
       },
       applyBtnHover: {
-        backgroundColor: isDark ? "rgba(232, 200, 90, 0.18)" : "rgba(201, 162, 39, 0.16)",
+        backgroundColor: isDark ? "rgba(52, 211, 153, 0.18)" : "rgba(31, 92, 71, 0.16)",
       },
       applyBtnPressed: {
         opacity: 0.88,

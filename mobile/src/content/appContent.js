@@ -1,16 +1,30 @@
 /**
- * Central customer-facing copy for KankreG.
- *
- * - Brand: name, taglines, search, support email.
- * - Home view defaults: same shape as API `/home-view` and Admin → Home View (Mongo).
- * - Home marketing: hero image strip, trust row, catalog intros (editable separately from API hero title/subtitle).
- * - Footers & support: compact footer, wide home footer, support screen header.
- *
- * Keep `backend/src/models/HomeViewConfig.js` defaults aligned with HOME_VIEW_DEFAULTS.
+ * Central customer-facing copy for Zeevan.
+ * Product lines (ghee, tel, masala, honey): `zeevanCatalogContent.js`
  */
 
+import {
+  ZEEVAN_CATALOG_SUBLINE,
+  ZEEVAN_CATALOG_TAGLINE,
+  ZEEVAN_HOME_MARQUEE,
+  ZEEVAN_PRODUCT_LINES,
+  ZEEVAN_SEARCH_PLACEHOLDER,
+  ZEEVAN_TRUST_STRIP,
+  buildHomeCategoryDefaults,
+} from "./zeevanCatalogContent";
+import { CATEGORY_SECTION_UI } from "./categorySectionContent";
+import { HOME_WEB_INTRO } from "./homeHeroContent";
+
 /** @type {string} */
-export const APP_DISPLAY_NAME = "KankreG";
+export const APP_DISPLAY_NAME = "Zeevan";
+
+/** Bundled Zeevan wordmark & mark — replaces legacy kankreg PNGs. */
+export const ZEEVAN_BRAND_ASSETS = {
+  wordmark: require("../../assets/zeevan-brand.png"),
+  wordmarkLight: require("../../assets/zeevan-brand-light.png"),
+  mark: require("../../assets/zeevan-logo.png"),
+};
+
 /**
  * `BrandLogo` heights (width scales via `BRAND_LOGO_ASPECT`). Tune here — import via `src/constants/brand`.
  */
@@ -28,24 +42,12 @@ export const BRAND_LOGO_SIZE = {
   authHero: 58,
   startup: 88,
 };
-export const APP_TAGLINE = "The benchmark of purity";
-export const APP_SPLASH_TAGLINE = "The benchmark of purity";
-export const APP_WORDMARK_SUBLINE = "Premium essentials";
+export const APP_TAGLINE = ZEEVAN_CATALOG_TAGLINE;
+export const APP_SPLASH_TAGLINE = ZEEVAN_CATALOG_TAGLINE;
+export const APP_WORDMARK_SUBLINE = ZEEVAN_CATALOG_SUBLINE;
 export const APP_HERO_KICKER = `${APP_DISPLAY_NAME} · ${APP_WORDMARK_SUBLINE}`;
-export const SEARCH_PLACEHOLDER = "Search KankreG — ghee, staples…";
-export const SUPPORT_EMAIL_DISPLAY = "support@kankreg.app";
-
-/** Digital product partner — linked from customer footers. */
-export const APP_ENGINEER_NAME = "NovaRo Solution";
-export const APP_ENGINEER_URL = "https://novarosolution.com/";
-
-export const APP_ENGINEER_CREDIT = {
-  eyebrow: "Created by",
-  name: APP_ENGINEER_NAME,
-  url: APP_ENGINEER_URL,
-  tagline: "Web · mobile · product engineering",
-  cta: "Visit NovaRo Solution",
-};
+export const SEARCH_PLACEHOLDER = ZEEVAN_SEARCH_PLACEHOLDER;
+export const SUPPORT_EMAIL_DISPLAY = "support@zeevan.app";
 
 /** Razorpay payment page (UPI, cards, wallet) — used as a hosted-page fallback. */
 export const RAZORPAY_PAY_URL = "https://razorpay.me/@chaudharydhirajpadmabhai";
@@ -80,9 +82,9 @@ export const PAYMENT_METHODS = [
 ];
 
 /** Fallback hero when API is offline — also seed defaults for new HomeViewConfig documents. */
-export const HOME_HERO_TITLE_DEFAULT = "Pure Heritage in Every Drop";
+export const HOME_HERO_TITLE_DEFAULT = ZEEVAN_CATALOG_TAGLINE;
 export const HOME_HERO_SUBTITLE_DEFAULT =
-  "Slow-churned from the milk of grass-fed cows — golden clarity and aroma rooted in tradition.";
+  "Ghee · tel · masala · Haldar honey — sourced with care, delivered fresh.";
 
 /** Premium ghee story blocks — import from `gheeHomeContent.js` (not re-exported here to keep bundle lean). */
 export const HOME_HERO_BANNER = {
@@ -93,8 +95,8 @@ export const HOME_HERO_BANNER = {
 
 /** Static brand quote on wide web home (not from reviews API). */
 export const HOME_BRAND_QUOTE = {
-  text: "Quietly premium — the kind of essentials you notice every morning.",
-  attribution: "— KankreG",
+  text: "Quietly premium — essentials you notice every morning.",
+  attribution: "— Zeevan",
 };
 
 /**
@@ -104,34 +106,41 @@ export const HOME_BRAND_QUOTE = {
 export const HOME_SCREEN_UI = {
   hero: {
     eyebrow: HOME_HERO_BANNER.kicker,
-    titleFallback: "The morning ritual",
+    titleFallback: "Morning ritual",
     subtitleFallback: "",
     cta: HOME_HERO_BANNER.cta,
     loadingCta: "Loading…",
     fromLabel: "From",
   },
+  heroSlider: {
+    maxProductSlides: 4,
+    autoPlayMs: 7000,
+    imagesOnly: true,
+    /** Desktop web slider — packaging wide banner + product slides. */
+    desktopBannerOnly: false,
+  },
   categories: {
-    title: "Categories",
-    action: "See all",
-    webOverline: "Collections",
-    webShopBy: "Shop by category",
-    webTitleFallback: "Browse the collection",
-    /** Fallback Ionicons for web category tiles (by sort order). */
-    webTileIcons: ["nutrition-outline", "leaf-outline", "home-outline", "cafe-outline"],
-    itemsSuffix: "items",
+    title: CATEGORY_SECTION_UI.title,
+    action: CATEGORY_SECTION_UI.viewAllLabel,
+    webOverline: CATEGORY_SECTION_UI.eyebrow,
+    webShopBy: CATEGORY_SECTION_UI.eyebrow,
+    webTitleFallback: CATEGORY_SECTION_UI.titleFallback,
+    webSubtitle: CATEGORY_SECTION_UI.subtitle,
+    webTileIcons: ZEEVAN_PRODUCT_LINES.map((l) => l.icon).concat(["gift-outline", "sparkles-outline"]),
+    itemsSuffix: CATEGORY_SECTION_UI.itemsSuffix,
+    shopNowLabel: CATEGORY_SECTION_UI.shopCta,
   },
   bestsellers: {
     titleFallback: "Bestsellers",
     action: "See all",
-    webEyebrow: "Catalog",
+    webEyebrow: "Bestsellers",
     webAction: "View all",
-    /** Serif display line under the home grid eyebrow. */
-    webSectionTitle: "Chosen for your table",
+    webSectionTitle: "Top picks",
   },
   comingSoon: {
-    stripEyebrow: "Launching soon",
-    stripTitle: "Next from KankreG",
-    stripBody: "Visible on home and shop with a blurred photo, red veil, and Coming soon label until launch.",
+    stripEyebrow: "Soon",
+    stripTitle: "Coming soon",
+    stripBody: "",
   },
   timelineVideo: {
     eyebrow: "Behind the craft",
@@ -147,39 +156,33 @@ export const HOME_SCREEN_UI = {
   },
   ourStory: {
     eyebrow: "Our story",
-    /** Serif title subtitle on phone — API `aboutSection.title` stays the display headline. */
-    kicker: "Hand-churned Bilona ghee from indigenous Kankrej cows — slow, honest, and golden.",
-    readMore: "Read the full story",
-    shopStory: "Shop the story",
-    galleryEyebrow: "Behind the craft",
-    filmLabel: "Brand film",
-    pullQuote: "Nothing rushed.\nNothing added.\nOnly pure Bilona craft.",
-    videoCaptionFallback: "From our Kankrej herd to your kitchen.",
-    highlightsEyebrow: "The promise",
-    highlightsTitle: "What every jar holds",
+    kicker: "Ghee, tel, masala & Haldar honey — crafted for Indian kitchens.",
+    readMore: "Read more",
+    shopStory: "Shop",
+    galleryEyebrow: "Range",
+    filmLabel: "Film",
+    pullQuote: "Nothing rushed.\nNothing added.\nPure craft.",
+    videoCaptionFallback: "From farm to pantry.",
+    highlightsEyebrow: "Promise",
+    highlightsTitle: "Every product",
   },
   editorial: {
-    overline: "Curated essentials",
-    ctaExplore: "Explore collection",
+    overline: "Essentials",
+    ctaExplore: "Shop",
     ctaRewards: "Rewards",
     featuredLabel: "Featured",
-    shopNowLabel: "Shop now",
-    ctaShop: "Shop now",
+    shopNowLabel: "Shop",
+    ctaShop: "Shop",
   },
   featured: {
     sectionLabel: "Featured",
-    eyebrow: "New season",
-    title: "Slow rituals, beautifully made.",
-    body: "Design-led essentials for home, wellness, and everyday living.",
-    ctaPrimary: "Shop now",
-    ctaSecondary: "Browse shop",
+    eyebrow: "New",
+    title: "Slow rituals, well made.",
+    body: "Essentials for home and kitchen.",
+    ctaPrimary: "Shop",
+    ctaSecondary: "Browse",
   },
-  marquee: [
-    "Live order tracking",
-    "Secure checkout",
-    "Rewards on every order",
-    "Crafted with care",
-  ],
+  marquee: ZEEVAN_HOME_MARQUEE,
   empty: {
     productsTitle: "No products yet",
     productsDescription: "New arrivals will appear here soon.",
@@ -190,43 +193,49 @@ export const HOME_SCREEN_UI = {
   },
   quote: HOME_BRAND_QUOTE,
   trust: {
-    overline: "Why KankreG",
+    overline: "Why Zeevan",
   },
   /** Web-only home layout toggles (`KankregHomeScreen.js`). Lean web = catalog + API hero only. */
   native: {
-    heroEyebrow: "Artisanal · A2 · Bilona",
+    heroEyebrow: ZEEVAN_CATALOG_SUBLINE,
+    showNativeHero: true,
   },
   web: {
+    leanHome: true,
     showWebHero: true,
-    heroEyebrow: "Artisanal · A2 · Bilona",
+    showThreeBackground: false,
+    enableHomeGsap: true,
+    heroEyebrow: ZEEVAN_CATALOG_SUBLINE,
     showHeroTrustChips: true,
-    /** Premium ghee story blocks (process, benefits, testimonials) on web home */
-    showGheePremiumSections: true,
-    /** Instagram-style community rail after Our Story video */
-    showCommunitySection: true,
-    welcomeTag: "",
-    heroStats: [],
+    showIntroBand: true,
+    showTimelineSection: false,
+    showProcessSection: false,
+    showAboutSection: false,
+    showCommunitySection: false,
+    showGheePremiumSections: false,
     showStatsStrip: false,
     showTestimonials: false,
     showBrandQuote: false,
     showMarquee: false,
     showTrustStrip: false,
     showFeaturedEditorial: false,
+    welcomeTag: "",
+    heroStats: [],
     statsSectionIndex: 2,
     testimonialsSectionIndex: 7,
     quoteSectionIndex: 8,
   },
+  webIntro: HOME_WEB_INTRO,
 };
+
+/** Default category tiles — ghee, tel, masala, honey (+ gifts & new). */
+export const HOME_CATEGORY_DEFAULTS = buildHomeCategoryDefaults();
 
 /** Light-mode tagline under the home top wordmark (same voice as `APP_TAGLINE`). */
 export const HOME_WORDMARK_TAGLINE = APP_TAGLINE;
 
 /** Trust strip under the hero (icon = Ionicons name). */
-export const HOME_TRUST_STRIP = [
-  { key: "pure", label: "100% Pure", icon: "shield-checkmark-outline" },
-  { key: "a2", label: "A2 Desi", icon: "leaf-outline" },
-  { key: "clean", label: "No Preservatives", icon: "sparkles-outline" },
-];
+export const HOME_TRUST_STRIP = ZEEVAN_TRUST_STRIP;
 
 /**
  * Animated stats strip (count-up). `target` numeric, `prefix` and `suffix` cosmetic,
@@ -234,75 +243,21 @@ export const HOME_TRUST_STRIP = [
  */
 export const HOME_STATS_STRIP = {
   overline: "Trusted by Indian kitchens",
-  items: [
-    {
-      key: "orders",
-      target: 12500,
-      prefix: "",
-      suffix: "+",
-      precision: 0,
-      label: "Orders fulfilled",
-      icon: "cube-outline",
-    },
-    {
-      key: "rating",
-      target: 4.9,
-      prefix: "",
-      suffix: "★",
-      precision: 1,
-      label: "Average rating",
-      icon: "star-outline",
-    },
-    {
-      key: "purity",
-      target: 100,
-      prefix: "",
-      suffix: "%",
-      precision: 0,
-      label: "Pure A2 ghee",
-      icon: "shield-checkmark-outline",
-    },
-  ],
+  items: [],
 };
 
 /**
- * Customer testimonials shown under the stats strip. Keep voice short, regional, real.
- * `name`, `city`, `quote`, `rating` (out of 5), optional `avatar` (string url or null = initial).
+ * Customer testimonials shown under the stats strip.
  */
 export const HOME_TESTIMONIALS = {
   overline: "Loved by our customers",
   title: "Stories from our kitchens",
-  items: [
-    {
-      key: "rashmi",
-      name: "Rashmi P.",
-      city: "Ahmedabad",
-      quote:
-        "The aroma the moment I open the jar — pure nostalgia. My morning rotis taste like grandma made them.",
-      rating: 5,
-    },
-    {
-      key: "arjun",
-      name: "Arjun S.",
-      city: "Mumbai",
-      quote:
-        "Genuinely small-batch. You can taste the difference vs. supermarket ghee. Worth every rupee.",
-      rating: 5,
-    },
-    {
-      key: "neha",
-      name: "Neha K.",
-      city: "Pune",
-      quote:
-        "Fast COD delivery, sealed beautifully. Switched my whole family — even kids prefer this taste.",
-      rating: 5,
-    },
-  ],
+  items: [],
 };
 
 /** Small uppercase labels above home sections (trust row, shop block). */
 export const HOME_PAGE_LABELS = {
-  trustOverline: "Why KankreG",
+  trustOverline: "Why Zeevan",
   shopOverline: "Browse the shop",
   /** Hint under shop overline — empty string hides it. */
   shopHint: "",
@@ -328,10 +283,10 @@ export const HOME_MENU_STARTER_TAG = "Starter picks";
 
 /** Compact footer (auth screens, etc.). */
 export const FOOTER_COMPACT = {
-  offerLine: "Fresh staples · Fair prices",
+  offerLine: "",
   needHelp: "Need help?",
-  customerCare: "Customer care",
-  chatSupport247: "24×7 chat support",
+  customerCare: "Email us",
+  chatSupport247: "",
 };
 
 export const APP_FOOTER_NAV_LINKS = [
@@ -373,13 +328,12 @@ export const HOME_PAGE_FOOTER_COLUMNS = [
 /** `icon`: "brand" = logo mark; else Ionicons name. */
 export const HOME_PAGE_TRUST_BADGES = [
   { key: "quality", label: "Trusted quality", icon: "shield-checkmark-outline" },
-  { key: "process", label: "Traditional process", icon: "leaf-outline" },
-  { key: "fair", label: "Fair prices", icon: "ribbon-outline" },
+  { key: "secure", label: "Secure checkout", icon: "lock-closed-outline" },
 ];
 
 export const HOME_PAGE_FOOTER_META = "Made with care in India";
 
-/** kankreg.html topbar — nav labels + action copy (routes wired in kankregNav.js). */
+/** Web header action labels (routes wired in kankregNav.js). */
 export const KANKREG_HEADER = {
   signInLabel: "Sign in",
   accountLabel: "Account",
@@ -401,38 +355,35 @@ export const KANKREG_NAV_ITEMS = [
   { key: "Account", label: "Account" },
 ];
 
-/** Desktop web header — marketing site nav (no checkout/product deep links). */
+/** Desktop web header — essential links only. */
 export const KANKREG_WEB_NAV_ITEMS = [
   { key: "Home", label: "Home" },
   { key: "Shop", label: "Shop" },
   { key: "About", label: "About" },
-  { key: "Rewards", label: "Rewards" },
-  { key: "Account", label: "Account" },
 ];
 
-/** About page — editorial marketing copy (web-first, works on native). */
+/** About page — editorial copy (web + native). Section body defaults in `aboutPageContent.js`. */
 export const ABOUT_SCREEN_UI = {
   header: {
-    eyebrow: "",
-    title: "About KankreG",
+    eyebrow: "Our story",
+    title: "About Zeevan",
     subtitle: "",
   },
   hero: {
-    kicker: "Since day one",
-    title: "Quietly premium essentials for Indian kitchens",
-    lead:
-      "KankreG began with a simple promise: heritage-quality ghee and staples, sourced with care, priced honestly, and delivered with live tracking you can trust.",
-    ctaPrimary: "Shop the collection",
-    ctaSecondary: "How we craft",
-    badge: "Family-owned · Gujarat",
-    floatQuote: "The aroma the moment you open the jar — pure nostalgia.",
+    kicker: "Our story",
+    title: "Premium pantry for Indian kitchens",
+    lead: "Ghee, tel, masala & Haldar honey — sourced with care, delivered with live tracking.",
+    ctaPrimary: "Shop all",
+    ctaSecondary: "Our range",
+    badge: "Gujarat, India",
+    floatQuote: "",
   },
   mission: {
     eyebrow: "Mission",
-    title: "Good food should feel unmistakably real",
+    title: "Food that feels unmistakably real",
     paragraphs: [
-      "We work with small-batch partners who share our obsession with clarity, aroma, and honest labels. No shortcuts — just ingredients you would proudly serve at your own table.",
-      "Every order earns rewards, every delivery is tracked in real time, and every product page tells you exactly what you are buying. Transparency is part of the craft.",
+      "Small-batch partners, honest labels, ingredients you'd serve at your table.",
+      "Rewards on every order, live delivery tracking, and clear product pages.",
     ],
   },
   pillars: [
@@ -440,48 +391,43 @@ export const ABOUT_SCREEN_UI = {
       key: "source",
       icon: "leaf-outline",
       title: "Thoughtful sourcing",
-      body: "Grass-fed A2 milk, cold-pressed oils, and pantry staples chosen for purity — not shelf appeal.",
+      body: "Ghee, tel, masala & honey from partners we trust.",
     },
     {
       key: "craft",
       icon: "flame-outline",
       title: "Slow craft",
-      body: "Traditional methods, small batches, and patient churning for the golden clarity ghee is known for.",
+      body: "Traditional methods — Bilona ghee, cold-pressed tel, fresh-ground masala.",
     },
     {
       key: "fair",
       icon: "heart-outline",
       title: "Fair pricing",
-      body: "Premium quality without the premium markup. Rewards on every order keep loyal kitchens saving.",
+      body: "Premium quality without inflated markups.",
     },
     {
       key: "deliver",
       icon: "bicycle-outline",
       title: "Delivered with care",
-      body: "Live order tracking, secure checkout, and support that answers like a neighbour would.",
+      body: "Secure checkout and live order tracking.",
     },
   ],
   craft: {
-    eyebrow: "The process",
-    title: "From farm to your morning roti",
+    eyebrow: "Process",
+    title: "Farm to your kitchen",
     steps: [
-      { key: "milk", label: "01", title: "Select milk", body: "A2 milk from grass-fed herds, tested for quality before it ever reaches the churn." },
-      { key: "churn", label: "02", title: "Slow churn", body: "Patient, low-heat churning until the butter separates — the step that builds aroma." },
-      { key: "clarify", label: "03", title: "Clarify & rest", body: "Ghee is clarified, filtered, and rested so the golden colour and nutty notes settle in." },
-      { key: "pack", label: "04", title: "Pack & ship", body: "Sealed fresh, shipped with live tracking — from our kitchen partners to yours." },
+      { key: "source", label: "01", title: "Source", body: "Pure ingredients from trusted farms and apiaries." },
+      { key: "craft", label: "02", title: "Craft", body: "Small batches — ghee, tel, masala & honey." },
+      { key: "pack", label: "03", title: "Pack", body: "Sealed fresh, labelled honestly." },
+      { key: "ship", label: "04", title: "Deliver", body: "Live tracking to your door." },
     ],
   },
-  stats: [
-    { key: "orders", value: "12.5k+", label: "Orders fulfilled" },
-    { key: "rating", value: "4.9★", label: "Average rating" },
-    { key: "purity", value: "100%", label: "Pure A2 ghee" },
-    { key: "cities", value: "40+", label: "Cities served" },
-  ],
+  stats: [],
   ctaBand: {
-    title: "Ready to taste the difference?",
-    body: "Explore bestsellers, earn rewards on your first order, and track delivery every step of the way.",
-    cta: "Browse the shop",
-    ctaSecondary: "Contact support",
+    title: "Taste the difference",
+    body: "Browse bestsellers and earn rewards on your first order.",
+    cta: "Shop",
+    ctaSecondary: "Support",
   },
 };
 
@@ -492,7 +438,7 @@ export const LEGAL_PAGES = {
     eyebrow: "Legal",
     updated: "Last updated June 2025",
     intro:
-      "KankreG respects your privacy. This policy explains what we collect, how we use it, and the choices you have when you shop with us.",
+      "Zeevan respects your privacy. This policy explains what we collect, how we use it, and the choices you have when you shop with us.",
     sections: [
       {
         title: "Information we collect",
@@ -512,11 +458,11 @@ export const LEGAL_PAGES = {
       },
       {
         title: "Your rights",
-        body: "You may request access, correction, or deletion of your personal data by contacting us at support@kankreg.app. We will respond within a reasonable timeframe.",
+        body: "You may request access, correction, or deletion of your personal data by contacting us at support@zeevan.app. We will respond within a reasonable timeframe.",
       },
       {
         title: "Contact",
-        body: "Questions about this policy? Email support@kankreg.app and we will be glad to help.",
+        body: "Questions about this policy? Email support@zeevan.app and we will be glad to help.",
       },
     ],
   },
@@ -525,7 +471,7 @@ export const LEGAL_PAGES = {
     eyebrow: "Legal",
     updated: "Last updated June 2025",
     intro:
-      "By using KankreG — on web or in the app — you agree to these terms. Please read them before placing an order.",
+      "By using Zeevan — on web or in the app — you agree to these terms. Please read them before placing an order.",
     sections: [
       {
         title: "Using our service",
@@ -580,10 +526,11 @@ export const KANKREG_FOOTER_COLUMNS = [
   {
     title: "Shop",
     links: [
-      { label: "New arrivals", route: "Shop", params: { pill: "New in" } },
-      { label: "Bestsellers", route: "Shop" },
-      { label: "On sale", route: "Shop", params: { pill: "On sale" } },
-      { label: "Gift cards", route: "Shop" },
+      { label: "All products", route: "Shop" },
+      { label: "Ghee", route: "Shop", params: { pill: "Ghee" } },
+      { label: "Tel", route: "Shop", params: { pill: "Tel" } },
+      { label: "Masala", route: "Shop", params: { pill: "Masala" } },
+      { label: "Haldar Honey", route: "Shop", params: { pill: "Honey" } },
     ],
   },
   {
@@ -599,20 +546,45 @@ export const KANKREG_FOOTER_COLUMNS = [
     title: "Company",
     links: [
       { label: "About", route: "About" },
-      { label: "Careers", route: "About" },
       { label: "Privacy", route: "Privacy" },
       { label: "Terms", route: "Terms" },
     ],
   },
 ];
 
-export const KANKREG_FOOTER_COPYRIGHT = "© 2025 kankreg. Crafted in India.";
+export const KANKREG_FOOTER_COPYRIGHT = "© 2026 Zeevan. Crafted in India.";
 
 /** Native header: announce + topbar (no fixed announce on very small native optional). */
 export const KANKREG_ANNOUNCE_COPY = {
   delivery: "Free delivery over ₹1,499",
   rewards: "",
   seasonCta: "",
+};
+
+/**
+ * Web UI — single place to manage web copy, nav, and home section toggles.
+ */
+export const WEB_CONTENT = {
+  get nav() {
+    return KANKREG_WEB_NAV_ITEMS;
+  },
+  get header() {
+    return KANKREG_HEADER;
+  },
+  get announce() {
+    return KANKREG_ANNOUNCE_COPY;
+  },
+  get home() {
+    return HOME_SCREEN_UI;
+  },
+  get footer() {
+    return {
+      tagline: KANKREG_FOOTER_TAGLINE,
+      columns: KANKREG_FOOTER_COLUMNS,
+      copyright: KANKREG_FOOTER_COPYRIGHT,
+      trust: HOME_PAGE_TRUST_BADGES,
+    };
+  },
 };
 
 /** Shared actions / empty states across customer screens. */
@@ -631,7 +603,7 @@ export const CART_UI = {
   pageTitle: "Shopping cart",
   checkoutTitle: "Checkout",
   emptyTitle: "Your cart is empty",
-  emptyDescription: "Discover heritage ghee, staples, and curated picks — add something you love.",
+  emptyDescription: "Discover ghee, tel, masala, honey & more — add something you love.",
   browseCta: "Browse shop",
   itemsSectionLabel: "Your items",
   summaryTitle: "Order summary",
@@ -670,69 +642,15 @@ export const CART_ADDRESS = {
   gpsFillSuccess: "Location added.",
 };
 
-/** Shop catalog — `ShopScreen.js` + `ShopPageChrome.js`. */
-export const SHOP_SCREEN_UI = {
-  pageEyebrow: "Catalog",
-  pageTitle: "Shop",
-  pageTitleWide: "Shop everything",
-  pageSubtitle: "Hand-churned Bilona ghee, A2 dairy & curated staples — delivered fresh.",
-  searchPlaceholder: "Search ghee, staples, wellness…",
-  refineTitle: "Refine",
-  resetFilters: "Reset",
-  sortA11y: "Change sort order",
-  filterSort: "Sort by",
-  categoryRailTitle: "Browse by category",
-  showingPrefix: "Showing",
-  showingOf: "of",
-  showingSuffix: "products",
-  clearFilters: "Clear filters",
-  filtersOpen: "Filters",
-  filtersClose: "Hide filters",
-  emptyTitle: "No products found",
-  emptyDescription: "Try a different filter or check back soon.",
-  emptyCta: "Browse shop",
-  emptyMatchesTitle: "No matches",
-  emptyMatchesDescription: "Try another category or clear filters to see more products.",
-  viewAllCta: "View all",
-  filterCategory: "Category",
-  filterCollection: "Collection",
-  filterRating: "Rating",
-  filterPrice: "Price",
-  priceMin: "₹500",
-  priceMax: "₹8,000",
-  collectionPills: ["All", "New in", "On sale", "Premium", "Coming soon"],
-  sortOptions: [
-    { key: "featured", label: "Featured" },
-    { key: "price-asc", label: "Price ↑" },
-    { key: "price-desc", label: "Price ↓" },
-    { key: "newest", label: "Newest" },
-  ],
-  hero: {
-    eyebrow: "KankreG catalog",
-    title: "Farm-fresh A2, curated for your kitchen",
-    body: "Browse Bilona ghee, dairy staples, and wellness picks — filter by category, price, or what’s launching next.",
-    totalLabel: "Products",
-    inStockLabel: "In stock",
-    comingSoonLabel: "Coming soon",
-    onSaleLabel: "On sale",
-  },
-  trustLine: "Secure checkout · Authentic A2 · Free delivery over ₹1,499",
-  trustBadges: [
-    { icon: "leaf-outline", label: "Grass-fed A2" },
-    { icon: "flame-outline", label: "Bilona churned" },
-    { icon: "cube-outline", label: "Fresh dispatch" },
-  ],
-  card: {
-    addA11y: "Add to cart",
-    soldOut: "Sold out",
-    comingSoon: "Coming soon",
-    comingSoonNoteFallback: "Launching shortly",
-    comingSoonPreview: "Preview",
-    unitFallback: "1 pc",
-    noImage: "No image",
-    imageUnavailable: "Image unavailable",
-  },
-};
+/** Shop catalog — re-export from `shopPageContent.js`. */
+export {
+  SHOP_SCREEN_UI,
+  SHOP_PRICE_PRESETS,
+  buildShopCollectionLines,
+  formatShopResultCount,
+  shopRatingChipLabels,
+  shopRatingLabelFromValue,
+} from "./shopPageContent";
 
 /** Notifications — `NotificationsScreen.js`. */
 export const NOTIFICATIONS_SCREEN_UI = {
@@ -850,7 +768,7 @@ export const SUPPORT_SCREEN = {
 export const PROFILE_SCREEN = {
   pageTitle: "My profile",
   pageEyebrow: "Account",
-  eyebrow: "KankreG member",
+  eyebrow: "Zeevan member",
   memberSincePrefix: "Member since",
   pageSubtitle: "",
   fallbackName: "Welcome",
@@ -950,7 +868,7 @@ export const AUTH_UI = {
   loginTitle: "Sign in",
   loginSubtitle: "Access your orders, rewards and saved items.",
   loginFormEyebrow: "Welcome back",
-  loginHeroEyebrow: "KankreG · Premium essentials",
+  loginHeroEyebrow: `Zeevan · ${ZEEVAN_CATALOG_SUBLINE}`,
   loginHeroTitle: "Goods worth\ncoming back for.",
   loginPerks: [
     { icon: "gift-outline", label: "Rewards on every order" },
@@ -958,8 +876,8 @@ export const AUTH_UI = {
     { icon: "shield-checkmark-outline", label: "Secure online checkout" },
   ],
   registerTitle: "Create account",
-  registerSubtitle: "Join kankreg — earn rewards on every delivered order.",
-  registerFormEyebrow: "Join kankreg",
+  registerSubtitle: "Join Zeevan — earn rewards on every delivered order.",
+  registerFormEyebrow: "Join Zeevan",
   registerHeroTitle: "Start earning\nfrom your first order.",
   registerPerks: [
     { icon: "star-outline", label: "Member rewards & offers" },
@@ -1137,7 +1055,7 @@ export const PRODUCT_SCREEN = {
   storyTitle: "About this item",
   /** Empty = no subtitle under section header (see ProductScreen). */
   storySubtitle: "",
-  defaultDescription: "From KankreG.",
+  defaultDescription: "From Zeevan.",
   variantOverline: "Choose",
   variantTitle: "Options",
   variantSubtitle: "",
@@ -1250,7 +1168,7 @@ export const ORDER_CELEBRATION_UI = {
   },
   delivered: {
     title: "Delivered!",
-    subtitle: "Your order arrived safely. Enjoy — and thank you for choosing kankreg.",
+    subtitle: "Your order arrived safely. Enjoy — and thank you for choosing Zeevan.",
     ctaPrimary: "View orders",
     ctaSecondary: "Shop again",
   },
@@ -1326,12 +1244,11 @@ export const ORDER_LIVE_TRACKING = {
 export const ADMIN_HOME_VIEW_COPY = {
   title: "Manage storefront content",
   subtitle:
-    "Hero copy and home layout live here. Each product’s name, price, image, stock, “Show on Home”, and which block it appears in (e.g. Prime Products) are set under Products.",
+    "Hero copy, slider images, and home layout live here. Product names, prices, photos, stock, and “Show on Home” are set under Products.",
   heroSection: "Hero banner",
-  heroHint: "Title + subtitle on web home. Add slides below for the hero image/video carousel.",
-  heroMediaSection: "Hero slider, story & community",
-  heroMediaHint:
-    "Hero carousel, Our Story video, Community rail, and “Ours vs ordinary ghee” compare section.",
+  heroHint: "Title and subtitle shown with the home hero (when no slide overrides them).",
+  heroMediaSection: "Hero slider",
+  heroMediaHint: "Carousel images on web and app home — up to 4 slides, images only.",
   sectionTitles: "Home catalog headings",
   sectionTitlesHint:
     "Prime title is the default section name for products without a custom Home section, and the heading for the main list when sections are merged. Product type title is saved with this profile for layout features (same API as the storefront).",

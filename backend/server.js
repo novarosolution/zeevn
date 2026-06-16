@@ -23,14 +23,10 @@ const app = express();
 app.disable("x-powered-by");
 
 const allowedOrigins = new Set([
-  "http://localhost:8081",
-  "http://localhost:8082",
-  "http://localhost:8083",
-  "http://127.0.0.1:8081",
-  "http://127.0.0.1:8082",
-  "http://127.0.0.1:8083",
   "https://novarosolution.com",
   "https://www.novarosolution.com",
+  "https://zeevan.app",
+  "https://www.zeevan.app",
 ]);
 
 /** Expo web, Vite, and local dev often use random localhost ports. */

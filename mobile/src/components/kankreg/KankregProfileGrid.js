@@ -61,7 +61,7 @@ export default function KankregProfileGrid({
         {avatar ? (
           <Image source={{ uri: avatar }} style={styles.avatarImage} contentFit="cover" />
         ) : (
-          <LinearGradient colors={["#d9b463", "#9c6b27"]} style={styles.avatar}>
+          <LinearGradient colors={["#DCAC74", "#244424"]} style={styles.avatar}>
             <Text style={styles.avatarText}>{initial}</Text>
           </LinearGradient>
         )}
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     borderRadius: 44,
     marginBottom: 14,
     borderWidth: 2,
-    borderColor: "rgba(214, 173, 91, 0.45)",
+    borderColor: "rgba(42, 117, 89, 0.45)",
   },
   avatarText: {
     fontFamily: FONT_BODY_SEMIBOLD,
@@ -212,9 +212,9 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: "rgba(214, 173, 91, 0.18)",
+    backgroundColor: "rgba(42, 117, 89, 0.18)",
     borderWidth: 1,
-    borderColor: "rgba(214, 173, 91, 0.35)",
+    borderColor: "rgba(42, 117, 89, 0.35)",
   },
   memberTagText: {
     fontSize: 11,
@@ -242,10 +242,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.08)",
   },
   menuItemHover: {
-    backgroundColor: "rgba(169, 119, 46, 0.08)",
+    backgroundColor: "rgba(31, 92, 71, 0.08)",
   },
   menuItemHoverDark: {
-    backgroundColor: "rgba(232, 200, 90, 0.1)",
+    backgroundColor: "rgba(52, 211, 153, 0.1)",
   },
   menuText: {
     fontSize: 14,

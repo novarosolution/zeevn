@@ -38,14 +38,14 @@ export function injectProcessCinemaStyles() {
 }
 .${ROOT} .kankreg-process-chapter::after{transform:scaleX(-1)}
 .${ROOT} .kankreg-process-title{
-  font-family:CIENUR,Georgia,serif;font-weight:400;font-size:clamp(2rem,5.8vw,4.2rem);
+  font-family:Fraunces_700Bold,Georgia,serif;font-weight:400;font-size:clamp(2rem,5.8vw,4.2rem);
   line-height:1.08;letter-spacing:-.025em;margin:20px 0 0;padding:0;border:0;color:var(--ink);text-align:center;
 }
 .${ROOT} .kankreg-process-subtitle{
   margin:14px auto 0;max-width:560px;font-size:clamp(.98rem,1.8vw,1.12rem);color:rgba(10,9,7,.62);text-align:center;
 }
 .${ROOT} .kankreg-process-opening{
-  margin:18px auto 0;max-width:520px;font-family:CIENUR,Georgia,serif;font-style:normal;font-weight:400;
+  margin:18px auto 0;max-width:520px;font-family:Fraunces_700Bold,Georgia,serif;font-style:normal;font-weight:400;
   font-size:clamp(1rem,1.9vw,1.2rem);color:rgba(10,9,7,.5);text-align:center;
 }
 .${ROOT} .kankreg-process-hairline{
@@ -68,7 +68,7 @@ export function injectProcessCinemaStyles() {
 .${ROOT} .kankreg-process-node{
   position:relative;display:grid;place-items:center;width:36px;height:36px;margin-left:-17px;
   border-radius:50%;border:1px solid var(--line);background:var(--paper);
-  font-family:CIENUR,serif;font-size:13px;color:rgba(10,9,7,.45);transition:all .35s var(--ease);cursor:default;
+  font-family:Fraunces_700Bold,serif;font-size:13px;color:rgba(10,9,7,.45);transition:all .35s var(--ease);cursor:default;
 }
 .${ROOT} .kankreg-process-node-on{
   border-color:var(--ghee);color:var(--ink);background:rgba(226,169,62,.12);
@@ -87,7 +87,7 @@ export function injectProcessCinemaStyles() {
   display:flex;align-items:center;justify-content:space-between;gap:12px;
   font-family:"Space Mono",ui-monospace,monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(10,9,7,.45);
 }
-.${ROOT} .kankreg-process-panel-num{color:var(--ghee);font-family:CIENUR,serif;font-size:1.4rem;letter-spacing:0;text-transform:none}
+.${ROOT} .kankreg-process-panel-num{color:var(--ghee);font-family:Fraunces_700Bold,serif;font-size:1.4rem;letter-spacing:0;text-transform:none}
 .${ROOT} .kankreg-process-frame{
   position:relative;border-radius:18px;overflow:hidden;border:1px solid var(--line);
   background:#1a1714;aspect-ratio:16/10;
@@ -106,7 +106,7 @@ export function injectProcessCinemaStyles() {
 }
 .${ROOT} .kankreg-process-copy{padding:4px 2px 0}
 .${ROOT} .kankreg-process-copy h3{
-  margin:0 0 10px;font-family:CIENUR,Georgia,serif;font-weight:400;
+  margin:0 0 10px;font-family:Fraunces_700Bold,Georgia,serif;font-weight:400;
   font-size:clamp(1.35rem,2.4vw,1.85rem);line-height:1.15;letter-spacing:-.015em;color:var(--ink);
 }
 .${ROOT} .kankreg-process-copy p{margin:0;font-size:clamp(.92rem,1.5vw,1.02rem);line-height:1.6;color:rgba(10,9,7,.62)}

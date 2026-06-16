@@ -16,10 +16,10 @@ export const FIGMA = {
   radiusSheet: 26,
   gutter: 16,
   productTileGradients: [
-    ["#f3e7cc", "#e3cfa6"],
+    ["#e8f0eb", "#c5d9cc"],
+    ["#dfece6", "#b8d4c4"],
     ["#e7eee6", "#cdddcf"],
-    ["#f1e3d6", "#dcc3ad"],
-    ["#f4e6d2", "#e0b98f"],
+    ["#eef3f0", "#d4e4dc"],
     ["#e8e9ee", "#cdd2dc"],
   ],
   productTileGradientsDark: [
@@ -82,7 +82,7 @@ export function figmaPill(active, isDark = false) {
     paddingHorizontal: 13,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: active ? (isDark ? FIGMA.goldDeep : FIGMA.ink) : isDark ? "#181513" : FIGMA.card,
+    backgroundColor: active ? (isDark ? FIGMA.greenDeep : FIGMA.green) : isDark ? "#181513" : FIGMA.card,
     borderWidth: active ? 0 : StyleSheet.hairlineWidth,
     borderColor: isDark ? "#3f3933" : FIGMA.line,
   };

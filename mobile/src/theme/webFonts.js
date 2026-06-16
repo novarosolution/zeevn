@@ -1,3 +1,2 @@
-/** Web display face — loaded via CDN in `web.js` + post-export. */
-export const WEB_DISPLAY_FONT = "CIENUR";
-export const WEB_DISPLAY_FONT_CDN = "https://fonts.cdnfonts.com/css/cienur";
+/** Web display face — Fraunces via Expo Google Fonts (see `webTypography.js`). */
+export const WEB_DISPLAY_FONT = "Fraunces_700Bold";

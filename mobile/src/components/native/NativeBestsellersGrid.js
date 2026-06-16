@@ -43,7 +43,7 @@ export default function NativeBestsellersGrid({ products, onProductPress, onAddT
         isDark
           ? {
               backgroundColor: "rgba(255,255,255,0.03)",
-              borderColor: "rgba(232, 200, 90, 0.2)",
+              borderColor: "rgba(52, 211, 153, 0.2)",
             }
           : {
               borderColor: FIGMA.line,
@@ -57,7 +57,7 @@ export default function NativeBestsellersGrid({ products, onProductPress, onAddT
         />
       ) : (
         <LinearGradient
-          colors={["rgba(232, 200, 90, 0.08)", "rgba(255,255,255,0.02)", "transparent"]}
+          colors={["rgba(52, 211, 153, 0.08)", "rgba(255,255,255,0.02)", "transparent"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFillObject}

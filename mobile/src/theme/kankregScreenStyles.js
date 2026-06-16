@@ -16,7 +16,7 @@ export function createKankregEyebrowStyle(isDark) {
     fontSize: typography.overline,
     letterSpacing: 3.6,
     textTransform: "uppercase",
-    color: isDark ? "#e8c878" : KANKREG_PALETTE.gold,
+    color: isDark ? "#C4D088" : KANKREG_PALETTE.gold,
   };
 }
 

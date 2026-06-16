@@ -18,7 +18,7 @@ export default function WhyKankrej() {
     >
       <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
         <FadeIn>
-          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-charcoal/8 bg-gradient-to-br from-amber-50 to-earth-green/10 shadow-card">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-charcoal/8 bg-gradient-to-br from-cream to-brand-green-leaf/15 shadow-card">
             <Image
               src={whyKankrej.image}
               alt={whyKankrej.imageAlt}
@@ -40,9 +40,9 @@ export default function WhyKankrej() {
       <div className="mt-12 grid gap-5 md:grid-cols-3">
         {whyKankrej.stats.map((stat, i) => (
           <FadeIn key={stat.value} delay={i * 0.05}>
-            <article className="rounded-2xl border border-ghee-gold/20 bg-cream p-6 shadow-soft">
+            <article className="rounded-2xl border border-brand-green/20 bg-cream p-6 shadow-soft">
               <p className="font-display text-2xl font-semibold text-earth-green">{stat.value}</p>
-              <p className="mt-1 text-sm font-semibold uppercase tracking-wide text-ghee-gold">{stat.label}</p>
+              <p className="mt-1 text-sm font-semibold uppercase tracking-wide text-brand-green">{stat.label}</p>
               <p className="mt-3 text-sm leading-relaxed text-charcoal/70">{stat.description}</p>
             </article>
           </FadeIn>

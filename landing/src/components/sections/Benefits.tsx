@@ -13,8 +13,8 @@ export default function Benefits() {
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {benefits.items.map((item, i) => (
           <FadeIn key={item.title} delay={i * 0.04}>
-            <article className="h-full rounded-2xl border border-charcoal/6 bg-cream p-6 shadow-soft transition hover:border-ghee-gold/25">
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-ghee-gold/12 text-ghee-gold">
+            <article className="h-full rounded-2xl border border-charcoal/6 bg-cream p-6 shadow-soft transition hover:border-brand-green/25">
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-brand-green/12 text-brand-green">
                 <ProcessIcon name={item.icon} className="h-5 w-5" />
               </span>
               <h3 className="mt-4 font-display text-lg font-semibold text-charcoal">{item.title}</h3>

@@ -31,16 +31,16 @@ export default forwardRef(function QCommerceSearchField(
         premium ? styles.wrapPremium : null,
         {
           backgroundColor: premium ? ALCHEMY.cardBg : c.searchBarFill,
-          borderColor: premium ? "rgba(201, 162, 39, 0.35)" : c.searchBarBorder,
+          borderColor: premium ? "rgba(31, 92, 71, 0.35)" : c.searchBarBorder,
         },
         hovered && Platform.OS === "web"
-          ? { borderColor: premium ? "rgba(201, 162, 39, 0.5)" : semantic.border.accent, backgroundColor: c.surface }
+          ? { borderColor: premium ? "rgba(31, 92, 71, 0.5)" : semantic.border.accent, backgroundColor: c.surface }
           : null,
         premium
           ? platformShadow({
               web: {
                 boxShadow:
-                  "0 10px 34px rgba(61, 42, 18, 0.12), inset 0 1px 0 rgba(255,255,255,0.85)",
+                  "0 10px 34px rgba(22, 69, 51, 0.12), inset 0 1px 0 rgba(255,255,255,0.85)",
               },
               ios: {
                 shadowColor: "#3D2A12",

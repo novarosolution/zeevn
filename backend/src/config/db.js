@@ -16,7 +16,7 @@ function normalizeMongoUri(uri) {
 
 async function connectDB() {
   try {
-    const rawUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/kankreg_ecommerce";
+    const rawUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/zeevan";
     const mongoUri = normalizeMongoUri(rawUri);
     if (mongoUri !== rawUri) {
       console.warn(`MongoDB URI normalized for database name casing (${rawUri} → ${mongoUri})`);

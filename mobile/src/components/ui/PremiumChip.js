@@ -84,8 +84,8 @@ function resolveTone(tone, c, isDark) {
   switch (tone) {
     case "gold":
       return {
-        bg: isDark ? "rgba(201, 162, 39, 0.16)" : ALCHEMY.goldSoft,
-        border: isDark ? "rgba(232, 200, 90, 0.32)" : "rgba(201, 162, 39, 0.32)",
+        bg: isDark ? "rgba(31, 92, 71, 0.16)" : ALCHEMY.goldSoft,
+        border: isDark ? "rgba(52, 211, 153, 0.32)" : "rgba(31, 92, 71, 0.32)",
         text: isDark ? ALCHEMY.goldBright : ALCHEMY.brown,
       };
     case "green":

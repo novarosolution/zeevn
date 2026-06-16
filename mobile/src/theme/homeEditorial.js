@@ -1,6 +1,6 @@
 /**
- * KankreG web home — editorial spacing & type scale.
- * Premium brief: generous rhythm, muted eyebrows, gold used sparingly.
+ * Zeevan web home — editorial spacing & type scale.
+ * Premium brief: generous rhythm, muted eyebrows, green used sparingly.
  */
 import { Platform } from "react-native";
 import { spacing } from "./tokens";

@@ -430,7 +430,7 @@ function createSupportStyles(c, shadowPremium, isDark, layoutFlags = {}) {
       web: {
         borderRadius: radius.xxl,
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: isDark ? "rgba(232, 200, 90, 0.14)" : "rgba(116, 79, 28, 0.1)"},
+        borderColor: isDark ? "rgba(52, 211, 153, 0.14)" : "rgba(22, 69, 51, 0.1)"},
       default: {}})},
   bannerWrap: {
     marginTop: spacing.sm},
@@ -459,7 +459,7 @@ function createSupportStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     backgroundColor: c.primarySoft,
     ...Platform.select({
       web: {
-        boxShadow: isDark ? "0 8px 18px rgba(0,0,0,0.24)" : "0 8px 16px rgba(61, 42, 18, 0.09)"},
+        boxShadow: isDark ? "0 8px 18px rgba(0,0,0,0.24)" : "0 8px 16px rgba(22, 69, 51, 0.09)"},
       default: {}})},
   refreshBtnText: {
     color: c.primary,
@@ -474,7 +474,7 @@ function createSupportStyles(c, shadowPremium, isDark, layoutFlags = {}) {
       web: {
         boxShadow: isDark
           ? "0 10px 22px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.03)"
-          : "0 8px 18px rgba(61, 42, 18, 0.08), inset 0 1px 0 rgba(255,255,255,0.82)"},
+          : "0 8px 18px rgba(22, 69, 51, 0.08), inset 0 1px 0 rgba(255,255,255,0.82)"},
       default: {}})},
   adminBubble: {
     borderColor: c.primaryBorder,
@@ -562,7 +562,7 @@ function createSupportStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     borderTopColor: c.divider,
     paddingVertical: spacing.sm + 2},
   faqRowOpen: {
-    backgroundColor: isDark ? "rgba(232, 200, 90, 0.05)" : "rgba(199, 154, 58, 0.04)",
+    backgroundColor: isDark ? "rgba(52, 211, 153, 0.05)" : "rgba(199, 154, 58, 0.04)",
     borderRadius: radius.md,
     paddingHorizontal: spacing.sm,
     marginHorizontal: -spacing.sm},

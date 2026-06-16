@@ -107,7 +107,7 @@ export default function KankregOrderTrackingCard({
             ]}
           >
             <LinearGradient
-              colors={["#d9b463", "#9c6b27"]}
+              colors={["#DCAC74", "#244424"]}
               style={styles.partnerAvatar}
             >
               <Text style={styles.partnerInitial}>{getPartnerInitial(partner.name)}</Text>

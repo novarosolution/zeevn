@@ -206,9 +206,9 @@ const styles = StyleSheet.create({
     padding: 10,
     backgroundColor: "#110B07",
     borderWidth: 1,
-    borderColor: "rgba(169, 119, 46, 0.22)",
+    borderColor: "rgba(31, 92, 71, 0.22)",
     borderTopWidth: 3,
-    borderTopColor: "rgba(201, 162, 39, 0.8)",
+    borderTopColor: "rgba(31, 92, 71, 0.8)",
     overflow: "hidden",
     boxShadow:
       "inset 0 1px 0 rgba(255, 253, 248, 0.12), 0 24px 52px -24px rgba(80, 60, 25, 0.28)",
@@ -222,8 +222,8 @@ const styles = StyleSheet.create({
     boxShadow: "none",
   },
   bannerShellDark: {
-    borderColor: "rgba(214, 173, 91, 0.18)",
-    borderTopColor: "rgba(214, 173, 91, 0.55)",
+    borderColor: "rgba(42, 117, 89, 0.18)",
+    borderTopColor: "rgba(42, 117, 89, 0.55)",
   },
   reelBleed: {
     borderRadius: 0,
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   reelEmbedded: {
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(169, 119, 46, 0.2)",
+    borderColor: "rgba(31, 92, 71, 0.2)",
     flex: 1,
     boxShadow: "0 20px 48px -24px rgba(8, 6, 4, 0.55), inset 0 1px 0 rgba(255, 253, 248, 0.08)",
   },
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: "rgba(214, 173, 91, 0.42)",
+    backgroundColor: "rgba(42, 117, 89, 0.42)",
     zIndex: 3,
   },
   muteChip: {
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   muteChipOn: {
-    borderColor: "rgba(214, 173, 91, 0.65)",
+    borderColor: "rgba(42, 117, 89, 0.65)",
     backgroundColor: "rgba(31, 77, 54, 0.5)",
   },
   muteChipPressed: {
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.97 }],
   },
   muteChipHover: {
-    borderColor: "rgba(214, 173, 91, 0.8)",
+    borderColor: "rgba(42, 117, 89, 0.8)",
   },
   filmChrome: {
     position: "absolute",
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(214, 173, 91, 0.4)",
+    borderColor: "rgba(42, 117, 89, 0.4)",
   },
   filmBadgeDot: {
     width: 4,

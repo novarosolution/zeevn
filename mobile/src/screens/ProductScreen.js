@@ -440,7 +440,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     web: {
       boxShadow: isDark
         ? "0 14px 44px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.05)"
-        : "0 12px 36px rgba(61, 42, 18, 0.07), 0 4px 14px rgba(28, 25, 23, 0.04), inset 0 1px 0 rgba(255,253,251,0.92)"},
+        : "0 12px 36px rgba(22, 69, 51, 0.07), 0 4px 14px rgba(28, 25, 23, 0.04), inset 0 1px 0 rgba(255,253,251,0.92)"},
     ios: {
       shadowColor: "#3D2A12",
       shadowOffset: { width: 0, height: 10 },
@@ -476,7 +476,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     overflow: "hidden",
     padding: 0,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: isDark ? "rgba(232, 200, 90, 0.35)" : "rgba(201, 162, 39, 0.42)",
+    borderTopColor: isDark ? "rgba(52, 211, 153, 0.35)" : "rgba(31, 92, 71, 0.42)",
     ...panelLift},
   /** Accent top edge when product matches home shelf (e.g. Ghee). */
   containerShelfMatch: {
@@ -602,7 +602,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     borderRadius: radius.xl,
     backgroundColor: isDark ? "rgba(28, 25, 23, 0.72)" : "rgba(255, 253, 248, 0.88)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(116, 79, 28, 0.12)",
+    borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(22, 69, 51, 0.12)",
     ...Platform.select({
       web: {
         maxWidth: "100%",
@@ -620,14 +620,14 @@ function createProductStyles(c, shadowPremium, isDark) {
     height: 68,
     borderRadius: radius.lg + 2,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.border : "rgba(116, 79, 28, 0.22)",
+    borderColor: isDark ? c.border : "rgba(22, 69, 51, 0.22)",
     overflow: "hidden",
     backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt},
   thumbWrapActive: {
     borderColor: ALCHEMY.gold,
     borderWidth: 3,
     ...platformShadow({
-      web: { boxShadow: "0 4px 12px rgba(201, 162, 39, 0.28)" },
+      web: { boxShadow: "0 4px 12px rgba(31, 92, 71, 0.28)" },
       ios: {
         shadowColor: ALCHEMY.gold,
         shadowOffset: { width: 0, height: 2 },
@@ -657,7 +657,7 @@ function createProductStyles(c, shadowPremium, isDark) {
       web: {
         boxShadow: isDark
           ? "0 -12px 40px rgba(0,0,0,0.35)"
-          : "0 -10px 36px rgba(61, 42, 18, 0.06), 0 -2px 12px rgba(28, 25, 23, 0.04)"},
+          : "0 -10px 36px rgba(22, 69, 51, 0.06), 0 -2px 12px rgba(28, 25, 23, 0.04)"},
       ios: {
         shadowColor: "#000",
         shadowOffset: { width: 0, height: -4 },
@@ -703,8 +703,8 @@ function createProductStyles(c, shadowPremium, isDark) {
     borderColor: isDark ? c.border : ALCHEMY.pillInactive,
     backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt},
   heroMetaRatingPill: {
-    borderColor: isDark ? c.primaryBorder : "rgba(201, 162, 39, 0.3)",
-    backgroundColor: isDark ? "rgba(201, 162, 39, 0.12)" : ALCHEMY.goldSoft},
+    borderColor: isDark ? c.primaryBorder : "rgba(31, 92, 71, 0.3)",
+    backgroundColor: isDark ? "rgba(31, 92, 71, 0.12)" : ALCHEMY.goldSoft},
   heroMetaPillOk: {
     borderColor: isDark ? c.secondaryBorder : "rgba(16, 185, 129, 0.28)",
     backgroundColor: isDark ? c.secondarySoft : "rgba(236, 253, 245, 0.9)"},
@@ -746,13 +746,13 @@ function createProductStyles(c, shadowPremium, isDark) {
     borderColor: isDark ? c.border : ALCHEMY.pillInactive,
     borderLeftWidth: 3,
     borderLeftColor: ALCHEMY.gold,
-    borderTopColor: "rgba(201, 162, 39, 0.6)"},
+    borderTopColor: "rgba(31, 92, 71, 0.6)"},
   priceBandDark: {
     backgroundColor: "rgba(255,255,255,0.04)",
     borderColor: c.border,
     borderLeftWidth: 3,
-    borderLeftColor: "rgba(232, 200, 90, 0.65)",
-    borderTopColor: "rgba(232, 200, 90, 0.38)"},
+    borderLeftColor: "rgba(52, 211, 153, 0.65)",
+    borderTopColor: "rgba(52, 211, 153, 0.38)"},
   priceBlock: {
     marginTop: 0,
     gap: spacing.sm},
@@ -888,7 +888,7 @@ function createProductStyles(c, shadowPremium, isDark) {
       web: {
         boxShadow: isDark
           ? "0 10px 24px rgba(0,0,0,0.35)"
-          : "0 10px 22px rgba(61, 42, 18, 0.22)"},
+          : "0 10px 22px rgba(22, 69, 51, 0.22)"},
       ios: {
         shadowColor: "#3D2A12",
         shadowOffset: { width: 0, height: 6 },
@@ -910,7 +910,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: isDark ? c.border : ALCHEMY.pillInactive,
     borderLeftWidth: 3,
-    borderLeftColor: isDark ? "rgba(232, 200, 90, 0.55)" : ALCHEMY.gold,
+    borderLeftColor: isDark ? "rgba(52, 211, 153, 0.55)" : ALCHEMY.gold,
     backgroundColor: isDark ? c.surfaceMuted : "rgba(255, 253, 249, 0.92)",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md + 2,
@@ -924,7 +924,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     marginBottom: spacing.sm},
   reviewComposerLight: {
     backgroundColor: isDark ? c.surface : "#FFFFFF",
-    borderColor: isDark ? c.border : "rgba(116, 79, 28, 0.1)"},
+    borderColor: isDark ? c.border : "rgba(22, 69, 51, 0.1)"},
   reviewComposerDark: {
     backgroundColor: "rgba(0,0,0,0.12)",
     borderColor: c.border},
@@ -938,7 +938,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     padding: 4,
     borderRadius: radius.md},
   reviewStarHitActive: {
-    backgroundColor: isDark ? "rgba(201, 162, 39, 0.12)" : ALCHEMY.goldSoft},
+    backgroundColor: isDark ? "rgba(31, 92, 71, 0.12)" : ALCHEMY.goldSoft},
   reviewInputWrap: {
     marginBottom: spacing.sm},
   reviewSubmitBtn: {
@@ -963,7 +963,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     borderRadius: radius.lg,
     backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.75)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.border : "rgba(116, 79, 28, 0.08)"},
+    borderColor: isDark ? c.border : "rgba(22, 69, 51, 0.08)"},
   reviewAvatar: {
     width: 36,
     height: 36,
@@ -995,7 +995,7 @@ function createProductStyles(c, shadowPremium, isDark) {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: radius.pill,
-    backgroundColor: isDark ? "rgba(201, 162, 39, 0.12)" : ALCHEMY.goldSoft,
+    backgroundColor: isDark ? "rgba(31, 92, 71, 0.12)" : ALCHEMY.goldSoft,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: isDark ? c.primaryBorder : ALCHEMY.pillInactive},
   reviewRatingPillText: {

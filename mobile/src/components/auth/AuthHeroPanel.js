@@ -172,11 +172,11 @@ const styles = StyleSheet.create({
   },
   perkOnDark: {
     backgroundColor: "rgba(255,255,255,0.08)",
-    borderColor: "rgba(214, 173, 91, 0.28)",
+    borderColor: "rgba(42, 117, 89, 0.28)",
   },
   perkOnLight: {
-    backgroundColor: "rgba(201, 162, 39, 0.08)",
-    borderColor: "rgba(201, 162, 39, 0.22)",
+    backgroundColor: "rgba(31, 92, 71, 0.08)",
+    borderColor: "rgba(31, 92, 71, 0.22)",
   },
   perkText: {
     flexShrink: 1,

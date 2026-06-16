@@ -34,7 +34,7 @@ function OrdersPageSummaryBase({ stats, active = true }) {
   const tiles = [
     { icon: I.statTotal, label: MY_ORDERS_UI.statTotal, value: String(stats.total), accent: FIGMA.goldDeep },
     { icon: I.statActive, label: MY_ORDERS_UI.statInFlight, value: String(stats.inFlight), accent: FIGMA.green },
-    { icon: I.statDelivered, label: MY_ORDERS_UI.statDelivered, value: String(stats.delivered), accent: isDark ? "#6ee7b7" : "#15803d" },
+    { icon: I.statDelivered, label: MY_ORDERS_UI.statDelivered, value: String(stats.delivered), accent: isDark ? "#C4D088" : "#5C6834" },
     { icon: I.statSpend, label: MY_ORDERS_UI.statSpend, value: formatINR(stats.totalSpent), accent: isDark ? "#93c5fd" : "#1e40af" },
   ];
 
@@ -47,7 +47,7 @@ function OrdersPageSummaryBase({ stats, active = true }) {
         {stats.inFlight > 0 ? (
           <View style={[styles.livePill, { backgroundColor: isDark ? "rgba(34,197,94,0.14)" : "rgba(236,253,245,0.95)" }]}>
             <View style={styles.liveDot} />
-            <Text style={[styles.liveText, { color: isDark ? "#6ee7b7" : "#15803d" }]}>
+            <Text style={[styles.liveText, { color: isDark ? "#C4D088" : "#5C6834" }]}>
               {stats.inFlight} live
             </Text>
           </View>

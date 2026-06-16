@@ -112,8 +112,8 @@ export default function HomeAmbientOrbs({ isDark }) {
     opacity: orb2Op.value,
   }));
 
-  const goldGlow = isDark ? "rgba(232, 200, 90, 0.16)" : "rgba(231, 200, 90, 0.32)";
-  const greenGlow = isDark ? "rgba(52, 211, 153, 0.1)" : "rgba(107, 72, 24, 0.14)";
+  const goldGlow = isDark ? "rgba(232, 188, 132, 0.16)" : "rgba(220, 172, 116, 0.32)";
+  const greenGlow = isDark ? "rgba(168, 184, 108, 0.1)" : "rgba(92, 104, 52, 0.14)";
 
   return (
     <View style={[styles.layer, styles.peNone]} accessibilityElementsHidden>

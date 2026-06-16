@@ -25,7 +25,7 @@ export default function SectionShell({
       <div className="mx-auto max-w-6xl px-5 md:px-8">
         <FadeIn className={centered ? "mx-auto mb-12 max-w-2xl text-center" : "mb-12 max-w-2xl"}>
           {eyebrow ? (
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-ghee-gold">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-brand-green">
               {eyebrow}
             </p>
           ) : null}

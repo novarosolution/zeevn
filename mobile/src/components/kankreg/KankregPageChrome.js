@@ -157,8 +157,7 @@ export function KankregCheckoutSteps({ active = 2 }) {
 }
 
 export function KankregGrainOverlay() {
-  if (Platform.OS !== "web") return null;
-  return <View style={styles.grain} />;
+  return null;
 }
 
 const styles = StyleSheet.create({

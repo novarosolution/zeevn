@@ -770,9 +770,9 @@ export default function HeroMediaSlider({
     if (isTop) {
       if (isMobileWeb) {
         const ratioH = Math.round(w * bannerHeightRatio);
-        const viewportCap = Math.round((layoutHeight || 800) * 0.92);
-        const maxH = Math.min(880, viewportCap);
-        const minH = Math.max(380, Math.round(w * 0.52));
+        const viewportCap = Math.round((layoutHeight || 800) * 0.46);
+        const maxH = Math.min(400, viewportCap);
+        const minH = Math.max(240, Math.round(w * 0.36));
         return Math.min(maxH, Math.max(minH, ratioH));
       }
       // 21:9 — height from width; only shrink on very short viewports

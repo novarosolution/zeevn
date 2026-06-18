@@ -177,7 +177,12 @@ export function getProductSectionImageUri(rawUri) {
 
 /** Max delivery width for home hero slider (web). */
 export const HERO_SLIDE_DESKTOP_MAX_WIDTH = 960;
-export const HERO_SLIDE_MOBILE_MAX_WIDTH = 720;
+/** Max pixel width delivered to phone hero `<img>` (bundled assets may still be 720 WebP). */
+export const HERO_SLIDE_MOBILE_DELIVERY_MAX = 480;
+/** Bundled portrait WebP width on disk. */
+export const HERO_SLIDE_MOBILE_ASSET_WIDTH = 720;
+/** @deprecated Use {@link HERO_SLIDE_MOBILE_DELIVERY_MAX} */
+export const HERO_SLIDE_MOBILE_MAX_WIDTH = HERO_SLIDE_MOBILE_DELIVERY_MAX;
 
 /** Bundled hero WebP width suffixes (largest → smallest). */
 const HERO_WEBP_WIDTHS = [960, 720];
@@ -187,11 +192,11 @@ export function getHeroSlideDisplayWidth(layoutWidth = 960, { isMobileWeb = fals
   const css = Math.max(320, Number(layoutWidth) || 960);
   let dpr = 1;
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    dpr = Math.min(window.devicePixelRatio || 1, isMobileWeb ? 1.5 : 1.75);
+    dpr = Math.min(window.devicePixelRatio || 1, isMobileWeb ? 1.25 : 1.75);
   } else {
     dpr = 2;
   }
-  const cap = isMobileWeb ? HERO_SLIDE_MOBILE_MAX_WIDTH : HERO_SLIDE_DESKTOP_MAX_WIDTH;
+  const cap = isMobileWeb ? HERO_SLIDE_MOBILE_DELIVERY_MAX : HERO_SLIDE_DESKTOP_MAX_WIDTH;
   return Math.min(Math.ceil(css * dpr), cap);
 }
 
@@ -206,15 +211,15 @@ function isWideHeroBundlerUri(uri) {
 /** Pick committed WebP suffix — portrait assets only exist at 720, wide at 960. */
 function pickHeroWebpSuffix(uri, deliveryWidth) {
   if (isPortraitHeroBundlerUri(uri)) {
-    return `-web-${HERO_SLIDE_MOBILE_MAX_WIDTH}.webp`;
+    return `-web-${HERO_SLIDE_MOBILE_ASSET_WIDTH}.webp`;
   }
   if (isWideHeroBundlerUri(uri)) {
     return `-web-${HERO_SLIDE_DESKTOP_MAX_WIDTH}.webp`;
   }
   const target = Math.min(
     deliveryWidth,
-    deliveryWidth <= HERO_SLIDE_MOBILE_MAX_WIDTH
-      ? HERO_SLIDE_MOBILE_MAX_WIDTH
+    deliveryWidth <= HERO_SLIDE_MOBILE_DELIVERY_MAX
+      ? HERO_SLIDE_MOBILE_ASSET_WIDTH
       : HERO_SLIDE_DESKTOP_MAX_WIDTH
   );
   const sorted = [...HERO_WEBP_WIDTHS].sort((a, b) => a - b);
@@ -233,7 +238,7 @@ function preferWebHeroBundlerVariant(uri, deliveryWidth) {
   const suffix = pickHeroWebpSuffix(value, deliveryWidth);
   const safeSuffix =
     isPortraitHeroBundlerUri(value) && suffix.includes("-web-960.")
-      ? `-web-${HERO_SLIDE_MOBILE_MAX_WIDTH}.webp`
+      ? `-web-${HERO_SLIDE_MOBILE_ASSET_WIDTH}.webp`
       : suffix;
 
   for (const width of HERO_WEBP_WIDTHS) {

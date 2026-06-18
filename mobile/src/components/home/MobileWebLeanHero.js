@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
-import { WEB_HERO_PORTRAIT_RATIO } from "../../content/homeHeroContent";
+import { WEB_HERO_PHONE_MAX_HEIGHT, WEB_HERO_PHONE_MAX_VH, WEB_HERO_PORTRAIT_RATIO } from "../../content/homeHeroContent";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { getHeroSlideDisplayWidth, getHeroSlideImageUri } from "../../utils/image";
 import { setLcpShellVisible } from "../../utils/lcpShell";
@@ -10,15 +10,25 @@ import { HtmlImg } from "./compareWebDom";
  * Phone web LCP hero — single static WebP, no carousel / GSAP / slider chunk.
  */
 export default function MobileWebLeanHero({ slide, onPress, layoutWidth }) {
-  const { width: viewportWidth } = useKankregLayout();
+  const { width: viewportWidth, height: viewportHeight } = useKankregLayout();
   const frameWidth = Math.max(320, layoutWidth || viewportWidth || 390);
+
+  const deliveryWidth = useMemo(
+    () => getHeroSlideDisplayWidth(frameWidth, { isMobileWeb: true }),
+    [frameWidth]
+  );
 
   const uri = useMemo(() => {
     if (!slide?.url) return "";
     return getHeroSlideImageUri(slide.url, { layoutWidth: frameWidth, isMobileWeb: true });
   }, [frameWidth, slide?.url]);
 
-  const frameHeight = Math.round(frameWidth * (slide?.heightRatio || WEB_HERO_PORTRAIT_RATIO));
+  const frameHeight = useMemo(() => {
+    const ratio = slide?.heightRatio || WEB_HERO_PORTRAIT_RATIO;
+    const natural = Math.round(frameWidth * ratio);
+    const vhCap = Math.round((viewportHeight || 700) * WEB_HERO_PHONE_MAX_VH);
+    return Math.min(natural, WEB_HERO_PHONE_MAX_HEIGHT, vhCap);
+  }, [frameWidth, slide?.heightRatio, viewportHeight]);
 
   const dismissShell = useCallback(() => {
     if (Platform.OS === "web") setLcpShellVisible(false);
@@ -33,9 +43,9 @@ export default function MobileWebLeanHero({ slide, onPress, layoutWidth }) {
       loading="eager"
       fetchPriority="high"
       decoding="async"
-      width={frameWidth}
+      width={deliveryWidth}
       height={frameHeight}
-      sizes="100vw"
+      sizes={`(max-width: 560px) ${deliveryWidth}px, 100vw`}
       style={{
         width: "100%",
         height: frameHeight,

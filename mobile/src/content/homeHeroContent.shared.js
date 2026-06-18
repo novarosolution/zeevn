@@ -29,6 +29,10 @@ export const WEB_HERO_PRODUCT_RATIO = 821 / 1915;
 /** Portrait phone / native hero — 941×1672 poster art. */
 export const WEB_HERO_PORTRAIT_RATIO = 1672 / 941;
 
+/** Phone web hero — cap rendered height (full portrait art is too tall on narrow screens). */
+export const WEB_HERO_PHONE_MAX_HEIGHT = 340;
+export const WEB_HERO_PHONE_MAX_VH = 0.42;
+
 export const HOME_HERO_PACKAGING = {
   key: "hero-packaging",
   title: "Pure Bilona ghee",

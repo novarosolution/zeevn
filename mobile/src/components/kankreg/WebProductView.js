@@ -165,7 +165,7 @@ function ProductPullQuote({ quote, isDark, styles }) {
   const ink = homeEditorialInk(isDark);
   return (
     <View style={[styles.pullQuote, isDark && styles.pullQuoteDark]}>
-      <Text style={[styles.pullQuoteGlyph, { color: KANKREG_PALETTE.gold }]}>"</Text>
+      <Text style={[styles.pullQuoteGlyph, { color: KANKREG_PALETTE.gold }]}>{"\u201C"}</Text>
       <Text style={[styles.pullQuoteText, { color: ink }]}>{quote}</Text>
       <GoldHairline {...GOLD_HAIRLINE_EDITORIAL.subtle} marginVertical={HOME_SPACE.sm} />
     </View>
@@ -311,6 +311,14 @@ export default function WebProductView({
     showFaq,
   } = pageContent;
 
+  const lifestyleImage = useMemo(() => {
+    const raw = String(product?.lifestyleImage || "").trim();
+    return raw ? getProductSectionImageUri(raw) : "";
+  }, [product?.lifestyleImage]);
+  const heroPreviewUri = useMemo(
+    () => getProductThumbImageUri(selectedImage || product?.image),
+    [selectedImage, product?.image]
+  );
 
   if (Platform.OS !== "web") return null;
 
@@ -332,14 +340,6 @@ export default function WebProductView({
     Array.isArray(product?.processSteps) && product.processSteps.length
       ? product.processSteps
       : processStepsContent;
-  const lifestyleImage = useMemo(() => {
-    const raw = String(product?.lifestyleImage || "").trim();
-    return raw ? getProductSectionImageUri(raw) : "";
-  }, [product?.lifestyleImage]);
-  const heroPreviewUri = useMemo(
-    () => getProductThumbImageUri(selectedImage || product?.image),
-    [selectedImage, product?.image]
-  );
 
   const renderGallery = () => (
     <View style={styles.gallery}>
@@ -869,7 +869,7 @@ export default function WebProductView({
                 <View key={`${r._id || idx}`} style={[styles.revCard, isDark && styles.revCardDark]}>
                   {renderStarRow(rt, 14)}
                   <Text style={[styles.revQuote, { color: isDark ? "#d8cdb8" : KANKREG_PALETTE.inkSoft }]}>
-                    "{comment || PRODUCT_SCREEN.reviewNoWrittenNote}"
+                    {`"${comment || PRODUCT_SCREEN.reviewNoWrittenNote}"`}
                   </Text>
                   <Text style={[styles.revWho, { color: muted }]}>{name}</Text>
                 </View>

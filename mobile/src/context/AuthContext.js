@@ -127,27 +127,8 @@ export function AuthProvider({ children }) {
             userRef.current = parsed.user;
           }
 
-          if (Platform.OS === "web") {
-            // Paint home immediately; refresh profile in background.
-            refreshProfile({ force: true }).catch(() => {});
-            return;
-          }
-
-          // Keep role/profile fresh so admin access reflects backend state.
-          try {
-            const freshUser = await Promise.race([
-              refreshProfile({ force: true }),
-              new Promise((_, reject) =>
-                setTimeout(() => reject(new Error("Profile refresh timeout")), 3500)
-              ),
-            ]);
-            if (isMounted && freshUser) {
-              setUser(freshUser);
-              userRef.current = freshUser;
-            }
-          } catch {
-            // If profile refresh fails, continue with cached session.
-          }
+          // Paint immediately with cached session; refresh profile in background.
+          refreshProfile({ force: true }).catch(() => {});
         }
       } catch {
         await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
@@ -158,7 +139,7 @@ export function AuthProvider({ children }) {
       }
     }
 
-    const watchdogMs = Platform.OS === "web" ? 800 : 5000;
+    const watchdogMs = Platform.OS === "web" ? 800 : 1500;
     const watchdog = setTimeout(() => {
       if (isMounted) {
         setIsAuthLoading(false);

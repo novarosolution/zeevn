@@ -29,10 +29,11 @@ export function LiveSocketProvider({ children }) {
     let cancelled = false;
     let idleId;
     let timeoutId;
+    let teardownSocket = null;
 
-    const connect = () => {
+    const runConnect = async () => {
+      const sock = await connectLiveSocket(token);
       if (cancelled) return;
-      const sock = connectLiveSocket(token);
       socketRef.current = sock;
       if (!sock) {
         setConnected(false);
@@ -46,43 +47,20 @@ export function LiveSocketProvider({ children }) {
       sock.on("disconnect", onDisconnect);
       setConnected(sock.connected);
 
-      return () => {
+      teardownSocket = () => {
         sock.off("connect", onConnect);
         sock.off("disconnect", onDisconnect);
       };
     };
 
-    let teardownSocket = null;
-
     if (Platform.OS === "web") {
-      const runConnect = async () => {
-        const sock = await connectLiveSocket(token);
-        if (cancelled) return;
-        socketRef.current = sock;
-        if (!sock) {
-          setConnected(false);
-          return;
-        }
-
-        const onConnect = () => setConnected(true);
-        const onDisconnect = () => setConnected(false);
-
-        sock.on("connect", onConnect);
-        sock.on("disconnect", onDisconnect);
-        setConnected(sock.connected);
-
-        teardownSocket = () => {
-          sock.off("connect", onConnect);
-          sock.off("disconnect", onDisconnect);
-        };
-      };
       if (typeof requestIdleCallback === "function") {
         idleId = requestIdleCallback(runConnect, { timeout: 2500 });
       } else {
         timeoutId = setTimeout(runConnect, 1200);
       }
     } else {
-      teardownSocket = connect();
+      timeoutId = setTimeout(runConnect, 800);
     }
 
     return () => {

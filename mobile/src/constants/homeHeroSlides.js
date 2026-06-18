@@ -148,10 +148,18 @@ function buildMobileSlidePool() {
 }
 
 /** Desktop web — packaging + tel + masala + honey banners. */
-export const HOME_HERO_WEB_SLIDER_SLIDES = buildWebSlidePool();
+let _webSlides = null;
+export function getHomeHeroWebSliderSlides() {
+  if (!_webSlides) _webSlides = buildWebSlidePool();
+  return _webSlides;
+}
 
 /** Phone web + native — portrait slides 1–4 (ghee, tel, masala, honey). */
-export const HOME_HERO_MOBILE_SLIDER_SLIDES = buildMobileSlidePool();
+let _mobileSlides = null;
+export function getHomeHeroMobileSliderSlides() {
+  if (!_mobileSlides) _mobileSlides = buildMobileSlidePool();
+  return _mobileSlides;
+}
 
 export const PACKAGING_RATIO = WEB_HERO_WIDE_RATIO;
 

@@ -1,15 +1,14 @@
 import React, { useEffect, useMemo } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Platform, StyleSheet, View } from "react-native";
-import AppStartupScreen from "../components/AppStartupScreen";
 import AuthGateShell from "../components/AuthGateShell";
 import KankregSiteHeader from "../components/kankreg/KankregSiteHeader";
 import PageTransition from "../components/motion/PageTransition";
 import * as CoreScreens from "./screenRegistryCore";
+import { FindLocationScreen } from "./screenRegistryCustomer";
 import * as LazyScreens from "./lazyScreens";
 import { useAuth } from "../context/AuthContext";
 import { DeliveryLocationProvider } from "../context/DeliveryLocationContext";
-import { useTheme } from "../context/ThemeContext";
 
 const Stack = createNativeStackNavigator();
 
@@ -61,7 +60,7 @@ function withRoleGuard(Component, roleCheck) {
 
 const WrappedLogin = withPageTransition(CoreScreens.LoginScreen);
 const WrappedRegister = withPageTransition(CoreScreens.RegisterScreen);
-const WrappedFindLocation = withPageTransition(CoreScreens.FindLocationScreen);
+const WrappedFindLocation = withPageTransition(FindLocationScreen);
 const WrappedHome = withPageTransition(CoreScreens.KankregHomeScreen);
 const WrappedShop = withPageTransition(LazyScreens.ShopScreen);
 const WrappedProduct = withPageTransition(LazyScreens.ProductScreen);
@@ -96,10 +95,6 @@ const ProtectedAdminSupport = withRoleGuard(LazyScreens.AdminSupportScreen, (use
 const ProtectedAdminHomeView = withRoleGuard(LazyScreens.AdminHomeViewScreen, (user) => Boolean(user?.isAdmin));
 
 export default function AppNavigator({ navigationRef, navReady = false }) {
-  const { isAuthLoading } = useAuth();
-  const { colors, isDark } = useTheme();
-  const blockStackOnAuth = Platform.OS !== "web" && isAuthLoading;
-
   const screenOptions = useMemo(
     () => ({
       headerShown: false,
@@ -115,9 +110,6 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
     <View style={styles.navRoot}>
       <KankregSiteHeader navigationRef={navigationRef} navReady={navReady} />
       <View style={styles.stackFill}>
-        {blockStackOnAuth ? (
-          <AppStartupScreen colors={colors} isDark={isDark} useAppFonts footnote="Syncing your session…" />
-        ) : (
     <DeliveryLocationProvider>
     <Stack.Navigator
       initialRouteName="Home"
@@ -199,7 +191,6 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
       </Stack.Group>
     </Stack.Navigator>
     </DeliveryLocationProvider>
-        )}
       </View>
     </View>
   );

@@ -4,12 +4,13 @@ import { useAuth } from "./AuthContext";
 import { useToastSafe } from "./ToastContext";
 import { fetchMyCart, replaceMyCart } from "../services/userService";
 import { cartLineKey } from "../utils/productCart";
+import { deferAfterFirstPaint } from "../utils/deferAfterFirstPaint";
 
 const CartContext = createContext(undefined);
 
 export function CartProvider({ children }) {
   const { isAuthenticated, token } = useAuth();
-  const { toastSuccess, toastInfo } = useToastSafe();
+  const { toastCart, toastInfo } = useToastSafe();
   const [cartItems, setCartItems] = useState([]);
   const [isCartSyncing, setIsCartSyncing] = useState(false);
   const isHydratingRef = useRef(false);
@@ -43,12 +44,10 @@ export function CartProvider({ children }) {
         return [...currentItems, { ...product, quantity: 1 }];
       });
       const name = String(product?.name || "Item").trim();
-      toastSuccess(`${name.length > 32 ? name.slice(0, 31) + "…" : name} added to bag`, {
-        title: "Added to bag",
-        duration: 2200,
-      });
+      const short = name.length > 28 ? `${name.slice(0, 27)}…` : name;
+      toastCart(`${short} added to bag`);
     },
-    [toastSuccess, toastInfo]
+    [toastCart, toastInfo]
   );
 
   /**
@@ -173,9 +172,13 @@ export function CartProvider({ children }) {
       }
     }
 
-    hydrateCart();
+    const cancelDeferred = deferAfterFirstPaint(() => {
+      hydrateCart();
+    }, { timeoutMs: 2000 });
+
     return () => {
       isMounted = false;
+      cancelDeferred();
     };
   }, [isAuthenticated, token]);
 

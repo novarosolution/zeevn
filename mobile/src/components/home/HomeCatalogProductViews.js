@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated from "react-native-reanimated";
 import PremiumProductCard from "../PremiumProductCard";
+import useAddToCartAnim from "../../hooks/useAddToCartAnim";
 import {
   HOME_SPACE,
   HOME_TYPE,
@@ -157,6 +159,13 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
 
   const launchNote = String(comingSoonNote || SHOP_SCREEN_UI.card.comingSoonNoteFallback).trim();
   const unavailable = isComingSoon || isOutOfStock;
+  const { trigger: triggerAddAnim, scaleStyle: addScaleStyle } = useAddToCartAnim();
+
+  const handleAddToCart = () => {
+    if (unavailable) return;
+    triggerAddAnim();
+    onAddToCart?.();
+  };
 
   const metaLine = useMemo(() => {
     const parts = [];
@@ -249,7 +258,7 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
             </TouchableOpacity>
             <Text style={[editorialStyles.stepQty, { color: ink }]}>{quantity}</Text>
             <TouchableOpacity
-              onPress={onAddToCart}
+              onPress={handleAddToCart}
               style={editorialStyles.stepBtn}
               disabled={unavailable}
               accessibilityRole="button"
@@ -260,8 +269,9 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
             </TouchableOpacity>
           </View>
         ) : (
+          <Animated.View style={addScaleStyle}>
           <Pressable
-            onPress={onAddToCart}
+            onPress={handleAddToCart}
             disabled={unavailable}
             style={({ hovered }) => [
               editorialStyles.addBtn,
@@ -281,6 +291,7 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
               {isComingSoon ? SHOP_SCREEN_UI.card.comingSoon : isOutOfStock ? "Unavailable" : "Add to cart"}
             </Text>
           </Pressable>
+          </Animated.View>
         )}
       </View>
     </View>
@@ -333,7 +344,15 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
     )
   );
 
-  return <View style={[styles?.productGridCell, catalogGridColStyle]}>{card}</View>;
+  return <View style={[styles?.productGridCell, gridCardStyles.cell]}>{card}</View>;
+});
+
+const gridCardStyles = StyleSheet.create({
+  cell: {
+    width: "100%",
+    minWidth: 0,
+    maxWidth: "100%",
+  },
 });
 
 const editorialStyles = StyleSheet.create({

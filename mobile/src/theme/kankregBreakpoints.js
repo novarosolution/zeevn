@@ -26,15 +26,43 @@ export function getKankregBreakpoint(width) {
 
 /** Product/catalog grid column width style for flex-wrap grids */
 export function getCatalogGridColStyle(width) {
-  const pad = width < KANKREG_BP.xs ? 5 : width < KANKREG_BP.sm ? 7 : 9;
+  const pad = width < KANKREG_BP.xs ? 4 : width < KANKREG_BP.sm ? 5 : 7;
+  const phoneCol = {
+    width: "48%",
+    maxWidth: "48%",
+    minWidth: 0,
+    paddingHorizontal: pad,
+    flexGrow: 0,
+    flexShrink: 1,
+    ...Platform.select({
+      web: { boxSizing: "border-box" },
+      default: {},
+    }),
+  };
   if (width >= KANKREG_BP.xl) {
-    return { width: "25%", maxWidth: "25%", paddingHorizontal: pad, flexGrow: 0, flexShrink: 0 };
+    return {
+      width: "25%",
+      maxWidth: "25%",
+      minWidth: 0,
+      paddingHorizontal: pad,
+      flexGrow: 0,
+      flexShrink: 1,
+      ...Platform.select({ web: { boxSizing: "border-box" }, default: {} }),
+    };
   }
   if (width >= KANKREG_BP.lg) {
-    return { width: "33.333%", maxWidth: "33.333%", paddingHorizontal: pad, flexGrow: 0, flexShrink: 0 };
+    return {
+      width: "33.333%",
+      maxWidth: "33.333%",
+      minWidth: 0,
+      paddingHorizontal: pad,
+      flexGrow: 0,
+      flexShrink: 1,
+      ...Platform.select({ web: { boxSizing: "border-box" }, default: {} }),
+    };
   }
-  /** Phone & narrow tablet: 2-up grid (kankreg.html mobile catalog) */
-  return { width: "50%", maxWidth: "50%", paddingHorizontal: pad, flexGrow: 0, flexShrink: 0 };
+  /** Phone & narrow tablet: 2-up grid with gutter room between columns */
+  return phoneCol;
 }
 
 export function useKankregLayout() {

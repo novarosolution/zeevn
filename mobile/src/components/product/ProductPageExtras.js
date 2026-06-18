@@ -160,7 +160,7 @@ export function ProductPullQuoteBlock({ quote, isDark }) {
   const ink = homeEditorialInk(isDark);
   return (
     <View style={[styles.pullQuote, isDark && styles.pullQuoteDark]}>
-      <Text style={[styles.pullQuoteText, { color: ink }]}>"{quote}"</Text>
+      <Text style={[styles.pullQuoteText, { color: ink }]}>{`\u201C${quote}\u201D`}</Text>
     </View>
   );
 }

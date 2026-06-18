@@ -1,6 +1,6 @@
 import {
-  HOME_HERO_MOBILE_SLIDER_SLIDES,
-  HOME_HERO_WEB_SLIDER_SLIDES,
+  getHomeHeroMobileSliderSlides,
+  getHomeHeroWebSliderSlides,
   buildPackagingMarketingSlide,
 } from "../constants/homeHeroSlides";
 import { HOME_SCREEN_UI } from "../content/appContent";
@@ -75,7 +75,7 @@ export function resolveWebHomeHeroSlides({
     return withPackagingFirst(admin, { portrait, max });
   }
 
-  const pool = isMobileWeb ? HOME_HERO_MOBILE_SLIDER_SLIDES : HOME_HERO_WEB_SLIDER_SLIDES;
+  const pool = isMobileWeb ? getHomeHeroMobileSliderSlides() : getHomeHeroWebSliderSlides();
   return mapMarketingSlidesToHero(pool).slice(0, max);
 }
 
@@ -91,5 +91,5 @@ export function resolveNativeHomeHeroSlides({ heroSlides = [], products = [] } =
     return withPackagingFirst(admin, { portrait: true, max: appMax });
   }
 
-  return getAppMarketingHeroSlides(HOME_HERO_MOBILE_SLIDER_SLIDES);
+  return getAppMarketingHeroSlides(getHomeHeroMobileSliderSlides());
 }

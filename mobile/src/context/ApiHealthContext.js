@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { AppState } from "react-native";
 import { checkApiHealth } from "../services/apiClient";
 import { getApiBaseUrl } from "../services/apiBase";
+import { deferAfterFirstPaint } from "../utils/deferAfterFirstPaint";
 
 const ApiHealthContext = createContext(undefined);
 
@@ -29,12 +30,15 @@ export function ApiHealthProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    runCheck();
+    const cancelDeferred = deferAfterFirstPaint(() => {
+      runCheck();
+    }, { timeoutMs: 3000 });
     const interval = setInterval(runCheck, POLL_MS);
     const sub = AppState.addEventListener("change", (state) => {
       if (state === "active") runCheck();
     });
     return () => {
+      cancelDeferred();
       clearInterval(interval);
       sub.remove();
     };

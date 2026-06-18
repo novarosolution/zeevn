@@ -10,6 +10,7 @@ import NativeFindLocationScene from "../components/native/NativeFindLocationScen
 import { useTheme } from "../context/ThemeContext";
 import { FIGMA, figmaPageBg, figmaSurfaceBg, figmaTextPrimary, figmaTextSecondary } from "../theme/figmaApp";
 import { fonts, spacing } from "../theme/tokens";
+import { platformShadow } from "../theme/shadowPlatform";
 
 /**
  * Full-screen native location discovery — radar animation, result card, confirm CTA.
@@ -230,11 +231,16 @@ const styles = StyleSheet.create({
   primaryBtn: {
     borderRadius: 999,
     overflow: "hidden",
-    shadowColor: "#3d2a12",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.14,
-    shadowRadius: 16,
-    elevation: 5,
+    ...platformShadow({
+      web: { boxShadow: "0 8px 16px rgba(61, 42, 18, 0.14)" },
+      ios: {
+        shadowColor: "#3d2a12",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.14,
+        shadowRadius: 16,
+      },
+      android: { elevation: 5 },
+    }),
   },
   primaryGrad: {
     paddingVertical: 15,

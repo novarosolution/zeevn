@@ -173,7 +173,7 @@ export default function ProfileScreen({ navigation }) {
   }
 
   const personalDetailsBlock = (
-    <SectionReveal delay={60} preset="fade-up">
+    <SectionReveal delay={80} preset="fade-up">
       <KankregInfoCard
         title="Personal details"
         actionLabel="Edit"
@@ -192,42 +192,51 @@ export default function ProfileScreen({ navigation }) {
   );
 
   const addressBlock = (
-    <SectionReveal delay={100} preset="fade-up">
+    <SectionReveal delay={120} preset="fade-up">
       <KankregInfoCard
         title={hasAddress ? PROFILE_SCREEN.addressTitle : PROFILE_SCREEN.addressMissingTitle}
         actionLabel={hasAddress ? "Manage" : "Add"}
         onAction={() => navigation.navigate("ManageAddress")}
       >
-        <Text style={profileStyles.addressBody}>
-          {hasAddress ? addressLines : PROFILE_SCREEN.addressMissingHint}
-        </Text>
+        <View style={profileStyles.addressPanel}>
+          {hasAddress ? (
+            <View style={profileStyles.addressRibbon}>
+              <Text style={profileStyles.addressRibbonText}>{PROFILE_SCREEN.addressDefaultRibbon}</Text>
+            </View>
+          ) : null}
+          <Text style={profileStyles.addressBody}>
+            {hasAddress ? addressLines : PROFILE_SCREEN.addressMissingHint}
+          </Text>
+        </View>
       </KankregInfoCard>
     </SectionReveal>
   );
 
   const kpiBlock = (
-    <KankregKpiStrip
-      items={[
-        {
-          key: "orders",
-          label: "Orders",
-          value: String(orders.length),
-          onPress: () => navigation.navigate("MyOrders"),
-        },
-        {
-          key: "saved",
-          label: "Saved",
-          value: formatINRCompact(savedTotal),
-          onPress: () => navigation.navigate("MyOrders", { initialFilter: "delivered" }),
-        },
-        {
-          key: "points",
-          label: "Points",
-          value: rewardPoints.toLocaleString("en-IN"),
-          onPress: () => navigation.navigate("RedeemRewards"),
-        },
-      ]}
-    />
+    <SectionReveal delay={40} preset="fade-up">
+      <KankregKpiStrip
+        items={[
+          {
+            key: "orders",
+            label: "Orders",
+            value: String(orders.length),
+            onPress: () => navigation.navigate("MyOrders"),
+          },
+          {
+            key: "saved",
+            label: "Saved",
+            value: formatINRCompact(savedTotal),
+            onPress: () => navigation.navigate("MyOrders", { initialFilter: "delivered" }),
+          },
+          {
+            key: "points",
+            label: "Points",
+            value: rewardPoints.toLocaleString("en-IN"),
+            onPress: () => navigation.navigate("RedeemRewards"),
+          },
+        ]}
+      />
+    </SectionReveal>
   );
 
   const adminBlock = user?.isAdmin ? (
@@ -325,7 +334,7 @@ export default function ProfileScreen({ navigation }) {
             <KankregCustomerPageHeader
               eyebrow={PROFILE_SCREEN.pageEyebrow}
               title={PROFILE_SCREEN.pageTitle}
-              subtitle={PROFILE_SCREEN.pageSubtitle}
+              subtitle={memberSince ? `${PROFILE_SCREEN.memberSincePrefix} ${memberSince}` : PROFILE_SCREEN.pageSubtitle}
               navigation={navigation}
               showBack={false}
               showBrand={false}
@@ -347,9 +356,9 @@ export default function ProfileScreen({ navigation }) {
               onSignOut={handleSignOut}
               signingOut={isSigningOut}
             >
+              {kpiBlock}
               {personalDetailsBlock}
               {addressBlock}
-              {kpiBlock}
               {adminBlock}
               {deliveryBlock}
             </KankregProfileGrid>
@@ -445,9 +454,28 @@ function createProfileStyles(c, isDark) {
       width: "100%",
       alignSelf: "center",
     },
+    addressPanel: {
+      gap: spacing.sm,
+    },
+    addressRibbon: {
+      alignSelf: "flex-start",
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 3,
+      borderRadius: radius.pill,
+      backgroundColor: isDark ? "rgba(52, 211, 153, 0.14)" : "rgba(31, 92, 71, 0.08)",
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? "rgba(52, 211, 153, 0.28)" : "rgba(31, 92, 71, 0.18)",
+    },
+    addressRibbonText: {
+      fontFamily: fonts.bold,
+      fontSize: 10,
+      letterSpacing: 0.8,
+      color: isDark ? c.secondary : ALCHEMY.brownInk,
+    },
     addressBody: {
       fontSize: typography.bodySmall,
       lineHeight: 24,
+      fontFamily: fonts.medium,
       color: isDark ? c.textSecondary : ALCHEMY.inkSoft,
     },
     skeletonProfGrid: {

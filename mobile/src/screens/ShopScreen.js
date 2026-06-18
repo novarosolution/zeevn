@@ -739,7 +739,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.xs,
   },
-  mainCol: { flex: 1, minWidth: 0 },
+  mainCol: { flex: 1, minWidth: 0, width: "100%", overflow: "hidden" },
   shopTopBand: {
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,

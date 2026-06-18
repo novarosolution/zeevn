@@ -1,4 +1,5 @@
 import React from "react";
+import { StyleSheet } from "react-native";
 import SectionReveal from "../motion/SectionReveal";
 import KankregResponsiveGrid from "./KankregResponsiveGrid";
 import useStaggeredReveal from "../../hooks/useStaggeredReveal";
@@ -32,6 +33,7 @@ export default function CatalogGridReveal({
           delay={delays[i]}
           preset="fade-up"
           immediate={i < immediateFirst}
+          style={styles.revealCell}
         >
           {child}
         </SectionReveal>
@@ -39,3 +41,11 @@ export default function CatalogGridReveal({
     </KankregResponsiveGrid>
   );
 }
+
+const styles = StyleSheet.create({
+  revealCell: {
+    width: "100%",
+    minWidth: 0,
+    maxWidth: "100%",
+  },
+});

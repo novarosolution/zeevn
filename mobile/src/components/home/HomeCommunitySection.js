@@ -154,7 +154,7 @@ function CommunityPostCard({ post, isDark, index, cardWidth, phone = false }) {
           ) : null}
           {isCustomer && post.quote ? (
             <View style={styles.quoteWrap} pointerEvents="none">
-              <Text style={styles.quoteMark}>"</Text>
+              <Text style={styles.quoteMark}>{"\u201C"}</Text>
               <Text style={styles.quote} numberOfLines={4}>
                 {post.quote}
               </Text>

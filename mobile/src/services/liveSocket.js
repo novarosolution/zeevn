@@ -1,5 +1,4 @@
 import { Platform } from "react-native";
-import { io } from "socket.io-client";
 import { getSocketBaseUrl } from "./apiBase";
 
 /** @type {import('socket.io-client').Socket | null} */
@@ -39,6 +38,11 @@ function attachSocketListeners(sock) {
   });
 }
 
+async function resolveIo() {
+  // eslint-disable-next-line global-require
+  return require("socket.io-client").io;
+}
+
 export function getLiveSocket() {
   return socket;
 }
@@ -47,7 +51,7 @@ export function isLiveSocketConnected() {
   return Boolean(socket?.connected);
 }
 
-export function connectLiveSocket(token) {
+export async function connectLiveSocket(token) {
   const trimmed = String(token || "").trim();
   if (!trimmed) {
     disconnectLiveSocket();
@@ -66,6 +70,7 @@ export function connectLiveSocket(token) {
   activeToken = trimmed;
 
   try {
+    const io = await resolveIo();
     socket = io(url, {
       auth: { token: trimmed },
       transports: Platform.OS === "android" ? ["polling", "websocket"] : ["websocket", "polling"],
@@ -109,7 +114,7 @@ if (Platform.OS === "web" && typeof window !== "undefined") {
     if (socket) {
       if (!socket.connected) socket.connect();
     } else {
-      connectLiveSocket(activeToken);
+      connectLiveSocket(activeToken).catch(() => {});
     }
   });
 }

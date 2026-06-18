@@ -1210,13 +1210,6 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     fontSize: typography.bodySmall,
     fontFamily: fonts.semibold,
     lineHeight: 20},
-  itemsSectionLabel: {
-    fontSize: typography.overline,
-    fontFamily: fonts.bold,
-    color: c.textMuted,
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-    marginBottom: spacing.sm},
   listSection: {
     marginBottom: spacing.md},
   nativeListSection: {

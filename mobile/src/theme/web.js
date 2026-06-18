@@ -9,10 +9,10 @@ import {
 export const WEB_HEADER_HEIGHT = 68;
 /** Slim in-flow header on native — bottom tab bar handles primary nav. */
 export const NATIVE_HEADER_HEIGHT = 52;
-/** Announce strip */
-export const WEB_ANNOUNCE_HEIGHT = 32;
-/** Announce + sticky topbar — use for page scroll padding. */
-export const WEB_CHROME_TOP = WEB_HEADER_HEIGHT + WEB_ANNOUNCE_HEIGHT;
+/** @deprecated Announce strip removed — kept at 0 for layout constants. */
+export const WEB_ANNOUNCE_HEIGHT = 0;
+/** Fixed header chrome — use for page scroll padding. */
+export const WEB_CHROME_TOP = WEB_HEADER_HEIGHT;
 /** Shared top offset for sticky page chrome below fixed header. */
 export const WEB_STICKY_TOP_OFFSET = WEB_CHROME_TOP + 12;
 /** Shared z-index ladder to prevent header/dropdown overlap bugs. */

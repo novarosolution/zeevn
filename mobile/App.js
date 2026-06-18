@@ -22,13 +22,13 @@ import {
   Fraunces_400Regular_Italic,
 } from "@expo-google-fonts/fraunces";
 import { useFonts } from "expo-font";
+import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { isRunningInExpoGo } from "expo";
 import { CartProvider } from "./src/context/CartContext";
 import { AuthProvider } from "./src/context/AuthContext";
 import { LiveSocketProvider } from "./src/context/LiveSocketContext";
 import { OrderCelebrationProvider } from "./src/context/OrderCelebrationContext";
-import { DeliveryLocationProvider } from "./src/context/DeliveryLocationContext";
 import { ApiHealthProvider } from "./src/context/ApiHealthContext";
 import { ToastProvider } from "./src/context/ToastContext";
 import BackendOfflineBanner from "./src/components/BackendOfflineBanner";
@@ -37,6 +37,20 @@ import useAppIconSync from "./src/hooks/useAppIconSync";
 import AppStartupScreen from "./src/components/AppStartupScreen";
 import AppNavigator from "./src/navigation/AppNavigator";
 import { applyWebPremiumChrome, injectWebDocumentMeta, webRootStyle } from "./src/theme/web";
+
+const CRITICAL_FONTS = {
+  HankenGrotesk_400Regular,
+  HankenGrotesk_500Medium,
+  HankenGrotesk_600SemiBold,
+  HankenGrotesk_700Bold,
+  Fraunces_600SemiBold,
+  Fraunces_700Bold,
+};
+
+const DEFERRED_FONTS = {
+  HankenGrotesk_800ExtraBold,
+  Fraunces_400Regular_Italic,
+};
 
 const STARTUP_WELCOME_KEY = "@kankreg_startup_welcome_shown";
 
@@ -149,18 +163,13 @@ function AppNavigationShell() {
 }
 
 export default function App() {
-  const fontMap = {
-    HankenGrotesk_400Regular,
-    HankenGrotesk_500Medium,
-    HankenGrotesk_600SemiBold,
-    HankenGrotesk_700Bold,
-    HankenGrotesk_800ExtraBold,
-    Fraunces_600SemiBold,
-    Fraunces_700Bold,
-    Fraunces_400Regular_Italic,
-  };
-  const [fontsLoaded] = useFonts(fontMap);
+  const [fontsLoaded] = useFonts(CRITICAL_FONTS);
   const [bootFootnote, setBootFootnote] = useState("Loading Zeevan…");
+
+  useEffect(() => {
+    if (!fontsLoaded) return;
+    Font.loadAsync(DEFERRED_FONTS).catch(() => {});
+  }, [fontsLoaded]);
 
   useEffect(() => {
     let cancelled = false;
@@ -210,13 +219,11 @@ export default function App() {
       <SafeAreaProvider style={safeAreaRootStyle}>
         <View style={webRootStyle}>
           <StatusBar style={Appearance.getColorScheme() === "dark" ? "light" : "dark"} />
-          {Platform.OS !== "web" ? (
-            <AppStartupScreen
-              isDark={Appearance.getColorScheme() === "dark"}
-              useAppFonts={false}
-              footnote={bootFootnote}
-            />
-          ) : null}
+          <AppStartupScreen
+            isDark={Appearance.getColorScheme() === "dark"}
+            useAppFonts={false}
+            footnote={bootFootnote}
+          />
         </View>
       </SafeAreaProvider>
     );

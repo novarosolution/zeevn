@@ -1,6 +1,10 @@
 /** Shared nav keys / route matching for KankregSiteHeader + KankregMobileNav */
 
-import { KANKREG_ROLE_NAV_ITEMS, KANKREG_WEB_NAV_ITEMS } from "../../content/appContent";
+import {
+  KANKREG_NAV_ITEMS,
+  KANKREG_ROLE_NAV_ITEMS,
+  KANKREG_WEB_NAV_ITEMS,
+} from "../../content/appContent";
 
 export const ADMIN_ROUTES = new Set([
   "AdminDashboard",
@@ -55,7 +59,38 @@ export function routeMatchesNav(navKey, routeName) {
 
 export function buildKankregNavItems({ go, goProduct, user }) {
   const ctx = { go, goProduct, user };
+  const roleItems = buildRoleNavItems(ctx);
+  return [
+    ...KANKREG_WEB_NAV_ITEMS.map(({ key, label }) => ({
+      key,
+      label,
+      onPress: NAV_HANDLERS[key](ctx),
+    })),
+    ...roleItems,
+  ];
+}
+
+/** Full-screen phone menu — primary destinations + About. */
+export function buildKankregMobileNavItems({ go, goProduct, user }) {
+  const ctx = { go, goProduct, user };
+  const roleItems = buildRoleNavItems(ctx);
+  const mobileKeys = new Set(["Home", "Shop", "About", "Cart", "Orders", "Rewards", "Account"]);
+  const labels = Object.fromEntries(KANKREG_NAV_ITEMS.map(({ key, label }) => [key, label]));
+  labels.About = KANKREG_WEB_NAV_ITEMS.find((i) => i.key === "About")?.label || "About";
+
+  return [
+    ...[...mobileKeys].map((key) => ({
+      key,
+      label: labels[key] || key,
+      onPress: NAV_HANDLERS[key](ctx),
+    })),
+    ...roleItems,
+  ];
+}
+
+function buildRoleNavItems(ctx) {
   const roleItems = [];
+  const { user } = ctx;
   if (user?.isAdmin) {
     const { key, label } = KANKREG_ROLE_NAV_ITEMS.admin;
     roleItems.push({
@@ -72,12 +107,5 @@ export function buildKankregNavItems({ go, goProduct, user }) {
       onPress: NAV_HANDLERS.Delivery(ctx),
     });
   }
-  return [
-    ...KANKREG_WEB_NAV_ITEMS.map(({ key, label }) => ({
-      key,
-      label,
-      onPress: NAV_HANDLERS[key](ctx),
-    })),
-    ...roleItems,
-  ];
+  return roleItems;
 }

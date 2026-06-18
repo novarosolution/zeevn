@@ -1,33 +1,32 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
+import { ALCHEMY } from "../../theme/customerAlchemy";
 import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { platformElevation } from "../../theme/platformStyles";
 import { fonts, spacing } from "../../theme/tokens";
 import {
   NATIVE_HEADER_HEIGHT,
-  WEB_ANNOUNCE_HEIGHT,
   WEB_CHROME_TOP,
   WEB_HEADER_HEIGHT,
   WEB_Z_INDEX,
 } from "../../theme/web";
-import KankregAnnounceBar from "./KankregAnnounceBar";
 import KankregBrandMark from "./KankregBrandMark";
 import KankregMobileNav from "./KankregMobileNav";
-import { buildKankregNavItems, routeMatchesNav } from "./kankregNav";
+import { buildKankregMobileNavItems, buildKankregNavItems, routeMatchesNav } from "./kankregNav";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { KANKREG_HEADER } from "../../content/appContent";
 import { safeNavigate } from "../../navigation/navigationRef";
 export const KANKREG_HEADER_BODY_HEIGHT = WEB_HEADER_HEIGHT;
-export const KANKREG_ANNOUNCE_HEIGHT = WEB_ANNOUNCE_HEIGHT;
 export { getKankregChromeTop } from "../../theme/kankregChrome";
 
 /**
- * kankreg.html `.announce` + `.topbar` — all platforms.
+ * kankreg.html `.topbar` — web fixed header.
  */
 export default function KankregSiteHeader({ navigationRef, navReady = false }) {
   const insets = useSafeAreaInsets();
@@ -85,6 +84,11 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
     [go, goProduct, user]
   );
 
+  const mobileItems = useMemo(
+    () => buildKankregMobileNavItems({ go, goProduct, user }),
+    [go, goProduct, user]
+  );
+
   const isNative = Platform.OS !== "web";
 
   /** Native app uses per-screen chrome + bottom tab bar (figmaforkankreg.html). */
@@ -111,6 +115,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
   ];
 
   return (
+    <>
     <View
       style={[
         styles.shell,
@@ -123,7 +128,6 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
       ]}
       accessibilityRole="header"
     >
-      {Platform.OS === "web" ? <KankregAnnounceBar onPressSeason={() => go("Shop")} /> : null}
       <View style={topbarStyle}>
         <View
           style={[
@@ -237,27 +241,56 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
             {!showDesktopNav && !isNative ? (
               <Pressable
                 onPress={() => setMobileOpen((v) => !v)}
-                style={[styles.hamb, isDark && styles.hambDark]}
+                style={({ hovered, pressed }) => [
+                  styles.menuToggle,
+                  isDark && styles.menuToggleDark,
+                  mobileOpen && (isDark ? styles.menuToggleOpenDark : styles.menuToggleOpen),
+                  (hovered || pressed) && styles.menuTogglePressed,
+                ]}
                 accessibilityLabel={mobileOpen ? KANKREG_HEADER.menuCloseA11y : KANKREG_HEADER.menuOpenA11y}
               >
-                <View style={[styles.hambBar, isDark && styles.hambBarDark]} />
-                <View style={[styles.hambBar, isDark && styles.hambBarDark]} />
-                <View style={[styles.hambBar, isDark && styles.hambBarDark]} />
+                <Ionicons
+                  name={mobileOpen ? "close" : "menu-outline"}
+                  size={22}
+                  color={
+                    mobileOpen
+                      ? isDark
+                        ? ALCHEMY.goldBright
+                        : KANKREG_PALETTE.greenDeep
+                      : isDark
+                        ? c.textSecondary
+                        : KANKREG_PALETTE.inkSoft
+                  }
+                />
               </Pressable>
             ) : null}
           </View>
         </View>
-        {!showDesktopNav && !isNative ? (
-          <KankregMobileNav
-            open={mobileOpen}
-            items={items}
-            currentRouteName={currentRouteName}
-            onClose={() => setMobileOpen(false)}
-            isDark={isDark}
-          />
-        ) : null}
+        <LinearGradient
+          colors={[ALCHEMY.goldBright, ALCHEMY.gold, ALCHEMY.goldDeep]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.goldRule}
+          pointerEvents="none"
+        />
       </View>
     </View>
+    {!showDesktopNav && !isNative ? (
+      <KankregMobileNav
+        open={mobileOpen}
+        items={mobileItems}
+        currentRouteName={currentRouteName}
+        onClose={() => setMobileOpen(false)}
+        isDark={isDark}
+        isAuthenticated={isAuthenticated}
+        user={user}
+        onSignIn={() => go("Login")}
+        onAccount={() => go("Profile", true)}
+        totalItems={totalItems}
+        onLogoPress={() => go("Home")}
+      />
+    ) : null}
+    </>
   );
 }
 
@@ -277,9 +310,11 @@ const styles = StyleSheet.create({
     }),
   },
   topbar: {
-    borderBottomWidth: 1,
+    borderBottomWidth: 0,
     minHeight: WEB_HEADER_HEIGHT,
     justifyContent: "center",
+    position: "relative",
+    overflow: "hidden",
     ...Platform.select({
       web: { backgroundColor: KANKREG_CHROME.topbarBg },
       default: {},
@@ -418,28 +453,39 @@ const styles = StyleSheet.create({
     color: KANKREG_CHROME.onAccent,
     letterSpacing: 0.02,
   },
-  hamb: {
+  goldRule: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 1.5,
+    opacity: 0.85,
+  },
+  menuToggle: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: KANKREG_PALETTE.line,
+    borderColor: "rgba(31, 92, 71, 0.14)",
     backgroundColor: KANKREG_PALETTE.card,
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
+    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
-  hambDark: {
+  menuToggleDark: {
     backgroundColor: "#181513",
     borderColor: "#3f3933",
   },
-  hambBar: {
-    width: 18,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: KANKREG_PALETTE.ink,
+  menuToggleOpen: {
+    borderColor: "rgba(31, 92, 71, 0.28)",
+    backgroundColor: "rgba(31, 92, 71, 0.08)",
   },
-  hambBarDark: {
-    backgroundColor: "#f5efe4",
+  menuToggleOpenDark: {
+    borderColor: "rgba(52, 211, 153, 0.28)",
+    backgroundColor: "rgba(52, 211, 153, 0.1)",
+  },
+  menuTogglePressed: {
+    opacity: 0.88,
+    transform: [{ scale: 0.96 }],
   },
 });

@@ -1,3 +1,6 @@
-/** Web: eager screens — async Metro chunks fail on static export (unknown module errors). */
+/**
+ * Web: eager screen imports — Metro async chunks are unreliable in dev/export.
+ * Boot split still applies via screenRegistryCore.web.js (Home + auth only in core).
+ */
 export * from "./screenRegistryCustomer";
 export * from "./screenRegistryHeavy";

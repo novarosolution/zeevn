@@ -8,6 +8,7 @@ import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { HOME_SPACE } from "../../theme/homeEditorial";
 import { fonts, icon, layout, radius, spacing, typography } from "../../theme/tokens";
+import { FONT_BODY_SEMIBOLD, FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import { KankregSectionHead } from "../kankreg/KankregPageChrome";
 import GoldHairline from "../ui/GoldHairline";
 import PremiumButton from "../ui/PremiumButton";

@@ -17,6 +17,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
+import useAddToCartAnim from "../hooks/useAddToCartAnim";
 import { SHOP_SCREEN_UI } from "../content/appContent";
 import { ALCHEMY } from "../theme/customerAlchemy";
 import { FONT_HEADING } from "../theme/typographyRoles";
@@ -109,6 +110,8 @@ function PremiumProductCardBase({
   const cardScale = useSharedValue(1);
   const imageScale = useSharedValue(1);
   const cardLift = useSharedValue(0);
+  const { trigger: triggerAddAnim, scaleStyle: addScaleStyle, flashStyle: addFlashStyle } =
+    useAddToCartAnim();
 
   const cardStyle = useAnimatedStyle(() => ({
     transform: [{ scale: cardScale.value }, { translateY: cardLift.value }],
@@ -160,13 +163,24 @@ function PremiumProductCardBase({
     : `Add ${product?.name || "product"} to cart`;
   const unavailable = isComingSoon || isOutOfStock;
 
+  const handleAddToCart = () => {
+    if (unavailable || loading) return;
+    triggerAddAnim();
+    onAddToCart?.();
+  };
+
   return (
     <Root
       style={styles.outer}
       ref={revealRef}
       {...(rootEntering ? { entering: rootEntering } : {})}
     >
-      <Animated.View style={[styles.card, cardStyle]}>
+      <Animated.View
+        style={[styles.card, cardStyle]}
+        {...(Platform.OS === "web"
+          ? { onMouseEnter: handleHoverIn, onMouseLeave: handleHoverOut }
+          : {})}
+      >
         <LinearGradient
           colors={
             isDark
@@ -188,11 +202,9 @@ function PremiumProductCardBase({
           onPress={onPress}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
-          onHoverIn={handleHoverIn}
-          onHoverOut={handleHoverOut}
           accessibilityRole="button"
           accessibilityLabel={accessibilityLabel}
-          style={({ pressed }) => [styles.press, pressed ? { opacity: 0.985 } : null]}
+          style={({ pressed }) => [styles.productTap, pressed ? { opacity: 0.985 } : null]}
         >
           <View style={styles.imageBlock}>
             <View
@@ -334,58 +346,67 @@ function PremiumProductCardBase({
                 </View>
               ) : null}
             </View>
+          </View>
+        </Pressable>
 
-            <View style={styles.footer}>
-              <View style={styles.footerCopy}>
-                <Text
-                  style={[
-                    styles.price,
-                    priceTypo,
-                    { color: isDark ? "#F2D679" : c.textPrimary },
-                  ]}
-                  numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.78}
-                >
-                  {priceLabel}
+        <View style={styles.footer}>
+          <Pressable
+            onPress={onPress}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            accessibilityRole="button"
+            accessibilityLabel={accessibilityLabel}
+            style={({ pressed }) => [styles.footerCopy, pressed ? { opacity: 0.985 } : null]}
+          >
+            <Text
+              style={[
+                styles.price,
+                priceTypo,
+                { color: isDark ? "#F2D679" : c.textPrimary },
+              ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.78}
+            >
+              {priceLabel}
+            </Text>
+            {listMrp ? (
+              <View style={styles.priceSubRow}>
+                <Text style={[styles.mrp, { color: c.textMuted }]} numberOfLines={1}>
+                  {formatINRWhole(listMrp)}
                 </Text>
-                {listMrp ? (
-                  <View style={styles.priceSubRow}>
-                    <Text style={[styles.mrp, { color: c.textMuted }]} numberOfLines={1}>
-                      {formatINRWhole(listMrp)}
-                    </Text>
-                    <View
+                {!compact && offPct != null && offPct > 0 ? (
+                  <View
+                    style={[
+                      styles.savePill,
+                      {
+                        backgroundColor: isDark
+                          ? "rgba(52, 211, 153, 0.16)"
+                          : "rgba(22, 163, 74, 0.1)",
+                        borderColor: isDark
+                          ? "rgba(52, 211, 153, 0.3)"
+                          : "rgba(22, 163, 74, 0.22)",
+                      },
+                    ]}
+                  >
+                    <Text
                       style={[
-                        styles.savePill,
-                        {
-                          backgroundColor: isDark
-                            ? "rgba(52, 211, 153, 0.16)"
-                            : "rgba(22, 163, 74, 0.1)",
-                          borderColor: isDark
-                            ? "rgba(52, 211, 153, 0.3)"
-                            : "rgba(22, 163, 74, 0.22)",
-                        },
+                        styles.saveText,
+                        { color: isDark ? "#86EFAC" : c.secondaryDark },
                       ]}
+                      numberOfLines={1}
                     >
-                      <Text
-                        style={[
-                          styles.saveText,
-                          { color: isDark ? "#86EFAC" : c.secondaryDark },
-                        ]}
-                        numberOfLines={1}
-                      >
-                        Save {formatINRWhole(listMrp - safePrice)}
-                      </Text>
-                    </View>
+                      Save {formatINRWhole(listMrp - safePrice)}
+                    </Text>
                   </View>
                 ) : null}
               </View>
-              <View style={styles.ctaWrap}>
+            ) : null}
+          </Pressable>
+          <View style={styles.ctaWrap}>
           {quantity > 0 ? (
-            <View
-              style={[
-                styles.stepper,
-                {
+            <Animated.View
+              style={[styles.stepper, addScaleStyle, {
                   borderColor: isDark ? ALCHEMY.goldBright : ALCHEMY.gold,
                   backgroundColor: isDark
                     ? "rgba(31, 92, 71, 0.14)"
@@ -419,7 +440,7 @@ function PremiumProductCardBase({
                 {quantity}
               </Text>
               <TouchableOpacity
-                onPress={onAddToCart}
+                onPress={handleAddToCart}
                 style={styles.stepBtn}
                 activeOpacity={0.78}
                 accessibilityRole="button"
@@ -432,10 +453,10 @@ function PremiumProductCardBase({
                   color={isDark ? ALCHEMY.goldBright : ALCHEMY.brown}
                 />
               </TouchableOpacity>
-            </View>
+            </Animated.View>
           ) : (
             <Pressable
-              onPress={onAddToCart}
+              onPress={handleAddToCart}
               disabled={unavailable || loading}
               accessibilityRole="button"
               accessibilityLabel={addAccessibilityLabel}
@@ -447,6 +468,7 @@ function PremiumProductCardBase({
                 unavailable || loading ? styles.addBtnShellDisabled : null,
               ]}
             >
+              <Animated.View style={[styles.addBtnAnimWrap, addScaleStyle]}>
               {isComingSoon ? (
                 <View style={styles.comingSoonCta}>
                   <LinearGradient
@@ -479,12 +501,14 @@ function PremiumProductCardBase({
                   )}
                 </View>
               )}
+              <Animated.View style={[styles.addFlash, addFlashStyle]} pointerEvents="none">
+                <Ionicons name="checkmark" size={compact ? 14 : icon.sm} color={KANKREG_PALETTE.paper} />
+              </Animated.View>
+              </Animated.View>
             </Pressable>
           )}
-              </View>
-            </View>
           </View>
-        </Pressable>
+        </View>
       </Animated.View>
     </Root>
   );
@@ -537,15 +561,16 @@ function createStyles(c, isDark, compact = false) {
     },
     card: {
       width: "100%",
+      maxWidth: "100%",
       flex: 1,
-      borderRadius: compact ? 16 : 20,
+      borderRadius: compact ? 14 : 20,
       backgroundColor: isDark ? c.surfaceElevated || c.surface : KANKREG_PALETTE.card,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: isDark ? "#3f3933" : KANKREG_PALETTE.line,
       overflow: "hidden",
-      paddingTop: compact ? spacing.sm + 2 : spacing.md,
-      paddingHorizontal: compact ? spacing.sm + 2 : spacing.md,
-      paddingBottom: compact ? spacing.sm + 2 : spacing.md,
+      paddingTop: compact ? spacing.sm : spacing.md,
+      paddingHorizontal: compact ? spacing.sm : spacing.md,
+      paddingBottom: compact ? spacing.sm : spacing.md,
       ...cardShadow,
     },
     topAccent: {
@@ -556,7 +581,7 @@ function createStyles(c, isDark, compact = false) {
       height: 2,
       opacity: 0.95,
     },
-    press: {
+    productTap: {
       width: "100%",
       ...Platform.select({
         web: { cursor: "pointer" },
@@ -697,60 +722,68 @@ function createStyles(c, isDark, compact = false) {
     },
     title: {
       fontFamily: fonts.semibold,
-      fontSize: compact ? 14 : 16,
-      lineHeight: compact ? 19 : 21,
+      fontSize: compact ? 13 : 16,
+      lineHeight: compact ? 17 : 21,
       letterSpacing: 0,
-      minHeight: compact ? 38 : 42,
+      minHeight: compact ? 34 : 42,
     },
     metaRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 6,
+      gap: compact ? 4 : 6,
       flexWrap: "wrap",
     },
     metaPill: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 5,
-      paddingHorizontal: 9,
-      paddingVertical: 4,
+      gap: compact ? 3 : 5,
+      paddingHorizontal: compact ? 6 : 9,
+      paddingVertical: compact ? 3 : 4,
       borderRadius: radius.pill,
       borderWidth: StyleSheet.hairlineWidth,
+      maxWidth: "100%",
     },
     metaText: {
       fontFamily: fonts.bold,
-      fontSize: 11,
+      fontSize: compact ? 10 : 11,
       letterSpacing: 0.15,
     },
     footer: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: spacing.sm,
+      gap: compact ? spacing.xs : spacing.sm,
       marginTop: compact ? 4 : 6,
-      minHeight: 44,
+      minHeight: compact ? 40 : 44,
+      paddingHorizontal: 2,
+      width: "100%",
+      minWidth: 0,
     },
     footerCopy: {
       flex: 1,
       minWidth: 0,
       justifyContent: "center",
+      ...Platform.select({
+        web: { cursor: "pointer" },
+        default: {},
+      }),
     },
     price: {
       fontFamily: fonts.bold,
-      fontSize: compact ? 18 : 22,
-      lineHeight: compact ? 21 : 26,
+      fontSize: compact ? 16 : 22,
+      lineHeight: compact ? 19 : 26,
       letterSpacing: -0.2,
     },
     priceSubRow: {
-      marginTop: 4,
+      marginTop: compact ? 2 : 4,
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: compact ? 4 : 8,
       flexWrap: "wrap",
     },
     mrp: {
       fontFamily: fonts.medium,
-      fontSize: 12,
+      fontSize: compact ? 11 : 12,
       textDecorationLine: "line-through",
     },
     savePill: {
@@ -766,14 +799,14 @@ function createStyles(c, isDark, compact = false) {
     },
     ctaWrap: {
       flexShrink: 0,
-      minWidth: 44,
+      minWidth: compact ? 36 : 44,
       alignItems: "flex-end",
       justifyContent: "center",
     },
     addCircle: {
-      width: compact ? 36 : 40,
-      height: compact ? 36 : 40,
-      borderRadius: compact ? 18 : 20,
+      width: compact ? 32 : 40,
+      height: compact ? 32 : 40,
+      borderRadius: compact ? 16 : 20,
       alignItems: "center",
       justifyContent: "center",
       ...Platform.select({
@@ -785,6 +818,18 @@ function createStyles(c, isDark, compact = false) {
       borderRadius: radius.pill,
       overflow: "hidden",
       ...addBtnShadow,
+    },
+    addBtnAnimWrap: {
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    addFlash: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: radius.pill,
+      backgroundColor: "rgba(31, 92, 71, 0.88)",
+      opacity: 0,
     },
     addBtnShellHover: {
       ...Platform.select({
@@ -825,13 +870,14 @@ function createStyles(c, isDark, compact = false) {
       justifyContent: "space-between",
       borderRadius: radius.pill,
       borderWidth: 1.25,
-      paddingHorizontal: 6,
-      height: 44,
-      width: compact ? 92 : 96,
+      paddingHorizontal: compact ? 4 : 6,
+      height: compact ? 36 : 44,
+      width: compact ? 84 : 96,
+      maxWidth: "100%",
     },
     stepBtn: {
-      width: 36,
-      height: 36,
+      width: compact ? 28 : 36,
+      height: compact ? 28 : 36,
       alignItems: "center",
       justifyContent: "center",
       borderRadius: radius.pill,

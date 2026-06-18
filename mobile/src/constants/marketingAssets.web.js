@@ -11,7 +11,7 @@ export const HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH = 1200 / 941;
 export const HOME_HERO_PRODUCT_SLIDE = null;
 export const HOME_HERO_PRODUCT_PHONE_SLIDE = null;
 export {
-  HOME_HERO_WEB_SLIDER_SLIDES,
-  HOME_HERO_MOBILE_SLIDER_SLIDES,
+  getHomeHeroWebSliderSlides,
+  getHomeHeroMobileSliderSlides,
 } from "./homeHeroSlides";
 export const AUTH_AMBIENT_IMAGE = null;

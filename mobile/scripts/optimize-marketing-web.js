@@ -190,8 +190,13 @@ async function extractVideoPoster(inputName, outputName) {
 
 async function main() {
   if (!fs.existsSync(marketingDir)) {
-    console.error("Missing assets/marketing/");
-    process.exit(1);
+    console.warn(
+      "[optimize:web] assets/marketing/ not found — skipping legacy kankreg marketing pipeline."
+    );
+    console.warn(
+      "[optimize:web] Zeevan uses bundled PNG heroes in assets/; no pre-export optimization needed."
+    );
+    return;
   }
 
   if (!sharp) {

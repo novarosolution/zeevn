@@ -59,12 +59,13 @@ if (fs.existsSync(indexHtml)) {
   });
 
   const heroCandidates = walkFiles(path.join(dist, "assets"), (name) =>
-    name.includes("hero-slide-kankreg-phone-hero-web-840") && name.endsWith(".webp")
+    (name.includes("zeevan-ghee-packaging-portrait") || name.includes("zeevan-hero-web-21x9")) &&
+    (name.endsWith(".png") || name.endsWith(".webp"))
   );
   if (heroCandidates.length) {
     const heroHref = toPublicAssetPath(dist, heroCandidates[0]);
     const preloadTag = `<link rel="preload" as="image" href="${heroHref}" fetchpriority="high" />`;
-    if (!html.includes("hero-slide-kankreg-phone-hero-web-840")) {
+    if (!html.includes(heroHref)) {
       html = html.replace("</head>", `  ${preloadTag}\n</head>`);
       console.log("[post-export-web] injected LCP hero preload:", heroHref);
     }

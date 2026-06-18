@@ -14,6 +14,7 @@ import GoldHairline from "../ui/GoldHairline";
 import KankregBrandMark from "./KankregBrandMark";
 import { routeMatchesNav } from "./kankregNav";
 import { KANKREG_HEADER } from "../../content/appContent";
+import { renderWebPortal } from "../../utils/renderWebPortal";
 
 const NAV_ICONS = {
   Home: "home-outline",
@@ -83,7 +84,7 @@ export default function KankregMobileNav({
     android: { elevation: 0 },
   });
 
-  return (
+  return renderWebPortal(
     <View style={styles.portal} pointerEvents="box-none">
       <View style={styles.backdrop} pointerEvents="auto">
         <Pressable
@@ -292,6 +293,8 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
+    width: "100vw",
+    height: "100dvh",
     zIndex: WEB_Z_INDEX.dropdown,
   },
   backdrop: {

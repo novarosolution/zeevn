@@ -17,6 +17,7 @@ import { initWebFonts } from "./src/theme/webFonts";
 import { updateWebRouteSeo } from "./src/utils/webSeo";
 import DeferredHeavyProviders from "./src/bootstrap/DeferredHeavyProviders";
 import { deferAfterFirstPaint } from "./src/utils/deferAfterFirstPaint";
+import { setLcpShellVisible } from "./src/utils/lcpShell";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -128,7 +129,13 @@ export default function App() {
     injectWebDocumentMeta();
     SplashScreen.hideAsync().catch(() => {});
     initWebFonts();
-    return undefined;
+    const dismissShell = () => setLcpShellVisible(false);
+    const cancelDeferred = deferAfterFirstPaint(dismissShell, { timeoutMs: 2500 });
+    const fallback = setTimeout(dismissShell, 8000);
+    return () => {
+      cancelDeferred();
+      clearTimeout(fallback);
+    };
   }, []);
 
   return (

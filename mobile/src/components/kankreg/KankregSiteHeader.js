@@ -15,10 +15,12 @@ import {
   getWebHeaderHeight,
 } from "../../theme/web";
 import KankregBrandMark from "./KankregBrandMark";
+import { KankregMobileNav } from "./loadKankregMobileNav";
 import { buildKankregMobileNavItems, buildKankregNavItems, routeMatchesNav } from "./kankregNav";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { KANKREG_HEADER } from "../../content/appContent";
 import { safeNavigate } from "../../navigation/navigationRef";
+import { setLcpShellVisible } from "../../utils/lcpShell";
 export const KANKREG_HEADER_BODY_HEIGHT = WEB_HEADER_HEIGHT;
 export { getKankregChromeTop } from "../../theme/kankregChrome";
 
@@ -31,36 +33,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
   const { isAuthenticated, user } = useAuth();
   const { colors: c, isDark } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [MobileNavComponent, setMobileNavComponent] = useState(null);
   const [currentRouteName, setCurrentRouteName] = useState(null);
-
-  useEffect(() => {
-    if (showDesktopNav || MobileNavComponent) return undefined;
-    let cancelled = false;
-
-    const apply = (Component) => {
-      if (!cancelled && Component) setMobileNavComponent(() => Component);
-    };
-
-    const load = () => {
-      if (typeof __DEV__ !== "undefined" && __DEV__) {
-        try {
-          apply(require("./KankregMobileNav").default);
-        } catch {
-          // ignore — retry on menu open
-        }
-        return;
-      }
-      import("./KankregMobileNav")
-        .then((mod) => apply(mod.default))
-        .catch(() => {});
-    };
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [showDesktopNav, MobileNavComponent, mobileOpen]);
 
   useEffect(() => {
     if (!navReady || !navigationRef?.addListener || !navigationRef?.isReady?.()) {
@@ -274,7 +247,10 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
             )}
             {!showDesktopNav && !isNative ? (
               <Pressable
-                onPress={() => setMobileOpen((v) => !v)}
+                onPress={() => {
+                  setLcpShellVisible(false);
+                  setMobileOpen((v) => !v);
+                }}
                 style={({ hovered, pressed }) => [
                   styles.menuToggle,
                   useCompactChrome && styles.menuToggleCompact,
@@ -310,8 +286,8 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
         />
       </View>
     </View>
-    {!showDesktopNav && !isNative && mobileOpen && MobileNavComponent ? (
-      <MobileNavComponent
+    {!showDesktopNav && !isNative && mobileOpen && KankregMobileNav ? (
+      <KankregMobileNav
         open={mobileOpen}
         items={mobileItems}
         currentRouteName={currentRouteName}

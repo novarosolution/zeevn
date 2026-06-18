@@ -29,8 +29,9 @@ export const WEB_STICKY_TOP_OFFSET = WEB_CHROME_TOP + 12;
 /** Shared z-index ladder to prevent header/dropdown overlap bugs. */
 export const WEB_Z_INDEX = {
   header: 1000,
-  dropdown: 1200,
   overlay: 1100,
+  /** Above exported LCP shell (9999) when it has not been dismissed yet. */
+  dropdown: 10050,
 };
 
 /** Root shell: full viewport height on web so the layout feels like a real page. */

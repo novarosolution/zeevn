@@ -207,7 +207,7 @@ if (fs.existsSync(indexHtml)) {
   });
 
   if (portraitHref || wideHref) {
-    const shellStyle = `<style id="kankreg-lcp-shell-style">#kankreg-lcp-shell-wrap{position:fixed;inset:0;z-index:9999;pointer-events:none;background:#FAF8F4;font-family:system-ui,-apple-system,sans-serif}#kankreg-lcp-shell{width:100%;height:100dvh;object-fit:contain;object-position:center top;display:block}</style>`;
+    const shellStyle = `<style id="kankreg-lcp-shell-style">#kankreg-lcp-shell-wrap{position:fixed;inset:0;z-index:9999;pointer-events:none;background:#FAF8F4;font-family:system-ui,-apple-system,sans-serif}#kankreg-lcp-shell{width:100%;height:100dvh;object-fit:contain;object-position:center top;display:block;pointer-events:none}</style>`;
     const portraitDims =
       portraitHref ? ` width="${LCP_PORTRAIT_WIDTH}" height="${LCP_PORTRAIT_HEIGHT}"` : "";
     const wideDims = wideHref ? ` width="${LCP_WIDE_WIDTH}" height="${LCP_WIDE_HEIGHT}"` : "";

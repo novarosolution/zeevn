@@ -19,6 +19,7 @@ export default function AuthCompactHero({ compact = false }) {
       />
       <BrandLogo
         height={compact ? BRAND_LOGO_SIZE.authHero - 12 : BRAND_LOGO_SIZE.authHero}
+        variant="onDark"
         glow
         style={styles.logo}
       />

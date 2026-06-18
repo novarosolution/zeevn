@@ -137,7 +137,7 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
   }, [product?.image, product?.images]);
 
   const imageUris = useMemo(
-    () => getImageUriCandidates(primaryImage, { width: isWeb ? 520 : 640, quality: "auto:good" }),
+    () => getImageUriCandidates(primaryImage, { width: isWeb ? 360 : 640, quality: isWeb ? "auto:eco" : "auto:good" }),
     [isWeb, primaryImage]
   );
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
@@ -318,7 +318,7 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
     variant === "editorial" && Platform.OS === "web" ? (
       <HomeEditorialProductCard
         product={item}
-        imagePriority={idx < 4 ? "high" : "normal"}
+        imagePriority={idx < 2 ? "high" : "low"}
         isOutOfStock={isOutOfStock}
         isComingSoon={isComingSoon}
         comingSoonNote={comingSoonNote}
@@ -331,7 +331,7 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
       <PremiumProductCard
         index={idx}
         compact={compact}
-        imagePriority={idx < 4 ? "high" : "normal"}
+        imagePriority={idx < 2 ? "high" : "low"}
         isOutOfStock={isOutOfStock}
         isComingSoon={isComingSoon}
         comingSoonNote={comingSoonNote}

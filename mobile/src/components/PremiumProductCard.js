@@ -18,7 +18,7 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import useAddToCartAnim from "../hooks/useAddToCartAnim";
-import { SHOP_SCREEN_UI } from "../content/appContent";
+import { SHOP_SCREEN_UI, HOME_SCREEN_UI } from "../content/appContent";
 import { ALCHEMY } from "../theme/customerAlchemy";
 import { FONT_HEADING } from "../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../theme/kankregWeb";
@@ -78,7 +78,7 @@ function PremiumProductCardBase({
     return "";
   }, [product?.image, product?.images]);
   const imageUris = useMemo(
-    () => getImageUriCandidates(primaryImage, { width: 480, quality: "auto:good" }),
+    () => getImageUriCandidates(primaryImage, { width: Platform.OS === "web" ? 400 : 480, quality: Platform.OS === "web" ? "auto:eco" : "auto:good" }),
     [primaryImage]
   );
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
@@ -146,6 +146,7 @@ function PremiumProductCardBase({
     preset: "scale-in",
     start: "top 92%",
     reducedMotion,
+    disabled: Platform.OS === "web" && HOME_SCREEN_UI.web?.enableHomeGsap !== true,
   });
 
   const Root = Platform.OS === "web" || index == null ? View : Animated.View;

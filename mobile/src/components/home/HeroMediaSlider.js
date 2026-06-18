@@ -36,7 +36,7 @@ import {
 } from "../../constants/marketingAssets";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 import ProgressiveImage from "../ui/ProgressiveImage";
-import { hasLcpShell, setLcpShellVisible } from "../../utils/lcpShell";
+import { setLcpShellVisible, hasLcpShell } from "../../utils/lcpShell";
 
 const SLIDE_INTERVAL_MS = 7000;
 const KEN_BURNS_CLASS = "kankreg-hero-kenburns";
@@ -88,13 +88,11 @@ injectWebCssOnce(
   height: 100%;
   display: block;
   pointer-events: none;
-  object-fit: cover;
-  object-position: center center;
 }
 .${HERO_MEDIA_CLASS} .kankreg-progressive-full,
 .${HERO_MEDIA_CLASS} .kankreg-progressive-preview {
-  object-fit: cover;
-  object-position: center center;
+  width: 100%;
+  height: 100%;
 }
 @media (prefers-reduced-motion: reduce) {
   .${KEN_BURNS_PRODUCT_CLASS} { animation: none !important; transform: none !important; }
@@ -132,6 +130,7 @@ function resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb }) {
 function resolveHeroImageFit(slide, { isTop, isMobileWebTop, isApp = false }) {
   if (isApp) return "cover";
   if (slide?.imageFit === "contain" || slide?.imageFit === "cover") return slide.imageFit;
+  if (isMobileWebTop && slide?.layout === "portrait") return "contain";
   if (isTop && !isMobileWebTop) return "cover";
   return "cover";
 }
@@ -185,6 +184,7 @@ function HeroSlideImage({
   useNativeLcp = false,
   slideLayoutWidth = 960,
   isMobileWeb = false,
+  onImageReady,
 }) {
   const deliveryWidth = useMemo(
     () => getHeroSlideDisplayWidth(slideLayoutWidth, { isMobileWeb }),
@@ -203,25 +203,22 @@ function HeroSlideImage({
 
   if (!uri) return null;
 
-  // Exported HTML shell already painted the LCP hero — skip duplicate img until slide changes.
-  if (useNativeLcp && Platform.OS === "web" && hasLcpShell()) {
-    return <View style={styles.heroSlideImage} accessibilityLabel={label} />;
-  }
-
-  if (useNativeLcp && Platform.OS === "web") {
+  if (Platform.OS === "web" && isMobileWeb) {
     return (
       <ProgressiveImage
         uri={uri}
         alt={label}
-        className={HERO_MEDIA_CLASS}
+        className={[HERO_MEDIA_CLASS, kenClass].filter(Boolean).join(" ")}
+        imageClassName={kenClass}
         style={styles.heroSlideImage}
         contentFit={imageFit}
-        contentPosition={contentPosition || "center"}
-        priority="high"
+        contentPosition={contentPosition || "top"}
+        priority={active || useNativeLcp ? "high" : "low"}
         width={deliveryWidth}
         quality="auto:good"
         showSkeleton={false}
         recyclingKey={String(slide.id || slide.key || uri)}
+        onLoad={useNativeLcp ? onImageReady : undefined}
       />
     );
   }
@@ -235,12 +232,13 @@ function HeroSlideImage({
         imageClassName={kenClass}
         style={styles.heroSlideImage}
         contentFit={imageFit}
-        contentPosition={contentPosition || "center"}
-        priority={active ? "high" : "normal"}
+        contentPosition={contentPosition || (isMobileWeb ? "top" : "center")}
+        priority={active || useNativeLcp ? "high" : "low"}
         width={deliveryWidth}
         quality="auto:good"
-        showSkeleton={false}
+        showSkeleton={!active && !useNativeLcp}
         recyclingKey={String(slide.id || slide.key || uri)}
+        onLoad={useNativeLcp ? onImageReady : undefined}
       />
     );
   }
@@ -380,6 +378,7 @@ function HeroSlideCard({
   isApp = false,
   isMobileWebTop = false,
   slideLayoutWidth = 960,
+  onLcpImageReady,
 }) {
   const hasImage = Boolean(slide?.url) && slide.mediaType !== "video";
   const isProduct = !isCompact && !isApp && slide.variant === "product";
@@ -404,6 +403,12 @@ function HeroSlideCard({
   const imageFit = resolveHeroImageFit(slide, { isTop, isMobileWebTop, isApp });
   const isPackagingSlide = slide.id === "hero-packaging" || slide.key === "hero-packaging";
   const marketingArtOnly = captionMode === "none";
+  const portraitPosition =
+    isMobileWebTop && slide?.layout === "portrait"
+      ? imageFit === "contain"
+        ? "top"
+        : slide.contentPosition || "top"
+      : slide.contentPosition || "center";
   const kenBurns =
     imageFit === "cover" &&
     isTop &&
@@ -413,7 +418,7 @@ function HeroSlideCard({
     !reducedMotion &&
     !isMobileWebTop;
   const kenClass = isProduct && kenBurns ? KEN_BURNS_PRODUCT_CLASS : kenBurns ? KEN_BURNS_CLASS : undefined;
-  const contentPosition = slide.contentPosition || "center";
+  const contentPosition = portraitPosition;
   const captionLeft = isTop && !isMobileWebTop && slide.captionAlign !== "center";
   const eyebrowLabel =
     isNative && editorialEyebrow
@@ -459,9 +464,10 @@ function HeroSlideCard({
           contentPosition={contentPosition}
           kenClass={kenClass}
           active={active}
-          useNativeLcp={isMobileWebTop && active}
+          useNativeLcp={isTop && active && Boolean(onLcpImageReady)}
           slideLayoutWidth={slideLayoutWidth}
           isMobileWeb={isMobileWebTop}
+          onImageReady={onLcpImageReady}
         />
       ) : hasImage ? (
         <View style={[styles.mediaFill, styles.videoPoster]} />
@@ -699,6 +705,7 @@ export default function HeroMediaSlider({
   const indexRef = useRef(0);
   const [pageWidth, setPageWidth] = useState(0);
   const [index, setIndex] = useState(0);
+  const [slidesWarmed, setSlidesWarmed] = useState(false);
   const count = slides.length;
 
   indexRef.current = index;
@@ -709,16 +716,31 @@ export default function HeroMediaSlider({
   );
 
   const activeSlide = slides[index] || slides[0];
+  const lcpShellDismissedRef = useRef(false);
+  const dismissLcpShell = useCallback(() => {
+    if (lcpShellDismissedRef.current || !hasLcpShell()) return;
+    lcpShellDismissedRef.current = true;
+    setLcpShellVisible(false);
+  }, []);
 
-  /** Stable height across slides — avoids blank bands when auto-rotating between aspect ratios. */
+  useEffect(() => {
+    if (Platform.OS !== "web" || !hasLcpShell()) return undefined;
+    const fallback = setTimeout(dismissLcpShell, 10000);
+    return () => clearTimeout(fallback);
+  }, [dismissLcpShell]);
+
+  /** Phone web: match active slide aspect — full product art with contain. Desktop: stable max ratio. */
   const bannerHeightRatio = useMemo(() => {
+    if (isTop && isMobileWeb && activeSlide) {
+      return resolveHeroSlideHeightRatio(activeSlide, { isNative, isMobileWeb });
+    }
     if (!slides.length) {
       return resolveHeroSlideHeightRatio(activeSlide, { isNative, isMobileWeb });
     }
     return Math.max(
       ...slides.map((slide) => resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb }))
     );
-  }, [activeSlide, isMobileWeb, isNative, slides]);
+  }, [activeSlide, isMobileWeb, isNative, isTop, slides]);
 
   const bannerHeight = useMemo(() => {
     const w = slideWidth;
@@ -747,9 +769,11 @@ export default function HeroMediaSlider({
     }
     if (isTop) {
       if (isMobileWeb) {
-        const maxH = Math.min(760, viewportCap);
-        const minH = Math.max(440, Math.round(w * 0.62));
-        return Math.min(maxH, Math.max(minH, Math.max(natural, minH)));
+        const ratioH = Math.round(w * bannerHeightRatio);
+        const viewportCap = Math.round((layoutHeight || 800) * 0.92);
+        const maxH = Math.min(880, viewportCap);
+        const minH = Math.max(380, Math.round(w * 0.52));
+        return Math.min(maxH, Math.max(minH, ratioH));
       }
       // 21:9 — height from width; only shrink on very short viewports
       const vhCap = Math.round((layoutHeight || 900) * 0.85);
@@ -773,7 +797,7 @@ export default function HeroMediaSlider({
     if (!slides.length) return undefined;
     const imageSlides = slides.filter((slide) => slide.mediaType !== "video" && slide.url);
     if (Platform.OS === "web") {
-      const eagerCount = isMobileWeb ? 1 : Math.min(2, imageSlides.length);
+      const eagerCount = 1;
       prefetchDisplayImages(
         imageSlides.map((slide) =>
           getHeroSlideImageUri(slide.url, {
@@ -785,7 +809,7 @@ export default function HeroMediaSlider({
           eagerCount,
           width: heroImageWidth,
           quality: "auto:good",
-          warmupAll: !isMobileWeb,
+          warmupAll: slidesWarmed && !isMobileWeb,
         }
       );
       return undefined;
@@ -798,7 +822,7 @@ export default function HeroMediaSlider({
       if (uri) Image.prefetch(uri).catch(() => {});
     });
     return undefined;
-  }, [heroImageWidth, isMobileWeb, isMobileWebTop, layoutWidth, slideWidth, slides]);
+  }, [heroImageWidth, isMobileWeb, isMobileWebTop, layoutWidth, slideWidth, slides, slidesWarmed]);
 
   const goTo = useCallback(
     (next) => {
@@ -817,9 +841,16 @@ export default function HeroMediaSlider({
 
   useEffect(() => {
     if (!isMobileWebTop || Platform.OS !== "web") return undefined;
-    setLcpShellVisible(index === 0);
-    return undefined;
-  }, [index, isMobileWebTop]);
+    const run = () => setSlidesWarmed(true);
+    if (typeof requestIdleCallback === "function") {
+      const id = requestIdleCallback(run, { timeout: 1800 });
+      return () => {
+        if (typeof cancelIdleCallback === "function") cancelIdleCallback(id);
+      };
+    }
+    const timer = setTimeout(run, 600);
+    return () => clearTimeout(timer);
+  }, [isMobileWebTop]);
 
   useEffect(() => {
     if (reducedMotion || count <= 1 || slideWidth <= 0) return undefined;
@@ -860,6 +891,7 @@ export default function HeroMediaSlider({
         cardEmbedded && isApp && styles.shellAppEmbedded,
         isBanner && useWebAspectFrame && styles.shellAspect21x9,
         isBanner && !useWebAspectFrame && bannerHeight ? { height: bannerHeight } : null,
+        isBanner && isMobileWebTop && styles.shellMobileWebAnimated,
         isBanner && styles.shellBannerBase,
       ]}
     >
@@ -915,7 +947,9 @@ export default function HeroMediaSlider({
                   slide={slide}
                   active={slideIndex === index}
                   shouldLoadImage={
-                    !isMobileWebTop || slideIndex === index || Math.abs(slideIndex - index) === 1
+                    slidesWarmed ||
+                    !isMobileWebTop ||
+                    slideIndex === index
                   }
                   isDark={isDark}
                   isBanner={isBanner}
@@ -930,6 +964,7 @@ export default function HeroMediaSlider({
                   editorialEyebrow={editorialEyebrow}
                   layoutWidth={layoutWidth}
                   slideLayoutWidth={slideWidth || layoutWidth}
+                  onLcpImageReady={isTop && slideIndex === 0 && hasLcpShell() ? dismissLcpShell : undefined}
                 />
               </PageWrap>
             </View>
@@ -1117,6 +1152,14 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
+  shellMobileWebAnimated: Platform.select({
+    web: {
+      transitionProperty: "height",
+      transitionDuration: "0.32s",
+      transitionTimingFunction: "ease",
+    },
+    default: {},
+  }),
   shellNative: {
     width: "100%",
     maxWidth: "100%",

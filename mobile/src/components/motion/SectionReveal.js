@@ -3,6 +3,7 @@ import { Platform, View } from "react-native";
 import Animated, { FadeInDown, FadeIn, FadeInRight, ZoomIn } from "react-native-reanimated";
 import useGsapReveal from "../../hooks/useGsapReveal";
 import useReducedMotion from "../../hooks/useReducedMotion";
+import { HOME_SCREEN_UI } from "../../content/appContent";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { motionDuration, staggerDelay } from "../../theme/motion";
 
@@ -43,6 +44,8 @@ export default function SectionReveal({
 
   const reducedMotion = useReducedMotion();
   const { isMobileWeb } = useKankregLayout();
+  const leanWeb = HOME_SCREEN_UI.web?.leanHome !== false;
+  const homeGsapEnabled = HOME_SCREEN_UI.web?.enableHomeGsap === true;
   const revealImmediate = immediate || isMobileWeb;
   const computedDelay = useMemo(() => {
     if (typeof delay === "number") return Math.max(0, delay);
@@ -50,7 +53,8 @@ export default function SectionReveal({
     return 0;
   }, [delay, index]);
 
-  const skipGsap = Platform.OS === "web" && (reducedMotion || isMobileWeb);
+  const skipGsap =
+    Platform.OS === "web" && (reducedMotion || isMobileWeb || (leanWeb && !homeGsapEnabled));
 
   const { ref: gsapRef } = useGsapReveal({
     preset,

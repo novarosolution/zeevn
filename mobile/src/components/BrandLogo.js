@@ -15,6 +15,24 @@ import { fonts } from "../theme/tokens";
 /** Wordmark aspect ratio for layout sizing (width / height). */
 export const BRAND_LOGO_ASPECT = 3.2;
 
+function usesLightWordmark(variant, isDark) {
+  if (variant === "onLight") return false;
+  if (variant === "onDark") return true;
+  return Boolean(isDark);
+}
+
+function resolveBrandImageSource({ mark, variant, isDark }) {
+  const light = usesLightWordmark(variant, isDark);
+  if (mark) {
+    return light && ZEEVAN_BRAND_ASSETS.markLight
+      ? ZEEVAN_BRAND_ASSETS.markLight
+      : ZEEVAN_BRAND_ASSETS.mark;
+  }
+  return light
+    ? ZEEVAN_BRAND_ASSETS.wordmarkLight || ZEEVAN_BRAND_ASSETS.wordmark
+    : ZEEVAN_BRAND_ASSETS.wordmark;
+}
+
 /**
  * Zeevan brand logo — PNG wordmark by default; text fallback when `textOnly`.
  * variant: onLight (cream bg), onDark (footer/hero), default (theme-aware).
@@ -42,12 +60,7 @@ export default function BrandLogo({
   );
 
   const useImage = !textOnly && ZEEVAN_BRAND_ASSETS.wordmark;
-  const onDark = resolvedVariant === "onDark";
-  const imageSource = mark
-    ? ZEEVAN_BRAND_ASSETS.mark
-    : onDark
-      ? ZEEVAN_BRAND_ASSETS.wordmarkLight || ZEEVAN_BRAND_ASSETS.wordmark
-      : ZEEVAN_BRAND_ASSETS.wordmark;
+  const imageSource = resolveBrandImageSource({ mark, variant: resolvedVariant, isDark });
   const imageAspect = mark ? 1 : BRAND_LOGO_ASPECT;
   const imageWidth = mark ? resolvedHeight : resolvedWidth;
   const imageHeight = resolvedHeight;
@@ -83,14 +96,14 @@ export default function BrandLogo({
 }
 
 function createStyles(glow, variant, scale, c, isDark) {
-  const onDark = variant === "onDark";
+  const onDarkBg = usesLightWordmark(variant, isDark);
   const onLight = variant === "onLight";
-  const ink = onDark
+  const ink = onDarkBg
     ? KANKREG_CHROME.footerAccent
     : onLight
       ? "#151210"
       : c.textPrimary;
-  const taglineColor = onDark
+  const taglineColor = onDarkBg
     ? "rgba(250, 248, 244, 0.62)"
     : onLight
       ? "#7A7168"
@@ -104,14 +117,14 @@ function createStyles(glow, variant, scale, c, isDark) {
       ...(glow
         ? Platform.select({
             web: {
-              filter: onDark
+              filter: onDarkBg
                 ? "drop-shadow(0 4px 12px rgba(0,0,0,0.35))"
                 : "drop-shadow(0 6px 18px rgba(184,134,11,0.18))",
             },
             default: {
-              shadowColor: onDark ? "#000" : "#244424",
+              shadowColor: onDarkBg ? "#000" : "#244424",
               shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: onDark ? 0.24 : 0.16,
+              shadowOpacity: onDarkBg ? 0.24 : 0.16,
               shadowRadius: 10,
               elevation: 6,
             },

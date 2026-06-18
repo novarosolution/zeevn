@@ -15,6 +15,7 @@ module.exports = {
         projectId: "f5017187-2f56-48d7-a1f2-741be2d8383b",
       },
       apiUrl: process.env.EXPO_PUBLIC_API_URL,
+      siteUrl: process.env.EXPO_PUBLIC_SITE_URL || "https://www.zeevan.app",
       googleOAuthWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
       googleOAuthIosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
       googleOAuthAndroidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,

@@ -1,14 +1,16 @@
-import "react-native-gesture-handler";
-import "react-native-reanimated";
 import { LogBox, Platform } from "react-native";
 import { enableScreens } from "react-native-screens";
 import { registerRootComponent } from "expo";
-import App from "./App";
 
-// Native stack + react-native-screens on web often yields a blank first paint; use JS stack on web.
 if (Platform.OS === "web") {
   enableScreens(false);
+} else {
+  // Native only — keeps web bundle smaller (FCP/LCP/TBT).
+  require("react-native-gesture-handler");
+  require("react-native-reanimated");
 }
+
+import App from "./App";
 
 LogBox.ignoreLogs([
   "Download the React DevTools",

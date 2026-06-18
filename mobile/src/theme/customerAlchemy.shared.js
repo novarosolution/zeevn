@@ -39,6 +39,19 @@ export function getCustomerShellGradient(isDark, themeColors) {
   return [KANKREG_PALETTE.card, KANKREG_PALETTE.paper, KANKREG_PALETTE.paper2, "#E8E4D0"];
 }
 
+/** Theme-aware ink/surface tokens — prefer over raw `ALCHEMY.*` in dynamic styles. */
+export function getAlchemySemantic(c, isDark) {
+  return {
+    ink: isDark ? c.textPrimary : ALCHEMY.brown,
+    inkSoft: isDark ? c.textSecondary : ALCHEMY.brownMuted,
+    inkMuted: isDark ? c.textMuted : ALCHEMY.brownMuted,
+    gold: isDark ? c.accentGold ?? c.primaryBright : ALCHEMY.gold,
+    goldBright: isDark ? c.primaryBright : ALCHEMY.goldBright,
+    card: isDark ? c.surface : ALCHEMY.cardBg,
+    line: isDark ? c.border : ALCHEMY.line,
+  };
+}
+
 export function getAlchemyPalette(themeColors, isDark) {
   const c = themeColors;
   return {

@@ -42,29 +42,12 @@ let premiumChromeInjected = false;
 /** No-op — display fonts load via Expo Google Fonts in App.js (faster than CDN). */
 export function injectWebDisplayFont() {}
 
-/** Web-only: description, theme-color, lang. */
+/** Web-only: description, theme-color, lang, Open Graph, JSON-LD. */
 export function injectWebDocumentMeta() {
-  if (Platform.OS !== "web" || typeof document === "undefined") return;
-
-  const html = document.documentElement;
-  if (!html.getAttribute("lang")) {
-    html.setAttribute("lang", "en");
-  }
-
-  const ensureMeta = (name, content) => {
-    if (!content || document.querySelector(`meta[name="${name}"]`)) return;
-    const meta = document.createElement("meta");
-    meta.name = name;
-    meta.content = content;
-    document.head.appendChild(meta);
-  };
-
-  ensureMeta(
-    "description",
-    "Zeevan — premium A2 ghee and artisan pantry goods, delivered fresh to your door."
-  );
-  ensureMeta("theme-color", KANKREG_CHROME.cream);
-  ensureMeta("color-scheme", "light dark");
+  if (Platform.OS !== "web") return;
+  // eslint-disable-next-line global-require
+  const { injectWebSeoBootstrap } = require("../utils/webSeo");
+  injectWebSeoBootstrap();
 }
 
 /**
@@ -81,9 +64,9 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
   html.style.minHeight = "100%";
 
   if (isDark) {
-    body.style.background = backgroundSolid || "#0A0908";
+    body.style.background = backgroundSolid || "#050403";
     body.style.backgroundAttachment = "scroll";
-    html.style.background = backgroundSolid || "#0A0908";
+    html.style.background = backgroundSolid || "#050403";
     html.style.colorScheme = "dark";
   } else {
     const g = `radial-gradient(1200px 620px at 92% -6%, rgba(120, 136, 68, 0.14), transparent 58%), radial-gradient(960px 540px at -6% 105%, rgba(36, 68, 36, 0.08), transparent 52%), linear-gradient(180deg, #FCF8F0 0%, ${KANKREG_CHROME.cream} 40%, #E8E4D0 100%)`;
@@ -157,24 +140,6 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
         width: 10px;
         height: 10px;
       }
-      ::-webkit-scrollbar-track {
-        background: rgba(100, 116, 139, 0.08);
-      }
-      ::-webkit-scrollbar-thumb {
-        background: rgba(92, 104, 52, 0.32);
-        border-radius: 999px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: rgba(92, 104, 52, 0.45);
-      }
-      ::selection {
-        background: rgba(220, 172, 116, 0.28);
-        color: #1E2018;
-      }
-      *:focus-visible {
-        outline: 2px solid rgba(92, 104, 52, 0.42);
-        outline-offset: 3px;
-      }
       a, button, [role="button"], [role="tab"] {
         transition: opacity 140ms ease, background-color 140ms ease, border-color 140ms ease;
       }
@@ -203,9 +168,6 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
           transition-duration: 0.01ms !important;
         }
       }
-      @font-face {
-        font-display: swap;
-      }
       [data-kankreg-display="true"],
       h1, h2, h3 {
         font-family: ${WEB_FONT_STACK_DISPLAY};
@@ -213,4 +175,63 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
     `;
     document.head.appendChild(style);
   }
+
+  applyWebThemeChromeCSS(isDark);
+}
+
+/** Scrollbar, text selection, and focus rings — updated when light/dark toggles. */
+function applyWebThemeChromeCSS(isDark) {
+  const id = "kankreg-theme-chrome";
+  let el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement("style");
+    el.id = id;
+    el.setAttribute("data-kankreg", "theme-chrome");
+    document.head.appendChild(el);
+  }
+
+  if (isDark) {
+    el.textContent = `
+      ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.04);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(168, 184, 108, 0.35);
+        border-radius: 999px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: rgba(168, 184, 108, 0.5);
+      }
+      ::selection {
+        background: rgba(232, 188, 132, 0.32);
+        color: #FAFAF9;
+      }
+      *:focus-visible {
+        outline: 2px solid rgba(168, 184, 108, 0.48);
+        outline-offset: 3px;
+      }
+    `;
+    return;
+  }
+
+  el.textContent = `
+    ::-webkit-scrollbar-track {
+      background: rgba(100, 116, 139, 0.08);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(92, 104, 52, 0.32);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(92, 104, 52, 0.45);
+    }
+    ::selection {
+      background: rgba(220, 172, 116, 0.28);
+      color: #1E2018;
+    }
+    *:focus-visible {
+      outline: 2px solid rgba(92, 104, 52, 0.42);
+      outline-offset: 3px;
+    }
+  `;
 }

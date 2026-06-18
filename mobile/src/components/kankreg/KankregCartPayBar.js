@@ -13,12 +13,23 @@ import { CART_UI } from "../../content/appContent";
 import { fonts, spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 
-const barShadow = platformShadow({
+const barShadowLight = platformShadow({
   web: { boxShadow: "0 -10px 32px rgba(22, 69, 51, 0.1)" },
   ios: {
     shadowColor: "#3D2A12",
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.1,
+    shadowRadius: 14,
+  },
+  android: { elevation: 10 },
+});
+
+const barShadowDark = platformShadow({
+  web: { boxShadow: "0 -10px 32px rgba(0, 0, 0, 0.38)" },
+  ios: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.28,
     shadowRadius: 14,
   },
   android: { elevation: 10 },
@@ -48,6 +59,7 @@ export default function KankregCartPayBar({
   const showBreakdown = !compact;
   const dockBottom = customerFloatingNavOffset(insets, { mobileWebTabBar: showMobileWebTabBar });
   const sheetBg = isDark ? "rgba(20, 17, 15, 0.97)" : "rgba(255, 253, 248, 0.98)";
+  const barShadow = isDark ? barShadowDark : barShadowLight;
 
   return (
     <View
@@ -84,37 +96,39 @@ export default function KankregCartPayBar({
         pointerEvents="none"
       />
 
-      {showBreakdown ? (
-        <>
-          <View style={styles.line}>
-            <Text style={[styles.meta, isDark && styles.metaDark]}>{CART_UI.stickySubtotalLabel}</Text>
-            <Text style={[styles.meta, isDark && styles.metaDark]}>{formatINR(subtotal)}</Text>
+      <View style={styles.contentCol}>
+        {showBreakdown ? (
+          <View style={styles.breakdownCol}>
+            <View style={styles.line}>
+              <Text style={[styles.meta, isDark && styles.metaDark]}>{CART_UI.stickySubtotalLabel}</Text>
+              <Text style={[styles.meta, isDark && styles.metaDark]}>{formatINR(subtotal)}</Text>
+            </View>
+            <View style={styles.line}>
+              <Text style={[styles.meta, isDark && styles.metaDark]}>{CART_UI.shippingLabel}</Text>
+              <Text style={[styles.free, isDark && styles.freeDark]}>{CART_UI.shippingFree}</Text>
+            </View>
+            {discount > 0 ? (
+              <View style={styles.line}>
+                <Text style={[styles.meta, styles.discountMeta, isDark && styles.discountMetaDark]}>{discountLabel || "Discount"}</Text>
+                <Text style={[styles.meta, styles.discountMeta, isDark && styles.discountMetaDark]}>−{formatINR(discount)}</Text>
+              </View>
+            ) : null}
           </View>
-          <View style={styles.line}>
-            <Text style={[styles.meta, isDark && styles.metaDark]}>{CART_UI.shippingLabel}</Text>
-            <Text style={styles.free}>{CART_UI.shippingFree}</Text>
-          </View>
-        </>
-      ) : null}
-      {showBreakdown && discount > 0 ? (
-        <View style={styles.line}>
-          <Text style={[styles.meta, styles.discountMeta]}>{discountLabel || "Discount"}</Text>
-          <Text style={[styles.meta, styles.discountMeta]}>−{formatINR(discount)}</Text>
-        </View>
-      ) : null}
+        ) : null}
 
-      <View style={styles.totalRow}>
-        <View>
-          <Text style={[styles.totalLabel, isDark && { color: KANKREG_PALETTE.paper }]}>
-            {CART_UI.totalLabel}
-          </Text>
-          {itemCount > 0 ? (
-            <Text style={styles.itemHint}>
-              {itemCount === 1 ? CART_UI.itemCount.replace("{count}", "1") : CART_UI.itemCountPlural.replace("{count}", String(itemCount))}
+        <View style={styles.totalRow}>
+          <View style={styles.totalCopy}>
+            <Text style={[styles.totalLabel, isDark && { color: KANKREG_PALETTE.paper }]}>
+              {CART_UI.totalLabel}
             </Text>
-          ) : null}
+            {itemCount > 0 ? (
+              <Text style={[styles.itemHint, isDark && styles.itemHintDark]}>
+                {itemCount === 1 ? CART_UI.itemCount.replace("{count}", "1") : CART_UI.itemCountPlural.replace("{count}", String(itemCount))}
+              </Text>
+            ) : null}
+          </View>
+          <Text style={[styles.totalValue, isDark && { color: KANKREG_PALETTE.paper }]}>{formatINR(total)}</Text>
         </View>
-        <Text style={[styles.totalValue, isDark && { color: KANKREG_PALETTE.paper }]}>{formatINR(total)}</Text>
       </View>
 
       <Pressable
@@ -146,9 +160,22 @@ export default function KankregCartPayBar({
 
 const styles = StyleSheet.create({
   bar: {
+    flexDirection: "column",
+    gap: spacing.sm,
     paddingTop: spacing.md,
     paddingHorizontal: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
+    width: "100%",
+  },
+  contentCol: {
+    flexDirection: "column",
+    gap: 6,
+    width: "100%",
+  },
+  breakdownCol: {
+    flexDirection: "column",
+    gap: 4,
+    width: "100%",
   },
   hairline: {
     position: "absolute",
@@ -160,7 +187,9 @@ const styles = StyleSheet.create({
   line: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 4,
+    alignItems: "center",
+    gap: spacing.sm,
+    width: "100%",
   },
   meta: {
     fontFamily: fonts.regular,
@@ -176,15 +205,26 @@ const styles = StyleSheet.create({
     color: KANKREG_PALETTE.green,
     letterSpacing: 0.4,
   },
+  freeDark: {
+    color: "#A8B86C",
+  },
   discountMeta: {
     color: KANKREG_PALETTE.green,
+  },
+  discountMetaDark: {
+    color: "#A8B86C",
   },
   totalRow: {
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    marginTop: 6,
-    marginBottom: spacing.sm + 4,
+    gap: spacing.sm,
+    width: "100%",
+    paddingTop: 2,
+  },
+  totalCopy: {
+    flex: 1,
+    minWidth: 0,
   },
   totalLabel: {
     fontFamily: fonts.bold,
@@ -199,6 +239,9 @@ const styles = StyleSheet.create({
     color: KANKREG_PALETTE.goldDeep,
     marginTop: 2,
   },
+  itemHintDark: {
+    color: "#E8BC84",
+  },
   totalValue: {
     fontFamily: FONT_PRICE,
     fontSize: 22,
@@ -207,6 +250,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   ctaWrap: {
+    width: "100%",
     borderRadius: 999,
     overflow: "hidden",
     ...platformShadow({

@@ -37,6 +37,7 @@ function resolvePriority(priority) {
 
 /**
  * Low-quality preview first, full resolution via load balancer, crossfade when ready.
+ * `priority="high"` shows the full image immediately (hero LCP).
  */
 export default function ProgressiveImage({
   source,
@@ -56,8 +57,10 @@ export default function ProgressiveImage({
   quality = "auto:good",
   skipFullLoad = false,
   imageClassName,
+  onLoad,
 }) {
-  const [fullReady, setFullReady] = useState(false);
+  const eager = priority === "high";
+  const [fullReady, setFullReady] = useState(eager);
 
   const fullSrc = useMemo(() => {
     if (uri) return toImageSrc(uri, { width, quality });
@@ -66,6 +69,7 @@ export default function ProgressiveImage({
   }, [quality, source, uri, width]);
 
   const previewSrc = useMemo(() => {
+    if (eager) return null;
     if (previewSource != null) {
       return toImageSrc(previewSource, { width: 48, quality: "auto:low" });
     }
@@ -74,11 +78,16 @@ export default function ProgressiveImage({
     const fromHelper = getPreviewImageUri(raw);
     if (fromHelper) return fromHelper;
     return toImageSrc(raw, { width: 48, quality: "auto:low" });
-  }, [previewSource, source, uri]);
+  }, [eager, previewSource, source, uri]);
 
   useEffect(() => {
-    setFullReady(false);
+    setFullReady(eager);
     if (skipFullLoad || !fullSrc || Platform.OS !== "web") return undefined;
+
+    if (eager) {
+      preloadImage(fullSrc, ImageLoadPriority.HIGH).catch(() => {});
+      return undefined;
+    }
 
     let cancelled = false;
     preloadImage(fullSrc, resolvePriority(priority))
@@ -92,23 +101,23 @@ export default function ProgressiveImage({
     return () => {
       cancelled = true;
     };
-  }, [fullSrc, onError, priority, skipFullLoad]);
+  }, [eager, fullSrc, onError, priority, skipFullLoad]);
 
   if (!fullSrc && !previewSrc) return null;
 
   const objectFit = contentFit;
   const objectPosition = contentPosition || "center";
-  const eager = priority === "high";
+  const showFull = fullReady || eager;
 
   if (Platform.OS === "web") {
     return (
       <View style={[styles.shell, rounded ? { borderRadius: rounded } : null, style]} className={className}>
-        {showSkeleton && !previewSrc && !fullReady ? (
+        {showSkeleton && !previewSrc && !showFull ? (
           <View style={styles.layer} pointerEvents="none">
             <SkeletonBlock width="100%" height="100%" rounded={rounded || 0} />
           </View>
         ) : null}
-        {previewSrc && !fullReady ? (
+        {previewSrc && !showFull ? (
           <HtmlImg
             src={previewSrc}
             alt=""
@@ -123,14 +132,17 @@ export default function ProgressiveImage({
           <HtmlImg
             src={fullSrc}
             alt={alt}
-            loading={eager ? "eager" : "lazy"}
-            fetchPriority={eager ? "high" : "auto"}
+            loading={eager ? "eager" : priority === "low" ? "lazy" : "lazy"}
+            fetchPriority={eager ? "high" : priority === "low" ? "low" : "auto"}
             decoding="async"
-            className={[FULL_CLASS, fullReady ? "kankreg-progressive-ready" : "", imageClassName]
+            className={[FULL_CLASS, showFull ? "kankreg-progressive-ready" : "", imageClassName]
               .filter(Boolean)
               .join(" ")}
             style={{ objectFit, objectPosition }}
-            onLoad={() => setFullReady(true)}
+            onLoad={() => {
+              setFullReady(true);
+              onLoad?.();
+            }}
             onError={onError}
           />
         ) : null}
@@ -154,7 +166,7 @@ export default function ProgressiveImage({
         contentPosition={contentPosition}
         placeholder={previewUri ? { uri: previewUri } : { blurhash: PRODUCT_HERO_BLURHASH }}
         placeholderContentFit={contentFit}
-        transition={320}
+        transition={eager ? 0 : 320}
         cachePolicy="memory-disk"
         priority={priority}
         recyclingKey={recyclingKey || fullSrc || previewUri}

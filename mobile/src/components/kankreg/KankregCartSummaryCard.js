@@ -39,7 +39,7 @@ export default function KankregCartSummaryCard({
           backgroundColor: isDark ? c.surface : "#FFFEFA",
           borderColor: isDark ? c.border : KANKREG_PALETTE.line,
         },
-        cardShadow,
+        isDark ? cardShadowDark : cardShadowLight,
       ]}
     >
       <View style={[styles.accent, { backgroundColor: isDark ? "rgba(52, 211, 153, 0.55)" : KANKREG_PALETTE.gold }]} />
@@ -96,6 +96,15 @@ export default function KankregCartSummaryCard({
         ) : null}
       </View>
 
+      <View style={[styles.totalBlock, { borderTopColor: isDark ? c.border : KANKREG_PALETTE.line }]}>
+        <Text style={[styles.totalBlockLabel, { color: isDark ? c.textMuted : KANKREG_PALETTE.inkFaint }]}>
+          {CART_UI.totalLabel}
+        </Text>
+        <Text style={[styles.totalBlockValue, { color: isDark ? c.textPrimary : KANKREG_PALETTE.ink }]}>
+          {formatINR(total)}
+        </Text>
+      </View>
+
       <View style={[styles.trustRow, { borderTopColor: isDark ? c.border : KANKREG_PALETTE.line }]}>
         <Ionicons name="shield-checkmark-outline" size={13} color={KANKREG_PALETTE.green} />
         <Text style={[styles.trustText, { color: isDark ? c.textMuted : KANKREG_PALETTE.inkFaint }]}>
@@ -119,12 +128,23 @@ export default function KankregCartSummaryCard({
   );
 }
 
-const cardShadow = platformShadow({
+const cardShadowLight = platformShadow({
   web: { boxShadow: "0 12px 32px rgba(22, 69, 51, 0.08)" },
   ios: {
     shadowColor: "#3D2A12",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.08,
+    shadowRadius: 16,
+  },
+  android: { elevation: 4 },
+});
+
+const cardShadowDark = platformShadow({
+  web: { boxShadow: "0 12px 32px rgba(0, 0, 0, 0.32)" },
+  ios: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.22,
     shadowRadius: 16,
   },
   android: { elevation: 4 },
@@ -137,6 +157,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
+    width: "100%",
+    flexDirection: "column",
   },
   accent: {
     position: "absolute",
@@ -184,6 +206,28 @@ const styles = StyleSheet.create({
   },
   discount: {
     color: KANKREG_PALETTE.green,
+  },
+  totalBlock: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    paddingTop: spacing.sm,
+    marginTop: spacing.xs,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  totalBlockLabel: {
+    flex: 1,
+    fontFamily: fonts.bold,
+    fontSize: 10,
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+  },
+  totalBlockValue: {
+    flexShrink: 0,
+    fontFamily: FONT_HEADING,
+    fontSize: 24,
+    letterSpacing: -0.4,
   },
   trustRow: {
     flexDirection: "row",

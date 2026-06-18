@@ -60,6 +60,7 @@ function OrderListItem({
         canEditAddress={canEditAddress}
         onDownloadInvoice={onDownloadInvoice}
         downloading={downloading}
+        invoiceReady={Boolean(order)}
         onClaimReward={onClaimReward}
         claimingReward={claimingReward}
         rewardClaimed={Boolean(order.reward?.claimedAt)}

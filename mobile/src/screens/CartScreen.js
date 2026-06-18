@@ -235,12 +235,14 @@ export default function CartScreen({ navigation, route }) {
     );
   }
 
-  const renderCartItem = (item, index = 0) => {
+  const renderCartItem = (item, index = 0, { embedded = false, showDivider = false } = {}) => {
     const lineKey = cartLineKey(item);
     const row = (
       <KankregCartRow
         item={item}
         index={index}
+        embedded={embedded}
+        showDivider={showDivider}
         onDecrease={() => removeFromCart(item.id, item.variantLabel)}
         onIncrease={() => addToCart(item)}
         onRemove={() => removeLineFromCart(item.id, item.variantLabel)}
@@ -489,19 +491,29 @@ export default function CartScreen({ navigation, route }) {
           </View>
           </SectionReveal>
         ) : (!kankregWebSplit || !isCheckoutFlow) ? (
-          <>
+          <View style={styles.bagSection}>
             <View style={styles.bagHeader}>
               <View style={styles.bagHeaderTop}>
-                <Text style={styles.itemsSectionLabel}>{CART_UI.itemsSectionLabel}</Text>
-                <Text style={styles.bagSubtotalPreview}>{formatINR(totalAmount)}</Text>
-              </View>
-              <View style={styles.trustStripInline}>
-                <Ionicons name="shield-checkmark-outline" size={14} color={isDark ? c.primaryBright : "#3C6248"} />
-                <Text style={styles.trustStripText}>{CART_UI.trustLine}</Text>
+                <View style={styles.bagHeaderCopy}>
+                  <Text style={styles.itemsSectionLabel}>{CART_UI.itemsSectionLabel}</Text>
+                  <View style={styles.trustStripInline}>
+                    <Ionicons name="shield-checkmark-outline" size={14} color={isDark ? c.primaryBright : "#3C6248"} />
+                    <Text style={styles.trustStripText}>{CART_UI.trustLine}</Text>
+                  </View>
+                </View>
+                <View style={styles.bagSubtotalChip}>
+                  <Text style={styles.bagSubtotalLabel}>{CART_UI.stickySubtotalLabel}</Text>
+                  <Text style={styles.bagSubtotalPreview}>{formatINR(totalAmount)}</Text>
+                </View>
               </View>
             </View>
-            <View style={[styles.listSection, styles.figmaListSection]}>
-              {cartItems.map((item, idx) => renderCartItem(item, idx))}
+            <View style={styles.itemsPanel}>
+              {cartItems.map((item, idx) =>
+                renderCartItem(item, idx, {
+                  embedded: true,
+                  showDivider: idx < cartItems.length - 1,
+                })
+              )}
             </View>
             {isCartBagView ? (
               <View style={styles.figmaCouponWrap}>
@@ -513,7 +525,7 @@ export default function CartScreen({ navigation, route }) {
                 />
               </View>
             ) : null}
-          </>
+          </View>
         ) : null}
 
         {cartItems.length > 0 && isCheckoutFlow && kankregWebSplit ? <GoldHairline marginVertical={spacing.md} /> : null}
@@ -1231,11 +1243,54 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     backgroundColor: isDark ? c.surfaceMuted : "rgba(255, 253, 249, 0.96)",
     ...shadowPremium,
   },
+  bagSection: {
+    width: "100%",
+    flexDirection: "column",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
   bagHeaderTop: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    marginBottom: spacing.sm,
+    gap: spacing.md,
+    width: "100%",
+  },
+  bagHeaderCopy: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "column",
+    gap: spacing.sm,
+  },
+  bagSubtotalChip: {
+    flexShrink: 0,
+    alignItems: "flex-end",
+    gap: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: isDark ? c.primaryBorder : "rgba(188, 144, 92, 0.28)",
+    backgroundColor: isDark ? "rgba(52, 211, 153, 0.08)" : "rgba(255, 251, 235, 0.9)",
+  },
+  bagSubtotalLabel: {
+    fontFamily: fonts.bold,
+    fontSize: 9,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    color: c.textMuted,
+  },
+  itemsPanel: {
+    marginHorizontal: FIGMA.gutter,
+    borderRadius: radius.xl,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: isDark ? c.border : ALCHEMY.pillInactive,
+    borderTopWidth: 2,
+    borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
+    backgroundColor: isDark ? c.surface : "rgba(255, 254, 252, 0.98)",
+    overflow: "hidden",
+    paddingVertical: spacing.xs,
+    ...shadowPremium,
   },
   itemsSectionLabel: {
     fontFamily: FONT_HEADING,
@@ -1244,14 +1299,16 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     letterSpacing: -0.2,
   },
   bagSubtotalPreview: {
-    fontFamily: fonts.bold,
-    fontSize: typography.bodySmall,
+    fontFamily: FONT_PRICE,
+    fontSize: typography.body,
     color: isDark ? c.primaryBright : ALCHEMY.brown,
+    letterSpacing: -0.2,
   },
   trustStripInline: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
+    width: "100%",
   },
   trustStripText: {
     flex: 1,

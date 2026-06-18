@@ -26,7 +26,7 @@
     "web": "expo start --web",
     "web:export": "expo export --platform web",
     "export:web": "npm run optimize:web && npm run web:export && node scripts/post-export-web.js",
-    "optimize:web": "node scripts/optimize-marketing-web.js",
+    "optimize:web": "node scripts/optimize-zeevan-heroes.js && node scripts/optimize-marketing-web.js",
     "icons:generate": "node scripts/generate-app-icons.js",
     "icons:app": "node scripts/generate-app-icons.js",
     "brand:generate": "node scripts/generate-zeevan-brand-assets.js",

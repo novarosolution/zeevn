@@ -19,6 +19,8 @@ export default function KankregCartRow({
   onDecrease,
   onIncrease,
   onRemove,
+  embedded = false,
+  showDivider = false,
 }) {
   const { colors: c, isDark } = useTheme();
   const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
@@ -31,74 +33,75 @@ export default function KankregCartRow({
   const thumbPreview = getProductThumbImageUri(imageUri);
 
   return (
-    <View style={styles.row}>
-      <View style={styles.accentBar} pointerEvents="none" />
-      <View style={styles.thumbWrap}>
-        {imageUri ? (
-          <ProgressiveProductImage
-            uri={imageUri}
-            previewUri={thumbPreview}
-            style={styles.thumbImage}
-            contentFit="cover"
-            priority="normal"
-            rounded={12}
-          />
-        ) : (
-          <LinearGradient colors={grad} style={styles.thumbGrad} />
-        )}
-      </View>
+    <View style={[styles.row, embedded && styles.rowEmbedded, showDivider && styles.rowDivider]}>
+      {!embedded ? <View style={styles.accentBar} pointerEvents="none" /> : null}
+      <View style={styles.topRow}>
+        <View style={styles.thumbWrap}>
+          {imageUri ? (
+            <ProgressiveProductImage
+              uri={imageUri}
+              previewUri={thumbPreview}
+              style={styles.thumbImage}
+              contentFit="cover"
+              priority="normal"
+              rounded={12}
+            />
+          ) : (
+            <LinearGradient colors={grad} style={styles.thumbGrad} />
+          )}
+        </View>
 
-      <View style={styles.body}>
-        <Text style={styles.name} numberOfLines={2}>
-          {item?.name}
-        </Text>
-        {variant ? (
-          <View style={styles.variantPill}>
-            <Text style={styles.variantText} numberOfLines={1}>
-              {variant}
+        <View style={styles.body}>
+          <View style={styles.titleRow}>
+            <Text style={styles.name} numberOfLines={2}>
+              {item?.name}
             </Text>
+            <Text style={styles.lineTotal}>{formatINR(lineTotal)}</Text>
           </View>
-        ) : null}
-        <Text style={styles.unitHint}>
-          {fillProductScreen(CART_UI.unitPrice, { price: formatINR(unitPrice) })}
-        </Text>
-
-        <View style={styles.qtyRow}>
-          <View style={styles.qtyPill}>
-            <Pressable
-              onPress={onDecrease}
-              style={({ pressed }) => [styles.qtyBtn, pressed && styles.qtyBtnPressed]}
-              hitSlop={6}
-              accessibilityLabel="Decrease quantity"
-            >
-              <Ionicons name="remove" size={15} color="#fff" />
-            </Pressable>
-            <Text style={styles.qtyNum}>{qty}</Text>
-            <Pressable
-              onPress={onIncrease}
-              style={({ pressed }) => [styles.qtyBtn, pressed && styles.qtyBtnPressed]}
-              hitSlop={6}
-              accessibilityLabel="Increase quantity"
-            >
-              <Ionicons name="add" size={15} color="#fff" />
-            </Pressable>
-          </View>
-          {onRemove ? (
-            <Pressable
-              onPress={onRemove}
-              style={({ pressed }) => [styles.removeBtn, pressed && { opacity: 0.7 }]}
-              hitSlop={8}
-              accessibilityLabel={CART_UI.removeItem}
-            >
-              <Ionicons name="trash-outline" size={14} color={isDark ? c.textMuted : KANKREG_PALETTE.inkFaint} />
-              <Text style={styles.removeText}>{CART_UI.removeItem}</Text>
-            </Pressable>
+          {variant ? (
+            <View style={styles.variantPill}>
+              <Text style={styles.variantText} numberOfLines={1}>
+                {variant}
+              </Text>
+            </View>
           ) : null}
+          <Text style={styles.unitHint}>
+            {fillProductScreen(CART_UI.unitPrice, { price: formatINR(unitPrice) })}
+          </Text>
         </View>
       </View>
 
-      <View style={styles.priceCol}>
-        <Text style={styles.lineTotal}>{formatINR(lineTotal)}</Text>
+      <View style={styles.actionsRow}>
+        <View style={styles.qtyPill}>
+          <Pressable
+            onPress={onDecrease}
+            style={({ pressed }) => [styles.qtyBtn, pressed && styles.qtyBtnPressed]}
+            hitSlop={6}
+            accessibilityLabel="Decrease quantity"
+          >
+            <Ionicons name="remove" size={15} color="#fff" />
+          </Pressable>
+          <Text style={styles.qtyNum}>{qty}</Text>
+          <Pressable
+            onPress={onIncrease}
+            style={({ pressed }) => [styles.qtyBtn, pressed && styles.qtyBtnPressed]}
+            hitSlop={6}
+            accessibilityLabel="Increase quantity"
+          >
+            <Ionicons name="add" size={15} color="#fff" />
+          </Pressable>
+        </View>
+        {onRemove ? (
+          <Pressable
+            onPress={onRemove}
+            style={({ pressed }) => [styles.removeBtn, pressed && { opacity: 0.7 }]}
+            hitSlop={8}
+            accessibilityLabel={CART_UI.removeItem}
+          >
+            <Ionicons name="trash-outline" size={14} color={isDark ? c.textMuted : KANKREG_PALETTE.inkFaint} />
+            <Text style={styles.removeText}>{CART_UI.removeItem}</Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );
@@ -110,9 +113,8 @@ function createStyles(c, isDark) {
 
   return StyleSheet.create({
     row: {
-      flexDirection: "row",
-      alignItems: "flex-start",
-      gap: 12,
+      flexDirection: "column",
+      gap: 10,
       padding: 12,
       marginBottom: 12,
       borderRadius: 16,
@@ -134,6 +136,30 @@ function createStyles(c, isDark) {
         },
         android: { elevation: 3 },
       }),
+    },
+    rowEmbedded: {
+      marginBottom: 0,
+      borderRadius: 0,
+      borderWidth: 0,
+      backgroundColor: "transparent",
+      ...Platform.select({
+        web: { boxShadow: "none" },
+        ios: { shadowOpacity: 0, shadowRadius: 0 },
+        android: { elevation: 0 },
+        default: {},
+      }),
+    },
+    rowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : KANKREG_PALETTE.line,
+      paddingBottom: 14,
+      marginBottom: 0,
+    },
+    topRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 12,
+      width: "100%",
     },
     accentBar: {
       position: "absolute",
@@ -162,9 +188,17 @@ function createStyles(c, isDark) {
     body: {
       flex: 1,
       minWidth: 0,
-      paddingTop: 2,
+    },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 10,
+      width: "100%",
     },
     name: {
+      flex: 1,
+      minWidth: 0,
       fontFamily: FONT_BODY_SEMIBOLD,
       fontSize: 14,
       lineHeight: 18,
@@ -194,11 +228,11 @@ function createStyles(c, isDark) {
       fontSize: 10,
       color: isDark ? c.textMuted : KANKREG_PALETTE.inkFaint,
     },
-    qtyRow: {
+    actionsRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 10,
-      marginTop: 10,
+      justifyContent: "space-between",
+      width: "100%",
     },
     qtyPill: {
       flexDirection: "row",
@@ -213,7 +247,7 @@ function createStyles(c, isDark) {
       width: 30,
       height: 30,
       borderRadius: 15,
-      backgroundColor: isDark ? KANKREG_PALETTE.ink : KANKREG_PALETTE.ink,
+      backgroundColor: isDark ? c.primary : KANKREG_PALETTE.ink,
       alignItems: "center",
       justifyContent: "center",
     },
@@ -240,17 +274,14 @@ function createStyles(c, isDark) {
       color: isDark ? c.textMuted : KANKREG_PALETTE.inkFaint,
       letterSpacing: 0.2,
     },
-    priceCol: {
-      flexShrink: 0,
-      alignItems: "flex-end",
-      paddingTop: 2,
-    },
     lineTotal: {
+      flexShrink: 0,
       fontFamily: FONT_PRICE,
       fontSize: 16,
       fontWeight: "600",
       color: isDark ? c.textPrimary : KANKREG_PALETTE.ink,
       letterSpacing: -0.2,
+      textAlign: "right",
     },
   });
 }

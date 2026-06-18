@@ -14,7 +14,7 @@ import PremiumSectionHeader from "../ui/PremiumSectionHeader";
 import { collectOrderMapPoints } from "../../utils/orderMapBounds";
 import { openMapsDirections, STALE_MS } from "./orderLiveMapShared";
 
-const LeafletMapComponent = require("./OrderLiveMapLeaflet.web").default;
+import LeafletMapComponent from "./OrderLiveMapLeaflet.web";
 
 function hasDestinationSummary(dest) {
   if (!dest || typeof dest !== "object") return false;
@@ -211,23 +211,23 @@ export default function OrderLiveMapCard({ orderId }) {
       ) : null}
 
       {showMap ? (
-          <LeafletMapComponent
-            plat={plat}
-            plng={plng}
-            slat={slat}
-            slng={slng}
-            dlat={dlat}
-            dlng={dlng}
-            hasPartner={hasPartner}
-            hasShop={hasShop}
-            hasDest={hasDest}
-            partnerLabel={partnerLabel}
-            shopLabel={shopLabel}
-            isDark={isDark}
-            routeColor={routeColor}
-            routePositions={routePositions}
-            mapPoints={mapPoints}
-          />
+        <LeafletMapComponent
+          plat={plat}
+          plng={plng}
+          slat={slat}
+          slng={slng}
+          dlat={dlat}
+          dlng={dlng}
+          hasPartner={hasPartner}
+          hasShop={hasShop}
+          hasDest={hasDest}
+          partnerLabel={partnerLabel}
+          shopLabel={shopLabel}
+          isDark={isDark}
+          routeColor={routeColor}
+          routePositions={routePositions}
+          mapPoints={mapPoints}
+        />
       ) : null}
 
       {trackable ? (

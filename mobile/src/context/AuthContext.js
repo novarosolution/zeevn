@@ -5,6 +5,7 @@ import { appleAuthRequest, googleAuthRequest, loginRequest, registerRequest } fr
 import { fetchUserProfile } from "../services/userService";
 import { registerForPushNotifications } from "../services/pushNotificationService";
 import { configureApiClient, onSessionExpiredEvent } from "../services/apiClient";
+import { deferAfterFirstPaint } from "../utils/deferAfterFirstPaint";
 
 const AuthContext = createContext(undefined);
 const AUTH_STORAGE_KEY = "@kankreg_auth";
@@ -14,7 +15,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(Platform.OS !== "web");
   const [sessionExpired, setSessionExpired] = useState(false);
 
   const tokenRef = useRef(null);
@@ -139,14 +140,27 @@ export function AuthProvider({ children }) {
       }
     }
 
-    const watchdogMs = Platform.OS === "web" ? 800 : 1500;
+    const watchdogMs = Platform.OS === "web" ? 400 : 1500;
     const watchdog = setTimeout(() => {
       if (isMounted) {
         setIsAuthLoading(false);
       }
     }, watchdogMs);
 
-    restoreAuth();
+    const runRestore = () => {
+      restoreAuth();
+    };
+
+    if (Platform.OS === "web") {
+      const cancelDeferred = deferAfterFirstPaint(runRestore, { timeoutMs: 2200 });
+      return () => {
+        isMounted = false;
+        clearTimeout(watchdog);
+        cancelDeferred();
+      };
+    }
+
+    runRestore();
 
     return () => {
       isMounted = false;

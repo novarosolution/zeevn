@@ -32,7 +32,7 @@ function OrderProgressStripBase({ status, c, isDark, compact = false }) {
     return (
       <View style={[styles.trackShell, styles.trackShellCancelled, isDark && styles.trackShellCancelledDark]}>
         <View style={styles.trackCancelledInner}>
-          <View style={[styles.trackCancelledIcon, { borderColor: c.danger }]}>
+          <View style={[styles.trackCancelledIcon, { borderColor: c.danger, backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "#fff" }]}>
             <Ionicons name="close-circle-outline" size={22} color={c.danger} />
           </View>
           <View style={styles.trackCancelledText}>
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#fff",
+    backgroundColor: "transparent",
   },
   trackCancelledText: {
     flex: 1,

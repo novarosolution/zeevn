@@ -12,6 +12,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import BrandLogo from "../BrandLogo";
+import EngineerCredit from "../EngineerCredit";
 import { fonts, getSemanticColors, icon, layout, semanticRadius, spacing, typography } from "../../theme/tokens";
 
 /**
@@ -98,6 +99,11 @@ export default function HomePageFooter({ colors: c }) {
         <Text style={styles.copy}>© {new Date().getFullYear()} Zeevan. All rights reserved.</Text>
         {footerMeta ? <Text style={styles.meta}>{footerMeta}</Text> : null}
       </View>
+      <EngineerCredit
+        style={styles.engineerLine}
+        textStyle={{ color: c.textMuted }}
+        linkStyle={{ color: isDark ? ALCHEMY.goldBright : KANKREG_PALETTE.goldBright }}
+      />
     </View>
   );
 }
@@ -266,15 +272,6 @@ function createStyles(c, shadowPremium, isDark, semantic) {
       marginTop: spacing.sm,
       textAlign: "center",
       width: "100%",
-      fontSize: typography.caption,
-      fontFamily: fonts.medium,
-      color: c.textMuted,
-    },
-    engineerLink: {
-      fontFamily: fonts.bold,
-      color: c.primary,
-      textDecorationLine: Platform.OS === "web" ? "underline" : "none",
-      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
     },
   });
 }

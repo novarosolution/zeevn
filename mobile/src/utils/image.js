@@ -166,7 +166,8 @@ export function getProductHeroImageUri(rawUri) {
 
 /** Product PDP — gallery thumb strip. */
 export function getProductThumbImageUri(rawUri) {
-  return getImageUriCandidates(rawUri, { width: 220, quality: "auto:good" })[0] || "";
+  const width = Platform.OS === "web" ? 96 : 220;
+  return getImageUriCandidates(rawUri, { width, quality: Platform.OS === "web" ? "auto:low" : "auto:good" })[0] || "";
 }
 
 /** Product PDP — lifestyle / story supporting image. */
@@ -175,15 +176,18 @@ export function getProductSectionImageUri(rawUri) {
 }
 
 /** Max delivery width for home hero slider (web). */
-export const HERO_SLIDE_DESKTOP_MAX_WIDTH = 1280;
-export const HERO_SLIDE_MOBILE_MAX_WIDTH = 840;
+export const HERO_SLIDE_DESKTOP_MAX_WIDTH = 960;
+export const HERO_SLIDE_MOBILE_MAX_WIDTH = 720;
 
-/** CSS layout width → capped pixel width for hero `<img>` (respects DPR, never 4K). */
+/** Bundled hero WebP width suffixes (largest → smallest). */
+const HERO_WEBP_WIDTHS = [960, 720];
+
+/** CSS layout width → capped pixel width for hero `<img>` (respects DPR, never oversized). */
 export function getHeroSlideDisplayWidth(layoutWidth = 960, { isMobileWeb = false } = {}) {
   const css = Math.max(320, Number(layoutWidth) || 960);
   let dpr = 1;
   if (Platform.OS === "web" && typeof window !== "undefined") {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    dpr = Math.min(window.devicePixelRatio || 1, isMobileWeb ? 1.5 : 1.75);
   } else {
     dpr = 2;
   }
@@ -191,7 +195,34 @@ export function getHeroSlideDisplayWidth(layoutWidth = 960, { isMobileWeb = fals
   return Math.min(Math.ceil(css * dpr), cap);
 }
 
-function preferWebHeroBundlerVariant(uri, width) {
+function isPortraitHeroBundlerUri(uri) {
+  return /portrait|packaging-portrait/i.test(String(uri || ""));
+}
+
+function isWideHeroBundlerUri(uri) {
+  return /21x9|hero-web-wide/i.test(String(uri || ""));
+}
+
+/** Pick committed WebP suffix — portrait assets only exist at 720, wide at 960. */
+function pickHeroWebpSuffix(uri, deliveryWidth) {
+  if (isPortraitHeroBundlerUri(uri)) {
+    return `-web-${HERO_SLIDE_MOBILE_MAX_WIDTH}.webp`;
+  }
+  if (isWideHeroBundlerUri(uri)) {
+    return `-web-${HERO_SLIDE_DESKTOP_MAX_WIDTH}.webp`;
+  }
+  const target = Math.min(
+    deliveryWidth,
+    deliveryWidth <= HERO_SLIDE_MOBILE_MAX_WIDTH
+      ? HERO_SLIDE_MOBILE_MAX_WIDTH
+      : HERO_SLIDE_DESKTOP_MAX_WIDTH
+  );
+  const sorted = [...HERO_WEBP_WIDTHS].sort((a, b) => a - b);
+  const bucket = sorted.find((w) => w >= target) || sorted[sorted.length - 1];
+  return `-web-${bucket}.webp`;
+}
+
+function preferWebHeroBundlerVariant(uri, deliveryWidth) {
   const value = String(uri || "");
   if (!value || Platform.OS !== "web") return value;
 
@@ -199,14 +230,28 @@ function preferWebHeroBundlerVariant(uri, width) {
     isBundlerMediaPath(value) || value.includes("/assets/") || value.includes("unstable_path=");
   if (!isBundled) return value;
 
-  const mobile = width <= HERO_SLIDE_MOBILE_MAX_WIDTH;
+  const suffix = pickHeroWebpSuffix(value, deliveryWidth);
+  const safeSuffix =
+    isPortraitHeroBundlerUri(value) && suffix.includes("-web-960.")
+      ? `-web-${HERO_SLIDE_MOBILE_MAX_WIDTH}.webp`
+      : suffix;
 
-  // Only swap between committed *-web-*.webp siblings — never rewrite .png/.jpg (Metro 404s).
-  if (value.includes("-web-1200.webp") && mobile) {
-    return value.replace("-web-1200.webp", "-web-840.webp");
+  for (const width of HERO_WEBP_WIDTHS) {
+    const token = `-web-${width}.webp`;
+    if (value.includes(token)) {
+      if (value.endsWith(safeSuffix) || value.includes(safeSuffix)) return value;
+      return value.replace(token, safeSuffix);
+    }
   }
-  if (value.includes("-web-840.webp") && !mobile) {
-    return value.replace("-web-840.webp", "-web-1200.webp");
+
+  const webpMatch = value.match(/^(.*)-web-\d+\.webp(\?.*)?$/i);
+  if (webpMatch) {
+    return `${webpMatch[1]}${safeSuffix}${webpMatch[2] || ""}`;
+  }
+
+  const pngMatch = value.match(/^(.*)\.png(\?.*)?$/i);
+  if (pngMatch) {
+    return `${pngMatch[1]}${safeSuffix}${pngMatch[2] || ""}`;
   }
 
   return value;
@@ -282,7 +327,10 @@ function applyCloudinaryDeliveryTransform(uri, { width, quality }) {
 export function optimizeDisplayImageUrl(rawUri, { width = 960, quality = "auto" } = {}) {
   const uri = resolveImageUri(String(rawUri || "").trim());
   if (!uri) return "";
-  if (isBundlerMediaPath(uri)) return resolveBundlerMediaUri(uri);
+  if (isBundlerMediaPath(uri)) {
+    const resolved = resolveBundlerMediaUri(uri);
+    return preferWebHeroBundlerVariant(resolved, width) || resolved;
+  }
   if (!uri.includes("res.cloudinary.com") || !uri.includes(CLOUDINARY_UPLOAD)) {
     return uri;
   }
@@ -305,8 +353,10 @@ export function getPreviewImageUri(rawUri, { width = 48, quality = "auto:low" } 
   const full = optimizeDisplayImageUrl(raw, { width: 1200, quality: "auto:good" });
   if (!full) return "";
 
-  // Bundled PNG/JPG — no `-preview-48.webp` sibling committed in repo.
-  if (isBundlerMediaPath(full) && !/-web-\d+\.webp/i.test(full)) {
+  // Bundled heroes — tiny LQIP sibling when optimize:web has run.
+  if (isBundlerMediaPath(full)) {
+    const preview = full.replace(/-web-\d+\.webp/i, "-preview-48.webp").replace(/\.png(\?.*)?$/i, "-preview-48.webp");
+    if (preview !== full && preview.includes("-preview-48.webp")) return preview;
     return "";
   }
 
@@ -361,16 +411,19 @@ export function prefetchProductHeroImage(rawUri) {
 /** Web: warm browser cache for upcoming section images. */
 export function prefetchDisplayImages(
   sources,
-  { eagerCount = 2, width = 960, quality = "auto:good", warmupAll = true } = {}
+  { eagerCount = 1, width = 960, quality = "auto:good", warmupAll = false } = {}
 ) {
   if (Platform.OS !== "web" || typeof document === "undefined") return;
 
   const seen = new Set();
   sources.forEach((raw, index) => {
-    const uri = optimizeDisplayImageUrl(
-      typeof raw === "object" && raw?.uri ? raw.uri : raw,
-      { width, quality }
-    );
+    let uri =
+      typeof raw === "string" && (isBundlerMediaPath(raw) || raw.includes("/assets/"))
+        ? raw
+        : optimizeDisplayImageUrl(
+            typeof raw === "object" && raw?.uri ? raw.uri : raw,
+            { width, quality }
+          );
     if (!uri || seen.has(uri)) return;
     seen.add(uri);
 

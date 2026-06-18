@@ -20,6 +20,7 @@ backend/node_modules
 # Expo / mobile builds
 mobile/.expo
 mobile/.expo-build-check
+mobile/.expo-web-*
 mobile/dist
 mobile/dist-web
 mobile/dist-export-check

@@ -9,6 +9,8 @@ import { createKankregEyebrowStyle, kankregSectionIndex } from "../../theme/kank
 import { fonts, spacing, typography } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import GoldHairline from "../ui/GoldHairline";
+import { KankregPageWrap } from "./KankregPageWrap";
+export { KankregPageWrap };
 /** `.section-head` from kankreg.html */
 export function KankregSectionHead({ index, eyebrow, title, kicker, right }) {
   const { isDark } = useTheme();
@@ -62,17 +64,8 @@ export function KankregSectionHead({ index, eyebrow, title, kicker, right }) {
 }
 
 /**
- * Page content wrapper: max-width centering + vertical rhythm.
- * Horizontal gutters are owned by {@link KankregScrollPage} (single source of truth),
- * so this no longer re-applies a gutter — keeping Home/Shop/Profile aligned with inner pages.
+ * Page content wrapper — re-exported from `./KankregPageWrap` (no Reanimated on home path).
  */
-export function KankregPageWrap({ children, style, gap }) {
-  return (
-    <View style={[styles.wrap, style]}>
-      <View style={[styles.inner, gap != null ? { gap } : null]}>{children}</View>
-    </View>
-  );
-}
 
 function CheckoutStepCell({ index, label, active, done, hideLabels, isDark }) {
   const reducedMotion = useReducedMotion();

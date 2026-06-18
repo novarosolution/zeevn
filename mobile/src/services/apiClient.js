@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "./apiBase";
+import { fetchBalanced } from "./apiEndpointBalancer";
 
 /**
  * Lightweight central API client.
@@ -72,19 +72,26 @@ function emitSessionExpired(reason) {
   }
 }
 
-function buildUrl(path) {
-  if (/^https?:\/\//i.test(path)) {
-    return path;
-  }
-  return `${getApiBaseUrl()}${path}`;
-}
-
 async function readJson(response) {
   try {
     return await response.json();
   } catch {
     return {};
   }
+}
+
+async function doFetch(path, options, token) {
+  const headers = { ...(options.headers || {}) };
+  if (!headers["Content-Type"] && options.body && typeof options.body === "string") {
+    headers["Content-Type"] = "application/json";
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  if (/^https?:\/\//i.test(path)) {
+    return fetch(path, { ...options, headers });
+  }
+  return fetchBalanced(path, { ...options, headers });
 }
 
 async function refreshAccessToken() {
@@ -98,7 +105,7 @@ async function refreshAccessToken() {
 
   refreshInFlight = (async () => {
     try {
-      const response = await fetch(buildUrl("/users/refresh"), {
+      const response = await fetchBalanced("/users/refresh", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken }),
@@ -121,17 +128,6 @@ async function refreshAccessToken() {
   })();
 
   return refreshInFlight;
-}
-
-async function doFetch(path, options, token) {
-  const headers = { ...(options.headers || {}) };
-  if (!headers["Content-Type"] && options.body && typeof options.body === "string") {
-    headers["Content-Type"] = "application/json";
-  }
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  return fetch(buildUrl(path), { ...options, headers });
 }
 
 /**
@@ -213,8 +209,7 @@ export function apiDelete(path, options = {}) {
 /** Lightweight connectivity probe — GET / on server root (no auth). */
 export async function checkApiHealth() {
   try {
-    const base = getApiBaseUrl().replace(/\/api\/?$/i, "");
-    const response = await fetch(`${base}/`, { method: "GET" });
+    const response = await fetchBalanced("/", { method: "GET" }, { timeoutMs: 6000 });
     const data = await readJson(response);
     return Boolean(response.ok && data?.ok);
   } catch {

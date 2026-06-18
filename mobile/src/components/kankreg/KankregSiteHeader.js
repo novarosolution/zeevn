@@ -17,7 +17,6 @@ import {
   WEB_Z_INDEX,
 } from "../../theme/web";
 import KankregBrandMark from "./KankregBrandMark";
-import KankregMobileNav from "./KankregMobileNav";
 import { buildKankregMobileNavItems, buildKankregNavItems, routeMatchesNav } from "./kankregNav";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { KANKREG_HEADER } from "../../content/appContent";
@@ -35,7 +34,32 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
   const { isAuthenticated, user } = useAuth();
   const { colors: c, isDark } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [MobileNavComponent, setMobileNavComponent] = useState(null);
   const [currentRouteName, setCurrentRouteName] = useState(null);
+
+  useEffect(() => {
+    if (!mobileOpen || MobileNavComponent) return undefined;
+    let cancelled = false;
+
+    const apply = (Component) => {
+      if (!cancelled) setMobileNavComponent(() => Component);
+    };
+
+    if (typeof __DEV__ !== "undefined" && __DEV__) {
+      apply(require("./KankregMobileNav").default);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    import("./KankregMobileNav")
+      .then((mod) => apply(mod.default))
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mobileOpen, MobileNavComponent]);
 
   useEffect(() => {
     if (!navReady || !navigationRef?.addListener || !navigationRef?.isReady?.()) {
@@ -275,8 +299,8 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
         />
       </View>
     </View>
-    {!showDesktopNav && !isNative ? (
-      <KankregMobileNav
+    {!showDesktopNav && !isNative && mobileOpen && MobileNavComponent ? (
+      <MobileNavComponent
         open={mobileOpen}
         items={mobileItems}
         currentRouteName={currentRouteName}

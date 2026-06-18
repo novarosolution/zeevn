@@ -23,6 +23,7 @@ export const ZEEVAN_BRAND_ASSETS = {
   wordmark: require("../../assets/zeevan-brand.png"),
   wordmarkLight: require("../../assets/zeevan-brand-light.png"),
   mark: require("../../assets/zeevan-logo.png"),
+  markLight: require("../../assets/zeevan-brand-light.png"),
 };
 
 /**
@@ -204,7 +205,7 @@ export const HOME_SCREEN_UI = {
     leanHome: true,
     showWebHero: true,
     showThreeBackground: false,
-    enableHomeGsap: true,
+    enableHomeGsap: false,
     heroEyebrow: ZEEVAN_CATALOG_SUBLINE,
     showHeroTrustChips: true,
     showIntroBand: true,
@@ -332,6 +333,13 @@ export const HOME_PAGE_TRUST_BADGES = [
 ];
 
 export const HOME_PAGE_FOOTER_META = "Made with care in India";
+
+/** Footer credit — studio that built the product. */
+export const APP_ENGINEER_CREDIT = {
+  prefix: "Created by ",
+  name: "NovaRo Solution",
+  url: "https://novarosolution.com/",
+};
 
 /** Web header action labels (routes wired in kankregNav.js). */
 export const KANKREG_HEADER = {
@@ -925,6 +933,7 @@ export const MY_ORDERS_UI = {
   detailPaymentMethod: "Payment method",
   detailPaymentStatus: "Payment status",
   detailPaymentId: "Payment ID",
+  detailTax: "Tax",
   detailInvoice: "Invoice no.",
   detailTotal: "Order total",
   detailAddress: "Deliver to",

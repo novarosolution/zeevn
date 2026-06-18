@@ -9,14 +9,24 @@ import {
   normalizeHeroSlides,
 } from "../utils/homeViewMedia";
 
+import { readCatalogDiskCache, writeCatalogDiskCache } from "../utils/catalogDiskCache";
+
 const publicApi = { auth: false };
 
-const PRODUCTS_CACHE_TTL_MS = 60 * 1000;
+const PRODUCTS_CACHE_TTL_MS = 5 * 60 * 1000;
 let productsCache = {
   data: null,
   fetchedAt: 0,
   promise: null,
 };
+
+let homeViewCache = {
+  data: null,
+  fetchedAt: 0,
+  promise: null,
+};
+
+const HOME_VIEW_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export function normalizeProduct(raw) {
   const primaryImage =
@@ -161,9 +171,13 @@ export function normalizeProduct(raw) {
   };
 }
 
-export async function getProducts() {
+export async function getProducts({ preferCache = false } = {}) {
   const now = Date.now();
   if (productsCache.data && now - productsCache.fetchedAt < PRODUCTS_CACHE_TTL_MS) {
+    return productsCache.data;
+  }
+  if (preferCache && productsCache.data?.length) {
+    refreshProductsInBackground();
     return productsCache.data;
   }
   if (productsCache.promise) {
@@ -171,6 +185,14 @@ export async function getProducts() {
   }
 
   productsCache.promise = (async () => {
+    const disk = await readCatalogDiskCache();
+    if (disk?.products?.length && !productsCache.data) {
+      productsCache = {
+        data: disk.products.map(normalizeProduct),
+        fetchedAt: disk.savedAt || Date.now(),
+        promise: null,
+      };
+    }
     const data = await apiGet("/products", publicApi);
     const list = Array.isArray(data) ? data : [];
     const normalized = list.map(normalizeProduct);
@@ -179,6 +201,8 @@ export async function getProducts() {
       fetchedAt: Date.now(),
       promise: null,
     };
+    const homeView = homeViewCache.data || disk?.homeView || null;
+    writeCatalogDiskCache({ products: normalized, homeView }).catch(() => {});
     return normalized;
   })();
 
@@ -186,12 +210,76 @@ export async function getProducts() {
     return await productsCache.promise;
   } catch (error) {
     productsCache.promise = null;
+    if (productsCache.data?.length) {
+      return productsCache.data;
+    }
+    const disk = await readCatalogDiskCache();
+    if (disk?.products?.length) {
+      const normalized = disk.products.map(normalizeProduct);
+      productsCache = {
+        data: normalized,
+        fetchedAt: disk.savedAt || Date.now(),
+        promise: null,
+      };
+      return normalized;
+    }
     throw error;
   }
 }
 
+function refreshProductsInBackground() {
+  if (productsCache.promise) return;
+  productsCache.promise = (async () => {
+    try {
+      const data = await apiGet("/products", publicApi);
+      const list = Array.isArray(data) ? data : [];
+      const normalized = list.map(normalizeProduct);
+      productsCache = {
+        data: normalized,
+        fetchedAt: Date.now(),
+        promise: null,
+      };
+      writeCatalogDiskCache({
+        products: normalized,
+        homeView: homeViewCache.data,
+      }).catch(() => {});
+      return normalized;
+    } finally {
+      productsCache.promise = null;
+    }
+  })();
+}
+
+export async function hydrateCatalogFromDisk() {
+  const disk = await readCatalogDiskCache();
+  if (!disk?.products?.length) return null;
+  const normalized = disk.products.map(normalizeProduct);
+  productsCache = {
+    data: normalized,
+    fetchedAt: disk.savedAt || Date.now(),
+    promise: null,
+  };
+  if (disk.homeView) {
+    homeViewCache = {
+      data: normalizeHomeViewConfig(disk.homeView),
+      fetchedAt: disk.savedAt || Date.now(),
+      promise: null,
+    };
+  }
+  return { products: normalized, homeView: homeViewCache.data };
+}
+
+export function prefetchCatalogData() {
+  return Promise.all([getProducts().catch(() => []), getHomeViewConfig().catch(() => null)]);
+}
+
 export function invalidateProductsCache() {
   productsCache = {
+    data: null,
+    fetchedAt: 0,
+    promise: null,
+  };
+  homeViewCache = {
     data: null,
     fetchedAt: 0,
     promise: null,
@@ -273,11 +361,60 @@ function normalizeHomeViewConfig(data) {
 }
 
 /** Customer home config from MongoDB — always returns usable defaults when API is unavailable. */
-export async function getHomeViewConfig() {
-  try {
-    const data = await apiGet("/home-view", publicApi);
-    return normalizeHomeViewConfig(data);
-  } catch {
-    return { ...DEFAULT_HOME_VIEW_CONFIG };
+export async function getHomeViewConfig({ preferCache = false } = {}) {
+  const now = Date.now();
+  if (homeViewCache.data && now - homeViewCache.fetchedAt < HOME_VIEW_CACHE_TTL_MS) {
+    return homeViewCache.data;
   }
+  if (preferCache && homeViewCache.data) {
+    refreshHomeViewInBackground();
+    return homeViewCache.data;
+  }
+  if (homeViewCache.promise) {
+    return homeViewCache.promise;
+  }
+
+  homeViewCache.promise = (async () => {
+    try {
+      const data = await apiGet("/home-view", publicApi);
+      const normalized = normalizeHomeViewConfig(data);
+      homeViewCache = {
+        data: normalized,
+        fetchedAt: Date.now(),
+        promise: null,
+      };
+      writeCatalogDiskCache({
+        products: productsCache.data,
+        homeView: normalized,
+      }).catch(() => {});
+      return normalized;
+    } catch {
+      homeViewCache.promise = null;
+      if (homeViewCache.data) return homeViewCache.data;
+      const disk = await readCatalogDiskCache();
+      if (disk?.homeView) {
+        const normalized = normalizeHomeViewConfig(disk.homeView);
+        homeViewCache = {
+          data: normalized,
+          fetchedAt: disk.savedAt || Date.now(),
+          promise: null,
+        };
+        return normalized;
+      }
+      return { ...DEFAULT_HOME_VIEW_CONFIG };
+    }
+  })();
+
+  try {
+    return await homeViewCache.promise;
+  } finally {
+    homeViewCache.promise = null;
+  }
+}
+
+function refreshHomeViewInBackground() {
+  if (homeViewCache.promise) return;
+  homeViewCache.promise = getHomeViewConfig().finally(() => {
+    homeViewCache.promise = null;
+  });
 }

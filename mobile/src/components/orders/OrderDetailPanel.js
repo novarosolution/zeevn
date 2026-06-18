@@ -9,6 +9,7 @@ import { FIGMA, figmaTextMuted, figmaTextPrimary } from "../../theme/figmaApp";
 import { platformShadow } from "../../theme/shadowPlatform";
 import { fonts } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
+import { resolveInvoiceNumber, getInvoiceStatusBadge } from "../../utils/orderInvoiceMeta";
 
 function DetailRow({ label, value, accent, isDark, last = false }) {
   return (
@@ -99,8 +100,36 @@ function OrderDetailPanelBase({ order }) {
       {order.razorpay?.paymentId ? (
         <DetailRow label={MY_ORDERS_UI.detailPaymentId} value={order.razorpay.paymentId} isDark={isDark} />
       ) : null}
-      {order.invoice?.number ? (
-        <DetailRow label={MY_ORDERS_UI.detailInvoice} value={order.invoice.number} isDark={isDark} />
+      {Number(order?.invoice?.taxAmount || 0) > 0 ? (
+        <DetailRow
+          label={MY_ORDERS_UI.detailTax}
+          value={formatINR(order.invoice.taxAmount)}
+          isDark={isDark}
+        />
+      ) : null}
+      {order.invoice?.number || order._id ? (
+        <View style={[styles.invoiceBox, { borderColor: isDark ? "#3f3933" : FIGMA.line, backgroundColor: isDark ? "#181513" : "#fffefb" }]}>
+          <View style={styles.invoiceHead}>
+            <Ionicons name="document-text-outline" size={14} color={FIGMA.goldDeep} />
+            <Text style={[styles.invoiceTitle, figmaTextMuted(isDark)]}>{MY_ORDERS_UI.invoiceDownload}</Text>
+            <View style={[styles.invoiceBadge, { borderColor: isDark ? "rgba(232,200,90,0.35)" : "rgba(188,144,92,0.35)" }]}>
+              <Text style={[styles.invoiceBadgeText, { color: FIGMA.goldDeep }]}>
+                {getInvoiceStatusBadge(order).label}
+              </Text>
+            </View>
+          </View>
+          <Text style={[styles.invoiceNumber, figmaTextPrimary(isDark)]}>{resolveInvoiceNumber(order)}</Text>
+          {order.invoice?.issueDate ? (
+            <Text style={[styles.invoiceMeta, figmaTextMuted(isDark)]}>
+              {MY_ORDERS_UI.detailInvoice} {new Date(order.invoice.issueDate).toLocaleDateString()}
+            </Text>
+          ) : null}
+          {order.invoice?.notes ? (
+            <Text style={[styles.invoiceNote, figmaTextMuted(isDark)]} numberOfLines={3}>
+              {order.invoice.notes}
+            </Text>
+          ) : null}
+        </View>
       ) : null}
 
       <View style={[styles.totalBanner, totalShadow]}>
@@ -259,5 +288,53 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 12,
     lineHeight: 18,
+  },
+  invoiceBox: {
+    marginHorizontal: 12,
+    marginBottom: 10,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 4,
+  },
+  invoiceHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 2,
+  },
+  invoiceTitle: {
+    flex: 1,
+    fontFamily: fonts.bold,
+    fontSize: 9,
+    letterSpacing: 1.1,
+    textTransform: "uppercase",
+  },
+  invoiceBadge: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  invoiceBadgeText: {
+    fontFamily: fonts.bold,
+    fontSize: 8,
+    letterSpacing: 0.2,
+    textTransform: "uppercase",
+  },
+  invoiceNumber: {
+    fontFamily: FONT_HEADING_SEMI,
+    fontSize: 14,
+    letterSpacing: -0.2,
+  },
+  invoiceMeta: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+  },
+  invoiceNote: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 4,
   },
 });

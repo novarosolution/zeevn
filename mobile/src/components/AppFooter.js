@@ -3,12 +3,13 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { getGsap } from "../utils/loadGsap";
-import { APP_FOOTER_NAV_LINKS, FOOTER_COMPACT } from "../content/appContent";
+import { APP_FOOTER_NAV_LINKS, FOOTER_COMPACT, HOME_SCREEN_UI } from "../content/appContent";
 import { useTheme } from "../context/ThemeContext";
 import { BRAND_LOGO_SIZE, SUPPORT_EMAIL_DISPLAY } from "../constants/brand";
 import { ALCHEMY } from "../theme/customerAlchemy";
 import { fonts, getSemanticColors, icon, semanticRadius, spacing, typography } from "../theme/tokens";
 import BrandLogo from "./BrandLogo";
+import EngineerCredit from "./EngineerCredit";
 
 function FooterNavLink({ label, onPress, styles }) {
   return (
@@ -46,7 +47,9 @@ export default function AppFooter({ webTight = false }) {
   const footerRef = useRef(null);
 
   useEffect(() => {
-    if (Platform.OS !== "web" || !footerRef.current) return undefined;
+    if (Platform.OS !== "web" || HOME_SCREEN_UI.web?.enableHomeGsap !== true || !footerRef.current) {
+      return undefined;
+    }
     let tween;
     let cancelled = false;
     (async () => {
@@ -105,6 +108,12 @@ export default function AppFooter({ webTight = false }) {
           <Text style={styles.noteValue}>{supportMeta}</Text>
         </View>
       ) : null}
+
+      <EngineerCredit
+        style={styles.engineerCredit}
+        textStyle={{ color: c.textMuted }}
+        linkStyle={{ color: c.primary }}
+      />
     </View>
   );
 }
@@ -239,6 +248,11 @@ function createFooterStyles(c, shadowLift, isDark, semantic, webTight) {
       lineHeight: 19,
       flex: Platform.OS === "web" ? 0 : Platform.OS === "android" ? 0 : 1,
       textAlign: Platform.OS === "ios" ? "right" : "left",
+    },
+    engineerCredit: {
+      marginTop: spacing.md,
+      textAlign: "center",
+      width: "100%",
     },
   });
 }

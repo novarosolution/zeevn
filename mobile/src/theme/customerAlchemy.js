@@ -6,6 +6,7 @@ export {
   ALCHEMY,
   getCustomerShellGradient,
   getAlchemyPalette,
+  getAlchemySemantic,
   CUSTOMER_SHELL_GRADIENT_LOCATIONS,
 } from "./customerAlchemy.shared";
 

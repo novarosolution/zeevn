@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Platform } from "react-native";
+import { HOME_SCREEN_UI } from "../content/appContent";
 import { getGsap, getScrollTrigger } from "../utils/loadGsap";
 import { scheduleScrollTriggerRefresh } from "../utils/scrollTriggerRefresh";
+
+function isWebGsapRevealEnabled() {
+  return Platform.OS !== "web" || HOME_SCREEN_UI.web?.enableHomeGsap === true;
+}
 
 const PRESETS = {
   "fade-up": {
@@ -75,7 +80,7 @@ export default function useGsapReveal({
   }, []);
 
   useEffect(() => {
-    if (Platform.OS !== "web" || disabled || reducedMotion) {
+    if (Platform.OS !== "web" || disabled || reducedMotion || !isWebGsapRevealEnabled()) {
       const target = ref.current;
       if (target && target.style) {
         target.style.opacity = "1";

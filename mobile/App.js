@@ -25,31 +25,41 @@ import { useFonts } from "expo-font";
 import * as Font from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { isRunningInExpoGo } from "expo";
-import { CartProvider } from "./src/context/CartContext";
-import { AuthProvider } from "./src/context/AuthContext";
-import { LiveSocketProvider } from "./src/context/LiveSocketContext";
-import { OrderCelebrationProvider } from "./src/context/OrderCelebrationContext";
-import { ApiHealthProvider } from "./src/context/ApiHealthContext";
 import { ToastProvider } from "./src/context/ToastContext";
-import BackendOfflineBanner from "./src/components/BackendOfflineBanner";
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import useAppIconSync from "./src/hooks/useAppIconSync";
 import AppStartupScreen from "./src/components/AppStartupScreen";
 import AppNavigator from "./src/navigation/AppNavigator";
+import DeferredHeavyProviders from "./src/bootstrap/DeferredHeavyProviders";
 import { applyWebPremiumChrome, injectWebDocumentMeta, webRootStyle } from "./src/theme/web";
+import { updateWebRouteSeo } from "./src/utils/webSeo";
 
-const CRITICAL_FONTS = {
-  HankenGrotesk_400Regular,
-  HankenGrotesk_500Medium,
-  HankenGrotesk_600SemiBold,
-  HankenGrotesk_700Bold,
-  Fraunces_600SemiBold,
-  Fraunces_700Bold,
-};
+const CRITICAL_FONTS = Platform.select({
+  web: {
+    HankenGrotesk_400Regular,
+    HankenGrotesk_700Bold,
+    Fraunces_600SemiBold,
+  },
+  default: {
+    HankenGrotesk_400Regular,
+    HankenGrotesk_700Bold,
+  },
+});
 
 const DEFERRED_FONTS = {
+  HankenGrotesk_500Medium,
+  HankenGrotesk_600SemiBold,
   HankenGrotesk_800ExtraBold,
+  Fraunces_600SemiBold,
+  Fraunces_700Bold,
   Fraunces_400Regular_Italic,
+  ...(Platform.OS === "web"
+    ? {
+        HankenGrotesk_500Medium,
+        HankenGrotesk_600SemiBold,
+        Fraunces_700Bold,
+      }
+    : {}),
 };
 
 const STARTUP_WELCOME_KEY = "@kankreg_startup_welcome_shown";
@@ -140,6 +150,27 @@ function AppIconSync() {
   return null;
 }
 
+function WebRouteSeoSync({ navReady }) {
+  useEffect(() => {
+    if (Platform.OS !== "web" || !navReady || !navigationRef?.addListener) return undefined;
+
+    const sync = () => {
+      if (!navigationRef.isReady?.()) return;
+      const route = navigationRef.getCurrentRoute();
+      const productName = route?.params?.productId ? undefined : route?.params?.name;
+      updateWebRouteSeo(route?.name || "Home", { productName });
+    };
+
+    sync();
+    const unsub = navigationRef.addListener("state", sync);
+    return () => {
+      if (typeof unsub === "function") unsub();
+    };
+  }, [navReady]);
+
+  return null;
+}
+
 function AppNavigationShell() {
   const [navReady, setNavReady] = useState(false);
 
@@ -147,6 +178,7 @@ function AppNavigationShell() {
     <>
       <AppIconSync />
       <WebBodySync />
+      <WebRouteSeoSync navReady={navReady} />
       <ThemedStatusBar />
       <NavigationContainer
         ref={navigationRef}
@@ -199,22 +231,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (Platform.OS === "web" && typeof document !== "undefined") {
-      const shell = document.getElementById("kankreg-lcp-shell");
-      if (shell) {
-        shell.style.pointerEvents = "none";
-        shell.style.zIndex = "0";
-      }
-    }
-  }, []);
-
-  useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [fontsLoaded]);
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded && Platform.OS !== "web") {
     return (
       <SafeAreaProvider style={safeAreaRootStyle}>
         <View style={webRootStyle}>
@@ -234,18 +256,9 @@ export default function App() {
       <View style={webRootStyle}>
         <ThemeProvider>
           <ToastProvider>
-            <ApiHealthProvider>
-              <AuthProvider>
-                <LiveSocketProvider>
-                  <OrderCelebrationProvider navigationRef={navigationRef}>
-                    <CartProvider>
-                      <BackendOfflineBanner />
-                      <AppNavigationShell />
-                    </CartProvider>
-                  </OrderCelebrationProvider>
-                </LiveSocketProvider>
-              </AuthProvider>
-            </ApiHealthProvider>
+            <DeferredHeavyProviders>
+              <AppNavigationShell />
+            </DeferredHeavyProviders>
           </ToastProvider>
         </ThemeProvider>
       </View>

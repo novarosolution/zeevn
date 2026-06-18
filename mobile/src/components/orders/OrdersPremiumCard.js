@@ -26,6 +26,7 @@ import { getOrderStatusLabel, isCancelledOrder, isDeliveredOrder } from "../../u
 import { formatCompactShippingLine } from "../../utils/shippingAddressFormat";
 import OrderProgressStrip from "./OrderProgressStrip";
 import KankregOrderTrack from "../kankreg/KankregOrderTrack";
+import InvoiceMetaRow from "./InvoiceMetaRow";
 
 const { icons: I } = MY_ORDERS_UI;
 
@@ -161,6 +162,8 @@ function OrdersPremiumCardBase({
             <Text style={[styles.dateText, figmaTextMuted(isDark)]}>{createdLabel}</Text>
           </View>
         ) : null}
+
+        <InvoiceMetaRow order={order} />
 
         {isActive ? (
           showLiveMap && compact ? (

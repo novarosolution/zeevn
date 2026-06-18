@@ -35,7 +35,7 @@ export default function AuthHeroPanel({
       {showLogo ? (
         <BrandLogo
           height={compact ? BRAND_LOGO_SIZE.footerCompact : BRAND_LOGO_SIZE.authHero}
-          variant={onDark ? "default" : "onLight"}
+          variant={onDark ? "onDark" : "onLight"}
           glow={onDark}
           style={styles.logo}
         />

@@ -51,7 +51,12 @@ export default function AppStartupScreen({
         )}
 
         <Animated.View entering={FadeIn.duration(480)} style={styles.center}>
-          <BrandLogo height={BRAND_LOGO_SIZE.startup} glow style={styles.logo} />
+          <BrandLogo
+            height={BRAND_LOGO_SIZE.startup}
+            variant={isDark ? "onDark" : "onLight"}
+            glow
+            style={styles.logo}
+          />
           <GoldRingLoader size={54} light={!isDark} style={styles.ring} />
         </Animated.View>
 

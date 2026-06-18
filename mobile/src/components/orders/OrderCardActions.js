@@ -57,6 +57,7 @@ function OrderCardActionsBase({
   canEditAddress,
   onDownloadInvoice,
   downloading,
+  invoiceReady = true,
   onClaimReward,
   claimingReward,
   rewardClaimed,
@@ -84,6 +85,7 @@ function OrderCardActionsBase({
           label={downloading ? MY_ORDERS_UI.invoiceGenerating : MY_ORDERS_UI.invoiceDownload}
           onPress={onDownloadInvoice}
           disabled={downloading}
+          active={invoiceReady && !downloading}
           isDark={isDark}
         />
         {showReward ? (

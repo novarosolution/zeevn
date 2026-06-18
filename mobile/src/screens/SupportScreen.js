@@ -357,7 +357,7 @@ export default function SupportScreen({ navigation }) {
       {toast ? (
         <View style={[styles.toastWrap, { bottom: 24 + insets.bottom }, styles.peNone]}>
           <View style={styles.toast}>
-            <Ionicons name="checkmark-circle" size={18} color={ALCHEMY.gold} />
+            <Ionicons name="checkmark-circle" size={18} color={isDark ? c.accentGold : ALCHEMY.gold} />
             <Text style={styles.toastText}>{toast}</Text>
           </View>
         </View>
@@ -547,7 +547,7 @@ function createSupportStyles(c, shadowPremium, isDark, layoutFlags = {}) {
   faqHeader: {
     marginBottom: spacing.sm},
   faqEyebrow: {
-    color: ALCHEMY.gold,
+    color: isDark ? c.accentGold : ALCHEMY.gold,
     fontSize: typography.overline,
     fontFamily: fonts.extrabold,
     letterSpacing: 1.4,
@@ -596,7 +596,7 @@ function createSupportStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     borderRadius: radius.xxl,
     backgroundColor: isDark ? "rgba(20, 16, 12, 0.96)" : "rgba(28, 25, 23, 0.92)",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: ALCHEMY.gold,
+    borderColor: isDark ? c.accentGold : ALCHEMY.gold,
     ...Platform.select({
       web: {
         boxShadow: "0 18px 38px rgba(0,0,0,0.32)"},

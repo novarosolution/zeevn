@@ -26,7 +26,7 @@ export default function HomeTrustStrip({
       style={styles.trustSectionWrap}
       entering={Platform.OS === "web" || reducedMotion ? undefined : FadeInDown.delay(100).duration(480)}
     >
-      <Text style={[styles.trustSectionEyebrow, { color: ALCHEMY.gold }]} numberOfLines={1}>
+      <Text style={[styles.trustSectionEyebrow, { color: isDark ? c.accentGold : ALCHEMY.gold }]} numberOfLines={1}>
         {HOME_PAGE_LABELS.trustOverline}
       </Text>
       <View
@@ -61,7 +61,7 @@ export default function HomeTrustStrip({
                   <Ionicons
                     name={item.icon}
                     size={trustVisualDense ? icon.sm : icon.sm + 2}
-                    color={isDark ? ALCHEMY.goldBright : KANKREG_PALETTE.goldBright}
+                    color={isDark ? c.accentGold : KANKREG_PALETTE.goldBright}
                   />
                 </View>
                 <Text

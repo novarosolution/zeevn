@@ -12,6 +12,7 @@ import {
   SUPPORT_EMAIL_DISPLAY,
 } from "../../content/appContent";
 import BrandLogo from "../BrandLogo";
+import EngineerCredit from "../EngineerCredit";
 import { useAuth } from "../../context/AuthContext";
 import { BRAND_LOGO_SIZE } from "../../constants/brand";
 import { FONT_HEADING } from "../../theme/typographyRoles";
@@ -106,6 +107,11 @@ export default function KankregSiteFooter() {
           <Text style={styles.bottomText}>{KANKREG_FOOTER_COPYRIGHT}</Text>
           <Text style={styles.bottomBrand}>{APP_DISPLAY_NAME}</Text>
         </View>
+        <EngineerCredit
+          style={styles.engineerCredit}
+          textStyle={styles.engineerCreditText}
+          linkStyle={styles.engineerCreditLink}
+        />
       </View>
     </View>
   );
@@ -227,5 +233,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "rgba(42, 117, 89, 0.65)",
     letterSpacing: 0.5,
+  },
+  engineerCredit: {
+    marginTop: 14,
+    textAlign: "center",
+    width: "100%",
+  },
+  engineerCreditText: {
+    color: "rgba(250, 248, 244, 0.42)",
+  },
+  engineerCreditLink: {
+    color: KANKREG_CHROME.footerAccent,
   },
 });

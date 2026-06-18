@@ -2,19 +2,17 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { platformElevation } from "../../theme/platformStyles";
-import { fonts, spacing } from "../../theme/tokens";
+import { fonts } from "../../theme/tokens";
 import {
-  NATIVE_HEADER_HEIGHT,
-  WEB_CHROME_TOP,
   WEB_HEADER_HEIGHT,
   WEB_Z_INDEX,
+  getWebHeaderHeight,
 } from "../../theme/web";
 import KankregBrandMark from "./KankregBrandMark";
 import { buildKankregMobileNavItems, buildKankregNavItems, routeMatchesNav } from "./kankregNav";
@@ -28,8 +26,7 @@ export { getKankregChromeTop } from "../../theme/kankregChrome";
  * kankreg.html `.topbar` — web fixed header.
  */
 export default function KankregSiteHeader({ navigationRef, navReady = false }) {
-  const insets = useSafeAreaInsets();
-  const { showDesktopNav, compactHeader, pageGutterClamp } = useKankregLayout();
+  const { showDesktopNav, compactHeader, isMobileWeb, width, pageGutterClamp } = useKankregLayout();
   const { totalItems } = useCart();
   const { isAuthenticated, user } = useAuth();
   const { colors: c, isDark } = useTheme();
@@ -38,28 +35,32 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
   const [currentRouteName, setCurrentRouteName] = useState(null);
 
   useEffect(() => {
-    if (!mobileOpen || MobileNavComponent) return undefined;
+    if (showDesktopNav || MobileNavComponent) return undefined;
     let cancelled = false;
 
     const apply = (Component) => {
-      if (!cancelled) setMobileNavComponent(() => Component);
+      if (!cancelled && Component) setMobileNavComponent(() => Component);
     };
 
-    if (typeof __DEV__ !== "undefined" && __DEV__) {
-      apply(require("./KankregMobileNav").default);
-      return () => {
-        cancelled = true;
-      };
-    }
+    const load = () => {
+      if (typeof __DEV__ !== "undefined" && __DEV__) {
+        try {
+          apply(require("./KankregMobileNav").default);
+        } catch {
+          // ignore — retry on menu open
+        }
+        return;
+      }
+      import("./KankregMobileNav")
+        .then((mod) => apply(mod.default))
+        .catch(() => {});
+    };
 
-    import("./KankregMobileNav")
-      .then((mod) => apply(mod.default))
-      .catch(() => {});
-
+    load();
     return () => {
       cancelled = true;
     };
-  }, [mobileOpen, MobileNavComponent]);
+  }, [showDesktopNav, MobileNavComponent, mobileOpen]);
 
   useEffect(() => {
     if (!navReady || !navigationRef?.addListener || !navigationRef?.isReady?.()) {
@@ -120,21 +121,18 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
     return null;
   }
 
-  const nativeHeaderHeight = NATIVE_HEADER_HEIGHT;
-
-  const shellHeight =
-    Platform.OS === "web"
-      ? WEB_CHROME_TOP
-      : insets.top + nativeHeaderHeight;
+  const webHeaderHeight = getWebHeaderHeight(width);
+  const useCompactChrome = isMobileWeb;
 
   const topbarStyle = [
     styles.topbar,
     isNative && styles.topbarNative,
+    useCompactChrome && styles.topbarCompact,
     {
       backgroundColor: isDark ? "rgba(20, 17, 15, 0.92)" : KANKREG_CHROME.topbarSolid,
       borderBottomColor: isDark ? c.border : "rgba(31, 92, 71, 0.1)",
-      paddingTop: Platform.OS === "web" ? 0 : insets.top,
-      minHeight: isNative ? nativeHeaderHeight : WEB_HEADER_HEIGHT,
+      paddingTop: 0,
+      minHeight: webHeaderHeight,
     },
   ];
 
@@ -143,12 +141,14 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
     <View
       style={[
         styles.shell,
-        Platform.OS === "web"
-          ? { height: WEB_CHROME_TOP, position: "fixed", zIndex: WEB_Z_INDEX.header }
-          : { minHeight: shellHeight, zIndex: WEB_Z_INDEX.header },
-        !isDark && Platform.OS === "web" ? styles.shellLightWeb : null,
-        Platform.OS === "web" ? { backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" } : null,
-        Platform.OS === "web" && isDark ? { backdropFilter: "blur(16px)" } : null,
+        {
+          height: webHeaderHeight,
+          position: "fixed",
+          zIndex: WEB_Z_INDEX.header,
+        },
+        !isDark ? styles.shellLightWeb : null,
+        { backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" },
+        isDark ? { backdropFilter: "blur(16px)" } : null,
       ]}
       accessibilityRole="header"
     >
@@ -156,11 +156,19 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
         <View
           style={[
             styles.wrap,
-            compactHeader && styles.wrapCompact,
-            { paddingHorizontal: pageGutterClamp },
+            useCompactChrome && styles.wrapCompact,
+            compactHeader && styles.wrapTight,
+            {
+              paddingHorizontal: pageGutterClamp,
+              minHeight: webHeaderHeight,
+              height: webHeaderHeight,
+            },
           ]}
         >
-          <KankregBrandMark onPress={() => go("Home")} compact={compactHeader} />
+          <KankregBrandMark
+            onPress={() => go("Home")}
+            compact={useCompactChrome}
+          />
 
           {showDesktopNav ? (
             <View style={styles.nav}>
@@ -194,11 +202,12 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
             </View>
           ) : null}
 
-          <View style={styles.actions}>
+          <View style={[styles.actions, useCompactChrome && styles.actionsCompact]}>
             <Pressable
               onPress={openShopSearch}
               style={({ hovered }) => [
                 styles.iconBtn,
+                useCompactChrome && styles.iconBtnCompact,
                 isDark && styles.iconBtnDark,
                 hovered && (isDark ? styles.iconBtnHoverDark : styles.iconBtnHover),
               ]}
@@ -206,7 +215,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
             >
               <Ionicons
                 name="search-outline"
-                size={18}
+                size={useCompactChrome ? 16 : 18}
                 color={isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft}
               />
             </Pressable>
@@ -214,6 +223,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
               onPress={() => go("Cart", true)}
               style={({ hovered }) => [
                 styles.iconBtn,
+                useCompactChrome && styles.iconBtnCompact,
                 isDark && styles.iconBtnDark,
                 hovered && (isDark ? styles.iconBtnHoverDark : styles.iconBtnHover),
               ]}
@@ -221,7 +231,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
             >
               <Ionicons
                 name="bag-outline"
-                size={18}
+                size={useCompactChrome ? 16 : 18}
                 color={isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft}
               />
               {totalItems > 0 ? (
@@ -230,7 +240,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
                 </View>
               ) : null}
             </Pressable>
-            {isNative ? null : !compactHeader ? (
+            {isNative ? null : !useCompactChrome ? (
               <Pressable
                 onPress={() => (isAuthenticated ? go("Profile", true) : go("Login"))}
                 style={({ hovered, pressed }) => [
@@ -250,14 +260,14 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
             ) : (
               <Pressable
                 onPress={() => (isAuthenticated ? go("Profile", true) : go("Login"))}
-                style={[styles.iconBtn, isDark && styles.iconBtnDark]}
+                style={[styles.iconBtn, useCompactChrome && styles.iconBtnCompact, isDark && styles.iconBtnDark]}
                 accessibilityLabel={
                   isAuthenticated ? KANKREG_HEADER.accountLabel : KANKREG_HEADER.signInLabel
                 }
               >
                 <Ionicons
                   name="person-outline"
-                  size={18}
+                  size={useCompactChrome ? 16 : 18}
                   color={isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft}
                 />
               </Pressable>
@@ -267,6 +277,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
                 onPress={() => setMobileOpen((v) => !v)}
                 style={({ hovered, pressed }) => [
                   styles.menuToggle,
+                  useCompactChrome && styles.menuToggleCompact,
                   isDark && styles.menuToggleDark,
                   mobileOpen && (isDark ? styles.menuToggleOpenDark : styles.menuToggleOpen),
                   (hovered || pressed) && styles.menuTogglePressed,
@@ -275,7 +286,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
               >
                 <Ionicons
                   name={mobileOpen ? "close" : "menu-outline"}
-                  size={22}
+                  size={useCompactChrome ? 20 : 22}
                   color={
                     mobileOpen
                       ? isDark
@@ -344,22 +355,24 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
-  topbarNative: {
-    minHeight: NATIVE_HEADER_HEIGHT,
+  topbarNative: {},
+  topbarCompact: {
+    minHeight: undefined,
   },
   wrap: {
     flexDirection: "row",
     alignItems: "center",
     gap: 26,
-    minHeight: Platform.OS === "web" ? WEB_HEADER_HEIGHT : NATIVE_HEADER_HEIGHT,
-    height: Platform.OS === "web" ? WEB_HEADER_HEIGHT : NATIVE_HEADER_HEIGHT,
     maxWidth: 1280,
     width: "100%",
     alignSelf: "center",
-    paddingHorizontal: Platform.OS === "web" ? "clamp(18px, 4vw, 40px)" : spacing.lg,
+    paddingHorizontal: "clamp(18px, 4vw, 40px)",
   },
   wrapCompact: {
-    gap: 8,
+    gap: 10,
+  },
+  wrapTight: {
+    gap: 6,
   },
   nav: {
     flex: 1,
@@ -424,6 +437,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
   },
+  actionsCompact: {
+    gap: 8,
+  },
   iconBtn: {
     width: 42,
     height: 42,
@@ -435,6 +451,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     position: "relative",
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+  },
+  iconBtnCompact: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   iconBtnDark: {
     backgroundColor: "#181513",
@@ -495,6 +516,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+  },
+  menuToggleCompact: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
   },
   menuToggleDark: {
     backgroundColor: "#181513",

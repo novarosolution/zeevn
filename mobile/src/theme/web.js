@@ -5,14 +5,25 @@ import {
   WEB_FONT_STACK_DISPLAY,
 } from "./webTypography";
 
-/** Fixed top bar height on web. */
+/** Fixed top bar height on web (desktop). */
 export const WEB_HEADER_HEIGHT = 68;
+/** Narrow web / tablet below desktop nav breakpoint. */
+export const WEB_HEADER_HEIGHT_MOBILE = 56;
+/** Phone web — compact top bar (kankreg.html ≤560px). */
+export const WEB_HEADER_HEIGHT_COMPACT = 52;
 /** Slim in-flow header on native — bottom tab bar handles primary nav. */
 export const NATIVE_HEADER_HEIGHT = 52;
 /** @deprecated Announce strip removed — kept at 0 for layout constants. */
 export const WEB_ANNOUNCE_HEIGHT = 0;
-/** Fixed header chrome — use for page scroll padding. */
+/** Fixed header chrome — desktop default; use {@link getWebHeaderHeight} for responsive layouts. */
 export const WEB_CHROME_TOP = WEB_HEADER_HEIGHT;
+
+/** Responsive web header height from viewport width (kankreg.html breakpoints). */
+export function getWebHeaderHeight(width = 0) {
+  if (width >= 1080) return WEB_HEADER_HEIGHT;
+  if (width < 560) return WEB_HEADER_HEIGHT_COMPACT;
+  return WEB_HEADER_HEIGHT_MOBILE;
+}
 /** Shared top offset for sticky page chrome below fixed header. */
 export const WEB_STICKY_TOP_OFFSET = WEB_CHROME_TOP + 12;
 /** Shared z-index ladder to prevent header/dropdown overlap bugs. */

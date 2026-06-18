@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { getApiBaseUrl, ZEEVAN_API_URL } from "./apiBase";
+import { getApiBaseUrl } from "./apiBase";
 
 const PREFERRED_URL_KEY = "@zeevan_api_preferred_url";
 const REQUEST_TIMEOUT_MS = 12_000;
@@ -24,7 +24,7 @@ function uniqueUrls(urls) {
 export function getApiEndpointCandidates() {
   const configured = getApiBaseUrl();
   const envFallback = String(process.env.EXPO_PUBLIC_API_URL_FALLBACK || "").trim();
-  return uniqueUrls([preferredUrl, configured, envFallback, ZEEVAN_API_URL]);
+  return uniqueUrls([preferredUrl, configured, envFallback]);
 }
 
 async function ensurePreferredLoaded() {
@@ -41,7 +41,7 @@ async function ensurePreferredLoaded() {
 export async function getBalancedApiBaseUrl() {
   await ensurePreferredLoaded();
   const candidates = getApiEndpointCandidates();
-  return candidates[0] || ZEEVAN_API_URL;
+  return candidates[0] || getApiBaseUrl();
 }
 
 export async function markApiEndpointHealthy(url) {
@@ -75,7 +75,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_M
 
 /**
  * Race API origins — first healthy response wins (load balancing / failover).
- * Wakes cold Render instances by hitting the fastest reachable host.
+ * First healthy response wins (load balancing / failover).
  */
 export async function fetchBalanced(path, options = {}, { timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
   await ensurePreferredLoaded();

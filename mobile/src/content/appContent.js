@@ -31,7 +31,7 @@ export const ZEEVAN_BRAND_ASSETS = {
  */
 export const BRAND_LOGO_SIZE = {
   /** Logo height — width follows `BRAND_LOGO_ASPECT` (full wordmark + tagline). */
-  headerCompact: 36,
+  headerCompact: 30,
   /** Web top bar. */
   headerDefault: 44,
   /** Native home header. */

@@ -1,8 +1,5 @@
 import Constants from "expo-constants";
 
-/** Production API (Render). */
-export const ZEEVAN_API_URL = "https://kankregserver.onrender.com";
-
 /** Local dev API — backend `npm run dev` on port 5001. */
 export const ZEEVAN_API_LOCAL_URL = "http://127.0.0.1:5001";
 
@@ -100,14 +97,14 @@ export function getSocketBaseUrl() {
   return api.replace(/\/api\/?$/i, "");
 }
 
-/** Dev → local backend; production → Render unless EXPO_PUBLIC_API_URL is set. */
+/** Dev → local backend; production → EXPO_PUBLIC_API_URL (required). */
 export function getApiBaseUrl() {
   const configured = getConfiguredApiUrl();
   if (configured) return configured;
   if (typeof __DEV__ !== "undefined" && __DEV__) {
     return ZEEVAN_API_LOCAL_URL;
   }
-  return ZEEVAN_API_URL;
+  return "";
 }
 
 export function isLocalApiUrl(url = getApiBaseUrl()) {

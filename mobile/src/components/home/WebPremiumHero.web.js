@@ -16,7 +16,6 @@ import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon } from "../../theme/tokens";
 import DeferredMount from "../ui/DeferredMount";
-import MobileWebLeanHero from "./MobileWebLeanHero";
 import HeroMediaSlider from "./HeroMediaSlider";
 
 function TrustRibbonItem({ item, muted, compact = false }) {
@@ -67,7 +66,7 @@ function TrustBand({ isDark, isMobileWeb, pageGutterClamp, muted, showDividers }
   );
 }
 
-/** Web home hero — phone uses lean static LCP; desktop uses full slider. */
+/** Web home hero — full carousel on phone + desktop. */
 export default function WebPremiumHero({ navigation, heroSlides = [], products = [] }) {
   const { isDark } = useTheme();
   const { pageGutterClamp, isXs, isMobileWeb } = useKankregLayout();
@@ -89,7 +88,6 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
   const openShop = () => navigation.navigate("Shop");
   const showTrust = HOME_SCREEN_UI.web?.showHeroTrustChips !== false;
   const heroEyebrow = HOME_SCREEN_UI.web?.heroEyebrow || "A2 ghee";
-  const leadSlide = activeSlides[0];
 
   const fullBleedStyle = isMobileWeb
     ? { width: "100%", alignSelf: "stretch", maxWidth: "100%" }
@@ -101,25 +99,6 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
         alignSelf: "center",
       };
 
-  if (isMobileWeb) {
-    return (
-      <View style={[styles.fullBleed, fullBleedStyle]}>
-        <MobileWebLeanHero slide={leadSlide} onPress={openShop} />
-        {showTrust ? (
-          <DeferredMount minHeight={52} rootMargin="120px 0px">
-            <TrustBand
-              isDark={isDark}
-              isMobileWeb
-              pageGutterClamp={pageGutterClamp}
-              muted={muted}
-              showDividers={showDividers}
-            />
-          </DeferredMount>
-        ) : null}
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.fullBleed, fullBleedStyle]}>
       <HeroMediaSlider
@@ -129,13 +108,25 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
         editorialEyebrow={heroEyebrow}
       />
       {showTrust ? (
-        <TrustBand
-          isDark={isDark}
-          isMobileWeb={false}
-          pageGutterClamp={pageGutterClamp}
-          muted={muted}
-          showDividers={showDividers}
-        />
+        isMobileWeb ? (
+          <DeferredMount minHeight={52} rootMargin="120px 0px">
+            <TrustBand
+              isDark={isDark}
+              isMobileWeb
+              pageGutterClamp={pageGutterClamp}
+              muted={muted}
+              showDividers={showDividers}
+            />
+          </DeferredMount>
+        ) : (
+          <TrustBand
+            isDark={isDark}
+            isMobileWeb={false}
+            pageGutterClamp={pageGutterClamp}
+            muted={muted}
+            showDividers={showDividers}
+          />
+        )
       ) : null}
     </View>
   );

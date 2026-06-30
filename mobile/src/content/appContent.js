@@ -200,10 +200,13 @@ export const HOME_SCREEN_UI = {
   native: {
     heroEyebrow: ZEEVAN_CATALOG_SUBLINE,
     showNativeHero: true,
+    showCategorySection: false,
   },
   web: {
     leanHome: true,
     showWebHero: true,
+    showCategorySection: false,
+    showIntroCategoryChips: false,
     showThreeBackground: false,
     enableHomeGsap: false,
     heroEyebrow: ZEEVAN_CATALOG_SUBLINE,

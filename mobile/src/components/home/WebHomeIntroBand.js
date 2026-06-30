@@ -29,26 +29,28 @@ export default function WebHomeIntroBand({ navigation }) {
             {copy.subtitle ? (
               <Text style={[styles.subtitle, { color: muted }]}>{copy.subtitle}</Text>
             ) : null}
-            <View style={styles.lineRow}>
-              {ZEEVAN_PRODUCT_LINES.map((line) => (
-                <Pressable
-                  key={line.key}
-                  onPress={() => navigation.navigate("Shop", { pill: line.shopPill })}
-                  style={({ hovered, pressed }) => [
-                    styles.lineChip,
-                    isDark && styles.lineChipDark,
-                    hovered && styles.lineChipHover,
-                    pressed && { opacity: 0.9 },
-                  ]}
-                  accessibilityRole="button"
-                >
-                  <Ionicons name={line.icon} size={12} color={KANKREG_PALETTE.green} />
-                  <Text style={[styles.lineChipText, { color: isDark ? "#FAF8F4" : KANKREG_PALETTE.ink }]}>
-                    {line.label}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
+            {HOME_SCREEN_UI.web?.showIntroCategoryChips !== false ? (
+              <View style={styles.lineRow}>
+                {ZEEVAN_PRODUCT_LINES.map((line) => (
+                  <Pressable
+                    key={line.key}
+                    onPress={() => navigation.navigate("Shop", { pill: line.shopPill })}
+                    style={({ hovered, pressed }) => [
+                      styles.lineChip,
+                      isDark && styles.lineChipDark,
+                      hovered && styles.lineChipHover,
+                      pressed && { opacity: 0.9 },
+                    ]}
+                    accessibilityRole="button"
+                  >
+                    <Ionicons name={line.icon} size={12} color={KANKREG_PALETTE.green} />
+                    <Text style={[styles.lineChipText, { color: isDark ? "#FAF8F4" : KANKREG_PALETTE.ink }]}>
+                      {line.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
           </View>
           <View style={[styles.actions, isMobileWeb && styles.actionsStack]}>
           <Pressable

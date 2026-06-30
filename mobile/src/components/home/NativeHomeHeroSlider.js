@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { HOME_SCREEN_UI, HOME_TRUST_STRIP } from "../../content/appContent";
 import { resolveNativeHomeHeroSlides } from "../../utils/homeHeroSlides";
@@ -36,17 +36,7 @@ export default function NativeHomeHeroSlider({ navigation, heroSlides = [], prod
 
   return (
     <View style={styles.wrap}>
-      <Pressable
-        onPress={openShop}
-        style={({ pressed }) => [
-          styles.card,
-          isDark && styles.cardDark,
-          cardShadow,
-          pressed && styles.cardPressed,
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel="Browse featured products"
-      >
+      <View style={[styles.card, isDark && styles.cardDark, cardShadow]}>
         <View style={styles.goldRail} pointerEvents="none" />
         <HeroMediaSlider
           variant="app"
@@ -73,7 +63,7 @@ export default function NativeHomeHeroSlider({ navigation, heroSlides = [], prod
             ))}
           </View>
         ) : null}
-      </Pressable>
+      </View>
     </View>
   );
 }
@@ -87,15 +77,12 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: FIGMA.radiusHero,
     overflow: "hidden",
-    backgroundColor: "#14110e",
+    backgroundColor: "#FAF8F4",
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(31, 92, 71, 0.32)",
   },
   cardDark: {
     borderColor: "rgba(42, 117, 89, 0.28)",
-  },
-  cardPressed: {
-    opacity: 0.96,
   },
   goldRail: {
     position: "absolute",

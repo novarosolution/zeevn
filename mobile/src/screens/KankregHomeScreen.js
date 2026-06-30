@@ -292,7 +292,11 @@ export default function KankregHomeScreen({ navigation }) {
 
   const primeTitle = homeView?.primeSectionTitle || HOME_SCREEN_UI.bestsellers.titleFallback;
   const showPrime = homeView?.showPrimeSection !== false;
-  const showCategories = homeView?.showProductTypeSections !== false;
+  const categorySectionEnabled =
+    Platform.OS === "web"
+      ? HOME_SCREEN_UI.web?.showCategorySection !== false
+      : HOME_SCREEN_UI.native?.showCategorySection !== false;
+  const showCategories = categorySectionEnabled && homeView?.showProductTypeSections !== false;
   const showHomeExtras = homeView?.showHomeSections !== false;
   const ready = !loading;
   const processSection = homeView?.processSection ?? DEFAULT_HOME_VIEW_CONFIG.processSection;

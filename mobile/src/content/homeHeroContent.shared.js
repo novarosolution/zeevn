@@ -29,9 +29,22 @@ export const WEB_HERO_PRODUCT_RATIO = 821 / 1915;
 /** Portrait phone / native hero — 941×1672 poster art. */
 export const WEB_HERO_PORTRAIT_RATIO = 1672 / 941;
 
-/** Phone web hero — cap rendered height (full portrait art is too tall on narrow screens). */
-export const WEB_HERO_PHONE_MAX_HEIGHT = 340;
-export const WEB_HERO_PHONE_MAX_VH = 0.42;
+/**
+ * Phone hero viewport cap — only shrink when natural poster height would dominate the screen.
+ * At 0.86, a ~390px-wide portrait slide (~693px tall) fits on common 844px-tall phones.
+ */
+export const WEB_HERO_PHONE_MAX_HEIGHT = 720;
+export const WEB_HERO_PHONE_MAX_VH = 0.86;
+
+/** Slider / lean-hero frame height — width-perfect aspect, soft viewport cap only. */
+export function resolvePhoneHeroFrameHeight(width, heightRatio, layoutHeight) {
+  const frameWidth = Math.max(320, Math.round(width || 390));
+  const ratio = heightRatio > 0 ? heightRatio : WEB_HERO_PORTRAIT_RATIO;
+  const natural = Math.round(frameWidth * ratio);
+  if (!layoutHeight || layoutHeight < 1) return natural;
+  const vhCap = Math.round(layoutHeight * WEB_HERO_PHONE_MAX_VH);
+  return Math.min(natural, vhCap, WEB_HERO_PHONE_MAX_HEIGHT);
+}
 
 export const HOME_HERO_PACKAGING = {
   key: "hero-packaging",

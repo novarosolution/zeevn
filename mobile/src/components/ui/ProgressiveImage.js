@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
   shell: {
     overflow: "hidden",
     position: "relative",
-    backgroundColor: "#1a1410",
+    backgroundColor: "transparent",
   },
   layer: {
     ...StyleSheet.absoluteFillObject,

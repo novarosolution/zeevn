@@ -22,20 +22,21 @@ import { prefetchDisplayImages, getHeroSlideDisplayWidth, getHeroSlideImageUri }
 import useReducedMotion from "../../hooks/useReducedMotion";
 import { KANKREG_BP, useKankregLayout } from "../../theme/kankregBreakpoints";
 import {
-  HOME_HERO_APP_HEIGHT_RATIO,
-  HOME_HERO_APP_MAX_HEIGHT,
-  HOME_HERO_APP_MIN_HEIGHT,
   HOME_HERO_COMPACT_HEIGHT_RATIO,
   HOME_HERO_COMPACT_MAX_HEIGHT,
   HOME_HERO_COMPACT_MIN_HEIGHT,
   HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH,
   HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH,
   HOME_HERO_PRODUCT_SLIDE_HEIGHT_PER_WIDTH,
-  HOME_HERO_PRODUCT_WIDE_HEIGHT_PER_WIDTH,
   HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH,
 } from "../../constants/marketingAssets";
+import {
+  WEB_HERO_PORTRAIT_RATIO,
+  resolvePhoneHeroFrameHeight,
+} from "../../content/homeHeroContent";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 import ProgressiveImage from "../ui/ProgressiveImage";
+import { HtmlImg } from "./compareWebDom";
 import { setLcpShellVisible, hasLcpShell } from "../../utils/lcpShell";
 
 const SLIDE_INTERVAL_MS = 7000;
@@ -43,6 +44,10 @@ const KEN_BURNS_CLASS = "kankreg-hero-kenburns";
 const KEN_BURNS_PRODUCT_CLASS = "kankreg-hero-kenburns-product";
 const HERO_PRODUCT_FRAME_CLASS = "kankreg-hero-product-frame";
 const HERO_MEDIA_CLASS = "kankreg-hero-media";
+const HERO_CONTAIN_CLASS = "kankreg-hero-contain";
+const HERO_MOBILE_SCROLLER_CLASS = "kankreg-hero-mobile-scroller";
+const HERO_MOBILE_PAGE_CLASS = "kankreg-hero-mobile-page";
+const HERO_PHONE_FIT_BG = "#FAF8F4";
 
 injectWebCssOnce(
   "kankreg-hero-kenburns-keyframes-v2",
@@ -94,8 +99,27 @@ injectWebCssOnce(
   width: 100%;
   height: 100%;
 }
+.${HERO_CONTAIN_CLASS} img,
+.${HERO_CONTAIN_CLASS} .kankreg-progressive-full,
+.${HERO_CONTAIN_CLASS} .kankreg-progressive-preview {
+  object-fit: contain !important;
+  object-position: top center !important;
+}
 @media (prefers-reduced-motion: reduce) {
   .${KEN_BURNS_PRODUCT_CLASS} { animation: none !important; transform: none !important; }
+}`
+);
+
+injectWebCssOnce(
+  "kankreg-hero-mobile-scroller-v1",
+  `.${HERO_MOBILE_SCROLLER_CLASS} {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.${HERO_MOBILE_PAGE_CLASS} {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }`
 );
 
@@ -127,10 +151,9 @@ function resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb }) {
   return HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH;
 }
 
-function resolveHeroImageFit(slide, { isTop, isMobileWebTop, isApp = false }) {
-  if (isApp) return "cover";
+function resolveHeroImageFit(slide, { isTop, isMobileWebTop, isApp = false, isNative = false }) {
+  if (isApp || isNative || isMobileWebTop) return "contain";
   if (slide?.imageFit === "contain" || slide?.imageFit === "cover") return slide.imageFit;
-  if (isMobileWebTop && slide?.layout === "portrait") return "contain";
   if (isTop && !isMobileWebTop) return "cover";
   return "cover";
 }
@@ -183,9 +206,16 @@ function HeroSlideImage({
   active,
   useNativeLcp = false,
   slideLayoutWidth = 960,
+  slideHeightRatio,
+  layoutHeight,
   isMobileWeb = false,
+  fillParent = false,
   onImageReady,
 }) {
+  const isContain = imageFit === "contain";
+  const mediaClassName = [HERO_MEDIA_CLASS, isContain ? HERO_CONTAIN_CLASS : null, kenClass]
+    .filter(Boolean)
+    .join(" ");
   const deliveryWidth = useMemo(
     () => getHeroSlideDisplayWidth(slideLayoutWidth, { isMobileWeb }),
     [isMobileWeb, slideLayoutWidth]
@@ -194,6 +224,16 @@ function HeroSlideImage({
     () => getHeroSlideImageUri(slide?.url, { layoutWidth: slideLayoutWidth, isMobileWeb }),
     [isMobileWeb, slideLayoutWidth, slide?.url]
   );
+  const phoneFrameHeight = useMemo(() => {
+    if (!isContain) return undefined;
+    const ratio =
+      slideHeightRatio > 0
+        ? slideHeightRatio
+        : slide?.heightRatio > 0
+          ? slide.heightRatio
+          : WEB_HERO_PORTRAIT_RATIO;
+    return resolvePhoneHeroFrameHeight(slideLayoutWidth, ratio, layoutHeight);
+  }, [isContain, layoutHeight, slide?.heightRatio, slideHeightRatio, slideLayoutWidth]);
   const label =
     slide?.accessibilityLabel ||
     slide?.title ||
@@ -203,23 +243,57 @@ function HeroSlideImage({
 
   if (!uri) return null;
 
-  if (Platform.OS === "web" && isMobileWeb) {
+  const containMediaStyle = fillParent
+    ? styles.heroContainMediaFill
+    : { width: "100%", height: phoneFrameHeight, backgroundColor: HERO_PHONE_FIT_BG };
+
+  if (Platform.OS !== "web" && isContain && phoneFrameHeight) {
     return (
-      <ProgressiveImage
-        uri={uri}
-        alt={label}
-        className={[HERO_MEDIA_CLASS, kenClass].filter(Boolean).join(" ")}
-        imageClassName={kenClass}
-        style={styles.heroSlideImage}
-        contentFit={imageFit}
-        contentPosition={contentPosition || "top"}
-        priority={active || useNativeLcp ? "high" : "low"}
-        width={deliveryWidth}
-        quality="auto:good"
-        showSkeleton={false}
-        recyclingKey={String(slide.id || slide.key || uri)}
-        onLoad={useNativeLcp ? onImageReady : undefined}
-      />
+      <View
+        style={fillParent ? styles.heroContainFill : [styles.heroContainFrame, { height: phoneFrameHeight }]}
+      >
+        <Image
+          source={{ uri }}
+          className={kenClass}
+          style={containMediaStyle}
+          contentFit="contain"
+          contentPosition={contentPosition || "top"}
+          transition={active ? 300 : 0}
+          priority={active ? "high" : "normal"}
+          cachePolicy="memory-disk"
+          recyclingKey={String(slide.id || slide.key || uri)}
+          accessibilityLabel={label}
+        />
+      </View>
+    );
+  }
+
+  if (Platform.OS === "web" && isMobileWeb && isContain && phoneFrameHeight) {
+    return (
+      <View
+        style={fillParent ? styles.heroContainFill : [styles.heroContainFrame, { height: phoneFrameHeight }]}
+      >
+        <HtmlImg
+          src={uri}
+          alt={label}
+          loading={active || useNativeLcp ? "eager" : "lazy"}
+          fetchPriority={active || useNativeLcp ? "high" : "auto"}
+          decoding="async"
+          width={deliveryWidth}
+          height={fillParent ? phoneFrameHeight : phoneFrameHeight}
+          sizes={`(max-width: 560px) ${deliveryWidth}px, 100vw`}
+          className={mediaClassName}
+          style={{
+            width: "100%",
+            height: fillParent ? "100%" : phoneFrameHeight,
+            objectFit: "contain",
+            objectPosition: "top center",
+            display: "block",
+            backgroundColor: HERO_PHONE_FIT_BG,
+          }}
+          onLoad={useNativeLcp ? onImageReady : undefined}
+        />
+      </View>
     );
   }
 
@@ -228,9 +302,9 @@ function HeroSlideImage({
       <ProgressiveImage
         uri={uri}
         alt={label}
-        className={[HERO_MEDIA_CLASS, kenClass].filter(Boolean).join(" ")}
+        className={mediaClassName}
         imageClassName={kenClass}
-        style={styles.heroSlideImage}
+        style={[styles.heroSlideImage, isContain && styles.heroSlideImageContain]}
         contentFit={imageFit}
         contentPosition={contentPosition || (isMobileWeb ? "top" : "center")}
         priority={active || useNativeLcp ? "high" : "low"}
@@ -247,7 +321,7 @@ function HeroSlideImage({
     <Image
       source={{ uri }}
       className={kenClass}
-      style={styles.heroSlideImage}
+      style={[styles.heroSlideImage, isContain && styles.heroSlideImageContain]}
       contentFit={imageFit}
       contentPosition={contentPosition}
       transition={active ? 300 : 0}
@@ -378,6 +452,7 @@ function HeroSlideCard({
   isApp = false,
   isMobileWebTop = false,
   slideLayoutWidth = 960,
+  layoutHeight,
   onLcpImageReady,
 }) {
   const hasImage = Boolean(slide?.url) && slide.mediaType !== "video";
@@ -400,15 +475,18 @@ function HeroSlideCard({
     : isProduct && isTop
       ? Math.min(52, homeHeroTitleSize(layoutWidth) + 4)
       : homeHeroTitleSize(layoutWidth);
-  const imageFit = resolveHeroImageFit(slide, { isTop, isMobileWebTop, isApp });
+  const imageFit = resolveHeroImageFit(slide, { isTop, isMobileWebTop, isApp, isNative });
+  const isContainFit = imageFit === "contain";
   const isPackagingSlide = slide.id === "hero-packaging" || slide.key === "hero-packaging";
   const marketingArtOnly = captionMode === "none";
   const portraitPosition =
-    isMobileWebTop && slide?.layout === "portrait"
-      ? imageFit === "contain"
-        ? "top"
-        : slide.contentPosition || "top"
-      : slide.contentPosition || "center";
+    isPhoneBand && isContainFit
+      ? "top"
+      : isMobileWebTop && slide?.layout === "portrait"
+        ? isContainFit
+          ? "top"
+          : slide.contentPosition || "top"
+        : slide.contentPosition || "center";
   const kenBurns =
     imageFit === "cover" &&
     isTop &&
@@ -425,6 +503,10 @@ function HeroSlideCard({
       ? editorialEyebrow
       : editorialEyebrow || (isBanner && !isTop ? HOME_HERO_BANNER.kicker : "");
   const useGoldCta = isTop || isNative;
+  const slideHeightRatio = resolveHeroSlideHeightRatio(slide, {
+    isNative,
+    isMobileWeb: isMobileWebTop || isApp,
+  });
 
   return (
     <View
@@ -432,6 +514,8 @@ function HeroSlideCard({
       style={[
         styles.slideInner,
         isBanner && styles.slideInnerBanner,
+        isPhoneBand && styles.slideInnerPhoneFit,
+        isPhoneBand && styles.slideInnerPhoneBand,
         isProduct && styles.slideInnerProduct,
       ]}
     >
@@ -466,7 +550,10 @@ function HeroSlideCard({
           active={active}
           useNativeLcp={isTop && active && Boolean(onLcpImageReady)}
           slideLayoutWidth={slideLayoutWidth}
+          slideHeightRatio={slideHeightRatio}
+          layoutHeight={layoutHeight}
           isMobileWeb={isMobileWebTop}
+          fillParent={isPhoneBand && isContainFit}
           onImageReady={onLcpImageReady}
         />
       ) : hasImage ? (
@@ -690,7 +777,7 @@ export default function HeroMediaSlider({
   cardEmbedded = false,
 }) {
   const { isDark } = useTheme();
-  const { isXs, isSm, isMd, isLg, isXl, isMobileWeb, width: layoutWidth, height: layoutHeight } =
+  const { isMobileWeb, width: layoutWidth, height: layoutHeight } =
     useKankregLayout();
   const reducedMotion = useReducedMotion();
   const isTop = variant === "top";
@@ -703,6 +790,7 @@ export default function HeroMediaSlider({
 
   const scrollRef = useRef(null);
   const indexRef = useRef(0);
+  const pauseAutoRef = useRef(false);
   const [pageWidth, setPageWidth] = useState(0);
   const [index, setIndex] = useState(0);
   const [slidesWarmed, setSlidesWarmed] = useState(false);
@@ -729,10 +817,29 @@ export default function HeroMediaSlider({
     return () => clearTimeout(fallback);
   }, [dismissLcpShell]);
 
-  /** Phone web: match active slide aspect — full product art with contain. Desktop: stable max ratio. */
+  /** Phone: shell height tracks the active slide’s width-perfect poster ratio. */
+  const slideFrameHeights = useMemo(() => {
+    const phoneBand = isNative || isApp || (isTop && isMobileWeb);
+    if (!phoneBand || !slideWidth) return [];
+    return slides.map((slide) =>
+      resolvePhoneHeroFrameHeight(
+        slideWidth,
+        resolveHeroSlideHeightRatio(slide, {
+          isNative,
+          isMobileWeb: isMobileWeb || isApp,
+        }),
+        layoutHeight
+      )
+    );
+  }, [isApp, isMobileWeb, isNative, isTop, layoutHeight, slideWidth, slides]);
+
   const bannerHeightRatio = useMemo(() => {
-    if (isTop && isMobileWeb && activeSlide) {
-      return resolveHeroSlideHeightRatio(activeSlide, { isNative, isMobileWeb });
+    const phonePerSlide = (isTop && isMobileWeb) || isApp || isNative;
+    if (phonePerSlide && activeSlide) {
+      return resolveHeroSlideHeightRatio(activeSlide, {
+        isNative,
+        isMobileWeb: isMobileWeb || isApp,
+      });
     }
     if (!slides.length) {
       return resolveHeroSlideHeightRatio(activeSlide, { isNative, isMobileWeb });
@@ -740,18 +847,19 @@ export default function HeroMediaSlider({
     return Math.max(
       ...slides.map((slide) => resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb }))
     );
-  }, [activeSlide, isMobileWeb, isNative, isTop, slides]);
+  }, [activeSlide, isApp, isMobileWeb, isNative, isTop, slides]);
 
   const bannerHeight = useMemo(() => {
     const w = slideWidth;
     if (!w) return undefined;
     const natural = Math.round(w * bannerHeightRatio);
-    const phoneBand = isNative || isMobileWeb;
-    const viewportCap = Math.round((layoutHeight || 800) * (phoneBand ? 0.84 : 0.78));
+
+    if (slideFrameHeights.length && slideFrameHeights[index] > 0) {
+      return slideFrameHeights[index];
+    }
 
     if (isNative) {
-      const target = Math.max(natural, Math.round(w * 0.62));
-      return Math.min(680, Math.max(400, Math.min(target, viewportCap)));
+      return resolvePhoneHeroFrameHeight(w, bannerHeightRatio, layoutHeight);
     }
     if (isCompact) {
       const target = Math.round(w * HOME_HERO_COMPACT_HEIGHT_RATIO);
@@ -761,19 +869,11 @@ export default function HeroMediaSlider({
       );
     }
     if (isApp && Platform.OS !== "web") {
-      const target = Math.round(w * HOME_HERO_APP_HEIGHT_RATIO);
-      return Math.min(
-        HOME_HERO_APP_MAX_HEIGHT,
-        Math.max(HOME_HERO_APP_MIN_HEIGHT, target)
-      );
+      return resolvePhoneHeroFrameHeight(w, bannerHeightRatio, layoutHeight);
     }
     if (isTop) {
       if (isMobileWeb) {
-        const ratioH = Math.round(w * bannerHeightRatio);
-        const viewportCap = Math.round((layoutHeight || 800) * 0.46);
-        const maxH = Math.min(400, viewportCap);
-        const minH = Math.max(240, Math.round(w * 0.36));
-        return Math.min(maxH, Math.max(minH, ratioH));
+        return resolvePhoneHeroFrameHeight(w, bannerHeightRatio, layoutHeight);
       }
       // 21:9 — height from width; only shrink on very short viewports
       const vhCap = Math.round((layoutHeight || 900) * 0.85);
@@ -782,15 +882,15 @@ export default function HeroMediaSlider({
     return undefined;
   }, [
     bannerHeightRatio,
+    index,
     isApp,
     isCompact,
     isMobileWeb,
     isNative,
     isTop,
-    isXs,
     layoutHeight,
+    slideFrameHeights,
     slideWidth,
-    slides,
   ]);
 
   useEffect(() => {
@@ -824,6 +924,25 @@ export default function HeroMediaSlider({
     return undefined;
   }, [heroImageWidth, isMobileWeb, isMobileWebTop, layoutWidth, slideWidth, slides, slidesWarmed]);
 
+  const syncIndexFromOffset = useCallback(
+    (offsetX, pageW) => {
+      const pageWidthPx = Math.floor(pageW) || slideWidth || 1;
+      const current = Math.round(offsetX / pageWidthPx);
+      setIndex(Math.max(0, Math.min(current, count - 1)));
+    },
+    [count, slideWidth]
+  );
+
+  const pauseAutoplay = useCallback(() => {
+    pauseAutoRef.current = true;
+  }, []);
+
+  const resumeAutoplaySoon = useCallback(() => {
+    setTimeout(() => {
+      pauseAutoRef.current = false;
+    }, 4000);
+  }, []);
+
   const goTo = useCallback(
     (next) => {
       if (!count || slideWidth <= 0) return;
@@ -854,14 +973,19 @@ export default function HeroMediaSlider({
 
   useEffect(() => {
     if (reducedMotion || count <= 1 || slideWidth <= 0) return undefined;
-    const timer = setInterval(() => goTo(indexRef.current + 1), SLIDE_INTERVAL_MS);
+    const timer = setInterval(() => {
+      if (pauseAutoRef.current) return;
+      goTo(indexRef.current + 1);
+    }, SLIDE_INTERVAL_MS);
     return () => clearInterval(timer);
   }, [count, goTo, reducedMotion, slideWidth]);
 
   if (!count) return null;
 
+  const useSnapPaging =
+    slideWidth > 0 && (isNative || isApp || isMobileWebTop);
   const showArrows =
-    count > 1 && slideWidth > 0 && !isApp && (isBanner || Platform.OS === "web");
+    count > 1 && slideWidth > 0 && !isApp && !isMobileWebTop && (isBanner || Platform.OS === "web");
   const progress = ((index + 1) / count) * 100;
   const shellStyle = isApp
     ? styles.shellApp
@@ -892,7 +1016,7 @@ export default function HeroMediaSlider({
         isBanner && useWebAspectFrame && styles.shellAspect21x9,
         isBanner && !useWebAspectFrame && bannerHeight ? { height: bannerHeight } : null,
         isBanner && isMobileWebTop && styles.shellMobileWebAnimated,
-        isBanner && styles.shellBannerBase,
+        isBanner && !isMobileWebTop && !isApp && styles.shellBannerBase,
       ]}
     >
       {isNative || (isApp && !cardEmbedded) ? (
@@ -902,27 +1026,43 @@ export default function HeroMediaSlider({
       <ScrollView
         ref={scrollRef}
         horizontal
-        pagingEnabled={slideWidth > 0}
-        snapToInterval={(isNative || isApp) && slideWidth > 0 ? slideWidth : undefined}
+        pagingEnabled={slideWidth > 0 && !isMobileWebTop}
+        snapToInterval={useSnapPaging ? slideWidth : undefined}
         snapToAlignment="start"
         nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         scrollEventThrottle={16}
-        decelerationRate={Platform.OS === "ios" ? "fast" : 0.98}
+        decelerationRate="fast"
         disableIntervalMomentum
         overScrollMode={Platform.OS === "android" ? "never" : undefined}
         bounces={count > 1}
+        onTouchStart={pauseAutoplay}
+        onTouchEnd={resumeAutoplaySoon}
+        onScrollBeginDrag={pauseAutoplay}
+        onScroll={(e) => {
+          const { contentOffset, layoutMeasurement } = e.nativeEvent;
+          syncIndexFromOffset(contentOffset.x, layoutMeasurement.width);
+        }}
         onMomentumScrollEnd={(e) => {
-          const pageW = Math.floor(e.nativeEvent.layoutMeasurement.width) || slideWidth || 1;
-          const current = Math.round(e.nativeEvent.contentOffset.x / pageW);
-          setIndex(Math.max(0, Math.min(current, count - 1)));
+          const { contentOffset, layoutMeasurement } = e.nativeEvent;
+          syncIndexFromOffset(contentOffset.x, layoutMeasurement.width);
+          resumeAutoplaySoon();
         }}
         onScrollEndDrag={(e) => {
-          const pageW = Math.floor(e.nativeEvent.layoutMeasurement.width) || slideWidth || 1;
-          const current = Math.round(e.nativeEvent.contentOffset.x / pageW);
-          setIndex(Math.max(0, Math.min(current, count - 1)));
+          const { contentOffset, layoutMeasurement } = e.nativeEvent;
+          syncIndexFromOffset(contentOffset.x, layoutMeasurement.width);
         }}
-        style={styles.scroller}
+        style={[
+          styles.scroller,
+          isMobileWebTop &&
+            Platform.OS === "web" && {
+              scrollSnapType: "x mandatory",
+              WebkitOverflowScrolling: "touch",
+            },
+        ]}
+        {...(isMobileWebTop && Platform.OS === "web"
+          ? { className: HERO_MOBILE_SCROLLER_CLASS }
+          : {})}
         contentContainerStyle={slideWidth > 0 ? { width: slideWidth * count } : undefined}
       >
         {slides.map((slide, slideIndex) => {
@@ -940,7 +1080,18 @@ export default function HeroMediaSlider({
           return (
             <View
               key={slide.id}
-              style={[styles.page, slideWidth > 0 ? { width: slideWidth } : styles.pageFlex]}
+              style={[
+                styles.page,
+                slideWidth > 0 ? { width: slideWidth } : styles.pageFlex,
+                isMobileWebTop &&
+                  Platform.OS === "web" && {
+                    scrollSnapAlign: "start",
+                    scrollSnapStop: "always",
+                  },
+              ]}
+              {...(isMobileWebTop && Platform.OS === "web"
+                ? { className: HERO_MOBILE_PAGE_CLASS }
+                : {})}
             >
               <PageWrap {...pageWrapProps}>
                 <HeroSlideCard
@@ -964,6 +1115,7 @@ export default function HeroMediaSlider({
                   editorialEyebrow={editorialEyebrow}
                   layoutWidth={layoutWidth}
                   slideLayoutWidth={slideWidth || layoutWidth}
+                  layoutHeight={layoutHeight}
                   onLcpImageReady={isTop && slideIndex === 0 && hasLcpShell() ? dismissLcpShell : undefined}
                 />
               </PageWrap>
@@ -1097,7 +1249,6 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: "100%",
     alignSelf: "stretch",
-    backgroundColor: "#1a1410",
   },
   shellCard: {
     width: "100%",
@@ -1136,7 +1287,7 @@ const styles = StyleSheet.create({
     },
     default: {},
   }),
-  /** Phone web — same flat cinematic band as desktop (reference: full-bleed landscape hero). */
+  /** Phone web — cream frame so contain-fit product art reads cleanly. */
   shellMobileWeb: {
     width: "100%",
     maxWidth: "100%",
@@ -1144,10 +1295,10 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     borderWidth: 0,
     overflow: "hidden",
-    backgroundColor: "#1a1410",
+    backgroundColor: HERO_PHONE_FIT_BG,
     ...Platform.select({
       web: {
-        boxShadow: "0 28px 64px -36px rgba(25,20,15,.32)",
+        boxShadow: "none",
       },
       default: {},
     }),
@@ -1215,7 +1366,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(31, 92, 71, 0.36)",
     overflow: "hidden",
     position: "relative",
-    backgroundColor: "#14110e",
+    backgroundColor: HERO_PHONE_FIT_BG,
     ...Platform.select({
       ios: {
         shadowColor: "#3D2A12",
@@ -1310,6 +1461,14 @@ const styles = StyleSheet.create({
     minHeight: "100%",
     backgroundColor: "#1a1410",
   },
+  slideInnerPhoneFit: {
+    backgroundColor: HERO_PHONE_FIT_BG,
+  },
+  slideInnerPhoneBand: {
+    flex: 1,
+    minHeight: "100%",
+    justifyContent: "flex-start",
+  },
   slideInnerProduct: {
     backgroundColor: "#1a1410",
   },
@@ -1354,6 +1513,26 @@ const styles = StyleSheet.create({
     height: "100%",
     zIndex: 1,
     backgroundColor: "transparent",
+  },
+  heroSlideImageContain: {
+    backgroundColor: HERO_PHONE_FIT_BG,
+  },
+  heroContainFrame: {
+    width: "100%",
+    alignSelf: "stretch",
+    overflow: "hidden",
+    backgroundColor: HERO_PHONE_FIT_BG,
+    zIndex: 1,
+  },
+  heroContainFill: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: HERO_PHONE_FIT_BG,
+    zIndex: 1,
+  },
+  heroContainMediaFill: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: HERO_PHONE_FIT_BG,
   },
   scrimLayer: {
     zIndex: 2,

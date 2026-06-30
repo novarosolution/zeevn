@@ -13,6 +13,7 @@ export {
   WEB_HERO_PORTRAIT_RATIO,
   WEB_HERO_PHONE_MAX_HEIGHT,
   WEB_HERO_PHONE_MAX_VH,
+  resolvePhoneHeroFrameHeight,
   HOME_HERO_PACKAGING,
   HOME_WEB_INTRO,
 } from "./homeHeroContent.shared";

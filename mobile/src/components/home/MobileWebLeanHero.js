@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
-import { WEB_HERO_PHONE_MAX_HEIGHT, WEB_HERO_PHONE_MAX_VH, WEB_HERO_PORTRAIT_RATIO } from "../../content/homeHeroContent";
+import { WEB_HERO_PORTRAIT_RATIO, resolvePhoneHeroFrameHeight } from "../../content/homeHeroContent";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { getHeroSlideDisplayWidth, getHeroSlideImageUri } from "../../utils/image";
 import { setLcpShellVisible } from "../../utils/lcpShell";
@@ -25,9 +25,7 @@ export default function MobileWebLeanHero({ slide, onPress, layoutWidth }) {
 
   const frameHeight = useMemo(() => {
     const ratio = slide?.heightRatio || WEB_HERO_PORTRAIT_RATIO;
-    const natural = Math.round(frameWidth * ratio);
-    const vhCap = Math.round((viewportHeight || 700) * WEB_HERO_PHONE_MAX_VH);
-    return Math.min(natural, WEB_HERO_PHONE_MAX_HEIGHT, vhCap);
+    return resolvePhoneHeroFrameHeight(frameWidth, ratio, viewportHeight);
   }, [frameWidth, slide?.heightRatio, viewportHeight]);
 
   const dismissShell = useCallback(() => {

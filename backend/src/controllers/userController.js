@@ -1,7 +1,7 @@
 const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 const { resolveProductLineFromRaw } = require("../utils/productLine");
-const cloudinary = require("../config/cloudinary");
+const { getCloudinary, isCloudinaryConfigured } = require("../config/cloudinary");
 const Product = require("../models/Product");
 const User = require("../models/User");
 const generateTokenModule = require("../utils/generateToken");
@@ -264,6 +264,13 @@ async function uploadUserAvatar(req, res, next) {
       ? imageBase64
       : `data:${safeMime};base64,${imageBase64}`;
 
+    if (!isCloudinaryConfigured()) {
+      return res.status(503).json({
+        message: "Image upload is not configured on this server.",
+      });
+    }
+
+    const cloudinary = getCloudinary();
     const uploaded = await cloudinary.uploader.upload(uploadSource, {
       folder: "kankreg/avatars",
       resource_type: "image",

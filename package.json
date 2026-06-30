@@ -4,7 +4,9 @@
   "private": true,
   "description": "Zeevan monorepo — mobile app (Expo) + backend API (Express)",
   "scripts": {
-    "install:all": "npm install --prefix mobile && npm install --prefix backend",
+    "install:all": "npm install --prefix mobile && npm install --prefix backend && npm install --prefix landing",
+    "dev": "sh scripts/dev.sh",
+    "mobile:dev": "npm run dev --prefix mobile",
     "mobile:start": "npm run start --prefix mobile",
     "mobile:start:clean": "npm run start:clean --prefix mobile",
     "web": "npm run web --prefix mobile",

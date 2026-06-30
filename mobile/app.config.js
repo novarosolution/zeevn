@@ -6,6 +6,15 @@
  */
 const { expo } = require("./app.json");
 
+/** Hosted API on Render — https://zeevn-i760.onrender.com */
+const PRODUCTION_API_URL = "https://zeevn-i760.onrender.com";
+const PRODUCTION_SITE_URL = "https://zeevan.shop";
+
+const isProductionBundle =
+  process.env.NODE_ENV === "production" ||
+  process.env.EAS_BUILD === "true" ||
+  process.env.EAS_BUILD_PROFILE === "production";
+
 module.exports = {
   expo: {
     ...expo,
@@ -14,8 +23,12 @@ module.exports = {
       eas: {
         projectId: "f5017187-2f56-48d7-a1f2-741be2d8383b",
       },
-      apiUrl: process.env.EXPO_PUBLIC_API_URL,
-      siteUrl: process.env.EXPO_PUBLIC_SITE_URL || "https://www.zeevan.app",
+      apiUrl:
+        process.env.EXPO_PUBLIC_API_URL ||
+        (isProductionBundle ? PRODUCTION_API_URL : undefined),
+      siteUrl:
+        process.env.EXPO_PUBLIC_SITE_URL ||
+        (isProductionBundle ? PRODUCTION_SITE_URL : "https://www.zeevan.app"),
       googleOAuthWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
       googleOAuthIosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
       googleOAuthAndroidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,

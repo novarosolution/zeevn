@@ -3,7 +3,8 @@ import { getApiBaseUrl } from "./apiBase";
 
 const PREFERRED_URL_KEY = "@zeevan_api_preferred_url";
 const REQUEST_TIMEOUT_MS = 12_000;
-const HEALTH_TIMEOUT_MS = 6_000;
+/** Render free tier cold starts can exceed 6s — allow longer health probes. */
+const HEALTH_TIMEOUT_MS = 25_000;
 
 let preferredUrl = null;
 let preferredLoaded = false;

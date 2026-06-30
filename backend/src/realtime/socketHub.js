@@ -3,28 +3,9 @@ const mongoose = require("mongoose");
 const { Server } = require("socket.io");
 const User = require("../models/User");
 const Order = require("../models/Order");
+const { corsOriginCallback } = require("../config/corsOrigins");
 
 let io = null;
-
-function isAllowedOrigin(origin) {
-  if (!origin) return true;
-  const allowedOrigins = new Set([
-    "https://novarosolution.com",
-    "https://www.novarosolution.com",
-    "https://zeevan.app",
-    "https://www.zeevan.app",
-  ]);
-  if (allowedOrigins.has(origin)) return true;
-  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return true;
-  if (/^https:\/\/[\w-]+\.vercel\.app$/i.test(origin)) return true;
-  const extra = process.env.CORS_EXTRA_ORIGINS;
-  if (extra) {
-    for (const o of extra.split(",").map((s) => s.trim()).filter(Boolean)) {
-      if (origin === o) return true;
-    }
-  }
-  return false;
-}
 
 function toPlain(doc) {
   if (!doc) return null;
@@ -34,10 +15,7 @@ function toPlain(doc) {
 function initSocketServer(httpServer) {
   io = new Server(httpServer, {
     cors: {
-      origin(origin, callback) {
-        if (isAllowedOrigin(origin)) return callback(null, true);
-        return callback(new Error(`Not allowed by CORS: ${origin}`));
-      },
+      origin: corsOriginCallback,
       credentials: true,
     },
     path: "/socket.io",

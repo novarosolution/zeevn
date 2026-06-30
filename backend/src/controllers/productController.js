@@ -1,5 +1,5 @@
 const Product = require("../models/Product");
-const cloudinary = require("../config/cloudinary");
+const { getCloudinary, isCloudinaryConfigured } = require("../config/cloudinary");
 
 function sanitizeVariants(raw) {
   if (!Array.isArray(raw)) return [];
@@ -371,6 +371,13 @@ async function uploadProductImage(req, res, next) {
       ? imageBase64
       : `data:${safeMime};base64,${imageBase64}`;
 
+    if (!isCloudinaryConfigured()) {
+      return res.status(503).json({
+        message: "Image upload is not configured on this server.",
+      });
+    }
+
+    const cloudinary = getCloudinary();
     const uploaded = await cloudinary.uploader.upload(uploadSource, {
       folder: "kankreg/products",
       resource_type: "image",
@@ -404,6 +411,13 @@ async function uploadMarketingVideo(req, res, next) {
       typeof mimeType === "string" && mimeType.startsWith("video/") ? mimeType : "video/mp4";
     const uploadSource = hasDataPrefix ? videoBase64 : `data:${safeMime};base64,${videoBase64}`;
 
+    if (!isCloudinaryConfigured()) {
+      return res.status(503).json({
+        message: "Video upload is not configured on this server.",
+      });
+    }
+
+    const cloudinary = getCloudinary();
     const uploaded = await cloudinary.uploader.upload(uploadSource, {
       folder: "kankreg/marketing",
       resource_type: "video",

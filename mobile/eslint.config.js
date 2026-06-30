@@ -10,6 +10,7 @@ module.exports = defineConfig([
       ".tmp-*",
       "dist-export-check/**",
       "dist-export-web-check/**",
+      "**/._*",
     ],
   },
 ]);

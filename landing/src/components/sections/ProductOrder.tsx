@@ -6,9 +6,36 @@ import { site } from "@/content/site";
 import SectionShell from "@/components/ui/SectionShell";
 import FadeIn from "@/components/ui/FadeIn";
 
+const SHOP_URL = process.env.NEXT_PUBLIC_SHOP_URL || "https://www.zeevan.app";
+
+function buildOrderLinks(product: (typeof site.products.items)[number], brand: typeof site.brand) {
+  const whatsapp = String(brand.whatsapp || "").trim();
+  const message = `Hi, I'd like to order Zeevan ghee ${product.size}.`;
+  const buyMessage = `Order ${product.size} - ${product.price}`;
+
+  if (whatsapp) {
+    const waBase = `https://wa.me/${whatsapp}?text=`;
+    return {
+      primaryHref: `${waBase}${encodeURIComponent(message)}`,
+      primaryExternal: true,
+      secondaryHref: `${waBase}${encodeURIComponent(buyMessage)}`,
+      secondaryExternal: true,
+    };
+  }
+
+  const email = String(brand.email || "support@zeevan.app").trim();
+  const subject = encodeURIComponent(`Zeevan ghee order — ${product.size}`);
+  const body = encodeURIComponent(message);
+  return {
+    primaryHref: `mailto:${email}?subject=${subject}&body=${body}`,
+    primaryExternal: false,
+    secondaryHref: SHOP_URL,
+    secondaryExternal: true,
+  };
+}
+
 export default function ProductOrder() {
   const { products, brand } = site;
-  const waBase = `https://wa.me/${brand.whatsapp}?text=`;
 
   return (
     <SectionShell
@@ -19,7 +46,9 @@ export default function ProductOrder() {
       centered
     >
       <div className="grid gap-6 md:grid-cols-3">
-        {products.items.map((product, i) => (
+        {products.items.map((product, i) => {
+          const links = buildOrderLinks(product, brand);
+          return (
           <FadeIn key={product.id} delay={i * 0.05}>
             <article className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-charcoal/8 bg-cream shadow-card">
               {product.badge ? (
@@ -44,26 +73,27 @@ export default function ProductOrder() {
                 ) : null}
                 <div className="mt-auto flex flex-col gap-2 pt-6">
                   <Link
-                    href={`${waBase}${encodeURIComponent(`Hi, I'd like to order Zeevan ghee ${product.size}.`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={links.primaryHref}
+                    target={links.primaryExternal ? "_blank" : undefined}
+                    rel={links.primaryExternal ? "noopener noreferrer" : undefined}
                     className="rounded-full border border-earth-green/30 px-4 py-2.5 text-center text-sm font-semibold text-earth-green transition hover:bg-earth-green/5"
                   >
-                    {products.whatsappCta}
+                    {String(brand.whatsapp || "").trim() ? products.whatsappCta : "Email to order"}
                   </Link>
                   <Link
-                    href={`${waBase}${encodeURIComponent(`Order ${product.size} - ${product.price}`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={links.secondaryHref}
+                    target={links.secondaryExternal ? "_blank" : undefined}
+                    rel={links.secondaryExternal ? "noopener noreferrer" : undefined}
                     className="rounded-full bg-brand-green px-4 py-2.5 text-center text-sm font-semibold text-cream shadow-soft transition hover:bg-brand-green-deep"
                   >
-                    {products.buyCta}
+                    {String(brand.whatsapp || "").trim() ? products.buyCta : "Shop on zeevan.app"}
                   </Link>
                 </div>
               </div>
             </article>
           </FadeIn>
-        ))}
+          );
+        })}
       </div>
     </SectionShell>
   );

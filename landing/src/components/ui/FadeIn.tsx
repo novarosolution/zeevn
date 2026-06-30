@@ -11,6 +11,12 @@ type FadeInProps = {
   as?: "div" | "section" | "li";
 };
 
+const motionByTag = {
+  div: motion.div,
+  section: motion.section,
+  li: motion.li,
+} as const;
+
 export default function FadeIn({
   children,
   className,
@@ -19,7 +25,8 @@ export default function FadeIn({
   as = "div",
 }: FadeInProps) {
   const reduceMotion = useReducedMotion();
-  const Component = motion.create(as);
+  const Component = motionByTag[as];
+
   return (
     <Component
       className={className}

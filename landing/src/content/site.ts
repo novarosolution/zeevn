@@ -58,9 +58,9 @@ export const site = {
   brand: {
     name: "Zeevan",
     tagline: "Pure heritage, delivered fresh — hand-churned A2 ghee from Gujarat.",
-    phone: "",
-    whatsapp: "",
-    email: "hello@zeevan.com",
+    phone: process.env.NEXT_PUBLIC_BRAND_PHONE || "",
+    whatsapp: process.env.NEXT_PUBLIC_BRAND_WHATSAPP || "",
+    email: process.env.NEXT_PUBLIC_BRAND_EMAIL || "support@zeevan.app",
     address: "Kutch, Gujarat, India",
     social: {
       instagram: "https://instagram.com/zeevan",
@@ -96,7 +96,7 @@ export const site = {
     title: "How our ghee is made",
     caption: "From grass-fed Kankrej cows to golden, grainy ghee — every step honoured by hand.",
     poster: "/images/video-poster.jpg",
-    src: "",
+    src: process.env.NEXT_PUBLIC_PROMO_VIDEO_URL || "",
     type: "mp4",
   } satisfies VideoConfig,
 

@@ -1,5 +1,7 @@
 import { fetchBalanced } from "./apiEndpointBalancer";
 
+const HEALTH_PROBE_TIMEOUT_MS = 25_000;
+
 /**
  * Lightweight central API client.
  *
@@ -208,11 +210,19 @@ export function apiDelete(path, options = {}) {
 
 /** Lightweight connectivity probe — GET / on server root (no auth). */
 export async function checkApiHealth() {
-  try {
-    const response = await fetchBalanced("/", { method: "GET" }, { timeoutMs: 6000 });
-    const data = await readJson(response);
-    return Boolean(response.ok && data?.ok);
-  } catch {
-    return false;
+  const attempts = 3;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      const timeoutMs = attempt === 0 ? 10_000 : HEALTH_PROBE_TIMEOUT_MS;
+      const response = await fetchBalanced("/", { method: "GET" }, { timeoutMs });
+      const data = await readJson(response);
+      if (response.ok && data?.ok) return true;
+    } catch {
+      // Retry — hosted APIs (e.g. Render) may be cold-starting.
+    }
+    if (attempt < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)));
+    }
   }
+  return false;
 }

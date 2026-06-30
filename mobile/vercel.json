@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm run export:web",
+  "buildCommand": "EXPO_PUBLIC_API_URL=https://zeevn-i760.onrender.com EXPO_PUBLIC_SITE_URL=https://zeevan.shop npm run export:web",
   "outputDirectory": "dist",
   "installCommand": "npm ci --include=dev",
   "rewrites": [

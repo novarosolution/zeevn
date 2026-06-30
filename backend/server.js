@@ -4,6 +4,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 const { initSocketServer } = require("./src/realtime/socketHub");
+const { corsOriginCallback } = require("./src/config/corsOrigins");
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
@@ -22,35 +23,8 @@ const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
 const app = express();
 app.disable("x-powered-by");
 
-const allowedOrigins = new Set([
-  "https://novarosolution.com",
-  "https://www.novarosolution.com",
-  "https://zeevan.app",
-  "https://www.zeevan.app",
-]);
-
-/** Expo web, Vite, and local dev often use random localhost ports. */
-function isAllowedOrigin(origin) {
-  if (!origin) return true;
-  if (allowedOrigins.has(origin)) return true;
-  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return true;
-  if (/^https:\/\/[\w-]+\.vercel\.app$/i.test(origin)) return true;
-  const extra = process.env.CORS_EXTRA_ORIGINS;
-  if (extra) {
-    for (const o of extra.split(",").map((s) => s.trim()).filter(Boolean)) {
-      if (origin === o) return true;
-    }
-  }
-  return false;
-}
-
 const corsOptions = {
-  origin(origin, callback) {
-    if (isAllowedOrigin(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error(`Not allowed by CORS: ${origin}`));
-  },
+  origin: corsOriginCallback,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
@@ -112,7 +86,7 @@ async function start() {
   const httpServer = http.createServer(app);
   initSocketServer(httpServer);
   httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`Kankreg API on port ${PORT} (listening on 0.0.0.0)`);
+    console.log(`Zeevan API on port ${PORT} (listening on 0.0.0.0)`);
     console.log("Try: GET http://127.0.0.1:" + PORT + "/products");
     console.log("Live: WebSocket /socket.io");
   });

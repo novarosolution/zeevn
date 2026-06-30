@@ -20,7 +20,7 @@ export default function BackendOfflineBanner() {
 
   const hint = isLocalApiUrl(apiBaseUrl)
     ? "Start the local API: npm run backend:dev (repo root), then retry."
-    : "Zeevan is temporarily unavailable. Check your connection and try again.";
+    : "The shop could not reach the API. If this is your first visit today, wait a moment and tap Retry — the server may be waking up.";
 
   return (
     <Animated.View

@@ -2,7 +2,9 @@ import React, { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,8 +17,10 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { AUTH_UI } from "../content/appContent";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
+import { KANKREG_PALETTE } from "../theme/kankregWeb";
+import { useTheme } from "../context/ThemeContext";
 import { adminScrollPaddingBottom, customerScrollFill } from "../theme/screenLayout";
-import { spacing } from "../theme/tokens";
+import { fonts, spacing, typography } from "../theme/tokens";
 import {
   isValidEmail,
   normalizeEmail,
@@ -27,6 +31,10 @@ import PremiumButton from "../components/ui/PremiumButton";
 import PremiumInput from "../components/ui/PremiumInput";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import { resetNavigationAfterAuth } from "../navigation/postAuthNavigation";
+import {
+  isAppleSignInConfigured,
+  isGoogleSignInConfigured,
+} from "../services/oauthSignIn";
 
 export default function RegisterScreen({ navigation }) {
   const [name, setName] = useState("");
@@ -37,10 +45,12 @@ export default function RegisterScreen({ navigation }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { registerWithCredentials } = useAuth();
   const { showToast } = useToast();
+  const { isDark } = useTheme();
   const { useAuthSplit } = useKankregLayout();
   const styles = useMemo(() => createRegisterStyles(), []);
   const insets = useSafeAreaInsets();
-  const marketingInHero = Platform.OS === "web";
+
+  const oauthReady = isGoogleSignInConfigured() || isAppleSignInConfigured();
 
   const handleRegister = async () => {
     const nameErr = validateRegisterName(name);
@@ -74,7 +84,7 @@ export default function RegisterScreen({ navigation }) {
         email: em,
         password,
       });
-      showToast({ type: "success", title: "Account created", message: "Welcome to kankreg.", duration: 2400 });
+      showToast({ type: "success", title: "Account created", message: "Welcome to Zeevan.", duration: 2400 });
       await resetNavigationAfterAuth(navigation);
     } catch (err) {
       setError(err.message || "Unable to register. Please try again.");
@@ -90,18 +100,23 @@ export default function RegisterScreen({ navigation }) {
       title={AUTH_UI.registerTitle}
       subtitle={AUTH_UI.registerSubtitle}
       formEyebrow={AUTH_UI.registerFormEyebrow}
-      marketingInHero={marketingInHero}
       compact={!useAuthSplit}
-      socialSlot={<AuthSocialButtons onSuccess={() => resetNavigationAfterAuth(navigation)} />}
+      socialSlot={
+        oauthReady ? (
+          <AuthSocialButtons onSuccess={() => resetNavigationAfterAuth(navigation)} />
+        ) : null
+      }
       footerSlot={
-        <PremiumButton
-          label={AUTH_UI.continueGuest}
-          variant="outline"
-          size="md"
-          fullWidth
-          iconLeft="storefront-outline"
+        <Pressable
           onPress={() => navigation.navigate("Home")}
-        />
+          style={styles.guestLink}
+          accessibilityRole="link"
+          accessibilityLabel={AUTH_UI.continueGuest}
+        >
+          <Text style={[styles.guestText, { color: isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.inkSoft }]}>
+            {AUTH_UI.continueGuest}
+          </Text>
+        </Pressable>
       }
     >
       <PremiumInput
@@ -113,6 +128,7 @@ export default function RegisterScreen({ navigation }) {
         }}
         iconLeft="person-outline"
         autoCapitalize="words"
+        placeholder="Your name"
       />
       <PremiumInput
         label="Email"
@@ -125,6 +141,7 @@ export default function RegisterScreen({ navigation }) {
         keyboardType="email-address"
         autoCapitalize="none"
         autoComplete="email"
+        placeholder="you@email.com"
       />
       <PremiumInput
         label="Password"
@@ -137,6 +154,7 @@ export default function RegisterScreen({ navigation }) {
         secureTextEntry
         passwordToggle
         autoCapitalize="none"
+        placeholder="Create a password"
       />
       <PremiumInput
         label="Confirm password"
@@ -151,6 +169,7 @@ export default function RegisterScreen({ navigation }) {
         autoCapitalize="none"
         returnKeyType="done"
         onSubmitEditing={handleRegister}
+        placeholder="Repeat password"
       />
       {error ? (
         <View style={styles.errorWrap}>
@@ -158,7 +177,7 @@ export default function RegisterScreen({ navigation }) {
         </View>
       ) : null}
       <PremiumButton
-        label={isSubmitting ? "Please wait..." : "Create account →"}
+        label={isSubmitting ? "Creating…" : AUTH_UI.registerCta}
         onPress={handleRegister}
         iconLeft="person-add-outline"
         loading={isSubmitting}
@@ -202,7 +221,7 @@ function createRegisterStyles() {
     screen: { flex: 1 },
     card: {
       width: "100%",
-      maxWidth: 468,
+      maxWidth: 440,
       alignSelf: "center",
     },
     cardWebInline: {
@@ -220,5 +239,16 @@ function createRegisterStyles() {
     errorWrap: { marginTop: spacing.sm },
     primaryCta: { marginTop: spacing.md },
     revealFill: { width: "100%" },
+    guestLink: {
+      paddingVertical: spacing.sm,
+      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+    },
+    guestText: {
+      fontFamily: fonts.medium,
+      fontSize: typography.bodySmall,
+      textAlign: "center",
+      textDecorationLine: "underline",
+      textDecorationColor: "rgba(92, 104, 52, 0.35)",
+    },
   });
 }

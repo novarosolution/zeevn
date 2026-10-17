@@ -1,86 +1,98 @@
 import React from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { HOME_SCREEN_UI } from "../../content/appContent";
 import { ZEEVAN_PRODUCT_LINES } from "../../content/zeevanCatalogContent";
-import { FONT_HEADING } from "../../theme/typographyRoles";
-import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { KANKREG_CHROME, KANKREG_PALETTE, ZEEVAN_GREEN } from "../../theme/kankregWeb";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
+import { FONT_HEADING } from "../../theme/typographyRoles";
 import { fonts, icon, spacing } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
+import { getHomeLineImage } from "../../content/homeLineImages";
 import SectionReveal from "../motion/SectionReveal";
 
-/** Compact intro band below the web hero — copy from `HOME_SCREEN_UI.webIntro`. */
+/**
+ * Premium intro under the web hero — line rail + clear shop CTA.
+ */
 export default function WebHomeIntroBand({ navigation }) {
   const { isDark } = useTheme();
   const { pageGutterClamp, isMobileWeb } = useKankregLayout();
   const copy = HOME_SCREEN_UI.webIntro;
-  if (!copy?.title || HOME_SCREEN_UI.web?.showIntroBand === false) return null;
+  if (HOME_SCREEN_UI.web?.showIntroBand === false) return null;
 
   const ink = isDark ? "#FAF8F4" : KANKREG_PALETTE.ink;
-  const muted = isDark ? "rgba(250,248,244,0.72)" : KANKREG_PALETTE.inkSoft;
+  const muted = isDark ? "rgba(250,248,244,0.62)" : KANKREG_PALETTE.inkSoft;
+  const cta = copy?.cta || "Shop all";
 
   return (
     <View style={[styles.shell, isDark && styles.shellDark]}>
-      <SectionReveal immediate preset="fade-up" delay={140} style={styles.revealWrap}>
+      <SectionReveal immediate preset="fade-up" delay={100} style={styles.revealWrap}>
         <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
-          <View style={styles.copy}>
-            <Text style={[styles.title, { color: ink }]}>{copy.title}</Text>
-            {copy.subtitle ? (
-              <Text style={[styles.subtitle, { color: muted }]}>{copy.subtitle}</Text>
+          <View style={[styles.copy, isMobileWeb && styles.copyCenter]}>
+            {copy?.title ? (
+              <Text style={[styles.title, { color: ink }, isMobileWeb && styles.titleCenter]}>
+                {copy.title}
+              </Text>
             ) : null}
-            {HOME_SCREEN_UI.web?.showIntroCategoryChips !== false ? (
-              <View style={styles.lineRow}>
-                {ZEEVAN_PRODUCT_LINES.map((line) => (
-                  <Pressable
-                    key={line.key}
-                    onPress={() => navigation.navigate("Shop", { pill: line.shopPill })}
-                    style={({ hovered, pressed }) => [
-                      styles.lineChip,
-                      isDark && styles.lineChipDark,
-                      hovered && styles.lineChipHover,
-                      pressed && { opacity: 0.9 },
-                    ]}
-                    accessibilityRole="button"
-                  >
-                    <Ionicons name={line.icon} size={12} color={KANKREG_PALETTE.green} />
-                    <Text style={[styles.lineChipText, { color: isDark ? "#FAF8F4" : KANKREG_PALETTE.ink }]}>
-                      {line.label}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
+            {copy?.subtitle ? (
+              <Text style={[styles.subtitle, { color: muted }, isMobileWeb && styles.titleCenter]}>
+                {copy.subtitle}
+              </Text>
             ) : null}
           </View>
-          <View style={[styles.actions, isMobileWeb && styles.actionsStack]}>
+
+          <View
+            style={[styles.rail, isMobileWeb && styles.railMobile]}
+            accessibilityRole="navigation"
+            accessibilityLabel="Product lines"
+          >
+            {ZEEVAN_PRODUCT_LINES.map((line) => {
+              const thumb = getHomeLineImage(line.key);
+              const short =
+                isMobileWeb && line.key === "honey" ? "Honey" : line.label;
+              return (
+                <Pressable
+                  key={line.key}
+                  onPress={() =>
+                    navigation.navigate("Shop", {
+                      category: line.label,
+                      pill: line.shopPill || line.label,
+                    })
+                  }
+                  style={({ hovered, pressed }) => [
+                    styles.lineChip,
+                    isMobileWeb && styles.lineChipMobile,
+                    isDark && styles.lineChipDark,
+                    hovered && styles.lineChipHover,
+                    pressed && { opacity: 0.9 },
+                  ]}
+                  accessibilityRole="link"
+                  accessibilityLabel={`Shop ${line.label}`}
+                >
+                  {thumb ? <Image source={thumb} style={styles.lineThumb} /> : null}
+                  <Text style={[styles.lineText, { color: ink }]} numberOfLines={1}>
+                    {short}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
           <Pressable
             onPress={() => navigation.navigate("Shop")}
             style={({ hovered, pressed }) => [
-              styles.primaryBtn,
-              hovered && styles.primaryBtnHover,
+              styles.cta,
+              hovered && styles.ctaHover,
               pressed && { opacity: 0.92 },
+              isMobileWeb && styles.ctaCenter,
             ]}
             accessibilityRole="button"
+            accessibilityLabel={cta}
           >
-            <Text style={styles.primaryBtnText}>{copy.cta}</Text>
-            <Ionicons name="arrow-forward" size={icon.xs} color="#fff" />
-          </Pressable>
-          <Pressable
-            onPress={() => navigation.navigate("About")}
-            style={({ hovered, pressed }) => [
-              styles.secondaryBtn,
-              isDark && styles.secondaryBtnDark,
-              hovered && styles.secondaryBtnHover,
-              pressed && { opacity: 0.88 },
-            ]}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.secondaryBtnText, { color: isDark ? "#FAF8F4" : KANKREG_PALETTE.green }]}>
-              {copy.ctaSecondary}
-            </Text>
+            <Text style={styles.ctaText}>{cta}</Text>
+            <Ionicons name="arrow-forward" size={icon.xs} color="#FAF8F4" />
           </Pressable>
         </View>
-      </View>
       </SectionReveal>
     </View>
   );
@@ -89,13 +101,20 @@ export default function WebHomeIntroBand({ navigation }) {
 const styles = StyleSheet.create({
   shell: {
     width: "100%",
-    backgroundColor: KANKREG_CHROME.topbarSolid,
+    backgroundColor: KANKREG_CHROME.cream,
     borderBottomWidth: 1,
-    borderBottomColor: KANKREG_PALETTE.lineSoft,
-    paddingVertical: spacing.lg,
+    borderBottomColor: "rgba(36, 68, 36, 0.08)",
+    paddingVertical: spacing.md + 4,
+    ...Platform.select({
+      web: {
+        backgroundImage:
+          "linear-gradient(180deg, rgba(252,248,240,0.2) 0%, rgba(240,232,216,0.55) 100%)",
+      },
+      default: {},
+    }),
   },
   shellDark: {
-    backgroundColor: "rgba(24, 21, 19, 0.55)",
+    backgroundColor: "rgba(24, 21, 19, 0.72)",
     borderBottomColor: "rgba(255,255,255,0.06)",
   },
   revealWrap: {
@@ -105,102 +124,106 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 1280,
     alignSelf: "center",
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    justifyContent: "space-between",
     gap: spacing.md,
   },
   copy: {
-    flex: 1,
-    minWidth: 240,
     gap: 6,
+    maxWidth: 560,
+  },
+  copyCenter: {
+    alignItems: "center",
+    alignSelf: "center",
+    maxWidth: 420,
   },
   title: {
     fontFamily: FONT_HEADING,
-    fontSize: 24,
-    lineHeight: 30,
-    letterSpacing: -0.3,
+    fontSize: 28,
+    lineHeight: 34,
+    letterSpacing: -0.35,
+  },
+  titleCenter: {
+    textAlign: "center",
   },
   subtitle: {
     fontFamily: fonts.regular,
-    fontSize: 14,
+    fontSize: 15,
     lineHeight: 22,
-    maxWidth: 480,
   },
-  lineRow: {
+  rail: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: spacing.xs,
-    marginTop: spacing.sm,
+    alignItems: "center",
+    gap: 8,
+  },
+  railMobile: {
+    justifyContent: "space-between",
+    gap: 8,
   },
   lineChip: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    paddingVertical: 6,
-    paddingHorizontal: 11,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(31, 92, 71, 0.18)",
-    backgroundColor: "rgba(31, 92, 71, 0.06)",
+    gap: 8,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    paddingRight: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(36, 68, 36, 0.16)",
+    backgroundColor: "rgba(252, 248, 240, 0.85)",
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
+  lineChipMobile: {
+    flex: 0,
+    flexBasis: "48%",
+    width: "48%",
+    maxWidth: "48%",
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    ...Platform.select({
+      web: { boxSizing: "border-box" },
+      default: {},
+    }),
+  },
   lineChipDark: {
-    borderColor: "rgba(42, 117, 89, 0.24)",
-    backgroundColor: "rgba(42, 117, 89, 0.1)",
+    borderColor: "rgba(255,255,255,0.14)",
+    backgroundColor: "rgba(255,255,255,0.04)",
   },
   lineChipHover: {
-    borderColor: KANKREG_PALETTE.green,
-    backgroundColor: "rgba(31, 92, 71, 0.1)",
+    borderColor: ZEEVAN_GREEN.deep,
+    backgroundColor: "rgba(92, 104, 52, 0.08)",
   },
-  lineChipText: {
+  lineThumb: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+  },
+  lineText: {
     fontFamily: fonts.semibold,
-    fontSize: 12,
+    fontSize: 13,
+    letterSpacing: 0.06,
   },
-  actions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-    flexShrink: 0,
-  },
-  actionsStack: {
-    width: "100%",
-  },
-  primaryBtn: {
+  cta: {
+    alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingVertical: 11,
+    marginTop: 4,
+    paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 999,
-    backgroundColor: KANKREG_CHROME.buttonAccent,
+    borderRadius: 10,
+    backgroundColor: ZEEVAN_GREEN.deep,
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
-  primaryBtnHover: {
-    backgroundColor: KANKREG_CHROME.buttonAccentHover,
+  ctaCenter: {
+    alignSelf: "center",
   },
-  primaryBtnText: {
+  ctaHover: {
+    backgroundColor: ZEEVAN_GREEN.base,
+  },
+  ctaText: {
     fontFamily: fonts.semibold,
-    fontSize: 14,
-    color: "#fff",
-  },
-  secondaryBtn: {
-    paddingVertical: 11,
-    paddingHorizontal: 18,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(31, 92, 71, 0.22)",
-    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
-  },
-  secondaryBtnDark: {
-    borderColor: "rgba(42, 117, 89, 0.28)",
-  },
-  secondaryBtnHover: {
-    borderColor: KANKREG_PALETTE.green,
-  },
-  secondaryBtnText: {
-    fontFamily: fonts.semibold,
-    fontSize: 14,
+    fontSize: 13,
+    letterSpacing: 0.04,
+    color: "#FAF8F4",
   },
 });

@@ -42,3 +42,9 @@ dist-web/
 dist-export-check/
 dist-export-web-check/
 landing/node_modules/
+
+# Secrets / keys — never commit
+*.pem
+*.ppk
+zeevan.pem
+landing/.next/

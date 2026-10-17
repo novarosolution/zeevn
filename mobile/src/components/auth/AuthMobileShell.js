@@ -45,7 +45,7 @@ export default function AuthMobileShell({ children, artTitle, artSubtitle, mode 
             artTitle={artTitle}
             artSubtitle={artSubtitle}
             compact={isXs}
-            showPerks={!isXs}
+            showPerks={false}
             variant="onDark"
           />
         </View>

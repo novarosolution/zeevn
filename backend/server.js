@@ -61,6 +61,8 @@ mountApi("/products", productRoutes);
 mountApi("/admin", adminRoutes);
 mountApi("/delivery", deliveryRoutes);
 
+app.use("/media", express.static(path.join(__dirname, "../mobile/assets")));
+
 app.use(notFound);
 app.use(errorHandler);
 

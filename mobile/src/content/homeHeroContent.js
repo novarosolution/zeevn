@@ -1,5 +1,6 @@
 /**
- * Home hero slider — native PNG assets. Web uses `homeHeroContent.web.js`.
+ * Home hero slider — native assets (same responsive art as web).
+ * Web uses `homeHeroContent.web.js`.
  */
 export {
   WEB_HERO_WIDE_RATIO,
@@ -20,27 +21,27 @@ export {
 
 export const HOME_HERO_ASSETS = {
   get webWide() {
-    return require("../../assets/zeevan-hero-web-21x9.png");
+    return require("../../assets/slider-desktop-ghee.jpg");
   },
   get webTelWide() {
-    return require("../../assets/zeevan-hero-web-tel-21x9.png");
+    return require("../../assets/slider-desktop-tel.jpg");
   },
   get webMasalaWide() {
-    return require("../../assets/zeevan-hero-web-masala-21x9.png");
-  },
-  get telMobile() {
-    return require("../../assets/zeevan-tel-portrait.png");
-  },
-  get masalaMobile() {
-    return require("../../assets/zeevan-masala-portrait.png");
+    return require("../../assets/slider-desktop-masala.jpg");
   },
   get webHoneyWide() {
-    return require("../../assets/zeevan-hero-web-honey-21x9.png");
-  },
-  get honeyMobile() {
-    return require("../../assets/zeevan-honey-portrait.png");
+    return require("../../assets/slider-desktop-honey.jpg");
   },
   get packagingMobile() {
-    return require("../../assets/zeevan-ghee-packaging-portrait.png");
+    return require("../../assets/slider-phone-ghee.jpg");
+  },
+  get telMobile() {
+    return require("../../assets/slider-phone-tel.jpg");
+  },
+  get masalaMobile() {
+    return require("../../assets/slider-phone-masala.jpg");
+  },
+  get honeyMobile() {
+    return require("../../assets/slider-phone-honey.jpg");
   },
 };

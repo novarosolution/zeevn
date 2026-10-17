@@ -52,6 +52,7 @@ import ShopSortBar from "../components/shop/ShopSortBar";
 import ShopFeaturesStrip from "../components/shop/ShopFeaturesStrip";
 import ShopDeliveryNote from "../components/shop/ShopDeliveryNote";
 import ShopLineQuickPick from "../components/shop/ShopLineQuickPick";
+import ShopAtelierLineRail from "../components/shop/ShopAtelierLineRail";
 import { buildShopCatalogSummary, buildShopCategoryRail } from "../utils/shopCatalogHelpers";
 import {
   ShopCollectionPills,
@@ -64,6 +65,8 @@ import {
   ShopTrustStrip,
   shopFilterSidebarStyle,
 } from "../components/shop/ShopPageChrome";
+import { KANKREG_CHROME } from "../theme/kankregWeb";
+import { SectionHeader } from "../components/home/editorial";
 
 const RATING_OPTIONS = shopRatingChipLabels();
 const SHOP_PILLS = SHOP_SCREEN_UI.collectionPills;
@@ -531,7 +534,13 @@ export default function ShopScreen({ navigation, route }) {
                 showBack={false}
                 figmaOnWeb={compactShop}
               />
-            ) : null}
+            ) : (
+              <SectionHeader
+                eyebrow={SHOP_SCREEN_UI.pageEyebrow || "Shop"}
+                title={mobileTitle}
+                kicker={SHOP_SCREEN_UI.pageSubtitle || undefined}
+              />
+            )}
             {showTrustStrip ? <ShopTrustStrip compact /> : null}
             {!compactShop && showCatalogHero ? (
               <>
@@ -551,7 +560,16 @@ export default function ShopScreen({ navigation, route }) {
 
             <View style={styles.mainCol}>
               <KankregAnimatedSection index={compactShop ? 1 : 1}>
-                <View style={[styles.shopTopBand, premiumLean && styles.shopTopBandLean, { backgroundColor: shopTheme.introBand, borderColor: shopTheme.border }]}>
+                <View
+                  style={[
+                    styles.shopTopBand,
+                    styles.shopTopBandAtelier,
+                    {
+                      backgroundColor: KANKREG_CHROME.cream,
+                      borderColor: shopTheme.border,
+                    },
+                  ]}
+                >
                   <ShopCatalogSearch
                     value={searchQuery}
                     onChangeText={setSearchQuery}
@@ -562,7 +580,7 @@ export default function ShopScreen({ navigation, route }) {
                   />
                   {showLineQuickPick ? (
                     <View style={styles.shopCollectionRow}>
-                      <ShopLineQuickPick selectedPill={pill} onSelectPill={handlePillSelect} compact={compactShop} />
+                      <ShopAtelierLineRail selectedPill={pill} onSelectPill={handlePillSelect} />
                     </View>
                   ) : null}
                 </View>
@@ -641,6 +659,7 @@ export default function ShopScreen({ navigation, route }) {
                       key={item.id}
                       idx={idx}
                       item={item}
+                      variant="editorial"
                       compact={catalogCardCompact}
                       navigation={navigation}
                       quantity={getItemQuantity(item.id)}
@@ -749,6 +768,21 @@ const styles = StyleSheet.create({
     ...Platform.select({
       web: {
         boxShadow: "0 16px 40px -28px rgba(36, 68, 36, 0.22)",
+      },
+      default: {},
+    }),
+  },
+  shopTopBandAtelier: {
+    borderRadius: 0,
+    borderWidth: 0,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 0,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.md,
+    marginBottom: spacing.md,
+    ...Platform.select({
+      web: {
+        boxShadow: "none",
       },
       default: {},
     }),

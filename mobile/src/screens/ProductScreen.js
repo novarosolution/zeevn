@@ -220,23 +220,19 @@ export default function ProductScreen({ route, navigation }) {
   }
 
   const handleAddToCart = () => {
-    if (!isProductPurchasable(product)) {
-      return;
-    }
-    if (!isAuthenticated) {
-      navigation.navigate("Login");
-      return;
-    }
+    if (!isProductPurchasable(product)) return;
     if (!cartLine) return;
     addToCart(cartLine);
   };
 
   const handleRemoveFromCart = () => {
-    if (!isAuthenticated) {
-      navigation.navigate("Login");
-      return;
-    }
     removeFromCart(product.id, cartLine?.variantLabel ?? "");
+  };
+
+  const handleBuyNow = () => {
+    handleAddToCart();
+    if (isAuthenticated) navigation.navigate("Checkout");
+    else navigation.navigate("Cart");
   };
 
   const quantity = getItemQuantity(product.id, cartLine?.variantLabel ?? "");
@@ -323,20 +319,10 @@ export default function ProductScreen({ route, navigation }) {
           quantity={quantity}
           onAddToCart={handleAddToCart}
           onRemoveFromCart={handleRemoveFromCart}
-          onBuyNow={() => {
-            handleAddToCart();
-            if (isAuthenticated) navigation.navigate("Checkout");
-            else navigation.navigate("Login");
-          }}
+          onBuyNow={handleBuyNow}
           relatedProducts={relatedProducts}
           onRelatedPress={(p) => navigation.push("Product", { productId: p.id })}
-          onAddRelated={(p) => {
-            if (!isAuthenticated) {
-              navigation.navigate("Login");
-              return;
-            }
-            addToCart(productToCartLine(p, ""));
-          }}
+          onAddRelated={(p) => addToCart(productToCartLine(p, ""))}
           reviews={reviews}
           reviewRating={reviewRating}
           onReviewRatingChange={setReviewRating}
@@ -388,21 +374,11 @@ export default function ProductScreen({ route, navigation }) {
           quantity={quantity}
           onAddToCart={handleAddToCart}
           onRemoveFromCart={handleRemoveFromCart}
-          onBuyNow={() => {
-            handleAddToCart();
-            if (isAuthenticated) navigation.navigate("Checkout");
-            else navigation.navigate("Login");
-          }}
+          onBuyNow={handleBuyNow}
           stickyBarVisible={stickyBarVisible}
           relatedProducts={relatedProducts}
           getItemQuantity={getItemQuantity}
-          onAddRelated={(item) => {
-            if (!isAuthenticated) {
-              navigation.navigate("Login");
-              return;
-            }
-            addToCart(productToCartLine(item));
-          }}
+          onAddRelated={(item) => addToCart(productToCartLine(item))}
           onRemoveRelated={removeFromCart}
           reviews={reviews}
           reviewRating={reviewRating}
@@ -424,11 +400,7 @@ export default function ProductScreen({ route, navigation }) {
         quantity={quantity}
         onAddToCart={handleAddToCart}
         onRemoveFromCart={handleRemoveFromCart}
-        onBuyNow={() => {
-          handleAddToCart();
-          if (isAuthenticated) navigation.navigate("Checkout");
-          else navigation.navigate("Login");
-        }}
+        onBuyNow={handleBuyNow}
       />
       <BottomNavBar />
     </CustomerScreenShell>

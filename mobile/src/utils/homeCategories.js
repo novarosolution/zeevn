@@ -8,6 +8,7 @@ import {
   matchProductLine,
   resolveProductLineKey,
 } from "../content/zeevanCatalogContent";
+import { getHomeLineImage } from "../content/homeLineImages";
 
 function countForLine(products, lineKey) {
   return products.filter((p) => matchProductLine(p, lineKey)).length;
@@ -17,6 +18,7 @@ function buildCategoryTile(def, products) {
   const line = getProductLineByKey(def.key);
   const meta = getCategoryTileMeta(def.key);
   const count = line ? countForLine(products, def.key) : 0;
+  const lineKey = def.key;
 
   return {
     key: def.key,
@@ -25,12 +27,13 @@ function buildCategoryTile(def, products) {
     gradient: def.gradient,
     gradientDark: def.gradientDark,
     icon: def.icon,
+    image: getHomeLineImage(def.imageKey || lineKey),
     accent: def.accent,
     description: def.description,
     tagline: meta.tagline,
     cta: meta.cta,
     shopPill: meta.shopPill || line?.shopPill,
-    lineKey: def.key,
+    lineKey,
   };
 }
 
@@ -55,8 +58,8 @@ export function buildHomeCategoriesFromApiLabels(products = [], { max = 6 } = {}
 
   const defaults = getCategorySectionDefaults();
   const mapLabel = (label, index) => {
-    const lineKey = resolveProductLineKey(label);
-    const lineDef = lineKey ? getProductLineByKey(lineKey) : null;
+    const resolvedKey = resolveProductLineKey(label);
+    const lineDef = resolvedKey ? getProductLineByKey(resolvedKey) : null;
     const def =
       (lineDef && defaults.find((d) => d.key === lineDef.key)) ||
       defaults.find(
@@ -67,6 +70,7 @@ export function buildHomeCategoriesFromApiLabels(products = [], { max = 6 } = {}
     const count = safe.filter(
       (p) => String(p.category || p.productType || "").trim() === label
     ).length;
+    const lineKey = lineDef?.key || def.key;
 
     return {
       key: `${def.key}-${label}`,
@@ -75,12 +79,13 @@ export function buildHomeCategoriesFromApiLabels(products = [], { max = 6 } = {}
       gradient: def.gradient,
       gradientDark: def.gradientDark,
       icon: def.icon,
+      image: getHomeLineImage(lineKey),
       accent: def.accent,
       description: def.description,
       tagline: meta.tagline,
       cta: meta.cta,
       shopPill: lineDef?.shopPill || meta.shopPill,
-      lineKey: lineDef?.key || def.key,
+      lineKey,
     };
   };
 

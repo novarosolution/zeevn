@@ -41,6 +41,17 @@ export function getCatalogGridColStyle(width) {
   };
   if (width >= KANKREG_BP.xl) {
     return {
+      width: "20%",
+      maxWidth: "20%",
+      minWidth: 0,
+      paddingHorizontal: pad,
+      flexGrow: 0,
+      flexShrink: 1,
+      ...Platform.select({ web: { boxSizing: "border-box" }, default: {} }),
+    };
+  }
+  if (width >= KANKREG_BP.lg) {
+    return {
       width: "25%",
       maxWidth: "25%",
       minWidth: 0,
@@ -50,7 +61,7 @@ export function getCatalogGridColStyle(width) {
       ...Platform.select({ web: { boxSizing: "border-box" }, default: {} }),
     };
   }
-  if (width >= KANKREG_BP.lg) {
+  if (width >= KANKREG_BP.md) {
     return {
       width: "33.333%",
       maxWidth: "33.333%",

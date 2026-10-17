@@ -73,6 +73,7 @@ export function mapMarketingSlidesToHero(marketingSlides = []) {
     enabled: true,
     variant: slide.variant || "",
     badge: slide.badge || "",
+    shopPill: slide.shopPill || "",
     contentPosition: slide.contentPosition || "center",
     heightRatio: slide.heightRatio,
     layout: slide.layout || "",

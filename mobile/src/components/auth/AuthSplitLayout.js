@@ -52,6 +52,7 @@ export default function AuthSplitLayout({ artTitle, artSubtitle, mode = "login",
             artTitle={artTitle}
             artSubtitle={artSubtitle}
             compact={isXs}
+            showPerks
             variant="onDark"
             perksLayout="column"
           />

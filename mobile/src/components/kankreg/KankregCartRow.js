@@ -247,7 +247,14 @@ function createStyles(c, isDark) {
       width: 30,
       height: 30,
       borderRadius: 15,
-      backgroundColor: isDark ? c.primary : KANKREG_PALETTE.ink,
+      backgroundColor:
+        Platform.OS === "web"
+          ? isDark
+            ? "rgba(255,255,255,0.12)"
+            : KANKREG_PALETTE.green
+          : isDark
+            ? c.primary
+            : KANKREG_PALETTE.ink,
       alignItems: "center",
       justifyContent: "center",
     },

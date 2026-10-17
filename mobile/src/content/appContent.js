@@ -96,7 +96,7 @@ export const HOME_HERO_BANNER = {
 
 /** Static brand quote on wide web home (not from reviews API). */
 export const HOME_BRAND_QUOTE = {
-  text: "Quietly premium — essentials you notice every morning.",
+  text: "Nothing rushed. Nothing added. Pure craft for the Indian kitchen.",
   attribution: "— Zeevan",
 };
 
@@ -134,9 +134,10 @@ export const HOME_SCREEN_UI = {
   bestsellers: {
     titleFallback: "Bestsellers",
     action: "See all",
-    webEyebrow: "Bestsellers",
+    webEyebrow: "Shop the pantry",
     webAction: "View all",
-    webSectionTitle: "Top picks",
+    webSectionTitle: "Essentials for your table",
+    webKicker: "Ghee, tel, masala & honey — small batches, ready to ship.",
   },
   comingSoon: {
     stripEyebrow: "Soon",
@@ -194,23 +195,25 @@ export const HOME_SCREEN_UI = {
   },
   quote: HOME_BRAND_QUOTE,
   trust: {
-    overline: "Why Zeevan",
+    overline: "Why kitchens choose Zeevan",
   },
-  /** Web-only home layout toggles (`KankregHomeScreen.js`). Lean web = catalog + API hero only. */
+  /** Web-only home layout toggles (`KankregHomeScreen.js`). */
   native: {
     heroEyebrow: ZEEVAN_CATALOG_SUBLINE,
     showNativeHero: true,
     showCategorySection: false,
   },
   web: {
-    leanHome: true,
-    showWebHero: true,
+    leanHome: false,
+    showWebHero: false,
     showCategorySection: false,
     showIntroCategoryChips: false,
     showThreeBackground: false,
     enableHomeGsap: false,
     heroEyebrow: ZEEVAN_CATALOG_SUBLINE,
-    showHeroTrustChips: true,
+    atelierSupport: "Ghee, tel, masala & honey — crafted slow for Indian kitchens.",
+    atelierCta: "Shop the collection",
+    showHeroTrustChips: false,
     showIntroBand: true,
     showTimelineSection: false,
     showProcessSection: false,
@@ -218,10 +221,19 @@ export const HOME_SCREEN_UI = {
     showCommunitySection: false,
     showGheePremiumSections: false,
     showStatsStrip: false,
-    showTestimonials: false,
+    showTestimonials: true,
     showBrandQuote: false,
     showMarquee: false,
-    showTrustStrip: false,
+    showTrustStrip: true,
+    showWhyChoose: true,
+    showLineFocus: true,
+    showNativeIngredients: true,
+    showDiwaliBridge: true,
+    showDiwaliFestive: true,
+    showDiwaliAnnounce: false,
+    showDiwaliFx: true,
+    showQualityAssurance: true,
+    showCertificationsStrip: true,
     showFeaturedEditorial: false,
     welcomeTag: "",
     heroStats: [],
@@ -256,7 +268,40 @@ export const HOME_STATS_STRIP = {
 export const HOME_TESTIMONIALS = {
   overline: "Loved by our customers",
   title: "Stories from our kitchens",
-  items: [],
+  items: [
+    {
+      key: "t1",
+      name: "Ananya S.",
+      city: "Ahmedabad",
+      rating: 5,
+      quote: "The bilona ghee smells like home. Grainy, golden, and nothing like supermarket jars.",
+      avatar: require("../../assets/testi-avatar-1.jpg"),
+    },
+    {
+      key: "t2",
+      name: "Rohan M.",
+      city: "Surat",
+      rating: 5,
+      quote: "Mustard tel for tadka — clean finish, no aftertaste. We switched the whole kitchen.",
+      avatar: require("../../assets/testi-avatar-2.jpg"),
+    },
+    {
+      key: "t3",
+      name: "Meera P.",
+      city: "Vadodara",
+      rating: 5,
+      quote: "Haldar honey on warm water every morning. Pure forest flavour. Packaging feels premium.",
+      avatar: require("../../assets/testi-avatar-3.jpg"),
+    },
+    {
+      key: "t4",
+      name: "Kunal D.",
+      city: "Rajkot",
+      rating: 5,
+      quote: "Ordered for Diwali gifting. Arrived sealed, on time, and everyone asked where we got it.",
+      avatar: require("../../assets/testi-avatar-4.jpg"),
+    },
+  ],
 };
 
 /** Small uppercase labels above home sections (trust row, shop block). */
@@ -567,9 +612,9 @@ export const KANKREG_FOOTER_COPYRIGHT = "© 2026 Zeevan. Crafted in India.";
 
 /** Native header: announce + topbar (no fixed announce on very small native optional). */
 export const KANKREG_ANNOUNCE_COPY = {
-  delivery: "Free delivery over ₹1,499",
-  rewards: "",
-  seasonCta: "",
+  delivery: "Diwali Craft Sale · Code BILONA25",
+  rewards: "Flat 25% off + extra 5% prepaid",
+  seasonCta: "Shop Pure",
 };
 
 /**
@@ -611,14 +656,14 @@ export const COMMON_UI = {
 /** Cart screen section chrome — see `CartScreen.js`. */
 export const CART_UI = {
   pageEyebrow: "Your bag",
-  pageTitle: "Shopping cart",
+  pageTitle: "Cart",
   checkoutTitle: "Checkout",
-  emptyTitle: "Your cart is empty",
-  emptyDescription: "Discover ghee, tel, masala, honey & more — add something you love.",
+  emptyTitle: "Nothing in your bag yet",
+  emptyDescription: "Ghee, tel, masala & honey — add something for your table.",
   browseCta: "Browse shop",
-  itemsSectionLabel: "Your items",
+  itemsSectionLabel: "In your bag",
   summaryTitle: "Order summary",
-  trustLine: "Secure checkout · Free delivery · Easy returns",
+  trustLine: "Secure checkout · Free delivery",
   stickySubtotalLabel: "Subtotal",
   shippingLabel: "Delivery",
   shippingFree: "FREE",
@@ -635,10 +680,10 @@ export const CART_UI = {
   couponPlaceholder: "Coupon code",
   couponApply: "Apply",
   couponApplied: "Coupon applied",
-  loginTitle: "Sign in to continue",
-  loginDescription: "Access your bag, saved address, and checkout on any device.",
-  loginCta: "Sign in",
-  browseGuestCta: "Continue browsing",
+  loginTitle: "Sign in to checkout",
+  loginDescription: "Your bag stays with you — sign in only to place the order.",
+  loginCta: "Sign in to checkout",
+  browseGuestCta: "Back to bag",
 };
 
 /** Cart — deliver-to panel and profile address prompts. */
@@ -876,24 +921,24 @@ export const LOCATION_BAR = {
 
 /** Auth screens — Login / Register (kankreg.html `#auth`). */
 export const AUTH_UI = {
-  loginTitle: "Sign in",
-  loginSubtitle: "Access your orders, rewards and saved items.",
-  loginFormEyebrow: "Welcome back",
+  loginTitle: "Welcome back",
+  loginSubtitle: "Sign in with your email to continue.",
+  loginCta: "Sign in",
+  loginFormEyebrow: "Account",
   loginHeroEyebrow: `Zeevan · ${ZEEVAN_CATALOG_SUBLINE}`,
-  loginHeroTitle: "Goods worth\ncoming back for.",
+  loginHeroTitle: "Your pantry,\nbeautifully kept.",
   loginPerks: [
-    { icon: "gift-outline", label: "Rewards on every order" },
-    { icon: "location-outline", label: "Live order tracking" },
-    { icon: "shield-checkmark-outline", label: "Secure online checkout" },
+    { icon: "bag-handle-outline", label: "Saved bag & orders" },
+    { icon: "shield-checkmark-outline", label: "Secure checkout" },
   ],
   registerTitle: "Create account",
-  registerSubtitle: "Join Zeevan — earn rewards on every delivered order.",
+  registerSubtitle: "One email — orders, addresses, and rewards in one place.",
+  registerCta: "Create account",
   registerFormEyebrow: "Join Zeevan",
-  registerHeroTitle: "Start earning\nfrom your first order.",
+  registerHeroTitle: "Start with\none quiet step.",
   registerPerks: [
-    { icon: "star-outline", label: "Member rewards & offers" },
-    { icon: "heart-outline", label: "Save favourites & addresses" },
-    { icon: "notifications-outline", label: "Order updates in real time" },
+    { icon: "heart-outline", label: "Saved addresses" },
+    { icon: "notifications-outline", label: "Order updates" },
   ],
   socialDivider: "or continue with",
   forgotPassword: "Forgot password?",
@@ -902,7 +947,7 @@ export const AUTH_UI = {
   appleLabel: "Apple",
   socialComingSoon: "Coming soon",
   socialDisabledHint: "Google & Apple sign-in will be enabled once OAuth is configured.",
-  continueGuest: "Continue as guest",
+  continueGuest: "Continue shopping without signing in",
   haveAccount: "Already have an account?",
   needAccount: "New here?",
 };
@@ -1090,20 +1135,25 @@ export const PRODUCT_SCREEN = {
   reviewNoWrittenNote: "—",
   reviewFirstHint: "",
   stickyPriceLabel: "Total",
-  addToCart: "Add to cart",
+  addToCart: "Add to bag",
+  buyNow: "Buy now",
+  goToBag: "Go to bag",
   /** Primary + sticky CTA when line is not purchasable */
   outOfStock: "Out of stock",
   productOutOfStockA11y: "Unavailable",
-  addToCartA11y: "Add to cart",
+  addToCartA11y: "Add to bag",
   /** `{count}` stepper label */
-  inCartCount: "{count} in cart",
+  inCartCount: "{count} in bag",
   /** `{count}` stock fact */
   stockCountLabel: "{count} in stock",
   stockOutLabel: "Out of stock",
   unitFallback: "1 pc",
   /** `{pct}` discount chip */
   savePctChip: "Save {pct}%",
-  stickyInCart: "In cart ({count})",
+  stickyInCart: "In bag ({count})",
+  chooseSize: "Choose size",
+  orderHint: "Pick a size, then add to bag — checkout when you’re ready.",
+  stockReady: "Ready to ship",
 };
 
 /** Replace `{placeholders}` in `PRODUCT_SCREEN` template strings. */

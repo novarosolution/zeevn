@@ -7,7 +7,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { platformElevation } from "../../theme/platformStyles";
 import { fonts } from "../../theme/tokens";
 import {
   WEB_HEADER_HEIGHT,
@@ -193,7 +192,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
               />
             </Pressable>
             <Pressable
-              onPress={() => go("Cart", true)}
+              onPress={() => go("Cart", false)}
               style={({ hovered }) => [
                 styles.iconBtn,
                 useCompactChrome && styles.iconBtnCompact,
@@ -315,7 +314,8 @@ const styles = StyleSheet.create({
   shellLightWeb: {
     ...Platform.select({
       web: {
-        boxShadow: "0 1px 0 rgba(31, 92, 71, 0.08), 0 8px 32px -16px rgba(21, 18, 16, 0.08)",
+        backgroundColor: "rgba(248, 240, 224, 0.82)",
+        boxShadow: "0 1px 0 rgba(36, 68, 36, 0.06), 0 12px 40px -24px rgba(21, 18, 16, 0.12)",
       },
       default: {},
     }),
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     position: "relative",
     overflow: "hidden",
     ...Platform.select({
-      web: { backgroundColor: KANKREG_CHROME.topbarBg },
+      web: { backgroundColor: "transparent" },
       default: {},
     }),
   },
@@ -354,53 +354,50 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     flexWrap: "nowrap",
-    gap: 2,
-    marginLeft: 6,
+    gap: 4,
+    marginLeft: 10,
     justifyContent: "center",
     ...Platform.select({ web: { overflow: "hidden" }, default: {} }),
   },
   navBtn: {
-    paddingVertical: 12,
-    paddingHorizontal: 11,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     minHeight: 44,
     justifyContent: "center",
-    borderRadius: 999,
+    borderRadius: 0,
     flexShrink: 0,
+    borderBottomWidth: 1.5,
+    borderBottomColor: "transparent",
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
   navBtnActive: {
-    backgroundColor: "rgba(31, 92, 71, 0.1)",
-    ...platformElevation({
-      web: { boxShadow: "0 1px 2px rgba(21, 18, 16, 0.04), 0 4px 14px -6px rgba(31, 92, 71, 0.12)" },
-      ios: {
-        shadowColor: "#19140f",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 6,
-      },
-      android: { elevation: 2 },
-    }),
+    backgroundColor: "transparent",
+    borderBottomColor: KANKREG_PALETTE.greenDeep,
   },
   navBtnActiveDark: {
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "transparent",
+    borderBottomColor: ALCHEMY.goldBright,
   },
   navBtnHover: {
-    backgroundColor: "rgba(31, 92, 71, 0.1)",
+    backgroundColor: "transparent",
+    borderBottomColor: "rgba(36, 68, 36, 0.28)",
   },
   navBtnHoverDark: {
-    backgroundColor: "rgba(52, 211, 153, 0.1)",
+    backgroundColor: "transparent",
+    borderBottomColor: "rgba(232, 188, 132, 0.4)",
   },
   navBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: fonts.medium,
     color: KANKREG_PALETTE.inkSoft,
-    letterSpacing: 0.01,
+    letterSpacing: 0.08,
+    textTransform: "uppercase",
   },
   navBtnTextDark: {
     color: "rgba(245, 239, 228, 0.78)",
   },
   navBtnTextActive: {
-    color: KANKREG_PALETTE.green,
+    color: KANKREG_PALETTE.greenDeep,
     fontFamily: fonts.semibold,
   },
   navBtnTextActiveDark: {
@@ -411,45 +408,46 @@ const styles = StyleSheet.create({
     marginLeft: "auto",
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
   },
   actionsCompact: {
-    gap: 8,
+    gap: 6,
   },
   iconBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(31, 92, 71, 0.14)",
-    backgroundColor: KANKREG_PALETTE.card,
+    borderColor: "rgba(36, 68, 36, 0.12)",
+    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
   iconBtnCompact: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
   },
   iconBtnDark: {
-    backgroundColor: "#181513",
+    backgroundColor: "transparent",
     borderColor: "#3f3933",
   },
   iconBtnHover: {
     borderColor: KANKREG_PALETTE.gold,
+    backgroundColor: "rgba(220, 172, 116, 0.08)",
   },
   iconBtnHoverDark: {
     borderColor: KANKREG_PALETTE.goldBright,
   },
   badge: {
     position: "absolute",
-    top: -5,
-    right: -5,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    top: -4,
+    right: -4,
+    minWidth: 17,
+    height: 17,
+    borderRadius: 8.5,
     backgroundColor: KANKREG_CHROME.buttonAccent,
     alignItems: "center",
     justifyContent: "center",
@@ -462,33 +460,33 @@ const styles = StyleSheet.create({
   },
   signIn: {
     paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 999,
+    paddingHorizontal: 16,
+    borderRadius: 10,
     backgroundColor: KANKREG_CHROME.buttonSecondary,
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
   signInHover: { backgroundColor: KANKREG_CHROME.buttonSecondaryHover },
   signInText: {
-    fontSize: 13.5,
+    fontSize: 13,
     fontFamily: fonts.semibold,
     color: KANKREG_CHROME.onAccent,
-    letterSpacing: 0.02,
+    letterSpacing: 0.04,
   },
   goldRule: {
     position: "absolute",
     left: 0,
     right: 0,
     bottom: 0,
-    height: 1.5,
-    opacity: 0.85,
+    height: 1,
+    opacity: 0.55,
   },
   menuToggle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 10,
     borderWidth: 1,
-    borderColor: "rgba(31, 92, 71, 0.14)",
-    backgroundColor: KANKREG_PALETTE.card,
+    borderColor: "rgba(36, 68, 36, 0.12)",
+    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
@@ -496,15 +494,15 @@ const styles = StyleSheet.create({
   menuToggleCompact: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 9,
   },
   menuToggleDark: {
-    backgroundColor: "#181513",
+    backgroundColor: "transparent",
     borderColor: "#3f3933",
   },
   menuToggleOpen: {
-    borderColor: "rgba(31, 92, 71, 0.28)",
-    backgroundColor: "rgba(31, 92, 71, 0.08)",
+    borderColor: "rgba(36, 68, 36, 0.28)",
+    backgroundColor: "rgba(36, 68, 36, 0.06)",
   },
   menuToggleOpenDark: {
     borderColor: "rgba(52, 211, 153, 0.28)",

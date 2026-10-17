@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
+  Image as RNImage,
   Platform,
   Pressable,
   StyleSheet,
@@ -56,6 +57,8 @@ import {
   ProductUsageGrid,
   ProductWhyZeevan,
 } from "../product/ProductPageExtras";
+import WebProductAtelierBand from "../product/WebProductAtelierBand";
+import { PRODUCT_ATELIER_SECTION } from "../../content/productAtelierContent";
 import { fonts, icon as sz, layout, radius, spacing, typography } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 
@@ -94,11 +97,11 @@ if (Platform.OS === "web") {
   cursor: pointer;
 }
 .${PRODUCT_BTN_CART_CLASS}:hover:not(:disabled) {
-  background: rgba(31, 77, 54, 0.06) !important;
+  background: rgba(36, 68, 36, 0.08) !important;
 }
 .${PRODUCT_BTN_BUY_CLASS}:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 24px -8px rgba(160, 116, 26, 0.45) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px -10px rgba(36, 68, 36, 0.45) !important;
 }
 @media (prefers-reduced-motion: reduce) {
   .${PRODUCT_THUMB_CLASS}:hover,
@@ -313,7 +316,12 @@ export default function WebProductView({
 
   const lifestyleImage = useMemo(() => {
     const raw = String(product?.lifestyleImage || "").trim();
-    return raw ? getProductSectionImageUri(raw) : "";
+    if (raw) return getProductSectionImageUri(raw);
+    try {
+      return RNImage.resolveAssetSource(PRODUCT_ATELIER_SECTION.lifestyle)?.uri || "";
+    } catch {
+      return "";
+    }
   }, [product?.lifestyleImage]);
   const heroPreviewUri = useMemo(
     () => getProductThumbImageUri(selectedImage || product?.image),
@@ -412,17 +420,43 @@ export default function WebProductView({
     </View>
   );
 
+  const stockLabel = isComingSoon
+    ? PRODUCT_SCREEN.heroComingSoon
+    : isOutOfStock
+      ? PRODUCT_SCREEN.heroOutOfStock
+      : PRODUCT_SCREEN.stockReady;
+  const buyLabel = inCart ? PRODUCT_SCREEN.goToBag : PRODUCT_SCREEN.buyNow;
+
   const renderPurchaseBlock = () => (
     <>
       <SectionReveal immediate delay={60} preset="fade-up">
-        <Text style={styles.eyebrow}>{eyebrowText}</Text>
+        <View style={styles.metaTop}>
+          <Text style={styles.eyebrow}>{eyebrowText}</Text>
+          <View
+            style={[
+              styles.stockChip,
+              isComingSoon && styles.stockChipSoon,
+              isOutOfStock && styles.stockChipOut,
+            ]}
+          >
+            <View
+              style={[
+                styles.stockDot,
+                isComingSoon && styles.stockDotSoon,
+                isOutOfStock && styles.stockDotOut,
+              ]}
+            />
+            <Text style={styles.stockChipText}>{stockLabel}</Text>
+          </View>
+        </View>
+
         <Text style={[styles.title, isXs && styles.titleMobile, { color: ink }]}>{product.name}</Text>
 
         <View style={styles.rateRow}>
           {liveRatingAvg > 0 ? (
             <>
               {renderStarRow(liveRatingAvg)}
-              <Text style={styles.rateBold}>{liveRatingAvg.toFixed(1)}</Text>
+              <Text style={[styles.rateBold, { color: ink }]}>{liveRatingAvg.toFixed(1)}</Text>
               <Text style={styles.rateMuted}>
                 · {reviewCountDisplay} review{reviewCountDisplay === 1 ? "" : "s"}
               </Text>
@@ -444,7 +478,7 @@ export default function WebProductView({
           </View>
           {inCart ? (
             <View style={styles.inBagPill}>
-              <Ionicons name="bag-check-outline" size={14} color={KANKREG_PALETTE.green} />
+              <Ionicons name="bag-handle-outline" size={14} color={KANKREG_PALETTE.green} />
               <Text style={styles.inBagPillText}>
                 {fillProductScreen(PRODUCT_SCREEN.inCartCount, { count: String(quantity) })}
               </Text>
@@ -457,7 +491,7 @@ export default function WebProductView({
 
       {variants.length > 0 ? (
         <SectionReveal immediate delay={140} preset="fade-up">
-          <Text style={styles.optLabel}>Select Size</Text>
+          <Text style={styles.optLabel}>{PRODUCT_SCREEN.chooseSize}</Text>
           <View style={[styles.sizesRow, isXs && styles.sizesRowStack]}>
             {variants.map((v) => {
               const lab = String(v.label || "").trim();
@@ -478,10 +512,13 @@ export default function WebProductView({
       ) : null}
 
       <SectionReveal immediate delay={200} preset="fade-up">
-          <View style={[styles.purchasePanel, isDark && styles.purchasePanelDark]}>
-            {isComingSoon ? (
-              <ComingSoonPurchasePanel note={comingSoonNote} isDark={isDark} ink={ink} muted={muted} />
-            ) : (
+        <View style={[styles.purchasePanel, isDark && styles.purchasePanelDark]}>
+          {!isComingSoon && !isOutOfStock ? (
+            <Text style={[styles.orderHint, { color: muted }]}>{PRODUCT_SCREEN.orderHint}</Text>
+          ) : null}
+          {isComingSoon ? (
+            <ComingSoonPurchasePanel note={comingSoonNote} isDark={isDark} ink={ink} muted={muted} />
+          ) : (
             <View style={[styles.buyRow, isXs && styles.buyRowStack]}>
               {!isOutOfStock && inCart ? (
                 <View style={[styles.qtyBox, isDark && styles.qtyBoxDark]}>
@@ -503,6 +540,8 @@ export default function WebProductView({
                   className={Platform.OS === "web" ? PRODUCT_BTN_CART_CLASS : undefined}
                   style={[styles.btnCart, isXs && styles.btnFull]}
                   onPress={onAddToCart}
+                  accessibilityRole="button"
+                  accessibilityLabel={PRODUCT_SCREEN.addToCartA11y}
                 >
                   <Ionicons name="bag-outline" size={16} color={KANKREG_PALETTE.green} style={styles.btnCartIcon} />
                   <Text style={styles.btnCartText}>{PRODUCT_SCREEN.addToCart}</Text>
@@ -513,15 +552,13 @@ export default function WebProductView({
                   className={Platform.OS === "web" ? PRODUCT_BTN_BUY_CLASS : undefined}
                   style={[styles.btnBuy, isXs && styles.btnFull, inCart && styles.btnBuyInCart]}
                   onPress={onBuyNow}
+                  accessibilityRole="button"
+                  accessibilityLabel={buyLabel}
                 >
-                  <LinearGradient
-                    colors={["#788844", "#244424"]}
-                    style={styles.btnBuyGrad}
-                    start={{ x: 0, y: 0.5 }}
-                    end={{ x: 1, y: 0.5 }}
-                  >
-                    <Text style={styles.btnBuyText}>Buy now</Text>
-                  </LinearGradient>
+                  <View style={styles.btnBuyGrad}>
+                    <Ionicons name="arrow-forward" size={15} color="#FAF8F4" style={styles.btnBuyIcon} />
+                    <Text style={styles.btnBuyText}>{buyLabel}</Text>
+                  </View>
                 </Pressable>
               ) : (
                 <View style={[styles.btnBuy, styles.btnDisabled, isXs && styles.btnFull]}>
@@ -529,9 +566,9 @@ export default function WebProductView({
                 </View>
               )}
             </View>
-            )}
-          </View>
-        </SectionReveal>
+          )}
+        </View>
+      </SectionReveal>
 
       {trustChips.length > 0 ? (
         <View style={styles.trustRow}>
@@ -618,6 +655,10 @@ export default function WebProductView({
         </SectionReveal>
       </View>
       </SectionReveal>
+
+      <View style={styles.sectionBlock}>
+        <WebProductAtelierBand />
+      </View>
 
       {showSpecs ? (
         <SectionReveal immediate delay={240} preset="fade-up" style={styles.sectionBlock}>
@@ -930,6 +971,7 @@ export default function WebProductView({
                 key={item.id}
                 idx={idx}
                 item={item}
+                featured={idx === 0}
                 variant="editorial"
                 compact={isXs}
                 navigation={navigation}
@@ -1052,7 +1094,74 @@ function createStyles(c, isDark) {
     },
     infoPanel: {
       width: "100%",
-      paddingTop: 4,
+      paddingTop: 18,
+      paddingBottom: 18,
+      paddingHorizontal: 18,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(36, 68, 36, 0.1)",
+      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#FCFAF6",
+      ...Platform.select({
+        web: {
+          position: "sticky",
+          top: 88,
+          alignSelf: "flex-start",
+          boxShadow: isDark
+            ? "0 18px 40px -28px rgba(0,0,0,0.45)"
+            : "0 18px 40px -28px rgba(36, 68, 36, 0.18)",
+        },
+        default: {},
+      }),
+    },
+    metaTop: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      marginBottom: 4,
+    },
+    stockChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      paddingHorizontal: 10,
+      paddingVertical: 5,
+      borderRadius: 8,
+      backgroundColor: "rgba(92, 104, 52, 0.1)",
+      borderWidth: 1,
+      borderColor: "rgba(92, 104, 52, 0.18)",
+    },
+    stockChipSoon: {
+      backgroundColor: "rgba(220, 172, 116, 0.16)",
+      borderColor: "rgba(220, 172, 116, 0.35)",
+    },
+    stockChipOut: {
+      backgroundColor: "rgba(184, 68, 47, 0.1)",
+      borderColor: "rgba(184, 68, 47, 0.22)",
+    },
+    stockDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: KANKREG_PALETTE.green,
+    },
+    stockDotSoon: {
+      backgroundColor: KANKREG_PALETTE.goldDeep,
+    },
+    stockDotOut: {
+      backgroundColor: KANKREG_PALETTE.danger,
+    },
+    stockChipText: {
+      fontFamily: fonts.semibold,
+      fontSize: 11,
+      letterSpacing: 0.04,
+      color: KANKREG_PALETTE.greenDeep || KANKREG_PALETTE.green,
+    },
+    orderHint: {
+      fontFamily: fonts.regular,
+      fontSize: 13,
+      lineHeight: 18,
+      marginBottom: 12,
     },
     gallery: {
       width: "100%",
@@ -1210,26 +1319,17 @@ function createStyles(c, isDark) {
     pricePanel: {
       marginTop: 4,
       marginBottom: 4,
-      padding: 16,
-      borderRadius: 16,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: "rgba(31, 92, 71, 0.28)",
-      borderTopWidth: 2,
-      borderTopColor: KANKREG_PALETTE.gold,
-      backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(255, 253, 249, 0.96)",
+      paddingVertical: 10,
+      paddingHorizontal: 0,
+      borderRadius: 0,
+      borderWidth: 0,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: KANKREG_PALETTE.lineSoft || KANKREG_PALETTE.line,
+      backgroundColor: "transparent",
       gap: 10,
-      ...platformShadow({
-        web: {
-          boxShadow: isDark
-            ? "0 10px 28px rgba(0,0,0,0.22)"
-            : "0 8px 24px rgba(22, 69, 51, 0.06), inset 0 1px 0 rgba(255,255,255,0.92)",
-        },
-        default: {},
-      }),
     },
     pricePanelDark: {
-      borderColor: "rgba(52, 211, 153, 0.22)",
-      borderTopColor: "rgba(52, 211, 153, 0.55)",
+      borderBottomColor: "rgba(255,255,255,0.12)",
     },
     inBagPill: {
       alignSelf: "flex-start",
@@ -1298,22 +1398,22 @@ function createStyles(c, isDark) {
     sizeCard: {
       flex: 1,
       minWidth: 100,
-      borderWidth: 1.5,
-      borderColor: KANKREG_PALETTE.line,
-      borderRadius: 14,
-      paddingVertical: 13,
+      borderWidth: 1,
+      borderColor: "rgba(36, 68, 36, 0.14)",
+      borderRadius: 12,
+      paddingVertical: 14,
       paddingHorizontal: 10,
       alignItems: "center",
-      backgroundColor: isDark ? c.surface : KANKREG_CHROME.cream,
+      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : KANKREG_PALETTE.card,
       gap: 3,
     },
     sizeCardDark: {
       borderColor: c.border,
-      backgroundColor: "rgba(255,255,255,0.03)",
     },
     sizeCardActive: {
-      borderColor: KANKREG_PALETTE.green,
-      backgroundColor: "rgba(31,77,54,0.05)",
+      borderColor: KANKREG_PALETTE.greenDeep || KANKREG_PALETTE.green,
+      borderWidth: 1.5,
+      backgroundColor: "rgba(92, 104, 52, 0.08)",
     },
     sizeLabel: {
       fontFamily: FONT_BODY_SEMIBOLD,
@@ -1342,20 +1442,13 @@ function createStyles(c, isDark) {
       flexWrap: "wrap",
     },
     purchasePanel: {
-      marginTop: 20,
-      padding: 14,
-      borderRadius: 18,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: KANKREG_PALETTE.line,
-      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#FFFEFA",
-      ...platformShadow({
-        web: {
-          boxShadow: isDark
-            ? "0 12px 32px rgba(0,0,0,0.2)"
-            : "0 10px 28px rgba(22, 69, 51, 0.07)",
-        },
-        default: {},
-      }),
+      marginTop: 18,
+      paddingVertical: 16,
+      paddingHorizontal: 16,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: "rgba(36, 68, 36, 0.12)",
+      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(252, 248, 240, 0.9)",
     },
     purchasePanelDark: {
       borderColor: c.border,
@@ -1449,9 +1542,9 @@ function createStyles(c, isDark) {
       justifyContent: "center",
       gap: 8,
       borderWidth: 1.5,
-      borderColor: KANKREG_PALETTE.green,
-      borderRadius: 14,
-      backgroundColor: isDark ? "rgba(31,77,54,0.08)" : "rgba(31,77,54,0.04)",
+      borderColor: KANKREG_PALETTE.greenDeep || KANKREG_PALETTE.green,
+      borderRadius: 12,
+      backgroundColor: isDark ? "rgba(31,77,54,0.08)" : "#FFFEFA",
       paddingHorizontal: 16,
     },
     btnCartIcon: {
@@ -1460,32 +1553,36 @@ function createStyles(c, isDark) {
     btnCartText: {
       fontFamily: fonts.bold,
       fontSize: 14.5,
-      color: KANKREG_PALETTE.green,
+      color: KANKREG_PALETTE.greenDeep || KANKREG_PALETTE.green,
       letterSpacing: 0.15,
     },
     btnBuy: {
-      flex: 1.2,
+      flex: 1.25,
       minWidth: 150,
       minHeight: 54,
-      borderRadius: 14,
+      borderRadius: 12,
       overflow: "hidden",
-      ...platformShadow({
-        web: { boxShadow: "0 10px 24px rgba(160, 116, 26, 0.32)" },
-      }),
+      backgroundColor: KANKREG_CHROME.buttonSecondary,
     },
     btnBuyInCart: {
       flex: 1.4,
     },
     btnBuyGrad: {
       flex: 1,
+      flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
+      gap: 8,
       paddingHorizontal: 16,
+      backgroundColor: KANKREG_CHROME.buttonSecondary,
+    },
+    btnBuyIcon: {
+      marginTop: 1,
     },
     btnBuyText: {
-      fontFamily: fonts.bold,
-      fontSize: 15.5,
-      color: "#FFF9EC",
+      fontFamily: fonts.semibold,
+      fontSize: 15,
+      color: "#FAF8F4",
       letterSpacing: 0.2,
     },
     btnOutOfStockText: {

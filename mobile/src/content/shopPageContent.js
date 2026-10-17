@@ -29,11 +29,11 @@ export function buildShopCollectionLines() {
 }
 
 export const SHOP_SCREEN_UI = {
-  pageEyebrow: "",
+  pageEyebrow: "The pantry",
   pageTitle: "Shop",
   pageTitleWide: "Shop",
-  pageSubtitle: "",
-  searchPlaceholder: "Search products…",
+  pageSubtitle: "Ghee, tel, masala & honey — chosen slowly.",
+  searchPlaceholder: "Search ghee, tel, masala, honey…",
   refineTitle: "Filters",
   resetFilters: "Clear",
   sortA11y: "Sort",
@@ -101,11 +101,15 @@ export const SHOP_SCREEN_UI = {
   },
   card: {
     addA11y: "Add to cart",
+    addLabel: "Add to bag",
+    inBagLabel: "In bag",
     soldOut: "Sold out",
-    comingSoon: "Soon",
+    comingSoon: "Coming soon",
     comingSoonNoteFallback: "Launching soon",
     comingSoonPreview: "Preview",
     unitFallback: "1 pc",
+    saveLabel: "Save",
+    featuredBadge: "Featured",
     noImage: "No image",
     imageUnavailable: "Unavailable",
   },

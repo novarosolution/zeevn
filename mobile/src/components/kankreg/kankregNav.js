@@ -42,7 +42,7 @@ const NAV_HANDLERS = {
   Shop: ({ go }) => () => go("Shop"),
   About: ({ go }) => () => go("About"),
   Product: ({ goProduct }) => goProduct,
-  Cart: ({ go }) => () => go("Cart", true),
+  Cart: ({ go }) => () => go("Cart", false),
   Checkout: ({ go }) => () => go("Checkout", true),
   Orders: ({ go }) => () => go("MyOrders", true),
   Rewards: ({ go }) => () => go("RedeemRewards", true),

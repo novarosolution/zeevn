@@ -65,6 +65,7 @@ import KankregCheckoutSectionCard from "../components/kankreg/KankregCheckoutSec
 import KankregCheckoutSteps from "../components/kankreg/KankregCheckoutSteps";
 import { FIGMA } from "../theme/figmaApp";
 import { cartLineKey } from "../utils/productCart";
+import { SectionHeader } from "../components/home/editorial";
 
 /** Same required fields as ManageAddressScreen save. */
 function getProfileAddressCompletion(defaultAddress) {
@@ -200,7 +201,8 @@ export default function CartScreen({ navigation, route }) {
 
   const profileAddress = useMemo(() => getProfileAddressCompletion(user?.defaultAddress), [user?.defaultAddress]);
 
-  if (!isAuthenticated) {
+  /** Guest can browse the bag; only checkout needs sign-in. */
+  if (!isAuthenticated && isCheckoutFlow) {
     return (
       <CustomerScreenShell style={styles.screen}>
         <KankregScrollPage
@@ -212,7 +214,7 @@ export default function CartScreen({ navigation, route }) {
           <KankregCustomerPageHeader
             navigation={navigation}
             eyebrow={CART_UI.pageEyebrow}
-            title={CART_UI.pageTitle}
+            title={CART_UI.checkoutTitle}
             showBack={false}
             figmaOnWeb
           />
@@ -226,7 +228,7 @@ export default function CartScreen({ navigation, route }) {
               ctaIconLeft="log-in-outline"
               onCtaPress={() => navigation.navigate("Login")}
               secondaryCtaLabel={CART_UI.browseGuestCta}
-              onSecondaryCtaPress={() => navigation.navigate("Home")}
+              onSecondaryCtaPress={() => navigation.navigate("Cart")}
             />
           </View>
         </KankregScrollPage>
@@ -401,13 +403,19 @@ export default function CartScreen({ navigation, route }) {
   const payableAmount = Math.max(0, totalAmount + deliveryFee + platformFee - discountAmount);
   const isRazorpayMethod = paymentMethod === "Razorpay";
   const primaryCtaLabel = isCartBagView
-    ? CART_UI.checkoutCtaArrow
+    ? isAuthenticated
+      ? CART_UI.checkoutCtaArrow
+      : CART_UI.loginCta
     : isRazorpayMethod
       ? `${CART_UI.payCta} · ${formatINR(payableAmount)}`
       : CART_UI.placeOrderCta;
 
   const handlePrimaryCta = () => {
     if (isCartBagView) {
+      if (!isAuthenticated) {
+        navigation.navigate("Login");
+        return;
+      }
       navigation.navigate("Checkout");
       return;
     }
@@ -460,6 +468,12 @@ export default function CartScreen({ navigation, route }) {
             showBrand={false}
             showLocation={false}
           />
+        ) : Platform.OS === "web" && !isCheckoutFlow ? (
+          <SectionHeader
+            eyebrow={cartEyebrow}
+            title={CART_UI.pageTitle}
+            kicker={CART_UI.trustLine}
+          />
         ) : (
           <KankregCustomerPageHeader
             eyebrow={isCheckoutFlow ? undefined : cartEyebrow}
@@ -496,12 +510,14 @@ export default function CartScreen({ navigation, route }) {
               <View style={styles.bagHeaderTop}>
                 <View style={styles.bagHeaderCopy}>
                   <Text style={styles.itemsSectionLabel}>{CART_UI.itemsSectionLabel}</Text>
-                  <View style={styles.trustStripInline}>
-                    <Ionicons name="shield-checkmark-outline" size={14} color={isDark ? c.primaryBright : "#3C6248"} />
-                    <Text style={styles.trustStripText}>{CART_UI.trustLine}</Text>
-                  </View>
+                  {Platform.OS !== "web" ? (
+                    <View style={styles.trustStripInline}>
+                      <Ionicons name="shield-checkmark-outline" size={14} color={isDark ? c.primaryBright : "#3C6248"} />
+                      <Text style={styles.trustStripText}>{CART_UI.trustLine}</Text>
+                    </View>
+                  ) : null}
                 </View>
-                <View style={styles.bagSubtotalChip}>
+                <View style={[styles.bagSubtotalChip, Platform.OS === "web" && styles.bagSubtotalChipAtelier]}>
                   <Text style={styles.bagSubtotalLabel}>{CART_UI.stickySubtotalLabel}</Text>
                   <Text style={styles.bagSubtotalPreview}>{formatINR(totalAmount)}</Text>
                 </View>
@@ -1272,6 +1288,13 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: isDark ? c.primaryBorder : "rgba(188, 144, 92, 0.28)",
     backgroundColor: isDark ? "rgba(52, 211, 153, 0.08)" : "rgba(255, 251, 235, 0.9)",
+  },
+  bagSubtotalChipAtelier: {
+    borderWidth: 0,
+    backgroundColor: "transparent",
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    borderRadius: 0,
   },
   bagSubtotalLabel: {
     fontFamily: fonts.bold,

@@ -2,7 +2,9 @@ import React, { useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
+  Text,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,13 +17,19 @@ import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
 import { AUTH_UI } from "../content/appContent";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
+import { KANKREG_PALETTE } from "../theme/kankregWeb";
+import { useTheme } from "../context/ThemeContext";
 import { adminScrollPaddingBottom, customerScrollFill } from "../theme/screenLayout";
-import { spacing } from "../theme/tokens";
+import { fonts, spacing, typography } from "../theme/tokens";
 import { normalizeEmail, validateLoginEmail, validateLoginPassword } from "../utils/authValidation";
 import PremiumButton from "../components/ui/PremiumButton";
 import PremiumInput from "../components/ui/PremiumInput";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import { resetNavigationAfterAuth } from "../navigation/postAuthNavigation";
+import {
+  isAppleSignInConfigured,
+  isGoogleSignInConfigured,
+} from "../services/oauthSignIn";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -30,10 +38,12 @@ export default function LoginScreen({ navigation }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { loginWithCredentials } = useAuth();
   const { showToast } = useToast();
+  const { isDark } = useTheme();
   const { useAuthSplit } = useKankregLayout();
   const styles = useMemo(() => createLoginStyles(), []);
   const insets = useSafeAreaInsets();
-  const marketingInHero = Platform.OS === "web";
+
+  const oauthReady = isGoogleSignInConfigured() || isAppleSignInConfigured();
 
   const handleLogin = async () => {
     const emailErr = validateLoginEmail(email);
@@ -66,28 +76,24 @@ export default function LoginScreen({ navigation }) {
       title={AUTH_UI.loginTitle}
       subtitle={AUTH_UI.loginSubtitle}
       formEyebrow={AUTH_UI.loginFormEyebrow}
-      marketingInHero={marketingInHero}
-      showForgotPassword
-      onForgotPassword={() =>
-        showToast({
-          type: "info",
-          title: AUTH_UI.forgotPassword,
-          message: AUTH_UI.forgotPasswordStub,
-          duration: 3600,
-        })
-      }
-      socialSlot={<AuthSocialButtons onSuccess={() => resetNavigationAfterAuth(navigation)} />}
-      footerSlot={
-        <PremiumButton
-          label={AUTH_UI.continueGuest}
-          variant="outline"
-          size="md"
-          fullWidth
-          iconLeft="storefront-outline"
-          onPress={() => navigation.navigate("Home")}
-        />
-      }
       compact={!useAuthSplit}
+      socialSlot={
+        oauthReady ? (
+          <AuthSocialButtons onSuccess={() => resetNavigationAfterAuth(navigation)} />
+        ) : null
+      }
+      footerSlot={
+        <Pressable
+          onPress={() => navigation.navigate("Home")}
+          style={styles.guestLink}
+          accessibilityRole="link"
+          accessibilityLabel={AUTH_UI.continueGuest}
+        >
+          <Text style={[styles.guestText, { color: isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.inkSoft }]}>
+            {AUTH_UI.continueGuest}
+          </Text>
+        </Pressable>
+      }
     >
       <PremiumInput
         label="Email"
@@ -102,6 +108,7 @@ export default function LoginScreen({ navigation }) {
         autoCorrect={false}
         autoComplete="email"
         textContentType="emailAddress"
+        placeholder="you@email.com"
       />
       <PremiumInput
         label="Password"
@@ -118,6 +125,7 @@ export default function LoginScreen({ navigation }) {
         textContentType="password"
         returnKeyType="done"
         onSubmitEditing={handleLogin}
+        placeholder="Your password"
       />
       {error ? (
         <View style={styles.errorWrap}>
@@ -125,7 +133,7 @@ export default function LoginScreen({ navigation }) {
         </View>
       ) : null}
       <PremiumButton
-        label={isSubmitting ? "Signing in…" : "Sign in"}
+        label={isSubmitting ? "Signing in…" : AUTH_UI.loginCta}
         onPress={handleLogin}
         iconLeft="log-in-outline"
         loading={isSubmitting}
@@ -164,7 +172,7 @@ function createLoginStyles() {
     screen: { flex: 1 },
     card: {
       width: "100%",
-      maxWidth: 468,
+      maxWidth: 440,
       alignSelf: "center",
     },
     cardWebInline: {
@@ -182,5 +190,16 @@ function createLoginStyles() {
     errorWrap: { marginTop: spacing.sm },
     primaryCta: { marginTop: spacing.md },
     revealFill: { width: "100%" },
+    guestLink: {
+      paddingVertical: spacing.sm,
+      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+    },
+    guestText: {
+      fontFamily: fonts.medium,
+      fontSize: typography.bodySmall,
+      textAlign: "center",
+      textDecorationLine: "underline",
+      textDecorationColor: "rgba(92, 104, 52, 0.35)",
+    },
   });
 }

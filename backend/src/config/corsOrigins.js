@@ -14,6 +14,8 @@ function isAllowedOrigin(origin) {
   if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)) return true;
   if (/^https:\/\/[\w-]+\.vercel\.app$/i.test(origin)) return true;
   if (/^https:\/\/(www\.)?zeevan\.shop$/i.test(origin)) return true;
+  // EC2 / bare IP deploys (http)
+  if (/^http:\/\/\d{1,3}(\.\d{1,3}){3}(:\d+)?$/i.test(origin)) return true;
   const extra = process.env.CORS_EXTRA_ORIGINS;
   if (extra) {
     for (const o of extra.split(",").map((s) => s.trim()).filter(Boolean)) {

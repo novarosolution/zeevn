@@ -12,19 +12,19 @@ import {
 /** Section header + grid behaviour. */
 export const CATEGORY_SECTION_UI = {
   eyebrow: "Collections",
-  title: "Shop by category",
-  titleFallback: "Shop by category",
-  subtitle: "Four pantry lines — ghee, tel, masala & Haldar honey.",
+  title: "Shop by line",
+  titleFallback: "Shop by line",
+  subtitle: "Ghee · Tel · Masala · Honey — choose a line, then browse.",
   viewAllLabel: "View all",
   shopCta: "Shop",
   itemsSuffix: "items",
   browseLabel: "Explore",
   maxCoreTiles: 4,
   showExtraTiles: false,
-  /** Icon tiles — compact height, not square. */
-  iconsOnly: true,
-  cardMinHeight: 168,
-  cardMaxHeight: 192,
+  /** Image tiles with product stills. */
+  iconsOnly: false,
+  cardMinHeight: 220,
+  cardMaxHeight: 260,
 };
 
 /** Per-line tile copy — icons come from `ZEEVAN_PRODUCT_LINES`. */

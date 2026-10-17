@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -47,7 +48,10 @@ function StarRow({ rating = 5, color }) {
   );
 }
 
-function Avatar({ name, isDark }) {
+function Avatar({ name, isDark, avatar }) {
+  if (avatar) {
+    return <Image source={avatar} style={styles.avatarImage} resizeMode="cover" />;
+  }
   const initial = String(name || "?").trim().slice(0, 1).toUpperCase();
   return (
     <View
@@ -122,7 +126,7 @@ export default function HomeTestimonials({ c, isDark }) {
         style={[styles.cardSheen, styles.peNone]}
       />
       <View style={styles.cardHeader}>
-        <Avatar name={item.name} isDark={isDark} />
+        <Avatar name={item.name} isDark={isDark} avatar={item.avatar} />
         <View style={styles.cardHeaderText}>
           <Text style={[styles.cardName, { color: c.textPrimary }]} numberOfLines={1}>
             {item.name}
@@ -310,6 +314,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
+  },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
   avatarInitial: {
     fontFamily: FONT_BODY_SEMIBOLD,

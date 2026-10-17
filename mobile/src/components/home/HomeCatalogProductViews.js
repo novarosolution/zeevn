@@ -17,9 +17,10 @@ import {
   homeEditorialInk,
   homeEditorialMuted,
 } from "../../theme/homeEditorial";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { KANKREG_PALETTE, ZEEVAN_GOLD, ZEEVAN_GREEN } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, radius } from "../../theme/tokens";
+import { FONT_PRICE } from "../../theme/typographyRoles";
 import { formatINRWhole } from "../../utils/currency";
 import { SHOP_SCREEN_UI } from "../../content/appContent";
 import ComingSoonProductOverlay from "../product/ComingSoonProductOverlay";
@@ -29,9 +30,11 @@ import { getImageUriCandidates, getProductThumbImageUri, prefetchProductHeroImag
 import ProgressiveProductImage from "../ui/ProgressiveProductImage";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 
-const PRODUCT_CARD_CSS_ID = "kankreg-home-product-card";
-const PRODUCT_CARD_CLASS = "kankreg-product-card";
-const PRODUCT_PHOTO_CLASS = "kankreg-product-photo";
+const PRODUCT_CARD_CSS_ID = "zeevan-atelier-product-card-v2";
+const PRODUCT_CARD_CLASS = "zeevan-product-card";
+const PRODUCT_PHOTO_CLASS = "zeevan-product-photo";
+const PRODUCT_CTA_CLASS = "zeevan-product-cta";
+const PRODUCT_TITLE_CLASS = "zeevan-product-title";
 
 const PRODUCT_IMAGE_ASPECT = 1;
 
@@ -39,21 +42,42 @@ if (Platform.OS === "web") {
   injectWebCssOnce(
     PRODUCT_CARD_CSS_ID,
     `.${PRODUCT_CARD_CLASS} {
-  transition: transform 0.38s ease, box-shadow 0.38s ease;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, border-color 0.3s ease;
+  will-change: transform;
 }
 .${PRODUCT_CARD_CLASS}:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 18px 40px -26px rgba(25, 20, 15, 0.26);
+  transform: translateY(-6px);
+  box-shadow: 0 24px 48px -26px rgba(36, 68, 36, 0.28);
+  border-color: rgba(92, 104, 52, 0.32);
 }
 .${PRODUCT_PHOTO_CLASS} {
-  transition: transform 0.6s ease-out;
+  transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .${PRODUCT_CARD_CLASS}:hover .${PRODUCT_PHOTO_CLASS} {
-  transform: scale(1.03);
+  transform: scale(1.06);
+}
+.${PRODUCT_TITLE_CLASS} {
+  transition: color 0.3s ease;
+}
+.${PRODUCT_CARD_CLASS}:hover .${PRODUCT_TITLE_CLASS} {
+  color: ${ZEEVAN_GREEN.deep};
+}
+.${PRODUCT_CTA_CLASS} {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.25s ease;
+}
+.${PRODUCT_CARD_CLASS}:hover .${PRODUCT_CTA_CLASS}:not([aria-disabled="true"]) {
+  background-color: ${ZEEVAN_GREEN.deep};
+  border-color: ${ZEEVAN_GREEN.deep};
+  color: #FAF8F4;
+}
+.${PRODUCT_CARD_CLASS}:hover .${PRODUCT_CTA_CLASS}:not([aria-disabled="true"]) * {
+  color: #FAF8F4;
 }
 @media (prefers-reduced-motion: reduce) {
-  .${PRODUCT_CARD_CLASS}, .${PRODUCT_PHOTO_CLASS} { transition: none !important; }
-  .${PRODUCT_CARD_CLASS}:hover { transform: none; box-shadow: 0 8px 22px -18px rgba(25, 20, 15, 0.16); }
+  .${PRODUCT_CARD_CLASS}, .${PRODUCT_PHOTO_CLASS}, .${PRODUCT_CTA_CLASS}, .${PRODUCT_TITLE_CLASS} {
+    transition: none !important;
+  }
+  .${PRODUCT_CARD_CLASS}:hover { transform: none; }
   .${PRODUCT_CARD_CLASS}:hover .${PRODUCT_PHOTO_CLASS} { transform: none; }
 }`
   );
@@ -122,11 +146,13 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
   isComingSoon = false,
   comingSoonNote = "",
   imagePriority = "normal",
+  featured = false,
 }) {
   const { isDark } = useTheme();
   const ink = homeEditorialInk(isDark);
   const muted = homeEditorialMuted(isDark);
   const isWeb = Platform.OS === "web";
+  const copy = SHOP_SCREEN_UI.card;
 
   const primaryImage = useMemo(() => {
     if (String(product?.image || "").trim()) return product.image;
@@ -137,8 +163,12 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
   }, [product?.image, product?.images]);
 
   const imageUris = useMemo(
-    () => getImageUriCandidates(primaryImage, { width: isWeb ? 360 : 640, quality: isWeb ? "auto:eco" : "auto:good" }),
-    [isWeb, primaryImage]
+    () =>
+      getImageUriCandidates(primaryImage, {
+        width: isWeb ? (featured ? 960 : 420) : 640,
+        quality: isWeb ? "auto:eco" : "auto:good",
+      }),
+    [featured, isWeb, primaryImage]
   );
   const [imageCandidateIndex, setImageCandidateIndex] = useState(0);
   const imageUri = imageUris[imageCandidateIndex] || "";
@@ -157,7 +187,12 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
     return Number.isFinite(n) && n > safePrice ? n : null;
   }, [product?.mrp, safePrice]);
 
-  const launchNote = String(comingSoonNote || SHOP_SCREEN_UI.card.comingSoonNoteFallback).trim();
+  const savePct = useMemo(() => {
+    if (!listMrp) return null;
+    return Math.max(1, Math.round(((listMrp - safePrice) / listMrp) * 100));
+  }, [listMrp, safePrice]);
+
+  const launchNote = String(comingSoonNote || copy.comingSoonNoteFallback).trim();
   const unavailable = isComingSoon || isOutOfStock;
   const { trigger: triggerAddAnim, scaleStyle: addScaleStyle } = useAddToCartAnim();
 
@@ -167,18 +202,25 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
     onAddToCart?.();
   };
 
-  const metaLine = useMemo(() => {
-    const parts = [];
-    if (product?.category) parts.push(String(product.category));
-    if (product?.unit) parts.push(String(product.unit));
-    return parts.join(" · ");
-  }, [product?.category, product?.unit]);
+  const category = String(product?.category || "").trim();
+  const unit = String(product?.unit || "").trim();
+  const badge = String(product?.badgeText || (featured ? copy.featuredBadge : "")).trim();
+  const name = String(product?.name || "").trim();
+
+  const ctaLabel = isComingSoon
+    ? copy.comingSoon
+    : isOutOfStock
+      ? copy.soldOut
+      : quantity > 0
+        ? copy.inBagLabel
+        : copy.addLabel;
 
   return (
     <View
       className={isWeb ? PRODUCT_CARD_CLASS : undefined}
       style={[
         editorialStyles.card,
+        featured && editorialStyles.cardFeatured,
         isDark && editorialStyles.cardDark,
         isComingSoon && editorialStyles.cardComingSoon,
         isComingSoon && isDark && editorialStyles.cardComingSoonDark,
@@ -187,11 +229,15 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
       <Pressable
         onPressIn={() => prefetchProductHeroImage(primaryImage)}
         onPress={onPress}
-        style={({ focused }) => [editorialStyles.cardPressable, focused && isWeb ? editorialStyles.cardFocus : null]}
+        style={({ focused }) => [
+          editorialStyles.cardPressable,
+          featured && editorialStyles.cardPressableFeatured,
+          focused && isWeb ? editorialStyles.cardFocus : null,
+        ]}
         accessibilityRole="button"
-        accessibilityLabel={`Open ${product?.name || "product"}`}
+        accessibilityLabel={`Open ${name || "product"}`}
       >
-        <View style={editorialStyles.imageFrame}>
+        <View style={[editorialStyles.imageFrame, featured && editorialStyles.imageFrameFeatured]}>
           {imageUri && imageCandidateIndex < imageUris.length ? (
             <ProgressiveProductImage
               uri={imageUri}
@@ -202,33 +248,61 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
               recyclingKey={`${product?.id || "p"}:${imageUri}`}
               onError={() => setImageCandidateIndex((idx) => idx + 1)}
               priority={imagePriority}
-              rounded={12}
+              rounded={0}
             />
           ) : (
             <View style={[editorialStyles.imageFallback, isDark && editorialStyles.imageFallbackDark]}>
               <Ionicons name="image-outline" size={icon.md} color={muted} />
             </View>
           )}
+
+          {badge && !isComingSoon && !isOutOfStock ? (
+            <View style={[editorialStyles.badge, isDark && editorialStyles.badgeDark]}>
+              <Text style={editorialStyles.badgeText}>{badge}</Text>
+            </View>
+          ) : null}
+
+          {savePct && !unavailable ? (
+            <View style={editorialStyles.savePill}>
+              <Text style={editorialStyles.saveText}>
+                {copy.saveLabel} {savePct}%
+              </Text>
+            </View>
+          ) : null}
+
           {isComingSoon ? (
             <ComingSoonProductOverlay note={launchNote} compact={false} isDark={isDark} />
           ) : isOutOfStock ? (
             <View style={editorialStyles.soldOutBadge}>
-              <Text style={editorialStyles.soldOutText}>Sold out</Text>
+              <Text style={editorialStyles.soldOutText}>{copy.soldOut}</Text>
             </View>
           ) : null}
         </View>
 
-        <View style={editorialStyles.bodyTop}>
-          {metaLine ? (
+        <View style={[editorialStyles.bodyTop, featured && editorialStyles.bodyTopFeatured]}>
+          {(category || unit) ? (
             <Text style={[editorialStyles.meta, { color: muted }]} numberOfLines={1}>
-              {metaLine}
+              {[category, unit].filter(Boolean).join(" · ")}
             </Text>
           ) : null}
-          <Text style={[editorialStyles.title, { color: ink }]} numberOfLines={2}>
-            {product?.name || ""}
+
+          <Text
+            className={isWeb ? PRODUCT_TITLE_CLASS : undefined}
+            style={[
+              editorialStyles.title,
+              featured && editorialStyles.titleFeatured,
+              { color: ink },
+            ]}
+            numberOfLines={2}
+          >
+            {name}
           </Text>
+
           <View style={editorialStyles.priceRow}>
-            <Text style={[editorialStyles.price, { color: ink }]} numberOfLines={1}>
+            <Text
+              style={[editorialStyles.price, featured && editorialStyles.priceFeatured, { color: ink }]}
+              numberOfLines={1}
+            >
               {formatINRWhole(safePrice)}
             </Text>
             {listMrp ? (
@@ -240,7 +314,7 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
         </View>
       </Pressable>
 
-      <View style={editorialStyles.bodyActions}>
+      <View style={[editorialStyles.bodyActions, featured && editorialStyles.bodyActionsFeatured]}>
         {quantity > 0 ? (
           <View
             style={[editorialStyles.stepper, isDark && editorialStyles.stepperDark]}
@@ -270,27 +344,37 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
           </View>
         ) : (
           <Animated.View style={addScaleStyle}>
-          <Pressable
-            onPress={handleAddToCart}
-            disabled={unavailable}
-            style={({ hovered }) => [
-              editorialStyles.addBtn,
-              isDark && editorialStyles.addBtnDark,
-              unavailable && editorialStyles.addBtnDisabled,
-              isComingSoon && editorialStyles.addBtnComingSoon,
-              hovered && isWeb && !unavailable ? editorialStyles.addBtnHover : null,
-            ]}
-            accessibilityRole="button"
-            accessibilityLabel={
-              isComingSoon
-                ? `${product?.name || "Product"} coming soon`
-                : `Add ${product?.name || "product"} to cart`
-            }
-          >
-            <Text style={[editorialStyles.addBtnText, { color: unavailable ? muted : ink }]}>
-              {isComingSoon ? SHOP_SCREEN_UI.card.comingSoon : isOutOfStock ? "Unavailable" : "Add to cart"}
-            </Text>
-          </Pressable>
+            <Pressable
+              onPress={handleAddToCart}
+              disabled={unavailable}
+              className={isWeb ? PRODUCT_CTA_CLASS : undefined}
+              style={({ hovered }) => [
+                editorialStyles.addBtn,
+                isDark && editorialStyles.addBtnDark,
+                unavailable && editorialStyles.addBtnDisabled,
+                isComingSoon && editorialStyles.addBtnComingSoon,
+                hovered && isWeb && !unavailable ? editorialStyles.addBtnHover : null,
+              ]}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: unavailable }}
+              accessibilityLabel={
+                isComingSoon
+                  ? `${name || "Product"} coming soon`
+                  : `${copy.addA11y}: ${name || "product"}`
+              }
+            >
+              {!unavailable ? (
+                <Ionicons
+                  name="bag-outline"
+                  size={icon.xs}
+                  color={ink}
+                  style={editorialStyles.addIcon}
+                />
+              ) : null}
+              <Text style={[editorialStyles.addBtnText, { color: unavailable ? muted : ink }]}>
+                {ctaLabel}
+              </Text>
+            </Pressable>
           </Animated.View>
         )}
       </View>
@@ -313,12 +397,14 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
   comingSoonNote = "",
   compact = false,
   variant = "default",
+  featured = false,
 }) {
-  const card = (
+  const card =
     variant === "editorial" && Platform.OS === "web" ? (
       <HomeEditorialProductCard
         product={item}
-        imagePriority={idx < 2 ? "high" : "low"}
+        featured={featured}
+        imagePriority={idx < 2 || featured ? "high" : "low"}
         isOutOfStock={isOutOfStock}
         isComingSoon={isComingSoon}
         comingSoonNote={comingSoonNote}
@@ -341,8 +427,7 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
         onAddToCart={onAddToCart}
         onRemoveFromCart={onRemoveFromCart}
       />
-    )
-  );
+    );
 
   return <View style={[styles?.productGridCell, gridCardStyles.cell]}>{card}</View>;
 });
@@ -358,31 +443,42 @@ const gridCardStyles = StyleSheet.create({
 const editorialStyles = StyleSheet.create({
   card: {
     flex: 1,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.line,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(36, 68, 36, 0.1)",
     backgroundColor: KANKREG_PALETTE.card,
     overflow: "hidden",
     ...Platform.select({
       web: {
-        boxShadow: "0 8px 22px -18px rgba(25, 20, 15, 0.16)",
+        boxShadow: "0 12px 28px -22px rgba(25, 20, 15, 0.2)",
       },
       default: {},
     }),
   },
+  cardFeatured: {},
   cardPressable: {
     width: "100%",
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
+  cardPressableFeatured: {},
   bodyTop: {
-    paddingHorizontal: HOME_SPACE.md,
-    paddingTop: HOME_SPACE.sm + 2,
-    gap: HOME_SPACE.xs,
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    gap: 4,
+  },
+  bodyTopFeatured: {
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    gap: 4,
   },
   bodyActions: {
-    paddingHorizontal: HOME_SPACE.md,
-    paddingBottom: HOME_SPACE.md,
-    paddingTop: HOME_SPACE.xs,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    paddingTop: 6,
+  },
+  bodyActionsFeatured: {
+    paddingHorizontal: 12,
+    paddingBottom: 12,
   },
   cardDark: {
     backgroundColor: "#181513",
@@ -394,13 +490,6 @@ const editorialStyles = StyleSheet.create({
   },
   cardComingSoon: {
     borderColor: COMING_SOON_RED.cardBorder,
-    ...Platform.select({
-      web: {
-        boxShadow:
-          "0 18px 44px rgba(127, 29, 29, 0.14), 0 0 0 1px rgba(220, 38, 38, 0.12), inset 0 1px 0 rgba(255,255,255,0.92)",
-      },
-      default: {},
-    }),
   },
   cardComingSoonDark: {
     borderColor: COMING_SOON_RED.cardBorderDark,
@@ -423,9 +512,58 @@ const editorialStyles = StyleSheet.create({
     backgroundColor: KANKREG_PALETTE.paper2,
     position: "relative",
   },
+  imageFrameFeatured: {
+    aspectRatio: PRODUCT_IMAGE_ASPECT,
+  },
   image: {
     width: "100%",
     height: "100%",
+  },
+  badge: {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+    borderRadius: 6,
+    backgroundColor: "rgba(250, 248, 244, 0.92)",
+    borderWidth: 1,
+    borderColor: "rgba(36, 68, 36, 0.12)",
+  },
+  badgeDark: {
+    backgroundColor: "rgba(24, 21, 19, 0.88)",
+    borderColor: "#3f3933",
+  },
+  badgeText: {
+    fontFamily: fonts.semibold,
+    fontSize: 9,
+    letterSpacing: 0.1,
+    textTransform: "uppercase",
+    color: ZEEVAN_GREEN.deep,
+  },
+  savePill: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+    borderRadius: 6,
+    backgroundColor: ZEEVAN_GOLD.base,
+  },
+  saveText: {
+    fontFamily: fonts.bold,
+    fontSize: 9,
+    letterSpacing: 0.04,
+    color: KANKREG_PALETTE.ink,
+  },
+  titleFeatured: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    lineHeight: 18,
+    minHeight: 0,
+  },
+  priceFeatured: {
+    fontSize: 14,
   },
   imageFallback: {
     flex: 1,
@@ -438,12 +576,12 @@ const editorialStyles = StyleSheet.create({
   },
   soldOutBadge: {
     position: "absolute",
-    top: HOME_SPACE.sm,
-    left: HOME_SPACE.sm,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: radius.pill,
-    backgroundColor: "rgba(25, 20, 15, 0.62)",
+    top: 12,
+    left: 12,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: "rgba(25, 20, 15, 0.72)",
   },
   soldOutText: {
     fontFamily: fonts.semibold,
@@ -452,59 +590,57 @@ const editorialStyles = StyleSheet.create({
     letterSpacing: 0.3,
     textTransform: "uppercase",
   },
-  body: {
-    paddingHorizontal: HOME_SPACE.md,
-    paddingTop: HOME_SPACE.sm + 2,
-    paddingBottom: HOME_SPACE.md,
-    gap: HOME_SPACE.xs,
-  },
   meta: {
-    fontFamily: fonts.regular,
-    fontSize: 11,
-    lineHeight: 15,
-    letterSpacing: 0.25,
+    fontFamily: fonts.semibold,
+    fontSize: 10,
+    lineHeight: 13,
+    letterSpacing: 0.12,
     textTransform: "uppercase",
   },
   title: {
     fontFamily: fonts.medium,
-    fontSize: HOME_TYPE.kicker,
-    lineHeight: HOME_TYPE.body.lineHeight,
+    fontSize: 13,
+    lineHeight: 18,
     letterSpacing: -0.1,
-    minHeight: HOME_TYPE.body.lineHeight * 2,
+    minHeight: 18,
   },
   priceRow: {
     flexDirection: "row",
     alignItems: "baseline",
     flexWrap: "wrap",
-    gap: HOME_SPACE.xs,
+    gap: 6,
     marginTop: 2,
   },
   price: {
-    fontFamily: fonts.bold,
-    fontSize: HOME_TYPE.kicker + 1,
+    fontFamily: FONT_PRICE,
+    fontSize: 14,
     letterSpacing: -0.2,
   },
   mrp: {
     fontFamily: fonts.regular,
-    fontSize: HOME_TYPE.kicker - 1,
+    fontSize: 11,
     textDecorationLine: "line-through",
   },
   addBtn: {
-    marginTop: HOME_SPACE.xs,
-    alignSelf: "stretch",
-    paddingVertical: 10,
-    paddingHorizontal: HOME_SPACE.sm,
-    borderRadius: radius.pill,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.line,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    alignSelf: "stretch",
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(36, 68, 36, 0.18)",
+    backgroundColor: "transparent",
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
   addBtnDark: {
     borderColor: "#3f3933",
   },
   addBtnHover: {
-    borderColor: KANKREG_PALETTE.gold,
+    borderColor: ZEEVAN_GREEN.deep,
+    backgroundColor: ZEEVAN_GREEN.deep,
   },
   addBtnDisabled: {
     opacity: 0.55,
@@ -514,29 +650,33 @@ const editorialStyles = StyleSheet.create({
     borderColor: COMING_SOON_RED.borderStrong,
     opacity: 1,
   },
+  addIcon: {
+    marginTop: 1,
+  },
   addBtnText: {
     fontFamily: fonts.semibold,
-    fontSize: HOME_TYPE.kicker - 1,
-    letterSpacing: 0.15,
+    fontSize: 12,
+    letterSpacing: 0.04,
   },
   stepper: {
-    marginTop: HOME_SPACE.xs,
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "stretch",
     justifyContent: "space-between",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.line,
-    borderRadius: radius.pill,
-    paddingVertical: 4,
-    paddingHorizontal: HOME_SPACE.xs,
+    borderWidth: 1,
+    borderColor: "rgba(36, 68, 36, 0.18)",
+    borderRadius: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    backgroundColor: "rgba(92, 104, 52, 0.06)",
   },
   stepperDark: {
     borderColor: "#3f3933",
+    backgroundColor: "rgba(255,255,255,0.04)",
   },
   stepBtn: {
-    width: 32,
-    height: 32,
+    width: 34,
+    height: 34,
     alignItems: "center",
     justifyContent: "center",
   },

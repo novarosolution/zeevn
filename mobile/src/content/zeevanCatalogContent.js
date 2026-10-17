@@ -82,9 +82,10 @@ export const ZEEVAN_PRODUCT_LINES = [
 export const ZEEVAN_SHOP_COLLECTION_PILLS = ["All", ...ZEEVAN_PRODUCT_LINES.map((l) => l.shopPill)];
 
 export const ZEEVAN_TRUST_STRIP = [
-  { key: "pure", label: "100% Pure", icon: "shield-checkmark-outline" },
-  { key: "lines", label: ZEEVAN_CATALOG_SUBLINE, icon: "grid-outline" },
-  { key: "track", label: "Live tracking", icon: "bicycle-outline" },
+  { key: "pure", label: "100% Pure", icon: "shield-checkmark-outline", imageKey: "pure" },
+  { key: "batch", label: "Small batch", icon: "leaf-outline", imageKey: "batch" },
+  { key: "track", label: "Live tracking", icon: "bicycle-outline", imageKey: "track" },
+  { key: "secure", label: "Secure checkout", icon: "lock-closed-outline", imageKey: "secure" },
 ];
 
 export const ZEEVAN_HOME_MARQUEE = [
@@ -102,6 +103,7 @@ export function buildHomeCategoryDefaults() {
     key: line.key,
     label: line.label,
     icon: line.icon,
+    imageKey: line.key,
     gradient: line.gradient,
     gradientDark: line.gradientDark,
     accent: line.accent,

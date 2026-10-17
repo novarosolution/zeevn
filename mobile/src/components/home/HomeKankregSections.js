@@ -13,7 +13,7 @@ import {
 } from "../../theme/homeEditorial";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { KANKREG_PALETTE, ZEEVAN_GOLD } from "../../theme/kankregWeb";
 import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";
 import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
@@ -58,8 +58,8 @@ function CategoryIconCard({ cat, onPress, isDark, compact = false }) {
   const accent = cat.accent || KANKREG_PALETTE.green;
   const ink = isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink;
   const muted = isDark ? "rgba(250, 248, 244, 0.72)" : KANKREG_PALETTE.inkSoft;
-  const cardMinH = CATEGORY_SECTION_UI.cardMinHeight || 168;
-  const cardMaxH = CATEGORY_SECTION_UI.cardMaxHeight || 192;
+  const cardMinH = CATEGORY_SECTION_UI.cardMinHeight || 220;
+  const hasImage = Boolean(cat.image);
 
   return (
     <Pressable
@@ -74,46 +74,73 @@ function CategoryIconCard({ cat, onPress, isDark, compact = false }) {
       accessibilityRole="button"
       accessibilityLabel={`${cat.label} — ${metaLine}`}
     >
-      <View style={[styles.catCardInner, { minHeight: cardMinH, maxHeight: cardMaxH }]}>
-        <LinearGradient
-          colors={isDark && cat.gradientDark ? cat.gradientDark : cat.gradient}
-          style={StyleSheet.absoluteFillObject}
-        />
+      <View style={[styles.catCardInner, { minHeight: cardMinH }]}>
+        {hasImage ? (
+          <View style={styles.catPhotoWrap} pointerEvents="none">
+            <Image source={cat.image} style={styles.catPhoto} contentFit="cover" />
+            <LinearGradient
+              colors={["transparent", "rgba(18, 16, 12, 0.72)"]}
+              locations={[0.35, 1]}
+              style={StyleSheet.absoluteFillObject}
+            />
+          </View>
+        ) : (
+          <LinearGradient
+            colors={isDark && cat.gradientDark ? cat.gradientDark : cat.gradient}
+            style={StyleSheet.absoluteFillObject}
+          />
+        )}
         {cat.count > 0 ? (
           <View style={[styles.catCountBadge, isDark && styles.catCountBadgeDark]} pointerEvents="none">
             <Text style={[styles.catCountText, isDark && styles.catCountTextDark]}>{cat.count}</Text>
           </View>
         ) : null}
-        <View style={styles.catIconHero} pointerEvents="none">
-          <View
-            style={[
-              styles.catIconRing,
-              compact && styles.catIconRingCompact,
-              {
-                borderColor: `${accent}55`,
-                backgroundColor: isDark ? "rgba(252, 248, 240, 0.08)" : "rgba(252, 248, 240, 0.82)",
-              },
-            ]}
-          >
-            <Ionicons
-              name={cat.icon || "grid-outline"}
-              size={compact ? icon.lg : icon.xl + 4}
-              color={accent}
-            />
+        {!hasImage ? (
+          <View style={styles.catIconHero} pointerEvents="none">
+            <View
+              style={[
+                styles.catIconRing,
+                compact && styles.catIconRingCompact,
+                {
+                  borderColor: `${accent}55`,
+                  backgroundColor: isDark ? "rgba(252, 248, 240, 0.08)" : "rgba(252, 248, 240, 0.82)",
+                },
+              ]}
+            >
+              <Ionicons
+                name={cat.icon || "grid-outline"}
+                size={compact ? icon.lg : icon.xl + 4}
+                color={accent}
+              />
+            </View>
           </View>
-        </View>
-        <View style={[styles.catCopy, isDark && styles.catCopyDark]} pointerEvents="none">
-          <Text style={[styles.catLabel, { color: ink }]} numberOfLines={1}>
+        ) : null}
+        <View
+          style={[
+            styles.catCopy,
+            hasImage && styles.catCopyOnPhoto,
+            !hasImage && isDark && styles.catCopyDark,
+          ]}
+          pointerEvents="none"
+        >
+          <Text style={[styles.catLabel, { color: hasImage ? "#FAF8F4" : ink }]} numberOfLines={1}>
             {cat.label}
           </Text>
-          <Text style={[styles.catMeta, { color: muted }]} numberOfLines={compact ? 1 : 2}>
+          <Text
+            style={[styles.catMeta, { color: hasImage ? "rgba(250,248,244,0.82)" : muted }]}
+            numberOfLines={compact ? 1 : 2}
+          >
             {metaLine}
           </Text>
           <View style={styles.catCtaRow}>
-            <Text style={[styles.catCtaText, { color: accent }]}>
+            <Text style={[styles.catCtaText, { color: hasImage ? ZEEVAN_GOLD.base : accent }]}>
               {cat.cta || CATEGORY_SECTION_UI.shopCta}
             </Text>
-            <Ionicons name="arrow-forward" size={icon.xs} color={accent} />
+            <Ionicons
+              name="arrow-forward"
+              size={icon.xs}
+              color={hasImage ? ZEEVAN_GOLD.base : accent}
+            />
           </View>
         </View>
       </View>
@@ -477,6 +504,19 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     flexDirection: "column",
     justifyContent: "flex-end",
+  },
+  catPhotoWrap: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  catPhoto: {
+    width: "100%",
+    height: "100%",
+  },
+  catCopyOnPhoto: {
+    backgroundColor: "transparent",
+    borderTopWidth: 0,
+    paddingTop: HOME_SPACE.md,
+    zIndex: 2,
   },
   catCountBadge: {
     position: "absolute",

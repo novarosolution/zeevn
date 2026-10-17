@@ -3,13 +3,19 @@ import { Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getKankregChromeTop } from "./KankregSiteHeader";
 import KankregSiteFooter from "./KankregSiteFooter";
+import WebCertificationsStrip from "../home/WebCertificationsStrip";
 
 /**
- * Standard page tail: global HTML footer.
+ * Standard page tail: certifications strip + global HTML footer.
  * Header is mounted once in AppNavigator.
  */
 export function KankregPageFooter() {
-  return <KankregSiteFooter />;
+  return (
+    <View>
+      {Platform.OS === "web" ? <WebCertificationsStrip /> : null}
+      <KankregSiteFooter />
+    </View>
+  );
 }
 
 /** Extra top padding below fixed header (web) or native chrome. */

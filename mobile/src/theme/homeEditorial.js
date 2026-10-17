@@ -14,7 +14,7 @@ export const HOME_SPACE = {
   lg: spacing.lg,
   xl: spacing.xl,
   /** Gap between major home blocks inside `KankregPageWrap`. */
-  section: spacing.xxl,
+  section: spacing.lg,
 };
 
 /** Single source: vertical gap between web home sections (categories → grid → story). */

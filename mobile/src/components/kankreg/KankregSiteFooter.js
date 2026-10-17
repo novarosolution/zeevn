@@ -1,8 +1,7 @@
 import React from "react";
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   APP_DISPLAY_NAME,
   HOME_PAGE_TRUST_BADGES,
@@ -16,9 +15,11 @@ import EngineerCredit from "../EngineerCredit";
 import { useAuth } from "../../context/AuthContext";
 import { BRAND_LOGO_SIZE } from "../../constants/brand";
 import { FONT_HEADING } from "../../theme/typographyRoles";
-import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { KANKREG_CHROME, ZEEVAN_GREEN } from "../../theme/kankregWeb";
 import { fonts, icon, spacing } from "../../theme/tokens";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
+
+const FOOTER_BG = require("../../../assets/footer-bg-premium-4k.jpg");
 
 /** Premium site footer — Zeevan brand, managed copy from `appContent.js`. */
 export default function KankregSiteFooter() {
@@ -41,12 +42,8 @@ export default function KankregSiteFooter() {
 
   return (
     <View style={styles.shell}>
-      <LinearGradient
-        colors={[KANKREG_CHROME.footerFrom, KANKREG_CHROME.footerTo]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+      <Image source={FOOTER_BG} style={styles.bg} resizeMode="cover" accessibilityIgnoresInvertColors />
+      <View style={styles.bgScrim} pointerEvents="none" />
       <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
         <View style={styles.trustRow}>
           {HOME_PAGE_TRUST_BADGES.map((badge) => (
@@ -120,16 +117,45 @@ export default function KankregSiteFooter() {
 const styles = StyleSheet.create({
   shell: {
     marginTop: 48,
+    marginBottom: 0,
     paddingTop: Platform.OS === "web" ? "clamp(48px, 6vw, 72px)" : 48,
-    paddingBottom: 36,
+    paddingBottom: Platform.OS === "web" ? 28 : 36,
     width: "100%",
     overflow: "hidden",
     position: "relative",
+    backgroundColor: ZEEVAN_GREEN.deep,
+    alignSelf: "center",
+    ...Platform.select({
+      web: {
+        width: "100vw",
+        maxWidth: "100vw",
+        marginLeft: "calc(50% - 50vw)",
+        marginRight: "calc(50% - 50vw)",
+      },
+      default: {},
+    }),
+  },
+  bg: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+  },
+  bgScrim: {
+    ...StyleSheet.absoluteFillObject,
+    ...Platform.select({
+      web: {
+        backgroundImage:
+          "linear-gradient(180deg, rgba(15,20,12,0.55) 0%, rgba(15,20,12,0.72) 100%)",
+      },
+      default: { backgroundColor: "rgba(15,20,12,0.65)" },
+    }),
   },
   inner: {
     maxWidth: 1280,
     width: "100%",
     alignSelf: "center",
+    position: "relative",
+    zIndex: 1,
     paddingHorizontal: Platform.OS === "web" ? "clamp(18px, 4vw, 40px)" : spacing.lg,
   },
   trustRow: {

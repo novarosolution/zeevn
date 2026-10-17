@@ -133,6 +133,11 @@ export default function KankregScrollPage({
       paddingBottom = Math.max(paddingBottom, mobileWebBottomPad);
     }
 
+    // Site footer is last — kill trailing cream gap under the dark footer.
+    if (showSiteFooter) {
+      paddingBottom = 0;
+    }
+
     if (paddingBottom === (typeof merged.paddingBottom === "number" ? merged.paddingBottom : spacing.xl)) {
       return layers;
     }
@@ -144,6 +149,7 @@ export default function KankregScrollPage({
     mobileWebBottomPad,
     scrollVariant,
     showMobileWebTabBar,
+    showSiteFooter,
     stickyFooterExtra,
   ]);
 

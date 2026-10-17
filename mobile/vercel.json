@@ -8,6 +8,14 @@
       "destination": "http://54.173.67.136:5001/socket.io/:path*"
     },
     {
+      "source": "/aws",
+      "destination": "http://54.173.67.136:5001/"
+    },
+    {
+      "source": "/aws/",
+      "destination": "http://54.173.67.136:5001/"
+    },
+    {
       "source": "/aws/:path*",
       "destination": "http://54.173.67.136:5001/:path*"
     },

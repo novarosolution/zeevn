@@ -8,6 +8,14 @@ export const markDeliveryOrderDelivered = (_token, orderId) =>
   apiPatch(`/delivery/orders/${orderId}/mark-delivered`, {});
 
 /** @param {string} [_token] */
+export const acceptDeliveryOrder = (_token, orderId) =>
+  apiPatch(`/delivery/orders/${orderId}/accept`, {});
+
+/** @param {string} [_token] */
+export const declineDeliveryOrder = (_token, orderId, reason = "") =>
+  apiPatch(`/delivery/orders/${orderId}/decline`, { reason });
+
+/** @param {string} [_token] */
 export const updateDeliveryLocation = (_token, payload) =>
   apiPatch("/delivery/location", payload);
 

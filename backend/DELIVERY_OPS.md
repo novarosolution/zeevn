@@ -38,6 +38,22 @@ node scripts/seed-delivery-zones.js
 | GET | `/admin/delivery-partners` | Admin |
 | PATCH | `/delivery/location` | Delivery partner (rate-limited) |
 | GET | `/delivery/orders` | Delivery partner |
+| PATCH | `/delivery/orders/:id/accept` | Delivery partner |
+| PATCH | `/delivery/orders/:id/decline` | Delivery partner (body: `{ reason }`) |
+| PATCH | `/delivery/orders/:id/mark-delivered` | Delivery partner (requires accepted) |
+
+## Accept / reassign flow
+
+1. Admin advances order to ready/shipped/out_for_delivery → auto-assign (or manual assign).
+2. `deliveryAcceptStatus` = `pending` until boy accepts.
+3. Boy **Accept** → can mark delivered when status allows.
+4. Boy **Decline** → partner cleared, reason saved, auto-offers next partner (skips decliners).
+5. Admin **Reassign** — pick another partner chip on order detail (resets to pending).
+
+## Stock / price / store
+
+- Stock + price: Admin → Products (`PUT /admin/products/:id` with `stockQty`, `price`, `inStock`).
+- Store / shop pin: Admin → Home view shop location (`/admin/home-view`).
 
 ## Notes
 

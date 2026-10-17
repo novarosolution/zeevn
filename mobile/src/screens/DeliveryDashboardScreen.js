@@ -30,6 +30,8 @@ import { useLiveSocket } from "../context/LiveSocketContext";
 import { useTheme } from "../context/ThemeContext";
 import {
   fetchMyDeliveryOrders,
+  acceptDeliveryOrder,
+  declineDeliveryOrder,
   markDeliveryOrderDelivered,
   updateDeliveryLocation} from "../services/deliveryService";
 import { openNavigateToDropoff } from "../components/orders/orderLiveMapShared";
@@ -346,6 +348,36 @@ export default function DeliveryDashboardScreen({ navigation }) {
     return inTransit?._id || list[0]?._id || null;
   }, [orders]);
 
+  const handleAcceptOrder = async (orderId) => {
+    try {
+      setBusyOrderId(orderId);
+      setError("");
+      setSuccess("");
+      await acceptDeliveryOrder(token, orderId);
+      setSuccess("Order accepted. Navigate to the drop-off when ready.");
+      await load();
+    } catch (err) {
+      setError(err.message || "Could not accept order.");
+    } finally {
+      setBusyOrderId("");
+    }
+  };
+
+  const handleDeclineOrder = async (orderId) => {
+    try {
+      setBusyOrderId(orderId);
+      setError("");
+      setSuccess("");
+      await declineDeliveryOrder(token, orderId, "Unavailable");
+      setSuccess("Order declined. Admin can reassign or another partner may get it.");
+      await load();
+    } catch (err) {
+      setError(err.message || "Could not decline order.");
+    } finally {
+      setBusyOrderId("");
+    }
+  };
+
   const handleMarkDelivered = async (orderId) => {
     try {
       setBusyOrderId(orderId);
@@ -500,9 +532,9 @@ export default function DeliveryDashboardScreen({ navigation }) {
             </View>
           ) : null}
           <Text style={styles.hint}>
-            Admin assigns you in Manage Orders. Once the order is <Text style={styles.hintBold}>Ready for pickup</Text>,{" "}
-            <Text style={styles.hintBold}>Out for delivery</Text>, or <Text style={styles.hintBold}>Shipped</Text>, tap Mark
-            delivered when the customer receives it.
+            Accept assigned runs first. After admin sets <Text style={styles.hintBold}>Ready for pickup</Text> /{" "}
+            <Text style={styles.hintBold}>Out for delivery</Text> / <Text style={styles.hintBold}>Shipped</Text>, mark
+            delivered when the customer receives it. Decline if you cannot take the run — admin can reassign.
           </Text>
           {error ? (
             <View style={styles.bannerWrap}>
@@ -546,10 +578,14 @@ export default function DeliveryDashboardScreen({ navigation }) {
             const addr = item.shippingAddress || {};
             const phone = String(addr.phone || "").trim();
             const expanded = expandedId === item._id;
+            const acceptStatus = String(item.deliveryAcceptStatus || "pending");
+            const needsAccept = acceptStatus === "pending" || acceptStatus === "none";
+            const isAccepted = acceptStatus === "accepted";
             const canComplete =
-              item.status === "ready_for_pickup" ||
-              item.status === "shipped" ||
-              item.status === "out_for_delivery";
+              isAccepted &&
+              (item.status === "ready_for_pickup" ||
+                item.status === "shipped" ||
+                item.status === "out_for_delivery");
             const lat = Number(addr.latitude);
             const lng = Number(addr.longitude);
             const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
@@ -642,7 +678,36 @@ export default function DeliveryDashboardScreen({ navigation }) {
                 </Text>
 
                 <View style={styles.rowBtns}>
-                  {canComplete ? (
+                  {needsAccept ? (
+                    <>
+                      <PremiumChip
+                        label="Awaiting your accept"
+                        tone="gold"
+                        size="sm"
+                        selected
+                        style={{ alignSelf: "flex-start", marginBottom: 4 }}
+                      />
+                      <PremiumButton
+                        label={busyOrderId === item._id ? "…" : "Accept run"}
+                        iconLeft="checkmark-outline"
+                        variant="secondary"
+                        size="md"
+                        fullWidth
+                        loading={busyOrderId === item._id}
+                        disabled={busyOrderId === item._id}
+                        onPress={() => handleAcceptOrder(item._id)}
+                      />
+                      <PremiumButton
+                        label="Decline"
+                        iconLeft="close-outline"
+                        variant="ghost"
+                        size="sm"
+                        fullWidth
+                        disabled={busyOrderId === item._id}
+                        onPress={() => handleDeclineOrder(item._id)}
+                      />
+                    </>
+                  ) : canComplete ? (
                     <PremiumButton
                       label={busyOrderId === item._id ? "Saving…" : "Mark delivered"}
                       iconLeft="checkmark-circle-outline"
@@ -657,8 +722,9 @@ export default function DeliveryDashboardScreen({ navigation }) {
                     <View style={styles.waitingBanner}>
                       <Ionicons name="hourglass-outline" size={icon.sm} color={c.primary} />
                       <Text style={styles.waitingText}>
-                        Waiting for admin to advance order to Ready for pickup (or Out for delivery / Shipped) before you
-                        can complete delivery.
+                        {isAccepted
+                          ? "Accepted — waiting for admin to set Ready for pickup / Out for delivery / Shipped."
+                          : "Waiting for assignment acceptance."}
                       </Text>
                     </View>
                   )}

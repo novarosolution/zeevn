@@ -55,13 +55,31 @@ function pushOrderLiveUpdate(order) {
 
 const LIVE_ASSIGN_STATUSES = ["ready_for_pickup", "shipped", "out_for_delivery"];
 
-/** Least-loaded partner for a zone (or any partner if zone has no partnerIds). */
-async function pickLeastLoadedPartner(zone) {
+function applyPartnerAssignment(order, partnerId) {
+  order.assignedDeliveryUser = partnerId;
+  order.deliveryAcceptStatus = "pending";
+  order.deliveryAssignedAt = new Date();
+  order.deliveryAcceptedAt = null;
+  order.deliveryDeclinedAt = null;
+  order.deliveryDeclineReason = "";
+}
+
+function clearPartnerAssignment(order) {
+  order.assignedDeliveryUser = null;
+  order.deliveryAcceptStatus = "none";
+  order.deliveryAssignedAt = null;
+  order.deliveryAcceptedAt = null;
+}
+
+/** Least-loaded partner for a zone (skips declined partner ids). */
+async function pickLeastLoadedPartner(zone, excludeIds = []) {
+  const exclude = new Set((excludeIds || []).map((id) => String(id)));
   const filter = { isDeliveryPartner: true };
   if (zone?.partnerIds?.length) {
     filter._id = { $in: zone.partnerIds };
   }
-  const partners = await User.find(filter).select("_id").lean();
+  let partners = await User.find(filter).select("_id").lean();
+  partners = partners.filter((p) => !exclude.has(String(p._id)));
   if (!partners.length) return null;
 
   const counts = await Order.aggregate([
@@ -69,6 +87,7 @@ async function pickLeastLoadedPartner(zone) {
       $match: {
         assignedDeliveryUser: { $in: partners.map((p) => p._id) },
         status: { $in: LIVE_ASSIGN_STATUSES },
+        deliveryAcceptStatus: { $in: ["pending", "accepted"] },
       },
     },
     { $group: { _id: "$assignedDeliveryUser", count: { $sum: 1 } } },
@@ -100,9 +119,9 @@ async function maybeAutoAssignPartner(order) {
       city: order.shippingAddress?.city,
     });
   }
-  const partnerId = await pickLeastLoadedPartner(zone);
+  const partnerId = await pickLeastLoadedPartner(zone, order.deliveryDeclinedBy || []);
   if (!partnerId) return order;
-  order.assignedDeliveryUser = partnerId;
+  applyPartnerAssignment(order, partnerId);
   await order.save();
   return order;
 }
@@ -1034,7 +1053,7 @@ async function updateAdminOrderDetails(req, res, next) {
     if (req.body?.assignedDeliveryUser !== undefined) {
       const raw = req.body.assignedDeliveryUser;
       if (raw === null || raw === "") {
-        order.assignedDeliveryUser = null;
+        clearPartnerAssignment(order);
       } else if (!mongoose.Types.ObjectId.isValid(String(raw))) {
         return res.status(400).json({ message: "Invalid delivery assignee id." });
       } else {
@@ -1065,7 +1084,13 @@ async function updateAdminOrderDetails(req, res, next) {
             });
           }
         }
-        order.assignedDeliveryUser = assignee._id;
+        applyPartnerAssignment(order, assignee._id);
+        // Admin reassign clears prior decline for this partner so they can accept again.
+        order.deliveryDeclinedBy = (order.deliveryDeclinedBy || []).filter(
+          (id) => String(id) !== String(assignee._id)
+        );
+        order.deliveryDeclineReason = "";
+        order.deliveryDeclinedAt = null;
       }
     }
     if (req.body?.invoice && typeof req.body.invoice === "object") {
@@ -1146,6 +1171,89 @@ async function getMyDeliveryOrders(req, res, next) {
   }
 }
 
+async function acceptMyDeliveryOrder(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(String(id))) {
+      return res.status(400).json({ message: "Invalid order id." });
+    }
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found." });
+    }
+    if (!order.assignedDeliveryUser || String(order.assignedDeliveryUser) !== String(req.user._id)) {
+      return res.status(403).json({ message: "This order is not assigned to you." });
+    }
+    if (order.deliveryAcceptStatus === "accepted") {
+      const already = await Order.findById(order._id)
+        .populate("user", "name email phone")
+        .populate("assignedDeliveryUser", "name email phone")
+        .populate("products.product", "name price image inStock stockQty");
+      return res.json(already);
+    }
+    if (order.deliveryAcceptStatus !== "pending") {
+      return res.status(400).json({ message: "This order is not waiting for your acceptance." });
+    }
+    order.deliveryAcceptStatus = "accepted";
+    order.deliveryAcceptedAt = new Date();
+    await order.save();
+    const updated = await Order.findById(order._id)
+      .populate("user", "name email phone")
+      .populate("assignedDeliveryUser", "name email phone")
+      .populate("products.product", "name price image inStock stockQty");
+    pushOrderLiveUpdate(updated);
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function declineMyDeliveryOrder(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(String(id))) {
+      return res.status(400).json({ message: "Invalid order id." });
+    }
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found." });
+    }
+    if (!order.assignedDeliveryUser || String(order.assignedDeliveryUser) !== String(req.user._id)) {
+      return res.status(403).json({ message: "This order is not assigned to you." });
+    }
+    if (order.deliveryAcceptStatus === "accepted") {
+      return res.status(400).json({ message: "You already accepted this order. Ask admin to reassign." });
+    }
+    if (order.deliveryAcceptStatus !== "pending") {
+      return res.status(400).json({ message: "This order is not waiting for your acceptance." });
+    }
+
+    const reason = String(req.body?.reason || "").trim().slice(0, 240);
+    const partnerId = order.assignedDeliveryUser;
+    order.deliveryAcceptStatus = "declined";
+    order.deliveryDeclinedAt = new Date();
+    order.deliveryDeclineReason = reason;
+    const declined = new Set((order.deliveryDeclinedBy || []).map((x) => String(x)));
+    declined.add(String(partnerId));
+    order.deliveryDeclinedBy = [...declined];
+    clearPartnerAssignment(order);
+    order.deliveryAcceptStatus = "declined";
+    await order.save();
+
+    // Auto-offer to next available partner.
+    await maybeAutoAssignPartner(order);
+
+    const updated = await Order.findById(order._id)
+      .populate("user", "name email phone")
+      .populate("assignedDeliveryUser", "name email phone")
+      .populate("products.product", "name price image inStock stockQty");
+    pushOrderLiveUpdate(updated);
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function markMyDeliveryOrderDelivered(req, res, next) {
   try {
     const { id } = req.params;
@@ -1159,6 +1267,11 @@ async function markMyDeliveryOrderDelivered(req, res, next) {
     }
     if (!order.assignedDeliveryUser || String(order.assignedDeliveryUser) !== String(req.user._id)) {
       return res.status(403).json({ message: "This order is not assigned to you." });
+    }
+    if (order.deliveryAcceptStatus !== "accepted") {
+      return res.status(400).json({
+        message: "Accept this order before marking it delivered.",
+      });
     }
     if (!ORDER_STATUSES_MARK_DELIVERABLE_FROM.includes(order.status)) {
       return res.status(400).json({
@@ -1518,6 +1631,8 @@ module.exports = {
   getMyOrderLiveLocation,
   getMyOrderDrivingRoute,
   getMyDeliveryOrders,
+  acceptMyDeliveryOrder,
+  declineMyDeliveryOrder,
   markMyDeliveryOrderDelivered,
   validateCouponForCart,
   getAvailableCouponsForCart,

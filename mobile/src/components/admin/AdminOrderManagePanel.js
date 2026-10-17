@@ -160,6 +160,25 @@ export default function AdminOrderManagePanel({
             ? `Assigned: ${order.assignedDeliveryUser.name}${order.assignedDeliveryUser.phone ? ` · ${order.assignedDeliveryUser.phone}` : ""}`
             : "No partner assigned yet."}
         </Text>
+        <Text style={[panelStyles.emptyHint, { color: c.textMuted, marginBottom: spacing.sm }]}>
+          Accept:{" "}
+          {String(order.deliveryAcceptStatus || "none")
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (ch) => ch.toUpperCase())}
+          {order.deliveryDeclineReason
+            ? ` · Last decline: ${order.deliveryDeclineReason}`
+            : ""}
+        </Text>
+        {String(order.deliveryAcceptStatus) === "pending" ? (
+          <Text style={[panelStyles.emptyHint, { color: c.warning || c.textSecondary, marginBottom: spacing.sm }]}>
+            Waiting for partner to accept. Tap another name below to reassign.
+          </Text>
+        ) : null}
+        {String(order.deliveryAcceptStatus) === "declined" && !order.assignedDeliveryUser ? (
+          <Text style={[panelStyles.emptyHint, { color: c.danger, marginBottom: spacing.sm }]}>
+            Partner declined — pick another delivery boy to reassign.
+          </Text>
+        ) : null}
         {deliveryPartners.length === 0 ? (
           <Text style={[panelStyles.emptyHint, { color: c.textMuted }]}>
             Enable delivery on a user in Manage Users first.
@@ -176,7 +195,15 @@ export default function AdminOrderManagePanel({
             {deliveryPartners.map((dp) => (
               <PremiumChip
                 key={dp._id}
-                label={dp.name}
+                label={
+                  editForm.assignedDeliveryUserId === String(dp._id) &&
+                  String(order.deliveryAcceptStatus) === "pending"
+                    ? `${dp.name} (pending)`
+                    : editForm.assignedDeliveryUserId === String(dp._id) &&
+                        String(order.deliveryAcceptStatus) === "accepted"
+                      ? `${dp.name} (accepted)`
+                      : `Reassign · ${dp.name}`
+                }
                 tone="gold"
                 size="sm"
                 selected={editForm.assignedDeliveryUserId === String(dp._id)}

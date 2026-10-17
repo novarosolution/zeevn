@@ -174,7 +174,11 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
       await updateAdminOrderDetails(token, order._id, {
         assignedDeliveryUser: nextId || null,
       });
-      setSuccess(nextId ? "Delivery partner assigned." : "Delivery partner unassigned.");
+      setSuccess(
+        nextId
+          ? "Delivery partner assigned — they must accept the run (or pick another to reassign)."
+          : "Delivery partner unassigned."
+      );
       await loadOrder();
     } catch (err) {
       setError(err.message || "Unable to assign delivery partner.");

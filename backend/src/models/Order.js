@@ -53,6 +53,26 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+    /**
+     * Partner must accept before working the run.
+     * none = unassigned · pending = waiting on boy · accepted · declined
+     */
+    deliveryAcceptStatus: {
+      type: String,
+      enum: ["none", "pending", "accepted", "declined"],
+      default: "none",
+    },
+    deliveryAssignedAt: { type: Date, default: null },
+    deliveryAcceptedAt: { type: Date, default: null },
+    deliveryDeclinedAt: { type: Date, default: null },
+    deliveryDeclineReason: { type: String, default: "", trim: true },
+    /** Partners who declined this order (skip on auto-reassign). */
+    deliveryDeclinedBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     /** Snapshot of serviceable zone at place-order. */
     deliveryZone: {
       type: mongoose.Schema.Types.ObjectId,

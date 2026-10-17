@@ -21,8 +21,8 @@ export default function AuthSplitLayout({ artTitle, artSubtitle, mode = "login",
     return <View style={styles.mobileOnly}>{children}</View>;
   }
 
-  const formBg = isDark ? "#141110" : KANKREG_PALETTE.card;
-  const formBorder = isDark ? "rgba(52, 211, 153, 0.12)" : "rgba(31, 92, 71, 0.12)";
+  const formBg = isDark ? "rgba(20,17,16,0.94)" : "rgba(255,252,246,0.94)";
+  const formBorder = isDark ? "rgba(52, 211, 153, 0.14)" : "rgba(31, 92, 71, 0.14)";
 
   return (
     <View style={[styles.split, isXs && styles.splitStack]}>
@@ -34,8 +34,8 @@ export default function AuthSplitLayout({ artTitle, artSubtitle, mode = "login",
           accessibilityIgnoresInvertColors
         />
         <LinearGradient
-          colors={["rgba(18,16,12,0.35)", "rgba(18,16,12,0.55)", "rgba(12,10,8,0.88)"]}
-          locations={[0, 0.45, 1]}
+          colors={["rgba(18,16,12,0.28)", "rgba(18,16,12,0.5)", "rgba(12,10,8,0.9)"]}
+          locations={[0, 0.42, 1]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
           style={StyleSheet.absoluteFillObject}
@@ -64,6 +64,7 @@ export default function AuthSplitLayout({ artTitle, artSubtitle, mode = "login",
           styles.form,
           isXs && styles.formStack,
           { backgroundColor: formBg, borderLeftColor: formBorder },
+          Platform.OS === "web" && styles.formGlass,
         ]}
       >
         <ScrollView
@@ -87,16 +88,19 @@ const styles = StyleSheet.create({
     alignItems: "stretch",
     alignSelf: "center",
     width: "100%",
-    maxWidth: 960,
-    borderRadius: radius.xl + 4,
+    maxWidth: 980,
+    borderRadius: radius.xl + 6,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.line,
+    borderColor: "rgba(31, 92, 71, 0.16)",
     overflow: "hidden",
     ...Platform.select({
       web: {
-        boxShadow: "0 28px 64px rgba(22, 69, 51, 0.14), 0 0 0 1px rgba(31, 92, 71, 0.08)",
-        minHeight: 640,
-        marginTop: 100,
+        boxShadow:
+          "0 32px 72px rgba(22, 69, 51, 0.18), 0 8px 24px rgba(26, 23, 20, 0.08), 0 0 0 1px rgba(31, 92, 71, 0.06)",
+        minHeight: 620,
+        marginTop: 56,
+        marginBottom: 40,
+        marginHorizontal: spacing.md,
       },
       default: {
         minHeight: 560,
@@ -157,14 +161,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignSelf: "stretch",
     minWidth: 300,
-    padding: spacing.xl + 8,
+    padding: spacing.xl + 10,
     borderLeftWidth: StyleSheet.hairlineWidth,
-    borderTopRightRadius: radius.xl + 4,
-    borderBottomRightRadius: radius.xl + 4,
+    borderTopRightRadius: radius.xl + 6,
+    borderBottomRightRadius: radius.xl + 6,
     ...Platform.select({
-      web: { minHeight: 640 },
+      web: { minHeight: 620 },
       default: {},
     }),
+  },
+  formGlass: {
+    backdropFilter: "blur(10px)",
+    WebkitBackdropFilter: "blur(10px)",
   },
   formScrollContent: {
     flexGrow: 1,
@@ -179,7 +187,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: KANKREG_PALETTE.line,
     borderTopRightRadius: 0,
-    borderBottomLeftRadius: radius.xl + 4,
-    borderBottomRightRadius: radius.xl + 4,
+    borderBottomLeftRadius: radius.xl + 6,
+    borderBottomRightRadius: radius.xl + 6,
   },
 });

@@ -190,7 +190,7 @@ export default function RegisterScreen({ navigation }) {
   );
 
   return (
-    <CustomerScreenShell style={styles.screen}>
+    <CustomerScreenShell style={styles.screen} topAccent={false}>
       <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <KankregScrollPage
           scrollVariant="auth"

@@ -4,8 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { AUTH_HERO_IMAGE } from "../../content/authVisualContent";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { useTheme } from "../../context/ThemeContext";
-import { FIGMA, figmaPageBg } from "../../theme/figmaApp";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { FIGMA } from "../../theme/figmaApp";
 import { radius, spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 import AuthHeroPanel from "./AuthHeroPanel";
@@ -62,7 +61,9 @@ export default function AuthMobileShell({ children, artTitle, artSubtitle, mode 
           styles.sheet,
           isWeb && styles.sheetWeb,
           cardShadow,
-          { backgroundColor: figmaPageBg(isDark) },
+          {
+            backgroundColor: isDark ? "rgba(20,17,16,0.94)" : "rgba(255,252,246,0.96)",
+          },
         ]}
       >
         <View style={styles.sheetAccent} />
@@ -114,12 +115,15 @@ const styles = StyleSheet.create({
     maxWidth: 468,
     alignSelf: "center",
     marginTop: -spacing.md,
-    borderRadius: radius.xl,
+    marginHorizontal: spacing.md,
+    borderRadius: radius.xl + 2,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: KANKREG_PALETTE.line,
+    borderColor: "rgba(31, 92, 71, 0.16)",
     ...Platform.select({
       web: {
-        boxShadow: "0 18px 48px rgba(22, 69, 51, 0.12)",
+        boxShadow: "0 22px 52px rgba(22, 69, 51, 0.16)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
       },
       default: {},
     }),
@@ -127,11 +131,11 @@ const styles = StyleSheet.create({
   sheetAccent: {
     position: "absolute",
     top: 0,
-    left: "20%",
-    right: "20%",
+    left: "22%",
+    right: "22%",
     height: 3,
     borderBottomLeftRadius: 3,
     borderBottomRightRadius: 3,
-    backgroundColor: "rgba(31, 92, 71, 0.65)",
+    backgroundColor: "rgba(31, 92, 71, 0.7)",
   },
 });

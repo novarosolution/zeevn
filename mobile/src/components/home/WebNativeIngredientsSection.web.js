@@ -8,10 +8,12 @@ import { FONT_HEADING } from "../../theme/typographyRoles";
 import { fonts, spacing } from "../../theme/tokens";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 import SectionReveal from "../motion/SectionReveal";
+import WebSectionBackdrop from "./WebSectionBackdrop";
 
-const CARD_CSS_ID = "zeevan-native-ingredients-v1";
+const CARD_CSS_ID = "zeevan-native-ingredients-v2";
 const CARD_CLASS = "zeevan-native-card";
 const PHOTO_CLASS = "zeevan-native-photo";
+const TITLE_INK = "#5C3A1A";
 
 injectWebCssOnce(
   CARD_CSS_ID,
@@ -42,16 +44,17 @@ export default function WebNativeIngredientsSection() {
   const { isDark } = useTheme();
   const { isMobileWeb, pageGutterClamp } = useKankregLayout();
   const copy = NATIVE_INGREDIENTS_SECTION;
-  const titleColor = isDark ? KANKREG_PALETTE.goldBright : "#8B5A2B";
+  const titleColor = isDark ? KANKREG_PALETTE.goldBright : TITLE_INK;
 
   return (
     <SectionReveal preset="fade-up" style={styles.reveal}>
-      <View
-        style={[styles.shell, isDark && styles.shellDark]}
-        accessibilityRole="region"
+      <WebSectionBackdrop
+        source={copy.background}
+        tone="warm"
+        isDark={isDark}
         accessibilityLabel={copy.title}
+        style={styles.pad}
       >
-        <Image source={copy.background} style={styles.bgPattern} resizeMode="cover" />
         <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
           <Text style={[styles.title, { color: titleColor }, isMobileWeb && styles.titleMobile]}>
             {copy.title}
@@ -73,10 +76,7 @@ export default function WebNativeIngredientsSection() {
                     resizeMode="cover"
                   />
                   <View
-                    style={[
-                      styles.scrim,
-                      light ? styles.scrimLight : styles.scrimDark,
-                    ]}
+                    style={[styles.scrim, light ? styles.scrimLight : styles.scrimDark]}
                     pointerEvents="none"
                   />
                   <View style={styles.copy}>
@@ -92,9 +92,7 @@ export default function WebNativeIngredientsSection() {
                       style={[
                         styles.cardBody,
                         {
-                          color: light
-                            ? "rgba(36, 68, 36, 0.82)"
-                            : "rgba(250, 248, 244, 0.9)",
+                          color: light ? "#2A3A1A" : "rgba(250, 248, 244, 0.94)",
                         },
                       ]}
                     >
@@ -106,45 +104,22 @@ export default function WebNativeIngredientsSection() {
             })}
           </View>
         </View>
-      </View>
+      </WebSectionBackdrop>
     </SectionReveal>
   );
 }
 
 const styles = StyleSheet.create({
-  reveal: {
-    width: "100%",
-  },
-  shell: {
-    position: "relative",
-    overflow: "hidden",
-    backgroundColor: "#F7F1E3",
+  reveal: { width: "100%" },
+  pad: {
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xxl + 8,
-    alignSelf: "center",
-    ...Platform.select({
-      web: {
-        width: "100vw",
-        maxWidth: "100vw",
-        marginLeft: "calc(50% - 50vw)",
-        marginRight: "calc(50% - 50vw)",
-      },
-      default: { width: "100%" },
-    }),
-  },
-  shellDark: {
-    backgroundColor: "#1a1714",
-  },
-  bgPattern: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.22,
   },
   inner: {
     width: "100%",
     maxWidth: 1280,
     alignSelf: "center",
     gap: spacing.xl,
-    zIndex: 1,
   },
   title: {
     fontFamily: FONT_HEADING,
@@ -195,22 +170,23 @@ const styles = StyleSheet.create({
   scrim: {
     ...StyleSheet.absoluteFillObject,
   },
+  /** Stronger wash so green ink stays readable on bright photos. */
   scrimLight: {
     ...Platform.select({
       web: {
         backgroundImage:
-          "linear-gradient(180deg, rgba(247,241,227,0.72) 0%, rgba(247,241,227,0.18) 42%, rgba(18,16,12,0.15) 100%)",
+          "linear-gradient(180deg, rgba(252,248,240,0.92) 0%, rgba(252,248,240,0.55) 38%, rgba(18,16,12,0.28) 100%)",
       },
-      default: { backgroundColor: "rgba(247,241,227,0.35)" },
+      default: { backgroundColor: "rgba(252,248,240,0.55)" },
     }),
   },
   scrimDark: {
     ...Platform.select({
       web: {
         backgroundImage:
-          "linear-gradient(180deg, rgba(18,16,12,0.55) 0%, rgba(18,16,12,0.22) 45%, rgba(18,16,12,0.35) 100%)",
+          "linear-gradient(180deg, rgba(12,10,8,0.78) 0%, rgba(12,10,8,0.42) 42%, rgba(12,10,8,0.55) 100%)",
       },
-      default: { backgroundColor: "rgba(18,16,12,0.4)" },
+      default: { backgroundColor: "rgba(12,10,8,0.55)" },
     }),
   },
   copy: {
@@ -218,14 +194,13 @@ const styles = StyleSheet.create({
     zIndex: 2,
     paddingTop: 22,
     paddingHorizontal: 18,
-    paddingBottom: 18,
     gap: 8,
   },
   cardTitle: {
-    fontFamily: fonts.bold,
-    fontSize: 17,
-    lineHeight: 23,
-    letterSpacing: -0.15,
+    fontFamily: FONT_HEADING,
+    fontSize: 18,
+    lineHeight: 24,
+    letterSpacing: -0.2,
   },
   cardBody: {
     fontFamily: fonts.regular,

@@ -8,13 +8,13 @@ import { FONT_HEADING } from "../../theme/typographyRoles";
 import { fonts, spacing } from "../../theme/tokens";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 import SectionReveal from "../motion/SectionReveal";
+import WebSectionBackdrop from "./WebSectionBackdrop";
 
-const CARD_CSS_ID = "zeevan-quality-assurance-v1";
+const CARD_CSS_ID = "zeevan-quality-assurance-v2";
 const CARD_CLASS = "zeevan-quality-card";
 const PHOTO_CLASS = "zeevan-quality-photo";
-const TEAL = "#0D4F4F";
-const TEAL_BODY = "rgba(13, 79, 79, 0.72)";
-const SHELL_BG = "#E8F4F8";
+const TEAL = "#083636";
+const TEAL_BODY = "#1A4A4A";
 
 injectWebCssOnce(
   CARD_CSS_ID,
@@ -47,12 +47,13 @@ export default function WebQualityAssuranceSection() {
 
   return (
     <SectionReveal preset="fade-up" style={styles.reveal}>
-      <View
-        style={[styles.shell, isDark && styles.shellDark]}
-        accessibilityRole="region"
+      <WebSectionBackdrop
+        source={copy.background}
+        tone="cool"
+        isDark={isDark}
         accessibilityLabel={copy.title}
+        style={styles.pad}
       >
-        <Image source={copy.background} style={styles.bgPattern} resizeMode="cover" />
         <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
           <Text style={[styles.title, { color: titleColor }, isMobileWeb && styles.titleMobile]}>
             {copy.title}
@@ -82,41 +83,22 @@ export default function WebQualityAssuranceSection() {
             ))}
           </View>
         </View>
-      </View>
+      </WebSectionBackdrop>
     </SectionReveal>
   );
 }
 
 const styles = StyleSheet.create({
   reveal: { width: "100%" },
-  shell: {
-    position: "relative",
-    overflow: "hidden",
-    backgroundColor: SHELL_BG,
+  pad: {
     paddingTop: spacing.xxl,
     paddingBottom: spacing.xxl + 8,
-    alignSelf: "center",
-    ...Platform.select({
-      web: {
-        width: "100vw",
-        maxWidth: "100vw",
-        marginLeft: "calc(50% - 50vw)",
-        marginRight: "calc(50% - 50vw)",
-      },
-      default: { width: "100%" },
-    }),
-  },
-  shellDark: { backgroundColor: "#121c1e" },
-  bgPattern: {
-    ...StyleSheet.absoluteFillObject,
-    opacity: 0.35,
   },
   inner: {
     width: "100%",
     maxWidth: 1280,
     alignSelf: "center",
     gap: spacing.xl,
-    zIndex: 1,
   },
   title: {
     fontFamily: FONT_HEADING,
@@ -141,7 +123,9 @@ const styles = StyleSheet.create({
     minHeight: 440,
     borderRadius: 18,
     overflow: "hidden",
-    backgroundColor: "#FAF8F4",
+    backgroundColor: "#FFFEFA",
+    borderWidth: 1,
+    borderColor: "rgba(8, 54, 54, 0.1)",
     ...Platform.select({
       web: {
         boxShadow: "0 16px 36px -22px rgba(13, 79, 79, 0.22)",
@@ -152,7 +136,7 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
-  cardDark: { backgroundColor: "#1c2426" },
+  cardDark: { backgroundColor: "#1c2426", borderColor: "rgba(255,255,255,0.1)" },
   cardMobile: { minHeight: 300, width: "100%" },
   copy: {
     paddingTop: 22,
@@ -175,7 +159,7 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     color: TEAL_BODY,
   },
-  cardBodyDark: { color: "rgba(250, 248, 244, 0.72)" },
+  cardBodyDark: { color: "rgba(250, 248, 244, 0.82)" },
   photoWrap: {
     flex: 1,
     minHeight: 220,
@@ -195,10 +179,10 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 10,
     lineHeight: 14,
-    color: "rgba(255,255,255,0.85)",
+    color: "#FFFFFF",
     textAlign: "center",
-    textShadowColor: "rgba(0,0,0,0.45)",
+    textShadowColor: "rgba(0,0,0,0.55)",
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    textShadowRadius: 3,
   },
 });

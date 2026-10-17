@@ -4,9 +4,14 @@ import { CERTIFICATIONS_STRIP } from "../../content/certificationsContent";
 import { HOME_SCREEN_UI } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { KANKREG_PALETTE, ZEEVAN_GREEN } from "../../theme/kankregWeb";
+import { ZEEVAN_GREEN } from "../../theme/kankregWeb";
 import { FONT_HEADING } from "../../theme/typographyRoles";
 import { fonts, spacing } from "../../theme/tokens";
+import WebSectionBackdrop from "./WebSectionBackdrop";
+
+const BG = require("../../../assets/section-bg-warm-4k.jpg");
+const INK = "#1A1C14";
+const MUTED = "#3F3C2E";
 
 /** Premium certifications row — individual badges, no crop/clip (web). */
 export default function WebCertificationsStrip() {
@@ -15,17 +20,21 @@ export default function WebCertificationsStrip() {
   const { isDark } = useTheme();
   const { isMobileWeb, pageGutterClamp } = useKankregLayout();
   const copy = CERTIFICATIONS_STRIP;
-  const ink = isDark ? "#FAF8F4" : ZEEVAN_GREEN.deep;
-  const muted = isDark ? "rgba(250,248,244,0.62)" : KANKREG_PALETTE.inkSoft;
+  const ink = isDark ? "#FAF8F4" : INK;
+  const muted = isDark ? "rgba(250,248,244,0.72)" : MUTED;
 
   return (
-    <View
-      style={[styles.shell, isDark && styles.shellDark]}
-      accessibilityRole="region"
+    <WebSectionBackdrop
+      source={BG}
+      tone="warm"
+      isDark={isDark}
       accessibilityLabel={copy.title}
+      style={styles.pad}
     >
       <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
-        <Text style={[styles.eyebrow, { color: ZEEVAN_GREEN.base }]}>{copy.eyebrow}</Text>
+        <Text style={[styles.eyebrow, { color: isDark ? "#E8BC84" : ZEEVAN_GREEN.deep }]}>
+          {copy.eyebrow}
+        </Text>
         <Text style={[styles.title, { color: ink }, isMobileWeb && styles.titleMobile]}>
           {copy.title}
         </Text>
@@ -45,36 +54,16 @@ export default function WebCertificationsStrip() {
           </View>
         </View>
 
-        {copy.hint ? (
-          <Text style={[styles.hint, { color: muted }]}>{copy.hint}</Text>
-        ) : null}
+        {copy.hint ? <Text style={[styles.hint, { color: muted }]}>{copy.hint}</Text> : null}
       </View>
-    </View>
+    </WebSectionBackdrop>
   );
 }
 
 const styles = StyleSheet.create({
-  shell: {
-    width: "100%",
-    backgroundColor: "#F7F1E3",
+  pad: {
     paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(36, 68, 36, 0.08)",
-    alignSelf: "center",
-    ...Platform.select({
-      web: {
-        width: "100vw",
-        maxWidth: "100vw",
-        marginLeft: "calc(50% - 50vw)",
-        marginRight: "calc(50% - 50vw)",
-      },
-      default: {},
-    }),
-  },
-  shellDark: {
-    backgroundColor: "#161412",
-    borderTopColor: "rgba(255,255,255,0.06)",
   },
   inner: {
     width: "100%",
@@ -99,10 +88,10 @@ const styles = StyleSheet.create({
   titleMobile: { fontSize: 22, lineHeight: 28 },
   frame: {
     width: "100%",
-    backgroundColor: "#FCFAF6",
+    backgroundColor: "rgba(255,253,248,0.97)",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(36, 68, 36, 0.1)",
+    borderColor: "rgba(26, 28, 20, 0.12)",
     paddingVertical: spacing.lg,
     paddingHorizontal: spacing.md,
     ...Platform.select({
@@ -111,8 +100,8 @@ const styles = StyleSheet.create({
     }),
   },
   frameDark: {
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderColor: "rgba(255,255,255,0.14)",
   },
   row: {
     flexDirection: "row",
@@ -130,25 +119,25 @@ const styles = StyleSheet.create({
   badge: {
     flex: 1,
     minWidth: 0,
-    maxWidth: 120,
-    aspectRatio: 1,
     alignItems: "center",
     justifyContent: "center",
+    height: 72,
   },
   badgeMobile: {
     flex: 0,
-    width: "22%",
-    maxWidth: 96,
+    width: "30%",
+    height: 64,
   },
   badgeImg: {
     width: "100%",
     height: "100%",
+    maxWidth: 96,
   },
   hint: {
     fontFamily: fonts.regular,
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 18,
     textAlign: "center",
-    maxWidth: 480,
+    maxWidth: 520,
   },
 });

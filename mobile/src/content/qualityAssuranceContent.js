@@ -30,5 +30,5 @@ export const QUALITY_ASSURANCE_SECTION = {
       image: require("../../assets/quality-report.jpg"),
     },
   ],
-  background: require("../../assets/quality-bg-pattern.jpg"),
+  background: require("../../assets/section-bg-cool-4k.jpg"),
 };

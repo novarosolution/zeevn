@@ -33,5 +33,5 @@ export const NATIVE_INGREDIENTS_SECTION = {
       image: require("../../assets/values-desi.jpg"),
     },
   ],
-  background: require("../../assets/values-bg-pattern.jpg"),
+  background: require("../../assets/section-bg-warm-4k.jpg"),
 };

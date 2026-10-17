@@ -3,7 +3,7 @@ import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native
 import { Ionicons } from "@expo/vector-icons";
 import { HOME_SCREEN_UI } from "../../content/appContent";
 import { ZEEVAN_PRODUCT_LINES } from "../../content/zeevanCatalogContent";
-import { KANKREG_CHROME, KANKREG_PALETTE, ZEEVAN_GREEN } from "../../theme/kankregWeb";
+import { KANKREG_CHROME, ZEEVAN_GREEN } from "../../theme/kankregWeb";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { FONT_HEADING } from "../../theme/typographyRoles";
 import { fonts, icon, spacing } from "../../theme/tokens";
@@ -20,8 +20,8 @@ export default function WebHomeIntroBand({ navigation }) {
   const copy = HOME_SCREEN_UI.webIntro;
   if (HOME_SCREEN_UI.web?.showIntroBand === false) return null;
 
-  const ink = isDark ? "#FAF8F4" : KANKREG_PALETTE.ink;
-  const muted = isDark ? "rgba(250,248,244,0.62)" : KANKREG_PALETTE.inkSoft;
+  const ink = isDark ? "#FAF8F4" : "#1A1C14";
+  const muted = isDark ? "rgba(250,248,244,0.78)" : "#3F3C2E";
   const cta = copy?.cta || "Shop all";
 
   return (
@@ -101,21 +101,23 @@ export default function WebHomeIntroBand({ navigation }) {
 const styles = StyleSheet.create({
   shell: {
     width: "100%",
+    position: "relative",
+    overflow: "hidden",
     backgroundColor: KANKREG_CHROME.cream,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(36, 68, 36, 0.08)",
+    borderBottomColor: "rgba(26, 28, 20, 0.12)",
     paddingVertical: spacing.md + 4,
     ...Platform.select({
       web: {
         backgroundImage:
-          "linear-gradient(180deg, rgba(252,248,240,0.2) 0%, rgba(240,232,216,0.55) 100%)",
+          "linear-gradient(180deg, rgba(252,248,240,0.97) 0%, rgba(243,235,221,0.98) 100%)",
       },
       default: {},
     }),
   },
   shellDark: {
-    backgroundColor: "rgba(24, 21, 19, 0.72)",
-    borderBottomColor: "rgba(255,255,255,0.06)",
+    backgroundColor: "rgba(18, 16, 12, 0.94)",
+    borderBottomColor: "rgba(255,255,255,0.1)",
   },
   revealWrap: {
     width: "100%",
@@ -168,8 +170,8 @@ const styles = StyleSheet.create({
     paddingRight: 14,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "rgba(36, 68, 36, 0.16)",
-    backgroundColor: "rgba(252, 248, 240, 0.85)",
+    borderColor: "rgba(26, 28, 20, 0.18)",
+    backgroundColor: "rgba(255, 253, 248, 0.98)",
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
   lineChipMobile: {

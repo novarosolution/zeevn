@@ -1,33 +1,33 @@
 /**
- * Zeevan brand palette — sampled from A2 ghee packaging (olive green, harvest gold, warm cream).
+ * Zeevan brand palette — premium atelier (deep olive, harvest gold, ivory paper).
  */
 
 export const ZEEVAN_GREEN = {
-  base: "#5C6834",
-  bright: "#788844",
-  deep: "#244424",
-  leaf: "#849448",
-  soft: "rgba(92, 104, 52, 0.12)",
-  border: "rgba(92, 104, 52, 0.32)",
+  base: "#556B32",
+  bright: "#7A8F44",
+  deep: "#1F331F",
+  leaf: "#8A9A52",
+  soft: "rgba(85, 107, 50, 0.12)",
+  border: "rgba(85, 107, 50, 0.34)",
 };
 
 export const ZEEVAN_GOLD = {
-  base: "#DCAC74",
-  bright: "#E8BC84",
-  deep: "#BC905C",
-  soft: "rgba(220, 172, 116, 0.18)",
-  border: "rgba(220, 172, 116, 0.35)",
+  base: "#D4A574",
+  bright: "#E6BE88",
+  deep: "#B8884C",
+  soft: "rgba(212, 165, 116, 0.18)",
+  border: "rgba(212, 165, 116, 0.38)",
 };
 
 export const KANKREG_PALETTE = {
-  ink: "#1E2018",
-  inkSoft: "#5C5838",
-  inkFaint: "#8A8468",
-  paper: "#F8F0E0",
-  paper2: "#F0E8D8",
-  card: "#FCF8F0",
-  line: "#E0D4C0",
-  lineSoft: "#E8E0D0",
+  ink: "#1A1C14",
+  inkSoft: "#4A4634",
+  inkFaint: "#7A7460",
+  paper: "#F7F1E6",
+  paper2: "#EFE7D8",
+  card: "#FFFCF6",
+  line: "#E2D6C2",
+  lineSoft: "#EBE3D4",
   green: ZEEVAN_GREEN.base,
   greenBright: ZEEVAN_GREEN.bright,
   greenDeep: ZEEVAN_GREEN.deep,

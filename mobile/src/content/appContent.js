@@ -196,7 +196,7 @@ export const HOME_SCREEN_UI = {
   },
   quote: HOME_BRAND_QUOTE,
   trust: {
-    overline: "Why kitchens choose Zeevan",
+    overline: "Why Zeevan",
   },
   /** Web-only home layout toggles (`KankregHomeScreen.js`). */
   native: {

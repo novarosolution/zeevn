@@ -503,11 +503,11 @@ export default function KankregHomeScreen({ navigation }) {
             isMobileWeb && styles.webHomeBodyMobile,
             {
               paddingHorizontal: pageGutterClamp,
-              paddingTop: HOME_SPACE.sm,
+              paddingTop: HOME_SPACE.xs,
             },
           ]}
         >
-          <KankregPageWrap gap={isMobileWeb ? spacing.md : HOME_SECTION_GAP}>
+          <KankregPageWrap gap={isMobileWeb ? spacing.md : HOME_SPACE.md}>
             {configError && !loading ? (
               <PremiumErrorBanner
                 severity="error"

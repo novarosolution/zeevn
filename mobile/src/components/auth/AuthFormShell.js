@@ -157,8 +157,8 @@ const styles = StyleSheet.create({
   },
   fields: {
     width: "100%",
-    gap: spacing.sm + 2,
-    marginTop: spacing.sm,
+    gap: spacing.md,
+    marginTop: spacing.md,
   },
   forgotWrap: {
     alignSelf: "flex-end",

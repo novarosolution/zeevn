@@ -22,9 +22,9 @@ export default function AuthPageBackdrop({ children }) {
         colors={
           isDark
             ? ["rgba(12,10,8,0.72)", "rgba(12,10,8,0.88)", "rgba(12,10,8,0.94)"]
-            : ["rgba(248,244,234,0.55)", "rgba(245,239,228,0.78)", "rgba(240,233,218,0.9)"]
+            : ["rgba(253,250,244,0.72)", "rgba(250,245,234,0.82)", "rgba(247,241,228,0.9)"]
         }
-        locations={[0, 0.55, 1]}
+        locations={[0, 0.5, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFillObject}

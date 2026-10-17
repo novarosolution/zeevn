@@ -167,12 +167,13 @@ const styles = StyleSheet.create({
   },
   perkColumn: {
     maxWidth: "100%",
-    width: "100%",
-    borderRadius: 12,
+    width: "auto",
+    alignSelf: "flex-start",
+    borderRadius: 999,
   },
   perkOnDark: {
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderColor: "rgba(42, 117, 89, 0.28)",
+    backgroundColor: "rgba(18, 16, 12, 0.48)",
+    borderColor: "rgba(255,255,255,0.14)",
   },
   perkOnLight: {
     backgroundColor: "rgba(31, 92, 71, 0.08)",

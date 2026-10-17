@@ -927,7 +927,7 @@ export const AUTH_UI = {
   loginSubtitle: "Sign in to save your bag, track orders, and checkout faster.",
   loginCta: "Sign in",
   loginFormEyebrow: "Account",
-  loginHeroEyebrow: `Zeevan · ${ZEEVAN_CATALOG_SUBLINE}`,
+  loginHeroEyebrow: ZEEVAN_CATALOG_SUBLINE,
   loginHeroTitle: "Your pantry,\nbeautifully kept.",
   loginPerks: [
     { icon: "bag-handle-outline", label: "Saved bag & orders" },

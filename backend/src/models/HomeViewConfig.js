@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { FESTIVAL_KEY_AUTO, FESTIVAL_KEY_VALUES } = require("../utils/festivalKey");
 
 const homeViewConfigSchema = new mongoose.Schema(
   {
@@ -39,6 +40,14 @@ const homeViewConfigSchema = new mongoose.Schema(
       type: String,
       enum: ["compact", "comfortable"],
       default: "compact",
+    },
+    /** Native app Home festival look. "" = auto (the app follows its festival calendar). */
+    festivalKey: {
+      type: String,
+      enum: FESTIVAL_KEY_VALUES,
+      default: FESTIVAL_KEY_AUTO,
+      trim: true,
+      lowercase: true,
     },
     /** Admin shop / pickup pin — shown on customer order tracking maps. */
     shopLocation: {

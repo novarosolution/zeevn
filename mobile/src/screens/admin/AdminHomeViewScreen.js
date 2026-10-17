@@ -34,6 +34,8 @@ import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 import AdminHomeHeroEditor from "../../components/admin/AdminHomeHeroEditor";
 import { normalizeHeroSlides } from "../../utils/homeViewMedia";
 
+const FESTIVAL_KEYS = ADMIN_HOME_VIEW_COPY.festivalOptions.map((option) => option.key);
+
 function Section({ label, hint, children, styles, revealIndex = 0 }) {
   return (
     <SectionReveal index={revealIndex} preset="fade-up">
@@ -81,6 +83,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
   const [showPrimeSection, setShowPrimeSection] = useState(true);
   const [showProductTypeSections, setShowProductTypeSections] = useState(true);
   const [productCardStyle, setProductCardStyle] = useState("compact");
+  const [festivalKey, setFestivalKey] = useState(HOME_VIEW_DEFAULTS.festivalKey);
   const [shopName, setShopName] = useState(HOME_VIEW_DEFAULTS.shopLocation.name);
   const [shopLine1, setShopLine1] = useState("");
   const [shopCity, setShopCity] = useState("");
@@ -105,6 +108,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
       setShowPrimeSection(data.showPrimeSection !== false);
       setShowProductTypeSections(data.showProductTypeSections !== false);
       setProductCardStyle(data.productCardStyle === "comfortable" ? "comfortable" : "compact");
+      setFestivalKey(FESTIVAL_KEYS.includes(data.festivalKey) ? data.festivalKey : HOME_VIEW_DEFAULTS.festivalKey);
       const shop = data.shopLocation || HOME_VIEW_DEFAULTS.shopLocation;
       setShopName(shop.name || HOME_VIEW_DEFAULTS.shopLocation.name);
       setShopLine1(shop.line1 || "");
@@ -159,6 +163,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
         showPrimeSection,
         showProductTypeSections,
         productCardStyle,
+        festivalKey,
         shopLocation: {
           name: shopName.trim() || HOME_VIEW_DEFAULTS.shopLocation.name,
           line1: shopLine1.trim(),
@@ -359,7 +364,22 @@ export default function AdminHomeViewScreen({ navigation, route }) {
             </View>
           </Section>
 
-          <Section label={copy.quickLinks} hint={null} styles={styles} revealIndex={6}>
+          <Section label={copy.festivalSection} hint={copy.festivalHint} styles={styles} revealIndex={6}>
+            <View style={styles.chipWrap}>
+              {copy.festivalOptions.map((option) => (
+                <PremiumChip
+                  key={option.key || "auto"}
+                  label={option.label}
+                  tone="gold"
+                  size="md"
+                  selected={festivalKey === option.key}
+                  onPress={() => setFestivalKey(option.key)}
+                />
+              ))}
+            </View>
+          </Section>
+
+          <Section label={copy.quickLinks} hint={null} styles={styles} revealIndex={7}>
             <View style={[styles.linkStack, { borderColor: c.border }]}>
               <QuickLinkRow
                 title={copy.linkProductsTitle}
@@ -462,6 +482,10 @@ function createAdminHomeViewStyles(c, shadowPremium) {
       lineHeight: 16},
     row: {
       flexDirection: "row",
+      gap: spacing.sm},
+    chipWrap: {
+      flexDirection: "row",
+      flexWrap: "wrap",
       gap: spacing.sm},
     linkStack: {
       borderRadius: radius.lg,

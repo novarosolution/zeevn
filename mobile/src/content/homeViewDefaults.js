@@ -10,6 +10,7 @@ export const HOME_VIEW_DEFAULTS = {
   showPrimeSection: true,
   showProductTypeSections: true,
   productCardStyle: "compact",
+  festivalKey: "",
   shopLocation: {
     name: "Zeevan Shop",
     line1: "",

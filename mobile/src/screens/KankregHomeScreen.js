@@ -158,7 +158,7 @@ export default function KankregHomeScreen({ navigation }) {
       const useCache = !pull && hasCachedCatalogRef.current;
       const [list, config] = await Promise.all([
         getProducts({ preferCache: useCache }).catch(() => []),
-        getHomeViewConfig({ preferCache: useCache }).catch(() => null),
+        getHomeViewConfig({ preferCache: useCache, force: pull }).catch(() => null),
       ]);
       setProducts(Array.isArray(list) ? list : []);
       setHomeView(config || DEFAULT_HOME_VIEW_CONFIG);

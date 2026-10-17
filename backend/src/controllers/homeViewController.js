@@ -7,6 +7,7 @@ const {
   normalizeProcessSection,
   normalizeHeroSlides,
 } = require("../utils/homeViewMedia");
+const { parseFestivalKey, normalizeFestivalKey } = require("../utils/festivalKey");
 
 /** In-memory defaults when the config document cannot be created (e.g. DB name case mismatch). */
 function buildDefaultHomeViewConfig() {
@@ -66,6 +67,7 @@ function serializeHomeViewConfig(config) {
   const obj = config?.toObject ? config.toObject() : { ...config };
   return {
     ...obj,
+    festivalKey: normalizeFestivalKey(obj.festivalKey),
     heroSlides: normalizeHeroSlides(obj.heroSlides),
     aboutSection: normalizeAboutSection(obj.aboutSection),
     communitySection: normalizeCommunitySection(obj.communitySection),
@@ -105,6 +107,7 @@ async function updateAdminHomeViewConfig(req, res, next) {
       showHomeSections,
       showProductTypeSections,
       productCardStyle,
+      festivalKey,
       shopLocation,
       heroSlides,
       aboutSection,
@@ -112,6 +115,16 @@ async function updateAdminHomeViewConfig(req, res, next) {
       compareSection,
       processSection,
     } = req.body || {};
+
+    let nextFestivalKey;
+    if (festivalKey !== undefined) {
+      nextFestivalKey = parseFestivalKey(festivalKey);
+      if (nextFestivalKey === null) {
+        return res.status(400).json({
+          message: 'Festival look must be "" (auto), "everyday", "navratri" or "diwali".',
+        });
+      }
+    }
 
     if (heroTitle !== undefined) config.heroTitle = heroTitle;
     if (heroSubtitle !== undefined) config.heroSubtitle = heroSubtitle;
@@ -132,6 +145,7 @@ async function updateAdminHomeViewConfig(req, res, next) {
     if (productCardStyle !== undefined && ["compact", "comfortable"].includes(String(productCardStyle))) {
       config.productCardStyle = productCardStyle;
     }
+    if (nextFestivalKey !== undefined) config.festivalKey = nextFestivalKey;
 
     if (shopLocation !== undefined && shopLocation && typeof shopLocation === "object") {
       const next = normalizeShopLocation({ ...config.shopLocation?.toObject?.() || config.shopLocation, ...shopLocation });

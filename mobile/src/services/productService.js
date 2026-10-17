@@ -333,6 +333,8 @@ export const DEFAULT_HOME_VIEW_CONFIG = {
   showHomeSections: true,
   showProductTypeSections: true,
   productCardStyle: "compact",
+  /** "" = auto (follow the app's festival calendar). */
+  festivalKey: "",
   heroSlides: [],
   aboutSection: normalizeAboutSection(null),
   communitySection: normalizeCommunitySection(null),
@@ -352,6 +354,8 @@ function normalizeHomeViewConfig(data) {
     showHomeSections: data?.showHomeSections !== false,
     showProductTypeSections: data?.showProductTypeSections !== false,
     productCardStyle: data?.productCardStyle === "comfortable" ? "comfortable" : "compact",
+    // Unknown keys are ignored by `resolveFestivalTheme`, so they behave like auto.
+    festivalKey: String(data?.festivalKey ?? "").trim().toLowerCase(),
     heroSlides: normalizeHeroSlides(data?.heroSlides),
     aboutSection: normalizeAboutSection(data?.aboutSection),
     communitySection: normalizeCommunitySection(data?.communitySection),
@@ -360,13 +364,16 @@ function normalizeHomeViewConfig(data) {
   };
 }
 
-/** Customer home config from MongoDB — always returns usable defaults when API is unavailable. */
-export async function getHomeViewConfig({ preferCache = false } = {}) {
+/**
+ * Customer home config from MongoDB — always returns usable defaults when API is unavailable.
+ * `force` skips the in-memory TTL (pull-to-refresh) so admin changes such as the festival look show at once.
+ */
+export async function getHomeViewConfig({ preferCache = false, force = false } = {}) {
   const now = Date.now();
-  if (homeViewCache.data && now - homeViewCache.fetchedAt < HOME_VIEW_CACHE_TTL_MS) {
+  if (!force && homeViewCache.data && now - homeViewCache.fetchedAt < HOME_VIEW_CACHE_TTL_MS) {
     return homeViewCache.data;
   }
-  if (preferCache && homeViewCache.data) {
+  if (!force && preferCache && homeViewCache.data) {
     refreshHomeViewInBackground();
     return homeViewCache.data;
   }

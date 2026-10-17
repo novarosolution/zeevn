@@ -16,7 +16,8 @@ Products, prices, categories, ratings, stock and delivery estimates always come 
 | You want to change… | Edit |
 | --- | --- |
 | Festival dates (Navratri, Diwali, …) | `FESTIVAL_CALENDAR` |
-| Force or disable a festival look | `STORE_FESTIVAL_OVERRIDE` |
+| Switch the festival look without an app release | Admin console → Home view editor → **Festival look** |
+| Force or disable a festival look in the build | `STORE_FESTIVAL_OVERRIDE` |
 | Festival greeting, banner text, bento tiles, "Festive Picks" | the theme object (`navratriTheme`, `diwaliTheme`, `everydayTheme`) |
 | Home header copy, search hints, delivery chip | `STORE_HEADER`, `STORE_FREE_DELIVERY` |
 | Category tabs under the search bar | `STORE_TABS` (+ `STORE_LINE_PAGES` for each tab's landing copy) |
@@ -34,15 +35,28 @@ Colours and spacing are not in the content file. They live in `src/theme/storefr
 
 The active look is picked in this order:
 
-1. `festivalKey` on the server's home-view config. The app already honours it, **but the backend and admin
-   console do not have this field yet**, so today this step never fires.
+1. `festivalKey` on the server's home-view config, set from the admin console (see below). `""` (Auto) or a
+   key the app does not know skips this step.
 2. `STORE_FESTIVAL_OVERRIDE` — `"auto"` follows the calendar, `"everyday"` never shows a festival,
    or force `"navratri"` / `"diwali"`
 3. The first window in `FESTIVAL_CALENDAR` that contains today's date
 4. `everyday`
 
-Because the calendar and themes are part of the app build, changing them needs a new app release (or an
-OTA update). Adding `festivalKey` to the admin Home View would let you switch festivals without a release.
+### Switch the festival from the admin console (no app release)
+
+Admin console → **Home view editor** → **Festival look** → pick **Auto (follow calendar)**, **Everyday**,
+**Navratri** or **Diwali** → **Save changes**.
+
+- The value is saved as `festivalKey` on the home-view config (`PUT /admin/home-view`) and served by the public
+  `GET /home-view` that the app already calls. The server rejects anything except `""`, `everyday`, `navratri`
+  and `diwali`.
+- **Auto** hands control back to `STORE_FESTIVAL_OVERRIDE` and the calendar below.
+- Customers see the change when Home next refreshes. Pulling down on Home always asks the server; opening the
+  app after it was closed for more than 30 minutes does too. Sooner than that the app first shows its saved
+  copy of the home config.
+
+Only *choosing* between the existing looks is remote. The themes and the calendar are part of the app build,
+so changing their contents (copy, colours, dates) still needs a new app release (or an OTA update).
 
 ```js
 export const FESTIVAL_CALENDAR = [
@@ -59,6 +73,9 @@ export const FESTIVAL_CALENDAR = [
    (`"marigold"`, `"diya"` or `"none"`), the `header` gradients, `banner`, `bento` and `picks`.
 2. Register it: `export const FESTIVAL_THEMES = { everyday, navratri, diwali, holi: holiTheme }`.
 3. Add its window to `FESTIVAL_CALENDAR`.
+4. To make it selectable in the admin console, add its key to `FESTIVAL_KEY_VALUES` in
+   `backend/src/utils/festivalKey.js` (server validation) and to `festivalOptions` in `ADMIN_HOME_VIEW_COPY`
+   (`src/content/appContent.js`).
 
 ### How bento tiles and picks choose products
 

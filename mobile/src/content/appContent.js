@@ -1322,6 +1322,16 @@ export const ADMIN_HOME_VIEW_COPY = {
     "These flags are read by the live Home screen. Each product still needs “Show on Home” and a Home section in the product editor.",
   cardLayoutSection: "Product card density",
   cardLayoutHint: "Stored as compact or comfortable (wired when the storefront reads this setting).",
+  festivalSection: "Festival look",
+  festivalHint:
+    "Theme for the app Home: greeting, banner and festive picks. Auto follows the festival calendar built into the app. Customers see a change when they next refresh Home.",
+  // Keys must match the backend allow-list (backend/src/utils/festivalKey.js) and FESTIVAL_THEMES in storefrontContent.js.
+  festivalOptions: [
+    { key: "", label: "Auto (follow calendar)" },
+    { key: "everyday", label: "Everyday" },
+    { key: "navratri", label: "Navratri" },
+    { key: "diwali", label: "Diwali" },
+  ],
   shopLocationSection: "Shop / pickup location",
   shopLocationHint: "Pin shown on order tracking maps (shop, delivery partner, customer).",
   shopNameLabel: "Shop name",

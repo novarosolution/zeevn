@@ -74,10 +74,10 @@ export default function StoreHeader({
             {eyebrow}
           </Text>
           <Text
-            style={type.display(35, { ls: -0.9, lh: 40 })}
+            style={type.display(30, { ls: -0.7, lh: 34 })}
             numberOfLines={1}
             adjustsFontSizeToFit
-            minimumFontScale={0.7}
+            minimumFontScale={0.72}
             accessibilityRole="header"
           >
             {title}
@@ -129,10 +129,10 @@ export default function StoreHeader({
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: 14 },
+  wrap: { gap: 10 },
   top: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  greeting: { flex: 1, minWidth: 0, gap: 1 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
+  greeting: { flex: 1, minWidth: 0, gap: 2 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 6 },
   chip: {
     flexDirection: "row",
     alignItems: "center",

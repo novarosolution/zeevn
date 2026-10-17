@@ -351,19 +351,6 @@ export default function StoreHome({
             <View style={styles.sections}>
               <FestiveBanner theme={festival} onPress={() => openShop()} />
 
-              <BentoGrid tall={bento.tall} tiles={bento.tiles} onPressItem={onBentoPress} />
-
-              {picks.length ? (
-                <FestivePicks
-                  title={festival.picks.title}
-                  picks={picks}
-                  activeKey={activePickKey}
-                  onChange={setPickKey}
-                  onProductPress={openProduct}
-                  onSeeAll={(pick) => go(pick.route)}
-                />
-              ) : null}
-
               <PromoCarousel items={promos} onPressItem={(item) => go(item.route)} />
 
               {categoryTiles.length ? (
@@ -382,6 +369,8 @@ export default function StoreHome({
                 </View>
               ) : null}
 
+              <BentoGrid tall={bento.tall} tiles={bento.tiles} onPressItem={onBentoPress} />
+
               {bestsellers.length ? (
                 <View style={styles.block}>
                   <SectionHeader
@@ -391,6 +380,17 @@ export default function StoreHome({
                   />
                   <ProductRail products={bestsellers} onProductPress={openProduct} onSeeAll={() => openShop()} />
                 </View>
+              ) : null}
+
+              {picks.length ? (
+                <FestivePicks
+                  title={festival.picks.title}
+                  picks={picks}
+                  activeKey={activePickKey}
+                  onChange={setPickKey}
+                  onProductPress={openProduct}
+                  onSeeAll={(pick) => go(pick.route)}
+                />
               ) : null}
 
               {lineRails.map((line) => {
@@ -437,10 +437,10 @@ export default function StoreHome({
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   backdrop: { position: "absolute", left: 0, right: 0 },
-  pinBlock: { marginTop: 16 },
-  tabs: { marginTop: 8 },
-  sections: { gap: 28, paddingTop: 6 },
-  block: { gap: 14 },
+  pinBlock: { marginTop: 12 },
+  tabs: { marginTop: 6 },
+  sections: { gap: 20, paddingTop: 8 },
+  block: { gap: 12 },
   compact: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 30, overflow: "hidden" },
   empty: { alignItems: "center", gap: 10, padding: 28, borderWidth: StyleSheet.hairlineWidth, marginTop: 24 },
   emptyIcon: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center", marginBottom: 4 },

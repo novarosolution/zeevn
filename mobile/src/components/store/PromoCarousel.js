@@ -8,8 +8,8 @@ import { Sparkle } from "./Ornaments";
 import PressableScale from "./PressableScale";
 import StoreIcon from "./StoreIcon";
 
-const GAP = 12;
-const CARD_H = 172;
+const GAP = 10;
+const CARD_H = 196;
 const AUTOPLAY_MS = 5600;
 
 export function CoinArt({ size = 132 }) {
@@ -97,17 +97,35 @@ function FeatureCard({ item, width, isDark }) {
 }
 
 function ImageCard({ item, width }) {
-  const { c, r, type } = useStoreTheme();
+  const { c, r, type, isDark } = useStoreTheme();
   const source = typeof item.image === "number" ? item.image : { uri: item.image };
   return (
     <View style={[styles.card, { width, borderRadius: r.xxl, backgroundColor: c.soft }]}>
       <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} cachePolicy="memory-disk" />
-      {item.cta ? (
-        <View style={[styles.imageCta, { backgroundColor: withAlpha("#FFFFFF", 0.92) }]}>
-          <Text style={type.ui(12.5, "extrabold", "#244424", { letterSpacing: 0.2 })}>{item.cta}</Text>
-          <StoreIcon icon={{ ion: "arrow-forward" }} size={13} color="#244424" />
-        </View>
-      ) : null}
+      <LinearGradient
+        colors={["transparent", withAlpha(isDark ? "#0A0806" : "#1A140C", 0.78)]}
+        locations={[0.35, 1]}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      <View style={styles.imageCopy} pointerEvents="none">
+        {item.eyebrow ? (
+          <Text style={type.eyebrow(c.goldBright, 10)} numberOfLines={1}>
+            {item.eyebrow}
+          </Text>
+        ) : null}
+        {item.title ? (
+          <Text style={type.display(22, { color: "#FFFFFF", ls: -0.4, lh: 26 })} numberOfLines={2}>
+            {item.title}
+          </Text>
+        ) : null}
+        {item.cta ? (
+          <View style={[styles.imageCta, { backgroundColor: withAlpha("#FFFFFF", 0.94) }]}>
+            <Text style={type.ui(12.5, "extrabold", "#244424", { letterSpacing: 0.2 })}>{item.cta}</Text>
+            <StoreIcon icon={{ ion: "arrow-forward" }} size={13} color="#244424" />
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -116,7 +134,7 @@ function ImageCard({ item, width }) {
 export default function PromoCarousel({ items, onPressItem }) {
   const { c, isDark, gutter, shadow } = useStoreTheme();
   const { width } = useWindowDimensions();
-  const cardW = Math.round(width * 0.86);
+  const cardW = Math.round(width * 0.88);
   const step = cardW + GAP;
   const listRef = useRef(null);
   const indexRef = useRef(0);
@@ -203,10 +221,16 @@ const styles = StyleSheet.create({
   cta: { alignSelf: "flex-start", marginTop: 7, paddingHorizontal: 16, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
   coinArt: { position: "absolute", right: -6, bottom: -4 },
   featureIcon: { position: "absolute", right: -14, bottom: -18 },
-  imageCta: {
+  imageCopy: {
     position: "absolute",
-    left: 14,
-    bottom: 14,
+    left: 16,
+    right: 16,
+    bottom: 16,
+    gap: 4,
+  },
+  imageCta: {
+    alignSelf: "flex-start",
+    marginTop: 8,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,

@@ -28,18 +28,18 @@ export const STORE_RADIUS = {
 };
 
 const LIGHT = {
-  page: "#FAF6EC",
-  pageDeep: "#F3ECDA",
+  page: "#F7F3E8",
+  pageDeep: "#EFE8D6",
   card: "#FFFFFF",
-  cardSoft: "#FFFCF5",
-  soft: "#F4EEDD",
-  softStrong: "#EBE3CC",
-  well: "#FFFFFF",
-  ink: "#1D2618",
-  inkSoft: "#4F5742",
-  inkMute: "#8D8870",
-  line: "rgba(36, 68, 36, 0.10)",
-  lineStrong: "rgba(36, 68, 36, 0.20)",
+  cardSoft: "#FFFCF7",
+  soft: "#F2ECDC",
+  softStrong: "#E8E0C8",
+  well: "#FAF7F0",
+  ink: "#1A2216",
+  inkSoft: "#4A5340",
+  inkMute: "#86816A",
+  line: "rgba(36, 68, 36, 0.09)",
+  lineStrong: "rgba(36, 68, 36, 0.18)",
   brand: "#244424",
   brandAlt: "#5C6834",
   brandBright: "#788844",
@@ -151,10 +151,10 @@ function buildShadows(isDark, c) {
     });
   return {
     none: {},
-    soft: make(3, 10, 0.07, 2),
-    card: make(6, 18, 0.1, 4),
-    lift: make(10, 26, 0.15, 7),
-    float: make(14, 30, 0.22, 12),
+    soft: make(2, 8, 0.06, 2),
+    card: make(8, 20, 0.12, 5),
+    lift: make(12, 28, 0.16, 8),
+    float: make(16, 32, 0.22, 12),
   };
 }
 

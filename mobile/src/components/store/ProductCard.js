@@ -74,7 +74,7 @@ function CardImage({ uris, size, gallery, dim, c }) {
 
   if (!gallery || uris.length < 2) {
     return (
-      <Image source={{ uri: uris[0] }} style={imageStyle} contentFit="contain" transition={180} cachePolicy="memory-disk" />
+      <Image source={{ uri: uris[0] }} style={imageStyle} contentFit="cover" transition={180} cachePolicy="memory-disk" />
     );
   }
 
@@ -91,7 +91,7 @@ function CardImage({ uris, size, gallery, dim, c }) {
         getItemLayout={(_, i) => ({ length: size, offset: size * i, index: i })}
         renderItem={({ item }) => (
           <View style={{ width: size, height: size }}>
-            <Image source={{ uri: item }} style={imageStyle} contentFit="contain" transition={180} cachePolicy="memory-disk" />
+            <Image source={{ uri: item }} style={imageStyle} contentFit="cover" transition={180} cachePolicy="memory-disk" />
           </View>
         )}
       />

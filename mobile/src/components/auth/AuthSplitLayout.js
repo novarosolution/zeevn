@@ -6,7 +6,7 @@ import { AUTH_HERO_IMAGE } from "../../content/authVisualContent";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { useTheme } from "../../context/ThemeContext";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { radius, spacing } from "../../theme/tokens";
+import { spacing } from "../../theme/tokens";
 import AuthHeroPanel from "./AuthHeroPanel";
 
 /**

@@ -1,8 +1,16 @@
 {
-  "buildCommand": "EXPO_PUBLIC_API_URL=https://zeevn-i760.onrender.com EXPO_PUBLIC_SITE_URL=https://zeevan.shop npm run export:web",
+  "buildCommand": "EXPO_PUBLIC_API_URL=https://www.zeevan.shop/aws EXPO_PUBLIC_SITE_URL=https://zeevan.shop EXPO_PUBLIC_API_URL_FALLBACK=https://zeevn-i760.onrender.com npm run export:web",
   "outputDirectory": "dist",
   "installCommand": "npm ci --include=dev",
   "rewrites": [
+    {
+      "source": "/aws/socket.io/:path*",
+      "destination": "http://54.173.67.136:5001/socket.io/:path*"
+    },
+    {
+      "source": "/aws/:path*",
+      "destination": "http://54.173.67.136:5001/:path*"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"

@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 1280,
     alignSelf: "center",
-    paddingBottom: HOME_SPACE.xl,
+    paddingBottom: HOME_SPACE.md,
   },
   webSection: {
     width: "100%",

@@ -37,6 +37,8 @@ const styles = StyleSheet.create({
   wrap: {
     width: "100%",
     height: 72,
+    marginTop: 0,
+    marginBottom: 0,
     overflow: "hidden",
     alignSelf: "center",
     ...Platform.select({

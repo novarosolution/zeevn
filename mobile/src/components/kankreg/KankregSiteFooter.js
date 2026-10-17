@@ -116,9 +116,9 @@ export default function KankregSiteFooter() {
 
 const styles = StyleSheet.create({
   shell: {
-    marginTop: 48,
+    marginTop: 0,
     marginBottom: 0,
-    paddingTop: Platform.OS === "web" ? "clamp(48px, 6vw, 72px)" : 48,
+    paddingTop: Platform.OS === "web" ? "clamp(40px, 5vw, 64px)" : 48,
     paddingBottom: Platform.OS === "web" ? 28 : 36,
     width: "100%",
     overflow: "hidden",

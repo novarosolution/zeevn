@@ -11,7 +11,7 @@ import WebCertificationsStrip from "../home/WebCertificationsStrip";
  */
 export function KankregPageFooter() {
   return (
-    <View>
+    <View style={{ margin: 0, padding: 0, gap: 0 }}>
       {Platform.OS === "web" ? <WebCertificationsStrip /> : null}
       <KankregSiteFooter />
     </View>

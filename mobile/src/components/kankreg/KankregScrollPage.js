@@ -135,7 +135,7 @@ export default function KankregScrollPage({
 
     // Site footer is last — kill trailing cream gap under the dark footer.
     if (showSiteFooter) {
-      paddingBottom = 0;
+      return [...layers, { paddingBottom: 0 }];
     }
 
     if (paddingBottom === (typeof merged.paddingBottom === "number" ? merged.paddingBottom : spacing.xl)) {

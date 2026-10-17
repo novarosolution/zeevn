@@ -19,6 +19,7 @@ import { useOrderCelebration } from "../context/OrderCelebrationContext";
 import {
   createOrderRequest,
   validateCouponRequest} from "../services/orderService";
+import { checkDeliveryServiceability } from "../services/deliveryService";
 import { getCurrentAddressFromGPS } from "../services/locationService";
 import { useTheme } from "../context/ThemeContext";
 import {
@@ -117,6 +118,12 @@ export default function CartScreen({ navigation, route }) {
   /** `"Razorpay"` | `"Cash on Delivery"` — must match backend `Order.paymentMethod`. */
   const [paymentMethod, setPaymentMethod] = useState("Razorpay");
   const [fieldErrors, setFieldErrors] = useState({});
+  const [deliveryQuote, setDeliveryQuote] = useState({
+    serviceable: true,
+    fee: 0,
+    zoneName: "",
+    checked: false,
+  });
 
   useEffect(() => {
     if (reducedMotion || cartItems.length === 0 || isPlacingOrder) {
@@ -304,6 +311,11 @@ export default function CartScreen({ navigation, route }) {
       return;
     }
 
+    if (deliveryBlocked) {
+      setError("We do not deliver to this pincode yet. Please choose another address.");
+      return;
+    }
+
     try {
       setIsPlacingOrder(true);
       setError("");
@@ -396,7 +408,51 @@ export default function CartScreen({ navigation, route }) {
     }
   };
 
-  const deliveryFee = 0;
+  useEffect(() => {
+    const pin = String(postalCode || "").replace(/\D/g, "");
+    const cityName = String(city || "").trim();
+    if (pin.length < 6 && !cityName) {
+      setDeliveryQuote({ serviceable: true, fee: 0, zoneName: "", checked: false });
+      return undefined;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      checkDeliveryServiceability({
+        postalCode: pin,
+        city: cityName,
+        itemsTotal: totalAmount,
+      })
+        .then((res) => {
+          if (cancelled) return;
+          setDeliveryQuote({
+            serviceable: Boolean(res?.serviceable),
+            fee: Number(res?.fee || 0),
+            zoneName: res?.zoneName || "",
+            checked: true,
+            etaMinutesMin: res?.etaMinutesMin,
+            etaMinutesMax: res?.etaMinutesMax,
+          });
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setDeliveryQuote({ serviceable: true, fee: 0, zoneName: "", checked: false });
+        });
+    }, 280);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [postalCode, city, totalAmount]);
+
+  const deliveryFee = deliveryQuote.checked && deliveryQuote.serviceable ? Number(deliveryQuote.fee || 0) : 0;
+  const deliveryBlocked = deliveryQuote.checked && !deliveryQuote.serviceable;
+  const deliveryHint = deliveryBlocked
+    ? "We do not deliver to this pincode yet."
+    : deliveryQuote.zoneName && deliveryQuote.checked
+      ? deliveryQuote.fee === 0
+        ? `${deliveryQuote.zoneName} · Free delivery`
+        : `${deliveryQuote.zoneName}`
+      : "";
   const platformFee = 1.2;
   const discountAmount = Number(appliedCoupon?.discountAmount || 0);
   const payableAmount = Math.max(0, totalAmount + deliveryFee + platformFee - discountAmount);
@@ -600,10 +656,13 @@ export default function CartScreen({ navigation, route }) {
             discount={discountAmount}
             discountLabel={appliedCoupon?.code ? `Coupon ${appliedCoupon.code}` : undefined}
             platformFee={platformFee}
+            deliveryFee={deliveryFee}
+            deliveryBlocked={deliveryBlocked}
+            deliveryHint={deliveryHint}
             total={payableAmount}
             ctaLabel={primaryCtaLabel}
             onPress={handlePrimaryCta}
-            disabled={cartItems.length === 0}
+            disabled={cartItems.length === 0 || deliveryBlocked}
             loading={isPlacingOrder}
             showCoupon
             couponCode={couponCode}
@@ -626,8 +685,27 @@ export default function CartScreen({ navigation, route }) {
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>{CART_UI.shippingLabel}</Text>
-              <Text style={styles.shippingFree}>{CART_UI.shippingFree}</Text>
+              <Text
+                style={
+                  deliveryBlocked
+                    ? [styles.summaryValue, { color: c.danger }]
+                    : deliveryFee > 0
+                      ? styles.summaryValue
+                      : styles.shippingFree
+                }
+              >
+                {deliveryBlocked
+                  ? "Unavailable"
+                  : deliveryFee > 0
+                    ? formatINR(deliveryFee)
+                    : CART_UI.shippingFree}
+              </Text>
             </View>
+            {deliveryHint ? (
+              <Text style={[styles.deliveryHint, { color: deliveryBlocked ? c.danger : c.textMuted }]}>
+                {deliveryHint}
+              </Text>
+            ) : null}
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>{CART_UI.serviceFeeLabel}</Text>
               <Text style={styles.summaryValue}>{formatINR(platformFee)}</Text>
@@ -659,7 +737,7 @@ export default function CartScreen({ navigation, route }) {
             <TouchableOpacity
               activeOpacity={0.92}
               onPress={handlePrimaryCta}
-              disabled={cartItems.length === 0 || isPlacingOrder}
+              disabled={cartItems.length === 0 || isPlacingOrder || deliveryBlocked}
               style={styles.checkoutGradientWrap}
               accessibilityRole="button"
               accessibilityLabel={primaryCtaLabel}
@@ -704,7 +782,7 @@ export default function CartScreen({ navigation, route }) {
           total={payableAmount}
           ctaLabel={primaryCtaLabel}
           onPress={handlePrimaryCta}
-          disabled={cartItems.length === 0}
+          disabled={cartItems.length === 0 || deliveryBlocked}
           loading={isPlacingOrder}
           itemCount={totalItems}
         />
@@ -943,6 +1021,12 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     fontFamily: fonts.bold,
     fontSize: typography.bodySmall,
     color: isDark ? c.primaryBright : "#C9A227"},
+  deliveryHint: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    lineHeight: 15,
+    marginBottom: 4,
+  },
   totalAmountLabel: {
     fontSize: 10,
     fontFamily: fonts.bold,

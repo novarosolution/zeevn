@@ -137,4 +137,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+userSchema.index({ isDeliveryPartner: 1 });
+userSchema.index({ "deliveryLiveLocation.updatedAt": 1 });
+
 module.exports = mongoose.model("User", userSchema);

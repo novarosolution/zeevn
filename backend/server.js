@@ -3,8 +3,9 @@ const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
-const { initSocketServer } = require("./src/realtime/socketHub");
+const { initSocketServer, getIO } = require("./src/realtime/socketHub");
 const { corsOriginCallback } = require("./src/config/corsOrigins");
+const mongoose = require("mongoose");
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
@@ -38,6 +39,26 @@ app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
 app.get("/", (req, res) => {
   res.json({ message: "E-commerce API is running", ok: true });
+});
+
+function healthPayload() {
+  const dbOk = mongoose.connection.readyState === 1;
+  const socketOk = Boolean(getIO());
+  return {
+    ok: dbOk,
+    db: dbOk ? "connected" : "disconnected",
+    socket: socketOk ? "ready" : "not_ready",
+    ts: new Date().toISOString(),
+  };
+}
+
+app.get("/health", (req, res) => {
+  const body = healthPayload();
+  res.status(body.ok ? 200 : 503).json(body);
+});
+app.get("/api/health", (req, res) => {
+  const body = healthPayload();
+  res.status(body.ok ? 200 : 503).json(body);
 });
 
 /* Register high-traffic routes directly (reliable on Express 5 + clear for debugging) */

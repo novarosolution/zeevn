@@ -17,6 +17,9 @@ export default function KankregCartSummaryCard({
   discount = 0,
   discountLabel,
   platformFee = 0,
+  deliveryFee = 0,
+  deliveryBlocked = false,
+  deliveryHint = "",
   total,
   ctaLabel,
   onPress,
@@ -30,6 +33,12 @@ export default function KankregCartSummaryCard({
   itemCount = 0,
 }) {
   const { colors: c, isDark } = useTheme();
+  const deliveryLabel =
+    deliveryBlocked
+      ? "Unavailable"
+      : Number(deliveryFee) > 0
+        ? formatINR(deliveryFee)
+        : CART_UI.shippingFree;
 
   return (
     <View
@@ -76,8 +85,28 @@ export default function KankregCartSummaryCard({
           <Text style={[styles.label, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
             {CART_UI.shippingLabel}
           </Text>
-          <Text style={styles.free}>{CART_UI.shippingFree}</Text>
+          <Text
+            style={[
+              Number(deliveryFee) > 0 || deliveryBlocked ? styles.value : styles.free,
+              {
+                color: deliveryBlocked
+                  ? c.danger
+                  : Number(deliveryFee) > 0
+                    ? isDark
+                      ? c.textPrimary
+                      : KANKREG_PALETTE.ink
+                    : undefined,
+              },
+            ]}
+          >
+            {deliveryLabel}
+          </Text>
         </View>
+        {deliveryHint ? (
+          <Text style={[styles.hint, { color: deliveryBlocked ? c.danger : KANKREG_PALETTE.inkFaint }]}>
+            {deliveryHint}
+          </Text>
+        ) : null}
         {platformFee > 0 ? (
           <View style={styles.line}>
             <Text style={[styles.label, { color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft }]}>
@@ -203,6 +232,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: KANKREG_PALETTE.green,
     letterSpacing: 0.3,
+  },
+  hint: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    lineHeight: 15,
+    marginTop: -2,
   },
   discount: {
     color: KANKREG_PALETTE.green,

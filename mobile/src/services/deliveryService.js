@@ -10,3 +10,16 @@ export const markDeliveryOrderDelivered = (_token, orderId) =>
 /** @param {string} [_token] */
 export const updateDeliveryLocation = (_token, payload) =>
   apiPatch("/delivery/location", payload);
+
+/**
+ * Public serviceability check for checkout.
+ * @param {{ postalCode?: string, city?: string, itemsTotal?: number }} params
+ */
+export function checkDeliveryServiceability({ postalCode = "", city = "", itemsTotal = 0 } = {}) {
+  const q = new URLSearchParams();
+  if (postalCode) q.set("postalCode", String(postalCode).trim());
+  if (city) q.set("city", String(city).trim());
+  if (itemsTotal != null) q.set("itemsTotal", String(Number(itemsTotal) || 0));
+  const qs = q.toString();
+  return apiGet(`/delivery/check${qs ? `?${qs}` : ""}`, { auth: false });
+}

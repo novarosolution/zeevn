@@ -93,6 +93,9 @@ export default function AdminOrderManagePanel({
       </AdminPanel>
 
       <AdminPanel title="Shipping address">
+        {order.deliveryZoneName ? (
+          <InfoRow label="Delivery zone" value={order.deliveryZoneName} c={c} />
+        ) : null}
         <InfoRow label="Name" value={order.shippingAddress?.fullName} c={c} />
         <InfoRow label="Phone" value={order.shippingAddress?.phone} c={c} />
         <InfoRow label="Address" value={order.shippingAddress?.line1} c={c} />

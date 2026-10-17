@@ -39,6 +39,11 @@ const {
   restoreStockForOrderLines,
 } = require("../utils/stock");
 const { notifyAdminNewOrder } = require("../services/orderNotificationService");
+const {
+  resolveDeliveryQuote,
+  findZoneForAddress,
+} = require("../services/deliveryZoneService");
+const DeliveryZone = require("../models/DeliveryZone");
 
 function pushOrderLiveUpdate(order) {
   try {
@@ -46,6 +51,60 @@ function pushOrderLiveUpdate(order) {
   } catch {
     // Realtime is best-effort; REST responses still succeed.
   }
+}
+
+const LIVE_ASSIGN_STATUSES = ["ready_for_pickup", "shipped", "out_for_delivery"];
+
+/** Least-loaded partner for a zone (or any partner if zone has no partnerIds). */
+async function pickLeastLoadedPartner(zone) {
+  const filter = { isDeliveryPartner: true };
+  if (zone?.partnerIds?.length) {
+    filter._id = { $in: zone.partnerIds };
+  }
+  const partners = await User.find(filter).select("_id").lean();
+  if (!partners.length) return null;
+
+  const counts = await Order.aggregate([
+    {
+      $match: {
+        assignedDeliveryUser: { $in: partners.map((p) => p._id) },
+        status: { $in: LIVE_ASSIGN_STATUSES },
+      },
+    },
+    { $group: { _id: "$assignedDeliveryUser", count: { $sum: 1 } } },
+  ]);
+  const countMap = new Map(counts.map((c) => [String(c._id), c.count]));
+  let best = partners[0]._id;
+  let bestCount = countMap.get(String(best)) || 0;
+  for (const p of partners) {
+    const n = countMap.get(String(p._id)) || 0;
+    if (n < bestCount) {
+      best = p._id;
+      bestCount = n;
+    }
+  }
+  return best;
+}
+
+async function maybeAutoAssignPartner(order) {
+  if (order.assignedDeliveryUser) return order;
+  if (!LIVE_ASSIGN_STATUSES.includes(String(order.status))) return order;
+
+  let zone = null;
+  if (order.deliveryZone) {
+    zone = await DeliveryZone.findById(order.deliveryZone).lean();
+  }
+  if (!zone) {
+    zone = await findZoneForAddress({
+      postalCode: order.shippingAddress?.postalCode,
+      city: order.shippingAddress?.city,
+    });
+  }
+  const partnerId = await pickLeastLoadedPartner(zone);
+  if (!partnerId) return order;
+  order.assignedDeliveryUser = partnerId;
+  await order.save();
+  return order;
 }
 
 /** Deduct stock + notify admin when a Razorpay order is confirmed paid. */
@@ -65,7 +124,6 @@ async function finalizePaidOrder(order) {
 }
 
 const PLATFORM_FEE = 1.2;
-const DEFAULT_DELIVERY_FEE = 0;
 /** Ignore duplicate PATCH /delivery/location within this window (ms). */
 const DELIVERY_LOCATION_UPDATE_MIN_INTERVAL_MS = 10000;
 
@@ -268,7 +326,19 @@ async function createOrder(req, res, next) {
       discountAmount = computeCouponDiscount(resolvedCoupon, itemsTotal);
     }
 
-    const deliveryFee = DEFAULT_DELIVERY_FEE;
+    const deliveryQuote = await resolveDeliveryQuote({
+      postalCode: shippingAddress?.postalCode,
+      city: shippingAddress?.city,
+      itemsTotal,
+    });
+    if (!deliveryQuote.serviceable) {
+      return res.status(400).json({
+        message:
+          "We do not deliver to this pincode yet. Please choose a serviceable address or contact support.",
+        code: "DELIVERY_NOT_SERVICEABLE",
+      });
+    }
+    const deliveryFee = Number(deliveryQuote.fee || 0);
     const totalPrice = Math.max(0, Number((itemsTotal + deliveryFee + PLATFORM_FEE - discountAmount).toFixed(2)));
 
     const isRazorpay = normalizedPaymentMethod === "Razorpay";
@@ -285,6 +355,8 @@ async function createOrder(req, res, next) {
       paymentMethod: normalizedPaymentMethod,
       paymentStatus: "pending",
       paymentExpiresAt,
+      deliveryZone: deliveryQuote.zoneId || null,
+      deliveryZoneName: deliveryQuote.zoneName || "",
       coupon: resolvedCoupon
         ? {
             code: resolvedCoupon.code,
@@ -975,6 +1047,24 @@ async function updateAdminOrderDetails(req, res, next) {
             message: "That user is not enabled as a delivery partner. Enable them in Manage Users first.",
           });
         }
+        let zone = null;
+        if (order.deliveryZone) {
+          zone = await DeliveryZone.findById(order.deliveryZone).select("partnerIds name").lean();
+        }
+        if (!zone) {
+          zone = await findZoneForAddress({
+            postalCode: order.shippingAddress?.postalCode,
+            city: order.shippingAddress?.city,
+          });
+        }
+        if (zone?.partnerIds?.length) {
+          const allowed = zone.partnerIds.map((id) => String(id));
+          if (!allowed.includes(String(assignee._id))) {
+            return res.status(400).json({
+              message: `This partner is not assigned to zone "${zone.name || "selected"}".`,
+            });
+          }
+        }
         order.assignedDeliveryUser = assignee._id;
       }
     }
@@ -1024,6 +1114,11 @@ async function updateAdminOrderDetails(req, res, next) {
       order.invoice = nextInvoice;
     }
     await order.save();
+
+    if (LIVE_ASSIGN_STATUSES.includes(String(order.status)) && !order.assignedDeliveryUser) {
+      await maybeAutoAssignPartner(order);
+    }
+
     const updated = await Order.findById(order._id)
       .populate("user", "name email")
       .populate("assignedDeliveryUser", "name email phone")
@@ -1107,6 +1202,10 @@ async function updateOrderStatus(req, res, next) {
       await restoreStockForOrderLines(order.products);
       order.stockAdjustedAt = null;
       await order.save();
+    }
+
+    if (LIVE_ASSIGN_STATUSES.includes(status) && !order.assignedDeliveryUser) {
+      await maybeAutoAssignPartner(order);
     }
 
     const updated = await Order.findById(order._id)

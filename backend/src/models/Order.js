@@ -53,6 +53,17 @@ const orderSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+    /** Snapshot of serviceable zone at place-order. */
+    deliveryZone: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "DeliveryZone",
+      default: null,
+    },
+    deliveryZoneName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     products: {
       type: [orderItemSchema],
       required: true,
@@ -163,5 +174,7 @@ const orderSchema = new mongoose.Schema(
 );
 
 orderSchema.index({ createdAt: 1 });
+orderSchema.index({ assignedDeliveryUser: 1, status: 1 });
+orderSchema.index({ deliveryZone: 1 });
 
 module.exports = mongoose.model("Order", orderSchema);

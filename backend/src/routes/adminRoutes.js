@@ -44,6 +44,13 @@ const {
   getAdminHomeViewConfig,
   updateAdminHomeViewConfig,
 } = require("../controllers/homeViewController");
+const {
+  listDeliveryZones,
+  createDeliveryZone,
+  updateDeliveryZone,
+  deleteDeliveryZone,
+  listDeliveryPartners,
+} = require("../controllers/deliveryZoneController");
 const { protect, adminOnly } = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -82,5 +89,11 @@ router.post("/support-threads/:id/reply", replyToSupportThread);
 router.patch("/support-threads/:id/status", updateSupportThreadStatus);
 router.get("/home-view", getAdminHomeViewConfig);
 router.put("/home-view", updateAdminHomeViewConfig);
+
+router.get("/delivery-zones", listDeliveryZones);
+router.post("/delivery-zones", createDeliveryZone);
+router.patch("/delivery-zones/:id", updateDeliveryZone);
+router.delete("/delivery-zones/:id", deleteDeliveryZone);
+router.get("/delivery-partners", listDeliveryPartners);
 
 module.exports = router;

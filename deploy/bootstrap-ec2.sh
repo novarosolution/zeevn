@@ -15,13 +15,17 @@ if ! command -v node >/dev/null 2>&1; then
   sudo apt-get install -y nodejs
 fi
 
-# MongoDB 7
-if ! command -v mongod >/dev/null 2>&1; then
-  curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
-  echo "deb [ signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
-  sudo apt-get update -y
-  sudo apt-get install -y mongodb-org
-  sudo systemctl enable --now mongod
+# Docker + Mongo (Ubuntu 26: official mongodb-org packages lag)
+if ! command -v docker >/dev/null 2>&1; then
+  curl -fsSL https://get.docker.com | sudo sh
+  sudo usermod -aG docker ubuntu || true
+fi
+sudo systemctl enable --now docker
+if ! sudo docker ps -a --format '{{.Names}}' | grep -qx zeevan-mongo; then
+  sudo docker run -d --name zeevan-mongo --restart unless-stopped \
+    -p 127.0.0.1:27017:27017 -v zeevan-mongo-data:/data/db mongo:7
+else
+  sudo docker start zeevan-mongo || true
 fi
 
 sudo npm install -g pm2
@@ -55,4 +59,4 @@ fi
 echo "Bootstrap done. Copy backend/.env then: cd $APP_DIR/backend && npm ci --omit=dev && pm2 start ecosystem.config.cjs"
 node -v
 npm -v
-mongod --version | head -1
+sudo docker ps --filter name=zeevan-mongo --format '{{.Names}} {{.Status}}'

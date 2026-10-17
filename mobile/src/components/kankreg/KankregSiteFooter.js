@@ -19,7 +19,7 @@ import { KANKREG_CHROME, ZEEVAN_GREEN } from "../../theme/kankregWeb";
 import { fonts, icon, spacing } from "../../theme/tokens";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 
-const FOOTER_BG = require("../../../assets/footer-bg-premium-4k.jpg");
+const FOOTER_BG = require("../../../assets/footer-bg-bilona-cow-4k.jpg");
 
 /** Premium site footer — Zeevan brand, managed copy from `appContent.js`. */
 export default function KankregSiteFooter() {
@@ -144,10 +144,11 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     ...Platform.select({
       web: {
+        /* Soft center so cow + bilona icons show; darker mid for link readability */
         backgroundImage:
-          "linear-gradient(180deg, rgba(15,20,12,0.55) 0%, rgba(15,20,12,0.72) 100%)",
+          "linear-gradient(105deg, rgba(12,16,10,0.28) 0%, rgba(12,16,10,0.55) 42%, rgba(12,16,10,0.72) 100%)",
       },
-      default: { backgroundColor: "rgba(15,20,12,0.65)" },
+      default: { backgroundColor: "rgba(12,16,10,0.55)" },
     }),
   },
   inner: {

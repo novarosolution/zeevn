@@ -137,7 +137,8 @@ export const HOME_SCREEN_UI = {
     webEyebrow: "Shop the pantry",
     webAction: "View all",
     webSectionTitle: "Essentials for your table",
-    webKicker: "Ghee, tel, masala & honey — small batches, ready to ship.",
+    /** Empty — intro band already states the pantry lines. */
+    webKicker: "",
   },
   comingSoon: {
     stripEyebrow: "Soon",

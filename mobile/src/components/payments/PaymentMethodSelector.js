@@ -9,6 +9,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { PAYMENT_METHODS } from "../../content/appContent";
 import { ALCHEMY } from "../../theme/customerAlchemy";
+import { KANKREG_PALETTE, ZEEVAN_GOLD, ZEEVAN_GREEN } from "../../theme/kankregWeb";
 import { FONT_HEADING } from "../../theme/typographyRoles";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, icon, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
@@ -116,7 +117,7 @@ function PaymentMethodCard({ method, selected, disabled, reducedMotion, compact,
           )}
         </View>
         <Animated.View style={[styles.checkWrap, checkStyle]}>
-          <Ionicons name="checkmark-circle" size={icon.lg} color={c.primary} />
+          <Ionicons name="checkmark-circle" size={icon.lg} color={isDark ? ZEEVAN_GOLD.bright : ZEEVAN_GREEN.deep} />
         </Animated.View>
       </View>
 
@@ -171,11 +172,12 @@ function createStyles(c, isDark) {
       gap: spacing.sm,
     },
     cardOuter: {
-      borderRadius: radius.xxl,
-      padding: spacing.md,
-      borderWidth: StyleSheet.hairlineWidth * 2,
-      borderColor: isDark ? "rgba(52, 211, 153, 0.14)" : "rgba(22, 69, 51, 0.14)",
-      backgroundColor: isDark ? c.surface : ALCHEMY.cardBg,
+      borderRadius: 16,
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(36, 68, 36, 0.12)",
+      backgroundColor: isDark ? c.surface : KANKREG_PALETTE.card,
       ...Platform.select({
         web: {
           cursor: "pointer",
@@ -185,20 +187,21 @@ function createStyles(c, isDark) {
       }),
     },
     cardOuterSelected: {
-      borderColor: isDark ? ALCHEMY.goldBright : ALCHEMY.gold,
+      borderColor: isDark ? ZEEVAN_GOLD.bright : ZEEVAN_GOLD.base,
       borderWidth: 2,
+      backgroundColor: isDark ? "rgba(220,172,116,0.08)" : "rgba(252, 248, 240, 1)",
       ...Platform.select({
         ios: {
-          shadowColor: ALCHEMY.gold,
+          shadowColor: ZEEVAN_GOLD.base,
           shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: isDark ? 0.25 : 0.18,
+          shadowOpacity: isDark ? 0.22 : 0.14,
           shadowRadius: 12,
         },
-        android: { elevation: isDark ? 5 : 4 },
+        android: { elevation: isDark ? 5 : 3 },
         web: {
           boxShadow: isDark
-            ? "0 12px 28px rgba(0,0,0,0.35), 0 0 0 1px rgba(232,200,90,0.35)"
-            : "0 14px 32px rgba(22, 69, 51, 0.12), 0 0 0 1px rgba(199, 154, 58, 0.35)",
+            ? "0 10px 24px rgba(0,0,0,0.3), 0 0 0 1px rgba(232,188,132,0.28)"
+            : "0 12px 28px -12px rgba(36, 68, 36, 0.16), 0 0 0 1px rgba(220, 172, 116, 0.35)",
         },
         default: {},
       }),
@@ -234,12 +237,12 @@ function createStyles(c, isDark) {
       borderWidth: StyleSheet.hairlineWidth,
     },
     iconCircleGold: {
-      backgroundColor: isDark ? "rgba(52, 211, 153, 0.12)" : "rgba(232, 245, 238, 1)",
-      borderColor: isDark ? "rgba(52, 211, 153, 0.35)" : ALCHEMY.gold,
+      backgroundColor: isDark ? "rgba(220,172,116,0.14)" : ZEEVAN_GOLD.soft,
+      borderColor: isDark ? "rgba(220,172,116,0.35)" : ZEEVAN_GOLD.border,
     },
     iconCircleBrown: {
-      backgroundColor: isDark ? c.secondarySoft : "#ECFDF3",
-      borderColor: c.secondaryBorder,
+      backgroundColor: isDark ? c.secondarySoft : ZEEVAN_GREEN.soft,
+      borderColor: isDark ? c.secondaryBorder : ZEEVAN_GREEN.border,
     },
     cardTitleCol: {
       flex: 1,

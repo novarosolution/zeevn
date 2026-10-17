@@ -150,7 +150,8 @@ export function mobileWebTabBarScrollPadding(insets = {}) {
 }
 
 /** Approximate height of figma sticky pay / buy bars above the tab bar. */
-export const FIGMA_STICKY_FOOTER_HEIGHT = 140;
+/** Sticky cart pay bar (breakdown + total + CTA) — keep scroll clear. */
+export const FIGMA_STICKY_FOOTER_HEIGHT = 188;
 
 /** Native product sticky buy bar (single-row layout, no tab bar). */
 export const NATIVE_PRODUCT_STICKY_BAR_HEIGHT = 118;

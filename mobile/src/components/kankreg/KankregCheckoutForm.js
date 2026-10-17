@@ -195,11 +195,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   gpsBtn: {
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: "hidden",
-    marginBottom: spacing.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(176, 141, 87, 0.28)",
+    marginBottom: spacing.md + 2,
+    borderWidth: 1,
+    borderColor: "rgba(220, 172, 116, 0.4)",
   },
   gpsBtnHover: {
     borderColor: FIGMA.gold,
@@ -208,8 +208,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 11,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
   },
   gpsCopy: {
     flex: 1,
@@ -219,10 +219,10 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     fontFamily: fonts.semibold,
-    fontSize: 12,
+    fontSize: 13,
   },
   section: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.md + 2,
   },
   sectionHint: {
     fontFamily: fonts.regular,
@@ -232,11 +232,11 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   sectionBody: {
-    gap: spacing.sm,
+    gap: 12,
   },
   row: {
     flexDirection: "row",
-    gap: spacing.sm,
+    gap: 12,
   },
   rowStack: {
     flexDirection: "column",

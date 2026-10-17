@@ -8,11 +8,11 @@ import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
 export const ADDRESS_TYPES = [
   { key: "Home", label: "Home", iconName: "home" },
   { key: "Work", label: "Work", iconName: "briefcase" },
-  { key: "Office", label: "Office", iconName: "business" },
+  { key: "Other", label: "Other", iconName: "location" },
 ];
 
 /**
- * Home / Work / Office address label selector (segmented chips).
+ * Home / Work / Other address label selector (segmented chips).
  */
 export default function AddressTypeSelector({ value = "Home", onChange, label = "Save address as" }) {
   const { colors: c, isDark } = useTheme();
@@ -100,10 +100,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    paddingVertical: 11,
+    paddingVertical: 13,
     paddingHorizontal: spacing.sm,
-    borderRadius: radius.md,
+    borderRadius: 12,
     borderWidth: 1.25,
+    minHeight: 46,
     ...Platform.select({ web: { cursor: "pointer", transition: "all 0.18s ease" }, default: {} }),
   },
   chipHover: {

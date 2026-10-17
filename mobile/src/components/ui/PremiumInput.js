@@ -3,6 +3,7 @@ import { Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from
 import { Ionicons } from "@expo/vector-icons";
 import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
 import { ALCHEMY } from "../../theme/customerAlchemy";
+import { KANKREG_PALETTE, ZEEVAN_GOLD } from "../../theme/kankregWeb";
 import { inputOutlineWeb } from "../../theme/screenLayout";
 import { useTheme } from "../../context/ThemeContext";
 import useReducedMotion from "../../hooks/useReducedMotion";
@@ -80,8 +81,12 @@ function PremiumInputBase({
   const borderColor = hasError
     ? c.danger
     : focused
-      ? isDark ? ALCHEMY.goldBright : ALCHEMY.gold
-      : c.border;
+      ? isDark
+        ? ZEEVAN_GOLD.bright
+        : ZEEVAN_GOLD.base
+      : isDark
+        ? c.border
+        : "rgba(36, 68, 36, 0.14)";
 
   const labelTopBase = multiline ? 14 : 16;
   const labelTopFloated = multiline ? 6 : 8;
@@ -225,11 +230,11 @@ function createStyles(c, isDark, multiline) {
     field: {
       flexDirection: "row",
       alignItems: multiline ? "flex-start" : "center",
-      borderWidth: 1,
-      borderRadius: radius.lg,
-      backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.cardBg,
-      paddingHorizontal: spacing.md - 2,
-      minHeight: multiline ? 100 : 58,
+      borderWidth: 1.25,
+      borderRadius: 14,
+      backgroundColor: isDark ? c.surfaceMuted : KANKREG_PALETTE.paper,
+      paddingHorizontal: spacing.md,
+      minHeight: multiline ? 108 : 56,
       ...Platform.select({
         web: {
           transition: "border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease",
@@ -238,11 +243,12 @@ function createStyles(c, isDark, multiline) {
       }),
     },
     fieldFocused: {
+      backgroundColor: isDark ? c.surface : "#FFFEFA",
       ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 0 0 4px rgba(52, 211, 153, 0.18), 0 10px 22px rgba(0,0,0,0.34)"
-            : "0 0 0 4px rgba(31, 92, 71, 0.16), 0 10px 22px rgba(22, 69, 51, 0.1)",
+            ? "0 0 0 3px rgba(220, 172, 116, 0.22), 0 8px 20px rgba(0,0,0,0.28)"
+            : "0 0 0 3px rgba(220, 172, 116, 0.28), 0 8px 20px rgba(36, 68, 36, 0.08)",
         },
         default: {},
       }),

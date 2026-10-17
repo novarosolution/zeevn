@@ -3,16 +3,15 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { FONT_BODY_SEMIBOLD, FONT_PRICE } from "../../theme/typographyRoles";
+import { KANKREG_PALETTE, ZEEVAN_GOLD, ZEEVAN_GREEN } from "../../theme/kankregWeb";
+import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import { formatINR } from "../../utils/currency";
 import { getProductThumbImageUri } from "../../utils/image";
 import ProgressiveProductImage from "../ui/ProgressiveProductImage";
 import { CART_UI, fillProductScreen } from "../../content/appContent";
 import { fonts, spacing } from "../../theme/tokens";
-import { platformShadow } from "../../theme/shadowPlatform";
 
-/** Premium cart line — product thumb, qty stepper, line total. */
+/** Premium cart line — refined thumb, soft qty stepper, clear line total. */
 export default function KankregCartRow({
   item,
   index = 0,
@@ -24,17 +23,17 @@ export default function KankregCartRow({
 }) {
   const { colors: c, isDark } = useTheme();
   const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
-  const grad = ["#f5ead0", "#ebe2d0", "#e8dcc8"];
+  const grad = ["#F5EAD8", "#EBE2D0", "#E4D8C4"];
   const unitPrice = Number(item?.price) || 0;
   const qty = Math.max(1, Number(item?.quantity) || 1);
   const lineTotal = unitPrice * qty;
   const variant = String(item?.variantLabel || item?.unit || "").trim();
   const imageUri = item?.image ? String(item.image) : "";
   const thumbPreview = getProductThumbImageUri(imageUri);
+  const inkIcon = isDark ? "rgba(250,248,244,0.75)" : ZEEVAN_GREEN.deep;
 
   return (
     <View style={[styles.row, embedded && styles.rowEmbedded, showDivider && styles.rowDivider]}>
-      {!embedded ? <View style={styles.accentBar} pointerEvents="none" /> : null}
       <View style={styles.topRow}>
         <View style={styles.thumbWrap}>
           {imageUri ? (
@@ -44,7 +43,7 @@ export default function KankregCartRow({
               style={styles.thumbImage}
               contentFit="cover"
               priority="normal"
-              rounded={12}
+              rounded={14}
             />
           ) : (
             <LinearGradient colors={grad} style={styles.thumbGrad} />
@@ -76,29 +75,28 @@ export default function KankregCartRow({
           <Pressable
             onPress={onDecrease}
             style={({ pressed }) => [styles.qtyBtn, pressed && styles.qtyBtnPressed]}
-            hitSlop={6}
+            hitSlop={8}
             accessibilityLabel="Decrease quantity"
           >
-            <Ionicons name="remove" size={15} color="#fff" />
+            <Ionicons name="remove" size={16} color={inkIcon} />
           </Pressable>
           <Text style={styles.qtyNum}>{qty}</Text>
           <Pressable
             onPress={onIncrease}
             style={({ pressed }) => [styles.qtyBtn, pressed && styles.qtyBtnPressed]}
-            hitSlop={6}
+            hitSlop={8}
             accessibilityLabel="Increase quantity"
           >
-            <Ionicons name="add" size={15} color="#fff" />
+            <Ionicons name="add" size={16} color={inkIcon} />
           </Pressable>
         </View>
         {onRemove ? (
           <Pressable
             onPress={onRemove}
-            style={({ pressed }) => [styles.removeBtn, pressed && { opacity: 0.7 }]}
+            style={({ pressed }) => [styles.removeBtn, pressed && { opacity: 0.65 }]}
             hitSlop={8}
             accessibilityLabel={CART_UI.removeItem}
           >
-            <Ionicons name="trash-outline" size={14} color={isDark ? c.textMuted : KANKREG_PALETTE.inkFaint} />
             <Text style={styles.removeText}>{CART_UI.removeItem}</Text>
           </Pressable>
         ) : null}
@@ -108,33 +106,25 @@ export default function KankregCartRow({
 }
 
 function createStyles(c, isDark) {
-  const cardBg = isDark ? c.surface : "#FFFEFA";
-  const border = isDark ? c.border : KANKREG_PALETTE.line;
-
   return StyleSheet.create({
     row: {
       flexDirection: "column",
-      gap: 10,
-      padding: 12,
+      gap: 14,
+      paddingVertical: 14,
+      paddingHorizontal: 14,
       marginBottom: 12,
-      borderRadius: 16,
+      borderRadius: 18,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: border,
-      backgroundColor: cardBg,
+      borderColor: isDark ? c.border : "rgba(36, 68, 36, 0.1)",
+      backgroundColor: isDark ? c.surface : "#FFFEFA",
       overflow: "hidden",
-      ...platformShadow({
+      ...Platform.select({
         web: {
           boxShadow: isDark
-            ? "0 10px 28px rgba(0,0,0,0.22)"
-            : "0 8px 22px rgba(22, 69, 51, 0.07), inset 0 1px 0 rgba(255,255,255,0.92)",
+            ? "0 8px 24px rgba(0,0,0,0.2)"
+            : "0 10px 28px -18px rgba(36, 68, 36, 0.18)",
         },
-        ios: {
-          shadowColor: "#3D2A12",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: isDark ? 0.14 : 0.07,
-          shadowRadius: 12,
-        },
-        android: { elevation: 3 },
+        default: {},
       }),
     },
     rowEmbedded: {
@@ -142,41 +132,33 @@ function createStyles(c, isDark) {
       borderRadius: 0,
       borderWidth: 0,
       backgroundColor: "transparent",
+      paddingHorizontal: 16,
+      paddingVertical: 16,
       ...Platform.select({
         web: { boxShadow: "none" },
-        ios: { shadowOpacity: 0, shadowRadius: 0 },
-        android: { elevation: 0 },
         default: {},
       }),
     },
     rowDivider: {
       borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : KANKREG_PALETTE.line,
-      paddingBottom: 14,
+      borderBottomColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(36, 68, 36, 0.1)",
       marginBottom: 0,
     },
     topRow: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: 12,
+      gap: 14,
       width: "100%",
     },
-    accentBar: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 2,
-      backgroundColor: isDark ? "rgba(52, 211, 153, 0.55)" : KANKREG_PALETTE.gold,
-    },
     thumbWrap: {
-      width: 72,
-      height: 72,
-      borderRadius: 12,
+      width: 80,
+      height: 80,
+      borderRadius: 14,
       overflow: "hidden",
       flexShrink: 0,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(52, 211, 153, 0.2)" : "rgba(31, 92, 71, 0.22)",
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(220,172,116,0.28)" : "rgba(220, 172, 116, 0.35)",
+      backgroundColor: isDark ? "rgba(255,255,255,0.04)" : KANKREG_PALETTE.paper2,
     },
     thumbImage: {
       width: "100%",
@@ -188,44 +170,43 @@ function createStyles(c, isDark) {
     body: {
       flex: 1,
       minWidth: 0,
+      gap: 6,
+      paddingTop: 2,
     },
     titleRow: {
       flexDirection: "row",
       alignItems: "flex-start",
       justifyContent: "space-between",
-      gap: 10,
+      gap: 12,
       width: "100%",
     },
     name: {
       flex: 1,
       minWidth: 0,
-      fontFamily: FONT_BODY_SEMIBOLD,
-      fontSize: 14,
-      lineHeight: 18,
-      fontWeight: "600",
+      fontFamily: FONT_HEADING,
+      fontSize: 16,
+      lineHeight: 22,
       color: isDark ? c.textPrimary : KANKREG_PALETTE.ink,
       letterSpacing: -0.2,
     },
     variantPill: {
       alignSelf: "flex-start",
-      marginTop: 5,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: 999,
-      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(31, 92, 71, 0.08)",
+      paddingHorizontal: 9,
+      paddingVertical: 4,
+      borderRadius: 8,
+      backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(92, 104, 52, 0.08)",
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? c.border : "rgba(31, 92, 71, 0.15)",
+      borderColor: isDark ? c.border : "rgba(92, 104, 52, 0.14)",
     },
     variantText: {
       fontFamily: fonts.semibold,
-      fontSize: 10,
+      fontSize: 11,
       color: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft,
-      letterSpacing: 0.3,
+      letterSpacing: 0.2,
     },
     unitHint: {
-      marginTop: 4,
       fontFamily: fonts.regular,
-      fontSize: 10,
+      fontSize: 12,
       color: isDark ? c.textMuted : KANKREG_PALETTE.inkFaint,
     },
     actionsRow: {
@@ -233,62 +214,61 @@ function createStyles(c, isDark) {
       alignItems: "center",
       justifyContent: "space-between",
       width: "100%",
+      paddingTop: 2,
     },
     qtyPill: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 4,
-      paddingHorizontal: 4,
-      paddingVertical: 4,
-      borderRadius: 999,
-      backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(25, 20, 15, 0.04)",
+      gap: 2,
+      padding: 3,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(36, 68, 36, 0.14)",
+      backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(252, 248, 240, 0.95)",
     },
     qtyBtn: {
-      width: 30,
-      height: 30,
-      borderRadius: 15,
-      backgroundColor:
-        Platform.OS === "web"
-          ? isDark
-            ? "rgba(255,255,255,0.12)"
-            : KANKREG_PALETTE.green
-          : isDark
-            ? c.primary
-            : KANKREG_PALETTE.ink,
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "#fff",
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(36, 68, 36, 0.1)",
       alignItems: "center",
       justifyContent: "center",
+      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
     },
     qtyBtnPressed: {
-      opacity: 0.85,
+      opacity: 0.8,
+      backgroundColor: isDark ? "rgba(168,184,108,0.18)" : ZEEVAN_GOLD.soft,
     },
     qtyNum: {
-      minWidth: 24,
+      minWidth: 28,
       textAlign: "center",
       fontFamily: fonts.bold,
-      fontSize: 13,
+      fontSize: 14,
       color: isDark ? c.textPrimary : KANKREG_PALETTE.ink,
     },
     removeBtn: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 4,
-      paddingVertical: 4,
-      paddingHorizontal: 2,
+      paddingVertical: 8,
+      paddingHorizontal: 4,
     },
     removeText: {
-      fontFamily: fonts.semibold,
-      fontSize: 10,
+      fontFamily: fonts.medium,
+      fontSize: 13,
       color: isDark ? c.textMuted : KANKREG_PALETTE.inkFaint,
-      letterSpacing: 0.2,
+      letterSpacing: 0.15,
+      textDecorationLine: "underline",
+      textDecorationColor: isDark ? "rgba(255,255,255,0.25)" : "rgba(138, 132, 104, 0.45)",
     },
     lineTotal: {
       flexShrink: 0,
       fontFamily: FONT_PRICE,
       fontSize: 16,
       fontWeight: "600",
-      color: isDark ? c.textPrimary : KANKREG_PALETTE.ink,
-      letterSpacing: -0.2,
+      color: isDark ? c.textPrimary : ZEEVAN_GREEN.deep,
+      letterSpacing: -0.25,
       textAlign: "right",
+      paddingTop: 2,
     },
   });
 }

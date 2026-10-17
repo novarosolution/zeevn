@@ -24,7 +24,6 @@ import { useTheme } from "../context/ThemeContext";
 import {
   customerPanel,
   customerScrollFill,
-  FIGMA_STICKY_FOOTER_HEIGHT,
 } from "../theme/screenLayout";
 import { fonts, layout, radius, semanticRadius, spacing, typography } from "../theme/tokens";
 import { formatINR } from "../utils/currency";
@@ -209,7 +208,7 @@ export default function CartScreen({ navigation, route }) {
           scrollVariant="inner"
           style={customerScrollFill}
           showFooter={false}
-          stickyFooterExtra={figmaStickyPay ? FIGMA_STICKY_FOOTER_HEIGHT : 0}
+          stickyFooterExtra={0}
         >
           <KankregCustomerPageHeader
             navigation={navigation}
@@ -457,7 +456,7 @@ export default function CartScreen({ navigation, route }) {
         style={styles.scrollFill}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        stickyFooterExtra={figmaStickyPay ? FIGMA_STICKY_FOOTER_HEIGHT : 0}
+        stickyFooterExtra={0}
       >
         {isCheckoutFlow && kankregWebSplit ? (
           <KankregUnifiedPageHeader
@@ -697,7 +696,8 @@ export default function CartScreen({ navigation, route }) {
 </KankregScrollPage>
       {figmaStickyPay ? (
         <KankregCartPayBar
-          mode="sticky"
+          mode="inline"
+          compact
           subtotal={totalAmount}
           discount={discountAmount}
           discountLabel={appliedCoupon?.code ? `Coupon ${appliedCoupon.code}` : undefined}
@@ -718,11 +718,15 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   return StyleSheet.create({
   screen: {
     flex: 1,
+    flexDirection: "column",
     width: "100%",
     alignSelf: "center",
     maxWidth: Platform.select({ web: layout.maxContentWidth + 96, default: "100%" })},
   scrollFill: {
     flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    minHeight: 0,
     width: "100%"},
   cartGridRow: {
     flexDirection: "row",
@@ -1249,25 +1253,22 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   },
   bagHeader: {
     marginHorizontal: FIGMA.gutter,
-    marginBottom: spacing.sm,
-    padding: spacing.md,
-    borderRadius: radius.xl,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.border : ALCHEMY.pillInactive,
-    borderTopWidth: 2,
-    borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
-    backgroundColor: isDark ? c.surfaceMuted : "rgba(255, 253, 249, 0.96)",
-    ...shadowPremium,
+    marginBottom: 0,
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+    borderRadius: 0,
+    borderWidth: 0,
+    backgroundColor: "transparent",
   },
   bagSection: {
     width: "100%",
     flexDirection: "column",
-    gap: spacing.sm,
+    gap: spacing.md,
     marginBottom: spacing.md,
   },
   bagHeaderTop: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "flex-end",
     justifyContent: "space-between",
     gap: spacing.md,
     width: "100%",
@@ -1276,18 +1277,17 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     flex: 1,
     minWidth: 0,
     flexDirection: "column",
-    gap: spacing.sm,
+    gap: 6,
   },
   bagSubtotalChip: {
     flexShrink: 0,
     alignItems: "flex-end",
     gap: 2,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: radius.lg,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.primaryBorder : "rgba(188, 144, 92, 0.28)",
-    backgroundColor: isDark ? "rgba(52, 211, 153, 0.08)" : "rgba(255, 251, 235, 0.9)",
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    borderRadius: 0,
+    borderWidth: 0,
+    backgroundColor: "transparent",
   },
   bagSubtotalChipAtelier: {
     borderWidth: 0,
@@ -1298,34 +1298,38 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
   },
   bagSubtotalLabel: {
     fontFamily: fonts.bold,
-    fontSize: 9,
-    letterSpacing: 0.8,
+    fontSize: 10,
+    letterSpacing: 1,
     textTransform: "uppercase",
     color: c.textMuted,
   },
   itemsPanel: {
     marginHorizontal: FIGMA.gutter,
-    borderRadius: radius.xl,
+    borderRadius: 18,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? c.border : ALCHEMY.pillInactive,
+    borderColor: isDark ? c.border : "rgba(36, 68, 36, 0.1)",
     borderTopWidth: 2,
-    borderTopColor: isDark ? c.primaryBorder : ALCHEMY.gold,
-    backgroundColor: isDark ? c.surface : "rgba(255, 254, 252, 0.98)",
+    borderTopColor: isDark ? "rgba(220,172,116,0.45)" : ALCHEMY.gold,
+    backgroundColor: isDark ? c.surface : "#FFFEFA",
     overflow: "hidden",
-    paddingVertical: spacing.xs,
-    ...shadowPremium,
+    paddingVertical: 4,
+    ...Platform.select({
+      web: { boxShadow: "0 14px 36px -22px rgba(36, 68, 36, 0.22)" },
+      default: shadowPremium,
+    }),
   },
   itemsSectionLabel: {
     fontFamily: FONT_HEADING,
-    fontSize: typography.body + 1,
+    fontSize: 20,
+    lineHeight: 26,
     color: c.textPrimary,
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
   bagSubtotalPreview: {
     fontFamily: FONT_PRICE,
-    fontSize: typography.body,
+    fontSize: 18,
     color: isDark ? c.primaryBright : ALCHEMY.brown,
-    letterSpacing: -0.2,
+    letterSpacing: -0.3,
   },
   trustStripInline: {
     flexDirection: "row",

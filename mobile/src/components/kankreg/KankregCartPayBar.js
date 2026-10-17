@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { KANKREG_PALETTE, ZEEVAN_GOLD, ZEEVAN_GREEN } from "../../theme/kankregWeb";
 import { FONT_PRICE } from "../../theme/typographyRoles";
 import { customerFloatingNavOffset } from "../../theme/screenLayout";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
@@ -14,30 +14,28 @@ import { fonts, spacing } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 
 const barShadowLight = platformShadow({
-  web: { boxShadow: "0 -10px 32px rgba(22, 69, 51, 0.1)" },
+  web: { boxShadow: "0 -6px 20px rgba(36, 68, 36, 0.08)" },
   ios: {
-    shadowColor: "#3D2A12",
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 14,
+    shadowColor: "#244424",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
   },
-  android: { elevation: 10 },
+  android: { elevation: 8 },
 });
 
 const barShadowDark = platformShadow({
-  web: { boxShadow: "0 -10px 32px rgba(0, 0, 0, 0.38)" },
+  web: { boxShadow: "0 -6px 20px rgba(0, 0, 0, 0.35)" },
   ios: {
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.28,
-    shadowRadius: 14,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
   },
-  android: { elevation: 10 },
+  android: { elevation: 8 },
 });
 
-/**
- * Premium cart sticky footer — gold CTA, clear price breakdown.
- */
+/** Compact checkout pay bar — single flex row, does not dominate the screen. */
 export default function KankregCartPayBar({
   subtotal,
   discount = 0,
@@ -47,8 +45,8 @@ export default function KankregCartPayBar({
   onPress,
   disabled = false,
   loading = false,
-  mode = "sticky",
-  compact = false,
+  mode = "inline",
+  compact = true,
   style,
   itemCount = 0,
 }) {
@@ -56,10 +54,26 @@ export default function KankregCartPayBar({
   const insets = useSafeAreaInsets();
   const { showMobileWebTabBar } = useKankregLayout();
   const isSticky = mode === "sticky";
-  const showBreakdown = !compact;
   const dockBottom = customerFloatingNavOffset(insets, { mobileWebTabBar: showMobileWebTabBar });
-  const sheetBg = isDark ? "rgba(20, 17, 15, 0.97)" : "rgba(255, 253, 248, 0.98)";
+  const sheetBg = isDark ? "rgba(20, 17, 15, 0.98)" : "rgba(252, 248, 240, 0.98)";
   const barShadow = isDark ? barShadowDark : barShadowLight;
+
+  const shortCta = String(ctaLabel || CART_UI.payCta)
+    .replace(/\s*[·•].*$/, "")
+    .trim() || CART_UI.payCta;
+
+  const metaBits = [];
+  if (itemCount > 0) {
+    metaBits.push(
+      itemCount === 1
+        ? CART_UI.itemCount.replace("{count}", "1")
+        : CART_UI.itemCountPlural.replace("{count}", String(itemCount))
+    );
+  }
+  metaBits.push(CART_UI.shippingFree);
+  if (discount > 0) {
+    metaBits.push(`−${formatINR(discount)}`);
+  }
 
   return (
     <View
@@ -68,92 +82,73 @@ export default function KankregCartPayBar({
         barShadow,
         {
           backgroundColor: sheetBg,
-          borderTopColor: isDark ? "rgba(255,255,255,0.08)" : KANKREG_PALETTE.line,
+          borderTopColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(36, 68, 36, 0.1)",
+          paddingBottom: Math.max(insets.bottom, 10),
         },
-        isSticky && {
-          position: Platform.OS === "web" && showMobileWebTabBar ? "fixed" : "absolute",
-          left: 0,
-          right: 0,
-          bottom: dockBottom,
-          paddingBottom: Math.max(insets.bottom, 12),
-          zIndex: Platform.OS === "web" && showMobileWebTabBar ? 850 : 40,
-          ...(Platform.OS === "web" && showMobileWebTabBar
-            ? {
-                maxWidth: "100%",
-                marginHorizontal: "auto",
-                paddingHorizontal: 14,
-              }
-            : {}),
-        },
+        isSticky
+          ? {
+              position: Platform.OS === "web" && showMobileWebTabBar ? "fixed" : "absolute",
+              left: 0,
+              right: 0,
+              bottom: dockBottom,
+              zIndex: Platform.OS === "web" && showMobileWebTabBar ? 850 : 40,
+            }
+          : styles.barInline,
         style,
       ]}
     >
       <LinearGradient
-        colors={["rgba(52, 211, 153, 0)", KANKREG_PALETTE.gold, "rgba(52, 211, 153, 0)"]}
+        colors={["transparent", ZEEVAN_GOLD.base, "transparent"]}
         start={{ x: 0, y: 0.5 }}
         end={{ x: 1, y: 0.5 }}
         style={styles.hairline}
         pointerEvents="none"
       />
 
-      <View style={styles.contentCol}>
-        {showBreakdown ? (
-          <View style={styles.breakdownCol}>
-            <View style={styles.line}>
-              <Text style={[styles.meta, isDark && styles.metaDark]}>{CART_UI.stickySubtotalLabel}</Text>
-              <Text style={[styles.meta, isDark && styles.metaDark]}>{formatINR(subtotal)}</Text>
-            </View>
-            <View style={styles.line}>
-              <Text style={[styles.meta, isDark && styles.metaDark]}>{CART_UI.shippingLabel}</Text>
-              <Text style={[styles.free, isDark && styles.freeDark]}>{CART_UI.shippingFree}</Text>
-            </View>
-            {discount > 0 ? (
-              <View style={styles.line}>
-                <Text style={[styles.meta, styles.discountMeta, isDark && styles.discountMetaDark]}>{discountLabel || "Discount"}</Text>
-                <Text style={[styles.meta, styles.discountMeta, isDark && styles.discountMetaDark]}>−{formatINR(discount)}</Text>
-              </View>
-            ) : null}
-          </View>
-        ) : null}
-
-        <View style={styles.totalRow}>
-          <View style={styles.totalCopy}>
-            <Text style={[styles.totalLabel, isDark && { color: KANKREG_PALETTE.paper }]}>
-              {CART_UI.totalLabel}
-            </Text>
-            {itemCount > 0 ? (
-              <Text style={[styles.itemHint, isDark && styles.itemHintDark]}>
-                {itemCount === 1 ? CART_UI.itemCount.replace("{count}", "1") : CART_UI.itemCountPlural.replace("{count}", String(itemCount))}
-              </Text>
-            ) : null}
-          </View>
-          <Text style={[styles.totalValue, isDark && { color: KANKREG_PALETTE.paper }]}>{formatINR(total)}</Text>
+      <View style={styles.row}>
+        <View style={styles.totalCol}>
+          <Text style={[styles.totalLabel, isDark && styles.totalLabelDark]}>{CART_UI.totalLabel}</Text>
+          <Text style={[styles.totalValue, isDark && styles.totalValueDark]} numberOfLines={1}>
+            {formatINR(total)}
+          </Text>
+          <Text style={[styles.metaLine, isDark && styles.metaLineDark]} numberOfLines={1}>
+            {metaBits.join(" · ")}
+          </Text>
         </View>
+
+        <Pressable
+          onPress={onPress}
+          disabled={disabled || loading}
+          style={({ pressed, hovered }) => [
+            styles.ctaWrap,
+            (pressed || disabled) && { opacity: 0.88 },
+            Platform.OS === "web" && hovered && !disabled && { opacity: 0.94 },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={ctaLabel || shortCta}
+        >
+          <LinearGradient
+            colors={disabled || loading ? ["#9a9a9a", "#7a7a7a"] : [ZEEVAN_GREEN.bright, ZEEVAN_GREEN.deep]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.cta}
+          >
+            <Text style={styles.ctaText} numberOfLines={1}>
+              {loading ? "…" : shortCta}
+            </Text>
+            {!loading && !disabled ? (
+              <Ionicons name="arrow-forward" size={15} color="#FAF8F4" />
+            ) : null}
+          </LinearGradient>
+        </Pressable>
       </View>
 
-      <Pressable
-        onPress={onPress}
-        disabled={disabled || loading}
-        style={({ pressed, hovered }) => [
-          styles.ctaWrap,
-          (pressed || disabled) && { opacity: 0.88 },
-          Platform.OS === "web" && hovered && !disabled && { opacity: 0.94 },
-        ]}
-        accessibilityRole="button"
-        accessibilityLabel={ctaLabel}
-      >
-        <LinearGradient
-          colors={disabled || loading ? ["#9a9a9a", "#7a7a7a"] : ["#788844", "#244424"]}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={styles.cta}
-        >
-          <Text style={styles.ctaText}>{loading ? "Please wait…" : ctaLabel}</Text>
-          {!loading && !disabled ? (
-            <Ionicons name="arrow-forward" size={16} color="#FFF9EC" style={styles.ctaIcon} />
-          ) : null}
-        </LinearGradient>
-      </Pressable>
+      {!compact && discount > 0 && discountLabel ? (
+        <Text style={[styles.discountNote, isDark && styles.metaLineDark]} numberOfLines={1}>
+          {discountLabel}: −{formatINR(discount)}
+          {subtotal != null ? ` · ${CART_UI.stickySubtotalLabel} ${formatINR(subtotal)}` : ""}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -161,119 +156,93 @@ export default function KankregCartPayBar({
 const styles = StyleSheet.create({
   bar: {
     flexDirection: "column",
-    gap: spacing.sm,
-    paddingTop: spacing.md,
+    width: "100%",
+    flexShrink: 0,
+    paddingTop: 10,
     paddingHorizontal: spacing.md,
     borderTopWidth: StyleSheet.hairlineWidth,
-    width: "100%",
-  },
-  contentCol: {
-    flexDirection: "column",
     gap: 6,
-    width: "100%",
   },
-  breakdownCol: {
-    flexDirection: "column",
-    gap: 4,
-    width: "100%",
+  barInline: {
+    position: "relative",
+    zIndex: 1,
   },
   hairline: {
     position: "absolute",
     top: 0,
-    left: "10%",
-    right: "10%",
+    left: "18%",
+    right: "18%",
     height: 1,
   },
-  line: {
+  row: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 12,
     width: "100%",
   },
-  meta: {
-    fontFamily: fonts.regular,
-    fontSize: 11,
-    color: KANKREG_PALETTE.inkSoft,
-  },
-  metaDark: {
-    color: "rgba(245, 239, 228, 0.72)",
-  },
-  free: {
-    fontFamily: fonts.bold,
-    fontSize: 11,
-    color: KANKREG_PALETTE.green,
-    letterSpacing: 0.4,
-  },
-  freeDark: {
-    color: "#A8B86C",
-  },
-  discountMeta: {
-    color: KANKREG_PALETTE.green,
-  },
-  discountMetaDark: {
-    color: "#A8B86C",
-  },
-  totalRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-    width: "100%",
-    paddingTop: 2,
-  },
-  totalCopy: {
+  totalCol: {
     flex: 1,
     minWidth: 0,
+    justifyContent: "center",
   },
   totalLabel: {
     fontFamily: fonts.bold,
-    fontSize: 10,
-    letterSpacing: 0.8,
+    fontSize: 9,
+    letterSpacing: 1.1,
     textTransform: "uppercase",
     color: KANKREG_PALETTE.inkFaint,
+    marginBottom: 1,
   },
-  itemHint: {
-    fontFamily: fonts.medium,
-    fontSize: 10,
-    color: KANKREG_PALETTE.goldDeep,
-    marginTop: 2,
-  },
-  itemHintDark: {
-    color: "#E8BC84",
+  totalLabelDark: {
+    color: "rgba(250,248,244,0.5)",
   },
   totalValue: {
     fontFamily: FONT_PRICE,
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "600",
-    color: KANKREG_PALETTE.ink,
+    color: ZEEVAN_GREEN.deep,
     letterSpacing: -0.3,
   },
+  totalValueDark: {
+    color: KANKREG_PALETTE.paper,
+  },
+  metaLine: {
+    marginTop: 2,
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: ZEEVAN_GOLD.deep,
+  },
+  metaLineDark: {
+    color: "rgba(232,188,132,0.85)",
+  },
+  discountNote: {
+    fontFamily: fonts.regular,
+    fontSize: 10,
+    color: KANKREG_PALETTE.inkSoft,
+  },
   ctaWrap: {
-    width: "100%",
-    borderRadius: 999,
+    flexShrink: 0,
+    borderRadius: 12,
     overflow: "hidden",
     ...platformShadow({
-      web: { boxShadow: "0 10px 24px rgba(160, 116, 26, 0.28)" },
+      web: { boxShadow: "0 8px 18px -8px rgba(36, 68, 36, 0.4)" },
       default: {},
     }),
   },
   cta: {
-    paddingVertical: 14,
-    paddingHorizontal: spacing.lg,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    borderRadius: 999,
+    gap: 6,
+    minHeight: 44,
+    minWidth: 118,
   },
   ctaText: {
     fontFamily: fonts.bold,
-    fontSize: 14,
-    color: "#FFF9EC",
-    letterSpacing: 0.2,
-  },
-  ctaIcon: {
-    marginTop: 1,
+    fontSize: 13,
+    color: "#FAF8F4",
+    letterSpacing: 0.15,
   },
 });

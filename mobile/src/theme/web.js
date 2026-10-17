@@ -1,5 +1,4 @@
 import { Platform } from "react-native";
-import { KANKREG_CHROME } from "./kankregWeb";
 import { buildSiteBackgroundCss, getSiteBackgroundUri, SITE_BG_FALLBACK } from "./siteBackground";
 import {
   WEB_FONT_STACK_BODY,

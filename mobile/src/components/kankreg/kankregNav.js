@@ -8,6 +8,7 @@ import {
 
 export const ADMIN_ROUTES = new Set([
   "AdminDashboard",
+  "AdminDelivery",
   "AdminProducts",
   "AdminInventory",
   "AdminAddProduct",

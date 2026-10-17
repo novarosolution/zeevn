@@ -2,6 +2,7 @@
 export { default as MyOrdersScreen } from "../screens/MyOrdersScreen";
 export { default as DeliveryDashboardScreen } from "../screens/DeliveryDashboardScreen";
 export { default as AdminDashboardScreen } from "../screens/admin/AdminDashboardScreen";
+export { default as AdminDeliveryScreen } from "../screens/admin/AdminDeliveryScreen";
 export { default as AdminProductsScreen } from "../screens/admin/AdminProductsScreen";
 export { default as AdminAddProductScreen } from "../screens/admin/AdminAddProductScreen";
 export { default as AdminOrdersScreen } from "../screens/admin/AdminOrdersScreen";

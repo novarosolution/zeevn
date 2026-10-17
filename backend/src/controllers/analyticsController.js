@@ -685,6 +685,122 @@ async function getAdminAnalytics(req, res, next) {
   }
 }
 
+/**
+ * Live ops command-center summary — open runs, accept queue, low stock.
+ */
+async function getAdminOpsSummary(req, res, next) {
+  try {
+    const LOW_STOCK_MAX = 5;
+    const LIVE = ["ready_for_pickup", "shipped", "out_for_delivery"];
+    const OPEN = [
+      "pending",
+      "confirmed",
+      "preparing",
+      "ready_for_pickup",
+      "shipped",
+      "out_for_delivery",
+      "paid",
+    ];
+
+    const [
+      openOrders,
+      pendingAccept,
+      outForDelivery,
+      declinedUnassigned,
+      lowStock,
+      outOfStock,
+      partnersOnline,
+      attentionOrders,
+    ] = await Promise.all([
+      Order.countDocuments({ status: { $in: OPEN } }),
+      Order.countDocuments({
+        assignedDeliveryUser: { $ne: null },
+        deliveryAcceptStatus: "pending",
+        status: { $in: LIVE },
+      }),
+      Order.countDocuments({ status: "out_for_delivery" }),
+      Order.countDocuments({
+        deliveryAcceptStatus: "declined",
+        assignedDeliveryUser: null,
+        status: { $in: LIVE },
+      }),
+      Product.countDocuments({
+        inStock: true,
+        stockQty: { $gt: 0, $lte: LOW_STOCK_MAX },
+      }),
+      Product.countDocuments({
+        $or: [{ inStock: false }, { stockQty: { $lte: 0 } }],
+      }),
+      User.countDocuments({
+        isDeliveryPartner: true,
+        "deliveryLiveLocation.updatedAt": {
+          $gte: new Date(Date.now() - 15 * 60 * 1000),
+        },
+      }),
+      Order.find({
+        $or: [
+          {
+            deliveryAcceptStatus: "pending",
+            assignedDeliveryUser: { $ne: null },
+            status: { $in: LIVE },
+          },
+          {
+            deliveryAcceptStatus: "declined",
+            assignedDeliveryUser: null,
+            status: { $in: LIVE },
+          },
+          {
+            assignedDeliveryUser: null,
+            status: { $in: LIVE },
+          },
+        ],
+      })
+        .sort({ updatedAt: -1 })
+        .limit(8)
+        .select(
+          "status totalPrice createdAt updatedAt shippingAddress deliveryAcceptStatus deliveryDeclineReason assignedDeliveryUser deliveryZoneName"
+        )
+        .populate("user", "name email")
+        .populate("assignedDeliveryUser", "name phone")
+        .lean(),
+    ]);
+
+    res.json({
+      kpis: {
+        openOrders,
+        pendingAccept,
+        outForDelivery,
+        declinedUnassigned,
+        lowStock,
+        outOfStock,
+        partnersOnline,
+      },
+      attention: attentionOrders.map((o) => ({
+        _id: o._id,
+        status: o.status,
+        totalPrice: o.totalPrice,
+        deliveryAcceptStatus: o.deliveryAcceptStatus || "none",
+        deliveryDeclineReason: o.deliveryDeclineReason || "",
+        deliveryZoneName: o.deliveryZoneName || "",
+        customerName: o.user?.name || o.shippingAddress?.fullName || "Guest",
+        partnerName: o.assignedDeliveryUser?.name || "",
+        updatedAt: o.updatedAt,
+        reason:
+          o.deliveryAcceptStatus === "pending"
+            ? "Waiting for rider accept"
+            : o.deliveryAcceptStatus === "declined" && !o.assignedDeliveryUser
+              ? "Declined — needs reassign"
+              : !o.assignedDeliveryUser
+                ? "No rider assigned"
+                : "Needs attention",
+      })),
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getAdminAnalytics,
+  getAdminOpsSummary,
 };

@@ -89,6 +89,11 @@ export const AdminDashboardScreen = createLazyScreenDevSafe(
   () => import("../screens/admin/AdminDashboardScreen"),
   { screenName: "AdminDashboardScreen" }
 );
+export const AdminDeliveryScreen = createLazyScreenDevSafe(
+  () => require("../screens/admin/AdminDeliveryScreen").default,
+  () => import("../screens/admin/AdminDeliveryScreen"),
+  { screenName: "AdminDeliveryScreen" }
+);
 export const AdminProductsScreen = createLazyScreenDevSafe(
   () => require("../screens/admin/AdminProductsScreen").default,
   () => import("../screens/admin/AdminProductsScreen"),

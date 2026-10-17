@@ -86,6 +86,22 @@ export const fetchAdminAnalytics = (_token, query = {}) => {
   return apiGet(`/admin/analytics${qs ? `?${qs}` : ""}`);
 };
 
+/** Live Ops command-center KPIs + attention queue. */
+export const fetchAdminOpsSummary = (_token) => apiGet("/admin/ops-summary");
+
+export const fetchAdminDeliveryZones = (_token) => apiGet("/admin/delivery-zones");
+
+export const createAdminDeliveryZone = (_token, payload) =>
+  apiPost("/admin/delivery-zones", payload);
+
+export const updateAdminDeliveryZone = (_token, zoneId, payload) =>
+  apiPatch(`/admin/delivery-zones/${zoneId}`, payload);
+
+export const deleteAdminDeliveryZone = (_token, zoneId) =>
+  apiDelete(`/admin/delivery-zones/${zoneId}`);
+
+export const fetchAdminDeliveryPartners = (_token) => apiGet("/admin/delivery-partners");
+
 export const fetchAdminHomeView = (_token) => apiGet("/admin/home-view");
 
 export const updateAdminHomeView = (_token, payload) => apiPut("/admin/home-view", payload);

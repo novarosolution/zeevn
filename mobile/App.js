@@ -94,6 +94,7 @@ const linking = {
       Support: "support",
       DeliveryDashboard: "delivery/dashboard",
       AdminDashboard: "admin",
+      AdminDelivery: "admin/delivery",
       AdminProducts: "admin/products",
       AdminInventory: "admin/inventory",
       AdminAddProduct: "admin/products/new",

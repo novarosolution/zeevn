@@ -13,40 +13,42 @@ import AdminBackLink from "../admin/AdminBackLink";
 import AdminMobileNav from "../admin/AdminMobileNav";
 import AdminTopBar from "../admin/AdminTopBar";
 
+/** Blinkit-style ops desk IA — Live Ops · Catalogue · Growth · People */
 const NAV_GROUPS = [
   {
-    key: "overview",
-    label: "Overview",
+    key: "ops",
+    label: "Live Ops",
     links: [
-      { key: "AdminDashboard", label: "Dashboard", icon: "grid-outline" },
+      { key: "AdminDashboard", label: "Command", icon: "flash-outline" },
       { key: "AdminOrders", label: "Orders", icon: "receipt-outline" },
+      { key: "AdminDelivery", label: "Zones & riders", icon: "bicycle-outline" },
     ],
   },
   {
     key: "catalog",
-    label: "Catalog",
+    label: "Catalogue",
     links: [
       { key: "AdminProducts", label: "Products", icon: "cube-outline" },
-      { key: "AdminInventory", label: "Inventory", icon: "layers-outline" },
+      { key: "AdminInventory", label: "Stock desk", icon: "layers-outline" },
       { key: "AdminAnalytics", label: "Analytics", icon: "bar-chart-outline" },
     ],
   },
   {
-    key: "marketing",
-    label: "Marketing",
+    key: "growth",
+    label: "Growth",
     links: [
-      { key: "AdminUsers", label: "Users", icon: "people-outline" },
       { key: "AdminCoupons", label: "Coupons", icon: "pricetag-outline" },
       { key: "AdminRewards", label: "Rewards", icon: "gift-outline" },
-      { key: "AdminHomeView", label: "Home View", icon: "home-outline" },
+      { key: "AdminHomeView", label: "Store & home", icon: "storefront-outline" },
+      { key: "AdminNotifications", label: "Notify", icon: "notifications-outline" },
     ],
   },
   {
-    key: "system",
-    label: "System",
+    key: "people",
+    label: "People",
     links: [
+      { key: "AdminUsers", label: "Users", icon: "people-outline" },
       { key: "AdminSupport", label: "Support", icon: "chatbubbles-outline" },
-      { key: "AdminNotifications", label: "Notify", icon: "notifications-outline" },
     ],
   },
 ];

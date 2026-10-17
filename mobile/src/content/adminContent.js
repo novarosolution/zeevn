@@ -11,8 +11,14 @@ export const ADMIN_GATE = {
 
 export const ADMIN_SCREEN_COPY = {
   dashboard: {
-    title: "Dashboard",
-    subtitle: "Store overview — revenue, orders, and recent activity",
+    title: "Command center",
+    subtitle: "Live ops — open runs, rider accepts, stock alerts",
+  },
+  delivery: {
+    title: "Zones & riders",
+    subtitle: "Delivery areas, fees, and partner GPS health",
+    emptyZones: "No delivery zones yet — seed or create one",
+    emptyPartners: "No delivery partners enabled",
   },
   products: {
     title: "Products",

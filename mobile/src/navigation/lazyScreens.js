@@ -29,6 +29,10 @@ export const AdminDashboardScreen = createLazyScreen(
   () => import("../screens/admin/AdminDashboardScreen"),
   { screenName: "AdminDashboardScreen" }
 );
+export const AdminDeliveryScreen = createLazyScreen(
+  () => import("../screens/admin/AdminDeliveryScreen"),
+  { screenName: "AdminDeliveryScreen" }
+);
 export const AdminProductsScreen = createLazyScreen(
   () => import("../screens/admin/AdminProductsScreen"),
   { screenName: "AdminProductsScreen" }

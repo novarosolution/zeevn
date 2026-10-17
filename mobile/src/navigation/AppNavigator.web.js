@@ -77,6 +77,7 @@ const ProtectedManageAddress = withAuthGuard(LazyScreens.ManageAddressScreen);
 const ProtectedSupport = withAuthGuard(LazyScreens.SupportScreen);
 const ProtectedDeliveryDashboard = withAuthGuard(LazyScreens.DeliveryDashboardScreen);
 const ProtectedAdminDashboard = withRoleGuard(LazyScreens.AdminDashboardScreen, (user) => Boolean(user?.isAdmin));
+const ProtectedAdminDelivery = withRoleGuard(LazyScreens.AdminDeliveryScreen, (user) => Boolean(user?.isAdmin));
 const ProtectedAdminProducts = withRoleGuard(LazyScreens.AdminProductsScreen, (user) => Boolean(user?.isAdmin));
 const ProtectedAdminInventory = withRoleGuard(LazyScreens.AdminInventoryScreen, (user) => Boolean(user?.isAdmin));
 const ProtectedAdminAddProduct = withRoleGuard(LazyScreens.AdminAddProductScreen, (user) => Boolean(user?.isAdmin));
@@ -141,6 +142,7 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
 
           <Stack.Group>
             <Stack.Screen name="AdminDashboard" component={ProtectedAdminDashboard} />
+            <Stack.Screen name="AdminDelivery" component={ProtectedAdminDelivery} />
             <Stack.Screen name="AdminProducts" component={ProtectedAdminProducts} />
             <Stack.Screen name="AdminInventory" component={ProtectedAdminInventory} />
             <Stack.Screen name="AdminAddProduct" component={ProtectedAdminAddProduct} />

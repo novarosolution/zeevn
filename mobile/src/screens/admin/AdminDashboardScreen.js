@@ -11,12 +11,16 @@ import AdminCategoryBar from "../../components/admin/AdminCategoryBar";
 import AdminRevenueBars from "../../components/admin/AdminRevenueBars";
 import AdminStatusPill, { orderStatusTone } from "../../components/admin/AdminStatusPill";
 import { useAuth } from "../../context/AuthContext";
-import { fetchAdminAnalytics, fetchAdminOrders } from "../../services/adminService";
+import {
+  fetchAdminAnalytics,
+  fetchAdminOpsSummary,
+  fetchAdminOrders,
+} from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
 import { adminTwoColAside, adminTwoColMain, adminTwoColStyle, useAdminCompactLayout } from "../../theme/adminLayout";
 import { formatOrderPublicRef } from "../../content/appContent";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { layout, spacing } from "../../theme/tokens";
+import { fonts, layout, spacing } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
 import { getOrderItemQty } from "../../utils/adminOrderHelpers";
 import { getOrderStatusLabel } from "../../utils/orderStatus";
@@ -58,6 +62,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [analytics, setAnalytics] = useState(null);
+  const [ops, setOps] = useState(null);
   const [recentOrders, setRecentOrders] = useState([]);
 
   const welcomeSub = useMemo(() => {
@@ -72,11 +77,13 @@ export default function AdminDashboardScreen({ navigation, route }) {
       else setLoading(true);
       setError("");
       try {
-        const [a, orders] = await Promise.all([
+        const [a, orders, opsSummary] = await Promise.all([
           fetchAdminAnalytics(token, { range: "30d" }),
           fetchAdminOrders(token),
+          fetchAdminOpsSummary(token).catch(() => null),
         ]);
         setAnalytics(a);
+        setOps(opsSummary);
         const sorted = [...(orders || [])].sort(
           (x, y) => new Date(y.createdAt || 0) - new Date(x.createdAt || 0)
         );
@@ -96,6 +103,18 @@ export default function AdminDashboardScreen({ navigation, route }) {
     loadDashboard();
   }, [user?.isAdmin, loadDashboard]);
 
+  const opsKpis = useMemo(() => {
+    const k = ops?.kpis || {};
+    return {
+      open: String(k.openOrders ?? "—"),
+      pendingAccept: String(k.pendingAccept ?? "—"),
+      out: String(k.outForDelivery ?? "—"),
+      lowStock: String(k.lowStock ?? "—"),
+      partnersOnline: String(k.partnersOnline ?? "—"),
+      needsReassign: String(k.declinedUnassigned ?? "—"),
+    };
+  }, [ops]);
+
   const kpis = useMemo(() => {
     const rev30 = analytics?.activity?.revenueLast30Days ?? analytics?.revenue?.total ?? 0;
     const orders30 = analytics?.activity?.ordersLast30Days ?? analytics?.totals?.orders ?? 0;
@@ -110,6 +129,8 @@ export default function AdminDashboardScreen({ navigation, route }) {
       refund: `${refundRate}%`,
     };
   }, [analytics]);
+
+  const attention = Array.isArray(ops?.attention) ? ops.attention : [];
 
   const chartData = useMemo(() => {
     const series = analytics?.trends?.last14Days || analytics?.trends?.last7Days;
@@ -208,13 +229,22 @@ export default function AdminDashboardScreen({ navigation, route }) {
           title={ADMIN_SCREEN_COPY.dashboard.title}
           subtitle={welcomeSub}
           headerRight={
-            <PremiumButton
-              label="Export"
-              iconLeft="download-outline"
-              variant="ghost"
-              size="sm"
-              onPress={() => navigation.navigate("AdminAnalytics")}
-            />
+            <View style={styles.headerActions}>
+              <PremiumButton
+                label="Zones"
+                iconLeft="bicycle-outline"
+                variant="ghost"
+                size="sm"
+                onPress={() => navigation.navigate("AdminDelivery")}
+              />
+              <PremiumButton
+                label="Analytics"
+                iconLeft="bar-chart-outline"
+                variant="ghost"
+                size="sm"
+                onPress={() => navigation.navigate("AdminAnalytics")}
+              />
+            </View>
           }
         >
           {error ? (
@@ -222,28 +252,72 @@ export default function AdminDashboardScreen({ navigation, route }) {
           ) : null}
 
           {loading ? (
-            <PremiumLoader caption="Loading dashboard…" />
+            <PremiumLoader caption="Loading command center…" />
           ) : (
             <>
               <SectionReveal preset="fade-up">
                 <AdminKpiGrid compact={compact}>
+                  <AdminKpiCard label="Open orders" value={opsKpis.open} />
+                  <AdminKpiCard label="Awaiting accept" value={opsKpis.pendingAccept} />
+                  <AdminKpiCard label="Out for delivery" value={opsKpis.out} />
+                  <AdminKpiCard label="Low stock" value={opsKpis.lowStock} />
+                  <AdminKpiCard label="Riders live GPS" value={opsKpis.partnersOnline} />
+                  <AdminKpiCard label="Need reassign" value={opsKpis.needsReassign} />
+                </AdminKpiGrid>
+              </SectionReveal>
+
+              <SectionReveal preset="fade-up" delay={40}>
+                <AdminPanel
+                  title="Needs attention"
+                  meta={attention.length ? `${attention.length} items` : "All clear"}
+                  action="All orders"
+                  onAction={() => navigation.navigate("AdminOrders")}
+                >
+                  {!attention.length ? (
+                    <Text style={[styles.muted, { color: c.textMuted }]}>
+                      No stuck accepts or unassigned live runs.
+                    </Text>
+                  ) : (
+                    attention.map((item) => (
+                      <PremiumButton
+                        key={String(item._id)}
+                        label={`${formatOrderPublicRef(item) || String(item._id).slice(-6)} · ${item.reason}`}
+                        variant="subtle"
+                        size="sm"
+                        fullWidth
+                        iconRight="chevron-forward-outline"
+                        onPress={() =>
+                          navigation.navigate("AdminOrderDetail", {
+                            orderId: String(item._id),
+                          })
+                        }
+                        style={styles.attentionBtn}
+                        textStyle={styles.attentionBtnText}
+                      />
+                    ))
+                  )}
+                </AdminPanel>
+              </SectionReveal>
+
+              <SectionReveal preset="fade-up" delay={60}>
+                <AdminKpiGrid compact={compact}>
                   <AdminKpiCard label="Revenue (30d)" value={kpis.revenue} />
                   <AdminKpiCard label="Orders (30d)" value={kpis.orders} />
                   <AdminKpiCard label="Avg. order" value={kpis.aov} />
-                  <AdminKpiCard label="Refund rate" value={kpis.refund} />
+                  <AdminKpiCard label="Cancel rate" value={kpis.refund} />
                 </AdminKpiGrid>
               </SectionReveal>
 
               <View style={[adminTwoColStyle(compact), styles.cols, compact && styles.colsCompact]}>
                 <View style={adminTwoColMain(compact)}>
-                  <SectionReveal preset="fade-up" delay={40}>
+                  <SectionReveal preset="fade-up" delay={80}>
                     <AdminPanel title="Revenue" meta="Last 14 days">
                       <AdminRevenueBars labels={chartData.labels} values={chartData.values} />
                     </AdminPanel>
                   </SectionReveal>
                 </View>
                 <View style={adminTwoColAside(compact)}>
-                  <SectionReveal preset="fade-up" delay={80}>
+                  <SectionReveal preset="fade-up" delay={100}>
                     <AdminPanel title="Top categories">
                       {categories.length ? (
                         categories.map((cat, idx) => (
@@ -297,9 +371,12 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   banner: { marginBottom: spacing.md },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
   cols: { marginTop: spacing.md },
   colsCompact: { marginTop: spacing.sm },
   ordersPanel: { marginTop: spacing.md, paddingHorizontal: 0, paddingBottom: 6 },
+  attentionBtn: { marginBottom: 6, justifyContent: "flex-start" },
+  attentionBtnText: { fontFamily: fonts.medium, fontSize: 12, textAlign: "left" },
   muted: {
     fontSize: 13,
     paddingVertical: spacing.sm,

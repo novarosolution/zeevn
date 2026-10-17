@@ -24,7 +24,7 @@ const {
   createBroadcastNotification,
   getAdminNotifications,
 } = require("../controllers/notificationController");
-const { getAdminAnalytics } = require("../controllers/analyticsController");
+const { getAdminAnalytics, getAdminOpsSummary } = require("../controllers/analyticsController");
 const {
   getAdminCoupons,
   createAdminCoupon,
@@ -78,6 +78,7 @@ router.delete("/users/:id", deleteUser);
 router.get("/notifications", getAdminNotifications);
 router.post("/notifications/broadcast", createBroadcastNotification);
 router.get("/analytics", getAdminAnalytics);
+router.get("/ops-summary", getAdminOpsSummary);
 router.get("/coupons", getAdminCoupons);
 router.post("/coupons", createAdminCoupon);
 router.put("/coupons/:id", updateAdminCoupon);

@@ -10,9 +10,15 @@ import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 import SectionReveal from "../motion/SectionReveal";
 import WebDiwaliFxOverlay from "./WebDiwaliFxOverlay";
 
-const CSS_ID = "zeevan-diwali-sale-v5";
+const CSS_ID = "zeevan-diwali-sale-v6";
 const SHELL_CLASS = "zeevan-diwali-shell";
 const CTA_CLASS = "zeevan-diwali-cta";
+const PROD_CLASS = "zeevan-diwali-prod";
+
+const GOLD = "#E0B878";
+const GOLD_SOFT = "#C9A676";
+const CREAM = "#FAF6EE";
+const INK_DEEP = "#1A2010";
 
 injectWebCssOnce(
   CSS_ID,
@@ -22,40 +28,32 @@ injectWebCssOnce(
 .${SHELL_CLASS} .${CTA_CLASS}:hover {
   background-color: ${ZEEVAN_GOLD.bright};
   transform: translateY(-2px);
-  box-shadow: 0 14px 28px -12px rgba(0,0,0,0.35);
+  box-shadow: 0 16px 32px -12px rgba(0,0,0,0.4);
 }
-@keyframes zeevanHeroProductFloat {
+@keyframes zeevanDiwaliProdFloat {
   0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+  50% { transform: translateY(-8px); }
 }
-@keyframes zeevanHeroSheen {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
+.${SHELL_CLASS} .${PROD_CLASS} {
+  animation: zeevanDiwaliProdFloat 5.2s ease-in-out infinite;
 }
-.${SHELL_CLASS} .zeevan-diwali-prod {
-  animation: zeevanHeroProductFloat 4.8s ease-in-out infinite;
+.${SHELL_CLASS} .${PROD_CLASS}:nth-child(2) { animation-delay: 0.55s; }
+.${SHELL_CLASS} .${PROD_CLASS}:nth-child(3) { animation-delay: 1.1s; }
+.${SHELL_CLASS} .zeevan-diwali-prod-img {
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.${SHELL_CLASS} .zeevan-diwali-prod:nth-child(2) { animation-delay: 0.6s; }
-.${SHELL_CLASS} .zeevan-diwali-prod:nth-child(3) { animation-delay: 1.2s; }
-.${SHELL_CLASS}::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(110deg, transparent 40%, rgba(245,215,142,0.08) 50%, transparent 60%);
-  background-size: 200% 100%;
-  animation: zeevanHeroSheen 9s linear infinite;
-  z-index: 2;
+.${SHELL_CLASS} .${PROD_CLASS}:hover .zeevan-diwali-prod-img {
+  transform: scale(1.04);
 }
 @media (prefers-reduced-motion: reduce) {
   .${SHELL_CLASS} .${CTA_CLASS} { transition: none !important; }
   .${SHELL_CLASS} .${CTA_CLASS}:hover { transform: none; }
-  .${SHELL_CLASS} .zeevan-diwali-prod,
-  .${SHELL_CLASS}::after { animation: none !important; }
+  .${SHELL_CLASS} .${PROD_CLASS},
+  .${SHELL_CLASS} .zeevan-diwali-prod-img { animation: none !important; transition: none !important; }
 }`
 );
 
-/** Diwali hero — festive bg + real catalog product photos (same as shop). */
+/** Diwali Craft Sale hero — reference layout + premium product panels. */
 export default function WebDiwaliBridgeSection() {
   const navigation = useNavigation();
   const { isMobileWeb, pageGutterClamp } = useKankregLayout();
@@ -110,8 +108,9 @@ export default function WebDiwaliBridgeSection() {
                 <Text style={styles.offerExtra}>{copy.offerExtra}</Text>
               </View>
               <View style={[styles.codeBox, isMobileWeb && styles.codeBoxMobile]}>
-                <Text style={styles.codeLabel}>{copy.codeLabel}</Text>
-                <Text style={styles.codeValue}>{copy.code}</Text>
+                <Text style={styles.codeLine}>
+                  {copy.codeLabel} {copy.code}
+                </Text>
               </View>
             </View>
 
@@ -131,7 +130,7 @@ export default function WebDiwaliBridgeSection() {
               {products.map((p, idx) => (
                 <View
                   key={p.key}
-                  className="zeevan-diwali-prod"
+                  className={PROD_CLASS}
                   style={[
                     styles.productCard,
                     idx === 0 && styles.productCardMain,
@@ -139,7 +138,13 @@ export default function WebDiwaliBridgeSection() {
                     idx === 2 && styles.productCardRight,
                   ]}
                 >
-                  <Image source={p.image} style={styles.productImg} resizeMode="cover" />
+                  <Image
+                    source={p.image}
+                    className="zeevan-diwali-prod-img"
+                    style={styles.productImg}
+                    resizeMode="cover"
+                    accessibilityLabel={p.label}
+                  />
                 </View>
               ))}
             </View>
@@ -148,9 +153,15 @@ export default function WebDiwaliBridgeSection() {
 
         {isMobileWeb && products.length ? (
           <View style={styles.productRowMobile} accessibilityLabel="Zeevan products">
-            {products.map((p) => (
+            {/* Mobile: tel · ghee · honey visual order */}
+            {[products[1], products[0], products[2]].filter(Boolean).map((p) => (
               <View key={p.key} style={styles.productCardMobile}>
-                <Image source={p.image} style={styles.productImg} resizeMode="cover" />
+                <Image
+                  source={p.image}
+                  style={styles.productImg}
+                  resizeMode="cover"
+                  accessibilityLabel={p.label}
+                />
               </View>
             ))}
           </View>
@@ -165,8 +176,8 @@ const styles = StyleSheet.create({
   shell: {
     position: "relative",
     overflow: "hidden",
-    minHeight: 440,
-    backgroundColor: ZEEVAN_GREEN.deep,
+    minHeight: 520,
+    backgroundColor: INK_DEEP,
     alignSelf: "center",
     ...Platform.select({
       web: {
@@ -184,16 +195,16 @@ const styles = StyleSheet.create({
     top: 12,
     right: 12,
     zIndex: 3,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    backgroundColor: ZEEVAN_GOLD.base,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: GOLD_SOFT,
   },
   salePillText: {
     fontFamily: fonts.bold,
     fontSize: 10,
-    letterSpacing: 1.2,
-    color: ZEEVAN_GREEN.deep,
+    letterSpacing: 1.4,
+    color: INK_DEEP,
   },
   photo: {
     ...StyleSheet.absoluteFillObject,
@@ -205,87 +216,94 @@ const styles = StyleSheet.create({
     ...Platform.select({
       web: {
         backgroundImage:
-          "linear-gradient(100deg, rgba(24,32,18,0.78) 0%, rgba(24,32,18,0.35) 42%, rgba(24,32,18,0.12) 100%)",
+          "linear-gradient(105deg, rgba(18,22,12,0.82) 0%, rgba(18,22,12,0.45) 38%, rgba(18,22,12,0.18) 62%, rgba(18,22,12,0.35) 100%)",
       },
-      default: { backgroundColor: "rgba(24,32,18,0.55)" },
+      default: { backgroundColor: "rgba(18,22,12,0.55)" },
     }),
   },
   scrimMobile: {
     ...Platform.select({
       web: {
         backgroundImage:
-          "linear-gradient(180deg, rgba(24,32,18,0.7) 0%, rgba(24,32,18,0.5) 60%, rgba(24,32,18,0.4) 100%)",
+          "linear-gradient(180deg, rgba(18,22,12,0.78) 0%, rgba(18,22,12,0.55) 55%, rgba(18,22,12,0.5) 100%)",
       },
       default: {},
     }),
   },
   badge: {
     position: "absolute",
-    top: 18,
-    right: 28,
+    top: 22,
+    right: 36,
     zIndex: 3,
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: ZEEVAN_GREEN.base,
-    borderWidth: 2,
-    borderColor: ZEEVAN_GOLD.base,
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: ZEEVAN_GREEN.deep,
+    borderWidth: 1.5,
+    borderColor: GOLD_SOFT,
     alignItems: "center",
     justifyContent: "center",
-    paddingBottom: 6,
+    paddingBottom: 8,
+    ...Platform.select({
+      web: { boxShadow: "0 12px 28px -10px rgba(0,0,0,0.45)" },
+      default: {},
+    }),
   },
   badgeTitle: {
     fontFamily: FONT_HEADING,
-    fontSize: 16,
-    color: "#FAF8F4",
+    fontSize: 18,
+    letterSpacing: 0.5,
+    color: CREAM,
   },
   badgeSub: {
     fontFamily: fonts.regular,
-    fontSize: 7,
-    lineHeight: 9,
-    color: "rgba(250,248,244,0.85)",
+    fontSize: 8,
+    lineHeight: 11,
+    letterSpacing: 0.2,
+    color: "rgba(250,246,238,0.88)",
     textAlign: "center",
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
+    marginTop: 2,
   },
   badgeTag: {
     position: "absolute",
-    bottom: -2,
-    backgroundColor: ZEEVAN_GOLD.base,
-    paddingHorizontal: 10,
-    paddingVertical: 2,
-    borderRadius: 8,
+    bottom: -4,
+    backgroundColor: GOLD_SOFT,
+    paddingHorizontal: 12,
+    paddingVertical: 3,
+    borderRadius: 10,
   },
   badgeTagText: {
     fontFamily: fonts.bold,
     fontSize: 9,
-    letterSpacing: 1,
-    color: ZEEVAN_GREEN.deep,
+    letterSpacing: 1.4,
+    color: INK_DEEP,
   },
   row: {
     position: "relative",
     zIndex: 2,
     width: "100%",
-    maxWidth: 1280,
+    maxWidth: 1320,
     alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 24,
-    paddingVertical: spacing.xxl,
-    minHeight: 440,
+    gap: 28,
+    paddingVertical: spacing.xxl + 8,
+    minHeight: 520,
   },
   rowMobile: {
     flexDirection: "column",
     alignItems: "center",
     minHeight: 0,
     paddingVertical: spacing.lg,
-    paddingTop: spacing.xl + 4,
+    paddingTop: spacing.xl + 8,
     gap: 14,
   },
   inner: {
     flex: 1,
-    maxWidth: 480,
-    gap: 12,
+    maxWidth: 520,
+    gap: 14,
     alignItems: "flex-start",
   },
   innerMobile: {
@@ -296,41 +314,45 @@ const styles = StyleSheet.create({
   },
   productStage: {
     position: "relative",
-    width: 420,
-    height: 340,
+    width: 460,
+    height: 380,
     flexShrink: 0,
+    marginRight: 8,
   },
   productCard: {
     position: "absolute",
-    borderRadius: 16,
+    borderRadius: 18,
     overflow: "hidden",
     borderWidth: 2,
-    borderColor: "rgba(250,248,244,0.35)",
+    borderColor: "rgba(250,246,238,0.42)",
     ...Platform.select({
-      web: { boxShadow: "0 18px 40px -16px rgba(0,0,0,0.45)" },
+      web: { boxShadow: "0 22px 48px -18px rgba(0,0,0,0.55)" },
       default: {},
     }),
   },
   productCardMain: {
-    width: 200,
-    height: 260,
-    right: 90,
-    bottom: 20,
+    width: 220,
+    height: 300,
+    right: 88,
+    bottom: 12,
     zIndex: 3,
+    borderRadius: 20,
   },
   productCardLeft: {
-    width: 140,
-    height: 180,
-    left: 8,
-    bottom: 40,
+    width: 148,
+    height: 200,
+    left: 4,
+    bottom: 48,
     zIndex: 2,
+    transform: [{ rotate: "-3deg" }],
   },
   productCardRight: {
-    width: 130,
-    height: 170,
+    width: 138,
+    height: 188,
     right: 0,
-    top: 24,
+    top: 18,
     zIndex: 1,
+    transform: [{ rotate: "3deg" }],
   },
   productImg: {
     width: "100%",
@@ -347,58 +369,63 @@ const styles = StyleSheet.create({
   },
   productCardMobile: {
     flex: 1,
-    aspectRatio: 0.82,
-    maxHeight: 148,
+    aspectRatio: 0.78,
+    maxHeight: 168,
     borderRadius: 14,
     overflow: "hidden",
     borderWidth: 1.5,
-    borderColor: "rgba(250,248,244,0.35)",
+    borderColor: "rgba(250,246,238,0.4)",
+    ...Platform.select({
+      web: { boxShadow: "0 12px 24px -12px rgba(0,0,0,0.4)" },
+      default: {},
+    }),
   },
   eyebrow: {
-    fontFamily: fonts.semibold,
-    fontSize: 11,
-    letterSpacing: 2.2,
+    fontFamily: FONT_HEADING,
+    fontSize: 13,
+    letterSpacing: 2.6,
     textTransform: "uppercase",
-    color: ZEEVAN_GOLD.bright,
+    color: GOLD,
   },
   eyebrowMobile: {
-    fontSize: 10,
-    letterSpacing: 1.8,
+    fontSize: 11,
+    letterSpacing: 2,
   },
   title: {
     fontFamily: FONT_HEADING,
-    fontSize: 36,
-    lineHeight: 42,
-    letterSpacing: -0.4,
-    color: "#FAF8F4",
+    fontSize: 42,
+    lineHeight: 48,
+    letterSpacing: -0.5,
+    color: CREAM,
   },
   titleMobile: {
-    fontSize: 24,
-    lineHeight: 30,
+    fontSize: 26,
+    lineHeight: 32,
     textAlign: "center",
     paddingHorizontal: 4,
   },
   titleHighlight: {
-    color: ZEEVAN_GOLD.bright,
+    color: GOLD,
   },
   body: {
     fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    color: "rgba(250, 248, 244, 0.88)",
-    maxWidth: 400,
+    fontSize: 16,
+    lineHeight: 24,
+    color: "rgba(250, 246, 238, 0.88)",
+    maxWidth: 420,
   },
   bodyMobile: {
     textAlign: "center",
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 21,
     maxWidth: 340,
   },
   offerRow: {
     flexDirection: "row",
     flexWrap: "wrap",
+    alignItems: "stretch",
     gap: 10,
-    marginTop: 4,
+    marginTop: 6,
   },
   offerRowMobile: {
     flexDirection: "column",
@@ -406,70 +433,67 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   offerBox: {
-    backgroundColor: "rgba(250,248,244,0.96)",
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    backgroundColor: CREAM,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     gap: 2,
+    justifyContent: "center",
   },
   offerBoxMobile: {
     width: "100%",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   offerMain: {
     fontFamily: fonts.bold,
-    fontSize: 15,
-    color: ZEEVAN_GREEN.deep,
+    fontSize: 16,
+    letterSpacing: 0.3,
+    color: INK_DEEP,
   },
   offerExtra: {
     fontFamily: fonts.regular,
     fontSize: 11,
-    color: "rgba(36,68,36,0.75)",
+    color: "rgba(26,32,16,0.72)",
   },
   codeBox: {
     borderWidth: 1.5,
     borderStyle: "dashed",
-    borderColor: "rgba(250,248,244,0.7)",
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    backgroundColor: "rgba(0,0,0,0.18)",
-    gap: 2,
+    borderColor: GOLD_SOFT,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "rgba(0,0,0,0.22)",
+    justifyContent: "center",
   },
   codeBoxMobile: {
     width: "100%",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
-  codeLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 10,
-    letterSpacing: 1,
-    color: "rgba(250,248,244,0.7)",
-  },
-  codeValue: {
+  codeLine: {
     fontFamily: fonts.bold,
-    fontSize: 15,
-    letterSpacing: 1.2,
-    color: ZEEVAN_GOLD.bright,
+    fontSize: 13,
+    letterSpacing: 1.4,
+    color: GOLD,
   },
   cta: {
-    marginTop: 6,
-    paddingVertical: 13,
-    paddingHorizontal: 26,
+    marginTop: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 30,
     borderRadius: 12,
-    backgroundColor: ZEEVAN_GOLD.base,
+    backgroundColor: GOLD_SOFT,
   },
   ctaMobile: {
     width: "100%",
     alignItems: "center",
-    marginTop: 4,
-    paddingVertical: 14,
+    marginTop: 6,
+    paddingVertical: 15,
   },
   ctaLabel: {
     fontFamily: fonts.semibold,
-    fontSize: 14,
-    color: ZEEVAN_GREEN.deep,
+    fontSize: 15,
+    letterSpacing: 0.2,
+    color: INK_DEEP,
   },
 });

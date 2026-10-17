@@ -1,5 +1,5 @@
 /**
- * Home Diwali hero — bg + real catalog product shots (same as shop cards).
+ * Home Diwali Craft Sale hero — festive bg + premium catalog product panels.
  */
 export const DIWALI_BRIDGE_SECTION = {
   eyebrow: "Diwali Craft Sale",
@@ -13,14 +13,17 @@ export const DIWALI_BRIDGE_SECTION = {
   code: "BILONA25",
   cta: "Shop Pure",
   badgeTitle: "CRAFT",
-  badgeSub: "Slow · Pure · Local",
+  badgeSub: "Slow. Pure. Local.",
   badgeTag: "SALE",
-  /** Festive bg only — products are overlaid from catalog assets. */
+  /** Festive stage — diyas / mandala / bokeh. */
   image: require("../../assets/diwali-sale-bg-4k.jpg"),
-  /** Same product photography as home/shop cards. */
+  /**
+   * Overlapping portrait panels (generated from brand product photography).
+   * Order: center hero = ghee, left = tel, right = honey.
+   */
   products: [
-    { key: "ghee", image: require("../../assets/zeevan-ghee-gen.jpg"), label: "A2 Ghee" },
-    { key: "tel", image: require("../../assets/zeevan-tel-gen.jpg"), label: "Cold-pressed Tel" },
-    { key: "honey", image: require("../../assets/zeevan-honey-gen.jpg"), label: "Forest Honey" },
+    { key: "ghee", image: require("../../assets/diwali-panel-ghee.jpg"), label: "A2 Ghee" },
+    { key: "tel", image: require("../../assets/diwali-panel-tel.jpg"), label: "Cold-pressed Tel" },
+    { key: "honey", image: require("../../assets/diwali-panel-honey.jpg"), label: "Forest Honey" },
   ],
 };

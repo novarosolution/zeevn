@@ -924,7 +924,7 @@ export const LOCATION_BAR = {
 /** Auth screens — Login / Register (kankreg.html `#auth`). */
 export const AUTH_UI = {
   loginTitle: "Welcome back",
-  loginSubtitle: "Sign in with your email to continue.",
+  loginSubtitle: "Sign in to save your bag, track orders, and checkout faster.",
   loginCta: "Sign in",
   loginFormEyebrow: "Account",
   loginHeroEyebrow: `Zeevan · ${ZEEVAN_CATALOG_SUBLINE}`,
@@ -932,6 +932,7 @@ export const AUTH_UI = {
   loginPerks: [
     { icon: "bag-handle-outline", label: "Saved bag & orders" },
     { icon: "shield-checkmark-outline", label: "Secure checkout" },
+    { icon: "leaf-outline", label: "Pure craft essentials" },
   ],
   registerTitle: "Create account",
   registerSubtitle: "One email — orders, addresses, and rewards in one place.",

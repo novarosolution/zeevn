@@ -1,7 +1,8 @@
 import React from "react";
-import { Platform, ScrollView, StyleSheet, View } from "react-native";
+import { Image, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { KankregGrainOverlay } from "../kankreg/KankregPageChrome";
+import { AUTH_HERO_IMAGE } from "../../content/authVisualContent";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { useTheme } from "../../context/ThemeContext";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
@@ -26,16 +27,16 @@ export default function AuthSplitLayout({ artTitle, artSubtitle, mode = "login",
   return (
     <View style={[styles.split, isXs && styles.splitStack]}>
       <View style={[styles.art, isXs && styles.artStack]}>
-        <LinearGradient
-          colors={["#f3e6c8", "#BC905C", "#3d3228", "#1a1714"]}
-          locations={[0, 0.38, 0.72, 1]}
-          start={{ x: 0.15, y: 0 }}
-          end={{ x: 0.85, y: 1 }}
-          style={StyleSheet.absoluteFillObject}
+        <Image
+          source={AUTH_HERO_IMAGE}
+          style={styles.artPhoto}
+          resizeMode="cover"
+          accessibilityIgnoresInvertColors
         />
         <LinearGradient
-          colors={["transparent", "rgba(26, 23, 20, 0.55)"]}
-          start={{ x: 0.5, y: 0.35 }}
+          colors={["rgba(18,16,12,0.35)", "rgba(18,16,12,0.55)", "rgba(12,10,8,0.88)"]}
+          locations={[0, 0.45, 1]}
+          start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
           style={StyleSheet.absoluteFillObject}
         />
@@ -111,6 +112,7 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
     minWidth: 0,
     position: "relative",
+    backgroundColor: "#1a1714",
     borderTopLeftRadius: radius.xl + 4,
     borderBottomLeftRadius: radius.xl + 4,
     ...Platform.select({
@@ -121,6 +123,11 @@ const styles = StyleSheet.create({
   artStack: {
     minHeight: 280,
     flex: 0,
+  },
+  artPhoto: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
   },
   artRing: {
     position: "absolute",

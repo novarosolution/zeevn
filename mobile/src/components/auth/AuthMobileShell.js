@@ -1,6 +1,7 @@
 import React from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { Image, Platform, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { AUTH_HERO_IMAGE } from "../../content/authVisualContent";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { useTheme } from "../../context/ThemeContext";
 import { FIGMA, figmaPageBg } from "../../theme/figmaApp";
@@ -32,11 +33,17 @@ export default function AuthMobileShell({ children, artTitle, artSubtitle, mode 
   return (
     <View style={styles.root}>
       <View style={[styles.heroBlock, isXs && styles.heroBlockCompact]}>
+        <Image
+          source={AUTH_HERO_IMAGE}
+          style={styles.heroPhoto}
+          resizeMode="cover"
+          accessibilityIgnoresInvertColors
+        />
         <LinearGradient
-          colors={["#f3e6c8", "#BC905C", "#2a241e", "#1a1714"]}
-          locations={[0, 0.45, 0.78, 1]}
-          start={{ x: 0.2, y: 0 }}
-          end={{ x: 0.8, y: 1 }}
+          colors={["rgba(18,16,12,0.4)", "rgba(12,10,8,0.82)"]}
+          locations={[0.2, 1]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
           style={StyleSheet.absoluteFillObject}
         />
         <View style={styles.heroInner}>
@@ -76,10 +83,18 @@ const styles = StyleSheet.create({
   heroBlock: {
     position: "relative",
     overflow: "hidden",
+    backgroundColor: "#1a1714",
+    minHeight: 220,
     paddingBottom: spacing.lg + 4,
   },
   heroBlockCompact: {
+    minHeight: 180,
     paddingBottom: spacing.md + 4,
+  },
+  heroPhoto: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
   },
   heroInner: {
     paddingTop: spacing.xl + 8,

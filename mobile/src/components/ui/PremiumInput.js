@@ -49,6 +49,8 @@ function PremiumInputBase({
   accessibilityLabel,
   accessibilityHint,
   passwordToggle = false,
+  /** "default" | "warm" — warm = cream-tan auth fields */
+  tone = "default",
 }) {
   const { colors: c, isDark } = useTheme();
   const reducedMotion = useReducedMotion();
@@ -56,6 +58,7 @@ function PremiumInputBase({
   const [hidden, setHidden] = useState(Boolean(secureTextEntry));
   const labelAnim = useRef(new Animated.Value(value ? 1 : 0)).current;
   const inputRef = useRef(null);
+  const warm = tone === "warm" && !isDark;
 
   const hasError = Boolean(errorText);
   const hasValue = value != null && String(value).length > 0;
@@ -74,8 +77,8 @@ function PremiumInputBase({
   }, [showFloating, labelAnim, reducedMotion]);
 
   const styles = useMemo(
-    () => createStyles(c, isDark, multiline),
-    [c, isDark, multiline]
+    () => createStyles(c, isDark, multiline, warm),
+    [c, isDark, multiline, warm]
   );
 
   const borderColor = hasError
@@ -222,7 +225,7 @@ function PremiumInputBase({
   );
 }
 
-function createStyles(c, isDark, multiline) {
+function createStyles(c, isDark, multiline, warm) {
   return StyleSheet.create({
     wrap: {
       width: "100%",
@@ -231,10 +234,14 @@ function createStyles(c, isDark, multiline) {
       flexDirection: "row",
       alignItems: multiline ? "flex-start" : "center",
       borderWidth: 1.25,
-      borderRadius: 14,
-      backgroundColor: isDark ? c.surfaceMuted : KANKREG_PALETTE.paper,
+      borderRadius: warm ? 16 : 14,
+      backgroundColor: isDark
+        ? c.surfaceMuted
+        : warm
+          ? KANKREG_PALETTE.paper2
+          : KANKREG_PALETTE.paper,
       paddingHorizontal: spacing.md,
-      minHeight: multiline ? 108 : 56,
+      minHeight: multiline ? 108 : warm ? 58 : 56,
       ...Platform.select({
         web: {
           transition: "border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease",

@@ -1,30 +1,23 @@
 import React from "react";
-import { Image, Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { AUTH_BODY_BG } from "../../content/authVisualContent";
 import { useTheme } from "../../context/ThemeContext";
 
 /**
- * Full-bleed soft pantry photo behind Login / Register body.
+ * Clean cream stage behind Login / Register — matches premium mock (no busy photo wash).
  */
 export default function AuthPageBackdrop({ children }) {
   const { isDark } = useTheme();
 
   return (
-    <View style={styles.root}>
-      <Image
-        source={AUTH_BODY_BG}
-        style={styles.bg}
-        resizeMode="cover"
-        accessibilityIgnoresInvertColors
-      />
+    <View style={[styles.root, isDark && styles.rootDark]}>
       <LinearGradient
         colors={
           isDark
-            ? ["rgba(12,10,8,0.72)", "rgba(12,10,8,0.88)", "rgba(12,10,8,0.94)"]
-            : ["rgba(253,250,244,0.72)", "rgba(250,245,234,0.82)", "rgba(247,241,228,0.9)"]
+            ? ["#161412", "#12100E", "#0E0C0A"]
+            : ["#FDF9F3", "#F8F2E8", "#F3ECDF"]
         }
-        locations={[0, 0.5, 1]}
+        locations={[0, 0.55, 1]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFillObject}
@@ -40,24 +33,32 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     position: "relative",
     overflow: "hidden",
+    backgroundColor: "#FDF9F3",
     ...Platform.select({
       web: {
         minHeight: "calc(100vh - 72px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       },
-      default: {
-        minHeight: "100%",
-      },
+      default: { minHeight: "100%" },
     }),
   },
-  bg: {
-    ...StyleSheet.absoluteFillObject,
-    width: "100%",
-    height: "100%",
+  rootDark: {
+    backgroundColor: "#12100E",
   },
   content: {
     position: "relative",
     zIndex: 1,
     width: "100%",
     flexGrow: 1,
+    ...Platform.select({
+      web: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      default: {},
+    }),
   },
 });

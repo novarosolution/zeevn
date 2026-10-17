@@ -108,7 +108,7 @@ export default function LoginScreen({ navigation }) {
         autoCorrect={false}
         autoComplete="email"
         textContentType="emailAddress"
-        placeholder="you@email.com"
+        tone="warm"
       />
       <PremiumInput
         label="Password"
@@ -125,7 +125,7 @@ export default function LoginScreen({ navigation }) {
         textContentType="password"
         returnKeyType="done"
         onSubmitEditing={handleLogin}
-        placeholder="Your password"
+        tone="warm"
       />
       {error ? (
         <View style={styles.errorWrap}>

@@ -133,17 +133,17 @@ const styles = StyleSheet.create({
   },
   formEyebrow: {
     fontFamily: fonts.semibold,
-    fontSize: typography.overline,
-    letterSpacing: 2.2,
+    fontSize: 11,
+    letterSpacing: 2.4,
     textTransform: "uppercase",
     marginBottom: spacing.xs,
   },
   h1: {
     fontFamily: FONT_HEADING,
     fontWeight: "400",
-    fontSize: Platform.select({ web: 34, default: typography.h1 }),
-    lineHeight: Platform.select({ web: 40, default: lineHeight.h1 + 4 }),
-    letterSpacing: -0.45,
+    fontSize: Platform.select({ web: 36, default: typography.h1 }),
+    lineHeight: Platform.select({ web: 42, default: lineHeight.h1 + 4 }),
+    letterSpacing: -0.5,
     marginBottom: spacing.xs,
   },
   h1Compact: {
@@ -151,14 +151,15 @@ const styles = StyleSheet.create({
     lineHeight: lineHeight.h2 + 4,
   },
   sub: {
+    fontFamily: fonts.regular,
     fontSize: typography.bodySmall,
     lineHeight: lineHeight.bodySmall + 2,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   fields: {
     width: "100%",
     gap: spacing.md,
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
   },
   forgotWrap: {
     alignSelf: "flex-end",

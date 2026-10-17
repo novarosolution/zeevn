@@ -128,7 +128,7 @@ export default function RegisterScreen({ navigation }) {
         }}
         iconLeft="person-outline"
         autoCapitalize="words"
-        placeholder="Your name"
+        tone="warm"
       />
       <PremiumInput
         label="Email"
@@ -141,7 +141,7 @@ export default function RegisterScreen({ navigation }) {
         keyboardType="email-address"
         autoCapitalize="none"
         autoComplete="email"
-        placeholder="you@email.com"
+        tone="warm"
       />
       <PremiumInput
         label="Password"
@@ -154,7 +154,7 @@ export default function RegisterScreen({ navigation }) {
         secureTextEntry
         passwordToggle
         autoCapitalize="none"
-        placeholder="Create a password"
+        tone="warm"
       />
       <PremiumInput
         label="Confirm password"
@@ -169,7 +169,7 @@ export default function RegisterScreen({ navigation }) {
         autoCapitalize="none"
         returnKeyType="done"
         onSubmitEditing={handleRegister}
-        placeholder="Repeat password"
+        tone="warm"
       />
       {error ? (
         <View style={styles.errorWrap}>

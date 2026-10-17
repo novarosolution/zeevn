@@ -19,7 +19,7 @@ const cardShadow = platformShadow({
   android: { elevation: 10 },
 });
 
-/** Native + narrow web auth — stacked hero (in flow) + form sheet (no overlapping clip). */
+/** Native + narrow web auth — stacked hero + form sheet. */
 export default function AuthMobileShell({ children, artTitle, artSubtitle, mode = "login" }) {
   const { isDark } = useTheme();
   const { isXs, useAuthSplit } = useKankregLayout();
@@ -39,18 +39,19 @@ export default function AuthMobileShell({ children, artTitle, artSubtitle, mode 
           accessibilityIgnoresInvertColors
         />
         <LinearGradient
-          colors={["rgba(18,16,12,0.4)", "rgba(12,10,8,0.82)"]}
-          locations={[0.2, 1]}
+          colors={["rgba(12,10,8,0.28)", "rgba(10,8,6,0.78)"]}
+          locations={[0.15, 1]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
           style={StyleSheet.absoluteFillObject}
+          pointerEvents="none"
         />
         <View style={styles.heroInner}>
           <AuthHeroPanel
             mode={mode}
             artTitle={artTitle}
             artSubtitle={artSubtitle}
-            compact={isXs}
+            compact
             showPerks={false}
             variant="onDark"
           />
@@ -61,9 +62,7 @@ export default function AuthMobileShell({ children, artTitle, artSubtitle, mode 
           styles.sheet,
           isWeb && styles.sheetWeb,
           cardShadow,
-          {
-            backgroundColor: isDark ? "rgba(20,17,16,0.94)" : "rgba(255,252,246,0.96)",
-          },
+          { backgroundColor: isDark ? "#141110" : "#FFFEF9" },
         ]}
       >
         <View style={styles.sheetAccent} />
@@ -74,22 +73,17 @@ export default function AuthMobileShell({ children, artTitle, artSubtitle, mode 
 }
 
 const styles = StyleSheet.create({
-  webFallback: {
-    width: "100%",
-  },
-  root: {
-    width: "100%",
-    flexGrow: 1,
-  },
+  webFallback: { width: "100%" },
+  root: { width: "100%", flexGrow: 1 },
   heroBlock: {
     position: "relative",
     overflow: "hidden",
     backgroundColor: "#1a1714",
-    minHeight: 220,
+    minHeight: 240,
     paddingBottom: spacing.lg + 4,
   },
   heroBlockCompact: {
-    minHeight: 180,
+    minHeight: 200,
     paddingBottom: spacing.md + 4,
   },
   heroPhoto: {
@@ -118,13 +112,9 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.md,
     borderRadius: radius.xl + 2,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(31, 92, 71, 0.16)",
+    borderColor: "rgba(31, 92, 71, 0.14)",
     ...Platform.select({
-      web: {
-        boxShadow: "0 22px 52px rgba(22, 69, 51, 0.16)",
-        backdropFilter: "blur(8px)",
-        WebkitBackdropFilter: "blur(8px)",
-      },
+      web: { boxShadow: "0 22px 52px rgba(22, 69, 51, 0.14)" },
       default: {},
     }),
   },

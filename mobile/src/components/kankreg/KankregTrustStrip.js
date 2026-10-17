@@ -93,9 +93,9 @@ function createStyles(phoneGrid, isDark) {
       backgroundColor: "rgba(255,255,255,0.05)",
     },
     thumbWrap: {
-      width: 64,
-      height: 64,
-      borderRadius: 14,
+      width: 72,
+      height: 72,
+      borderRadius: 16,
       overflow: "hidden",
       backgroundColor: isDark ? "rgba(212,165,116,0.12)" : KANKREG_PALETTE.paper2,
     },

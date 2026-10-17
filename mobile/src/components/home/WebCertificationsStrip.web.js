@@ -62,8 +62,8 @@ export default function WebCertificationsStrip() {
 
 const styles = StyleSheet.create({
   pad: {
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
     marginBottom: 0,
   },
   inner: {

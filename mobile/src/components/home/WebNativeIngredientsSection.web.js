@@ -112,8 +112,8 @@ export default function WebNativeIngredientsSection() {
 const styles = StyleSheet.create({
   reveal: { width: "100%" },
   pad: {
-    paddingTop: spacing.xxl,
-    paddingBottom: spacing.xxl + 8,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
   },
   inner: {
     width: "100%",

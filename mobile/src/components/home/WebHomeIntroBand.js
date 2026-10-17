@@ -11,6 +11,8 @@ import { useTheme } from "../../context/ThemeContext";
 import { getHomeLineImage } from "../../content/homeLineImages";
 import SectionReveal from "../motion/SectionReveal";
 
+const PANTRY_BG = require("../../../assets/home-pantry-strip-bg.jpg");
+
 /**
  * Compact Diwali / pantry intro — title, line cards, one CTA (no sparse empty right).
  */
@@ -26,6 +28,10 @@ export default function WebHomeIntroBand({ navigation }) {
 
   return (
     <View style={[styles.shell, isDark && styles.shellDark]}>
+      {!isDark ? (
+        <Image source={PANTRY_BG} style={styles.bg} resizeMode="cover" accessibilityIgnoresInvertColors />
+      ) : null}
+      <View style={[styles.scrim, isDark && styles.scrimDark]} pointerEvents="none" />
       <SectionReveal immediate preset="fade-up" delay={80} style={styles.revealWrap}>
         <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
           <View style={styles.topRow}>
@@ -119,20 +125,40 @@ export default function WebHomeIntroBand({ navigation }) {
 const styles = StyleSheet.create({
   shell: {
     width: "100%",
-    paddingTop: spacing.lg,
+    position: "relative",
+    overflow: "hidden",
+    paddingTop: spacing.md + 4,
     paddingBottom: spacing.md,
     borderBottomWidth: 0,
-    backgroundColor: "transparent",
+    backgroundColor: "#F7F1E6",
   },
   shellDark: {
-    backgroundColor: "transparent",
+    backgroundColor: "#141210",
   },
-  revealWrap: { width: "100%" },
+  bg: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+  },
+  scrim: {
+    ...StyleSheet.absoluteFillObject,
+    ...Platform.select({
+      web: {
+        backgroundImage:
+          "linear-gradient(180deg, rgba(252,248,240,0.82) 0%, rgba(247,241,230,0.9) 100%)",
+      },
+      default: { backgroundColor: "rgba(252,248,240,0.85)" },
+    }),
+  },
+  scrimDark: {
+    backgroundColor: "rgba(18,16,12,0.88)",
+  },
+  revealWrap: { width: "100%", position: "relative", zIndex: 1 },
   inner: {
     width: "100%",
     maxWidth: 1100,
     alignSelf: "center",
-    gap: spacing.md,
+    gap: spacing.sm + 4,
   },
   topRow: {
     flexDirection: "row",

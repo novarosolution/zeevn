@@ -52,13 +52,8 @@ import { HOME_SCREEN_UI, SHOP_SCREEN_UI } from "../content/appContent";
 import { deferAfterFirstPaint } from "../utils/deferAfterFirstPaint";
 import { createQuoteBlockStyles } from "../theme/screenThemes";
 import { productToCartLine } from "../utils/productCart";
-import {
-  NativeHomeHeader,
-  NativeHomeHeroSlider,
-  NativeSectionHeader,
-  NativeCategoryRow,
-  NativeBestsellersGrid,
-} from "./nativeHomeImports";
+import { NativeSectionHeader, NativeCategoryRow } from "./nativeHomeImports";
+import { StoreHome } from "../components/store/entry";
 import AppStartupScreen from "../components/AppStartupScreen";
 import { FIGMA } from "../theme/figmaApp";
 import { useAuth } from "../context/AuthContext";
@@ -181,7 +176,6 @@ export default function KankregHomeScreen({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const hasCachedCatalogRef = useRef(false);
   const skipWebFocusRefreshRef = useRef(Platform.OS === "web");
-  const { displayLabel } = useDeliveryLocation();
   useRedirectToFindLocationWhenNeeded(navigation, isAuthenticated);
 
   const load = useCallback(async (pull = false) => {
@@ -335,91 +329,17 @@ export default function KankregHomeScreen({ navigation }) {
 
   if (Platform.OS !== "web") {
     return (
-      <CustomerScreenShell style={nativeHomeStyles.shell}>
-        <NativeHomeHeader
-          navigation={navigation}
-          hasNotifications={hasUnreadNotifications}
-          locationLabel={displayLabel}
-          onRefreshLocation={() => {
-            if (!isAuthenticated) {
-              navigation.navigate("Login");
-              return;
-            }
-            navigation.navigate("FindLocation", { force: true });
-          }}
-        />
-        <KankregScrollPage
-          scrollVariant="inner"
-          topInsetOwner="external"
-          style={nativeHomeStyles.scroll}
-          showFooter={false}
-          contentContainerStyle={nativeHomeStyles.scrollContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={c.primary} />
-          }
-        >
-          {configError && !loading ? (
-            <View style={nativeHomeStyles.bannerWrap}>
-              <PremiumErrorBanner
-                severity="error"
-                message={configError}
-                actionLabel="Retry"
-                onActionPress={() => load()}
-              />
-            </View>
-          ) : null}
-          {HOME_SCREEN_UI.native?.showNativeHero !== false ? (
-            <NativeHomeHeroSlider
-              navigation={navigation}
-              heroSlides={homeView?.heroSlides}
-              products={homeCatalog}
-            />
-          ) : null}
-          {showCategories && ready ? (
-            <>
-              <NativeSectionHeader
-                title={HOME_SCREEN_UI.categories.title}
-                actionLabel={HOME_SCREEN_UI.categories.action}
-                onAction={() => navigation.navigate("Shop")}
-                tight
-              />
-              <NativeCategoryRow
-                products={shopCatalog}
-                onPress={(label) => navigation.navigate("Shop", getShopNavParamsForLabel(label))}
-              />
-            </>
-          ) : null}
-
-          {showPrime && ready ? (
-            <>
-              <NativeSectionHeader
-                title={primeTitle}
-                actionLabel={HOME_SCREEN_UI.bestsellers.action}
-                onAction={() => navigation.navigate("Shop")}
-              />
-              {homeCatalog.length ? (
-                <NativeBestsellersGrid
-                  products={homeCatalog}
-                  onProductPress={(item) => navigation.navigate("Product", { productId: item.id })}
-                  onAddToCart={handleAdd}
-                />
-              ) : ready ? (
-                <View style={nativeHomeStyles.emptyWrap}>
-                  <PremiumEmptyState
-                    iconName="bag-outline"
-                    title={HOME_SCREEN_UI.empty.productsTitle}
-                    description={HOME_SCREEN_UI.empty.productsDescription}
-                    ctaLabel={HOME_SCREEN_UI.empty.productsCta}
-                    onCtaPress={() => navigation.navigate("Shop")}
-                  />
-                </View>
-              ) : null}
-            </>
-          ) : null}
-
-        </KankregScrollPage>
-        <BottomNavBar />
-      </CustomerScreenShell>
+      <StoreHome
+        navigation={navigation}
+        products={shopCatalog}
+        homeProducts={homeCatalog}
+        homeView={homeView}
+        refreshing={refreshing}
+        onRefresh={() => load(true)}
+        error={configError}
+        onRetry={() => load()}
+        hasUnread={hasUnreadNotifications}
+      />
     );
   }
 
@@ -712,10 +632,10 @@ export default function KankregHomeScreen({ navigation }) {
             style={[
               styles.webHomeBody,
               isMobileWeb && styles.webHomeBodyMobile,
-              { paddingHorizontal: pageGutterClamp, paddingTop: HOME_SPACE.sm },
+              { paddingHorizontal: pageGutterClamp, paddingTop: HOME_SPACE.xs },
             ]}
           >
-            <KankregPageWrap gap={HOME_SECTION_GAP}>
+            <KankregPageWrap gap={HOME_SPACE.md}>
               <WebLineFocusSection
                 lineKey="tel"
                 title="Cold-pressed Tel"
@@ -753,10 +673,10 @@ export default function KankregHomeScreen({ navigation }) {
             styles.webHomeBody,
             isMobileWeb && styles.webHomeBodyMobile,
             webCreamShell,
-            { paddingHorizontal: pageGutterClamp, paddingTop: HOME_SECTION_GAP },
+            { paddingHorizontal: pageGutterClamp, paddingTop: HOME_SPACE.sm },
           ]}
         >
-          <KankregPageWrap gap={isMobileWeb ? spacing.lg : HOME_SECTION_GAP}>
+          <KankregPageWrap gap={isMobileWeb ? spacing.md : HOME_SPACE.md}>
             {showAboutStory ? (
               <ScrollFadeUp index={4}>
                 <DeferredMount minHeight={400} rootMargin="280px 0px">

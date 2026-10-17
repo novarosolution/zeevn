@@ -36,7 +36,7 @@ export default function WebDiwaliDivider() {
 const styles = StyleSheet.create({
   wrap: {
     width: "100%",
-    height: 72,
+    height: 52,
     marginTop: 0,
     marginBottom: 0,
     overflow: "hidden",

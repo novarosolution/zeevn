@@ -9,10 +9,10 @@ export const HOME_LINE_IMAGES = {
 };
 
 export const HOME_TRUST_IMAGES = {
-  pure: require("../../assets/trust-pure.jpg"),
-  batch: require("../../assets/trust-batch.jpg"),
-  track: require("../../assets/trust-track.jpg"),
-  secure: require("../../assets/trust-secure.jpg"),
+  pure: require("../../assets/home-trust-pure.jpg"),
+  batch: require("../../assets/home-trust-batch.jpg"),
+  track: require("../../assets/home-trust-track.jpg"),
+  secure: require("../../assets/home-trust-secure.jpg"),
 };
 
 export function getHomeLineImage(key) {

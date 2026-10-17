@@ -6,7 +6,7 @@ import { Platform } from "react-native";
 import { spacing } from "./tokens";
 import { KANKREG_PALETTE } from "./kankregWeb";
 
-/** Vertical rhythm for web home sections (8px base). */
+/** Vertical rhythm for web home sections (8px base) — tighter premium stack. */
 export const HOME_SPACE = {
   xs: spacing.xs,
   sm: spacing.sm,
@@ -14,14 +14,14 @@ export const HOME_SPACE = {
   lg: spacing.lg,
   xl: spacing.xl,
   /** Gap between major home blocks inside `KankregPageWrap`. */
-  section: spacing.lg,
+  section: spacing.md,
 };
 
 /** Single source: vertical gap between web home sections (categories → grid → story). */
 export const HOME_SECTION_GAP = HOME_SPACE.section;
 
 /** Space from a section header to its content (grid, cards, body). */
-export const HOME_HEADER_CONTENT_GAP = HOME_SPACE.md;
+export const HOME_HEADER_CONTENT_GAP = HOME_SPACE.sm;
 
 /**
  * Editorial type scale (web home). Pair with `FONT_HEADING` + sans body tokens.

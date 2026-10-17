@@ -66,7 +66,7 @@ export default function WebWhyChooseSection() {
 
 const styles = StyleSheet.create({
   reveal: { width: "100%" },
-  pad: { paddingVertical: spacing.xl },
+  pad: { paddingVertical: spacing.lg + 4 },
   inner: {
     width: "100%",
     maxWidth: 1100,

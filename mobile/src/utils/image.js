@@ -6,14 +6,6 @@ function isLocalHost(hostname) {
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
 }
 
-function getDevHostFromApiBase() {
-  try {
-    return new URL(getApiBaseUrl()).hostname;
-  } catch {
-    return "";
-  }
-}
-
 function unique(items) {
   return Array.from(new Set(items.filter(Boolean)));
 }
@@ -51,20 +43,33 @@ function withHost(urlString, hostname) {
   }
 }
 
+/** Map `http://127.0.0.1:5001/media/…` → current API base (incl. `/aws` path). */
+function rewriteLocalApiUrl(urlString) {
+  try {
+    const url = new URL(urlString);
+    if (!isLocalHost(url.hostname)) return null;
+    const apiBase = getApiBaseUrl();
+    if (!apiBase) return null;
+    const base = new URL(apiBase.includes("://") ? apiBase : `https://${apiBase}`);
+    const prefix = base.pathname.replace(/\/+$/, "");
+    return `${base.origin}${prefix}${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return null;
+  }
+}
+
 function hostVariants(urlString) {
   try {
     const url = new URL(urlString);
     const currentHost = url.hostname;
-    const devHost = getDevHostFromApiBase();
     const candidates = [];
 
     if (isLocalHost(currentHost)) {
+      const rewritten = rewriteLocalApiUrl(urlString);
+      if (rewritten) candidates.push(rewritten);
       // Images served from local API — emulator / device need host variants.
       if (Platform.OS === "android") {
         candidates.push(withHost(urlString, "10.0.2.2"));
-      }
-      if (devHost && !isLocalHost(devHost)) {
-        candidates.push(withHost(urlString, devHost));
       }
       candidates.push(urlString);
     } else {
@@ -108,11 +113,7 @@ export function resolveImageUri(rawUri) {
     const url = new URL(uri);
 
     if (isLocalHost(url.hostname)) {
-      const devHost = getDevHostFromApiBase();
-      if (devHost) {
-        url.hostname = devHost;
-      }
-      return url.toString();
+      return rewriteLocalApiUrl(uri) || url.toString();
     }
 
     return upgradeRemoteImageUrl(url.toString());

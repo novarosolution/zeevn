@@ -216,6 +216,7 @@ export const HOME_SCREEN_UI = {
     atelierCta: "Shop the collection",
     showHeroTrustChips: false,
     showIntroBand: true,
+    showPromiseBand: true,
     showTimelineSection: false,
     showProcessSection: false,
     showAboutSection: false,

@@ -11,6 +11,7 @@ import {
 } from "../components/home/HomeKankregSections";
 import WebPremiumHero from "../components/home/WebPremiumHero";
 import WebHomeIntroBand from "../components/home/WebHomeIntroBand";
+import WebHomePromiseBand from "../components/home/WebHomePromiseBand";
 import {
   WebTimelineSection,
   WebProcessSection,
@@ -372,6 +373,7 @@ export default function KankregHomeScreen({ navigation }) {
     Platform.OS === "web" && webCfg.showQualityAssurance !== false;
   const showWhyChoose = Platform.OS === "web" && webCfg.showWhyChoose !== false;
   const showLineFocus = Platform.OS === "web" && webCfg.showLineFocus !== false;
+  const showPromiseBand = Platform.OS === "web" && webCfg.showPromiseBand !== false;
   const showBottomBlock =
     !webLean &&
     (showAboutStory ||
@@ -494,6 +496,8 @@ export default function KankregHomeScreen({ navigation }) {
                 <KankregTrustStrip />
               </ScrollFadeUp>
             ) : null}
+
+            {showPromiseBand && ready ? <WebHomePromiseBand /> : null}
 
             {showPrime && ready ? (
               webLean ? (

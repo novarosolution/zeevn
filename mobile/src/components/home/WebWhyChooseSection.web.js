@@ -101,9 +101,9 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     minWidth: 0,
-    alignItems: "center",
+    alignItems: "stretch",
     gap: 10,
-    padding: 16,
+    padding: 12,
     borderRadius: 14,
     backgroundColor: "rgba(255,253,248,0.96)",
     borderWidth: 1,
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     flexBasis: "48%",
     width: "48%",
     maxWidth: "48%",
-    padding: 12,
+    padding: 10,
     gap: 8,
   },
   cardDark: {
@@ -122,14 +122,13 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.14)",
   },
   icon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: "100%",
+    height: 128,
+    borderRadius: 10,
   },
   iconMobile: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    height: 96,
+    borderRadius: 8,
   },
   cardTitle: {
     fontFamily: fonts.bold,
@@ -141,5 +140,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     textAlign: "center",
+    paddingHorizontal: 4,
   },
 });

@@ -69,12 +69,12 @@ const LIGHT = {
     ["#EAF1E6", "#D3E3CD"],
   ],
   /** Bento washes — warm gold / peach / sage, richer for the tall corner tile. */
-  bentoTall: ["#FFE8A8", "#F4C25A"],
+  bentoTall: ["#FFE29A", "#EFB84A"],
   bentoTiles: [
-    ["#FFF3D2", "#F9DD94"],
-    ["#FFEBD8", "#F8CFA4"],
-    ["#F6F4DA", "#E2E8B6"],
-    ["#FFF0D2", "#F6D08B"],
+    ["#FFF1CC", "#F5D57A"],
+    ["#FFE6CF", "#F5C49A"],
+    ["#F3F5D4", "#D9E4A8"],
+    ["#FFECD0", "#F2CC7E"],
   ],
 };
 

@@ -116,13 +116,20 @@ export default function StoreHeader({
         </View>
       </View>
 
-      <Pressable onPress={onPressLocation} style={styles.location} accessibilityRole="button" accessibilityLabel={`Delivery location ${locationText}`}>
-        <Ionicons name="location" size={17} color={c.brandAlt} />
-        <Text style={[type.ui(15.5, "regular", c.ink), styles.locationText]} numberOfLines={1}>
-          {locationKind ? <Text style={type.ui(15.5, "extrabold", c.ink, { letterSpacing: 0.4 })}>{`${locationKind.toUpperCase()}  –  `}</Text> : null}
+      <Pressable
+        onPress={onPressLocation}
+        style={[styles.location, { backgroundColor: withAlpha(c.card, 0.72), borderColor: withAlpha(c.brand, 0.12) }]}
+        accessibilityRole="button"
+        accessibilityLabel={`Delivery location ${locationText}`}
+      >
+        <View style={[styles.locGlyph, { backgroundColor: c.brandSoft }]}>
+          <Ionicons name="location" size={14} color={c.brand} />
+        </View>
+        <Text style={[type.ui(14, "regular", c.ink), styles.locationText]} numberOfLines={1}>
+          {locationKind ? <Text style={type.ui(13.5, "extrabold", c.ink, { letterSpacing: 0.35 })}>{`${locationKind.toUpperCase()}  ·  `}</Text> : null}
           {locationText}
         </Text>
-        <Ionicons name="chevron-down" size={16} color={c.ink} />
+        <Ionicons name="chevron-down" size={15} color={c.inkSoft} />
       </Pressable>
     </View>
   );
@@ -166,6 +173,15 @@ const styles = StyleSheet.create({
   },
   avatarFill: { alignItems: "center", justifyContent: "center" },
   unreadDot: { position: "absolute", top: 0, right: 0, width: 12, height: 12, borderRadius: 6, borderWidth: 2 },
-  location: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 2 },
-  locationText: { flexShrink: 1 },
+  location: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  locGlyph: { width: 26, height: 26, borderRadius: 13, alignItems: "center", justifyContent: "center" },
+  locationText: { flex: 1, flexShrink: 1 },
 });

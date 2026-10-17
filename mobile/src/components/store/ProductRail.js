@@ -5,7 +5,7 @@ import { useStoreTheme } from "../../theme/storefront";
 import PressableScale from "./PressableScale";
 import ProductCard from "./ProductCard";
 
-export const RAIL_CARD_WIDTH = 164;
+export const RAIL_CARD_WIDTH = 168;
 
 /** Horizontal product rail with a trailing “See all” card. */
 export default function ProductRail({ products, onProductPress, onSeeAll, seeAllLabel = "See all", cardWidth = RAIL_CARD_WIDTH }) {

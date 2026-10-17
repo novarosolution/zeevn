@@ -169,7 +169,7 @@ function ProductCard({ product, width = 172, onPress, gallery = false, style }) 
       scaleTo={0.97}
       style={[
         styles.card,
-        shadow.soft,
+        shadow.card,
         { width, backgroundColor: c.card, borderColor: c.line, borderRadius: r.xl },
         style,
       ]}
@@ -263,16 +263,16 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
   },
   well: { overflow: "hidden" },
-  image: { width: "100%", height: "100%", padding: 6 },
+  image: { width: "100%", height: "100%" },
   placeholder: { flex: 1, alignItems: "center", justifyContent: "center" },
   badge: {
     position: "absolute",
     top: 8,
     left: 8,
-    maxWidth: "70%",
+    maxWidth: "72%",
     paddingHorizontal: 8,
-    paddingVertical: 3.5,
-    borderRadius: 8,
+    paddingVertical: 4,
+    borderRadius: 9,
   },
   heartHit: { position: "absolute", top: 6, right: 6 },
   heart: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },

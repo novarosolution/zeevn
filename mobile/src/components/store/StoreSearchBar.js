@@ -42,7 +42,9 @@ export default function StoreSearchBar({ onPress, hints = [], prefix = "Search",
         style,
       ]}
     >
-      <Ionicons name="search" size={compact ? 18 : 20} color={c.ink} />
+      <View style={[styles.searchGlyph, { backgroundColor: c.brandSoft }]}>
+        <Ionicons name="search" size={compact ? 15 : 17} color={c.brand} />
+      </View>
       <View style={styles.textWrap}>
         <Text style={type.ui(compact ? 14.5 : 15.5, "medium", c.inkMute)} numberOfLines={1}>
           {prefix}{" "}
@@ -54,7 +56,7 @@ export default function StoreSearchBar({ onPress, hints = [], prefix = "Search",
               entering={FadeInDown.duration(320)}
               exiting={FadeOutUp.duration(240)}
               numberOfLines={1}
-              style={type.ui(compact ? 14.5 : 15.5, "semibold", c.inkSoft)}
+              style={type.ui(compact ? 14.5 : 15.5, "semibold", c.ink)}
             >
               {`"${hint}"`}
             </Animated.Text>
@@ -70,8 +72,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
     borderWidth: StyleSheet.hairlineWidth,
+  },
+  searchGlyph: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
   },
   textWrap: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", height: 24 },
   hintClip: { flex: 1, minWidth: 0, height: 24, justifyContent: "center", overflow: "hidden" },

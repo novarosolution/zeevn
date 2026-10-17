@@ -10,7 +10,7 @@ import { OrnamentTitle } from "./SectionTitle";
 import StoreIcon from "./StoreIcon";
 
 function PickTab({ pick, active, width, onPress }) {
-  const { c, r, type } = useStoreTheme();
+  const { c, r, type, shadow } = useStoreTheme();
   const uri = pick.product ? productImageUri(pick.product, 70) : "";
   return (
     <Pressable
@@ -22,13 +22,23 @@ function PickTab({ pick, active, width, onPress }) {
         styles.tab,
         {
           width,
-          borderRadius: r.xl - 2,
+          borderRadius: r.xl,
           backgroundColor: active ? c.goldSoft : "transparent",
-          borderColor: active ? c.gold : "transparent",
+          borderColor: active ? withAlpha(c.gold, 0.55) : "transparent",
         },
       ]}
     >
-      <View style={[styles.circle, { backgroundColor: c.card, borderColor: active ? c.gold : c.line }]}>
+      <View
+        style={[
+          styles.circle,
+          shadow.soft,
+          {
+            backgroundColor: c.card,
+            borderColor: active ? c.gold : c.line,
+            borderWidth: active ? 2.5 : StyleSheet.hairlineWidth,
+          },
+        ]}
+      >
         {uri ? (
           <Image source={{ uri }} style={styles.circleImg} contentFit="cover" cachePolicy="memory-disk" />
         ) : (
@@ -36,7 +46,7 @@ function PickTab({ pick, active, width, onPress }) {
         )}
       </View>
       <Text
-        style={[type.ui(13, active ? "extrabold" : "semibold", active ? c.goldText : c.inkSoft), styles.label]}
+        style={[type.ui(12.5, active ? "extrabold" : "semibold", active ? c.goldText : c.inkSoft), styles.label]}
         numberOfLines={2}
       >
         {pick.title}

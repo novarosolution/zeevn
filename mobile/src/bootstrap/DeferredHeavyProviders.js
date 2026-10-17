@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { AuthProvider } from "../context/AuthContext";
 import { CartProvider } from "../context/CartContext";
+import { WishlistProvider } from "../context/WishlistContext";
 import { LiveSocketProvider } from "../context/LiveSocketContext";
 import { OrderCelebrationProvider } from "../context/OrderCelebrationContext";
 import { ApiHealthProvider } from "../context/ApiHealthContext";
@@ -27,20 +28,22 @@ export default function DeferredHeavyProviders({ children }) {
 
   return (
     <AuthProvider>
-      <CartProvider>
-        {heavyReady ? (
-          <ApiHealthProvider>
-            <LiveSocketProvider>
-              <OrderCelebrationProvider navigationRef={navigationRef}>
-                <BackendOfflineBanner />
-                {children}
-              </OrderCelebrationProvider>
-            </LiveSocketProvider>
-          </ApiHealthProvider>
-        ) : (
-          children
-        )}
-      </CartProvider>
+      <WishlistProvider>
+        <CartProvider>
+          {heavyReady ? (
+            <ApiHealthProvider>
+              <LiveSocketProvider>
+                <OrderCelebrationProvider navigationRef={navigationRef}>
+                  <BackendOfflineBanner />
+                  {children}
+                </OrderCelebrationProvider>
+              </LiveSocketProvider>
+            </ApiHealthProvider>
+          ) : (
+            children
+          )}
+        </CartProvider>
+      </WishlistProvider>
     </AuthProvider>
   );
 }

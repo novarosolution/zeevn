@@ -74,6 +74,7 @@ const linking = {
     screens: {
       Home: "",
       Shop: "shop",
+      Wishlist: "wishlist",
       About: "about",
       Privacy: "privacy",
       Terms: "terms",

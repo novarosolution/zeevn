@@ -5,15 +5,15 @@
  *  - Festival themes (greeting, colours, banner, bento tiles, picks) switch
  *    automatically by date via `FESTIVAL_CALENDAR`. Add or edit entries each year.
  *  - Force a theme with `STORE_FESTIVAL_OVERRIDE` ("auto" = follow the calendar,
- *    "everyday" = never show a festival look). The server home-view config can also
- *    send `festivalKey` to override it remotely.
+ *    "everyday" = never show a festival look). The app also honours a `festivalKey` on the
+ *    server home-view config (the admin console has no field for it yet).
  *  - Products, categories and prices always come from the API; this file only holds copy,
  *    layout choices and brand imagery.
  *
- * Icons use `{ ion: "name" }` (Ionicons) or `{ mci: "name" }` (MaterialCommunityIcons).
+ * Icons use `{ glyph: "ghee" }` (Zeevan range glyphs: all, ghee, tel, masala, honey, gifts), `{ ion: "name" }` (Ionicons)
+ * or `{ mci: "name" }` (MaterialCommunityIcons).
  * Routes use `{ name, params }` and are passed straight to `navigation.navigate`.
  */
-import { KANKREG_ANNOUNCE_COPY } from "./appContent";
 
 /** "auto" | "everyday" | "navratri" | "diwali" */
 export const STORE_FESTIVAL_OVERRIDE = "auto";
@@ -33,14 +33,22 @@ export const STORE_BRAND = {
   madeIn: "Made with care in Gujarat, India",
 };
 
-/** Greeting header — top block of Home. */
+/** Free-delivery threshold copy — shared by the header chip and the promo card. */
+export const STORE_FREE_DELIVERY = "Free delivery over ₹1,499";
+
+/** Top block of Home. */
 export const STORE_HEADER = {
-  eyebrow: "Zeevan · Taste of Purity",
-  greetingByPart: { morning: "Good morning", afternoon: "Good afternoon", evening: "Good evening" },
-  signedInTitle: (firstName) => `Namaste, ${firstName}`,
-  guestTitle: "Namaste",
-  /** Info chip next to the greeting (like “1.5 km away”). Distance chip is added when the shop pin is set. */
-  deliveryChip: KANKREG_ANNOUNCE_COPY.delivery || "Free delivery over ₹1,499",
+  /**
+   * “Zeevan delivers in / 1–2 days” (the most common `eta` set on your products). With no ETA data it
+   * falls back to a greeting: “Namaste, Aarav” (or “Welcome to Zeevan” when signed out).
+   */
+  showDeliveryPromise: true,
+  promiseEyebrow: "Zeevan delivers in",
+  greetingEyebrow: "Namaste,",
+  guestEyebrow: "Welcome to",
+  guestTitle: "Zeevan",
+  /** Info chip under the title. A distance chip is added when the farm-shop pin and the user's location are known. */
+  deliveryChip: STORE_FREE_DELIVERY,
   distanceSuffix: "from our farm shop",
   locationFallback: "Set delivery location",
   rewardsA11y: "Zeevan rewards",
@@ -58,12 +66,12 @@ export const STORE_HEADER = {
 
 /** Category tabs under the search bar. `lineKey` links a tab to a product line (see `zeevanCatalogContent`). */
 export const STORE_TABS = [
-  { key: "all", label: "All", icon: { mci: "view-grid-outline" }, iconActive: { mci: "view-grid" } },
-  { key: "ghee", label: "Ghee", lineKey: "ghee", icon: { mci: "pot-steam-outline" }, iconActive: { mci: "pot-steam" } },
-  { key: "tel", label: "Tel", lineKey: "tel", icon: { mci: "oil" }, iconActive: { mci: "oil" } },
-  { key: "masala", label: "Masala", lineKey: "masala", icon: { mci: "chili-mild-outline" }, iconActive: { mci: "chili-mild" } },
-  { key: "honey", label: "Honey", lineKey: "honey", icon: { mci: "beehive-outline" }, iconActive: { mci: "beehive-outline" } },
-  { key: "gifts", label: "Gifting", lineKey: "gifts", icon: { mci: "gift-outline" }, iconActive: { mci: "gift" } },
+  { key: "all", label: "All", icon: { glyph: "all" } },
+  { key: "ghee", label: "Ghee", lineKey: "ghee", icon: { glyph: "ghee" } },
+  { key: "tel", label: "Tel", lineKey: "tel", icon: { glyph: "tel" } },
+  { key: "masala", label: "Masala", lineKey: "masala", icon: { glyph: "masala" } },
+  { key: "honey", label: "Honey", lineKey: "honey", icon: { glyph: "honey" } },
+  { key: "gifts", label: "Gifting", lineKey: "gifts", icon: { glyph: "gifts" } },
 ];
 
 /** Copy for the tab landing page (non-“All” tabs). */
@@ -267,7 +275,6 @@ export const STORE_PROMOS = [
     image: require("../../assets/zeevan-hero-web-21x9-web-960.webp"),
     ratio: 412 / 960,
     title: "A2 Desi Cow Ghee",
-    cta: "Shop ghee",
     route: { name: "Shop", params: { pill: "Ghee" } },
   },
   {
@@ -276,7 +283,6 @@ export const STORE_PROMOS = [
     image: require("../../assets/zeevan-hero-web-honey-21x9-web-960.webp"),
     ratio: 524 / 960,
     title: "Kachi Ghani Mustard Oil",
-    cta: "Shop tel",
     route: { name: "Shop", params: { pill: "Tel" } },
   },
   {
@@ -284,7 +290,7 @@ export const STORE_PROMOS = [
     kind: "feature",
     icon: { mci: "truck-fast-outline" },
     eyebrow: "Doorstep delivery",
-    title: KANKREG_ANNOUNCE_COPY.delivery || "Free delivery over ₹1,499",
+    title: STORE_FREE_DELIVERY,
     subtitle: "Live tracking from our farm to your home",
     cta: "Shop now",
     route: { name: "Shop" },
@@ -401,7 +407,7 @@ export const STORE_WISHLIST = {
 export const STORE_NAV = {
   items: [
     { key: "Home", label: "Home", route: "Home", icon: { ion: "home-outline" }, iconActive: { ion: "home" } },
-    { key: "Shop", label: "Categories", route: "Shop", icon: { mci: "view-grid-outline" }, iconActive: { mci: "view-grid" } },
+    { key: "Shop", label: "Categories", route: "Shop", icon: { glyph: "all" } },
     { key: "Orders", label: "Order Again", route: "MyOrders", requiresAuth: true, icon: { mci: "repeat" }, iconActive: { mci: "repeat" } },
     { key: "Profile", label: "Account", route: "Profile", requiresAuth: true, icon: { ion: "person-outline" }, iconActive: { ion: "person" } },
   ],
@@ -409,8 +415,8 @@ export const STORE_NAV = {
   /** Which routes light up which tab. */
   activeRoutes: {
     Home: ["Home"],
-    Shop: ["Shop", "Product", "Wishlist"],
+    Shop: ["Shop", "Product"],
     Orders: ["MyOrders", "OrderConfirmed"],
-    Profile: ["Profile", "EditProfile", "Settings", "ManageAddress", "Notifications", "Support", "RedeemRewards"],
+    Profile: ["Profile", "Wishlist", "EditProfile", "Settings", "ManageAddress", "Notifications", "Support", "RedeemRewards"],
   },
 };

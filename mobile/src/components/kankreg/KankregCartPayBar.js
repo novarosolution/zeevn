@@ -55,12 +55,16 @@ export default function KankregCartPayBar({
   const { showMobileWebTabBar } = useKankregLayout();
   const isSticky = mode === "sticky";
   const dockBottom = customerFloatingNavOffset(insets, { mobileWebTabBar: showMobileWebTabBar });
+  /** In the app the floating bottom nav stays on screen, so the inline bar becomes a card docked just above it. */
+  const isNativeDock = Platform.OS !== "web" && !isSticky;
   const sheetBg = isDark ? "rgba(20, 17, 15, 0.98)" : "rgba(252, 248, 240, 0.98)";
   const barShadow = isDark ? barShadowDark : barShadowLight;
 
   const shortCta = String(ctaLabel || CART_UI.payCta)
     .replace(/\s*[·•].*$/, "")
     .trim() || CART_UI.payCta;
+  /** App copy already ends in an arrow ("Checkout →") and the button draws its own icon — drop the duplicate in the app. */
+  const ctaText = Platform.OS === "web" ? shortCta : shortCta.replace(/\s*[→›»]+\s*$/, "") || shortCta;
 
   const metaBits = [];
   if (itemCount > 0) {
@@ -94,6 +98,16 @@ export default function KankregCartPayBar({
               zIndex: Platform.OS === "web" && showMobileWebTabBar ? 850 : 40,
             }
           : styles.barInline,
+        isNativeDock && {
+          width: "auto",
+          alignSelf: "stretch",
+          marginHorizontal: spacing.md,
+          marginBottom: dockBottom,
+          paddingBottom: 10,
+          borderRadius: 22,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(36, 68, 36, 0.14)",
+        },
         style,
       ]}
     >
@@ -134,7 +148,7 @@ export default function KankregCartPayBar({
             style={styles.cta}
           >
             <Text style={styles.ctaText} numberOfLines={1}>
-              {loading ? "…" : shortCta}
+              {loading ? "…" : ctaText}
             </Text>
             {!loading && !disabled ? (
               <Ionicons name="arrow-forward" size={15} color="#FAF8F4" />

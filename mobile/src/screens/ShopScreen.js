@@ -1,13 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
-import {
-  Platform,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Platform, RefreshControl, StyleSheet, View } from "react-native";
 import CustomerScreenShell from "../components/CustomerScreenShell";
 import BottomNavBar from "../components/BottomNavBar";
 import { HomeCatalogGridCard } from "../components/home/HomeCatalogProductViews";
@@ -19,7 +12,6 @@ import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
 import { getProducts, invalidateProductsCache } from "../services/productService";
-import { KANKREG_PALETTE } from "../theme/kankregWeb";
 import { KANKREG_PAGE_SECTION_GAP } from "../theme/kankregScreenStyles";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import { getShopTheme } from "../theme/shopTheme";
@@ -32,8 +24,7 @@ import SectionReveal from "../components/motion/SectionReveal";
 import { customerPanel } from "../theme/screenLayout";
 import { fonts, spacing, typography } from "../theme/tokens";
 import { productToCartLine } from "../utils/productCart";
-import NativeSearchBar from "../components/native/NativeSearchBar";
-import NativeProductCard from "../components/native/NativeProductCard";
+import { StoreShop } from "../components/store/entry";
 import { FIGMA } from "../theme/figmaApp";
 import {
   applyShopFilters,
@@ -45,13 +36,11 @@ import {
 } from "../utils/shopFilters";
 import ShopPriceFilter from "../components/shop/ShopPriceFilter";
 import ShopFilterSection from "../components/shop/ShopFilterSection";
-import ShopActiveFilters from "../components/shop/ShopActiveFilters";
 import ShopCatalogHero from "../components/shop/ShopCatalogHero";
 import ShopCategoryRail from "../components/shop/ShopCategoryRail";
 import ShopSortBar from "../components/shop/ShopSortBar";
 import ShopFeaturesStrip from "../components/shop/ShopFeaturesStrip";
 import ShopDeliveryNote from "../components/shop/ShopDeliveryNote";
-import ShopLineQuickPick from "../components/shop/ShopLineQuickPick";
 import ShopAtelierLineRail from "../components/shop/ShopAtelierLineRail";
 import { buildShopCatalogSummary, buildShopCategoryRail } from "../utils/shopCatalogHelpers";
 import {
@@ -61,7 +50,6 @@ import {
   ShopFilterCheck,
   ShopFilterSidebarHeader,
   ShopMobileFilterCard,
-  ShopNativeMetaLine,
   ShopTrustStrip,
   shopFilterSidebarStyle,
 } from "../components/shop/ShopPageChrome";
@@ -270,10 +258,8 @@ export default function ShopScreen({ navigation, route }) {
   const hideToolbarPills =
     SHOP_LAYOUT.hideToolbarPillsWhenQuickPick !== false && showLineQuickPick;
   const showPageHeader = SHOP_LAYOUT.showPageHeader !== false;
-  const showNativeSortRow = SHOP_LAYOUT.showNativeSortRow === true;
   const showFeaturesStrip = SHOP_LAYOUT.showFeaturesStrip === true && (SHOP_SCREEN_UI.features?.length || 0) > 0;
   const showDeliveryNote = SHOP_LAYOUT.showDeliveryNote === true && Boolean(SHOP_SCREEN_UI.deliveryNote);
-  const showNativeMetaLine = SHOP_LAYOUT.showNativeMetaLine === true;
   const premiumLean = SHOP_LAYOUT.premiumLean === true;
 
   const showToolbarSort = SHOP_LAYOUT.showToolbarSort !== false;
@@ -354,140 +340,31 @@ export default function ShopScreen({ navigation, route }) {
     </>
   );
 
-  const nativeFilterPanel = filtersOpen ? (
-    <View
-      style={[
-        styles.nativeFiltersCard,
-        {
-          backgroundColor: shopTheme.surface,
-          borderColor: shopTheme.border,
-          borderTopColor: shopTheme.borderTopAccent,
-        },
-      ]}
-    >
-      {renderFilterSections("chips", { skipCollection: true })}
-      {hasActiveFilters ? (
-        <Pressable onPress={clearAllFilters} style={styles.nativeClearLink}>
-          <Text style={[styles.nativeClearText, { color: shopTheme.accent }]}>
-            {SHOP_SCREEN_UI.clearFilters}
-          </Text>
-        </Pressable>
-      ) : null}
-    </View>
-  ) : null;
-
   if (Platform.OS !== "web") {
     return (
-      <CustomerScreenShell style={{ flex: 1 }}>
-        <KankregScrollPage
-          scrollVariant="page"
-          showFooter={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={c.primary} />
-          }
-        >
-          <KankregCustomerPageHeader
-            title={SHOP_SCREEN_UI.pageTitle}
-            showBack={false}
-            compactNative
-          />
-          {(showCatalogHero || showFeaturesStrip || showDeliveryNote) ? (
-            <View style={styles.nativeHeroWrap}>
-              {showCatalogHero ? <ShopCatalogHero summary={catalogSummary} compact /> : null}
-              {showFeaturesStrip ? <ShopFeaturesStrip compact /> : null}
-              {showDeliveryNote ? <ShopDeliveryNote compact /> : null}
-            </View>
-          ) : null}
-          {showTrustStrip ? (
-            <View style={styles.nativeTrustWrap}>
-              <ShopTrustStrip compact />
-            </View>
-          ) : null}
-          <View style={styles.nativeToolbar}>
-            <NativeSearchBar
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              inputRef={searchInputRef}
-              autoFocus={Boolean(route.params?.focusSearch)}
-              onClear={() => setSearchQuery("")}
-              onFilterPress={() => setFiltersOpen((open) => !open)}
-              placeholder={SHOP_SCREEN_UI.searchPlaceholder}
-              filterBadgeCount={filterBadgeCount}
-            />
-            {showLineQuickPick ? (
-              <View style={styles.nativeLinePick}>
-                <ShopLineQuickPick selectedPill={pill} onSelectPill={handlePillSelect} compact />
-              </View>
-            ) : (
-              <View style={styles.nativePillsWrap}>
-                <ShopCollectionPills selected={pill} onSelect={handlePillSelect} compact scroll />
-              </View>
-            )}
-            {showCategoryRail ? (
-              <View style={styles.nativeCategoryRail}>
-                <ShopCategoryRail
-                  categories={categoryRail}
-                  selected={categories}
-                  onToggle={toggleCategory}
-                  compact
-                />
-              </View>
-            ) : null}
-            {activeFilterChips.length ? (
-              <View style={styles.nativeActiveFilters}>
-                <ShopActiveFilters
-                  chips={activeFilterChips}
-                  onRemove={handleRemoveFilterChip}
-                  onClearAll={clearAllFilters}
-                  inline
-                />
-              </View>
-            ) : null}
-            {nativeFilterPanel}
-            {showNativeSortRow ? (
-              <View style={styles.nativeSortWrap}>
-                <ShopSortBar value={sortKey} onChange={setSortKey} compact />
-              </View>
-            ) : null}
-            {showNativeMetaLine ? (
-              <ShopNativeMetaLine filtered={filtered.length} total={products.length} />
-            ) : null}
-          </View>
-          {loading ? (
-            <ShopCatalogSkeleton count={6} />
-          ) : filtered.length ? (
-            <View style={nativeShopGrid.grid}>
-              {filtered.map((item, idx) => {
-                const flags = getProductCardFlags(item, SHOP_SCREEN_UI.card.comingSoonNoteFallback);
-                return (
-                <View key={item.id} style={nativeShopGrid.cell}>
-                  <NativeProductCard
-                    product={item}
-                    index={idx}
-                    isOutOfStock={flags.isOutOfStock}
-                    isComingSoon={flags.isComingSoon}
-                    comingSoonNote={flags.comingSoonNote}
-                    onPress={() => navigation.navigate("Product", { productId: item.id })}
-                    onAddToCart={() => addToCart(productToCartLine(item))}
-                  />
-                </View>
-              );})}
-            </View>
-          ) : (
-            <PremiumEmptyState
-              iconName="search-outline"
-              title={hasActiveFilters ? SHOP_SCREEN_UI.emptyMatchesTitle : SHOP_SCREEN_UI.emptyTitle}
-              description={
-                hasActiveFilters ? SHOP_SCREEN_UI.emptyMatchesDescription : SHOP_SCREEN_UI.emptyDescription
-              }
-              ctaLabel={hasActiveFilters ? SHOP_SCREEN_UI.viewAllCta : SHOP_SCREEN_UI.emptyCta}
-              onCtaPress={hasActiveFilters ? clearAllFilters : () => load(true)}
-              compact
-            />
-          )}
-        </KankregScrollPage>
-        <BottomNavBar />
-      </CustomerScreenShell>
+      <StoreShop
+        navigation={navigation}
+        route={route}
+        products={products}
+        filtered={filtered}
+        loading={loading}
+        refreshing={refreshing}
+        onRefresh={() => load(true)}
+        filters={filterState}
+        categoryOptions={categoryOptions}
+        hasActiveFilters={hasActiveFilters}
+        filterBadgeCount={filterBadgeCount}
+        onLineFiltersChange={({ pill: nextPill, categories: nextCategories }) => {
+          setPill(nextPill);
+          setCategories(nextCategories);
+        }}
+        onSortChange={setSortKey}
+        onToggleCategory={toggleCategory}
+        onPriceChange={handlePriceChange}
+        onRatingChange={setMinRating}
+        onSearchChange={setSearchQuery}
+        onClearAll={clearAllFilters}
+      />
     );
   }
 
@@ -686,20 +563,6 @@ const gridStyles = StyleSheet.create({
   productGridWrap: {},
   productGridCell: {},
   productListRow: {},
-});
-
-const nativeShopGrid = StyleSheet.create({
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    paddingHorizontal: FIGMA.gutter,
-    gap: 11,
-    paddingBottom: spacing.md,
-  },
-  cell: {
-    width: "47.5%",
-    minWidth: 0,
-  },
 });
 
 const styles = StyleSheet.create({

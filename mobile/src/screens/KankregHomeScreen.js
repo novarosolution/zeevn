@@ -56,7 +56,6 @@ import { productToCartLine } from "../utils/productCart";
 import { NativeSectionHeader, NativeCategoryRow } from "./nativeHomeImports";
 import { StoreHome } from "../components/store/entry";
 import AppStartupScreen from "../components/AppStartupScreen";
-import { FIGMA } from "../theme/figmaApp";
 import { useAuth } from "../context/AuthContext";
 import { fetchMyNotifications } from "../services/userService";
 import { spacing } from "../theme/tokens";
@@ -81,34 +80,6 @@ function useRedirectToFindLocationWhenNeeded(navigation, isAuthenticated) {
     }, [bootstrapped, isAuthenticated, needsFindScreen, navigation])
   );
 }
-
-const nativeHomeStyles = StyleSheet.create({
-  shell: {
-    flex: 1,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: spacing.xs,
-    paddingHorizontal: 0,
-    gap: spacing.md,
-    width: "100%",
-    maxWidth: "100%",
-  },
-  bannerWrap: {
-    paddingHorizontal: FIGMA.gutter,
-    marginBottom: spacing.xs,
-  },
-  emptyWrap: {
-    paddingHorizontal: FIGMA.gutter,
-  },
-  divider: {
-    marginHorizontal: FIGMA.gutter,
-    marginTop: spacing.xs,
-    marginBottom: spacing.xs,
-  },
-});
 
 const homeGridStyles = StyleSheet.create({
   productGridWrap: {},

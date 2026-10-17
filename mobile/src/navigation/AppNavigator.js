@@ -9,6 +9,7 @@ import { FindLocationScreen } from "./screenRegistryCustomer";
 import * as LazyScreens from "./lazyScreens";
 import { useAuth } from "../context/AuthContext";
 import { DeliveryLocationProvider } from "../context/DeliveryLocationContext";
+import WishlistScreen from "../screens/WishlistScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -63,6 +64,7 @@ const WrappedRegister = withPageTransition(CoreScreens.RegisterScreen);
 const WrappedFindLocation = withPageTransition(FindLocationScreen);
 const WrappedHome = withPageTransition(CoreScreens.KankregHomeScreen);
 const WrappedShop = withPageTransition(LazyScreens.ShopScreen);
+const WrappedWishlist = withPageTransition(WishlistScreen);
 const WrappedProduct = withPageTransition(LazyScreens.ProductScreen);
 const WrappedAbout = withPageTransition(LazyScreens.AboutScreen);
 const WrappedLegal = withPageTransition(LazyScreens.LegalDocumentScreen);
@@ -130,6 +132,7 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
         )}
         <Stack.Screen name="Home" component={WrappedHome} />
         <Stack.Screen name="Shop" component={WrappedShop} />
+        <Stack.Screen name="Wishlist" component={WrappedWishlist} />
         <Stack.Screen name="About" component={WrappedAbout} />
         <Stack.Screen name="Privacy" component={WrappedLegal} />
         <Stack.Screen name="Terms" component={WrappedLegal} />

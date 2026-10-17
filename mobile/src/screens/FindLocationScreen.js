@@ -11,6 +11,7 @@ import { useTheme } from "../context/ThemeContext";
 import { FIGMA, figmaPageBg, figmaSurfaceBg, figmaTextPrimary, figmaTextSecondary } from "../theme/figmaApp";
 import { fonts, spacing } from "../theme/tokens";
 import { platformShadow } from "../theme/shadowPlatform";
+import { APP_DISPLAY_NAME } from "../constants/brand";
 
 /**
  * Full-screen native location discovery — radar animation, result card, confirm CTA.
@@ -121,7 +122,7 @@ export default function FindLocationScreen({ navigation, route }) {
       />
       <View style={styles.topMark}>
         <View style={styles.brandDot} />
-        <Text style={[styles.brand, figmaTextSecondary(isDark)]}>kankreg</Text>
+        <Text style={[styles.brand, figmaTextSecondary(isDark)]}>{APP_DISPLAY_NAME}</Text>
       </View>
 
       <View style={styles.body}>

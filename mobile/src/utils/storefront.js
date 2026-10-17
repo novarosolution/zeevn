@@ -3,7 +3,6 @@
  * Pure functions, no React.
  */
 import { ZEEVAN_PRODUCT_LINES, matchProductLine } from "../content/zeevanCatalogContent";
-import { STORE_HEADER } from "../content/storefrontContent";
 import { productCoverUri } from "./adminProductHelpers";
 import { getImageUriCandidates } from "./image";
 import { isProductComingSoon, isProductOutOfStock } from "./productAvailability";
@@ -167,15 +166,32 @@ export function visibleTabs(tabs, products) {
   return tabs.filter((tab) => tab.key === "all" || !tab.lineKey || present.has(tab.lineKey));
 }
 
-export function getGreetingPart(date = new Date()) {
-  const h = date.getHours();
-  if (h < 12) return "morning";
-  if (h < 17) return "afternoon";
-  return "evening";
+/** The delivery estimate most products share (e.g. “1–2 days”), or "" when none is set. */
+export function mostCommonEta(products) {
+  const counts = new Map();
+  (Array.isArray(products) ? products : []).forEach((p) => {
+    const label = getEtaLabel(p);
+    if (label) counts.set(label, (counts.get(label) || 0) + 1);
+  });
+  let best = "";
+  let bestCount = 0;
+  counts.forEach((count, label) => {
+    if (count > bestCount) {
+      best = label;
+      bestCount = count;
+    }
+  });
+  return best;
 }
 
-export function getGreetingLabel(date = new Date()) {
-  return STORE_HEADER.greetingByPart[getGreetingPart(date)];
+/** "9876543210" → "+91 98765 43210" (Indian mobiles); anything else is returned as typed. */
+export function formatPhone(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const digits = raw.replace(/\D/g, "");
+  const national = digits.length === 12 && digits.startsWith("91") ? digits.slice(2) : digits;
+  if (national.length === 10) return `+91 ${national.slice(0, 5)} ${national.slice(5)}`;
+  return raw;
 }
 
 export function getFirstName(user) {

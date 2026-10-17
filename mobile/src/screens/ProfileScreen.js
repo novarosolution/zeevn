@@ -29,6 +29,7 @@ import SectionReveal from "../components/motion/SectionReveal";
 import KankregProfileGrid from "../components/kankreg/KankregProfileGrid";
 import NativeProfileCard from "../components/native/NativeProfileCard";
 import NativeMenuList from "../components/native/NativeMenuList";
+import { StoreProfile } from "../components/store/entry";
 import { FIGMA } from "../theme/figmaApp";
 
 /**
@@ -170,6 +171,27 @@ export default function ProfileScreen({ navigation }) {
   }
   if (!isAuthenticated) {
     return <AuthGateShell signedOut navigation={navigation} />;
+  }
+
+  if (isNativeApp) {
+    return (
+      <StoreProfile
+        navigation={navigation}
+        user={user}
+        displayName={displayName}
+        phone={phoneText}
+        avatarUrl={fullAvatar}
+        rewardPoints={rewardPoints}
+        orderCount={orders.length}
+        unreadCount={unreadNotifications}
+        loading={loading}
+        error={error}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        onSignOut={handleSignOut}
+        signingOut={isSigningOut}
+      />
+    );
   }
 
   const personalDetailsBlock = (

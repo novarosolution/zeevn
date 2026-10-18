@@ -215,7 +215,7 @@ export const HOME_SCREEN_UI = {
     atelierSupport: "Ghee, tel, masala & honey — crafted slow for Indian kitchens.",
     atelierCta: "Shop the collection",
     showHeroTrustChips: true,
-    showIntroBand: false,
+    showIntroBand: true,
     showPromiseBand: true,
     showTimelineSection: false,
     showProcessSection: false,

@@ -333,7 +333,7 @@ export default function KankregHomeScreen({ navigation }) {
   const showWebProcess =
     !webLean && webCfg.showProcessSection !== false && showProcessSection;
   const showNativeIngredients =
-    Platform.OS === "web" && webCfg.showNativeIngredients !== false && !isMobileWeb;
+    Platform.OS === "web" && webCfg.showNativeIngredients !== false;
   const showDiwaliBridge =
     Platform.OS === "web" && webCfg.showDiwaliBridge !== false;
   const showDiwaliFestive =
@@ -341,18 +341,18 @@ export default function KankregHomeScreen({ navigation }) {
   const showDiwaliAnnounce =
     Platform.OS === "web" && webCfg.showDiwaliAnnounce === true;
   const showQualityAssurance =
-    Platform.OS === "web" && webCfg.showQualityAssurance !== false && !isMobileWeb;
+    Platform.OS === "web" && webCfg.showQualityAssurance !== false;
   const showWhyChoose = Platform.OS === "web" && webCfg.showWhyChoose !== false;
   const showLineFocus = Platform.OS === "web" && webCfg.showLineFocus !== false;
-  const showPromiseBand =
-    Platform.OS === "web" && webCfg.showPromiseBand !== false && !isMobileWeb;
+  const showPromiseBand = Platform.OS === "web" && webCfg.showPromiseBand !== false;
+  /** Phone + desktop share the same content blocks (UI chrome differs). */
   const showBottomBlock =
-    !webLean &&
+    ready &&
     (showAboutStory ||
       showCommunitySection ||
       webCfg.showMarquee ||
       webCfg.showBrandQuote ||
-      webCfg.showTestimonials ||
+      webCfg.showTestimonials !== false ||
       webCfg.showFeaturedEditorial ||
       webCfg.showStatsStrip);
   const webCreamShell =
@@ -371,8 +371,8 @@ export default function KankregHomeScreen({ navigation }) {
           <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={c.primary} />
         }
       >
-        {showDiwaliAnnounce && !isMobileWeb ? <WebDiwaliAnnounceBar /> : null}
-        {showDiwaliBridge && !isMobileWeb ? <WebDiwaliBridgeSection /> : null}
+        {showDiwaliAnnounce ? <WebDiwaliAnnounceBar /> : null}
+        {showDiwaliBridge ? <WebDiwaliBridgeSection /> : null}
         {showWebHero ? (
           <WebPremiumHero
             navigation={navigation}
@@ -381,8 +381,14 @@ export default function KankregHomeScreen({ navigation }) {
           />
         ) : null}
 
-        {webCfg.showIntroBand !== false && !isMobileWeb ? (
-          <WebHomeIntroBand navigation={navigation} />
+        {webCfg.showIntroBand !== false ? (
+          isMobileWeb ? (
+            <DeferredMount minHeight={96} rootMargin="240px 0px">
+              <WebHomeIntroBand navigation={navigation} />
+            </DeferredMount>
+          ) : (
+            <WebHomeIntroBand navigation={navigation} />
+          )
         ) : null}
 
         {isMobileWeb && ready ? (
@@ -441,16 +447,16 @@ export default function KankregHomeScreen({ navigation }) {
               </ScrollFadeUp>
             ) : null}
 
-            {showPromiseBand && ready ? <WebHomePromiseBand /> : null}
+            {showPromiseBand && ready && !isMobileWeb ? <WebHomePromiseBand /> : null}
 
             {showPrime && ready ? (
               webLean ? (
                 <DeferredMount minHeight={480} rootMargin="320px 0px">
                   <View style={styles.webSection} nativeID="home-bestsellers">
                     <SectionHeader
-                      eyebrow={isMobileWeb ? undefined : primeTitle}
+                      eyebrow={primeTitle}
                       title={HOME_SCREEN_UI.bestsellers.webSectionTitle}
-                      kicker={isMobileWeb ? undefined : HOME_SCREEN_UI.bestsellers.webKicker}
+                      kicker={HOME_SCREEN_UI.bestsellers.webKicker}
                       right={
                         <HomeCatalogViewAllLink
                           label={HOME_SCREEN_UI.bestsellers.webAction}
@@ -458,16 +464,14 @@ export default function KankregHomeScreen({ navigation }) {
                         />
                       }
                     />
-                    {comingSoonOnHome.length && !isMobileWeb ? (
-                      <HomeComingSoonStrip products={comingSoonOnHome} />
-                    ) : null}
+                    {comingSoonOnHome.length ? <HomeComingSoonStrip products={comingSoonOnHome} /> : null}
                     <View nativeID="home-catalog">
                       {homeCatalog.length ? (
                         <CatalogGridReveal
                           immediateFirst={Math.min(homeCatalog.length, isMobileWeb ? 4 : 8)}
                           staggerInitialDelay={48}
                         >
-                          {(isMobileWeb ? homeCatalog.slice(0, 8) : homeCatalog).map((item, idx) => {
+                          {homeCatalog.map((item, idx) => {
                             const flags = getProductCardFlags(item, SHOP_SCREEN_UI.card.comingSoonNoteFallback);
                             return (
                             <HomeCatalogGridCard
@@ -503,9 +507,9 @@ export default function KankregHomeScreen({ navigation }) {
               <ScrollFadeUp index={1}>
                 <View style={styles.webSection} nativeID="home-bestsellers">
                   <SectionHeader
-                    eyebrow={isMobileWeb ? undefined : primeTitle}
+                    eyebrow={primeTitle}
                     title={HOME_SCREEN_UI.bestsellers.webSectionTitle}
-                    kicker={isMobileWeb ? undefined : HOME_SCREEN_UI.bestsellers.webKicker}
+                    kicker={HOME_SCREEN_UI.bestsellers.webKicker}
                     right={
                       <HomeCatalogViewAllLink
                         label={HOME_SCREEN_UI.bestsellers.webAction}
@@ -557,6 +561,8 @@ export default function KankregHomeScreen({ navigation }) {
 
             {showWhyChoose && ready ? <WebWhyChooseSection /> : null}
 
+            {showPromiseBand && ready && isMobileWeb ? <WebHomePromiseBand /> : null}
+
             {showTimelineSection ? (
               <ScrollFadeUp index={2}>
                 <DeferredMount minHeight={320} rootMargin="320px 0px">
@@ -575,7 +581,7 @@ export default function KankregHomeScreen({ navigation }) {
         </View>
 
         {showNativeIngredients ? <WebNativeIngredientsSection /> : null}
-        {showDiwaliFestive && !isMobileWeb ? <WebDiwaliDivider /> : null}
+        {showDiwaliFestive ? <WebDiwaliDivider /> : null}
 
         {showLineFocus && ready ? (
           <View
@@ -614,7 +620,7 @@ export default function KankregHomeScreen({ navigation }) {
           </View>
         ) : null}
 
-        {showDiwaliFestive && !isMobileWeb ? <WebDiwaliDivider /> : null}
+        {showDiwaliFestive ? <WebDiwaliDivider /> : null}
         {showQualityAssurance ? <WebQualityAssuranceSection /> : null}
 
         {showBottomBlock ? (
@@ -645,7 +651,7 @@ export default function KankregHomeScreen({ navigation }) {
               </DeferredMount>
             ) : null}
 
-            {showHomeExtras && webCfg.showStatsStrip && !isMobileWeb && ready ? (
+            {showHomeExtras && webCfg.showStatsStrip && ready ? (
               <ScrollFadeUp index={5}>
                 <HomeStatsStrip c={c} isDark={isDark} />
               </ScrollFadeUp>
@@ -660,7 +666,7 @@ export default function KankregHomeScreen({ navigation }) {
                 <HomeFeaturedEditorial product={featuredProduct} navigation={navigation} />
               </ScrollFadeUp>
             ) : null}
-            {showHomeExtras && webCfg.showTestimonials && ready ? (
+            {(showHomeExtras || isMobileWeb) && webCfg.showTestimonials !== false && ready ? (
               <ScrollFadeUp index={8}>
                 <HomeTestimonials c={c} isDark={isDark} />
               </ScrollFadeUp>

@@ -333,7 +333,7 @@ export default function KankregHomeScreen({ navigation }) {
   const showWebProcess =
     !webLean && webCfg.showProcessSection !== false && showProcessSection;
   const showNativeIngredients =
-    Platform.OS === "web" && webCfg.showNativeIngredients !== false;
+    Platform.OS === "web" && webCfg.showNativeIngredients !== false && !isMobileWeb;
   const showDiwaliBridge =
     Platform.OS === "web" && webCfg.showDiwaliBridge !== false;
   const showDiwaliFestive =
@@ -341,10 +341,11 @@ export default function KankregHomeScreen({ navigation }) {
   const showDiwaliAnnounce =
     Platform.OS === "web" && webCfg.showDiwaliAnnounce === true;
   const showQualityAssurance =
-    Platform.OS === "web" && webCfg.showQualityAssurance !== false;
+    Platform.OS === "web" && webCfg.showQualityAssurance !== false && !isMobileWeb;
   const showWhyChoose = Platform.OS === "web" && webCfg.showWhyChoose !== false;
   const showLineFocus = Platform.OS === "web" && webCfg.showLineFocus !== false;
-  const showPromiseBand = Platform.OS === "web" && webCfg.showPromiseBand !== false;
+  const showPromiseBand =
+    Platform.OS === "web" && webCfg.showPromiseBand !== false && !isMobileWeb;
   const showBottomBlock =
     !webLean &&
     (showAboutStory ||
@@ -447,9 +448,9 @@ export default function KankregHomeScreen({ navigation }) {
                 <DeferredMount minHeight={480} rootMargin="320px 0px">
                   <View style={styles.webSection} nativeID="home-bestsellers">
                     <SectionHeader
-                      eyebrow={primeTitle}
+                      eyebrow={isMobileWeb ? undefined : primeTitle}
                       title={HOME_SCREEN_UI.bestsellers.webSectionTitle}
-                      kicker={HOME_SCREEN_UI.bestsellers.webKicker}
+                      kicker={isMobileWeb ? undefined : HOME_SCREEN_UI.bestsellers.webKicker}
                       right={
                         <HomeCatalogViewAllLink
                           label={HOME_SCREEN_UI.bestsellers.webAction}
@@ -457,14 +458,16 @@ export default function KankregHomeScreen({ navigation }) {
                         />
                       }
                     />
-                    {comingSoonOnHome.length ? <HomeComingSoonStrip products={comingSoonOnHome} /> : null}
+                    {comingSoonOnHome.length && !isMobileWeb ? (
+                      <HomeComingSoonStrip products={comingSoonOnHome} />
+                    ) : null}
                     <View nativeID="home-catalog">
                       {homeCatalog.length ? (
                         <CatalogGridReveal
-                          immediateFirst={Math.min(homeCatalog.length, isMobileWeb ? 1 : 8)}
+                          immediateFirst={Math.min(homeCatalog.length, isMobileWeb ? 4 : 8)}
                           staggerInitialDelay={48}
                         >
-                          {homeCatalog.map((item, idx) => {
+                          {(isMobileWeb ? homeCatalog.slice(0, 8) : homeCatalog).map((item, idx) => {
                             const flags = getProductCardFlags(item, SHOP_SCREEN_UI.card.comingSoonNoteFallback);
                             return (
                             <HomeCatalogGridCard
@@ -500,9 +503,9 @@ export default function KankregHomeScreen({ navigation }) {
               <ScrollFadeUp index={1}>
                 <View style={styles.webSection} nativeID="home-bestsellers">
                   <SectionHeader
-                    eyebrow={primeTitle}
+                    eyebrow={isMobileWeb ? undefined : primeTitle}
                     title={HOME_SCREEN_UI.bestsellers.webSectionTitle}
-                    kicker={HOME_SCREEN_UI.bestsellers.webKicker}
+                    kicker={isMobileWeb ? undefined : HOME_SCREEN_UI.bestsellers.webKicker}
                     right={
                       <HomeCatalogViewAllLink
                         label={HOME_SCREEN_UI.bestsellers.webAction}

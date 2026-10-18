@@ -128,7 +128,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
         <View
           style={[
             styles.wrap,
-            useCompactChrome && styles.wrapCompact,
+            useCompactChrome && styles.wrapCompactPhone,
             compactHeader && styles.wrapTight,
             {
               paddingHorizontal: pageGutterClamp,
@@ -137,152 +137,135 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
             },
           ]}
         >
-          <KankregBrandMark
-            onPress={() => go("Home")}
-            compact={useCompactChrome}
-          />
-
-          {showDesktopNav ? (
-            <View style={styles.nav}>
-              {items.map((item) => {
-                const active = routeMatchesNav(item.key, currentRouteName);
-                return (
-                  <Pressable
-                    key={item.key}
-                    onPress={item.onPress}
-                    style={({ hovered }) => [
-                      styles.navBtn,
-                      active && (isDark ? styles.navBtnActiveDark : styles.navBtnActive),
-                      hovered && !active && (isDark ? styles.navBtnHoverDark : styles.navBtnHover),
-                    ]}
-                    accessibilityRole="tab"
-                    accessibilityState={{ selected: active }}
-                    accessibilityLabel={item.label}
-                  >
-                    <Text
-                      style={[
-                        styles.navBtnText,
-                        isDark && styles.navBtnTextDark,
-                        active && (isDark ? styles.navBtnTextActiveDark : styles.navBtnTextActive),
-                      ]}
-                    >
-                      {item.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          ) : null}
-
-          <View style={[styles.actions, useCompactChrome && styles.actionsCompact]}>
-            <Pressable
-              onPress={openShopSearch}
-              style={({ hovered }) => [
-                styles.iconBtn,
-                useCompactChrome && styles.iconBtnCompact,
-                isDark && styles.iconBtnDark,
-                hovered && (isDark ? styles.iconBtnHoverDark : styles.iconBtnHover),
-              ]}
-              accessibilityLabel={KANKREG_HEADER.searchA11y}
-            >
-              <Ionicons
-                name="search-outline"
-                size={useCompactChrome ? 16 : 18}
-                color={isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft}
-              />
-            </Pressable>
-            <Pressable
-              onPress={() => go("Cart", false)}
-              style={({ hovered }) => [
-                styles.iconBtn,
-                useCompactChrome && styles.iconBtnCompact,
-                isDark && styles.iconBtnDark,
-                hovered && (isDark ? styles.iconBtnHoverDark : styles.iconBtnHover),
-              ]}
-              accessibilityLabel={KANKREG_HEADER.cartA11y}
-            >
-              <Ionicons
-                name="bag-outline"
-                size={useCompactChrome ? 16 : 18}
-                color={isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft}
-              />
-              {totalItems > 0 ? (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{totalItems > 9 ? "9+" : String(totalItems)}</Text>
-                </View>
-              ) : null}
-            </Pressable>
-            {isNative ? null : !useCompactChrome ? (
-              <Pressable
-                onPress={() => (isAuthenticated ? go("Profile", true) : go("Login"))}
-                style={({ hovered, pressed }) => [
-                  styles.signIn,
-                  hovered && styles.signInHover,
-                  pressed && { opacity: 0.9 },
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  isAuthenticated ? KANKREG_HEADER.accountLabel : KANKREG_HEADER.signInLabel
-                }
-              >
-                <Text style={styles.signInText}>
-                  {isAuthenticated ? KANKREG_HEADER.accountLabel : KANKREG_HEADER.signInLabel}
-                </Text>
-              </Pressable>
-            ) : (
-              <Pressable
-                onPress={() => (isAuthenticated ? go("Profile", true) : go("Login"))}
-                style={[styles.iconBtn, useCompactChrome && styles.iconBtnCompact, isDark && styles.iconBtnDark]}
-                accessibilityLabel={
-                  isAuthenticated ? KANKREG_HEADER.accountLabel : KANKREG_HEADER.signInLabel
-                }
-              >
-                <Ionicons
-                  name="person-outline"
-                  size={useCompactChrome ? 16 : 18}
-                  color={isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft}
-                />
-              </Pressable>
-            )}
-            {!showDesktopNav && !isNative ? (
+          {useCompactChrome ? (
+            <>
               <Pressable
                 onPress={() => {
                   setLcpShellVisible(false);
                   setMobileOpen((v) => !v);
                 }}
-                style={({ hovered, pressed }) => [
-                  styles.menuToggle,
-                  useCompactChrome && styles.menuToggleCompact,
-                  isDark && styles.menuToggleDark,
-                  mobileOpen && (isDark ? styles.menuToggleOpenDark : styles.menuToggleOpen),
-                  (hovered || pressed) && styles.menuTogglePressed,
-                ]}
+                style={[styles.iconBtn, styles.iconBtnCompact]}
                 accessibilityLabel={mobileOpen ? KANKREG_HEADER.menuCloseA11y : KANKREG_HEADER.menuOpenA11y}
               >
                 <Ionicons
                   name={mobileOpen ? "close" : "menu-outline"}
-                  size={useCompactChrome ? 20 : 22}
-                  color={
-                    mobileOpen
-                      ? isDark
-                        ? ALCHEMY.goldBright
-                        : KANKREG_PALETTE.greenDeep
-                      : isDark
-                        ? c.textSecondary
-                        : KANKREG_PALETTE.inkSoft
-                  }
+                  size={22}
+                  color={isDark ? c.textSecondary : KANKREG_PALETTE.greenDeep}
                 />
               </Pressable>
-            ) : null}
-          </View>
+              <View style={styles.brandCenter}>
+                <KankregBrandMark onPress={() => go("Home")} compact />
+              </View>
+              <Pressable
+                onPress={() => go("Cart", false)}
+                style={[styles.iconBtn, styles.iconBtnCompact]}
+                accessibilityLabel={KANKREG_HEADER.cartA11y}
+              >
+                <Ionicons
+                  name="bag-outline"
+                  size={18}
+                  color={isDark ? c.textSecondary : KANKREG_PALETTE.greenDeep}
+                />
+                {totalItems > 0 ? (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{totalItems > 9 ? "9+" : String(totalItems)}</Text>
+                  </View>
+                ) : null}
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <KankregBrandMark onPress={() => go("Home")} compact={false} />
+
+              {showDesktopNav ? (
+                <View style={styles.nav}>
+                  {items.map((item) => {
+                    const active = routeMatchesNav(item.key, currentRouteName);
+                    return (
+                      <Pressable
+                        key={item.key}
+                        onPress={item.onPress}
+                        style={({ hovered }) => [
+                          styles.navBtn,
+                          active && (isDark ? styles.navBtnActiveDark : styles.navBtnActive),
+                          hovered && !active && (isDark ? styles.navBtnHoverDark : styles.navBtnHover),
+                        ]}
+                        accessibilityRole="tab"
+                        accessibilityState={{ selected: active }}
+                        accessibilityLabel={item.label}
+                      >
+                        <Text
+                          style={[
+                            styles.navBtnText,
+                            isDark && styles.navBtnTextDark,
+                            active && (isDark ? styles.navBtnTextActiveDark : styles.navBtnTextActive),
+                          ]}
+                        >
+                          {item.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ) : null}
+
+              <View style={styles.actions}>
+                <Pressable
+                  onPress={openShopSearch}
+                  style={({ hovered }) => [
+                    styles.iconBtn,
+                    isDark && styles.iconBtnDark,
+                    hovered && (isDark ? styles.iconBtnHoverDark : styles.iconBtnHover),
+                  ]}
+                  accessibilityLabel={KANKREG_HEADER.searchA11y}
+                >
+                  <Ionicons name="search-outline" size={18} color={isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft} />
+                </Pressable>
+                <Pressable
+                  onPress={() => go("Cart", false)}
+                  style={({ hovered }) => [
+                    styles.iconBtn,
+                    isDark && styles.iconBtnDark,
+                    hovered && (isDark ? styles.iconBtnHoverDark : styles.iconBtnHover),
+                  ]}
+                  accessibilityLabel={KANKREG_HEADER.cartA11y}
+                >
+                  <Ionicons name="bag-outline" size={18} color={isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft} />
+                  {totalItems > 0 ? (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>{totalItems > 9 ? "9+" : String(totalItems)}</Text>
+                    </View>
+                  ) : null}
+                </Pressable>
+                <Pressable
+                  onPress={() => (isAuthenticated ? go("Profile", true) : go("Login"))}
+                  style={({ hovered, pressed }) => [
+                    styles.signIn,
+                    hovered && styles.signInHover,
+                    pressed && { opacity: 0.9 },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    isAuthenticated ? KANKREG_HEADER.accountLabel : KANKREG_HEADER.signInLabel
+                  }
+                >
+                  <Text style={styles.signInText}>
+                    {isAuthenticated ? KANKREG_HEADER.accountLabel : KANKREG_HEADER.signInLabel}
+                  </Text>
+                </Pressable>
+              </View>
+            </>
+          )}
         </View>
-        <LinearGradient
-          colors={[ALCHEMY.goldBright, ALCHEMY.gold, ALCHEMY.goldDeep]}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={styles.goldRule}
-          pointerEvents="none"
-        />
+        {!useCompactChrome ? (
+          <LinearGradient
+            colors={[ALCHEMY.goldBright, ALCHEMY.gold, ALCHEMY.goldDeep]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.goldRule}
+            pointerEvents="none"
+          />
+        ) : null}
       </View>
     </View>
     {!showDesktopNav && !isNative && mobileOpen && KankregMobileNav ? (
@@ -343,6 +326,17 @@ const styles = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
     paddingHorizontal: "clamp(18px, 4vw, 40px)",
+  },
+  wrapCompactPhone: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  brandCenter: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   wrapCompact: {
     gap: 10,

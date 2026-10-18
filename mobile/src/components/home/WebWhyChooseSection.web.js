@@ -22,62 +22,58 @@ export default function WebWhyChooseSection() {
   const ink = isDark ? "#FAF8F4" : INK;
   const muted = isDark ? "rgba(250,248,244,0.78)" : MUTED;
 
+  const body = (
+    <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
+      {!isMobileWeb ? (
+        <Text style={[styles.eyebrow, { color: isDark ? "#E8BC84" : ZEEVAN_GREEN.deep }]}>
+          {copy.eyebrow}
+        </Text>
+      ) : null}
+      <Text style={[styles.title, { color: ink }, isMobileWeb && styles.titleMobile]}>
+        {isMobileWeb ? "Why choose Zeevan?" : copy.title}
+      </Text>
+      <View style={[styles.grid, isMobileWeb && styles.gridMobile]}>
+        {copy.items.map((item) =>
+          isMobileWeb ? (
+            <View key={item.key} style={styles.iconCardFlat}>
+              <Ionicons
+                name={item.icon || "leaf-outline"}
+                size={40}
+                color={isDark ? "#C4D088" : ZEEVAN_GREEN.deep}
+              />
+              <Text style={[styles.cardTitle, styles.cardTitlePhone, { color: ink }]}>
+                {item.title}
+              </Text>
+              <Text style={[styles.cardBody, { color: muted }]} numberOfLines={2}>
+                {item.body}
+              </Text>
+            </View>
+          ) : (
+            <View key={item.key} style={[styles.card, isDark && styles.cardDark]}>
+              <Image source={item.image} style={styles.icon} resizeMode="cover" />
+              <Text style={[styles.cardTitle, { color: ink }]}>{item.title}</Text>
+              <Text style={[styles.cardBody, { color: muted }]}>{item.body}</Text>
+            </View>
+          )
+        )}
+      </View>
+    </View>
+  );
+
   return (
     <SectionReveal preset="fade-up" style={styles.reveal}>
-      <WebSectionBackdrop
-        source={BG}
-        tone="warm"
-        isDark={isDark}
-        accessibilityLabel={copy.title}
-        style={styles.pad}
-      >
-        <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
-          <Text style={[styles.eyebrow, { color: isDark ? "#E8BC84" : ZEEVAN_GREEN.deep }]}>
-            {copy.eyebrow}
-          </Text>
-          <Text style={[styles.title, { color: ink }, isMobileWeb && styles.titleMobile]}>
-            {copy.title}
-          </Text>
-          <View style={[styles.grid, isMobileWeb && styles.gridMobile]}>
-            {copy.items.map((item) =>
-              isMobileWeb ? (
-                <View
-                  key={item.key}
-                  style={[styles.iconCard, isDark && styles.cardDark]}
-                >
-                  <View
-                    style={[
-                      styles.iconWrap,
-                      {
-                        backgroundColor: isDark ? "rgba(185,204,122,0.14)" : "rgba(36,68,36,0.08)",
-                      },
-                    ]}
-                  >
-                    <Ionicons
-                      name={item.icon || "leaf-outline"}
-                      size={28}
-                      color={isDark ? "#C4D088" : ZEEVAN_GREEN.deep}
-                    />
-                  </View>
-                  <Text style={[styles.cardTitle, { color: ink }]}>{item.title}</Text>
-                  <Text style={[styles.cardBody, { color: muted }]} numberOfLines={3}>
-                    {item.body}
-                  </Text>
-                </View>
-              ) : (
-                <View
-                  key={item.key}
-                  style={[styles.card, isDark && styles.cardDark]}
-                >
-                  <Image source={item.image} style={styles.icon} resizeMode="cover" />
-                  <Text style={[styles.cardTitle, { color: ink }]}>{item.title}</Text>
-                  <Text style={[styles.cardBody, { color: muted }]}>{item.body}</Text>
-                </View>
-              )
-            )}
-          </View>
+      {isMobileWeb ? (
+        <View
+          style={[styles.pad, styles.padPhone, { backgroundColor: isDark ? "#1A1712" : "#F3EDE0" }]}
+          accessibilityLabel={copy.title}
+        >
+          {body}
         </View>
-      </WebSectionBackdrop>
+      ) : (
+        <WebSectionBackdrop source={BG} tone="warm" isDark={isDark} accessibilityLabel={copy.title} style={styles.pad}>
+          {body}
+        </WebSectionBackdrop>
+      )}
     </SectionReveal>
   );
 }
@@ -85,6 +81,7 @@ export default function WebWhyChooseSection() {
 const styles = StyleSheet.create({
   reveal: { width: "100%" },
   pad: { paddingVertical: spacing.lg + 4 },
+  padPhone: { paddingVertical: spacing.lg, marginTop: spacing.sm },
   inner: {
     width: "100%",
     maxWidth: 1100,
@@ -127,31 +124,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(26, 28, 20, 0.12)",
   },
-  iconCard: {
+  iconCardFlat: {
     flex: 0,
     flexBasis: "48%",
     width: "48%",
     maxWidth: "48%",
     alignItems: "center",
     gap: 8,
-    paddingVertical: 16,
-    paddingHorizontal: 10,
-    borderRadius: 16,
-    backgroundColor: "rgba(255,253,248,0.96)",
-    borderWidth: 1,
-    borderColor: "rgba(26, 28, 20, 0.1)",
+    paddingVertical: 10,
+    paddingHorizontal: 6,
   },
   cardDark: {
     backgroundColor: "rgba(255,255,255,0.08)",
     borderColor: "rgba(255,255,255,0.14)",
   },
-  iconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 2,
+  cardTitlePhone: {
+    fontSize: 14,
+    marginTop: 2,
   },
   icon: {
     width: "100%",

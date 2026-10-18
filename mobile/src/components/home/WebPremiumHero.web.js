@@ -102,8 +102,9 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
     HOME_SCREEN_UI.web?.atelierSupport ||
     HOME_HERO_PACKAGING.subtitle ||
     "Hand-churned A2 ghee — slow craft for your table.";
-  const cta =
-    current?.cta || HOME_SCREEN_UI.web?.atelierCta || "Shop the collection";
+  const cta = isMobileWeb
+    ? "Shop Now"
+    : current?.cta || HOME_SCREEN_UI.web?.atelierCta || "Shop the collection";
 
   const openShop = () => {
     const params = shopParamsForSlide(current);
@@ -120,8 +121,11 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
         alignSelf: "center",
       };
 
-  const stageHeight = isMobileWeb ? 620 : 560;
-  const stageAspect = isMobileWeb ? undefined : { aspectRatio: 16 / 9, minHeight: 480, maxHeight: 720 };
+  /** Phone web: short promo band (~Anveshan). Desktop: tall atelier stage. */
+  const stageHeight = isMobileWeb ? 200 : 560;
+  const stageAspect = isMobileWeb
+    ? { height: stageHeight, minHeight: stageHeight, maxHeight: stageHeight }
+    : { aspectRatio: 16 / 9, minHeight: 480, maxHeight: 720 };
 
   return (
     <View
@@ -133,13 +137,14 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
         className={HERO_STAGE_CLASS}
         style={[
           styles.stage,
-          { minHeight: stageHeight },
+          isMobileWeb ? styles.stagePhone : { minHeight: stageHeight },
           stageAspect,
           isDark && styles.stageDark,
+          isMobileWeb && styles.stagePhoneMaroon,
         ]}
       >
         {activeSlides.map((slide, index) => {
-          const src = toImageSrc(slide.url, { width: isMobileWeb ? 720 : 1600 });
+          const src = toImageSrc(slide.url, { width: isMobileWeb ? 900 : 1600 });
           if (!src) return null;
           const active = index === slideIndex;
           return (
@@ -168,30 +173,38 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
             key={current?.id || slideIndex}
             immediate
             preset="fade-up"
-            delay={60}
-            style={styles.reveal}
+            delay={40}
+            style={[styles.reveal, isMobileWeb && styles.revealPhone]}
           >
-            <BrandLogo
-              height={isMobileWeb ? BRAND_LOGO_SIZE.homeHero : BRAND_LOGO_SIZE.homeHero + 12}
-              variant="onDark"
-              showTagline={false}
-            />
-            {current?.badge ? <Text style={styles.badge}>{current.badge}</Text> : null}
-            <Text style={[styles.headline, isMobileWeb && styles.headlinePhone]}>{headline}</Text>
-            <Text style={[styles.support, isMobileWeb && styles.supportPhone]}>{support}</Text>
+            {!isMobileWeb ? (
+              <BrandLogo
+                height={BRAND_LOGO_SIZE.homeHero + 12}
+                variant="onDark"
+                showTagline={false}
+              />
+            ) : null}
+            {current?.badge && !isMobileWeb ? <Text style={styles.badge}>{current.badge}</Text> : null}
+            <Text style={[styles.headline, isMobileWeb && styles.headlinePhone]} numberOfLines={isMobileWeb ? 2 : 3}>
+              {isMobileWeb ? headline : headline}
+            </Text>
+            {!isMobileWeb ? (
+              <Text style={[styles.support, isMobileWeb && styles.supportPhone]}>{support}</Text>
+            ) : null}
             <Pressable
               onPress={openShop}
               style={({ hovered, pressed }) => [
                 styles.cta,
                 isMobileWeb ? styles.ctaPhone : styles.ctaDesktop,
-                hovered && styles.ctaHover,
+                hovered && (isMobileWeb ? styles.ctaPhoneHover : styles.ctaHover),
                 pressed && { opacity: 0.92 },
               ]}
               accessibilityRole="button"
               accessibilityLabel={cta}
             >
-              <Text style={styles.ctaText}>{cta}</Text>
-              <Ionicons name="arrow-forward" size={icon.xs} color={KANKREG_PALETTE.ink} />
+              <Text style={[styles.ctaText, isMobileWeb && styles.ctaTextPhone]}>{cta}</Text>
+              {!isMobileWeb ? (
+                <Ionicons name="arrow-forward" size={icon.xs} color={KANKREG_PALETTE.ink} />
+              ) : null}
             </Pressable>
           </SectionReveal>
         </View>
@@ -224,7 +237,7 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
               <Pressable
                 key={slide.id || `dot-${index}`}
                 onPress={() => setSlideIndex(index)}
-                style={[styles.dot, index === slideIndex && styles.dotActive]}
+                style={[styles.dot, isMobileWeb && styles.dotPhone, index === slideIndex && styles.dotActive]}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: index === slideIndex }}
                 accessibilityLabel={slide.title || `Slide ${index + 1}`}
@@ -250,6 +263,13 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     backgroundColor: KANKREG_CHROME.cream,
   },
+  stagePhone: {
+    overflow: "hidden",
+    justifyContent: "center",
+  },
+  stagePhoneMaroon: {
+    backgroundColor: "#4A1C28",
+  },
   stageDark: {
     backgroundColor: "#151210",
   },
@@ -266,7 +286,14 @@ const styles = StyleSheet.create({
     }),
   },
   scrimPhone: {
-    backgroundColor: "rgba(18, 16, 12, 0.42)",
+    backgroundColor: "transparent",
+    ...Platform.select({
+      web: {
+        backgroundImage:
+          "linear-gradient(90deg, rgba(58,18,28,0.72) 0%, rgba(58,18,28,0.35) 55%, rgba(58,18,28,0.15) 100%)",
+      },
+      default: { backgroundColor: "rgba(58, 18, 28, 0.45)" },
+    }),
   },
   copyWrap: {
     width: "100%",
@@ -277,12 +304,18 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   copyWrapPhone: {
-    paddingBottom: HOME_SPACE.xl + 20,
-    alignItems: "center",
+    paddingTop: 18,
+    paddingBottom: 22,
+    alignItems: "flex-start",
+    justifyContent: "center",
   },
   reveal: {
     maxWidth: 520,
     gap: spacing.sm,
+  },
+  revealPhone: {
+    maxWidth: "78%",
+    gap: 8,
   },
   badge: {
     alignSelf: "flex-start",
@@ -302,10 +335,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   headlinePhone: {
-    fontSize: 32,
-    lineHeight: 38,
-    textAlign: "center",
+    fontSize: 22,
+    lineHeight: 26,
+    letterSpacing: -0.3,
+    textAlign: "left",
     alignSelf: "stretch",
+    marginTop: 0,
   },
   support: {
     fontFamily: fonts.regular,
@@ -316,7 +351,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   supportPhone: {
-    textAlign: "center",
+    textAlign: "left",
     alignSelf: "stretch",
     maxWidth: 340,
   },
@@ -332,14 +367,30 @@ const styles = StyleSheet.create({
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
   ctaDesktop: { alignSelf: "flex-start" },
-  ctaPhone: { alignSelf: "center" },
+  ctaPhone: {
+    alignSelf: "flex-start",
+    marginTop: 6,
+    paddingVertical: 9,
+    paddingHorizontal: 18,
+    borderRadius: 8,
+    backgroundColor: "#E8BC84",
+  },
   ctaHover: {
     backgroundColor: "#F0EBE0",
+  },
+  ctaPhoneHover: {
+    backgroundColor: "#F2CE9B",
   },
   ctaText: {
     fontFamily: fonts.semibold,
     fontSize: 14,
     color: KANKREG_PALETTE.ink,
+  },
+  ctaTextPhone: {
+    fontFamily: fonts.extrabold,
+    fontSize: 13,
+    letterSpacing: 0.2,
+    color: "#2A1E08",
   },
   arrow: {
     position: "absolute",
@@ -371,9 +422,10 @@ const styles = StyleSheet.create({
     zIndex: 3,
   },
   dotsPhone: {
-    right: 0,
-    left: 0,
-    justifyContent: "center",
+    bottom: 8,
+    right: 12,
+    left: "auto",
+    justifyContent: "flex-end",
   },
   dot: {
     width: 7,
@@ -381,6 +433,10 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "rgba(250, 248, 244, 0.35)",
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+  },
+  dotPhone: {
+    width: 5,
+    height: 5,
   },
   dotActive: {
     width: 22,

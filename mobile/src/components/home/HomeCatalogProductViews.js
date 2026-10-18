@@ -19,6 +19,7 @@ import {
 } from "../../theme/homeEditorial";
 import { KANKREG_PALETTE, ZEEVAN_GOLD, ZEEVAN_GREEN } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { fonts, icon, radius } from "../../theme/tokens";
 import { FONT_PRICE } from "../../theme/typographyRoles";
 import { formatINRWhole } from "../../utils/currency";
@@ -29,6 +30,8 @@ import { COMING_SOON_RED } from "../../theme/comingSoonTheme";
 import { getImageUriCandidates, getProductThumbImageUri, prefetchProductHeroImage } from "../../utils/image";
 import ProgressiveProductImage from "../ui/ProgressiveProductImage";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
+
+const MAROON = "#B8442F";
 
 const PRODUCT_CARD_CSS_ID = "zeevan-atelier-product-card-v2";
 const PRODUCT_CARD_CLASS = "zeevan-product-card";
@@ -149,9 +152,11 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
   featured = false,
 }) {
   const { isDark } = useTheme();
+  const { isMobileWeb } = useKankregLayout();
   const ink = homeEditorialInk(isDark);
   const muted = homeEditorialMuted(isDark);
   const isWeb = Platform.OS === "web";
+  const phoneShop = isWeb && isMobileWeb;
   const copy = SHOP_SCREEN_UI.card;
 
   const primaryImage = useMemo(() => {
@@ -263,9 +268,9 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
           ) : null}
 
           {savePct && !unavailable ? (
-            <View style={editorialStyles.savePill}>
-              <Text style={editorialStyles.saveText}>
-                {copy.saveLabel} {savePct}%
+            <View style={[editorialStyles.savePill, phoneShop && editorialStyles.savePillPhone]}>
+              <Text style={[editorialStyles.saveText, phoneShop && editorialStyles.saveTextPhone]}>
+                {phoneShop ? `${savePct}% OFF` : `${copy.saveLabel} ${savePct}%`}
               </Text>
             </View>
           ) : null}
@@ -306,7 +311,10 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
               {formatINRWhole(safePrice)}
             </Text>
             {listMrp ? (
-              <Text style={[editorialStyles.mrp, { color: muted }]} numberOfLines={1}>
+              <Text
+                style={[editorialStyles.mrp, { color: phoneShop ? MAROON : muted }]}
+                numberOfLines={1}
+              >
                 {formatINRWhole(listMrp)}
               </Text>
             ) : null}
@@ -350,10 +358,11 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
               className={isWeb ? PRODUCT_CTA_CLASS : undefined}
               style={({ hovered }) => [
                 editorialStyles.addBtn,
-                isDark && editorialStyles.addBtnDark,
+                phoneShop && editorialStyles.addBtnPhone,
+                isDark && !phoneShop && editorialStyles.addBtnDark,
                 unavailable && editorialStyles.addBtnDisabled,
                 isComingSoon && editorialStyles.addBtnComingSoon,
-                hovered && isWeb && !unavailable ? editorialStyles.addBtnHover : null,
+                hovered && isWeb && !unavailable && !phoneShop ? editorialStyles.addBtnHover : null,
               ]}
               accessibilityRole="button"
               accessibilityState={{ disabled: unavailable }}
@@ -363,7 +372,7 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
                   : `${copy.addA11y}: ${name || "product"}`
               }
             >
-              {!unavailable ? (
+              {!unavailable && !phoneShop ? (
                 <Ionicons
                   name="bag-outline"
                   size={icon.xs}
@@ -371,8 +380,13 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
                   style={editorialStyles.addIcon}
                 />
               ) : null}
-              <Text style={[editorialStyles.addBtnText, { color: unavailable ? muted : ink }]}>
-                {ctaLabel}
+              <Text
+                style={[
+                  editorialStyles.addBtnText,
+                  { color: unavailable ? muted : phoneShop ? "#FFFFFF" : ink },
+                ]}
+              >
+                {phoneShop && !unavailable ? "ADD" : ctaLabel}
               </Text>
             </Pressable>
           </Animated.View>
@@ -550,11 +564,31 @@ const editorialStyles = StyleSheet.create({
     borderRadius: 6,
     backgroundColor: ZEEVAN_GOLD.base,
   },
+  savePillPhone: {
+    top: 8,
+    left: 8,
+    right: "auto",
+    borderRadius: 4,
+    backgroundColor: MAROON,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
   saveText: {
     fontFamily: fonts.bold,
     fontSize: 9,
     letterSpacing: 0.04,
     color: KANKREG_PALETTE.ink,
+  },
+  saveTextPhone: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    letterSpacing: 0.3,
+  },
+  addBtnPhone: {
+    borderWidth: 0,
+    backgroundColor: ZEEVAN_GREEN.deep,
+    borderRadius: 8,
+    paddingVertical: 10,
   },
   titleFeatured: {
     fontFamily: fonts.medium,

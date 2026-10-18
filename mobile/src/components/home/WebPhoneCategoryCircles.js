@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
@@ -10,16 +10,16 @@ import { buildNativeCategoryTiles } from "../../utils/homeCategories";
 import { HOME_SCREEN_UI } from "../../content/appContent";
 
 /**
- * Compact phone-web category strip: welcome line + circular icons (Shop all + lines).
+ * Anveshan-style phone web: welcome + 5 fixed circular category icons in one row.
  */
 export default function WebPhoneCategoryCircles({ products = [], onPressCategory, onPressShopAll }) {
   const { isDark } = useTheme();
   const { pageGutterClamp } = useKankregLayout();
   const tiles = useMemo(() => buildNativeCategoryTiles(products, { max: 4 }), [products]);
-  const ink = isDark ? "#FAF8F4" : "#1A2618";
-  const muted = isDark ? "rgba(250,248,244,0.7)" : "#6A6556";
-  const ring = isDark ? "rgba(185,204,122,0.4)" : "rgba(36,68,36,0.16)";
-  const fill = isDark ? "rgba(255,255,255,0.07)" : "#FFFFFF";
+  const ink = isDark ? "#FAF8F4" : ZEEVAN_GREEN.deep;
+  const muted = isDark ? "rgba(250,248,244,0.7)" : "#5A5648";
+  const ring = isDark ? "rgba(185,204,122,0.45)" : "rgba(36,68,36,0.22)";
+  const fill = isDark ? "rgba(255,255,255,0.06)" : "#FFFFFF";
   const title = HOME_SCREEN_UI.web?.phoneWelcomeTitle || "Welcome to Zeevan";
   const subtitle =
     HOME_SCREEN_UI.web?.phoneWelcomeSubtitle || "Your one-stop store for purity";
@@ -33,82 +33,79 @@ export default function WebPhoneCategoryCircles({ products = [], onPressCategory
       shopAll: false,
       lineLabel: t.label,
     })),
-  ];
+  ].slice(0, 5);
 
   return (
     <View style={[styles.wrap, { paddingHorizontal: pageGutterClamp }]}>
       <Text style={[styles.title, { color: ink }]}>{title}</Text>
       <Text style={[styles.subtitle, { color: muted }]}>{subtitle}</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.row}
-      >
+      <View style={styles.row}>
         {items.map((item) => (
           <Pressable
             key={item.key}
             onPress={() => (item.shopAll ? onPressShopAll?.() : onPressCategory?.(item.lineLabel))}
-            style={({ pressed }) => [styles.item, pressed && { opacity: 0.88, transform: [{ scale: 0.97 }] }]}
+            style={({ pressed }) => [styles.item, pressed && { opacity: 0.85 }]}
             accessibilityRole="button"
             accessibilityLabel={item.label}
           >
             <View style={[styles.circle, { borderColor: ring, backgroundColor: fill }]}>
-              <Ionicons name={item.icon} size={22} color={isDark ? "#C4D088" : ZEEVAN_GREEN.deep} />
+              <Ionicons name={item.icon} size={24} color={ink} />
             </View>
             <Text style={[styles.label, { color: ink }]} numberOfLines={2}>
               {item.label}
             </Text>
           </Pressable>
         ))}
-      </ScrollView>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    paddingTop: spacing.sm + 2,
-    paddingBottom: spacing.xs,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
     gap: 4,
+    backgroundColor: "transparent",
   },
   title: {
     fontFamily: FONT_HEADING,
-    fontSize: 18,
-    lineHeight: 23,
+    fontSize: 20,
+    lineHeight: 26,
     textAlign: "center",
-    letterSpacing: -0.25,
-    paddingHorizontal: 6,
+    letterSpacing: -0.2,
+    paddingHorizontal: 8,
   },
   subtitle: {
     fontFamily: fonts.medium,
-    fontSize: 12.5,
-    lineHeight: 16,
+    fontSize: 13,
+    lineHeight: 17,
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 12,
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 8,
-    paddingHorizontal: 2,
-    minWidth: "100%",
+    alignItems: "flex-start",
+    width: "100%",
   },
   item: {
-    width: 68,
+    flex: 1,
     alignItems: "center",
     gap: 6,
+    maxWidth: 76,
   },
   circle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
   },
   label: {
     fontFamily: fonts.semibold,
-    fontSize: 10.5,
+    fontSize: 11,
     lineHeight: 13,
     textAlign: "center",
     minHeight: 26,

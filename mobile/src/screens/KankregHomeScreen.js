@@ -402,7 +402,7 @@ export default function KankregHomeScreen({ navigation }) {
             },
           ]}
         >
-          <KankregPageWrap gap={isMobileWeb ? spacing.md : HOME_SPACE.md}>
+          <KankregPageWrap gap={isMobileWeb ? spacing.sm + 2 : HOME_SPACE.md}>
             {configError && !loading ? (
               <PremiumErrorBanner
                 severity="error"

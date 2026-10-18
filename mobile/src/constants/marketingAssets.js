@@ -8,6 +8,10 @@ export const HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH = 1024 / 1535;
 export const HOME_HERO_COMPACT_HEIGHT_RATIO = 0.34;
 export const HOME_HERO_COMPACT_MAX_HEIGHT = 220;
 export const HOME_HERO_COMPACT_MIN_HEIGHT = 168;
+/** Phone website top slider — short landscape band (Aumshanti-style). */
+export const HOME_HERO_MOBILE_WEB_HEIGHT_RATIO = 0.48;
+export const HOME_HERO_MOBILE_WEB_MAX_HEIGHT = 210;
+export const HOME_HERO_MOBILE_WEB_MIN_HEIGHT = 156;
 export const HOME_HERO_APP_HEIGHT_RATIO = 0.48;
 export const HOME_HERO_APP_MAX_HEIGHT = 272;
 export const HOME_HERO_APP_MIN_HEIGHT = 200;

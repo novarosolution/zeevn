@@ -22,12 +22,15 @@ function TrustRibbonItem({ item, muted, compact = false }) {
     <View style={[styles.trustItem, compact && styles.trustItemCompact]}>
       <Ionicons
         name={item.icon}
-        size={compact ? icon.xs : icon.micro}
+        size={compact ? 13 : icon.micro}
         color={muted}
         style={styles.trustIcon}
       />
-      <Text style={[styles.trustText, { color: muted }]} numberOfLines={1}>
-        {item.label.toUpperCase()}
+      <Text
+        style={[styles.trustText, compact && styles.trustTextCompact, { color: muted }]}
+        numberOfLines={compact ? 2 : 1}
+      >
+        {compact ? item.label : item.label.toUpperCase()}
       </Text>
     </View>
   );
@@ -135,8 +138,8 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 1280,
     alignSelf: "center",
-    paddingVertical: HOME_SPACE.md,
-    gap: HOME_SPACE.sm,
+    paddingVertical: HOME_SPACE.sm,
+    gap: HOME_SPACE.xs,
   },
   trustHairline: {
     marginVertical: 0,
@@ -154,8 +157,8 @@ const styles = StyleSheet.create({
   trustRibbonMobile: {
     flexWrap: "nowrap",
     justifyContent: "space-between",
-    columnGap: HOME_SPACE.xs,
-    paddingVertical: HOME_SPACE.sm,
+    columnGap: 4,
+    paddingVertical: 4,
   },
   trustItem: {
     flexDirection: "row",
@@ -167,8 +170,9 @@ const styles = StyleSheet.create({
   },
   trustItemCompact: {
     flex: 1,
-    paddingHorizontal: 2,
-    gap: 4,
+    flexDirection: "column",
+    paddingHorizontal: 1,
+    gap: 3,
   },
   trustIcon: {
     opacity: 0.88,
@@ -179,6 +183,12 @@ const styles = StyleSheet.create({
     lineHeight: HOME_TYPE.eyebrow + 4,
     letterSpacing: HOME_EYEBROW_LETTER_SPACING,
     textAlign: "center",
+  },
+  trustTextCompact: {
+    fontSize: 9.5,
+    lineHeight: 12,
+    letterSpacing: 0.2,
+    textTransform: "none",
   },
   trustDivider: {
     width: StyleSheet.hairlineWidth,

@@ -25,6 +25,9 @@ import {
   HOME_HERO_COMPACT_HEIGHT_RATIO,
   HOME_HERO_COMPACT_MAX_HEIGHT,
   HOME_HERO_COMPACT_MIN_HEIGHT,
+  HOME_HERO_MOBILE_WEB_HEIGHT_RATIO,
+  HOME_HERO_MOBILE_WEB_MAX_HEIGHT,
+  HOME_HERO_MOBILE_WEB_MIN_HEIGHT,
   HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH,
   HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH,
   HOME_HERO_PRODUCT_SLIDE_HEIGHT_PER_WIDTH,
@@ -139,11 +142,15 @@ const cardShadow = platformShadow({
 
 function resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb }) {
   if (slide?.heightRatio > 0) return slide.heightRatio;
+  const phoneWebBand = Platform.OS === "web" && isMobileWeb && !isNative;
   if (slide?.variant === "product") {
+    if (phoneWebBand) return HOME_HERO_MOBILE_WEB_HEIGHT_RATIO;
     return isNative || isMobileWeb
       ? HOME_HERO_PRODUCT_PHONE_SLIDE_HEIGHT_PER_WIDTH
       : HOME_HERO_PRODUCT_SLIDE_HEIGHT_PER_WIDTH;
   }
+  /** Phone website — short landscape band; native app keeps tall posters. */
+  if (phoneWebBand) return HOME_HERO_MOBILE_WEB_HEIGHT_RATIO;
   if (isNative || isMobileWeb) {
     if (slide?.layout === "landscape") return HOME_HERO_WEB_LANDSCAPE_HEIGHT_PER_WIDTH;
     return HOME_HERO_PHONE_SLIDE_HEIGHT_PER_WIDTH;
@@ -152,7 +159,8 @@ function resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb }) {
 }
 
 function resolveHeroImageFit(slide, { isTop, isMobileWebTop, isApp = false, isNative = false }) {
-  if (isApp || isNative || isMobileWebTop) return "contain";
+  if (isMobileWebTop) return "cover";
+  if (isApp || isNative) return "contain";
   if (slide?.imageFit === "contain" || slide?.imageFit === "cover") return slide.imageFit;
   if (isTop && !isMobileWebTop) return "cover";
   return "cover";
@@ -819,7 +827,14 @@ export default function HeroMediaSlider({
 
   /** Phone: shell height tracks the active slide’s width-perfect poster ratio. */
   const slideFrameHeights = useMemo(() => {
-    const phoneBand = isNative || isApp || (isTop && isMobileWeb);
+    if (isTop && isMobileWeb && Platform.OS === "web" && slideWidth) {
+      const h = Math.min(
+        HOME_HERO_MOBILE_WEB_MAX_HEIGHT,
+        Math.max(HOME_HERO_MOBILE_WEB_MIN_HEIGHT, Math.round(slideWidth * HOME_HERO_MOBILE_WEB_HEIGHT_RATIO))
+      );
+      return slides.map(() => h);
+    }
+    const phoneBand = isNative || isApp;
     if (!phoneBand || !slideWidth) return [];
     return slides.map((slide) =>
       resolvePhoneHeroFrameHeight(
@@ -873,7 +888,11 @@ export default function HeroMediaSlider({
     }
     if (isTop) {
       if (isMobileWeb) {
-        return resolvePhoneHeroFrameHeight(w, bannerHeightRatio, layoutHeight);
+        const target = Math.round(w * HOME_HERO_MOBILE_WEB_HEIGHT_RATIO);
+        return Math.min(
+          HOME_HERO_MOBILE_WEB_MAX_HEIGHT,
+          Math.max(HOME_HERO_MOBILE_WEB_MIN_HEIGHT, target)
+        );
       }
       // 21:9 — height from width; only shrink on very short viewports
       const vhCap = Math.round((layoutHeight || 900) * 0.85);

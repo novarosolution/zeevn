@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
@@ -10,16 +10,16 @@ import { buildNativeCategoryTiles } from "../../utils/homeCategories";
 import { HOME_SCREEN_UI } from "../../content/appContent";
 
 /**
- * Aumshanti-style phone web strip: welcome title + circular category icons (Shop all + lines).
+ * Compact phone-web category strip: welcome line + circular icons (Shop all + lines).
  */
 export default function WebPhoneCategoryCircles({ products = [], onPressCategory, onPressShopAll }) {
   const { isDark } = useTheme();
   const { pageGutterClamp } = useKankregLayout();
   const tiles = useMemo(() => buildNativeCategoryTiles(products, { max: 4 }), [products]);
   const ink = isDark ? "#FAF8F4" : "#1A2618";
-  const muted = isDark ? "rgba(250,248,244,0.72)" : "#5A5648";
-  const ring = isDark ? "rgba(185,204,122,0.35)" : "rgba(36,68,36,0.14)";
-  const fill = isDark ? "rgba(255,255,255,0.06)" : "#FFFFFF";
+  const muted = isDark ? "rgba(250,248,244,0.7)" : "#6A6556";
+  const ring = isDark ? "rgba(185,204,122,0.4)" : "rgba(36,68,36,0.16)";
+  const fill = isDark ? "rgba(255,255,255,0.07)" : "#FFFFFF";
   const title = HOME_SCREEN_UI.web?.phoneWelcomeTitle || "Welcome to Zeevan";
   const subtitle =
     HOME_SCREEN_UI.web?.phoneWelcomeSubtitle || "Your one-stop store for purity";
@@ -39,75 +39,76 @@ export default function WebPhoneCategoryCircles({ products = [], onPressCategory
     <View style={[styles.wrap, { paddingHorizontal: pageGutterClamp }]}>
       <Text style={[styles.title, { color: ink }]}>{title}</Text>
       <Text style={[styles.subtitle, { color: muted }]}>{subtitle}</Text>
-      <View style={styles.row}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.row}
+      >
         {items.map((item) => (
           <Pressable
             key={item.key}
             onPress={() => (item.shopAll ? onPressShopAll?.() : onPressCategory?.(item.lineLabel))}
-            style={({ pressed }) => [styles.item, pressed && { opacity: 0.88 }]}
+            style={({ pressed }) => [styles.item, pressed && { opacity: 0.88, transform: [{ scale: 0.97 }] }]}
             accessibilityRole="button"
             accessibilityLabel={item.label}
           >
             <View style={[styles.circle, { borderColor: ring, backgroundColor: fill }]}>
-              <Ionicons name={item.icon} size={26} color={isDark ? "#C4D088" : ZEEVAN_GREEN.deep} />
+              <Ionicons name={item.icon} size={22} color={isDark ? "#C4D088" : ZEEVAN_GREEN.deep} />
             </View>
             <Text style={[styles.label, { color: ink }]} numberOfLines={2}>
               {item.label}
             </Text>
           </Pressable>
         ))}
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: {
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-    gap: 6,
-    alignItems: "center",
+    paddingTop: spacing.sm + 2,
+    paddingBottom: spacing.xs,
+    gap: 4,
   },
   title: {
     fontFamily: FONT_HEADING,
-    fontSize: 22,
-    lineHeight: 28,
+    fontSize: 18,
+    lineHeight: 23,
     textAlign: "center",
-    letterSpacing: -0.3,
-    paddingHorizontal: 8,
+    letterSpacing: -0.25,
+    paddingHorizontal: 6,
   },
   subtitle: {
     fontFamily: fonts.medium,
-    fontSize: 13.5,
-    lineHeight: 18,
+    fontSize: 12.5,
+    lineHeight: 16,
     textAlign: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   row: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 10,
-    width: "100%",
+    justifyContent: "space-between",
+    gap: 8,
+    paddingHorizontal: 2,
+    minWidth: "100%",
   },
   item: {
-    width: "18%",
-    minWidth: 64,
-    maxWidth: 76,
+    width: 68,
     alignItems: "center",
-    gap: 7,
+    gap: 6,
   },
   circle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
   },
   label: {
     fontFamily: fonts.semibold,
-    fontSize: 11,
+    fontSize: 10.5,
     lineHeight: 13,
     textAlign: "center",
     minHeight: 26,

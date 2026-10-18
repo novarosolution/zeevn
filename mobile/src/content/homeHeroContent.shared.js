@@ -30,11 +30,11 @@ export const WEB_HERO_PRODUCT_RATIO = 9 / 16;
 export const WEB_HERO_PORTRAIT_RATIO = 4 / 3;
 
 /**
- * Phone hero viewport cap — only shrink when natural poster height would dominate the screen.
- * At 0.86, a ~390px-wide portrait slide (~693px tall) fits on common 844px-tall phones.
+ * Phone hero viewport cap — keep native posters readable without eating the first screen.
+ * Phone *website* slider uses `HOME_HERO_MOBILE_WEB_*` (shorter landscape band) instead.
  */
-export const WEB_HERO_PHONE_MAX_HEIGHT = 720;
-export const WEB_HERO_PHONE_MAX_VH = 0.86;
+export const WEB_HERO_PHONE_MAX_HEIGHT = 520;
+export const WEB_HERO_PHONE_MAX_VH = 0.58;
 
 /** Slider / lean-hero frame height — width-perfect aspect, soft viewport cap only. */
 export function resolvePhoneHeroFrameHeight(width, heightRatio, layoutHeight) {

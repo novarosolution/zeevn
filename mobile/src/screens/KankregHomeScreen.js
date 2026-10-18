@@ -53,7 +53,6 @@ import { HOME_SCREEN_UI, SHOP_SCREEN_UI } from "../content/appContent";
 import { deferAfterFirstPaint } from "../utils/deferAfterFirstPaint";
 import { createQuoteBlockStyles } from "../theme/screenThemes";
 import { productToCartLine } from "../utils/productCart";
-import { NativeSectionHeader, NativeCategoryRow } from "./nativeHomeImports";
 import WebPhoneCategoryCircles from "../components/home/WebPhoneCategoryCircles";
 import { StoreHome } from "../components/store/entry";
 import AppStartupScreen from "../components/AppStartupScreen";

@@ -54,6 +54,7 @@ import { deferAfterFirstPaint } from "../utils/deferAfterFirstPaint";
 import { createQuoteBlockStyles } from "../theme/screenThemes";
 import { productToCartLine } from "../utils/productCart";
 import { NativeSectionHeader, NativeCategoryRow } from "./nativeHomeImports";
+import WebPhoneCategoryCircles from "../components/home/WebPhoneCategoryCircles";
 import { StoreHome } from "../components/store/entry";
 import AppStartupScreen from "../components/AppStartupScreen";
 import { useAuth } from "../context/AuthContext";
@@ -370,8 +371,8 @@ export default function KankregHomeScreen({ navigation }) {
           <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={c.primary} />
         }
       >
-        {showDiwaliAnnounce ? <WebDiwaliAnnounceBar /> : null}
-        {showDiwaliBridge ? <WebDiwaliBridgeSection /> : null}
+        {showDiwaliAnnounce && !isMobileWeb ? <WebDiwaliAnnounceBar /> : null}
+        {showDiwaliBridge && !isMobileWeb ? <WebDiwaliBridgeSection /> : null}
         {showWebHero ? (
           <WebPremiumHero
             navigation={navigation}
@@ -380,14 +381,16 @@ export default function KankregHomeScreen({ navigation }) {
           />
         ) : null}
 
-        {webCfg.showIntroBand !== false ? (
-          isMobileWeb ? (
-            <DeferredMount minHeight={96} rootMargin="240px 0px">
-              <WebHomeIntroBand navigation={navigation} />
-            </DeferredMount>
-          ) : (
-            <WebHomeIntroBand navigation={navigation} />
-          )
+        {webCfg.showIntroBand !== false && !isMobileWeb ? (
+          <WebHomeIntroBand navigation={navigation} />
+        ) : null}
+
+        {isMobileWeb && ready ? (
+          <WebPhoneCategoryCircles
+            products={shopCatalog}
+            onPressShopAll={() => navigation.navigate("Shop")}
+            onPressCategory={(label) => navigation.navigate("Shop", getShopNavParamsForLabel(label))}
+          />
         ) : null}
 
         <View
@@ -410,54 +413,24 @@ export default function KankregHomeScreen({ navigation }) {
               />
             ) : null}
 
-            {showCategories && ready ? (
+            {showCategories && ready && !isMobileWeb ? (
               webLean ? (
                 <DeferredMount minHeight={220} rootMargin="280px 0px">
-                  {isMobileWeb ? (
-                    <>
-                      <NativeSectionHeader
-                        title={HOME_SCREEN_UI.categories.title}
-                        actionLabel={HOME_SCREEN_UI.categories.action}
-                        onAction={() => navigation.navigate("Shop")}
-                        tight
-                      />
-                      <NativeCategoryRow
-                        products={shopCatalog}
-                        onPress={(label) => navigation.navigate("Shop", getShopNavParamsForLabel(label))}
-                      />
-                    </>
-                  ) : (
-                    <HomeCategoryCards
-                      products={shopCatalog}
-                      productTypeTitle={homeView?.productTypeTitle}
-                      onBrowse={(label) => navigation.navigate("Shop", getShopNavParamsForLabel(label))}
-                      onOpenShop={() => navigation.navigate("Shop")}
-                    />
-                  )}
-                </DeferredMount>
-              ) : (
-              <ScrollFadeUp index={0}>
-                {isMobileWeb ? (
-                  <>
-                    <NativeSectionHeader
-                      title={HOME_SCREEN_UI.categories.title}
-                      actionLabel={HOME_SCREEN_UI.categories.action}
-                      onAction={() => navigation.navigate("Shop")}
-                      tight
-                    />
-                    <NativeCategoryRow
-                      products={shopCatalog}
-                      onPress={(label) => navigation.navigate("Shop", getShopNavParamsForLabel(label))}
-                    />
-                  </>
-                ) : (
                   <HomeCategoryCards
                     products={shopCatalog}
                     productTypeTitle={homeView?.productTypeTitle}
                     onBrowse={(label) => navigation.navigate("Shop", getShopNavParamsForLabel(label))}
                     onOpenShop={() => navigation.navigate("Shop")}
                   />
-                )}
+                </DeferredMount>
+              ) : (
+              <ScrollFadeUp index={0}>
+                <HomeCategoryCards
+                  products={shopCatalog}
+                  productTypeTitle={homeView?.productTypeTitle}
+                  onBrowse={(label) => navigation.navigate("Shop", getShopNavParamsForLabel(label))}
+                  onOpenShop={() => navigation.navigate("Shop")}
+                />
               </ScrollFadeUp>
               )
             ) : null}
@@ -600,7 +573,7 @@ export default function KankregHomeScreen({ navigation }) {
         </View>
 
         {showNativeIngredients ? <WebNativeIngredientsSection /> : null}
-        {showDiwaliFestive ? <WebDiwaliDivider /> : null}
+        {showDiwaliFestive && !isMobileWeb ? <WebDiwaliDivider /> : null}
 
         {showLineFocus && ready ? (
           <View
@@ -639,7 +612,7 @@ export default function KankregHomeScreen({ navigation }) {
           </View>
         ) : null}
 
-        {showDiwaliFestive ? <WebDiwaliDivider /> : null}
+        {showDiwaliFestive && !isMobileWeb ? <WebDiwaliDivider /> : null}
         {showQualityAssurance ? <WebQualityAssuranceSection /> : null}
 
         {showBottomBlock ? (

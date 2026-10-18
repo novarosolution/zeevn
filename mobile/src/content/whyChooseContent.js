@@ -1,33 +1,38 @@
 /**
- * Home “Why Choose Zeevan” — edit copy & images here.
+ * Home “Why Choose Zeevan” — edit copy, icons & images here.
+ * Phone web uses icon + title + short body (Aumshanti-style); desktop keeps photography.
  */
 export const WHY_CHOOSE_SECTION = {
-  eyebrow: "Why Zeevan",
-  title: "Crafted slow for Indian kitchens",
+  eyebrow: "What makes us Zeevan",
+  title: "Purity you can taste",
   items: [
     {
-      key: "tradition",
-      title: "Traditional methods",
-      body: "Bilona churning, wood-fire clarity, cold-pressed oils — the old ways, kept honest.",
+      key: "organic",
+      title: "100% pure",
+      body: "Single-ingredient jars — no fillers, no blends, no shortcuts.",
+      icon: "leaf-outline",
+      image: require("../../assets/why-pure-premium.jpg"),
+    },
+    {
+      key: "batch",
+      title: "Small batch",
+      body: "Bilona & cold-press in small lots so every jar stays honest.",
+      icon: "flask-outline",
       image: require("../../assets/why-tradition-premium.jpg"),
+    },
+    {
+      key: "certified",
+      title: "Batch-checked",
+      body: "Lab checks at sourcing, process & pack. Nothing ships on hope.",
+      icon: "clipboard-outline",
+      image: require("../../assets/why-quality-premium.jpg"),
     },
     {
       key: "farm",
       title: "Farm partners",
-      body: "We work with native herds and rain-fed regions — not commodity auctions.",
+      body: "Native herds and rain-fed regions — not commodity auctions.",
+      icon: "sunny-outline",
       image: require("../../assets/why-farm-premium.jpg"),
-    },
-    {
-      key: "quality",
-      title: "Batch-checked",
-      body: "Lab checks at sourcing, process & pack. Nothing ships on hope.",
-      image: require("../../assets/why-quality-premium.jpg"),
-    },
-    {
-      key: "pure",
-      title: "Nothing added",
-      body: "Single-ingredient purity. No fillers, no blends, no shortcuts.",
-      image: require("../../assets/why-pure-premium.jpg"),
     },
   ],
 };

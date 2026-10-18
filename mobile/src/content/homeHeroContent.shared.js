@@ -58,9 +58,8 @@ export const HOME_HERO_PACKAGING = {
 
 /** Intro band below the web hero (`WebHomeIntroBand.js`) — typographic line rail CTA. */
 export const HOME_WEB_INTRO = {
-  title: "Diwali pantry picks",
-  /** Short — chips + CTA carry the rest. */
-  subtitle: "Festive gifts that taste like home.",
-  cta: "Shop Diwali gifts",
+  title: "Welcome to Zeevan",
+  subtitle: "Your one-stop store for purity — ghee, tel, masala & honey.",
+  cta: "Shop all",
   ctaSecondary: "About",
 };

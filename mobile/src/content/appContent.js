@@ -134,11 +134,10 @@ export const HOME_SCREEN_UI = {
   bestsellers: {
     titleFallback: "Bestsellers",
     action: "See all",
-    webEyebrow: "Shop the pantry",
+    webEyebrow: "Bestsellers",
     webAction: "View all",
-    webSectionTitle: "Essentials for your table",
-    /** Empty — intro band already states the pantry lines. */
-    webKicker: "",
+    webSectionTitle: "Bestsellers",
+    webKicker: "Loved across Indian kitchens",
   },
   comingSoon: {
     stripEyebrow: "Soon",
@@ -206,16 +205,17 @@ export const HOME_SCREEN_UI = {
   },
   web: {
     leanHome: false,
-    showWebHero: false,
-    showCategorySection: false,
+    /** Phone web = Aumshanti-style commerce home (hero → circles → products → why → stories). */
+    showWebHero: true,
+    showCategorySection: true,
     showIntroCategoryChips: false,
     showThreeBackground: false,
     enableHomeGsap: false,
     heroEyebrow: ZEEVAN_CATALOG_SUBLINE,
     atelierSupport: "Ghee, tel, masala & honey — crafted slow for Indian kitchens.",
     atelierCta: "Shop the collection",
-    showHeroTrustChips: false,
-    showIntroBand: true,
+    showHeroTrustChips: true,
+    showIntroBand: false,
     showPromiseBand: true,
     showTimelineSection: false,
     showProcessSection: false,
@@ -226,17 +226,20 @@ export const HOME_SCREEN_UI = {
     showTestimonials: true,
     showBrandQuote: false,
     showMarquee: false,
-    showTrustStrip: true,
+    showTrustStrip: false,
     showWhyChoose: true,
     showLineFocus: true,
     showNativeIngredients: true,
-    showDiwaliBridge: true,
-    showDiwaliFestive: true,
+    /** Keep festive bridge off phone web so the home stays clean like the reference. */
+    showDiwaliBridge: false,
+    showDiwaliFestive: false,
     showDiwaliAnnounce: false,
-    showDiwaliFx: true,
+    showDiwaliFx: false,
     showQualityAssurance: true,
     showCertificationsStrip: true,
     showFeaturedEditorial: false,
+    phoneWelcomeTitle: "Welcome to Zeevan",
+    phoneWelcomeSubtitle: "Your one-stop store for purity",
     welcomeTag: "",
     heroStats: [],
     statsSectionIndex: 2,
@@ -269,7 +272,7 @@ export const HOME_STATS_STRIP = {
  */
 export const HOME_TESTIMONIALS = {
   overline: "Loved by our customers",
-  title: "Stories from our kitchens",
+  title: "What our customers say",
   items: [
     {
       key: "t1",
@@ -1329,7 +1332,6 @@ export const ADMIN_HOME_VIEW_COPY = {
   festivalOptions: [
     { key: "", label: "Auto (follow calendar)" },
     { key: "everyday", label: "Everyday" },
-    { key: "navratri", label: "Navratri" },
     { key: "diwali", label: "Diwali" },
   ],
   shopLocationSection: "Shop / pickup location",

@@ -53,25 +53,19 @@ export default function LineLanding({ tab, products, onProductPress, onCategoryP
             <Text style={type.display(25, { ls: -0.5, lh: 29 })} numberOfLines={2}>
               {page.title}
             </Text>
-            <Text style={type.ui(13.5, "medium", c.inkSoft)} numberOfLines={2}>
-              {page.subtitle}
-            </Text>
-            {products.length ? (
+            {products.length && line?.hero?.cta ? (
               <View style={styles.heroFoot}>
-                {line?.hero?.cta ? (
-                  <PressableScale
-                    onPress={onSeeAll}
-                    accessibilityRole="button"
-                    accessibilityLabel={line.hero.cta}
-                    style={[styles.heroCta, { backgroundColor: c.brand }]}
-                  >
-                    <Text style={type.ui(13, "extrabold", c.onBrand, { letterSpacing: 0.2 })} numberOfLines={1}>
-                      {line.hero.cta}
-                    </Text>
-                    <Ionicons name="arrow-forward" size={14} color={c.onBrand} />
-                  </PressableScale>
-                ) : null}
-                <Text style={type.ui(12, "bold", c.brand)}>{COPY.count(products.length)}</Text>
+                <PressableScale
+                  onPress={onSeeAll}
+                  accessibilityRole="button"
+                  accessibilityLabel={line.hero.cta}
+                  style={[styles.heroCta, { backgroundColor: c.brand }]}
+                >
+                  <Text style={type.ui(13, "extrabold", c.onBrand, { letterSpacing: 0.2 })} numberOfLines={1}>
+                    {line.hero.cta}
+                  </Text>
+                  <Ionicons name="arrow-forward" size={14} color={c.onBrand} />
+                </PressableScale>
               </View>
             ) : null}
           </View>
@@ -87,13 +81,13 @@ export default function LineLanding({ tab, products, onProductPress, onCategoryP
         <>
           {tiles.length > 1 ? (
             <View style={styles.block}>
-              <SectionHeader eyebrow={COPY.browseEyebrow} title={COPY.browseByType} />
+              <SectionHeader title={COPY.browseByType} />
               <CategoryGrid tiles={tiles} onPressTile={onCategoryPress} />
             </View>
           ) : null}
 
           <View style={styles.block}>
-            <SectionHeader eyebrow={COPY.allEyebrow} title={COPY.all(tab.label)} />
+            <SectionHeader title={COPY.all(tab.label)} />
             <View style={[styles.grid, { paddingHorizontal: gutter }]}>
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} width={cardW} gallery onPress={() => onProductPress?.(product)} />
@@ -116,7 +110,7 @@ export default function LineLanding({ tab, products, onProductPress, onCategoryP
 
 const styles = StyleSheet.create({
   wrap: { gap: 26, paddingTop: 18 },
-  hero: { minHeight: 176, overflow: "hidden", flexDirection: "row" },
+  hero: { minHeight: 164, overflow: "hidden", flexDirection: "row" },
   heroCopy: { flex: 1, padding: 18, gap: 6, justifyContent: "center", maxWidth: "58%" },
   heroTop: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 },
   heroIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },

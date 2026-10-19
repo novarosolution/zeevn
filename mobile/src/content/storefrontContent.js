@@ -41,15 +41,13 @@ export const STORE_FREE_DELIVERY = "Free delivery over ₹1,499";
 /** Top block of Home. */
 export const STORE_HEADER = {
   /**
-   * “Zeevan delivers in / 1–2 days” (the most common `eta` set on your products). With no ETA data it
-   * falls back to a greeting: “Namaste, Aarav” (or “Welcome to Zeevan” when signed out).
+   * Chips under the location bar, left to right: the festival countdown (festival themes), “Delivers in 1–2 days”
+   * (the most common `eta` set on your products), the free-delivery threshold, and — when the farm-shop pin and
+   * the customer's location are both known — the distance. Set `showDeliveryPromise` to false to drop the ETA chip.
    */
   showDeliveryPromise: true,
-  promiseEyebrow: "Zeevan delivers in",
-  greetingEyebrow: "Namaste,",
-  guestEyebrow: "Welcome to",
-  guestTitle: "Zeevan",
-  /** Info chip under the title. A distance chip is added when the farm-shop pin and the user's location are known. */
+  /** “Delivers in 10 mins” — a time that does not start with a number (“Same day”) is shown as it is. */
+  etaChip: (eta) => (/^\d/.test(eta) ? `Delivers in ${eta}` : eta),
   deliveryChip: STORE_FREE_DELIVERY,
   distanceSuffix: "from our farm shop",
   /** Small label above the delivery address in the top bar. */
@@ -87,19 +85,16 @@ export const STORE_TABS = [
 
 /** Copy for the tab landing page (non-“All” tabs). */
 export const STORE_LINE_PAGES = {
-  ghee: { title: "Pure A2 Bilona ghee", subtitle: "Hand-churned, golden and grainy.", shopPill: "Ghee" },
-  tel: { title: "Cold-pressed tel", subtitle: "Kachi ghani oils for everyday cooking.", shopPill: "Tel" },
-  masala: { title: "Fresh masala", subtitle: "Small-batch spices with real aroma.", shopPill: "Masala" },
-  honey: { title: "Haldar honey", subtitle: "Raw honey with haldi — wellness in every spoon.", shopPill: "Honey" },
-  gifts: { title: "Gifts & hampers", subtitle: "Thoughtful pantry gifts, beautifully packed.", category: "Gift Sets" },
+  ghee: { title: "Pure A2 Bilona ghee", shopPill: "Ghee" },
+  tel: { title: "Cold-pressed tel", shopPill: "Tel" },
+  masala: { title: "Fresh masala", shopPill: "Masala" },
+  honey: { title: "Haldar honey", shopPill: "Honey" },
+  gifts: { title: "Gifts & hampers", category: "Gift Sets" },
   empty: { title: "Coming soon", subtitle: "New arrivals in this range will appear here." },
   seeAll: "See all products",
   landing: {
-    browseEyebrow: "Browse",
     browseByType: "Browse by type",
-    allEyebrow: "The full range",
     all: (label) => `All ${String(label).toLowerCase()}`,
-    count: (n) => (n === 1 ? "1 product" : `${n} products`),
   },
 };
 
@@ -129,9 +124,10 @@ export const STORE_CARD = {
 
 /*
  * A theme is plain data — no component changes are needed to add or retire a festival.
- *  - `greeting` / `occasion`  header badge ("Shubh Deepavali · 21 days to Diwali")
- *  - `header`                 gradient behind the greeting (light + dark) and the badge accent colour
- *  - `banner`                 hero copy, call to action + `route`, and its colours (`palette.light` / `palette.dark`)
+ *  - `greeting` / `occasion`  festival chip in the header ("20 days to Diwali"; the greeting shows when there is no date)
+ *  - `header`                 gradient behind the header (light + dark) and the chip accent colour
+ *  - `banner`                 hero: `title`, call to action + `route`, `spotlight` (which product's photo it shows) and its
+ *                             colours (`palette.light` / `palette.dark`). Add an optional `eyebrow` / `subtitle` for more copy.
  *  - `ornament`               artwork: "diya" (lamps, fairy lights, rangoli) or "none" (calm olive sprigs)
  *  - `layout`                 optional section order — omit it to use `STORE_HOME.layout`
  *  - `tabBadges`              small badge on a category tab ({ gifts: "Diwali" })
@@ -151,11 +147,10 @@ const everydayTheme = {
     accent: { light: "#5C6834", dark: "#C4D088" },
   },
   banner: {
-    eyebrow: "Zeevan",
     title: "Taste of Purity",
-    subtitle: "A2 · Bilona · Made in Gujarat",
     cta: "Shop now",
     route: { name: "Shop" },
+    spotlight: { match: { featured: true } },
     palette: {
       light: {
         gradient: ["#1D3A1E", "#2D5629", "#587534"],
@@ -180,7 +175,6 @@ const everydayTheme = {
     },
   },
   bento: {
-    eyebrow: "Our range",
     title: "Pantry essentials",
     action: "See all",
     route: { name: "Shop" },
@@ -200,7 +194,6 @@ const everydayTheme = {
   },
   picks: {
     title: "Pantry Picks",
-    caption: "Hand-picked from every shelf",
     items: [
       { key: "ghee", title: "Ghee", match: { lineKeys: ["ghee"] }, route: { name: "Shop", params: { pill: "Ghee" } } },
       { key: "tel", title: "Tel", match: { lineKeys: ["tel"] }, route: { name: "Shop", params: { pill: "Tel" } } },
@@ -229,11 +222,10 @@ const diwaliTheme = {
     accent: { light: "#7A3A08", dark: "#F2CE9B" },
   },
   banner: {
-    eyebrow: "Diwali special",
     title: "Shubh Deepavali",
-    subtitle: "Pure A2 ghee for every diya, mithai and gift",
     cta: "Shop festive",
     route: { name: "Shop", params: { category: "Gift Sets" } },
+    spotlight: { match: { lineKey: "gifts" } },
     palette: {
       light: {
         gradient: ["#3F1409", "#7B2A0D", "#C8691A"],
@@ -258,24 +250,8 @@ const diwaliTheme = {
     },
   },
   /** Gifting first, then the everyday shelves. */
-  layout: [
-    "tracker",
-    "banner",
-    "promos",
-    "bento",
-    "picks",
-    "categories",
-    "bestsellers",
-    "lines",
-    "process",
-    "compare",
-    "reviews",
-    "trust",
-    "help",
-    "footer",
-  ],
+  layout: ["tracker", "banner", "promos", "bento", "picks", "categories", "bestsellers", "lines", "trust", "footer"],
   bento: {
-    eyebrow: "Festive collection",
     title: "Diwali gifting",
     action: "See all",
     route: { name: "Shop", params: { category: "Gift Sets" } },
@@ -316,7 +292,6 @@ const diwaliTheme = {
   },
   picks: {
     title: "Diwali Picks",
-    caption: "Hand-picked for diyas, mithai and gifting",
     items: [
       { key: "gifts", title: "Gift Hampers", match: { lineKeys: ["gifts"] }, route: { name: "Shop", params: { category: "Gift Sets" } } },
       { key: "ghee", title: "Ghee for Diyas", match: { lineKeys: ["ghee"] }, route: { name: "Shop", params: { pill: "Ghee" } } },
@@ -378,77 +353,29 @@ export function getFestivalCountdown(theme, now = new Date()) {
 /**
  * Sections on the Home "All" tab, top to bottom. Delete a key to hide that section, or reorder to move it:
  *  tracker     live order card (only while a signed-in customer has an order in progress)
- *  banner      festival / brand hero
+ *  banner      festival / brand hero with a product spotlight
  *  promos      rewards card + admin hero slides
  *  categories  "Shop by category" grid
  *  bento       festive (or range) collection tiles
  *  bestsellers best-rated products rail
  *  picks       tabbed festive picks rail
- *  lines       one rail per range (ghee, tel, masala, honey, gifting)
- *  process     "How it's made" — steps and photos are managed in Admin → Home view
- *  compare     "Ours vs ordinary" — rows are managed in Admin → Home view
- *  reviews     customer reviews (`HOME_TESTIMONIALS` in appContent.js, shared with the website)
- *  trust       "Why Zeevan" promises and the certification badges
- *  help        closing "Need a hand?" support card
+ *  lines       one rail per range (ghee, tel, masala, honey, gifting) — delete it for a shorter Home
+ *  trust       the four "Why Zeevan" icons
  *  footer      the Zeevan wordmark sign-off (keep it last)
  * A festival theme can set its own `layout` (Diwali puts its gifting collections first).
- * `process` and `compare` also follow the admin switch "show home sections" and each section's own Enabled flag.
+ * Long-form storytelling (how it's made, comparison, reviews, certifications) lives on the About page and the
+ * website, not on the app Home.
  */
 export const STORE_HOME = {
-  layout: [
-    "tracker",
-    "banner",
-    "promos",
-    "categories",
-    "bento",
-    "bestsellers",
-    "picks",
-    "lines",
-    "process",
-    "compare",
-    "reviews",
-    "trust",
-    "help",
-    "footer",
-  ],
+  layout: ["tracker", "banner", "promos", "categories", "bento", "bestsellers", "picks", "lines", "trust", "footer"],
 
-  /** Live order card. The status line itself ("Out for delivery") and its hint come from the order. */
+  /** Live order card. The status ("Out for delivery") comes from the order; its hint is read out to screen readers only. */
   tracker: {
-    eyebrow: "Track order",
+    live: "Live",
     cta: "Track",
     ctaA11y: "Open order tracking",
-    more: (n) => `+${n} more on the way`,
+    more: (n) => `+${n} more`,
     items: (n) => (n === 1 ? "1 item" : `${n} items`),
-  },
-
-  /** "How it's made": headline, steps and photos are admin-managed; these are the labels around them. */
-  process: {
-    stepOf: (n, total) => `Step ${n} of ${total}`,
-    /** One icon per step (by position) for steps without a photo. */
-    icons: ["cow", "cup-water", "bowl-mix-outline", "pot-mix-outline", "fire", "bottle-tonic-outline"],
-    /** Bundled photos for the default steps, used until the admin uploads one. */
-    fallbackImages: { "process-04": require("../../assets/pdp-process-bilona.jpg") },
-  },
-
-  /** "Ours vs ordinary": the table itself is admin-managed; these are only fallbacks. */
-  compare: {
-    oursLabel: "Zeevan",
-    ordinaryLabel: "Ordinary",
-  },
-
-  /** Reviews: the quotes live in `HOME_TESTIMONIALS` (appContent.js). */
-  reviews: {
-    /** `count` arrives already formatted ("1,139"). */
-    rating: (avg, count) => `${avg} average · ${count} customer reviews`,
-  },
-
-  /** Closing support card. */
-  help: {
-    eyebrow: "Need a hand?",
-    title: "Talk to a real person",
-    body: "Questions about a product, delivery or your order? We answer like a neighbour would.",
-    cta: "Chat with support",
-    route: { name: "Support" },
   },
 };
 
@@ -456,7 +383,6 @@ export const STORE_HOME = {
 
 export const STORE_SECTIONS = {
   categories: {
-    eyebrow: "Browse",
     title: "Shop by category",
     action: "See all",
     moreSuffix: "more",
@@ -464,16 +390,13 @@ export const STORE_SECTIONS = {
     tileA11y: (label, n) => `${label}, ${n} ${n === 1 ? "product" : "products"}`,
   },
   /** `rankTop` products get a gold #1 / #2 / #3 badge. */
-  bestsellers: { eyebrow: "Most loved", title: "Bestsellers", action: "See all", rankTop: 3, rankA11y: (n) => `Bestseller number ${n}` },
+  bestsellers: { title: "Bestsellers", action: "See all", rankTop: 3, rankA11y: (n) => `Bestseller number ${n}` },
   picks: { action: "See all" },
   newArrivals: { title: "New arrivals", action: "See all" },
-  lineRail: { eyebrow: "Our range", action: "See all" },
+  lineRail: { action: "See all" },
   /** Call to action on admin hero slides that have none of their own. */
   promoCta: "Shop now",
   promoA11y: "Promotion",
-  seeAllProducts: "See all products",
-  trustEyebrow: "Our promise",
-  trustTitle: "Why Zeevan",
   empty: {
     title: "Fresh stock on the way",
     body: "New products will appear here as soon as they are added.",
@@ -484,7 +407,8 @@ export const STORE_SECTIONS = {
 
 /**
  * Promo carousel cards. Admin hero slides (Home View in the admin console) take priority;
- * these are the brand defaults when none are configured.
+ * these are the brand defaults when none are configured. The built-in photo banners already carry their own
+ * headline, so they show the picture only (`a11y` is what screen readers say).
  * The rewards card shows `signedIn` copy to a signed-in customer ({points} is their balance).
  */
 export const STORE_PROMOS = [
@@ -493,11 +417,9 @@ export const STORE_PROMOS = [
     kind: "rewards",
     eyebrow: "Zeevan Rewards",
     title: "Earn on every order",
-    subtitle: "Get exciting rewards everyday",
     cta: "Start now",
     signedIn: {
       title: (points) => `${points} points`,
-      subtitle: "Redeem them for coupons on your next order",
       cta: "Redeem now",
     },
     route: { name: "RedeemRewards" },
@@ -508,7 +430,7 @@ export const STORE_PROMOS = [
     kind: "image",
     image: require("../../assets/zeevan-hero-web-21x9-web-960.webp"),
     ratio: 412 / 960,
-    title: "A2 Desi Cow Ghee",
+    a11y: "A2 Desi Cow Ghee",
     route: { name: "Shop", params: { pill: "Ghee" } },
   },
   {
@@ -516,22 +438,12 @@ export const STORE_PROMOS = [
     kind: "image",
     image: require("../../assets/zeevan-hero-web-honey-21x9-web-960.webp"),
     ratio: 524 / 960,
-    title: "Kachi Ghani Mustard Oil",
+    a11y: "Kachi Ghani Mustard Oil",
     route: { name: "Shop", params: { pill: "Tel" } },
-  },
-  {
-    key: "delivery",
-    kind: "feature",
-    icon: { mci: "truck-fast-outline" },
-    eyebrow: "Doorstep delivery",
-    title: STORE_FREE_DELIVERY,
-    subtitle: "Live tracking from our farm to your home",
-    cta: "Shop now",
-    route: { name: "Shop" },
   },
 ];
 
-/** “Why Zeevan” trust row. */
+/** The four “Why Zeevan” icons (a line break in a label splits it over two lines). */
 export const STORE_TRUST = [
   { key: "a2", label: "A2 desi\ncow milk", icon: { mci: "cow" } },
   { key: "bilona", label: "Bilona\nmethod", icon: { mci: "pot-steam-outline" } },

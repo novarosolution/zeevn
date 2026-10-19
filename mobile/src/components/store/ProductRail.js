@@ -8,7 +8,7 @@ import ProductCard from "./ProductCard";
 export const RAIL_CARD_WIDTH = 168;
 
 /** Horizontal product rail with a trailing “See all” card. */
-/** `rankTop`: the first N products carry a gold #1…#N badge (0 = none). */
+/** `rankTop`: the first N products carry a gold #1…#N badge (0 = none). `hideEta`: see ProductCard. */
 export default function ProductRail({
   products,
   onProductPress,
@@ -16,6 +16,7 @@ export default function ProductRail({
   seeAllLabel = "See all",
   cardWidth = RAIL_CARD_WIDTH,
   rankTop = 0,
+  hideEta,
 }) {
   const { c, r, type, gutter, shadow } = useStoreTheme();
   const items = Array.isArray(products) ? products : [];
@@ -36,6 +37,7 @@ export default function ProductRail({
           product={product}
           width={cardWidth}
           rank={index < rankTop ? index + 1 : undefined}
+          hideEta={hideEta}
           onPress={() => onProductPress?.(product)}
         />
       ))}

@@ -136,7 +136,11 @@ function CardImage({ uris, size, gallery, dim, c }) {
  * @param {number} width   tile width in points
  * @param {boolean} gallery swipeable image gallery (use in vertical grids, not horizontal rails)
  */
-function ProductCard({ product, width = 172, onPress, gallery = false, rank, style }) {
+/**
+ * @param {string} hideEta  delivery time to leave out when the product has exactly this one (Home already
+ *                          promises it in the header), so only exceptions show on a tile
+ */
+function ProductCard({ product, width = 172, onPress, gallery = false, rank, hideEta, style }) {
   const { c, r, type, shadow } = useStoreTheme();
   const { addToCart, removeFromCart, getItemQuantity } = useCart();
   const wishlist = useWishlist();
@@ -153,7 +157,8 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, sty
   );
   const wished = wishlist.has(product.id);
   const unit = getUnitLabel(product);
-  const eta = getEtaLabel(product);
+  const rawEta = getEtaLabel(product);
+  const eta = hideEta && rawEta === hideEta ? "" : rawEta;
   const stockHint = getStockHint(product);
   const rating = Number(product.ratingAverage) || 0;
   const showRating = rating >= 3.5 && (Number(product.reviewCount) || 0) > 0;

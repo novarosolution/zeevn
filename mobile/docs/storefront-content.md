@@ -18,14 +18,11 @@ Products, prices, categories, ratings, stock and delivery estimates always come 
 | Festival dates (Diwali, …) | `FESTIVAL_CALENDAR` |
 | Switch the festival look without an app release | Admin console → Home view editor → **Festival look** |
 | Force or disable a festival look in the build | `STORE_FESTIVAL_OVERRIDE` |
-| Festival greeting, countdown, hero banner copy + colours, bento tiles, "Diwali Picks" | the theme object (`diwaliTheme`, `everydayTheme`) |
+| Festival countdown chip, hero title / button / colours / which product photo it shows, bento tiles, "Diwali Picks" | the theme object (`diwaliTheme`, `everydayTheme`) |
 | Which Home sections show, and in what order | `STORE_HOME.layout` (a theme can bring its own `layout`) |
-| Home header copy (location label, sign-in, greeting), search hints, delivery chip | `STORE_HEADER`, `STORE_FREE_DELIVERY` |
-| Home section headings, eyebrows, "See all" labels | `STORE_SECTIONS` |
-| Live order card, "How it's made" labels, support card, rating line | `STORE_HOME.tracker`, `.process`, `.compare`, `.reviews`, `.help` |
-| "How it's made" steps and photos, "Ours vs ordinary" rows | **Admin console → Home view** (Process journey / Compare section) — not in the app build |
-| Customer review quotes | `HOME_TESTIMONIALS` in `src/content/appContent.js` (shared with the website) |
-| Certification badges ("Standards we cook to") | `CERTIFICATIONS_STRIP` in `src/content/certificationsContent.js` |
+| Home header chips ("Delivers in …", free-delivery), location label, sign-in, search hints | `STORE_HEADER`, `STORE_FREE_DELIVERY` |
+| Home section headings and "See all" labels | `STORE_SECTIONS` |
+| Live order card labels | `STORE_HOME.tracker` |
 | Product tile copy (ADD, % OFF, Out of stock, spoken labels) | `STORE_CARD` |
 | Category tabs under the search bar | `STORE_TABS` (+ `STORE_LINE_PAGES` for each tab's landing copy) |
 | Promo carousel cards | `STORE_PROMOS` (admin hero slides override these when set) |
@@ -84,15 +81,15 @@ A theme is plain data (see `diwaliTheme`) — changing it never needs a componen
 
 | Field | What it does |
 | --- | --- |
-| `greeting` | The badge at the top of the header ("Shubh Deepavali", plus the user's first name when signed in). Leave `""` for no badge. |
-| `occasion` | Optional countdown beside the badge: `{ date, days(n), tomorrow, today }` → "21 days to Diwali" → "Diwali is tomorrow" → "Happy Diwali". Disappears after the day. |
-| `header` | `gradient` / `gradientDark` behind the greeting (end on the page colour) and `accent` (badge colour, light + dark). |
-| `banner` | Hero card: `eyebrow`, `title`, `subtitle`, `cta`, `route` (where the button goes — Diwali opens Gift Sets) and `palette.light` / `palette.dark` (gradient, text, button and gold colours). |
+| `greeting` | Turns the festival chip on (the first chip under the location bar). It shows the countdown below, or this greeting when there is no date. Leave `""` for no festival chip. |
+| `occasion` | Optional countdown for that chip: `{ date, days(n), tomorrow, today }` → "20 days to Diwali" → "Diwali is tomorrow" → "Happy Diwali". Disappears after the day. |
+| `header` | `gradient` / `gradientDark` behind the header (end on the page colour) and `accent` (chip colour, light + dark). |
+| `banner` | Hero card: `title`, `cta`, `route` (where the button goes — Diwali opens Gift Sets), `spotlight` (`{ match }` — which product's photo floats on the card; Diwali picks the gift hamper) and `palette.light` / `palette.dark` (gradient, text, button and gold colours). The hero is deliberately just a headline and a button; add an optional `eyebrow` and/or `subtitle` string if you want more copy. |
 | `tabBadges` | A small gold badge on a category tab, e.g. `{ gifts: "Diwali" }`. |
-| `ornament` | Hero + header artwork: `"diya"` (fairy lights, rangoli, three flickering diyas, rising embers) or `"none"` (calm olive sprigs). |
+| `ornament` | Hero + header artwork: `"diya"` (fairy lights, rangoli, flickering diyas, rising embers) or `"none"` (calm olive sprigs). |
 | `layout` | Optional section order for this theme (see *Home layout*). |
-| `bento` | The festive collection: heading (`eyebrow`, `title`, `action`, `route`), the tiles, and optional `colors` to recolour them. |
-| `picks` | The tabbed "Picks" rail: `title`, `caption` and the pick tabs. |
+| `bento` | The festive collection: heading (`title`, `action`, `route`), the tiles, and optional `colors` to recolour them. |
+| `picks` | The tabbed "Picks" rail: `title` and the pick tabs. |
 | `shopBanner` | The strip at the top of the Shop screen. |
 
 ### Retire a festival (e.g. Navratri)
@@ -121,48 +118,34 @@ move it to reorder:
 
 ```js
 export const STORE_HOME = {
-  layout: [
-    "tracker", "banner", "promos", "categories", "bento", "bestsellers", "picks", "lines",
-    "process", "compare", "reviews", "trust", "help", "footer",
-  ],
+  layout: ["tracker", "banner", "promos", "categories", "bento", "bestsellers", "picks", "lines", "trust", "footer"],
 };
 ```
 
 | Key | Section |
 | --- | --- |
-| `tracker` | Live order card — only while a signed-in customer has an order in progress (status, hint, six-step progress, "Track") |
-| `banner` | The festival (or brand) hero |
-| `promos` | Rewards card (shows the customer's points when signed in) + admin hero slides + delivery card |
+| `tracker` | Live order card — only while a signed-in customer has an order in progress (status, item count, six-step progress, "Track") |
+| `banner` | The festival (or brand) hero: headline, button and a tilted product photo with a discount sticker |
+| `promos` | Rewards card (shows the customer's points when signed in) + photo slides (admin hero slides when set) |
 | `categories` | "Shop by category" grid |
 | `bento` | Festive (or range) collection with its own heading |
-| `bestsellers` | Best-rated products rail, top three wear a gold #1 / #2 / #3 medal (`STORE_SECTIONS.bestsellers.rankTop`) |
-| `picks` | Tabbed festive picks |
-| `lines` | One rail per range, headed by the range icon |
-| `process` | "How it's made" — the Bilona journey as step cards |
-| `compare` | "Ours vs ordinary" comparison table |
-| `reviews` | Customer reviews, with a rating line computed from the catalog |
-| `trust` | "Why Zeevan" promises and the certification badges |
-| `help` | Closing "Need a hand?" support card |
+| `bestsellers` | Best-rated products rail on an olive panel; the top three wear a gold #1 / #2 / #3 medal (`STORE_SECTIONS.bestsellers.rankTop`) |
+| `picks` | Tabbed festive picks on a gold panel |
+| `lines` | One rail per range, headed by the range icon — delete this key for a much shorter Home |
+| `trust` | The four "Why Zeevan" icons |
 | `footer` | The Zeevan wordmark sign-off — keep it last |
 
 A festival theme can set its own `layout`; Diwali puts its gifting collections (`bento`, `picks`) above the
 category grid. A section with nothing to show (no products, no matching picks, no active order) is skipped
 automatically.
 
+**Why there is so little text.** Home is picture-led on purpose: section headings are one line, the hero is a headline
+and a button, and long-form storytelling (how it's made, ours-vs-ordinary, reviews, certifications) lives on the About
+page and the website, not in the app Home. A delivery time that every product shares ("10 mins") is promised once in
+the header chip and left off the product tiles; a product with a different time still shows its own.
+
 Sections rise into view once, as you scroll to them, and tiles inside them stagger in. With the phone's
 **Reduce Motion** setting on, everything appears without movement and the ornaments hold still.
-
-### Story sections managed in the admin console
-
-`process` and `compare` read their content from the same Home-view config the website uses
-(Admin console → **Home view** → *Process journey* and *Compare section*): headline, subtitle, every step or row,
-and a photo per step. They follow each section's own **Enabled** switch and the "show home sections" switch.
-Until the admin uploads a photo, a step shows a drawn icon on a soft colour wash; the churning step (`process-04`)
-uses the bundled churn photo (`STORE_HOME.process.fallbackImages`). `STORE_HOME.process` / `.compare` only hold the
-small labels around that content ("Step 3 of 6", icons, fallback names).
-
-Reviews come from `HOME_TESTIMONIALS` (`appContent.js`); the quotes there are the website's placeholder set —
-replace them with real customer words before you rely on them.
 
 ### How bento tiles and picks choose products
 
@@ -228,12 +211,10 @@ mobile/src/
   utils/storefront.js              ← catalog helpers (pricing, ranges, ETA, phone format)
   components/store/                ← the premium UI components (native only; entry.web.js stubs keep web untouched)
   components/store/FestiveBanner.js ← Home hero (copy + colours come from the theme)
-  components/store/StoreHeader.js  ← Home header (location, rewards, festival badge, greeting, chips)
+  components/store/StoreHeader.js  ← Home header (location, rewards, a row of chips)
   components/store/StoreTracker.js ← live order card + `useActiveOrders`
-  components/store/StoreProcess.js ← "How it's made" step carousel
-  components/store/StoreCompare.js ← "Ours vs ordinary" table
-  components/store/StoreReviews.js ← customer review carousel
-  components/store/TrustFooter.js  ← "Why Zeevan", certification marquee, help card, footer
+  components/store/Band.js         ← the tinted panels behind Bestsellers and Picks
+  components/store/TrustFooter.js  ← the four trust icons and the footer wordmark
   components/store/HomeArt.js      ← animated artwork: diyas, fairy lights, rangoli, embers, sheen
   components/store/HomeMotion.js   ← scroll reveal / stagger / count-up helpers
   screens/WishlistScreen.js        ← wishlist route

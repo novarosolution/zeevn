@@ -81,17 +81,6 @@ export function OrnamentTitle({ title, style }) {
   );
 }
 
-/** Quiet line under an ornamented title. */
-export function OrnamentCaption({ children }) {
-  const { c, type, gutter } = useStoreTheme();
-  if (!children) return null;
-  return (
-    <Text style={[type.ui(12.5, "medium", c.inkMute), styles.ornamentCaption, { paddingHorizontal: gutter }]} numberOfLines={2}>
-      {children}
-    </Text>
-  );
-}
-
 const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
@@ -105,7 +94,6 @@ const styles = StyleSheet.create({
   accent: { width: 3.5, height: 20, borderRadius: 2 },
   accentTall: { height: 40 },
   iconDisc: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  ornamentCaption: { textAlign: "center", marginTop: -8 },
   caption: { marginTop: 3, marginLeft: 12.5 },
   action: {
     flexDirection: "row",

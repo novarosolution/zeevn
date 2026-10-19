@@ -3,56 +3,52 @@ import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } fr
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import Animated, { FadeInDown, FadeInRight } from "react-native-reanimated";
+import Animated, { FadeInRight } from "react-native-reanimated";
 import { STORE_HEADER } from "../../content/storefrontContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { DiyaGlyph, HeaderArt } from "./HomeArt";
 import { useCountUp } from "./HomeMotion";
 import PressableScale from "./PressableScale";
 
-function InfoChip({ icon, label, index }) {
+/**
+ * One pill under the location bar. A `festival` chip carries the theme's flickering lamp and accent colour;
+ * the others show a small icon and a few words.
+ */
+function InfoChip({ chip, index, accent, ornament }) {
   const { c, type, isDark } = useStoreTheme();
+  const festival = chip.kind === "festival";
+  const tint = isDark ? c.gold : c.brandAlt;
   return (
     <Animated.View
-      entering={FadeInRight.delay(260 + index * 90).duration(420)}
+      entering={FadeInRight.delay(140 + index * 90).duration(420)}
       style={[
         styles.chip,
-        { backgroundColor: withAlpha(c.card, isDark ? 0.16 : 0.72), borderColor: withAlpha(isDark ? c.gold : c.brand, isDark ? 0.24 : 0.14) },
-      ]}
-    >
-      <MaterialCommunityIcons name={icon} size={14} color={isDark ? c.gold : c.brandAlt} />
-      <Text style={type.ui(12, "bold", c.inkSoft)} numberOfLines={1}>
-        {label}
-      </Text>
-    </Animated.View>
-  );
-}
-
-/** "Shubh Deepavali · 21 days to Diwali" — the festival greeting, with a flickering lamp. */
-function FestivalBadge({ label, countdown, ornament, accent }) {
-  const { c, type, isDark } = useStoreTheme();
-  return (
-    <Animated.View
-      entering={FadeInDown.duration(460)}
-      style={[
-        styles.badge,
-        { backgroundColor: withAlpha(c.card, isDark ? 0.14 : 0.6), borderColor: withAlpha(accent, isDark ? 0.34 : 0.3) },
+        festival && styles.chipFestival,
+        {
+          backgroundColor: withAlpha(c.card, isDark ? 0.16 : festival ? 0.8 : 0.7),
+          borderColor: festival
+            ? withAlpha(accent, isDark ? 0.42 : 0.34)
+            : withAlpha(isDark ? c.gold : c.brand, isDark ? 0.24 : 0.14),
+        },
       ]}
       accessible
-      accessibilityLabel={countdown ? `${label}. ${countdown}` : label}
+      accessibilityLabel={chip.label}
     >
-      {ornament === "diya" ? <DiyaGlyph size={22} /> : <Ionicons name="sparkles" size={14} color={accent} />}
-      <Text style={type.ui(12.5, "extrabold", accent, { letterSpacing: 0.25 })} numberOfLines={1}>
-        {label}
+      {festival ? (
+        ornament === "diya" ? (
+          <DiyaGlyph size={22} />
+        ) : (
+          <Ionicons name="sparkles" size={14} color={accent} />
+        )
+      ) : (
+        <MaterialCommunityIcons name={chip.icon} size={14} color={tint} />
+      )}
+      <Text
+        style={type.ui(12, festival ? "extrabold" : "bold", festival ? accent : c.inkSoft, festival ? { letterSpacing: 0.2 } : null)}
+        numberOfLines={1}
+      >
+        {chip.label}
       </Text>
-      {countdown ? (
-        <>
-          <View style={[styles.badgeDot, { backgroundColor: accent }]} />
-          <Text style={type.ui(12, "semibold", accent)} numberOfLines={1}>
-            {countdown}
-          </Text>
-        </>
-      ) : null}
     </Animated.View>
   );
 }
@@ -111,9 +107,9 @@ function RewardsPill({ points, onPress }) {
 }
 
 /**
- * Home header — delivery location and account actions on top, then the festival greeting badge, the
- * "Zeevan delivers in …" headline (or a personal greeting) and the info chips, over a warm gradient with
- * quiet animated ornaments.
+ * Home header — delivery location, rewards and account on top, then one row of small chips (festival countdown,
+ * delivery time, free-delivery threshold, distance) over a warm gradient with quiet animated ornaments.
+ * Kept short on purpose so the hero is in view the moment Home opens.
  */
 export default function StoreHeader({
   signedIn,
@@ -121,11 +117,8 @@ export default function StoreHeader({
   avatarUrl,
   hasUnread = false,
   points = 0,
-  badge,
   ornament = "none",
   accent,
-  eyebrow,
-  title,
   chips = [],
   locationLabel,
   locationKind,
@@ -139,13 +132,15 @@ export default function StoreHeader({
 }) {
   const { c, type, shadow, gutter, isDark } = useStoreTheme();
   const { width } = useWindowDimensions();
-  const [height, setHeight] = useState(250);
-  const badgeAccent = accent || c.goldText;
+  const [height, setHeight] = useState(110);
+  const chipAccent = accent || c.goldText;
+  // The ornaments also reach down behind the search bar and tabs, so the glow feels like one warm sky.
+  const artHeight = height + extendTop + 96;
 
   return (
     <View onLayout={(e) => setHeight(Math.round(e.nativeEvent.layout.height))}>
-      <View pointerEvents="none" style={[styles.art, { top: -extendTop, height: height + extendTop }]}>
-        <HeaderArt ornament={ornament} isDark={isDark} width={width} height={height + extendTop} />
+      <View pointerEvents="none" style={[styles.art, { top: -extendTop, height: artHeight }]}>
+        <HeaderArt ornament={ornament} isDark={isDark} width={width} height={artHeight} />
       </View>
 
       <View style={{ paddingHorizontal: gutter }}>
@@ -193,29 +188,6 @@ export default function StoreHeader({
             <Avatar name={firstName} avatarUrl={avatarUrl} signedIn={signedIn} hasUnread={hasUnread} onPress={onPressProfile} />
           </View>
         </View>
-
-        <View style={styles.greeting}>
-          {badge ? <FestivalBadge label={badge.label} countdown={badge.countdown} ornament={ornament} accent={badgeAccent} /> : null}
-          <Animated.Text
-            entering={FadeInDown.delay(80).duration(460)}
-            style={[type.ui(15.5, "semibold", c.inkSoft), styles.eyebrow]}
-            numberOfLines={1}
-            maxFontSizeMultiplier={1.2}
-          >
-            {eyebrow}
-          </Animated.Text>
-          <Animated.Text
-            entering={FadeInDown.delay(150).duration(520)}
-            style={type.display(38, { ls: -1, lh: 42 })}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-            maxFontSizeMultiplier={1.2}
-            accessibilityRole="header"
-          >
-            {title}
-          </Animated.Text>
-        </View>
       </View>
 
       {chips.length ? (
@@ -226,7 +198,7 @@ export default function StoreHeader({
           contentContainerStyle={[styles.chips, { paddingHorizontal: gutter }]}
         >
           {chips.map((chip, i) => (
-            <InfoChip key={chip.key} icon={chip.icon} label={chip.label} index={i} />
+            <InfoChip key={chip.key} chip={chip} index={i} accent={chipAccent} ornament={ornament} />
           ))}
         </ScrollView>
       ) : null}
@@ -242,21 +214,6 @@ const styles = StyleSheet.create({
   locationText: { flex: 1, minWidth: 0, gap: 1 },
   locationLabelRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   actions: { flexDirection: "row", alignItems: "center", gap: 8 },
-  greeting: { marginTop: 14, gap: 1 },
-  badge: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    height: 30,
-    paddingLeft: 8,
-    paddingRight: 12,
-    borderRadius: 15,
-    borderWidth: 1,
-    marginBottom: 8,
-  },
-  badgeDot: { width: 3, height: 3, borderRadius: 1.5, opacity: 0.7 },
-  eyebrow: { marginBottom: -2 },
   chipScroll: { marginTop: 12, flexGrow: 0 },
   chips: { flexDirection: "row", alignItems: "center", gap: 8 },
   chip: {
@@ -268,6 +225,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
   },
+  chipFestival: { height: 30, paddingLeft: 8, paddingRight: 12, borderRadius: 15, borderWidth: 1 },
   rewards: {
     height: 42,
     paddingHorizontal: 13,

@@ -20,7 +20,7 @@ import PressableScale from "./PressableScale";
 import StoreIcon from "./StoreIcon";
 
 const GAP = 10;
-const CARD_H = 196;
+const CARD_H = 176;
 const AUTOPLAY_MS = 5600;
 const AnimatedFlatList = Animated.FlatList;
 
@@ -80,7 +80,6 @@ function RewardsCard({ item, width, isDark, signedIn, points }) {
   const colors = isDark ? ["#4A3812", "#2E2209"] : ["#FFF0C9", "#F8D68C"];
   const personal = signedIn && item.signedIn;
   const title = personal ? item.signedIn.title(Number(points || 0).toLocaleString("en-IN")) : item.title;
-  const subtitle = personal ? item.signedIn.subtitle : item.subtitle;
   const cta = personal ? item.signedIn.cta : item.cta;
   return (
     <View style={[styles.card, { width, borderRadius: r.xxl }]}>
@@ -88,11 +87,8 @@ function RewardsCard({ item, width, isDark, signedIn, points }) {
       <FloatingCoins />
       <View style={styles.copy}>
         <Text style={type.eyebrow(isDark ? c.goldText : "#8A5A12", 10)}>{item.eyebrow}</Text>
-        <Text style={[type.display(26, { color: isDark ? c.ink : "#3A2A0C", ls: -0.5, lh: 29 }), styles.heading]} numberOfLines={2}>
+        <Text style={[type.display(28, { color: isDark ? c.ink : "#3A2A0C", ls: -0.6, lh: 31 }), styles.heading]} numberOfLines={2}>
           {title}
-        </Text>
-        <Text style={type.ui(13, "medium", isDark ? c.inkSoft : "#6A4A1C")} numberOfLines={2}>
-          {subtitle}
         </Text>
         <CtaPill label={cta} color={isDark ? c.gold : "#2A1E08"} textColor={isDark ? "#2A1E08" : "#FFF3D0"} />
       </View>
@@ -100,56 +96,29 @@ function RewardsCard({ item, width, isDark, signedIn, points }) {
   );
 }
 
-/** The watermark icon on the delivery card drifts gently, like the van is rolling. */
-function GlidingIcon({ icon }) {
-  const t = useLoop(3400);
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: interpolate(t.value, [0, 1], [-10, 8]) }, { translateY: interpolate(t.value, [0, 1], [1, -3]) }],
-  }));
-  return (
-    <Animated.View style={[styles.featureIcon, animatedStyle]} pointerEvents="none">
-      <StoreIcon icon={icon} size={118} color={withAlpha("#FFFFFF", 0.09)} />
-    </Animated.View>
-  );
-}
-
-function FeatureCard({ item, width, isDark }) {
-  const { c, r, type } = useStoreTheme();
-  const colors = isDark ? ["#2A3A1E", "#1B2814"] : ["#2F4E2B", "#1E3B1F"];
-  return (
-    <View style={[styles.card, { width, borderRadius: r.xxl }]}>
-      <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-      <GlidingIcon icon={item.icon} />
-      <View style={styles.copy}>
-        <Text style={type.eyebrow(c.goldBright, 10)}>{item.eyebrow}</Text>
-        <Text style={[type.display(24, { color: "#FFFFFF", ls: -0.4, lh: 28 }), styles.heading]} numberOfLines={2}>
-          {item.title}
-        </Text>
-        <Text style={type.ui(13, "medium", withAlpha("#FFFFFF", 0.78))} numberOfLines={2}>
-          {item.subtitle}
-        </Text>
-        <CtaPill label={item.cta} color={c.gold} textColor="#2A1E08" />
-      </View>
-    </View>
-  );
-}
-
+/**
+ * A photo slide. The built-in banners already carry their headline, so they show the picture with a round arrow;
+ * admin slides can add a title, subtitle and call to action, which sit on a soft dark gradient.
+ */
 function ImageCard({ item, width }) {
   const { c, r, type, isDark } = useStoreTheme();
   const source = typeof item.image === "number" ? item.image : { uri: item.image };
   const zoom = useLoop(9000);
   const zoomStyle = useAnimatedStyle(() => ({ transform: [{ scale: interpolate(zoom.value, [0, 1], [1, 1.07]) }] }));
+  const hasCopy = Boolean(item.eyebrow || item.title || item.subtitle);
   return (
     <View style={[styles.card, { width, borderRadius: r.xxl, backgroundColor: c.soft }]}>
       <Animated.View style={[StyleSheet.absoluteFill, zoomStyle]}>
         <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} cachePolicy="memory-disk" />
       </Animated.View>
-      <LinearGradient
-        colors={["transparent", withAlpha(isDark ? "#0A0806" : "#1A140C", 0.78)]}
-        locations={[0.35, 1]}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-      />
+      {hasCopy || item.cta ? (
+        <LinearGradient
+          colors={["transparent", withAlpha(isDark ? "#0A0806" : "#1A140C", hasCopy ? 0.78 : 0.4)]}
+          locations={[0.35, 1]}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+      ) : null}
       <View style={styles.imageCopy} pointerEvents="none">
         {item.eyebrow ? (
           <Text style={type.eyebrow(c.goldBright, 10)} numberOfLines={1}>
@@ -173,6 +142,11 @@ function ImageCard({ item, width }) {
           </View>
         ) : null}
       </View>
+      {item.cta ? null : (
+        <View style={[styles.arrowDisc, { backgroundColor: withAlpha("#FFFFFF", 0.92) }]} pointerEvents="none">
+          <StoreIcon icon={{ ion: "arrow-forward" }} size={17} color="#244424" />
+        </View>
+      )}
     </View>
   );
 }
@@ -185,13 +159,11 @@ function Slide({ item, index, scrollX, step, width, isDark, signedIn, points, on
         onPress={onPress}
         scaleTo={0.98}
         accessibilityRole="button"
-        accessibilityLabel={item.title || item.cta || STORE_SECTIONS.promoA11y}
+        accessibilityLabel={item.title || item.a11y || item.cta || STORE_SECTIONS.promoA11y}
         style={[shadow.soft, { height: CARD_H }]}
       >
         {item.kind === "rewards" ? (
           <RewardsCard item={item} width={width} isDark={isDark} signedIn={signedIn} points={points} />
-        ) : item.kind === "feature" ? (
-          <FeatureCard item={item} width={width} isDark={isDark} />
         ) : (
           <ImageCard item={item} width={width} />
         )}
@@ -287,13 +259,22 @@ const styles = StyleSheet.create({
   heading: { marginBottom: 1 },
   cta: { alignSelf: "flex-start", marginTop: 7, paddingHorizontal: 16, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
   coinArt: { position: "absolute", right: -6, bottom: -4 },
-  featureIcon: { position: "absolute", right: -14, bottom: -18 },
   imageCopy: {
     position: "absolute",
     left: 16,
     right: 16,
     bottom: 16,
     gap: 4,
+  },
+  arrowDisc: {
+    position: "absolute",
+    right: 14,
+    bottom: 14,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
   },
   imageCta: {
     alignSelf: "flex-start",

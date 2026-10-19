@@ -15,7 +15,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { useAuth } from "../../context/AuthContext";
 import { useDeliveryLocation } from "../../hooks/useDeliveryLocation";
-import { HOME_TESTIMONIALS } from "../../content/appContent";
 import {
   STORE_HEADER,
   STORE_HOME,
@@ -30,7 +29,7 @@ import {
 import { getProductLineByKey } from "../../content/zeevanCatalogContent";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { getHeroSlideImageUri } from "../../utils/image";
-import { getAppHeroSlides, resolveCompareDisplay, resolveProcessDisplay } from "../../utils/homeViewMedia";
+import { getAppHeroSlides } from "../../utils/homeViewMedia";
 import {
   STORE_LINE_ORDER,
   buildCategoryTiles,
@@ -45,8 +44,9 @@ import {
   visibleTabs,
 } from "../../utils/storefront";
 import BackToTop from "./BackToTop";
+import Band from "./Band";
 import BentoGrid from "./BentoGrid";
-import CategoryGrid, { SeeAllBar } from "./CategoryGrid";
+import CategoryGrid from "./CategoryGrid";
 import FestiveBanner from "./FestiveBanner";
 import FestivePicks from "./FestivePicks";
 import FloatingNav from "./FloatingNav";
@@ -57,21 +57,18 @@ import PromoCarousel from "./PromoCarousel";
 import { SectionHeader } from "./SectionTitle";
 import StoreHeader from "./StoreHeader";
 import StoreIcon from "./StoreIcon";
-import StoreCompare from "./StoreCompare";
-import StoreProcess from "./StoreProcess";
-import StoreReviews from "./StoreReviews";
 import StoreSearchBar from "./StoreSearchBar";
 import StoreTabs from "./StoreTabs";
 import StoreTracker, { useActiveOrders } from "./StoreTracker";
-import { BrandFooter, CertificationsRow, HelpCard, TrustStrip } from "./TrustFooter";
+import { BrandFooter, TrustStrip } from "./TrustFooter";
 import PressableScale from "./PressableScale";
 import { VariantSheetProvider } from "./VariantSheet";
 
 const GRADIENT_OVERSCROLL = 800;
 const GRADIENT_HEIGHT = 620;
 const BACK_TO_TOP_AT = 1100;
-/** Header text is fully faded once the page has scrolled this far. */
-const HEADER_FADE_AT = 190;
+/** The header is fully faded once the page has scrolled this far. */
+const HEADER_FADE_AT = 130;
 
 function EmptyState({ icon, title, body, cta, onPress }) {
   const { c, r, type, gutter } = useStoreTheme();
@@ -92,10 +89,10 @@ function EmptyState({ icon, title, body, cta, onPress }) {
 }
 
 /**
- * Native Home — quick-commerce layout in the Zeevan look: a festival-gradient header (location, rewards,
- * greeting badge, delivery promise, chips), rotating search, category tabs that pin on scroll, then the
- * sections listed in `STORE_HOME.layout` (or the festival theme's own order) rising into view as you
- * scroll, and the floating bottom nav.
+ * Native Home — quick-commerce layout in the Zeevan look: a short festival-gradient header (location, rewards,
+ * a row of chips), rotating search, category tabs that pin on scroll, then the sections listed in
+ * `STORE_HOME.layout` (or the festival theme's own order) rising into view as you scroll, and the floating
+ * bottom nav. Picture-led on purpose: long copy lives on the About page and the website.
  */
 export default function StoreHome({
   navigation,
@@ -161,10 +158,10 @@ export default function StoreHome({
     };
   });
 
-  // The greeting block drifts up a touch faster than the page and fades, so it hands over to the pinned bar.
+  // The header drifts up a touch faster than the page and fades, so it hands over to the pinned bar.
   const headerStyle = useAnimatedStyle(() => ({
     opacity: interpolate(scrollY.value, [0, HEADER_FADE_AT], [1, 0], Extrapolation.CLAMP),
-    transform: [{ translateY: -interpolate(scrollY.value, [0, HEADER_FADE_AT], [0, 22], Extrapolation.CLAMP) }],
+    transform: [{ translateY: -interpolate(scrollY.value, [0, HEADER_FADE_AT], [0, 16], Extrapolation.CLAMP) }],
   }));
 
   const scrollToTop = useCallback(() => scrollRef.current?.scrollTo?.({ y: 0, animated: true }), [scrollRef]);
@@ -199,25 +196,15 @@ export default function StoreHome({
 
   /* ---- header content ---- */
   const firstName = getFirstName(user);
-  const signedInName = isAuthenticated && firstName;
   const etaLabel = useMemo(() => (STORE_HEADER.showDeliveryPromise ? mostCommonEta(products) : ""), [products]);
-  const eyebrow = etaLabel ? STORE_HEADER.promiseEyebrow : signedInName ? STORE_HEADER.greetingEyebrow : STORE_HEADER.guestEyebrow;
-  const title = etaLabel || (signedInName ? firstName : STORE_HEADER.guestTitle);
   const points = Math.max(0, Number(user?.rewardPoints) || 0);
 
-  const badge = useMemo(
-    () =>
-      festival.greeting
-        ? {
-            label: signedInName ? `${festival.greeting}, ${firstName}` : festival.greeting,
-            countdown: getFestivalCountdown(festival),
-          }
-        : null,
-    [festival, firstName, signedInName]
-  );
-
   const chips = useMemo(() => {
-    const list = [{ key: "delivery", icon: "truck-fast-outline", label: STORE_HEADER.deliveryChip }];
+    const list = [];
+    const festivalLabel = festival.greeting ? getFestivalCountdown(festival) || festival.greeting : "";
+    if (festivalLabel) list.push({ key: "festival", kind: "festival", label: festivalLabel });
+    if (etaLabel) list.push({ key: "eta", icon: "clock-fast", label: STORE_HEADER.etaChip(etaLabel) });
+    list.push({ key: "delivery", icon: "truck-fast-outline", label: STORE_HEADER.deliveryChip });
     const from = homeView?.shopLocation;
     const to = snippet?.latitude != null ? snippet : user?.defaultAddress;
     const km = distanceKm(from, to);
@@ -225,7 +212,7 @@ export default function StoreHome({
       list.push({ key: "distance", icon: "map-marker-distance", label: `${formatDistanceKm(km)} ${STORE_HEADER.distanceSuffix}` });
     }
     return list;
-  }, [homeView?.shopLocation, snippet, user?.defaultAddress]);
+  }, [festival, etaLabel, homeView?.shopLocation, snippet, user?.defaultAddress]);
 
   const locationText = displayLabel || STORE_HEADER.locationFallback;
   const locationKind = savedLabel && displayLabel === savedLabel ? user?.defaultAddress?.addressType : "";
@@ -247,6 +234,14 @@ export default function StoreHome({
       })),
     };
   }, [festival, products]);
+
+  // The product whose photo the hero shows (the theme says which; falls back to a featured product).
+  const spotlight = useMemo(
+    () =>
+      pickTileProduct(products, festival.banner.spotlight?.match || { featured: true }) ||
+      pickTileProduct(products, { featured: true }),
+    [festival, products]
+  );
 
   const picks = useMemo(
     () =>
@@ -277,24 +272,6 @@ export default function StoreHome({
   }, [homeView?.heroSlides, width]);
 
   const categoryTiles = useMemo(() => buildCategoryTiles(products, { max: 8 }), [products]);
-
-  // Story sections are managed in Admin → Home view; they also follow its "show home sections" switch.
-  const showStory = homeView?.showHomeSections !== false;
-  const processDisplay = useMemo(() => (showStory ? resolveProcessDisplay(homeView?.processSection) : null), [showStory, homeView?.processSection]);
-  const compareDisplay = useMemo(() => (showStory ? resolveCompareDisplay(homeView?.compareSection) : null), [showStory, homeView?.compareSection]);
-  const reviewLine = useMemo(() => {
-    let total = 0;
-    let sum = 0;
-    products.forEach((product) => {
-      const count = Number(product?.reviewCount) || 0;
-      const rating = Number(product?.ratingAverage) || 0;
-      if (count > 0 && rating > 0) {
-        total += count;
-        sum += rating * count;
-      }
-    });
-    return total > 0 ? STORE_HOME.reviews.rating((sum / total).toFixed(1), total.toLocaleString("en-IN")) : "";
-  }, [products]);
 
   const bestsellers = useMemo(
     () => [...homeProducts].sort((a, b) => (Number(b.reviewCount) || 0) - (Number(a.reviewCount) || 0)).slice(0, 8),
@@ -330,7 +307,7 @@ export default function StoreHome({
         blocks.push({ key, node: <StoreTracker orders={activeOrders} onPress={() => navigation.navigate("MyOrders")} /> });
         break;
       case "banner":
-        blocks.push({ key, node: <FestiveBanner theme={festival} onPress={() => go(festival.banner.route)} /> });
+        blocks.push({ key, node: <FestiveBanner theme={festival} product={spotlight} onPress={() => go(festival.banner.route)} /> });
         break;
       case "promos":
         blocks.push({
@@ -346,7 +323,6 @@ export default function StoreHome({
           node: (
             <View style={styles.block}>
               <SectionHeader
-                eyebrow={STORE_SECTIONS.categories.eyebrow}
                 title={homeView?.productTypeTitle || STORE_SECTIONS.categories.title}
                 action={STORE_SECTIONS.categories.action}
                 onAction={() => openShop()}
@@ -358,7 +334,6 @@ export default function StoreHome({
                 onPressTile={(tile) => openShop({ category: tile.label })}
                 onPressAll={() => openShop()}
               />
-              <SeeAllBar images={categoryTiles.map((t) => t.image)} label={STORE_SECTIONS.seeAllProducts} onPress={() => openShop()} />
             </View>
           ),
         });
@@ -371,7 +346,6 @@ export default function StoreHome({
             <View style={styles.block}>
               {festival.bento.title ? (
                 <SectionHeader
-                  eyebrow={festival.bento.eyebrow}
                   title={festival.bento.title}
                   action={festival.bento.action}
                   onAction={() => go(festival.bento.route)}
@@ -387,9 +361,8 @@ export default function StoreHome({
         blocks.push({
           key,
           node: (
-            <View style={styles.block}>
+            <Band tone="olive" style={styles.band}>
               <SectionHeader
-                eyebrow={STORE_SECTIONS.bestsellers.eyebrow}
                 title={homeView?.primeSectionTitle || STORE_SECTIONS.bestsellers.title}
                 action={STORE_SECTIONS.bestsellers.action}
                 onAction={() => openShop()}
@@ -398,10 +371,11 @@ export default function StoreHome({
                 products={bestsellers}
                 rankTop={STORE_SECTIONS.bestsellers.rankTop}
                 seeAllLabel={STORE_SECTIONS.bestsellers.action}
+                hideEta={etaLabel}
                 onProductPress={openProduct}
                 onSeeAll={() => openShop()}
               />
-            </View>
+            </Band>
           ),
         });
         break;
@@ -410,15 +384,17 @@ export default function StoreHome({
         blocks.push({
           key,
           node: (
-            <FestivePicks
-              title={festival.picks.title}
-              caption={festival.picks.caption}
-              picks={picks}
-              activeKey={activePickKey}
-              onChange={setPickKey}
-              onProductPress={openProduct}
-              onSeeAll={(pick) => go(pick.route)}
-            />
+            <Band tone="gold">
+              <FestivePicks
+                title={festival.picks.title}
+                picks={picks}
+                activeKey={activePickKey}
+                onChange={setPickKey}
+                onProductPress={openProduct}
+                onSeeAll={(pick) => go(pick.route)}
+                hideEta={etaLabel}
+              />
+            </Band>
           ),
         });
         break;
@@ -431,47 +407,22 @@ export default function StoreHome({
               <View style={styles.block}>
                 <SectionHeader
                   icon={STORE_TABS.find((tab) => tab.lineKey === line.key)?.icon}
-                  eyebrow={STORE_SECTIONS.lineRail.eyebrow}
                   title={page.title || line.key}
-                  caption={page.subtitle}
                   action={STORE_SECTIONS.lineRail.action}
                   onAction={() => openShop(page.shopPill ? { pill: page.shopPill } : page.category ? { category: page.category } : undefined)}
                 />
-                <ProductRail products={line.list} seeAllLabel={STORE_SECTIONS.lineRail.action} onProductPress={openProduct} />
+                <ProductRail products={line.list} seeAllLabel={STORE_SECTIONS.lineRail.action} hideEta={etaLabel} onProductPress={openProduct} />
               </View>
             ),
           });
-        });
-        break;
-      case "process":
-        if (!processDisplay) break;
-        blocks.push({ key, node: <StoreProcess data={processDisplay} /> });
-        break;
-      case "compare":
-        if (!compareDisplay) break;
-        blocks.push({ key, staggered: true, node: <StoreCompare data={compareDisplay} /> });
-        break;
-      case "reviews":
-        if (!HOME_TESTIMONIALS.items?.length) break;
-        blocks.push({
-          key,
-          node: <StoreReviews items={HOME_TESTIMONIALS.items} overline={HOME_TESTIMONIALS.overline} title={HOME_TESTIMONIALS.title} caption={reviewLine} />,
         });
         break;
       case "trust":
         blocks.push({
           key,
           staggered: true,
-          node: (
-            <View style={styles.block}>
-              <TrustStrip eyebrow={STORE_SECTIONS.trustEyebrow} title={STORE_SECTIONS.trustTitle} items={STORE_TRUST} />
-              <CertificationsRow />
-            </View>
-          ),
+          node: <TrustStrip items={STORE_TRUST} />,
         });
-        break;
-      case "help":
-        blocks.push({ key, node: <HelpCard onPress={() => go(STORE_HOME.help.route)} /> });
         break;
       case "footer":
         blocks.push({ key, node: <BrandFooter /> });
@@ -512,11 +463,8 @@ export default function StoreHome({
                 avatarUrl={user?.avatar}
                 hasUnread={hasUnread}
                 points={points}
-                badge={badge}
                 ornament={festival.ornament}
                 accent={isDark ? festival.header.accent?.dark : festival.header.accent?.light}
-                eyebrow={eyebrow}
-                title={title}
                 chips={chips}
                 locationLabel={STORE_HEADER.locationLabel}
                 locationKind={locationKind}
@@ -612,8 +560,9 @@ const styles = StyleSheet.create({
   backdrop: { position: "absolute", left: 0, right: 0 },
   pinBlock: { marginTop: 12 },
   tabs: { marginTop: 6 },
-  sections: { gap: 26, paddingTop: 12 },
+  sections: { gap: 24, paddingTop: 12 },
   block: { gap: 14 },
+  band: { gap: 14 },
   compact: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 30, overflow: "hidden", borderBottomWidth: StyleSheet.hairlineWidth },
   compactRule: { position: "absolute", left: 0, right: 0, bottom: 0, height: 1.5 },
   empty: { alignItems: "center", gap: 10, padding: 28, borderWidth: StyleSheet.hairlineWidth, marginTop: 24 },

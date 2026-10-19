@@ -8,7 +8,7 @@ import { hapticTick } from "../../utils/haptics";
 import { productImageUri } from "../../utils/storefront";
 import PressableScale from "./PressableScale";
 import ProductRail from "./ProductRail";
-import { OrnamentCaption, OrnamentTitle } from "./SectionTitle";
+import { OrnamentTitle } from "./SectionTitle";
 import StoreIcon from "./StoreIcon";
 
 function PickTab({ pick, active, width, onPress }) {
@@ -71,10 +71,10 @@ function PickTab({ pick, active, width, onPress }) {
 }
 
 /**
- * “Festive Picks”: ornamented title and caption, circular pick tabs, and a product rail for the selected pick.
+ * “Festive Picks”: ornamented title, circular pick tabs, and a product rail for the selected pick.
  * Picks arrive resolved: { key, title, product?, products[], icon?, route? }.
  */
-export default function FestivePicks({ title, caption, picks, activeKey, onChange, onProductPress, onSeeAll }) {
+export default function FestivePicks({ title, picks, activeKey, onChange, onProductPress, onSeeAll, hideEta }) {
   const { gutter } = useStoreTheme();
   const { width } = useWindowDimensions();
   const tabW = (width - gutter * 2) / Math.min(4, Math.max(picks.length, 1));
@@ -83,10 +83,7 @@ export default function FestivePicks({ title, caption, picks, activeKey, onChang
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.heading}>
-        <OrnamentTitle title={title} />
-        <OrnamentCaption>{caption}</OrnamentCaption>
-      </View>
+      <OrnamentTitle title={title} />
       <View style={[styles.tabs, { paddingHorizontal: gutter }]}>
         {picks.map((pick) => (
           <PickTab
@@ -107,6 +104,7 @@ export default function FestivePicks({ title, caption, picks, activeKey, onChang
           onProductPress={onProductPress}
           onSeeAll={onSeeAll ? () => onSeeAll(active) : undefined}
           seeAllLabel={STORE_SECTIONS.picks.action}
+          hideEta={hideEta}
         />
       </Animated.View>
     </View>
@@ -115,7 +113,6 @@ export default function FestivePicks({ title, caption, picks, activeKey, onChang
 
 const styles = StyleSheet.create({
   wrap: { gap: 14 },
-  heading: { gap: 10 },
   tabs: { flexDirection: "row", justifyContent: "space-between" },
   tab: { alignItems: "center", paddingVertical: 8, paddingHorizontal: 2, gap: 7, borderWidth: 1.5 },
   circle: {

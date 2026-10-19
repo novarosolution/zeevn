@@ -2,21 +2,24 @@ import React, { useMemo } from "react";
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { STORE_LINE_PAGES } from "../../content/storefrontContent";
 import { getProductLineByKey } from "../../content/zeevanCatalogContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { buildCategoryTiles, productImageUri } from "../../utils/storefront";
 import CategoryGrid, { SeeAllBar } from "./CategoryGrid";
+import PressableScale from "./PressableScale";
 import ProductCard from "./ProductCard";
 import { SectionHeader } from "./SectionTitle";
 import StoreIcon from "./StoreIcon";
 
 const GAP = 12;
+const COPY = STORE_LINE_PAGES.landing;
 
 /**
  * Landing for a single range tab (Ghee, Tel, Masala, Honey, Gifting):
- * hero panel, sub-category tiles, and the full product grid.
+ * hero panel (badge, title, call to action), sub-category tiles, and the full product grid.
  */
 export default function LineLanding({ tab, products, onProductPress, onCategoryPress, onSeeAll }) {
   const { c, r, type, gutter, shadow, isDark } = useStoreTheme();
@@ -35,8 +38,17 @@ export default function LineLanding({ tab, products, onProductPress, onCategoryP
           <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
           <View style={[StyleSheet.absoluteFill, { borderRadius: r.xxl, borderWidth: 1, borderColor: withAlpha("#FFFFFF", 0.55) }]} pointerEvents="none" />
           <View style={styles.heroCopy}>
-            <View style={[styles.heroIcon, { backgroundColor: withAlpha(c.brand, 0.12) }]}>
-              <StoreIcon icon={tab.icon} size={22} color={c.brand} />
+            <View style={styles.heroTop}>
+              <View style={[styles.heroIcon, { backgroundColor: withAlpha(c.brand, 0.12) }]}>
+                <StoreIcon icon={tab.icon} size={22} color={c.brand} />
+              </View>
+              {line?.hero?.badge ? (
+                <View style={[styles.heroBadge, { backgroundColor: isDark ? withAlpha(c.gold, 0.9) : c.gold }]}>
+                  <Text style={type.ui(10.5, "extrabold", "#3A2A0C", { letterSpacing: 0.6 })} numberOfLines={1}>
+                    {line.hero.badge}
+                  </Text>
+                </View>
+              ) : null}
             </View>
             <Text style={type.display(25, { ls: -0.5, lh: 29 })} numberOfLines={2}>
               {page.title}
@@ -45,12 +57,29 @@ export default function LineLanding({ tab, products, onProductPress, onCategoryP
               {page.subtitle}
             </Text>
             {products.length ? (
-              <View style={[styles.count, { backgroundColor: withAlpha(c.card, 0.78) }]}>
-                <Text style={type.ui(12, "bold", c.brand)}>{products.length === 1 ? "1 product" : `${products.length} products`}</Text>
+              <View style={styles.heroFoot}>
+                {line?.hero?.cta ? (
+                  <PressableScale
+                    onPress={onSeeAll}
+                    accessibilityRole="button"
+                    accessibilityLabel={line.hero.cta}
+                    style={[styles.heroCta, { backgroundColor: c.brand }]}
+                  >
+                    <Text style={type.ui(13, "extrabold", c.onBrand, { letterSpacing: 0.2 })} numberOfLines={1}>
+                      {line.hero.cta}
+                    </Text>
+                    <Ionicons name="arrow-forward" size={14} color={c.onBrand} />
+                  </PressableScale>
+                ) : null}
+                <Text style={type.ui(12, "bold", c.brand)}>{COPY.count(products.length)}</Text>
               </View>
             ) : null}
           </View>
-          {cover ? <Image source={{ uri: cover }} style={styles.heroImage} contentFit="contain" cachePolicy="memory-disk" /> : null}
+          {cover ? (
+            <View style={[styles.heroPhoto, { borderColor: withAlpha("#FFFFFF", isDark ? 0.16 : 0.85), backgroundColor: c.well }]}>
+              <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="memory-disk" />
+            </View>
+          ) : null}
         </View>
       </View>
 
@@ -58,13 +87,13 @@ export default function LineLanding({ tab, products, onProductPress, onCategoryP
         <>
           {tiles.length > 1 ? (
             <View style={styles.block}>
-              <SectionHeader title="Browse by type" />
+              <SectionHeader eyebrow={COPY.browseEyebrow} title={COPY.browseByType} />
               <CategoryGrid tiles={tiles} onPressTile={onCategoryPress} />
             </View>
           ) : null}
 
           <View style={styles.block}>
-            <SectionHeader title={`All ${tab.label.toLowerCase()}`} />
+            <SectionHeader eyebrow={COPY.allEyebrow} title={COPY.all(tab.label)} />
             <View style={[styles.grid, { paddingHorizontal: gutter }]}>
               {products.map((product) => (
                 <ProductCard key={product.id} product={product} width={cardW} gallery onPress={() => onProductPress?.(product)} />
@@ -88,10 +117,13 @@ export default function LineLanding({ tab, products, onProductPress, onCategoryP
 const styles = StyleSheet.create({
   wrap: { gap: 26, paddingTop: 18 },
   hero: { minHeight: 176, overflow: "hidden", flexDirection: "row" },
-  heroCopy: { flex: 1, padding: 18, gap: 6, justifyContent: "center", maxWidth: "64%" },
-  heroIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", marginBottom: 2 },
-  heroImage: { position: "absolute", right: -6, bottom: 6, width: "44%", height: "86%" },
-  count: { alignSelf: "flex-start", marginTop: 4, paddingHorizontal: 11, paddingVertical: 4, borderRadius: 11 },
+  heroCopy: { flex: 1, padding: 18, gap: 6, justifyContent: "center", maxWidth: "58%" },
+  heroTop: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 },
+  heroIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  heroBadge: { paddingHorizontal: 9, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center", flexShrink: 1 },
+  heroFoot: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 6 },
+  heroCta: { flexDirection: "row", alignItems: "center", gap: 6, height: 36, paddingHorizontal: 14, borderRadius: 18 },
+  heroPhoto: { position: "absolute", right: 14, top: 16, bottom: 16, width: "37%", borderRadius: 22, borderWidth: 3, overflow: "hidden" },
   block: { gap: 14 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: GAP, rowGap: 14 },
   empty: { alignItems: "center", gap: 8, padding: 28, borderWidth: StyleSheet.hairlineWidth },

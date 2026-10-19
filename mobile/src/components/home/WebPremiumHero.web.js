@@ -34,10 +34,17 @@ if (Platform.OS === "web") {
   height: 100%;
   object-fit: cover;
   object-position: center center;
-  transition: opacity 0.9s ease;
+  transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1), transform 6.5s ease;
+  will-change: opacity, transform;
+}
+.${HERO_STAGE_CLASS} .${HERO_MEDIA_CLASS}[data-active="1"] {
+  transform: scale(1.04);
+}
+.${HERO_STAGE_CLASS} .${HERO_MEDIA_CLASS}[data-active="0"] {
+  transform: scale(1);
 }
 @media (prefers-reduced-motion: reduce) {
-  .${HERO_MEDIA_CLASS} { transition: none !important; }
+  .${HERO_MEDIA_CLASS} { transition: opacity 0.2s ease !important; transform: none !important; }
 }`
   );
 }
@@ -122,7 +129,7 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
       };
 
   /** Phone web: short promo band (~Anveshan). Desktop: tall atelier stage. */
-  const stageHeight = isMobileWeb ? 200 : 560;
+  const stageHeight = isMobileWeb ? 188 : 420;
   const stageAspect = isMobileWeb
     ? { height: stageHeight, minHeight: stageHeight, maxHeight: stageHeight }
     : { aspectRatio: 16 / 9, minHeight: 480, maxHeight: 720 };
@@ -155,6 +162,7 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
               className={HERO_MEDIA_CLASS}
               loading={index === 0 ? "eager" : "lazy"}
               fetchPriority={index === 0 ? "high" : "auto"}
+              data-active={active ? "1" : "0"}
               style={{ opacity: active ? 1 : 0 }}
             />
           );
@@ -201,9 +209,11 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
               accessibilityRole="button"
               accessibilityLabel={cta}
             >
-              <Text style={[styles.ctaText, isMobileWeb && styles.ctaTextPhone]}>{cta}</Text>
+              <Text style={[styles.ctaText, !isMobileWeb && styles.ctaTextDesktop, isMobileWeb && styles.ctaTextPhone]}>
+                {cta}
+              </Text>
               {!isMobileWeb ? (
-                <Ionicons name="arrow-forward" size={icon.xs} color={KANKREG_PALETTE.ink} />
+                <Ionicons name="arrow-forward" size={icon.xs} color="#FFFFFF" />
               ) : null}
             </Pressable>
           </SectionReveal>
@@ -268,7 +278,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   stagePhoneMaroon: {
-    backgroundColor: "#4A1C28",
+    backgroundColor: "#1F331F",
   },
   stageDark: {
     backgroundColor: "#151210",
@@ -290,9 +300,9 @@ const styles = StyleSheet.create({
     ...Platform.select({
       web: {
         backgroundImage:
-          "linear-gradient(90deg, rgba(58,18,28,0.72) 0%, rgba(58,18,28,0.35) 55%, rgba(58,18,28,0.15) 100%)",
+          "linear-gradient(100deg, rgba(20,28,16,0.78) 0%, rgba(20,28,16,0.38) 52%, rgba(20,28,16,0.12) 100%)",
       },
-      default: { backgroundColor: "rgba(58, 18, 28, 0.45)" },
+      default: { backgroundColor: "rgba(20, 28, 16, 0.5)" },
     }),
   },
   copyWrap: {
@@ -304,8 +314,8 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   copyWrapPhone: {
-    paddingTop: 18,
-    paddingBottom: 22,
+    paddingTop: 16,
+    paddingBottom: 18,
     alignItems: "flex-start",
     justifyContent: "center",
   },
@@ -314,8 +324,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   revealPhone: {
-    maxWidth: "78%",
-    gap: 8,
+    maxWidth: "82%",
+    gap: 6,
   },
   badge: {
     alignSelf: "flex-start",
@@ -335,9 +345,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   headlinePhone: {
-    fontSize: 22,
-    lineHeight: 26,
-    letterSpacing: -0.3,
+    fontSize: 20,
+    lineHeight: 24,
+    letterSpacing: -0.25,
     textAlign: "left",
     alignSelf: "stretch",
     marginTop: 0,
@@ -366,31 +376,46 @@ const styles = StyleSheet.create({
     backgroundColor: "#FAF8F4",
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
-  ctaDesktop: { alignSelf: "flex-start" },
+  ctaDesktop: {
+    alignSelf: "flex-start",
+    backgroundColor: KANKREG_CHROME.buttonAccent,
+    paddingVertical: 14,
+    paddingHorizontal: 26,
+    borderRadius: 12,
+    ...Platform.select({
+      web: { boxShadow: "0 12px 28px -10px rgba(31, 51, 31, 0.45)" },
+      default: {},
+    }),
+  },
   ctaPhone: {
     alignSelf: "flex-start",
-    marginTop: 6,
-    paddingVertical: 9,
+    marginTop: 4,
+    paddingVertical: 10,
     paddingHorizontal: 18,
-    borderRadius: 8,
-    backgroundColor: "#E8BC84",
+    borderRadius: 9,
+    backgroundColor: KANKREG_CHROME.buttonAccent,
   },
   ctaHover: {
-    backgroundColor: "#F0EBE0",
+    backgroundColor: KANKREG_CHROME.buttonAccentHover,
   },
   ctaPhoneHover: {
-    backgroundColor: "#F2CE9B",
+    backgroundColor: KANKREG_CHROME.buttonAccentHover,
   },
   ctaText: {
     fontFamily: fonts.semibold,
     fontSize: 14,
     color: KANKREG_PALETTE.ink,
   },
+  ctaTextDesktop: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    letterSpacing: 0.3,
+  },
   ctaTextPhone: {
-    fontFamily: fonts.extrabold,
+    fontFamily: fonts.bold,
     fontSize: 13,
-    letterSpacing: 0.2,
-    color: "#2A1E08",
+    letterSpacing: 0.25,
+    color: "#FFFFFF",
   },
   arrow: {
     position: "absolute",

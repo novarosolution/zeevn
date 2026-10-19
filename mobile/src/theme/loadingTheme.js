@@ -11,7 +11,8 @@ export const LOADING_THEME = {
   gold: KANKREG_PALETTE.gold,
   goldBright: KANKREG_PALETTE.goldBright,
   goldDeep: KANKREG_PALETTE.goldDeep,
-  splashRadialLight: ["#d8dcc8", "#788844", "#244424"],
+  /** Cream atelier splash — keep loaders calm; AppStartupScreen uses paper/ink. */
+  splashRadialLight: [KANKREG_PALETTE.paper, KANKREG_PALETTE.paper2, "#E8E2D4"],
   splashRadialDark: ["#1a2018", "#121810", "#050403"],
   shimmerDurationMs: 1500,
   ringDurationMs: 1000,

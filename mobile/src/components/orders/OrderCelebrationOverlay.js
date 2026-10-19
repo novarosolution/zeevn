@@ -29,6 +29,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { getKankregSurfaces, KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
+import { StoreOrderPlaced } from "../store/entry";
 
 const CONFIRM_GREEN = "#3c6248";
 const CONFIRM_HALO = "rgba(124, 196, 154, 0.38)";
@@ -404,12 +405,16 @@ export default function OrderCelebrationOverlay({
       statusBarTranslucent
     >
       {isPlaced ? (
-        <OrderPlacedPopup
-          order={order}
-          onTrackOrder={onTrackOrder}
-          onContinue={onContinue}
-          isDark={isDark}
-        />
+        Platform.OS !== "web" ? (
+          <StoreOrderPlaced order={order} onTrack={onTrackOrder} onContinue={onContinue} />
+        ) : (
+          <OrderPlacedPopup
+            order={order}
+            onTrackOrder={onTrackOrder}
+            onContinue={onContinue}
+            isDark={isDark}
+          />
+        )
       ) : (
         <DeliveredCardPopup
           order={order}

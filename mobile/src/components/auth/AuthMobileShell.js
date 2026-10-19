@@ -83,8 +83,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg + 4,
   },
   heroBlockCompact: {
-    minHeight: 200,
-    paddingBottom: spacing.md + 4,
+    minHeight: 160,
+    paddingBottom: spacing.sm,
   },
   heroPhoto: {
     ...StyleSheet.absoluteFillObject,
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(31, 92, 71, 0.14)",
     ...Platform.select({
-      web: { boxShadow: "0 22px 52px rgba(22, 69, 51, 0.14)" },
+      web: { boxShadow: "0 12px 32px -16px rgba(22, 69, 51, 0.12)" },
       default: {},
     }),
   },

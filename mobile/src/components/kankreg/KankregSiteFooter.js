@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Image, Linking, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -21,11 +21,63 @@ import { useKankregLayout } from "../../theme/kankregBreakpoints";
 
 const FOOTER_BG = require("../../../assets/footer-bg-heritage-final.jpg");
 
-/** Premium site footer — Zeevan brand, managed copy from `appContent.js`. */
+function FooterColumn({ column, handleLink, accordion }) {
+  const [open, setOpen] = useState(false);
+  if (!accordion) {
+    return (
+      <View style={[styles.col, { minWidth: 140 }]}>
+        <Text style={styles.colTitle}>{column.title}</Text>
+        {column.links.map((link) => (
+          <Pressable
+            key={link.label}
+            onPress={() => handleLink(link)}
+            disabled={!link.route}
+            style={({ hovered, pressed }) => [
+              styles.link,
+              link.route && hovered && styles.linkHover,
+              pressed && link.route && { opacity: 0.75 },
+            ]}
+          >
+            <Text style={[styles.linkText, !link.route && styles.linkMuted]}>{link.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.accordionCol}>
+      <Pressable
+        onPress={() => setOpen((v) => !v)}
+        style={({ pressed }) => [styles.accordionHead, pressed && { opacity: 0.85 }]}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+      >
+        <Text style={styles.colTitle}>{column.title}</Text>
+        <Ionicons name={open ? "chevron-up" : "chevron-down"} size={16} color={KANKREG_CHROME.footerAccent} />
+      </Pressable>
+      {open
+        ? column.links.map((link) => (
+            <Pressable
+              key={link.label}
+              onPress={() => handleLink(link)}
+              disabled={!link.route}
+              style={({ pressed }) => [styles.link, pressed && link.route && { opacity: 0.75 }]}
+            >
+              <Text style={[styles.linkText, !link.route && styles.linkMuted]}>{link.label}</Text>
+            </Pressable>
+          ))
+        : null}
+    </View>
+  );
+}
+
+/** Premium site footer — solid green phone / heritage desktop. */
 export default function KankregSiteFooter() {
   const navigation = useNavigation();
-  const { footerCols, isXs, pageGutterClamp } = useKankregLayout();
+  const { footerCols, isXs, pageGutterClamp, isMobileWeb } = useKankregLayout();
   const { isAuthenticated } = useAuth();
+  const phone = isMobileWeb || isXs;
 
   const handleLink = (link) => {
     if (!link.route) return;
@@ -41,11 +93,15 @@ export default function KankregSiteFooter() {
   };
 
   return (
-    <View style={styles.shell}>
-      <Image source={FOOTER_BG} style={styles.bg} resizeMode="cover" accessibilityIgnoresInvertColors />
-      <View style={styles.bgScrim} pointerEvents="none" />
-      <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
-        <View style={styles.trustRow}>
+    <View style={[styles.shell, phone && styles.shellPhone]}>
+      {!phone ? (
+        <>
+          <Image source={FOOTER_BG} style={styles.bg} resizeMode="cover" accessibilityIgnoresInvertColors />
+          <View style={styles.bgScrim} pointerEvents="none" />
+        </>
+      ) : null}
+      <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }, phone && styles.innerPhone]}>
+        <View style={[styles.trustRow, phone && styles.trustRowPhone]}>
           {HOME_PAGE_TRUST_BADGES.map((badge) => (
             <View key={badge.key} style={styles.trustChip}>
               <Ionicons name={badge.icon} size={icon.xs} color={KANKREG_CHROME.footerAccent} />
@@ -58,17 +114,14 @@ export default function KankregSiteFooter() {
           style={[
             styles.cols,
             {
-              flexDirection: footerCols === 1 ? "column" : "row",
+              flexDirection: phone ? "column" : footerCols === 1 ? "column" : "row",
               flexWrap: "wrap",
             },
+            phone && styles.colsPhone,
           ]}
         >
-          <View style={[styles.brandCol, { width: footerCols >= 4 ? "38%" : "100%", minWidth: 220 }]}>
-            <BrandLogo
-              height={BRAND_LOGO_SIZE.footerCompact}
-              variant="onDark"
-              glow={false}
-            />
+          <View style={[styles.brandCol, { width: phone || footerCols < 4 ? "100%" : "38%", minWidth: 220 }]}>
+            <BrandLogo height={BRAND_LOGO_SIZE.footerCompact} variant="onDark" glow={false} />
             <Text style={styles.tagline}>{KANKREG_FOOTER_TAGLINE}</Text>
             <Pressable onPress={openEmail} style={({ pressed }) => [styles.emailRow, pressed && { opacity: 0.8 }]}>
               <Ionicons name="mail-outline" size={icon.xs} color={KANKREG_CHROME.footerAccent} />
@@ -77,30 +130,16 @@ export default function KankregSiteFooter() {
           </View>
 
           {KANKREG_FOOTER_COLUMNS.map((column) => (
-            <View
+            <FooterColumn
               key={column.title}
-              style={[styles.col, { minWidth: footerCols === 1 ? "100%" : isXs ? "46%" : 140 }]}
-            >
-              <Text style={styles.colTitle}>{column.title}</Text>
-              {column.links.map((link) => (
-                <Pressable
-                  key={link.label}
-                  onPress={() => handleLink(link)}
-                  disabled={!link.route}
-                  style={({ hovered, pressed }) => [
-                    styles.link,
-                    link.route && hovered && styles.linkHover,
-                    pressed && link.route && { opacity: 0.75 },
-                  ]}
-                >
-                  <Text style={[styles.linkText, !link.route && styles.linkMuted]}>{link.label}</Text>
-                </Pressable>
-              ))}
-            </View>
+              column={column}
+              handleLink={handleLink}
+              accordion={phone}
+            />
           ))}
         </View>
 
-        <View style={[styles.bottom, isXs && styles.bottomStack]}>
+        <View style={[styles.bottom, (phone || isXs) && styles.bottomStack]}>
           <Text style={styles.bottomText}>{KANKREG_FOOTER_COPYRIGHT}</Text>
           <Text style={styles.bottomBrand}>{APP_DISPLAY_NAME}</Text>
         </View>
@@ -135,6 +174,10 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
+  shellPhone: {
+    paddingTop: 28,
+    paddingBottom: 20,
+  },
   bg: {
     ...StyleSheet.absoluteFillObject,
     width: "100%",
@@ -144,7 +187,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     ...Platform.select({
       web: {
-        /* Keep herd + bilona still-life visible; darken center for footer links */
         backgroundImage:
           "linear-gradient(105deg, rgba(10,14,8,0.22) 0%, rgba(10,14,8,0.58) 48%, rgba(10,14,8,0.45) 100%)",
       },
@@ -159,6 +201,9 @@ const styles = StyleSheet.create({
     zIndex: 1,
     paddingHorizontal: Platform.OS === "web" ? "clamp(18px, 4vw, 40px)" : spacing.lg,
   },
+  innerPhone: {
+    gap: 4,
+  },
   trustRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -167,6 +212,11 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255,255,255,0.08)",
+  },
+  trustRowPhone: {
+    marginBottom: 20,
+    paddingBottom: 16,
+    gap: 8,
   },
   trustChip: {
     flexDirection: "row",
@@ -186,6 +236,9 @@ const styles = StyleSheet.create({
   },
   cols: {
     gap: 36,
+  },
+  colsPhone: {
+    gap: 8,
   },
   brandCol: {
     gap: spacing.sm,
@@ -212,6 +265,19 @@ const styles = StyleSheet.create({
   },
   col: {
     flex: 1,
+  },
+  accordionCol: {
+    width: "100%",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.1)",
+    paddingVertical: 4,
+  },
+  accordionHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
   colTitle: {
     fontSize: 11,
@@ -250,6 +316,7 @@ const styles = StyleSheet.create({
   bottomStack: {
     flexDirection: "column",
     alignItems: "flex-start",
+    marginTop: 24,
   },
   bottomText: {
     fontSize: 12.5,

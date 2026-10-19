@@ -58,8 +58,8 @@ export const ABOUT_PAGE_SECTION_LABELS = {
   sidebarPillarsTitle: "What we stand for",
   storyValues: "Values",
   storyValuesTitle: "What guides us",
-  storyGallery: "Gallery",
-  storyGalleryTitle: "From our partners",
+  storyGallery: "Atelier",
+  storyGalleryTitle: "Crafted for the pantry",
   missionDivider: "Mission",
   craftDivider: "Process",
 };

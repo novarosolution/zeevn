@@ -54,6 +54,9 @@ import { deferAfterFirstPaint } from "../utils/deferAfterFirstPaint";
 import { createQuoteBlockStyles } from "../theme/screenThemes";
 import { productToCartLine } from "../utils/productCart";
 import WebPhoneCategoryCircles from "../components/home/WebPhoneCategoryCircles";
+import WebPhoneProductRail from "../components/home/WebPhoneProductRail";
+import WebPhoneTrustStrip from "../components/home/WebPhoneTrustStrip";
+import WebPhoneQuoteBand from "../components/home/WebPhoneQuoteBand";
 import { StoreHome } from "../components/store/entry";
 import AppStartupScreen from "../components/AppStartupScreen";
 import { useAuth } from "../context/AuthContext";
@@ -116,6 +119,12 @@ const styles = StyleSheet.create({
   webSection: {
     width: "100%",
     gap: HOME_SPACE.md,
+  },
+  phoneBestsellers: {
+    width: "100%",
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+    backgroundColor: "transparent",
   },
 });
 
@@ -381,14 +390,9 @@ export default function KankregHomeScreen({ navigation }) {
           />
         ) : null}
 
-        {webCfg.showIntroBand !== false ? (
-          isMobileWeb ? (
-            <DeferredMount minHeight={96} rootMargin="240px 0px">
-              <WebHomeIntroBand navigation={navigation} />
-            </DeferredMount>
-          ) : (
-            <WebHomeIntroBand navigation={navigation} />
-          )
+        {/* Desktop pantry intro; phone uses category circles instead (cleaner first scroll). */}
+        {webCfg.showIntroBand !== false && !isMobileWeb ? (
+          <WebHomeIntroBand navigation={navigation} />
         ) : null}
 
         {isMobileWeb && ready ? (
@@ -397,6 +401,42 @@ export default function KankregHomeScreen({ navigation }) {
             onPressShopAll={() => navigation.navigate("Shop")}
             onPressCategory={(label) => navigation.navigate("Shop", getShopNavParamsForLabel(label))}
           />
+        ) : null}
+
+        {isMobileWeb && ready ? <WebPhoneTrustStrip /> : null}
+
+        {showPrime && ready && isMobileWeb ? (
+          <View nativeID="home-bestsellers" style={styles.phoneBestsellers}>
+            {comingSoonOnHome.length ? (
+              <View style={{ paddingHorizontal: pageGutterClamp }}>
+                <HomeComingSoonStrip products={comingSoonOnHome} />
+              </View>
+            ) : null}
+            {homeCatalog.length ? (
+              <WebPhoneProductRail
+                title={HOME_SCREEN_UI.bestsellers.webSectionTitle || "Bestsellers"}
+                kicker={HOME_SCREEN_UI.bestsellers.webKicker || "Fresh jars, honest labels"}
+                products={homeCatalog}
+                navigation={navigation}
+                getItemQuantity={getItemQuantity}
+                onAdd={handleAdd}
+                onRemove={handleRemove}
+                onViewAll={() => navigation.navigate("Shop")}
+                viewAllLabel={HOME_SCREEN_UI.bestsellers.webAction || "View all"}
+                limit={10}
+              />
+            ) : (
+              <View style={{ paddingHorizontal: pageGutterClamp }}>
+                <PremiumEmptyState
+                  iconName="bag-outline"
+                  title={HOME_SCREEN_UI.empty.productsTitle}
+                  description={HOME_SCREEN_UI.empty.productsDescription}
+                  ctaLabel={HOME_SCREEN_UI.empty.productsCta}
+                  onCtaPress={() => navigation.navigate("Shop")}
+                />
+              </View>
+            )}
+          </View>
         ) : null}
 
         <View
@@ -449,7 +489,7 @@ export default function KankregHomeScreen({ navigation }) {
 
             {showPromiseBand && ready && !isMobileWeb ? <WebHomePromiseBand /> : null}
 
-            {showPrime && ready ? (
+            {showPrime && ready && !isMobileWeb ? (
               webLean ? (
                 <DeferredMount minHeight={480} rootMargin="320px 0px">
                   <View style={styles.webSection} nativeID="home-bestsellers">
@@ -468,7 +508,7 @@ export default function KankregHomeScreen({ navigation }) {
                     <View nativeID="home-catalog">
                       {homeCatalog.length ? (
                         <CatalogGridReveal
-                          immediateFirst={Math.min(homeCatalog.length, isMobileWeb ? 4 : 8)}
+                          immediateFirst={Math.min(homeCatalog.length, 8)}
                           staggerInitialDelay={48}
                         >
                           {homeCatalog.map((item, idx) => {
@@ -521,7 +561,7 @@ export default function KankregHomeScreen({ navigation }) {
                   <View nativeID="home-catalog">
                     {homeCatalog.length ? (
                       <CatalogGridReveal
-                        immediateFirst={Math.min(homeCatalog.length, isMobileWeb ? 1 : 8)}
+                        immediateFirst={Math.min(homeCatalog.length, 8)}
                         staggerInitialDelay={48}
                       >
                         {homeCatalog.map((item, idx) => {
@@ -588,10 +628,13 @@ export default function KankregHomeScreen({ navigation }) {
             style={[
               styles.webHomeBody,
               isMobileWeb && styles.webHomeBodyMobile,
-              { paddingHorizontal: pageGutterClamp, paddingTop: HOME_SPACE.xs },
+              {
+                paddingHorizontal: isMobileWeb ? 0 : pageGutterClamp,
+                paddingTop: HOME_SPACE.xs,
+              },
             ]}
           >
-            <KankregPageWrap gap={HOME_SPACE.md}>
+            <KankregPageWrap gap={isMobileWeb ? spacing.md : HOME_SPACE.md}>
               <WebLineFocusSection
                 lineKey="tel"
                 title="Cold-pressed Tel"
@@ -604,6 +647,7 @@ export default function KankregHomeScreen({ navigation }) {
                 homeGridStyles={homeGridStyles}
                 compact={catalogCardCompact}
               />
+              {isMobileWeb ? <WebPhoneQuoteBand /> : null}
               <WebLineFocusSection
                 lineKey="ghee"
                 title="A2 Desi Ghee"
@@ -616,6 +660,34 @@ export default function KankregHomeScreen({ navigation }) {
                 homeGridStyles={homeGridStyles}
                 compact={catalogCardCompact}
               />
+              {isMobileWeb ? (
+                <>
+                  <WebLineFocusSection
+                    lineKey="masala"
+                    title="Kitchen Masala"
+                    kicker="Small-batch spice — ground fresh."
+                    products={homeCatalog}
+                    navigation={navigation}
+                    getItemQuantity={getItemQuantity}
+                    onAdd={handleAdd}
+                    onRemove={handleRemove}
+                    homeGridStyles={homeGridStyles}
+                    compact={catalogCardCompact}
+                  />
+                  <WebLineFocusSection
+                    lineKey="honey"
+                    title="Haldar Honey"
+                    kicker="Raw, floral, unhurried."
+                    products={homeCatalog}
+                    navigation={navigation}
+                    getItemQuantity={getItemQuantity}
+                    onAdd={handleAdd}
+                    onRemove={handleRemove}
+                    homeGridStyles={homeGridStyles}
+                    compact={catalogCardCompact}
+                  />
+                </>
+              ) : null}
             </KankregPageWrap>
           </View>
         ) : null}

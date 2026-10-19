@@ -1,20 +1,34 @@
-import React from "react";
-import { Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
-import Animated, { FadeIn } from "react-native-reanimated";
+import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withSequence, withSpring } from "react-native-reanimated";
+import { STORE_SECTIONS } from "../../content/storefrontContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { hapticTick } from "../../utils/haptics";
 import { productImageUri } from "../../utils/storefront";
+import PressableScale from "./PressableScale";
 import ProductRail from "./ProductRail";
-import { OrnamentTitle } from "./SectionTitle";
+import { OrnamentCaption, OrnamentTitle } from "./SectionTitle";
 import StoreIcon from "./StoreIcon";
 
 function PickTab({ pick, active, width, onPress }) {
   const { c, r, type, shadow } = useStoreTheme();
   const uri = pick.product ? productImageUri(pick.product, 70) : "";
+  const pop = useSharedValue(1);
+  const mounted = useRef(false);
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true;
+      return;
+    }
+    if (active) pop.value = withSequence(withSpring(1.12, { damping: 7, stiffness: 400 }), withSpring(1, { damping: 10, stiffness: 240 }));
+  }, [active, pop]);
+  const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
+
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
+      scaleTo={0.95}
       accessibilityRole="tab"
       accessibilityState={{ selected: active }}
       accessibilityLabel={pick.title}
@@ -28,7 +42,7 @@ function PickTab({ pick, active, width, onPress }) {
         },
       ]}
     >
-      <View
+      <Animated.View
         style={[
           styles.circle,
           shadow.soft,
@@ -37,6 +51,7 @@ function PickTab({ pick, active, width, onPress }) {
             borderColor: active ? c.gold : c.line,
             borderWidth: active ? 2.5 : StyleSheet.hairlineWidth,
           },
+          popStyle,
         ]}
       >
         {uri ? (
@@ -44,22 +59,22 @@ function PickTab({ pick, active, width, onPress }) {
         ) : (
           <StoreIcon icon={pick.icon || { mci: "gift-outline" }} size={26} color={withAlpha(c.brand, 0.5)} />
         )}
-      </View>
+      </Animated.View>
       <Text
         style={[type.ui(12.5, active ? "extrabold" : "semibold", active ? c.goldText : c.inkSoft), styles.label]}
         numberOfLines={2}
       >
         {pick.title}
       </Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
 /**
- * “Festive Picks”: ornamented title, circular pick tabs, and a product rail for the selected pick.
+ * “Festive Picks”: ornamented title and caption, circular pick tabs, and a product rail for the selected pick.
  * Picks arrive resolved: { key, title, product?, products[], icon?, route? }.
  */
-export default function FestivePicks({ title, picks, activeKey, onChange, onProductPress, onSeeAll }) {
+export default function FestivePicks({ title, caption, picks, activeKey, onChange, onProductPress, onSeeAll }) {
   const { gutter } = useStoreTheme();
   const { width } = useWindowDimensions();
   const tabW = (width - gutter * 2) / Math.min(4, Math.max(picks.length, 1));
@@ -68,7 +83,10 @@ export default function FestivePicks({ title, picks, activeKey, onChange, onProd
 
   return (
     <View style={styles.wrap}>
-      <OrnamentTitle title={title} />
+      <View style={styles.heading}>
+        <OrnamentTitle title={title} />
+        <OrnamentCaption>{caption}</OrnamentCaption>
+      </View>
       <View style={[styles.tabs, { paddingHorizontal: gutter }]}>
         {picks.map((pick) => (
           <PickTab
@@ -88,7 +106,7 @@ export default function FestivePicks({ title, picks, activeKey, onChange, onProd
           products={active.products.slice(0, 8)}
           onProductPress={onProductPress}
           onSeeAll={onSeeAll ? () => onSeeAll(active) : undefined}
-          seeAllLabel="See all"
+          seeAllLabel={STORE_SECTIONS.picks.action}
         />
       </Animated.View>
     </View>
@@ -97,6 +115,7 @@ export default function FestivePicks({ title, picks, activeKey, onChange, onProd
 
 const styles = StyleSheet.create({
   wrap: { gap: 14 },
+  heading: { gap: 10 },
   tabs: { flexDirection: "row", justifyContent: "space-between" },
   tab: { alignItems: "center", paddingVertical: 8, paddingHorizontal: 2, gap: 7, borderWidth: 1.5 },
   circle: {

@@ -17,9 +17,8 @@ import {
   homeEditorialInk,
   homeEditorialMuted,
 } from "../../theme/homeEditorial";
-import { KANKREG_PALETTE, ZEEVAN_GOLD, ZEEVAN_GREEN } from "../../theme/kankregWeb";
+import { KANKREG_PALETTE, WEB_COMMERCE, ZEEVAN_GOLD, ZEEVAN_GREEN } from "../../theme/kankregWeb";
 import { useTheme } from "../../context/ThemeContext";
-import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { fonts, icon, radius } from "../../theme/tokens";
 import { FONT_PRICE } from "../../theme/typographyRoles";
 import { formatINRWhole } from "../../utils/currency";
@@ -31,7 +30,7 @@ import { getImageUriCandidates, getProductThumbImageUri, prefetchProductHeroImag
 import ProgressiveProductImage from "../ui/ProgressiveProductImage";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 
-const MAROON = "#B8442F";
+const MAROON = WEB_COMMERCE.saveBadgeBg;
 
 const PRODUCT_CARD_CSS_ID = "zeevan-atelier-product-card-v2";
 const PRODUCT_CARD_CLASS = "zeevan-product-card";
@@ -152,11 +151,11 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
   featured = false,
 }) {
   const { isDark } = useTheme();
-  const { isMobileWeb } = useKankregLayout();
   const ink = homeEditorialInk(isDark);
   const muted = homeEditorialMuted(isDark);
   const isWeb = Platform.OS === "web";
-  const phoneShop = isWeb && isMobileWeb;
+  /** Anveshan commerce chrome on all web (Home + Shop identical cards). */
+  const phoneShop = isWeb;
   const copy = SHOP_SCREEN_UI.card;
 
   const primaryImage = useMemo(() => {

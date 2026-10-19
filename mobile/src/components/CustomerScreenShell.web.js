@@ -40,14 +40,16 @@ a, button, [role="button"], [role="link"], [role="tab"] {
 }`
 );
 
-/** Web — premium photo atelier shell + global polish. */
+/** Web — cream page canvas + global polish (customer funnel). */
 export default function CustomerScreenShell({ children, style }) {
   const { colors: c, isDark } = useTheme();
   return (
     <View
       style={[
         styles.shell,
-        isDark ? { backgroundColor: c.background } : siteBackgroundStyle(false),
+        isDark
+          ? { backgroundColor: c.background }
+          : [siteBackgroundStyle(false), { backgroundColor: KANKREG_PALETTE.paper }],
         style,
       ]}
     >

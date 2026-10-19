@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
       default: { width: "100%" },
     }),
   },
-  shellMobile: { minHeight: 240 },
+  shellMobile: { minHeight: 200 },
   bg: {
     ...StyleSheet.absoluteFillObject,
     width: "100%",
@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
     color: "#FAF8F4",
   },
-  titleMobile: { fontSize: 26, lineHeight: 32 },
+  titleMobile: { fontSize: 22, lineHeight: 28 },
   body: {
     fontFamily: fonts.regular,
     fontSize: 15,
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     color: "rgba(250,248,244,0.86)",
     maxWidth: 520,
   },
-  bodyMobile: { fontSize: 14, lineHeight: 21 },
+  bodyMobile: { fontSize: 13, lineHeight: 19, maxWidth: 360 },
   cta: {
     marginTop: 8,
     paddingVertical: 12,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     backgroundColor: ZEEVAN_GOLD.base,
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
-  ctaCenter: { alignSelf: "stretch", alignItems: "center" },
+  ctaCenter: { alignSelf: "flex-start" },
   ctaHover: { backgroundColor: ZEEVAN_GOLD.bright },
   ctaText: {
     fontFamily: fonts.semibold,

@@ -503,6 +503,18 @@ const styles = StyleSheet.create({
   compactToolbar: {
     gap: spacing.sm,
     marginBottom: spacing.sm,
+    ...Platform.select({
+      web: {
+        position: "sticky",
+        top: getKankregChromeTop(),
+        zIndex: 12,
+        backgroundColor: KANKREG_PALETTE.paper,
+        paddingTop: 8,
+        paddingBottom: 6,
+        marginHorizontal: -2,
+      },
+      default: {},
+    }),
   },
   compactToolbarLean: {
     gap: spacing.xs,

@@ -2,10 +2,10 @@ import React from "react";
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, { FadeInUp } from "react-native-reanimated";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { formatINRWhole } from "../../utils/currency";
 import { getProductPricing, productImageUri } from "../../utils/storefront";
+import { Stagger } from "./HomeMotion";
 import PressableScale from "./PressableScale";
 import StoreIcon from "./StoreIcon";
 
@@ -38,7 +38,7 @@ function TileArt({ item, frameStyle, iconSize, radius = 16 }) {
 function SmallTile({ item, colors, height, index, onPress }) {
   const { c, r, type, shadow } = useStoreTheme();
   return (
-    <Animated.View entering={FadeInUp.delay(110 + index * 70).duration(420)} style={styles.flex}>
+    <Stagger index={index + 1} style={styles.flex}>
       <PressableScale
         onPress={() => onPress?.(item)}
         scaleTo={0.96}
@@ -47,6 +47,7 @@ function SmallTile({ item, colors, height, index, onPress }) {
         style={[styles.tile, shadow.soft, { height, borderRadius: r.xl }]}
       >
         <LinearGradient colors={colors} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={["rgba(255,255,255,0.32)", "rgba(255,255,255,0)"]} style={styles.gloss} pointerEvents="none" />
         <View style={[StyleSheet.absoluteFill, { borderRadius: r.xl, borderWidth: 1, borderColor: withAlpha("#FFFFFF", 0.55) }]} pointerEvents="none" />
         <Text style={[type.display(14.5, { semi: true, ls: -0.2, lh: 17, color: c.ink }), styles.title]} numberOfLines={2}>
           {item.title}
@@ -55,7 +56,7 @@ function SmallTile({ item, colors, height, index, onPress }) {
           <TileArt item={item} frameStyle={styles.art} iconSize={38} radius={14} />
         </View>
       </PressableScale>
-    </Animated.View>
+    </Stagger>
   );
 }
 
@@ -63,7 +64,7 @@ function TallTile({ item, colors, height, onPress }) {
   const { c, r, type, shadow } = useStoreTheme();
   const pricing = item.product ? getProductPricing(item.product) : null;
   return (
-    <Animated.View entering={FadeInUp.duration(420)} style={{ flex: 1 }}>
+    <Stagger index={0} style={{ flex: 1 }}>
       <PressableScale
         onPress={() => onPress?.(item)}
         scaleTo={0.97}
@@ -72,6 +73,7 @@ function TallTile({ item, colors, height, onPress }) {
         style={[styles.tile, shadow.card, { height, borderRadius: r.xl }]}
       >
         <LinearGradient colors={colors} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={["rgba(255,255,255,0.34)", "rgba(255,255,255,0)"]} style={styles.gloss} pointerEvents="none" />
         <View style={[StyleSheet.absoluteFill, { borderRadius: r.xl, borderWidth: 1, borderColor: withAlpha("#FFFFFF", 0.6) }]} pointerEvents="none" />
         <Text style={[type.display(20, { ls: -0.4, lh: 23, color: c.ink }), styles.title, styles.tallTitle]} numberOfLines={2}>
           {item.title}
@@ -97,16 +99,20 @@ function TallTile({ item, colors, height, onPress }) {
           <TileArt item={item} frameStyle={styles.tallArt} iconSize={54} radius={18} />
         </View>
       </PressableScale>
-    </Animated.View>
+    </Stagger>
   );
 }
 
 /**
  * Festival “bento”: one tall corner tile plus a 2×2 block of collections.
  * Items arrive resolved: { key, title, caption?, product?, icon?, showPrice? }.
+ * `colors` ({ light: { tall, tiles }, dark: { … } }) recolours the tiles for a festival; without it the theme palette is used.
  */
-export default function BentoGrid({ tall, tiles = [], onPressItem }) {
-  const { c, gutter } = useStoreTheme();
+export default function BentoGrid({ tall, tiles = [], colors, onPressItem }) {
+  const { c, gutter, isDark } = useStoreTheme();
+  const tint = colors?.[isDark ? "dark" : "light"];
+  const tallColors = tint?.tall || c.bentoTall;
+  const tileColors = tint?.tiles?.length ? tint.tiles : c.bentoTiles;
   const { width } = useWindowDimensions();
   const inner = width - gutter * 2;
   const col = (inner - GAP * 2) / 3;
@@ -117,17 +123,17 @@ export default function BentoGrid({ tall, tiles = [], onPressItem }) {
   return (
     <View style={[styles.wrap, { paddingHorizontal: gutter }]}>
       <View style={[styles.tallCol, { width: col }]}>
-        {tall ? <TallTile item={tall} colors={c.bentoTall} height={tallH} onPress={onPressItem} /> : null}
+        {tall ? <TallTile item={tall} colors={tallColors} height={tallH} onPress={onPressItem} /> : null}
       </View>
       <View style={styles.grid}>
         <View style={styles.row}>
           {small.slice(0, 2).map((item, i) => (
-            <SmallTile key={item.key} item={item} colors={c.bentoTiles[i % c.bentoTiles.length]} height={tileH} index={i} onPress={onPressItem} />
+            <SmallTile key={item.key} item={item} colors={tileColors[i % tileColors.length]} height={tileH} index={i} onPress={onPressItem} />
           ))}
         </View>
         <View style={styles.row}>
           {small.slice(2, 4).map((item, i) => (
-            <SmallTile key={item.key} item={item} colors={c.bentoTiles[(i + 2) % c.bentoTiles.length]} height={tileH} index={i + 2} onPress={onPressItem} />
+            <SmallTile key={item.key} item={item} colors={tileColors[(i + 2) % tileColors.length]} height={tileH} index={i + 2} onPress={onPressItem} />
           ))}
         </View>
       </View>
@@ -142,6 +148,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: GAP },
   flex: { flex: 1 },
   tile: { overflow: "hidden", alignItems: "center" },
+  gloss: { position: "absolute", top: 0, left: 0, right: 0, height: "42%" },
   title: { textAlign: "center", paddingHorizontal: 8, paddingTop: 11, width: "100%" },
   tallTitle: { paddingTop: 14 },
   artWrap: { position: "absolute", left: 10, right: 10, bottom: 0, height: "54%" },
@@ -151,7 +158,7 @@ const styles = StyleSheet.create({
   photoFrame: { overflow: "hidden", borderWidth: 1.5, borderBottomWidth: 0 },
   fallback: { alignItems: "center", justifyContent: "center" },
   priceBlock: { alignItems: "center", marginTop: 8 },
-  mrpPill: { paddingHorizontal: 12, paddingVertical: 4, borderRadius: 9, zIndex: 1 },
+  mrpPill: { paddingHorizontal: 12, paddingTop: 4, paddingBottom: 11, borderRadius: 9, zIndex: 1 },
   strike: { textDecorationLine: "line-through" },
   pricePill: { paddingHorizontal: 14, paddingVertical: 4, borderRadius: 11 },
   pricePillOverlap: { marginTop: -7 },

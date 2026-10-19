@@ -2,6 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
+import { STORE_CARD } from "../../content/storefrontContent";
 import { useStoreTheme } from "../../theme/storefront";
 import PressableScale from "./PressableScale";
 import { hapticTap } from "../../utils/haptics";
@@ -31,7 +32,7 @@ export default function AddControl({
   if (state === "sold") {
     return (
       <View style={[styles.pill, { height, backgroundColor: c.soft }]}>
-        <Text style={type.ui(11.5, "bold", c.inkMute, { letterSpacing: 0.3 })}>Sold out</Text>
+        <Text style={type.ui(11.5, "bold", c.inkMute, { letterSpacing: 0.3 })}>{STORE_CARD.soldOut}</Text>
       </View>
     );
   }
@@ -40,7 +41,7 @@ export default function AddControl({
     return (
       <View style={[styles.pill, { height, backgroundColor: c.card, borderColor: c.gold, borderWidth: 1 }]}>
         <View pointerEvents="none" style={[styles.tint, { backgroundColor: c.goldSoft }]} />
-        <Text style={type.ui(11.5, "extrabold", c.goldText, { letterSpacing: 0.6 })}>SOON</Text>
+        <Text style={type.ui(11.5, "extrabold", c.goldText, { letterSpacing: 0.6 })}>{STORE_CARD.soon}</Text>
       </View>
     );
   }
@@ -56,10 +57,10 @@ export default function AddControl({
             }}
             style={[styles.filled, addSize, { height, backgroundColor: c.brand }]}
             accessibilityRole="button"
-            accessibilityLabel={`${quantity} of ${label} in bag. Change options`}
+            accessibilityLabel={STORE_CARD.a11y.changeOptions(quantity, label)}
           >
             <Ionicons name="checkmark" size={14} color={c.onBrand} />
-            <Text style={type.ui(12.5, "extrabold", c.onBrand, { letterSpacing: 0.3 })}>{compact ? quantity : `${quantity} added`}</Text>
+            <Text style={type.ui(12.5, "extrabold", c.onBrand, { letterSpacing: 0.3 })}>{compact ? quantity : STORE_CARD.added(quantity)}</Text>
           </PressableScale>
         </Animated.View>
       );
@@ -73,10 +74,10 @@ export default function AddControl({
           }}
           style={[styles.add, addSize, { height, borderColor: c.brandAlt, backgroundColor: c.card }]}
           accessibilityRole="button"
-          accessibilityLabel={`Choose size for ${label}`}
+          accessibilityLabel={STORE_CARD.a11y.chooseSize(label)}
         >
           <View pointerEvents="none" style={[styles.tint, { backgroundColor: c.brandSoft }]} />
-          <Text style={type.ui(13.5, "extrabold", c.brand, { letterSpacing: 0.9 })}>ADD</Text>
+          <Text style={type.ui(13.5, "extrabold", c.brand, { letterSpacing: 0.9 })}>{STORE_CARD.add}</Text>
         </PressableScale>
       </Animated.View>
     );
@@ -93,7 +94,7 @@ export default function AddControl({
           hitSlop={8}
           style={[styles.stepBtn, stepBtnSize]}
           accessibilityRole="button"
-          accessibilityLabel={`Remove one ${label}`}
+          accessibilityLabel={STORE_CARD.a11y.removeOne(label)}
         >
           <Ionicons name="remove" size={17} color={c.onBrand} />
         </Pressable>
@@ -106,7 +107,7 @@ export default function AddControl({
           hitSlop={8}
           style={[styles.stepBtn, stepBtnSize]}
           accessibilityRole="button"
-          accessibilityLabel={`Add one more ${label}`}
+          accessibilityLabel={STORE_CARD.a11y.addOne(label)}
         >
           <Ionicons name="add" size={17} color={c.onBrand} />
         </Pressable>
@@ -123,10 +124,10 @@ export default function AddControl({
         }}
         style={[styles.add, addSize, { height, borderColor: c.brandAlt, backgroundColor: c.card }]}
         accessibilityRole="button"
-        accessibilityLabel={`Add ${label} to bag`}
+        accessibilityLabel={STORE_CARD.a11y.addToBag(label)}
       >
         <View pointerEvents="none" style={[styles.tint, { backgroundColor: c.brandSoft }]} />
-        <Text style={type.ui(13.5, "extrabold", c.brand, { letterSpacing: 0.9 })}>ADD</Text>
+        <Text style={type.ui(13.5, "extrabold", c.brand, { letterSpacing: 0.9 })}>{STORE_CARD.add}</Text>
       </PressableScale>
     </Animated.View>
   );

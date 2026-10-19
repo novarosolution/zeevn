@@ -5,8 +5,8 @@ import { ALCHEMY } from "./customerAlchemy";
 /** Shared shop page + filter tokens — light & dark. */
 export function getShopTheme(isDark = false) {
   return {
-    pageBg: isDark ? "transparent" : "transparent",
-    introBand: isDark ? "rgba(255,255,255,0.04)" : ALCHEMY.creamAlt,
+    pageBg: isDark ? "transparent" : KANKREG_PALETTE.paper,
+    introBand: isDark ? "rgba(255,255,255,0.04)" : KANKREG_PALETTE.paper2,
     surface: isDark ? "rgba(255,255,255,0.055)" : KANKREG_PALETTE.card,
     surfaceMuted: isDark ? "rgba(255,255,255,0.035)" : "#F5F0E6",
     surfaceChip: isDark ? "rgba(255,255,255,0.08)" : KANKREG_PALETTE.paper2,

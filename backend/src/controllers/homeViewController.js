@@ -98,6 +98,8 @@ async function getAdminHomeViewConfig(req, res, next) {
 async function updateAdminHomeViewConfig(req, res, next) {
   try {
     const config = await getOrCreateConfigDocument();
+    // A look that has since been retired (e.g. "navratri") would fail enum validation on save, so read it as auto.
+    config.festivalKey = normalizeFestivalKey(config.festivalKey);
     const {
       heroTitle,
       heroSubtitle,
@@ -121,7 +123,7 @@ async function updateAdminHomeViewConfig(req, res, next) {
       nextFestivalKey = parseFestivalKey(festivalKey);
       if (nextFestivalKey === null) {
         return res.status(400).json({
-          message: 'Festival look must be "" (auto), "everyday", "navratri" or "diwali".',
+          message: 'Festival look must be "" (auto), "everyday" or "diwali".',
         });
       }
     }

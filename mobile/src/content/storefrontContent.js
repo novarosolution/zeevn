@@ -2,13 +2,14 @@
  * Storefront content — the one file that manages what the native app's
  * Home / Shop / Profile / bottom nav say and show.
  *
- *  - Festival themes (greeting, colours, banner, bento tiles, picks) switch
+ *  - Festival themes (greeting, countdown, banner, colours, bento tiles, picks, section order) switch
  *    automatically by date via `FESTIVAL_CALENDAR`. Add or edit entries each year.
  *  - The admin console (Home view editor → "Festival look") switches the look with no app release: it
- *    saves `festivalKey` ("" = Auto, "everyday", "navratri" or "diwali") on the server home-view config,
+ *    saves `festivalKey` ("" = Auto, "everyday" or "diwali") on the server home-view config,
  *    and the app uses it first. "" or an unknown key falls through to the rules below.
  *  - Force a theme in the build with `STORE_FESTIVAL_OVERRIDE` ("auto" = follow the calendar,
  *    "everyday" = never show a festival look).
+ *  - `STORE_HOME.layout` sets which Home sections show and in what order (a theme can bring its own).
  *  - Products, categories and prices always come from the API; this file only holds copy,
  *    layout choices and brand imagery.
  *
@@ -17,17 +18,16 @@
  * Routes use `{ name, params }` and are passed straight to `navigation.navigate`.
  */
 
-/** "auto" | "everyday" | "navratri" | "diwali" */
+/** "auto" | "everyday" | "diwali" */
 export const STORE_FESTIVAL_OVERRIDE = "auto";
 
 /**
  * Dates are local `YYYY-MM-DD`, inclusive. First matching window wins.
  * Update these when the festival dates for the new year are known.
+ * Diwali 2026: Dhanteras 6 Nov · Lakshmi Puja 8 Nov · Bhai Dooj 11 Nov — the window opens four weeks ahead
+ * for gifting and closes the day after Bhai Dooj.
  */
-export const FESTIVAL_CALENDAR = [
-  { key: "navratri", from: "2026-10-10", to: "2026-10-20" },
-  { key: "diwali", from: "2026-10-28", to: "2026-11-12" },
-];
+export const FESTIVAL_CALENDAR = [{ key: "diwali", from: "2026-10-10", to: "2026-11-12" }];
 
 export const STORE_BRAND = {
   name: "Zeevan",
@@ -52,9 +52,18 @@ export const STORE_HEADER = {
   /** Info chip under the title. A distance chip is added when the farm-shop pin and the user's location are known. */
   deliveryChip: STORE_FREE_DELIVERY,
   distanceSuffix: "from our farm shop",
+  /** Small label above the delivery address in the top bar. */
+  locationLabel: "Deliver to",
   locationFallback: "Set delivery location",
-  rewardsA11y: "Zeevan rewards",
-  profileA11y: "Your account",
+  signIn: "Sign in",
+  /** Spoken labels (screen readers). */
+  a11y: {
+    account: "Your account",
+    accountUnread: "Your account, new notifications",
+    rewards: (points) => `Zeevan rewards, ${points} points`,
+    location: (text) => `Delivery location ${text}`,
+    search: "Search products",
+  },
   searchPrefix: "Search",
   searchHints: [
     "A2 desi cow ghee",
@@ -85,24 +94,96 @@ export const STORE_LINE_PAGES = {
   gifts: { title: "Gifts & hampers", subtitle: "Thoughtful pantry gifts, beautifully packed.", category: "Gift Sets" },
   empty: { title: "Coming soon", subtitle: "New arrivals in this range will appear here." },
   seeAll: "See all products",
+  landing: {
+    browseEyebrow: "Browse",
+    browseByType: "Browse by type",
+    allEyebrow: "The full range",
+    all: (label) => `All ${String(label).toLowerCase()}`,
+    count: (n) => (n === 1 ? "1 product" : `${n} products`),
+  },
+};
+
+/** Product tile copy (Home rails, Shop grid, Wishlist) and the ADD control. */
+export const STORE_CARD = {
+  comingSoon: "COMING SOON",
+  off: (pct) => `${pct}% OFF`,
+  outOfStock: "Out of stock",
+  from: "From",
+  add: "ADD",
+  soldOut: "Sold out",
+  soon: "SOON",
+  added: (n) => `${n} added`,
+  wishlistAdd: "Save to wishlist",
+  wishlistRemove: "Remove from wishlist",
+  a11y: {
+    tile: (name, price) => `${name}, ${price}`,
+    chooseSize: (name) => `Choose size for ${name}`,
+    changeOptions: (n, name) => `${n} of ${name} in bag. Change options`,
+    addToBag: (name) => `Add ${name} to bag`,
+    addOne: (name) => `Add one more ${name}`,
+    removeOne: (name) => `Remove one ${name}`,
+  },
 };
 
 /* ---- Festival themes ---- */
+
+/*
+ * A theme is plain data — no component changes are needed to add or retire a festival.
+ *  - `greeting` / `occasion`  header badge ("Shubh Deepavali · 21 days to Diwali")
+ *  - `header`                 gradient behind the greeting (light + dark) and the badge accent colour
+ *  - `banner`                 hero copy, call to action + `route`, and its colours (`palette.light` / `palette.dark`)
+ *  - `ornament`               artwork: "diya" (lamps, fairy lights, rangoli) or "none" (calm olive sprigs)
+ *  - `layout`                 optional section order — omit it to use `STORE_HOME.layout`
+ *  - `tabBadges`              small badge on a category tab ({ gifts: "Diwali" })
+ *  - `bento` / `picks`        festive collections (heading, route, tiles); `bento.colors` optionally recolours the tiles
+ *  - `shopBanner`             the strip on top of the Shop screen
+ */
 
 const everydayTheme = {
   key: "everyday",
   greeting: "",
   ornament: "none",
+  /** Small badge on a category tab, e.g. { gifts: "Diwali" }. */
+  tabBadges: {},
   header: {
-    gradient: ["#F2D082", "#F7E0A8", "#FAEECF", "#FAF6EC"],
+    gradient: ["#F2D082", "#F7E0A8", "#FAEECF", "#F7F3E8"],
     gradientDark: ["#3C2D12", "#2B2110", "#1B150C", "#0F0D0A"],
+    accent: { light: "#5C6834", dark: "#C4D088" },
   },
   banner: {
     eyebrow: "Zeevan",
     title: "Taste of Purity",
     subtitle: "A2 · Bilona · Made in Gujarat",
+    cta: "Shop now",
+    route: { name: "Shop" },
+    palette: {
+      light: {
+        gradient: ["#1D3A1E", "#2D5629", "#587534"],
+        eyebrow: "#EDC27D",
+        title: "#FBF7EA",
+        subtitle: "#DDE6C6",
+        ctaBg: "#EDC27D",
+        ctaText: "#22300F",
+        gold: "#E8BC84",
+        border: "rgba(237, 194, 125, 0.42)",
+      },
+      dark: {
+        gradient: ["#141D0E", "#21321A", "#394D22"],
+        eyebrow: "#E8BC84",
+        title: "#F6EFE0",
+        subtitle: "#CFD8B6",
+        ctaBg: "#E8BC84",
+        ctaText: "#1A2410",
+        gold: "#E8BC84",
+        border: "rgba(232, 188, 132, 0.3)",
+      },
+    },
   },
   bento: {
+    eyebrow: "Our range",
+    title: "Pantry essentials",
+    action: "See all",
+    route: { name: "Shop" },
     tall: {
       key: "bestseller",
       title: "Bestseller",
@@ -119,6 +200,7 @@ const everydayTheme = {
   },
   picks: {
     title: "Pantry Picks",
+    caption: "Hand-picked from every shelf",
     items: [
       { key: "ghee", title: "Ghee", match: { lineKeys: ["ghee"] }, route: { name: "Shop", params: { pill: "Ghee" } } },
       { key: "tel", title: "Tel", match: { lineKeys: ["tel"] }, route: { name: "Shop", params: { pill: "Tel" } } },
@@ -129,78 +211,112 @@ const everydayTheme = {
   shopBanner: { title: "Pure from the farm", subtitle: "Small batches, honest labels" },
 };
 
-const navratriTheme = {
-  key: "navratri",
-  greeting: "Shubh Navratri",
-  ornament: "marigold",
-  header: {
-    gradient: ["#F6C56A", "#F9DEA0", "#FBF0D4", "#FAF6EC"],
-    gradientDark: ["#3A2814", "#2A1C10", "#1A140E", "#0F0D0A"],
-  },
-  banner: {
-    eyebrow: "Navratri special",
-    title: "Shubh Navratri",
-    subtitle: "Pure ghee for vrat, aarti & prasad",
-  },
-  bento: {
-    tall: {
-      key: "corner",
-      title: "Festive Corner",
-      caption: "Gift Hamper",
-      match: { lineKey: "gifts" },
-      showPrice: true,
-      route: { name: "Shop", params: { category: "Gift Sets" } },
-    },
-    tiles: [
-      { key: "vrat", title: "Vrat Essentials", match: { lineKey: "ghee" }, route: { name: "Shop", params: { pill: "Ghee" } } },
-      { key: "aarti", title: "Diya & Aarti", match: { lineKey: "ghee", index: 1 }, route: { name: "Shop", params: { pill: "Ghee" } } },
-      { key: "prasad", title: "Prasad & Mithai", match: { lineKey: "honey" }, route: { name: "Shop", params: { pill: "Honey" } } },
-      { key: "kitchen", title: "Kitchen Staples", match: { lineKey: "masala" }, route: { name: "Shop", params: { pill: "Masala" } } },
-    ],
-  },
-  picks: {
-    title: "Festive Picks",
-    items: [
-      { key: "gifts", title: "Gift Hampers", match: { lineKeys: ["gifts"] }, route: { name: "Shop", params: { category: "Gift Sets" } } },
-      { key: "ghee", title: "Ghee for Vrat", match: { lineKeys: ["ghee"] }, route: { name: "Shop", params: { pill: "Ghee" } } },
-      { key: "honey", title: "Honey & Wellness", match: { lineKeys: ["honey"] }, route: { name: "Shop", params: { pill: "Honey" } } },
-      { key: "pantry", title: "Tel & Masala", match: { lineKeys: ["tel", "masala"] }, route: { name: "Shop", params: { pill: "Tel" } } },
-    ],
-  },
-  shopBanner: { title: "Celebrate Navratri", subtitle: "Bring home pure, festive flavours" },
-};
-
 const diwaliTheme = {
   key: "diwali",
   greeting: "Shubh Deepavali",
   ornament: "diya",
+  tabBadges: { gifts: "Diwali" },
+  /** Counts down to the main day (Lakshmi Puja) in the header badge. Update the date every year. */
+  occasion: {
+    date: "2026-11-08",
+    days: (n) => `${n} days to Diwali`,
+    tomorrow: "Diwali is tomorrow",
+    today: "Happy Diwali",
+  },
   header: {
-    gradient: ["#F0A93A", "#F6CB77", "#FAE4B4", "#FAF6EC"],
-    gradientDark: ["#4F3410", "#36240D", "#1E160A", "#0F0D0A"],
+    gradient: ["#EFA33A", "#F6C877", "#FAE3B2", "#F7F3E8"],
+    gradientDark: ["#4A2D0E", "#321F0C", "#1C130A", "#0F0D0A"],
+    accent: { light: "#7A3A08", dark: "#F2CE9B" },
   },
   banner: {
     eyebrow: "Diwali special",
     title: "Shubh Deepavali",
-    subtitle: "Light every diya with pure ghee",
+    subtitle: "Pure A2 ghee for every diya, mithai and gift",
+    cta: "Shop festive",
+    route: { name: "Shop", params: { category: "Gift Sets" } },
+    palette: {
+      light: {
+        gradient: ["#3F1409", "#7B2A0D", "#C8691A"],
+        eyebrow: "#F7CE7A",
+        title: "#FFF4DC",
+        subtitle: "#F6DFB4",
+        ctaBg: "#F7C766",
+        ctaText: "#3A1604",
+        gold: "#F6C453",
+        border: "rgba(247, 199, 102, 0.5)",
+      },
+      dark: {
+        gradient: ["#2A0A0B", "#561810", "#A25A10"],
+        eyebrow: "#F2CE9B",
+        title: "#FFF1D6",
+        subtitle: "#E6CFA4",
+        ctaBg: "#E8BC84",
+        ctaText: "#2A1405",
+        gold: "#E8BC84",
+        border: "rgba(232, 188, 132, 0.34)",
+      },
+    },
   },
+  /** Gifting first, then the everyday shelves. */
+  layout: [
+    "tracker",
+    "banner",
+    "promos",
+    "bento",
+    "picks",
+    "categories",
+    "bestsellers",
+    "lines",
+    "process",
+    "compare",
+    "reviews",
+    "trust",
+    "help",
+    "footer",
+  ],
   bento: {
+    eyebrow: "Festive collection",
+    title: "Diwali gifting",
+    action: "See all",
+    route: { name: "Shop", params: { category: "Gift Sets" } },
+    colors: {
+      light: {
+        tall: ["#FFD27A", "#EC9A2E"],
+        tiles: [
+          ["#FFF0CC", "#F7D27F"],
+          ["#FFE3CC", "#F6BC8C"],
+          ["#FDF1D6", "#EFD28F"],
+          ["#FFE8D6", "#F4C69A"],
+        ],
+      },
+      dark: {
+        tall: ["#6A3A10", "#3F2008"],
+        tiles: [
+          ["#4A3112", "#33220C"],
+          ["#4A2A18", "#34190F"],
+          ["#3E3314", "#2B240D"],
+          ["#4A2C16", "#331E0F"],
+        ],
+      },
+    },
     tall: {
       key: "hamper",
       title: "Diwali Hampers",
-      caption: "Gift Hamper",
+      caption: "Gift hamper",
       match: { lineKey: "gifts" },
       showPrice: true,
       route: { name: "Shop", params: { category: "Gift Sets" } },
     },
     tiles: [
-      { key: "diya", title: "Diya Ghee", match: { lineKey: "ghee" }, route: { name: "Shop", params: { pill: "Ghee" } } },
+      { key: "diya", title: "Ghee for Diyas", match: { lineKey: "ghee" }, route: { name: "Shop", params: { pill: "Ghee" } } },
       { key: "mithai", title: "Mithai Makers", match: { lineKey: "ghee", index: 1 }, route: { name: "Shop", params: { pill: "Ghee" } } },
       { key: "cooking", title: "Festive Cooking", match: { lineKey: "tel" }, route: { name: "Shop", params: { pill: "Tel" } } },
-      { key: "honey", title: "Honey & Dry Fruit", match: { lineKey: "honey" }, route: { name: "Shop", params: { pill: "Honey" } } },
+      { key: "honey", title: "Honey & Haldi", match: { lineKey: "honey" }, route: { name: "Shop", params: { pill: "Honey" } } },
     ],
   },
   picks: {
     title: "Diwali Picks",
+    caption: "Hand-picked for diyas, mithai and gifting",
     items: [
       { key: "gifts", title: "Gift Hampers", match: { lineKeys: ["gifts"] }, route: { name: "Shop", params: { category: "Gift Sets" } } },
       { key: "ghee", title: "Ghee for Diyas", match: { lineKeys: ["ghee"] }, route: { name: "Shop", params: { pill: "Ghee" } } },
@@ -213,7 +329,6 @@ const diwaliTheme = {
 
 export const FESTIVAL_THEMES = {
   everyday: everydayTheme,
-  navratri: navratriTheme,
   diwali: diwaliTheme,
 };
 
@@ -227,6 +342,7 @@ function toDateKey(date) {
 /**
  * Pick the active storefront theme.
  * Priority: server `festivalKey` → `STORE_FESTIVAL_OVERRIDE` → calendar window → everyday.
+ * A key the app does not know (for example a look that has been retired) is skipped.
  */
 export function resolveFestivalTheme({ now = new Date(), remoteKey } = {}) {
   const remote = String(remoteKey || "").trim().toLowerCase();
@@ -239,14 +355,124 @@ export function resolveFestivalTheme({ now = new Date(), remoteKey } = {}) {
   return (hit && FESTIVAL_THEMES[hit.key]) || FESTIVAL_THEMES.everyday;
 }
 
+/**
+ * Header badge text for a theme with an `occasion` ("21 days to Diwali"), or "" when the theme has none
+ * or the day has passed. Counts local calendar days, so it changes at midnight.
+ */
+export function getFestivalCountdown(theme, now = new Date()) {
+  const occasion = theme?.occasion;
+  if (!occasion?.date) return "";
+  const [y, m, d] = String(occasion.date).split("-").map(Number);
+  if (!y || !m || !d) return "";
+  const target = new Date(y, m - 1, d);
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.round((target.getTime() - today.getTime()) / 86400000);
+  if (days < 0) return "";
+  if (days === 0) return occasion.today;
+  if (days === 1) return occasion.tomorrow;
+  return occasion.days(days);
+}
+
+/* ---- Home layout ---- */
+
+/**
+ * Sections on the Home "All" tab, top to bottom. Delete a key to hide that section, or reorder to move it:
+ *  tracker     live order card (only while a signed-in customer has an order in progress)
+ *  banner      festival / brand hero
+ *  promos      rewards card + admin hero slides
+ *  categories  "Shop by category" grid
+ *  bento       festive (or range) collection tiles
+ *  bestsellers best-rated products rail
+ *  picks       tabbed festive picks rail
+ *  lines       one rail per range (ghee, tel, masala, honey, gifting)
+ *  process     "How it's made" — steps and photos are managed in Admin → Home view
+ *  compare     "Ours vs ordinary" — rows are managed in Admin → Home view
+ *  reviews     customer reviews (`HOME_TESTIMONIALS` in appContent.js, shared with the website)
+ *  trust       "Why Zeevan" promises and the certification badges
+ *  help        closing "Need a hand?" support card
+ *  footer      the Zeevan wordmark sign-off (keep it last)
+ * A festival theme can set its own `layout` (Diwali puts its gifting collections first).
+ * `process` and `compare` also follow the admin switch "show home sections" and each section's own Enabled flag.
+ */
+export const STORE_HOME = {
+  layout: [
+    "tracker",
+    "banner",
+    "promos",
+    "categories",
+    "bento",
+    "bestsellers",
+    "picks",
+    "lines",
+    "process",
+    "compare",
+    "reviews",
+    "trust",
+    "help",
+    "footer",
+  ],
+
+  /** Live order card. The status line itself ("Out for delivery") and its hint come from the order. */
+  tracker: {
+    eyebrow: "Track order",
+    cta: "Track",
+    ctaA11y: "Open order tracking",
+    more: (n) => `+${n} more on the way`,
+    items: (n) => (n === 1 ? "1 item" : `${n} items`),
+  },
+
+  /** "How it's made": headline, steps and photos are admin-managed; these are the labels around them. */
+  process: {
+    stepOf: (n, total) => `Step ${n} of ${total}`,
+    /** One icon per step (by position) for steps without a photo. */
+    icons: ["cow", "cup-water", "bowl-mix-outline", "pot-mix-outline", "fire", "bottle-tonic-outline"],
+    /** Bundled photos for the default steps, used until the admin uploads one. */
+    fallbackImages: { "process-04": require("../../assets/pdp-process-bilona.jpg") },
+  },
+
+  /** "Ours vs ordinary": the table itself is admin-managed; these are only fallbacks. */
+  compare: {
+    oursLabel: "Zeevan",
+    ordinaryLabel: "Ordinary",
+  },
+
+  /** Reviews: the quotes live in `HOME_TESTIMONIALS` (appContent.js). */
+  reviews: {
+    /** `count` arrives already formatted ("1,139"). */
+    rating: (avg, count) => `${avg} average · ${count} customer reviews`,
+  },
+
+  /** Closing support card. */
+  help: {
+    eyebrow: "Need a hand?",
+    title: "Talk to a real person",
+    body: "Questions about a product, delivery or your order? We answer like a neighbour would.",
+    cta: "Chat with support",
+    route: { name: "Support" },
+  },
+};
+
 /* ---- Home sections ---- */
 
 export const STORE_SECTIONS = {
-  categories: { title: "Shop by category", action: "See all", moreSuffix: "more" },
-  bestsellers: { title: "Bestsellers", action: "See all" },
+  categories: {
+    eyebrow: "Browse",
+    title: "Shop by category",
+    action: "See all",
+    moreSuffix: "more",
+    allTile: "See all",
+    tileA11y: (label, n) => `${label}, ${n} ${n === 1 ? "product" : "products"}`,
+  },
+  /** `rankTop` products get a gold #1 / #2 / #3 badge. */
+  bestsellers: { eyebrow: "Most loved", title: "Bestsellers", action: "See all", rankTop: 3, rankA11y: (n) => `Bestseller number ${n}` },
+  picks: { action: "See all" },
   newArrivals: { title: "New arrivals", action: "See all" },
-  lineRail: { action: "See all" },
+  lineRail: { eyebrow: "Our range", action: "See all" },
+  /** Call to action on admin hero slides that have none of their own. */
+  promoCta: "Shop now",
+  promoA11y: "Promotion",
   seeAllProducts: "See all products",
+  trustEyebrow: "Our promise",
   trustTitle: "Why Zeevan",
   empty: {
     title: "Fresh stock on the way",
@@ -259,6 +485,7 @@ export const STORE_SECTIONS = {
 /**
  * Promo carousel cards. Admin hero slides (Home View in the admin console) take priority;
  * these are the brand defaults when none are configured.
+ * The rewards card shows `signedIn` copy to a signed-in customer ({points} is their balance).
  */
 export const STORE_PROMOS = [
   {
@@ -268,6 +495,11 @@ export const STORE_PROMOS = [
     title: "Earn on every order",
     subtitle: "Get exciting rewards everyday",
     cta: "Start now",
+    signedIn: {
+      title: (points) => `${points} points`,
+      subtitle: "Redeem them for coupons on your next order",
+      cta: "Redeem now",
+    },
     route: { name: "RedeemRewards" },
     requiresAuth: true,
   },
@@ -490,6 +722,7 @@ export const STORE_PRODUCT = {
 export const STORE_CART = {
   back: "Back",
   bag: {
+    navTitle: "Cart",
     title: "Your bag",
     count: (n) => (n === 1 ? "1 item" : `${n} items`),
     inBagHeading: "In your bag",
@@ -540,6 +773,7 @@ export const STORE_CART = {
   },
   checkout: {
     title: "Checkout",
+    heading: "Delivery & payment",
     steps: ["Bag", "Address", "Pay"],
     summaryTitle: "Order summary",
     editBag: "Edit bag",

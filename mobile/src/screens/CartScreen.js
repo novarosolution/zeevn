@@ -66,6 +66,7 @@ import KankregCheckoutSteps from "../components/kankreg/KankregCheckoutSteps";
 import { FIGMA } from "../theme/figmaApp";
 import { cartLineKey } from "../utils/productCart";
 import { SectionHeader } from "../components/home/editorial";
+import { StoreCart } from "../components/store/entry";
 
 /** Same required fields as ManageAddressScreen save. */
 function getProfileAddressCompletion(defaultAddress) {
@@ -207,8 +208,48 @@ export default function CartScreen({ navigation, route }) {
 
   const profileAddress = useMemo(() => getProfileAddressCompletion(user?.defaultAddress), [user?.defaultAddress]);
 
+  /** Delivery quote for the typed pincode / city. Declared before the guest early return so hook order stays stable. */
+  useEffect(() => {
+    const pin = String(postalCode || "").replace(/\D/g, "");
+    const cityName = String(city || "").trim();
+    if (pin.length < 6 && !cityName) {
+      setDeliveryQuote({ serviceable: true, fee: 0, zoneName: "", checked: false });
+      return undefined;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      checkDeliveryServiceability({
+        postalCode: pin,
+        city: cityName,
+        itemsTotal: totalAmount,
+      })
+        .then((res) => {
+          if (cancelled) return;
+          setDeliveryQuote({
+            serviceable: Boolean(res?.serviceable),
+            fee: Number(res?.fee || 0),
+            zoneName: res?.zoneName || "",
+            checked: true,
+            etaMinutesMin: res?.etaMinutesMin,
+            etaMinutesMax: res?.etaMinutesMax,
+          });
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setDeliveryQuote({ serviceable: true, fee: 0, zoneName: "", checked: false });
+        });
+    }, 280);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [postalCode, city, totalAmount]);
+
   /** Guest can browse the bag; only checkout needs sign-in. */
   if (!isAuthenticated && isCheckoutFlow) {
+    if (isNativeApp) {
+      return <StoreCart mode="gate" navigation={navigation} />;
+    }
     return (
       <CustomerScreenShell style={styles.screen}>
         <KankregScrollPage
@@ -408,42 +449,6 @@ export default function CartScreen({ navigation, route }) {
     }
   };
 
-  useEffect(() => {
-    const pin = String(postalCode || "").replace(/\D/g, "");
-    const cityName = String(city || "").trim();
-    if (pin.length < 6 && !cityName) {
-      setDeliveryQuote({ serviceable: true, fee: 0, zoneName: "", checked: false });
-      return undefined;
-    }
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      checkDeliveryServiceability({
-        postalCode: pin,
-        city: cityName,
-        itemsTotal: totalAmount,
-      })
-        .then((res) => {
-          if (cancelled) return;
-          setDeliveryQuote({
-            serviceable: Boolean(res?.serviceable),
-            fee: Number(res?.fee || 0),
-            zoneName: res?.zoneName || "",
-            checked: true,
-            etaMinutesMin: res?.etaMinutesMin,
-            etaMinutesMax: res?.etaMinutesMax,
-          });
-        })
-        .catch(() => {
-          if (cancelled) return;
-          setDeliveryQuote({ serviceable: true, fee: 0, zoneName: "", checked: false });
-        });
-    }, 280);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [postalCode, city, totalAmount]);
-
   const deliveryFee = deliveryQuote.checked && deliveryQuote.serviceable ? Number(deliveryQuote.fee || 0) : 0;
   const deliveryBlocked = deliveryQuote.checked && !deliveryQuote.serviceable;
   const deliveryHint = deliveryBlocked
@@ -504,6 +509,62 @@ export default function CartScreen({ navigation, route }) {
       setIsDetectingLocation(false);
     }
   };
+
+  if (isNativeApp) {
+    const formSetters = {
+      fullName: setFullName,
+      phone: setPhone,
+      addressType: setAddressType,
+      houseNumber: setHouseNumber,
+      line1: setLine1,
+      landmark: setLandmark,
+      city: setCity,
+      postalCode: setPostalCode,
+      country: setCountry,
+      note: setNote,
+    };
+    return (
+      <StoreCart
+        mode={isCheckoutFlow ? "checkout" : "bag"}
+        navigation={navigation}
+        isAuthenticated={isAuthenticated}
+        items={cartItems}
+        totalItems={totalItems}
+        onIncrease={(item) => addToCart(item)}
+        onDecrease={(item) => removeFromCart(item.id, item.variantLabel)}
+        onRemove={(item) => removeLineFromCart(item.id, item.variantLabel)}
+        coupon={{
+          code: couponCode,
+          onChange: setCouponCode,
+          onApply: handleApplyCoupon,
+          appliedText: appliedCouponText,
+        }}
+        bill={{
+          subtotal: totalAmount,
+          deliveryFee,
+          deliveryBlocked,
+          deliveryHint,
+          platformFee,
+          discount: discountAmount,
+          total: payableAmount,
+        }}
+        form={{ fullName, phone, addressType, houseNumber, line1, landmark, city, postalCode, country, note }}
+        onFormChange={(key, value) => formSetters[key]?.(value)}
+        fieldErrors={fieldErrors}
+        error={error}
+        onDismissError={() => setError("")}
+        detectingLocation={isDetectingLocation}
+        onUseGps={handleUseCurrentLocation}
+        hasSavedAddress={profileAddress.complete}
+        onUseSaved={handleUseSavedAddress}
+        paymentMethod={paymentMethod}
+        onPaymentChange={setPaymentMethod}
+        placing={isPlacingOrder}
+        ctaDisabled={cartItems.length === 0 || deliveryBlocked}
+        onPrimary={handlePrimaryCta}
+      />
+    );
+  }
 
   return (
     <CustomerScreenShell style={styles.screen}>

@@ -158,33 +158,23 @@ export default function KankregCartSummaryCard({
 }
 
 const cardShadowLight = platformShadow({
-  web: { boxShadow: "0 12px 32px rgba(22, 69, 51, 0.08)" },
-  ios: {
-    shadowColor: "#3D2A12",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-  },
-  android: { elevation: 4 },
+  web: { boxShadow: "none" },
+  default: {},
 });
 
 const cardShadowDark = platformShadow({
-  web: { boxShadow: "0 12px 32px rgba(0, 0, 0, 0.32)" },
-  ios: {
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
-  },
-  android: { elevation: 4 },
+  web: { boxShadow: "none" },
+  default: {},
 });
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 18,
+    borderRadius: 0,
     padding: spacing.md + 4,
     gap: spacing.sm,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
     width: "100%",
     flexDirection: "column",

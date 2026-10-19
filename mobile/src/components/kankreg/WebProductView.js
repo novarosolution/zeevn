@@ -33,7 +33,7 @@ import {
   homeEditorialInk,
   homeEditorialMuted,
 } from "../../theme/homeEditorial";
-import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { KANKREG_CHROME, KANKREG_PALETTE, WEB_COMMERCE, ZEEVAN_GREEN } from "../../theme/kankregWeb";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 import { formatINR } from "../../utils/currency";
 import {
@@ -273,8 +273,9 @@ export default function WebProductView({
 }) {
   const insets = useSafeAreaInsets();
   const { colors: c, isDark } = useTheme();
-  const { useProductSplit, isXs, isMd } = useKankregLayout();
+  const { useProductSplit, isXs, isMd, isMobileWeb } = useKankregLayout();
   const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
+  const showPhoneBuyBar = (isMobileWeb || isXs) && !isComingSoon && !isOutOfStock;
   const ink = homeEditorialInk(isDark);
   const muted = homeEditorialMuted(isDark);
   const pageContent = useMemo(
@@ -349,31 +350,44 @@ export default function WebProductView({
       ? product.processSteps
       : processStepsContent;
 
+  const phoneBleed = !useProductSplit;
   const renderGallery = () => (
-    <View style={styles.gallery}>
+    <View style={[styles.gallery, phoneBleed && styles.galleryBleed]}>
       <HeroParallax strength="subtle" maxScroll={360} dim={false} scale style={styles.heroParallax}>
         <LinearGradient
           colors={isDark ? ["#1a1410", "#14100c"] : ["#FFFDF6", "#F2E9D4"]}
           start={{ x: 0.2, y: 0 }}
           end={{ x: 0.8, y: 1 }}
-          style={[styles.heroStage, { height: heroImageHeight }]}
+          style={[
+            styles.heroStage,
+            { height: heroImageHeight },
+            phoneBleed && styles.heroStageBleed,
+          ]}
         >
           {heroImageUri && !imageFailed ? (
             <Animated.View style={[styles.heroAnim, heroFadeStyle, { height: heroImageHeight }]}>
-              <View style={[styles.heroImageFrame, { height: heroImageHeight }]}>
+              <View
+                style={[
+                  styles.heroImageFrame,
+                  { height: heroImageHeight },
+                  phoneBleed && styles.heroImageFrameBleed,
+                ]}
+              >
                 <ProgressiveProductImage
                   uri={heroImageUri}
                   previewUri={heroPreviewUri}
                   style={[
                     styles.heroImageInner,
-                    { height: Math.max(180, heroImageHeight - 32) },
+                    {
+                      height: Math.max(180, heroImageHeight - (phoneBleed ? 0 : 32)),
+                    },
                     isComingSoon && getComingSoonImageBlurStyle(),
                   ]}
-                  contentFit="contain"
+                  contentFit={phoneBleed ? "cover" : "contain"}
                   priority="high"
                   recyclingKey={heroImageUri}
                   onError={onHeroImageError}
-                  rounded={14}
+                  rounded={phoneBleed ? 0 : 14}
                 />
               </View>
             </Animated.View>
@@ -471,9 +485,9 @@ export default function WebProductView({
             <Text style={[styles.priceNow, { color: ink }]}>{formatINR(displayPrice)}</Text>
             {showMrp && mrp ? <Text style={styles.priceWas}>{formatINR(mrp)}</Text> : null}
             {offPct != null && offPct > 0 ? (
-              <Text style={styles.priceSave}>
-                {fillProductScreen(PRODUCT_SCREEN.savePctChip, { pct: String(offPct) })}
-              </Text>
+              <View style={styles.saveBadge}>
+                <Text style={styles.saveBadgeText}>{`${offPct}% OFF`}</Text>
+              </View>
             ) : null}
           </View>
           {inCart ? (
@@ -987,6 +1001,44 @@ export default function WebProductView({
           </CatalogGridReveal>
         </SectionReveal>
       ) : null}
+
+      {showPhoneBuyBar ? (
+        <View
+          style={[
+            styles.phoneBuyBar,
+            { paddingBottom: Math.max(insets.bottom, 12) },
+            stickyBarVisible === false && styles.phoneBuyBarHidden,
+          ]}
+          pointerEvents="box-none"
+        >
+          <View style={styles.phoneBuyPriceCol}>
+            <Text style={styles.phoneBuyPrice}>{formatINR(displayPrice)}</Text>
+            {offPct != null && offPct > 0 ? (
+              <Text style={styles.phoneBuySave}>{`${offPct}% OFF`}</Text>
+            ) : null}
+          </View>
+          {inCart ? (
+            <View style={styles.phoneQtyBox}>
+              <Pressable style={styles.phoneQtyBtn} onPress={onRemoveFromCart} accessibilityLabel="Decrease quantity">
+                <Text style={styles.phoneQtyBtnText}>−</Text>
+              </Pressable>
+              <Text style={styles.phoneQtyCount}>{quantity}</Text>
+              <Pressable style={styles.phoneQtyBtn} onPress={onAddToCart} accessibilityLabel="Increase quantity">
+                <Text style={styles.phoneQtyBtnText}>+</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable
+              style={styles.phoneAddBtn}
+              onPress={onAddToCart}
+              accessibilityRole="button"
+              accessibilityLabel={PRODUCT_SCREEN.addToCartA11y}
+            >
+              <Text style={styles.phoneAddBtnText}>ADD</Text>
+            </Pressable>
+          )}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -1012,7 +1064,7 @@ function createStyles(c, isDark) {
       maxWidth: layout.maxContentWidth + 96,
       alignSelf: "center",
       position: "relative",
-      paddingBottom: HOME_SPACE.lg,
+      paddingBottom: HOME_SPACE.lg + 72,
     },
     pageWash: {
       position: "absolute",
@@ -1205,6 +1257,10 @@ function createStyles(c, isDark) {
       justifyContent: "center",
       backgroundColor: c.surfaceMuted,
     },
+    galleryBleed: {
+      marginHorizontal: Platform.OS === "web" ? "calc(-1 * clamp(12px, 4vw, 24px))" : -12,
+      width: Platform.OS === "web" ? "calc(100% + 2 * clamp(12px, 4vw, 24px))" : undefined,
+    },
     heroStage: {
       width: "100%",
       justifyContent: "center",
@@ -1224,6 +1280,11 @@ function createStyles(c, isDark) {
         },
       }),
     },
+    heroStageBleed: {
+      borderRadius: 0,
+      borderWidth: 0,
+      ...Platform.select({ web: { boxShadow: "none" }, default: {} }),
+    },
     heroAnim: { width: "100%", height: "100%" },
     heroImageFrame: {
       width: "100%",
@@ -1231,6 +1292,9 @@ function createStyles(c, isDark) {
       padding: 16,
       justifyContent: "center",
       alignItems: "center",
+    },
+    heroImageFrameBleed: {
+      padding: 0,
     },
     heroImageInner: {
       width: "100%",
@@ -1363,12 +1427,116 @@ function createStyles(c, isDark) {
     priceSave: {
       fontFamily: fonts.bold,
       fontSize: 12,
-      color: KANKREG_PALETTE.green,
-      backgroundColor: "rgba(60,98,72,0.1)",
+      color: WEB_COMMERCE.saveBadgeText,
+      backgroundColor: WEB_COMMERCE.saveBadgeBg,
       paddingHorizontal: 10,
       paddingVertical: 4,
       borderRadius: radius.pill,
       overflow: "hidden",
+    },
+    saveBadge: {
+      backgroundColor: WEB_COMMERCE.saveBadgeBg,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 6,
+    },
+    saveBadgeText: {
+      fontFamily: fonts.bold,
+      fontSize: 12,
+      color: WEB_COMMERCE.saveBadgeText,
+      letterSpacing: 0.3,
+    },
+    phoneBuyBar: {
+      ...Platform.select({
+        web: {
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 40,
+        },
+        default: {
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+        },
+      }),
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      paddingHorizontal: 16,
+      paddingTop: 12,
+      backgroundColor: WEB_COMMERCE.stickyBarBg,
+      borderTopWidth: 1,
+      borderTopColor: WEB_COMMERCE.stickyBarBorder,
+      ...platformShadow({
+        web: { boxShadow: "0 -8px 28px -12px rgba(31, 51, 31, 0.18)" },
+      }),
+    },
+    phoneBuyBarHidden: {
+      opacity: 0,
+      pointerEvents: "none",
+    },
+    phoneBuyPriceCol: {
+      flex: 1,
+      gap: 2,
+    },
+    phoneBuyPrice: {
+      fontFamily: FONT_PRICE,
+      fontSize: 20,
+      fontWeight: "600",
+      color: KANKREG_PALETTE.ink,
+    },
+    phoneBuySave: {
+      fontFamily: fonts.bold,
+      fontSize: 11,
+      color: WEB_COMMERCE.saveBadgeBg,
+    },
+    phoneAddBtn: {
+      minWidth: 120,
+      minHeight: 48,
+      paddingHorizontal: 22,
+      borderRadius: 10,
+      backgroundColor: WEB_COMMERCE.addBtnBg,
+      alignItems: "center",
+      justifyContent: "center",
+      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+    },
+    phoneAddBtnText: {
+      fontFamily: fonts.bold,
+      fontSize: 15,
+      letterSpacing: 0.6,
+      color: WEB_COMMERCE.addBtnText,
+    },
+    phoneQtyBox: {
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1.5,
+      borderColor: ZEEVAN_GREEN.border,
+      borderRadius: 10,
+      overflow: "hidden",
+      backgroundColor: KANKREG_PALETTE.card,
+    },
+    phoneQtyBtn: {
+      width: 44,
+      height: 48,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: ZEEVAN_GREEN.soft,
+      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+    },
+    phoneQtyBtnText: {
+      fontSize: 20,
+      color: ZEEVAN_GREEN.deep,
+      fontFamily: fonts.medium,
+    },
+    phoneQtyCount: {
+      minWidth: 36,
+      textAlign: "center",
+      fontFamily: FONT_BODY_SEMIBOLD,
+      fontSize: 15,
+      color: KANKREG_PALETTE.ink,
     },
     lead: {
       fontSize: 15.5,

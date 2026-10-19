@@ -36,6 +36,19 @@ export const KANKREG_PALETTE = {
   goldBright: ZEEVAN_GOLD.bright,
   goldDeep: ZEEVAN_GOLD.deep,
   danger: "#B8442F",
+  /** Anveshan-style commerce accent (sale badges / MRP). */
+  maroon: "#B8442F",
+};
+
+/** Shared web commerce chrome — Home + Shop product cards, sticky CTAs. */
+export const WEB_COMMERCE = {
+  saveBadgeBg: KANKREG_PALETTE.danger,
+  saveBadgeText: "#FFFFFF",
+  addBtnBg: ZEEVAN_GREEN.deep,
+  addBtnText: "#FFFFFF",
+  mrp: KANKREG_PALETTE.danger,
+  stickyBarBg: KANKREG_PALETTE.card,
+  stickyBarBorder: KANKREG_PALETTE.line,
 };
 
 /** Web chrome — announce strip, header, trust band, CTAs. */

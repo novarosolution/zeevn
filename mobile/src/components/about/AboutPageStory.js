@@ -3,12 +3,12 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { FONT_HEADING, FONT_HEADING_ITALIC } from "../../theme/typographyRoles";
-import { getKankregSurfaces, KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { getKankregSurfaces, KANKREG_PALETTE, ZEEVAN_GREEN } from "../../theme/kankregWeb";
 import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { HOME_SPACE } from "../../theme/homeEditorial";
-import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
-import StoryImageFrame from "../home/StoryImageFrame";
+import { fonts, icon, spacing, typography } from "../../theme/tokens";
+import AboutPhoto from "./AboutPhoto";
 import GoldHairline from "../ui/GoldHairline";
 import SectionReveal from "../motion/SectionReveal";
 import {
@@ -16,41 +16,26 @@ import {
   ABOUT_PAGE_SECTION_LABELS,
   ABOUT_STORY_BLOCKS,
 } from "../../content/aboutPageContent";
-import { platformShadow } from "../../theme/shadowPlatform";
-
-const panelShadow = platformShadow({
-  web: { boxShadow: "0 1px 2px rgba(25,20,15,.04), 0 14px 38px -20px rgba(25,20,15,.22)" },
-  ios: {
-    shadowColor: "#3D2A12",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.09,
-    shadowRadius: 10,
-  },
-  android: { elevation: 3 },
-});
 
 function AboutSectionDivider() {
-  return <GoldHairline marginVertical={spacing.md} withDot={false} variant="subtle" />;
+  return <GoldHairline marginVertical={spacing.sm} withDot={false} variant="subtle" />;
 }
 
 function StoryBlock({ eyebrow, title, body, isDark, surfaces, iconName }) {
   if (!body && !title) return null;
   return (
-    <View
-      style={[
-        styles.block,
-        { backgroundColor: surfaces.card, borderColor: surfaces.border },
-        panelShadow,
-      ]}
-    >
-      {iconName ? (
-        <View style={[styles.blockIcon, isDark && styles.blockIconDark]}>
-          <Ionicons name={iconName} size={icon.md} color={KANKREG_PALETTE.goldBright} />
+    <View style={styles.block}>
+      <View style={styles.blockHead}>
+        {iconName ? (
+          <View style={[styles.blockIcon, isDark && styles.blockIconDark]}>
+            <Ionicons name={iconName} size={icon.sm} color={ZEEVAN_GREEN.deep} />
+          </View>
+        ) : null}
+        <View style={styles.blockHeadCopy}>
+          {eyebrow ? <Text style={createKankregEyebrowStyle(isDark)}>{eyebrow}</Text> : null}
+          {title ? <Text style={[styles.blockTitle, { color: surfaces.text }]}>{title}</Text> : null}
         </View>
-      ) : null}
-      {eyebrow ? <Text style={createKankregEyebrowStyle(isDark)}>{eyebrow}</Text> : null}
-      {title ? <Text style={[styles.blockTitle, { color: surfaces.text }]}>{title}</Text> : null}
-      <GoldHairline marginVertical={spacing.sm} withDot={false} variant="subtle" />
+      </View>
       {body ? <Text style={[styles.blockBody, { color: surfaces.textSoft }]}>{body}</Text> : null}
     </View>
   );
@@ -66,15 +51,17 @@ function ValuesGrid({ values, isDark, surfaces, isMd }) {
       </Text>
       <View style={[styles.valuesGrid, isMd && styles.valuesGridWide]}>
         {values.map((item, idx) => (
-          <SectionReveal key={item.title} index={ABOUT_PAGE_ANIM.values + idx} preset="scale-in">
+          <SectionReveal key={item.title} index={ABOUT_PAGE_ANIM.values + idx} preset="fade-up">
             <View
               style={[
                 styles.valueCard,
-                { backgroundColor: surfaces.card, borderColor: surfaces.border },
-                panelShadow,
+                { borderColor: surfaces.borderSubtle },
                 isMd && styles.valueCardHalf,
               ]}
             >
+              <Text style={[styles.valueIndex, { color: KANKREG_PALETTE.gold }]}>
+                {String(idx + 1).padStart(2, "0")}
+              </Text>
               <Text style={[styles.valueTitle, { color: surfaces.text }]}>{item.title}</Text>
               <Text style={[styles.valueBody, { color: surfaces.textSoft }]}>{item.body}</Text>
             </View>
@@ -85,41 +72,47 @@ function ValuesGrid({ values, isDark, surfaces, isMd }) {
   );
 }
 
-function PhotoGallery({ photos, isDark, isMd }) {
+/** Compact equal gallery — 4-up desktop, 2-up phone. No giant featured image. */
+function PhotoGallery({ photos, isDark, isMd, isMobileWeb }) {
   if (!photos?.length) return null;
+  const cols = isMd ? 4 : 2;
+
   return (
     <View style={styles.galleryWrap}>
       <Text style={createKankregEyebrowStyle(isDark)}>{ABOUT_PAGE_SECTION_LABELS.storyGallery}</Text>
       <Text style={[styles.galleryHeading, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
         {ABOUT_PAGE_SECTION_LABELS.storyGalleryTitle}
       </Text>
-      <View style={[styles.galleryGrid, isMd && styles.galleryGridWide]}>
-        {photos.map((photo, idx) => (
-          <SectionReveal
-            key={`${photo.url}-${idx}`}
-            index={ABOUT_PAGE_ANIM.gallery + idx}
-            preset={idx % 2 === 0 ? "fade-up" : "slide-right"}
-          >
-            <View style={[styles.galleryCell, isMd && photos.length > 1 && styles.galleryCellHalf]}>
-              <StoryImageFrame
-                source={photo.url}
-                caption={photo.caption}
-                aspectRatio={idx === 0 && photos.length === 1 ? 16 / 9 : 4 / 5}
-                isDark={isDark}
-              />
-            </View>
-          </SectionReveal>
-        ))}
+      <View style={[styles.galleryGrid, { gap: isMobileWeb ? 10 : 14 }]}>
+        {photos.slice(0, 4).map((photo, idx) => {
+          const media = photo.source ?? photo.url;
+          return (
+            <SectionReveal
+              key={`${photo.caption || idx}-${idx}`}
+              index={ABOUT_PAGE_ANIM.gallery + idx}
+              preset="fade-up"
+            >
+              <View style={[styles.galleryCell, { width: `${100 / cols - 1.5}%` }]}>
+                <AboutPhoto
+                  source={media}
+                  caption={photo.caption}
+                  aspectRatio={1}
+                  isDark={isDark}
+                  priority={idx < 2 ? "high" : "normal"}
+                />
+              </View>
+            </SectionReveal>
+          );
+        })}
       </View>
     </View>
   );
 }
 
-/** About page story — pull quote, intro, gallery, narrative blocks & values. */
-export default function AboutPageStory({ about }) {
+export default function AboutPageStory({ about, hidePullQuote = false }) {
   const { isDark, colors: c } = useTheme();
   const surfaces = getKankregSurfaces(isDark, c);
-  const { isMd } = useKankregLayout();
+  const { isMd, isMobileWeb } = useKankregLayout();
 
   if (!about) return null;
 
@@ -146,10 +139,9 @@ export default function AboutPageStory({ about }) {
 
   return (
     <View style={styles.root}>
-      {about.pullQuote ? (
+      {!hidePullQuote && about.pullQuote ? (
         <SectionReveal index={ABOUT_PAGE_ANIM.pullQuote} preset="scale-in">
           <View style={[styles.pullQuote, isDark && styles.pullQuoteDark]}>
-            <View style={styles.pullQuoteRule} />
             <Text style={[styles.pullQuoteText, { color: surfaces.text }]}>{about.pullQuote}</Text>
           </View>
         </SectionReveal>
@@ -169,9 +161,7 @@ export default function AboutPageStory({ about }) {
       ) : null}
 
       {about.photos?.length ? (
-        <SectionReveal index={ABOUT_PAGE_ANIM.gallery} preset="fade-in">
-          <PhotoGallery photos={about.photos} isDark={isDark} isMd={isMd} />
-        </SectionReveal>
+        <PhotoGallery photos={about.photos} isDark={isDark} isMd={isMd} isMobileWeb={isMobileWeb} />
       ) : null}
 
       {storyBlocks.length ? (
@@ -193,91 +183,88 @@ export default function AboutPageStory({ about }) {
 const styles = StyleSheet.create({
   root: {
     width: "100%",
-    gap: HOME_SPACE.lg,
-  },
-  storyBlocks: {
     gap: HOME_SPACE.md,
   },
+  storyBlocks: {
+    gap: HOME_SPACE.sm,
+  },
   pullQuote: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.xl,
-    backgroundColor: "rgba(31, 92, 71, 0.06)",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(31, 92, 71, 0.2)",
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: ZEEVAN_GREEN.base,
   },
   pullQuoteDark: {
-    backgroundColor: "rgba(52, 211, 153, 0.08)",
-    borderColor: "rgba(52, 211, 153, 0.22)",
-  },
-  pullQuoteRule: {
-    width: 3,
-    alignSelf: "stretch",
-    borderRadius: 2,
-    backgroundColor: KANKREG_PALETTE.green,
-    opacity: 0.8,
+    borderLeftColor: KANKREG_PALETTE.gold,
   },
   pullQuoteText: {
-    flex: 1,
     fontFamily: FONT_HEADING_ITALIC,
     fontStyle: "italic",
-    fontSize: 22,
-    lineHeight: 32,
-    letterSpacing: -0.2,
+    fontSize: 18,
+    lineHeight: 28,
   },
   leadWrap: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   lead: {
     fontFamily: FONT_HEADING,
-    fontSize: Platform.OS === "web" ? 22 : 20,
-    lineHeight: 32,
+    fontSize: Platform.OS === "web" ? 20 : 18,
+    lineHeight: Platform.OS === "web" ? 30 : 28,
     letterSpacing: -0.2,
   },
   leadContinued: {
     fontFamily: fonts.regular,
-    fontSize: typography.body + 1,
-    lineHeight: 28,
+    fontSize: typography.body,
+    lineHeight: 26,
+    maxWidth: 640,
   },
   block: {
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    padding: spacing.lg,
-    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    gap: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: KANKREG_PALETTE.lineSoft,
+  },
+  blockHead: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+  },
+  blockHeadCopy: {
+    flex: 1,
+    gap: 2,
   },
   blockIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: "rgba(31, 92, 71, 0.12)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: ZEEVAN_GREEN.soft,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: spacing.xs,
   },
   blockIconDark: {
     backgroundColor: "rgba(52, 211, 153, 0.12)",
   },
   blockTitle: {
     fontFamily: FONT_HEADING,
-    fontSize: 26,
-    lineHeight: 32,
+    fontSize: 20,
+    lineHeight: 26,
     fontWeight: "400",
-    marginTop: spacing.xs,
   },
   blockBody: {
     fontFamily: fonts.regular,
     fontSize: typography.body,
-    lineHeight: typography.body * 1.65,
+    lineHeight: typography.body * 1.6,
+    maxWidth: 620,
+    paddingLeft: 44,
   },
   valuesWrap: {
-    gap: spacing.sm,
+    gap: spacing.xs,
+    paddingTop: spacing.xs,
   },
   valuesHeading: {
     fontFamily: FONT_HEADING,
     fontSize: 24,
-    marginTop: spacing.xs,
+    letterSpacing: -0.3,
   },
   valuesGrid: {
     gap: spacing.md,
@@ -288,47 +275,47 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   valueCard: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    padding: spacing.md,
-    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingRight: spacing.sm,
+    gap: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
   valueCardHalf: {
     width: "48%",
-    minWidth: 200,
+    minWidth: 180,
     flexGrow: 1,
   },
-  valueTitle: {
+  valueIndex: {
     fontFamily: fonts.semibold,
-    fontSize: typography.body + 1,
+    fontSize: 11,
+    letterSpacing: 1.2,
+  },
+  valueTitle: {
+    fontFamily: FONT_HEADING,
+    fontSize: 18,
+    lineHeight: 24,
   },
   valueBody: {
     fontFamily: fonts.regular,
-    fontSize: typography.caption,
+    fontSize: typography.caption + 1,
     lineHeight: 20,
   },
   galleryWrap: {
-    gap: spacing.sm,
+    gap: 6,
+    marginTop: spacing.xs,
   },
   galleryHeading: {
     fontFamily: FONT_HEADING,
     fontSize: 24,
-    marginTop: spacing.xs,
+    letterSpacing: -0.3,
+    marginBottom: spacing.xs,
   },
   galleryGrid: {
-    gap: spacing.md,
-    marginTop: spacing.sm,
-  },
-  galleryGridWide: {
     flexDirection: "row",
     flexWrap: "wrap",
   },
   galleryCell: {
-    width: "100%",
-  },
-  galleryCellHalf: {
-    width: "48%",
+    minWidth: 140,
     flexGrow: 1,
-    minWidth: 240,
   },
 });

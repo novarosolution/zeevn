@@ -119,8 +119,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
           zIndex: WEB_Z_INDEX.header,
         },
         !isDark ? styles.shellLightWeb : null,
-        { backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)" },
-        isDark ? { backdropFilter: "blur(16px)" } : null,
+        isDark ? { backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" } : null,
       ]}
       accessibilityRole="header"
     >
@@ -297,8 +296,8 @@ const styles = StyleSheet.create({
   shellLightWeb: {
     ...Platform.select({
       web: {
-        backgroundColor: "rgba(248, 240, 224, 0.82)",
-        boxShadow: "0 1px 0 rgba(36, 68, 36, 0.06), 0 12px 40px -24px rgba(21, 18, 16, 0.12)",
+        backgroundColor: KANKREG_CHROME.topbarSolid,
+        boxShadow: "0 1px 0 rgba(36, 68, 36, 0.08)",
       },
       default: {},
     }),

@@ -37,6 +37,7 @@ import { fonts, icon, radius, spacing, typography } from "../theme/tokens";
 import { formatINR } from "../utils/currency";
 import { formatCompactShippingLine } from "../utils/shippingAddressFormat";
 import { platformShadow } from "../theme/shadowPlatform";
+import { StoreOrderConfirmed } from "../components/store/entry";
 
 const COPY = ORDER_CELEBRATION_UI.screen;
 
@@ -143,6 +144,10 @@ export default function OrderConfirmedScreen({ navigation, route }) {
     if (!order || Platform.OS === "web") return;
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
   }, [order]);
+
+  if (Platform.OS !== "web") {
+    return <StoreOrderConfirmed navigation={navigation} order={order} />;
+  }
 
   if (!order?._id && !order?.id) {
     return (
@@ -279,22 +284,16 @@ export default function OrderConfirmedScreen({ navigation, route }) {
         <SectionReveal preset="fade-up" delay={220}>
           <View style={styles.actions}>
             <PremiumButton
-              label={COPY.ctaPrimary}
+              label={COPY.ctaSecondary || "Continue shopping"}
               variant="primary"
-              iconLeft="navigate-outline"
-              onPress={() => navigation.replace("MyOrders")}
-            />
-            <PremiumButton
-              label={COPY.ctaSecondary}
-              variant="secondary"
               iconLeft="bag-outline"
               onPress={() => navigation.replace("Shop")}
             />
             <PremiumButton
-              label={COPY.ctaHome}
-              variant="ghost"
-              iconLeft="home-outline"
-              onPress={() => navigation.replace("Home")}
+              label={COPY.ctaPrimary || "View orders"}
+              variant="secondary"
+              iconLeft="receipt-outline"
+              onPress={() => navigation.replace("MyOrders")}
             />
           </View>
         </SectionReveal>

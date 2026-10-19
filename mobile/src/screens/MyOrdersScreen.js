@@ -4,7 +4,6 @@ import {
   Platform,
   RefreshControl,
   StyleSheet,
-  Text,
   View} from "react-native";
 import SectionReveal from "../components/motion/SectionReveal";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
@@ -48,6 +47,7 @@ import { MY_ORDERS_UI } from "../content/appContent";
 import { getOrdersPageEyebrow } from "../utils/orderDisplay";
 import { buildOrderInvoiceHtml } from "../utils/orderInvoiceHtml";
 import { printInvoiceOnWeb } from "../utils/printInvoiceWeb";
+import { StoreOrders } from "../components/store/entry";
 
 export default function MyOrdersScreen({ navigation, route }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
@@ -362,6 +362,51 @@ export default function MyOrdersScreen({ navigation, route }) {
   }
   if (!isAuthenticated) {
     return <AuthGateShell signedOut navigation={navigation} />;
+  }
+
+  if (Platform.OS !== "web") {
+    return (
+      <StoreOrders
+        navigation={navigation}
+        user={user}
+        token={token}
+        loading={loading}
+        refreshing={refreshing}
+        onRefresh={onPullRefresh}
+        onReload={loadOrders}
+        error={error}
+        onDismissError={() => setError("")}
+        success={success}
+        onDismissSuccess={() => setSuccess("")}
+        orders={orders}
+        stats={orderStats}
+        eyebrow={pageEyebrow}
+        filter={filter}
+        onFilterChange={setFilter}
+        counts={filterCounts}
+        activeOrders={activeOrders}
+        historyOrders={historyOrders}
+        visibleOrders={visibleOrders}
+        renderCount={renderCount}
+        onLoadMore={() => setRenderCount((prev) => prev + 20)}
+        expandedOrderId={expandedOrderId}
+        onToggleDetails={(orderId) => setExpandedOrderId((current) => (current === orderId ? "" : orderId))}
+        editingOrderId={editingOrderId}
+        addressForm={addressForm}
+        onAddressChange={handleAddressChange}
+        onOpenEdit={openEditAddress}
+        onSaveAddress={handleSaveAddress}
+        onCancelEdit={() => setEditingOrderId("")}
+        savingOrderId={savingOrderId}
+        canEditAddress={canEditAddress}
+        onDownloadInvoice={handleDownloadInvoice}
+        downloadingOrderId={downloadingOrderId}
+        onClaimReward={handleClaimReward}
+        claimingRewardOrderId={claimingRewardOrderId}
+        onReorder={handleReorder}
+        reorderingOrderId={reorderingOrderId}
+      />
+    );
   }
 
   return (
@@ -1060,10 +1105,11 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     flexWrap: "wrap",
     gap: spacing.xs},
   amountMain: {
-    fontFamily: fonts.extrabold,
+    fontFamily: FONT_PRICE,
     fontSize: typography.h3,
     color: c.textPrimary,
-    letterSpacing: -0.3},
+    letterSpacing: -0.3,
+    fontWeight: "600"},
   amountMeta: {
     fontSize: typography.caption,
     color: c.textMuted,
@@ -1079,11 +1125,11 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
     paddingVertical: spacing.lg,
     gap: spacing.md},
   statusChip: {
-    borderRadius: radius.md,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: c.primaryBorder,
     backgroundColor: c.primarySoft,
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
     paddingVertical: 5,
     alignSelf: "flex-start"},
   statusChipSuccess: {
@@ -1098,7 +1144,9 @@ function createMyOrdersStyles(c, shadowPremium, isDark, layoutFlags = {}) {
   statusChipText: {
     color: c.textPrimary,
     fontSize: typography.overline,
-    fontFamily: fonts.bold},
+    fontFamily: fonts.bold,
+    letterSpacing: 0.4,
+    textTransform: "uppercase"},
   meta: {
     marginTop: 4,
     color: c.textSecondary,

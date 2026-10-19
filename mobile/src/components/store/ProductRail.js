@@ -8,7 +8,15 @@ import ProductCard from "./ProductCard";
 export const RAIL_CARD_WIDTH = 168;
 
 /** Horizontal product rail with a trailing “See all” card. */
-export default function ProductRail({ products, onProductPress, onSeeAll, seeAllLabel = "See all", cardWidth = RAIL_CARD_WIDTH }) {
+/** `rankTop`: the first N products carry a gold #1…#N badge (0 = none). */
+export default function ProductRail({
+  products,
+  onProductPress,
+  onSeeAll,
+  seeAllLabel = "See all",
+  cardWidth = RAIL_CARD_WIDTH,
+  rankTop = 0,
+}) {
   const { c, r, type, gutter, shadow } = useStoreTheme();
   const items = Array.isArray(products) ? products : [];
   if (!items.length) return null;
@@ -22,8 +30,14 @@ export default function ProductRail({ products, onProductPress, onSeeAll, seeAll
       snapToAlignment="start"
       contentContainerStyle={[styles.content, { paddingHorizontal: gutter }]}
     >
-      {items.map((product) => (
-        <ProductCard key={product.id} product={product} width={cardWidth} onPress={() => onProductPress?.(product)} />
+      {items.map((product, index) => (
+        <ProductCard
+          key={product.id}
+          product={product}
+          width={cardWidth}
+          rank={index < rankTop ? index + 1 : undefined}
+          onPress={() => onProductPress?.(product)}
+        />
       ))}
       {onSeeAll ? (
         <PressableScale

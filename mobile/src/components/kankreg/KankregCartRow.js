@@ -3,7 +3,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
-import { KANKREG_PALETTE, ZEEVAN_GOLD, ZEEVAN_GREEN } from "../../theme/kankregWeb";
+import { KANKREG_PALETTE, ZEEVAN_GREEN } from "../../theme/kankregWeb";
 import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import { formatINR } from "../../utils/currency";
 import { getProductThumbImageUri } from "../../utils/image";
@@ -222,24 +222,24 @@ function createStyles(c, isDark) {
       gap: 2,
       padding: 3,
       borderRadius: 12,
-      borderWidth: 1,
-      borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(36, 68, 36, 0.14)",
-      backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(252, 248, 240, 0.95)",
+      borderWidth: 1.5,
+      borderColor: isDark ? "rgba(168,184,108,0.35)" : ZEEVAN_GREEN.border,
+      backgroundColor: isDark ? "rgba(255,255,255,0.04)" : ZEEVAN_GREEN.soft,
     },
     qtyBtn: {
       width: 34,
       height: 34,
       borderRadius: 10,
-      backgroundColor: isDark ? "rgba(255,255,255,0.08)" : "#fff",
+      backgroundColor: isDark ? "rgba(255,255,255,0.08)" : KANKREG_PALETTE.card,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(36, 68, 36, 0.1)",
+      borderColor: isDark ? "rgba(255,255,255,0.1)" : ZEEVAN_GREEN.border,
       alignItems: "center",
       justifyContent: "center",
       ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
     },
     qtyBtnPressed: {
       opacity: 0.8,
-      backgroundColor: isDark ? "rgba(168,184,108,0.18)" : ZEEVAN_GOLD.soft,
+      backgroundColor: isDark ? "rgba(168,184,108,0.18)" : "rgba(85, 107, 50, 0.18)",
     },
     qtyNum: {
       minWidth: 28,

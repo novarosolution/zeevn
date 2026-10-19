@@ -200,7 +200,9 @@ export default function RegisterScreen({ navigation }) {
           contentContainerStyle={
             Platform.OS !== "web"
               ? { flexGrow: 1, paddingBottom: adminScrollPaddingBottom(insets), paddingHorizontal: 0 }
-              : { paddingBottom: spacing.xxl + spacing.lg }
+              : !useAuthSplit
+                ? { flexGrow: 1, paddingBottom: spacing.xl, paddingTop: 0 }
+                : { paddingBottom: spacing.xxl + spacing.lg }
           }
           keyboardShouldPersistTaps="handled"
         >

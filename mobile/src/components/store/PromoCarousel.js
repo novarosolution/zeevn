@@ -1,9 +1,20 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { FlatList, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import React, { useCallback, useEffect, useRef } from "react";
+import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Defs, LinearGradient as SvgGradient, Path, Stop } from "react-native-svg";
+import Animated, {
+  interpolate,
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from "react-native-reanimated";
+import { STORE_SECTIONS } from "../../content/storefrontContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
+import { useLoop } from "./HomeArt";
+import { DepthSlide, PagerDots } from "./HomeMotion";
 import { Sparkle } from "./Ornaments";
 import PressableScale from "./PressableScale";
 import StoreIcon from "./StoreIcon";
@@ -11,6 +22,7 @@ import StoreIcon from "./StoreIcon";
 const GAP = 10;
 const CARD_H = 196;
 const AUTOPLAY_MS = 5600;
+const AnimatedFlatList = Animated.FlatList;
 
 export function CoinArt({ size = 132 }) {
   return (
@@ -41,6 +53,19 @@ export function CoinArt({ size = 132 }) {
   );
 }
 
+/** Gently bobbing coins. */
+function FloatingCoins() {
+  const t = useLoop(2200);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: interpolate(t.value, [0, 1], [3, -6]) }, { rotate: `${interpolate(t.value, [0, 1], [-2, 3])}deg` }],
+  }));
+  return (
+    <Animated.View style={[styles.coinArt, animatedStyle]} pointerEvents="none">
+      <CoinArt />
+    </Animated.View>
+  );
+}
+
 function CtaPill({ label, color, textColor }) {
   const { type } = useStoreTheme();
   return (
@@ -50,26 +75,41 @@ function CtaPill({ label, color, textColor }) {
   );
 }
 
-function RewardsCard({ item, width, isDark }) {
+function RewardsCard({ item, width, isDark, signedIn, points }) {
   const { c, r, type } = useStoreTheme();
   const colors = isDark ? ["#4A3812", "#2E2209"] : ["#FFF0C9", "#F8D68C"];
+  const personal = signedIn && item.signedIn;
+  const title = personal ? item.signedIn.title(Number(points || 0).toLocaleString("en-IN")) : item.title;
+  const subtitle = personal ? item.signedIn.subtitle : item.subtitle;
+  const cta = personal ? item.signedIn.cta : item.cta;
   return (
     <View style={[styles.card, { width, borderRadius: r.xxl }]}>
       <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-      <View style={styles.coinArt} pointerEvents="none">
-        <CoinArt />
-      </View>
+      <FloatingCoins />
       <View style={styles.copy}>
         <Text style={type.eyebrow(isDark ? c.goldText : "#8A5A12", 10)}>{item.eyebrow}</Text>
         <Text style={[type.display(26, { color: isDark ? c.ink : "#3A2A0C", ls: -0.5, lh: 29 }), styles.heading]} numberOfLines={2}>
-          {item.title}
+          {title}
         </Text>
         <Text style={type.ui(13, "medium", isDark ? c.inkSoft : "#6A4A1C")} numberOfLines={2}>
-          {item.subtitle}
+          {subtitle}
         </Text>
-        <CtaPill label={item.cta} color={isDark ? c.gold : "#2A1E08"} textColor={isDark ? "#2A1E08" : "#FFF3D0"} />
+        <CtaPill label={cta} color={isDark ? c.gold : "#2A1E08"} textColor={isDark ? "#2A1E08" : "#FFF3D0"} />
       </View>
     </View>
+  );
+}
+
+/** The watermark icon on the delivery card drifts gently, like the van is rolling. */
+function GlidingIcon({ icon }) {
+  const t = useLoop(3400);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: interpolate(t.value, [0, 1], [-10, 8]) }, { translateY: interpolate(t.value, [0, 1], [1, -3]) }],
+  }));
+  return (
+    <Animated.View style={[styles.featureIcon, animatedStyle]} pointerEvents="none">
+      <StoreIcon icon={icon} size={118} color={withAlpha("#FFFFFF", 0.09)} />
+    </Animated.View>
   );
 }
 
@@ -79,9 +119,7 @@ function FeatureCard({ item, width, isDark }) {
   return (
     <View style={[styles.card, { width, borderRadius: r.xxl }]}>
       <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-      <View style={styles.featureIcon} pointerEvents="none">
-        <StoreIcon icon={item.icon} size={118} color={withAlpha("#FFFFFF", 0.09)} />
-      </View>
+      <GlidingIcon icon={item.icon} />
       <View style={styles.copy}>
         <Text style={type.eyebrow(c.goldBright, 10)}>{item.eyebrow}</Text>
         <Text style={[type.display(24, { color: "#FFFFFF", ls: -0.4, lh: 28 }), styles.heading]} numberOfLines={2}>
@@ -99,9 +137,13 @@ function FeatureCard({ item, width, isDark }) {
 function ImageCard({ item, width }) {
   const { c, r, type, isDark } = useStoreTheme();
   const source = typeof item.image === "number" ? item.image : { uri: item.image };
+  const zoom = useLoop(9000);
+  const zoomStyle = useAnimatedStyle(() => ({ transform: [{ scale: interpolate(zoom.value, [0, 1], [1, 1.07]) }] }));
   return (
     <View style={[styles.card, { width, borderRadius: r.xxl, backgroundColor: c.soft }]}>
-      <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} cachePolicy="memory-disk" />
+      <Animated.View style={[StyleSheet.absoluteFill, zoomStyle]}>
+        <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} cachePolicy="memory-disk" />
+      </Animated.View>
       <LinearGradient
         colors={["transparent", withAlpha(isDark ? "#0A0806" : "#1A140C", 0.78)]}
         locations={[0.35, 1]}
@@ -119,6 +161,11 @@ function ImageCard({ item, width }) {
             {item.title}
           </Text>
         ) : null}
+        {item.subtitle ? (
+          <Text style={type.ui(12.5, "medium", withAlpha("#FFFFFF", 0.86))} numberOfLines={1}>
+            {item.subtitle}
+          </Text>
+        ) : null}
         {item.cta ? (
           <View style={[styles.imageCta, { backgroundColor: withAlpha("#FFFFFF", 0.94) }]}>
             <Text style={type.ui(12.5, "extrabold", "#244424", { letterSpacing: 0.2 })}>{item.cta}</Text>
@@ -130,26 +177,62 @@ function ImageCard({ item, width }) {
   );
 }
 
-/** Peeking, auto-advancing promo carousel with animated page dots. */
-export default function PromoCarousel({ items, onPressItem }) {
-  const { c, isDark, gutter, shadow } = useStoreTheme();
+function Slide({ item, index, scrollX, step, width, isDark, signedIn, points, onPress }) {
+  const { shadow } = useStoreTheme();
+  return (
+    <DepthSlide index={index} scrollX={scrollX} step={step}>
+      <PressableScale
+        onPress={onPress}
+        scaleTo={0.98}
+        accessibilityRole="button"
+        accessibilityLabel={item.title || item.cta || STORE_SECTIONS.promoA11y}
+        style={[shadow.soft, { height: CARD_H }]}
+      >
+        {item.kind === "rewards" ? (
+          <RewardsCard item={item} width={width} isDark={isDark} signedIn={signedIn} points={points} />
+        ) : item.kind === "feature" ? (
+          <FeatureCard item={item} width={width} isDark={isDark} />
+        ) : (
+          <ImageCard item={item} width={width} />
+        )}
+      </PressableScale>
+    </DepthSlide>
+  );
+}
+
+/** Peeking, auto-advancing promo carousel with depth scaling and animated page dots. */
+export default function PromoCarousel({ items, onPressItem, signedIn = false, points = 0 }) {
+  const { isDark, gutter } = useStoreTheme();
   const { width } = useWindowDimensions();
   const cardW = Math.round(width * 0.88);
   const step = cardW + GAP;
   const listRef = useRef(null);
   const indexRef = useRef(0);
   const pausedUntil = useRef(0);
-  const [index, setIndex] = useState(0);
+  const scrollX = useSharedValue(0);
 
-  const onScroll = useCallback(
-    (e) => {
-      const next = Math.min(items.length - 1, Math.max(0, Math.round(e.nativeEvent.contentOffset.x / step)));
-      if (next !== indexRef.current) {
-        indexRef.current = next;
-        setIndex(next);
-      }
+  const setIndex = useCallback((next) => {
+    indexRef.current = next;
+  }, []);
+  const pause = useCallback(() => {
+    pausedUntil.current = Date.now() + 9000;
+  }, []);
+
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      scrollX.value = e.contentOffset.x;
     },
-    [items.length, step]
+    onBeginDrag: () => {
+      runOnJS(pause)();
+    },
+  });
+
+  useAnimatedReaction(
+    () => Math.round(scrollX.value / step),
+    (now, prev) => {
+      if (now !== prev) runOnJS(setIndex)(now);
+    },
+    [step]
   );
 
   useEffect(() => {
@@ -166,7 +249,7 @@ export default function PromoCarousel({ items, onPressItem }) {
 
   return (
     <View style={styles.wrap}>
-      <FlatList
+      <AnimatedFlatList
         ref={listRef}
         data={items}
         horizontal
@@ -175,40 +258,24 @@ export default function PromoCarousel({ items, onPressItem }) {
         snapToInterval={step}
         snapToAlignment="start"
         decelerationRate="fast"
-        scrollEventThrottle={32}
+        scrollEventThrottle={16}
         onScroll={onScroll}
-        onScrollBeginDrag={() => {
-          pausedUntil.current = Date.now() + 9000;
-        }}
         contentContainerStyle={{ paddingHorizontal: gutter, gap: GAP }}
-        renderItem={({ item }) => (
-          <PressableScale
+        renderItem={({ item, index }) => (
+          <Slide
+            item={item}
+            index={index}
+            scrollX={scrollX}
+            step={step}
+            width={cardW}
+            isDark={isDark}
+            signedIn={signedIn}
+            points={points}
             onPress={() => onPressItem?.(item)}
-            scaleTo={0.98}
-            accessibilityRole="button"
-            accessibilityLabel={item.title || item.cta || "Promotion"}
-            style={[shadow.soft, { height: CARD_H }]}
-          >
-            {item.kind === "rewards" ? (
-              <RewardsCard item={item} width={cardW} isDark={isDark} />
-            ) : item.kind === "feature" ? (
-              <FeatureCard item={item} width={cardW} isDark={isDark} />
-            ) : (
-              <ImageCard item={item} width={cardW} />
-            )}
-          </PressableScale>
+          />
         )}
       />
-      {items.length > 1 ? (
-        <View style={styles.dots}>
-          {items.map((item, i) => (
-            <View
-              key={item.key}
-              style={[styles.dot, { width: i === index ? 20 : 6, backgroundColor: i === index ? c.brand : c.lineStrong }]}
-            />
-          ))}
-        </View>
-      ) : null}
+      <PagerDots count={items.length} scrollX={scrollX} step={step} />
     </View>
   );
 }
@@ -238,6 +305,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 13,
     borderRadius: 16,
   },
-  dots: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 5 },
-  dot: { height: 6, borderRadius: 3 },
 });

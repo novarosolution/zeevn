@@ -2,9 +2,11 @@ import React, { memo, useCallback, useMemo, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } from "react-native-reanimated";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
+import { STORE_CARD, STORE_SECTIONS } from "../../content/storefrontContent";
 import { useStoreTheme } from "../../theme/storefront";
 import { formatINRWhole } from "../../utils/currency";
 import { hapticTap } from "../../utils/haptics";
@@ -44,13 +46,30 @@ function Heart({ active, onPress }) {
       onPress={handlePress}
       hitSlop={8}
       accessibilityRole="button"
-      accessibilityLabel={active ? "Remove from wishlist" : "Save to wishlist"}
+      accessibilityLabel={active ? STORE_CARD.wishlistRemove : STORE_CARD.wishlistAdd}
       style={styles.heartHit}
     >
       <AnimatedView style={[styles.heart, shadow.soft, { backgroundColor: c.card }, popStyle]}>
         <Ionicons name={active ? "heart" : "heart-outline"} size={16} color={active ? c.danger : c.inkSoft} />
       </AnimatedView>
     </Pressable>
+  );
+}
+
+/** Gold "1 / 2 / 3" medal pinned to a card's top-left corner (Bestsellers). */
+function RankBadge({ rank }) {
+  const { c, type } = useStoreTheme();
+  return (
+    <View
+      style={[styles.rank, { borderColor: c.card }]}
+      accessible
+      accessibilityLabel={STORE_SECTIONS.bestsellers.rankA11y(rank)}
+    >
+      <LinearGradient colors={[c.goldBright, c.gold]} style={StyleSheet.absoluteFill} />
+      <Text style={type.display(14, { color: "#3A2A0C", ls: 0, lh: 17 })} allowFontScaling={false}>
+        {rank}
+      </Text>
+    </View>
   );
 }
 
@@ -117,7 +136,7 @@ function CardImage({ uris, size, gallery, dim, c }) {
  * @param {number} width   tile width in points
  * @param {boolean} gallery swipeable image gallery (use in vertical grids, not horizontal rails)
  */
-function ProductCard({ product, width = 172, onPress, gallery = false, style }) {
+function ProductCard({ product, width = 172, onPress, gallery = false, rank, style }) {
   const { c, r, type, shadow } = useStoreTheme();
   const { addToCart, removeFromCart, getItemQuantity } = useCart();
   const wishlist = useWishlist();
@@ -140,8 +159,8 @@ function ProductCard({ product, width = 172, onPress, gallery = false, style }) 
   const showRating = rating >= 3.5 && (Number(product.reviewCount) || 0) > 0;
 
   const badge = useMemo(() => {
-    if (state === "soon") return { text: "COMING SOON", tone: "soon" };
-    if (pricing.discountPct) return { text: `${pricing.discountPct}% OFF`, tone: "offer" };
+    if (state === "soon") return { text: STORE_CARD.comingSoon, tone: "soon" };
+    if (pricing.discountPct) return { text: STORE_CARD.off(pricing.discountPct), tone: "offer" };
     if (product.badgeText) return { text: String(product.badgeText).toUpperCase(), tone: "brand" };
     return null;
   }, [state, pricing.discountPct, product.badgeText]);
@@ -174,8 +193,9 @@ function ProductCard({ product, width = 172, onPress, gallery = false, style }) 
         style,
       ]}
       accessibilityRole="button"
-      accessibilityLabel={`${product.name}, ${formatINRWhole(pricing.price)}`}
+      accessibilityLabel={STORE_CARD.a11y.tile(product.name, formatINRWhole(pricing.price))}
     >
+      {rank ? <RankBadge rank={rank} /> : null}
       <View style={[styles.well, { width: imageSize, height: imageSize, backgroundColor: c.well, borderRadius: r.lg }]}>
         <CardImage uris={uris} size={imageSize} gallery={gallery} dim={dim} c={c} />
         {badge ? (
@@ -192,7 +212,7 @@ function ProductCard({ product, width = 172, onPress, gallery = false, style }) 
         {state === "sold" ? (
           <View style={styles.soldWrap} pointerEvents="none">
             <View style={[styles.soldTag, { backgroundColor: c.glassStrong, borderColor: c.line }]}>
-              <Text style={type.ui(11, "bold", c.inkSoft, { letterSpacing: 0.4 })}>Out of stock</Text>
+              <Text style={type.ui(11, "bold", c.inkSoft, { letterSpacing: 0.4 })}>{STORE_CARD.outOfStock}</Text>
             </View>
           </View>
         ) : null}
@@ -218,7 +238,7 @@ function ProductCard({ product, width = 172, onPress, gallery = false, style }) 
 
       <View style={styles.info}>
         <View style={styles.priceRow}>
-          {pricing.from ? <Text style={type.ui(11.5, "semibold", c.inkMute)}>From</Text> : null}
+          {pricing.from ? <Text style={type.ui(11.5, "semibold", c.inkMute)}>{STORE_CARD.from}</Text> : null}
           <Text style={type.ui(17, "extrabold", c.ink, { letterSpacing: -0.2 })}>{formatINRWhole(pricing.price)}</Text>
           {pricing.mrp ? (
             <Text style={[type.ui(12, "regular", c.inkMute), styles.strike]}>{formatINRWhole(pricing.mrp)}</Text>
@@ -275,6 +295,19 @@ const styles = StyleSheet.create({
     borderRadius: 9,
   },
   heartHit: { position: "absolute", top: 6, right: 6 },
+  rank: {
+    position: "absolute",
+    top: -8,
+    left: -6,
+    zIndex: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2.5,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   heart: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
   dots: {
     position: "absolute",

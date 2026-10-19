@@ -1,18 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
-import { useStoreTheme } from "../../theme/storefront";
+import { STORE_HEADER } from "../../content/storefrontContent";
+import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import PressableScale from "./PressableScale";
 
 const ROTATE_MS = 2800;
+const RIM = 1.5;
 
 /**
- * Tappable search pill with a rotating “Search "A2 desi cow ghee"” hint.
- * `compact` is the slimmer variant used in the pinned scroll header.
+ * Tappable search pill with a rotating “Search "A2 desi cow ghee"” hint. The full-size bar has a fine gold rim;
+ * `compact` is the slimmer, flat variant used in the pinned scroll header.
  */
 export default function StoreSearchBar({ onPress, hints = [], prefix = "Search", compact = false, style }) {
-  const { c, type, shadow } = useStoreTheme();
+  const { c, type, shadow, isDark } = useStoreTheme();
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -22,28 +25,11 @@ export default function StoreSearchBar({ onPress, hints = [], prefix = "Search",
   }, [hints.length]);
 
   const hint = hints[index % Math.max(hints.length, 1)] || "";
-  const height = compact ? 44 : 52;
-
-  return (
-    <PressableScale
-      onPress={onPress}
-      scaleTo={0.985}
-      accessibilityRole="search"
-      accessibilityLabel="Search products"
-      style={[
-        styles.bar,
-        compact ? shadow.none : shadow.card,
-        {
-          height,
-          borderRadius: height / 2,
-          backgroundColor: compact ? c.soft : c.card,
-          borderColor: compact ? "transparent" : c.line,
-        },
-        style,
-      ]}
-    >
-      <View style={[styles.searchGlyph, { backgroundColor: c.brandSoft }]}>
-        <Ionicons name="search" size={compact ? 15 : 17} color={c.brand} />
+  const height = compact ? 44 : 54;
+  const inner = (
+    <>
+      <View style={[styles.searchGlyph, { backgroundColor: compact ? c.brandSoft : isDark ? withAlpha(c.gold, 0.16) : c.goldSoft }]}>
+        <Ionicons name="search" size={compact ? 15 : 17} color={compact ? c.brand : c.goldText} />
       </View>
       <View style={styles.textWrap}>
         <Text style={type.ui(compact ? 14.5 : 15.5, "medium", c.inkMute)} numberOfLines={1}>
@@ -63,22 +49,54 @@ export default function StoreSearchBar({ onPress, hints = [], prefix = "Search",
           ) : null}
         </View>
       </View>
+    </>
+  );
+
+  if (compact) {
+    return (
+      <PressableScale
+        onPress={onPress}
+        scaleTo={0.985}
+        accessibilityRole="search"
+        accessibilityLabel={STORE_HEADER.a11y.search}
+        style={[styles.bar, { height, borderRadius: height / 2, backgroundColor: c.soft }, style]}
+      >
+        {inner}
+      </PressableScale>
+    );
+  }
+
+  return (
+    <PressableScale
+      onPress={onPress}
+      scaleTo={0.985}
+      accessibilityRole="search"
+      accessibilityLabel={STORE_HEADER.a11y.search}
+      style={[shadow.card, { height, borderRadius: height / 2, backgroundColor: c.card }, style]}
+    >
+      <LinearGradient
+        colors={[withAlpha(c.gold, isDark ? 0.6 : 0.85), withAlpha(c.gold, isDark ? 0.14 : 0.2), withAlpha(c.gold, isDark ? 0.42 : 0.6)]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[StyleSheet.absoluteFill, { borderRadius: height / 2 }]}
+      />
+      <View style={[styles.bar, { margin: RIM, borderRadius: height / 2 - RIM, backgroundColor: c.card }]}>{inner}</View>
     </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
   bar: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     paddingHorizontal: 10,
-    borderWidth: StyleSheet.hairlineWidth,
   },
   searchGlyph: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
   },

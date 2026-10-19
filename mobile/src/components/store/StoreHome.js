@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshControl, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
@@ -15,19 +15,22 @@ import Animated, {
 } from "react-native-reanimated";
 import { useAuth } from "../../context/AuthContext";
 import { useDeliveryLocation } from "../../hooks/useDeliveryLocation";
+import { HOME_TESTIMONIALS } from "../../content/appContent";
 import {
   STORE_HEADER,
+  STORE_HOME,
   STORE_LINE_PAGES,
   STORE_PROMOS,
   STORE_SECTIONS,
   STORE_TABS,
   STORE_TRUST,
+  getFestivalCountdown,
   resolveFestivalTheme,
 } from "../../content/storefrontContent";
 import { getProductLineByKey } from "../../content/zeevanCatalogContent";
-import { STORE_NAV_HEIGHT, useStoreTheme } from "../../theme/storefront";
+import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { getHeroSlideImageUri } from "../../utils/image";
-import { getAppHeroSlides } from "../../utils/homeViewMedia";
+import { getAppHeroSlides, resolveCompareDisplay, resolveProcessDisplay } from "../../utils/homeViewMedia";
 import {
   STORE_LINE_ORDER,
   buildCategoryTiles,
@@ -47,21 +50,28 @@ import CategoryGrid, { SeeAllBar } from "./CategoryGrid";
 import FestiveBanner from "./FestiveBanner";
 import FestivePicks from "./FestivePicks";
 import FloatingNav from "./FloatingNav";
+import { HomeScrollProvider, Reveal } from "./HomeMotion";
 import LineLanding from "./LineLanding";
 import ProductRail from "./ProductRail";
 import PromoCarousel from "./PromoCarousel";
 import { SectionHeader } from "./SectionTitle";
 import StoreHeader from "./StoreHeader";
 import StoreIcon from "./StoreIcon";
+import StoreCompare from "./StoreCompare";
+import StoreProcess from "./StoreProcess";
+import StoreReviews from "./StoreReviews";
 import StoreSearchBar from "./StoreSearchBar";
 import StoreTabs from "./StoreTabs";
-import { BrandFooter, TrustStrip } from "./TrustFooter";
+import StoreTracker, { useActiveOrders } from "./StoreTracker";
+import { BrandFooter, CertificationsRow, HelpCard, TrustStrip } from "./TrustFooter";
 import PressableScale from "./PressableScale";
 import { VariantSheetProvider } from "./VariantSheet";
 
 const GRADIENT_OVERSCROLL = 800;
 const GRADIENT_HEIGHT = 620;
 const BACK_TO_TOP_AT = 1100;
+/** Header text is fully faded once the page has scrolled this far. */
+const HEADER_FADE_AT = 190;
 
 function EmptyState({ icon, title, body, cta, onPress }) {
   const { c, r, type, gutter } = useStoreTheme();
@@ -82,9 +92,10 @@ function EmptyState({ icon, title, body, cta, onPress }) {
 }
 
 /**
- * Native Home — quick-commerce layout in the Zeevan look: festival-gradient header with greeting,
- * rotating search, category tabs that pin on scroll, festive band + bento, picks, promos,
- * category grid, product rails, trust strip, and the floating bottom nav.
+ * Native Home — quick-commerce layout in the Zeevan look: a festival-gradient header (location, rewards,
+ * greeting badge, delivery promise, chips), rotating search, category tabs that pin on scroll, then the
+ * sections listed in `STORE_HOME.layout` (or the festival theme's own order) rising into view as you
+ * scroll, and the floating bottom nav.
  */
 export default function StoreHome({
   navigation,
@@ -99,7 +110,7 @@ export default function StoreHome({
 }) {
   const { c, isDark, gutter } = useStoreTheme();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
+  const { width, height: windowH } = useWindowDimensions();
   const { user, isAuthenticated } = useAuth();
   const { displayLabel, savedLabel, snippet } = useDeliveryLocation();
 
@@ -109,14 +120,21 @@ export default function StoreHome({
   const activeTab = tabs.some((t) => t.key === requestedTab) ? requestedTab : "all";
   const activeTabDef = tabs.find((t) => t.key === activeTab) || tabs[0];
   const [pickKey, setPickKey] = useState(null);
+  const activeOrders = useActiveOrders();
 
-  /* ---- scroll-driven pinned header ---- */
+  /* ---- scroll-driven pinned header + section reveals ---- */
   const scrollRef = useAnimatedRef();
   const scrollY = useSharedValue(0);
   const searchY = useSharedValue(260);
+  const sectionsY = useSharedValue(0);
+  const viewportH = useSharedValue(windowH);
   const [compactVisible, setCompactVisible] = useState(false);
   const [topVisible, setTopVisible] = useState(false);
   const [compactH, setCompactH] = useState(150);
+
+  useEffect(() => {
+    viewportH.value = windowH;
+  }, [viewportH, windowH]);
 
   const onScroll = useAnimatedScrollHandler((e) => {
     scrollY.value = e.contentOffset.y;
@@ -142,6 +160,12 @@ export default function StoreHome({
       transform: [{ translateY: interpolate(scrollY.value, [start - 26, start], [-14, 0], Extrapolation.CLAMP) }],
     };
   });
+
+  // The greeting block drifts up a touch faster than the page and fades, so it hands over to the pinned bar.
+  const headerStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(scrollY.value, [0, HEADER_FADE_AT], [1, 0], Extrapolation.CLAMP),
+    transform: [{ translateY: -interpolate(scrollY.value, [0, HEADER_FADE_AT], [0, 22], Extrapolation.CLAMP) }],
+  }));
 
   const scrollToTop = useCallback(() => scrollRef.current?.scrollTo?.({ y: 0, animated: true }), [scrollRef]);
 
@@ -177,15 +201,20 @@ export default function StoreHome({
   const firstName = getFirstName(user);
   const signedInName = isAuthenticated && firstName;
   const etaLabel = useMemo(() => (STORE_HEADER.showDeliveryPromise ? mostCommonEta(products) : ""), [products]);
-  const eyebrow = etaLabel
-    ? STORE_HEADER.promiseEyebrow
-    : signedInName
-      ? festival.greeting
-        ? `${festival.greeting},`
-        : STORE_HEADER.greetingEyebrow
-      : STORE_HEADER.guestEyebrow;
+  const eyebrow = etaLabel ? STORE_HEADER.promiseEyebrow : signedInName ? STORE_HEADER.greetingEyebrow : STORE_HEADER.guestEyebrow;
   const title = etaLabel || (signedInName ? firstName : STORE_HEADER.guestTitle);
-  const points = Math.max(0, Number(user?.rewardPoints) || 0).toLocaleString("en-IN");
+  const points = Math.max(0, Number(user?.rewardPoints) || 0);
+
+  const badge = useMemo(
+    () =>
+      festival.greeting
+        ? {
+            label: signedInName ? `${festival.greeting}, ${firstName}` : festival.greeting,
+            countdown: getFestivalCountdown(festival),
+          }
+        : null,
+    [festival, firstName, signedInName]
+  );
 
   const chips = useMemo(() => {
     const list = [{ key: "delivery", icon: "truck-fast-outline", label: STORE_HEADER.deliveryChip }];
@@ -240,13 +269,32 @@ export default function StoreHome({
       kind: "image",
       image: getHeroSlideImageUri(slide.url, { layoutWidth: width }),
       title: slide.title,
-      cta: slide.cta || "Shop now",
+      subtitle: slide.subtitle,
+      cta: slide.cta || STORE_SECTIONS.promoCta,
       route: { name: "Shop" },
     }));
     return [...(rewards ? [rewards] : []), ...fromAdmin].slice(0, 5);
   }, [homeView?.heroSlides, width]);
 
   const categoryTiles = useMemo(() => buildCategoryTiles(products, { max: 8 }), [products]);
+
+  // Story sections are managed in Admin → Home view; they also follow its "show home sections" switch.
+  const showStory = homeView?.showHomeSections !== false;
+  const processDisplay = useMemo(() => (showStory ? resolveProcessDisplay(homeView?.processSection) : null), [showStory, homeView?.processSection]);
+  const compareDisplay = useMemo(() => (showStory ? resolveCompareDisplay(homeView?.compareSection) : null), [showStory, homeView?.compareSection]);
+  const reviewLine = useMemo(() => {
+    let total = 0;
+    let sum = 0;
+    products.forEach((product) => {
+      const count = Number(product?.reviewCount) || 0;
+      const rating = Number(product?.ratingAverage) || 0;
+      if (count > 0 && rating > 0) {
+        total += count;
+        sum += rating * count;
+      }
+    });
+    return total > 0 ? STORE_HOME.reviews.rating((sum / total).toFixed(1), total.toLocaleString("en-IN")) : "";
+  }, [products]);
 
   const bestsellers = useMemo(
     () => [...homeProducts].sort((a, b) => (Number(b.reviewCount) || 0) - (Number(a.reviewCount) || 0)).slice(0, 8),
@@ -272,6 +320,167 @@ export default function StoreHome({
     [go, openProduct]
   );
 
+  /* ---- sections, in the order the content layout asks for ---- */
+  const layout = Array.isArray(festival.layout) ? festival.layout : STORE_HOME.layout;
+  const blocks = [];
+  layout.forEach((key) => {
+    switch (key) {
+      case "tracker":
+        if (!activeOrders.length) break;
+        blocks.push({ key, node: <StoreTracker orders={activeOrders} onPress={() => navigation.navigate("MyOrders")} /> });
+        break;
+      case "banner":
+        blocks.push({ key, node: <FestiveBanner theme={festival} onPress={() => go(festival.banner.route)} /> });
+        break;
+      case "promos":
+        blocks.push({
+          key,
+          node: <PromoCarousel items={promos} signedIn={Boolean(isAuthenticated)} points={points} onPressItem={(item) => go(item.route)} />,
+        });
+        break;
+      case "categories":
+        if (!categoryTiles.length) break;
+        blocks.push({
+          key,
+          staggered: true,
+          node: (
+            <View style={styles.block}>
+              <SectionHeader
+                eyebrow={STORE_SECTIONS.categories.eyebrow}
+                title={homeView?.productTypeTitle || STORE_SECTIONS.categories.title}
+                action={STORE_SECTIONS.categories.action}
+                onAction={() => openShop()}
+              />
+              <CategoryGrid
+                tiles={categoryTiles}
+                moreSuffix={STORE_SECTIONS.categories.moreSuffix}
+                allLabel={STORE_SECTIONS.categories.allTile}
+                onPressTile={(tile) => openShop({ category: tile.label })}
+                onPressAll={() => openShop()}
+              />
+              <SeeAllBar images={categoryTiles.map((t) => t.image)} label={STORE_SECTIONS.seeAllProducts} onPress={() => openShop()} />
+            </View>
+          ),
+        });
+        break;
+      case "bento":
+        blocks.push({
+          key,
+          staggered: true,
+          node: (
+            <View style={styles.block}>
+              {festival.bento.title ? (
+                <SectionHeader
+                  eyebrow={festival.bento.eyebrow}
+                  title={festival.bento.title}
+                  action={festival.bento.action}
+                  onAction={() => go(festival.bento.route)}
+                />
+              ) : null}
+              <BentoGrid tall={bento.tall} tiles={bento.tiles} colors={festival.bento.colors} onPressItem={onBentoPress} />
+            </View>
+          ),
+        });
+        break;
+      case "bestsellers":
+        if (!bestsellers.length) break;
+        blocks.push({
+          key,
+          node: (
+            <View style={styles.block}>
+              <SectionHeader
+                eyebrow={STORE_SECTIONS.bestsellers.eyebrow}
+                title={homeView?.primeSectionTitle || STORE_SECTIONS.bestsellers.title}
+                action={STORE_SECTIONS.bestsellers.action}
+                onAction={() => openShop()}
+              />
+              <ProductRail
+                products={bestsellers}
+                rankTop={STORE_SECTIONS.bestsellers.rankTop}
+                seeAllLabel={STORE_SECTIONS.bestsellers.action}
+                onProductPress={openProduct}
+                onSeeAll={() => openShop()}
+              />
+            </View>
+          ),
+        });
+        break;
+      case "picks":
+        if (!picks.length) break;
+        blocks.push({
+          key,
+          node: (
+            <FestivePicks
+              title={festival.picks.title}
+              caption={festival.picks.caption}
+              picks={picks}
+              activeKey={activePickKey}
+              onChange={setPickKey}
+              onProductPress={openProduct}
+              onSeeAll={(pick) => go(pick.route)}
+            />
+          ),
+        });
+        break;
+      case "lines":
+        lineRails.forEach((line) => {
+          const page = STORE_LINE_PAGES[line.key] || {};
+          blocks.push({
+            key: `line-${line.key}`,
+            node: (
+              <View style={styles.block}>
+                <SectionHeader
+                  icon={STORE_TABS.find((tab) => tab.lineKey === line.key)?.icon}
+                  eyebrow={STORE_SECTIONS.lineRail.eyebrow}
+                  title={page.title || line.key}
+                  caption={page.subtitle}
+                  action={STORE_SECTIONS.lineRail.action}
+                  onAction={() => openShop(page.shopPill ? { pill: page.shopPill } : page.category ? { category: page.category } : undefined)}
+                />
+                <ProductRail products={line.list} seeAllLabel={STORE_SECTIONS.lineRail.action} onProductPress={openProduct} />
+              </View>
+            ),
+          });
+        });
+        break;
+      case "process":
+        if (!processDisplay) break;
+        blocks.push({ key, node: <StoreProcess data={processDisplay} /> });
+        break;
+      case "compare":
+        if (!compareDisplay) break;
+        blocks.push({ key, staggered: true, node: <StoreCompare data={compareDisplay} /> });
+        break;
+      case "reviews":
+        if (!HOME_TESTIMONIALS.items?.length) break;
+        blocks.push({
+          key,
+          node: <StoreReviews items={HOME_TESTIMONIALS.items} overline={HOME_TESTIMONIALS.overline} title={HOME_TESTIMONIALS.title} caption={reviewLine} />,
+        });
+        break;
+      case "trust":
+        blocks.push({
+          key,
+          staggered: true,
+          node: (
+            <View style={styles.block}>
+              <TrustStrip eyebrow={STORE_SECTIONS.trustEyebrow} title={STORE_SECTIONS.trustTitle} items={STORE_TRUST} />
+              <CertificationsRow />
+            </View>
+          ),
+        });
+        break;
+      case "help":
+        blocks.push({ key, node: <HelpCard onPress={() => go(STORE_HOME.help.route)} /> });
+        break;
+      case "footer":
+        blocks.push({ key, node: <BrandFooter /> });
+        break;
+      default:
+        break;
+    }
+  });
+
   const bottomPad = STORE_NAV_HEIGHT + Math.max(16, insets.bottom + 6) + 28;
   const gradient = isDark ? festival.header.gradientDark : festival.header.gradient;
   const gradTotal = GRADIENT_OVERSCROLL + GRADIENT_HEIGHT;
@@ -279,157 +488,121 @@ export default function StoreHome({
 
   return (
     <VariantSheetProvider>
-      <View style={[styles.screen, { backgroundColor: c.page }]}>
-        <Animated.ScrollView
-          ref={scrollRef}
-          onScroll={onScroll}
-          scrollEventThrottle={16}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: bottomPad }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brand} />}
-        >
-          <LinearGradient
-            colors={[gradient[0], ...gradient]}
-            locations={gradLocations}
-            style={[styles.backdrop, { top: -GRADIENT_OVERSCROLL, height: gradTotal }]}
-            pointerEvents="none"
-          />
-
-          <View style={{ paddingTop: insets.top + 8 }}>
-            <StoreHeader
-              signedIn={Boolean(isAuthenticated)}
-              firstName={firstName}
-              avatarUrl={user?.avatar}
-              hasUnread={hasUnread}
-              points={points}
-              eyebrow={eyebrow}
-              title={title}
-              chips={chips}
-              locationKind={locationKind}
-              locationText={locationText}
-              onPressLocation={onLocationPress}
-              onPressRewards={() => navigation.navigate("RedeemRewards")}
-              onPressProfile={() => navigation.navigate(isAuthenticated ? "Profile" : "Login")}
-              onPressSignIn={() => navigation.navigate("Login")}
-            />
-          </View>
-
-          <View
-            style={styles.pinBlock}
-            onLayout={(e) => {
-              searchY.value = e.nativeEvent.layout.y;
-            }}
+      <HomeScrollProvider scrollY={scrollY} viewportH={viewportH} originY={sectionsY}>
+        <View style={[styles.screen, { backgroundColor: c.page }]}>
+          <Animated.ScrollView
+            ref={scrollRef}
+            onScroll={onScroll}
+            scrollEventThrottle={16}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: bottomPad }}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brand} />}
           >
-            <View style={{ paddingHorizontal: gutter }}>
-              <StoreSearchBar onPress={openSearch} hints={STORE_HEADER.searchHints} prefix={STORE_HEADER.searchPrefix} />
-            </View>
-            <StoreTabs tabs={tabs} activeKey={activeTab} onChange={changeTab} style={styles.tabs} />
-          </View>
-
-          {!hasProducts ? (
-            <View style={styles.sections}>
-              <EmptyState
-                icon={{ mci: error ? "cloud-off-outline" : "package-variant-closed" }}
-                title={error ? STORE_SECTIONS.error.title : STORE_SECTIONS.empty.title}
-                body={error || STORE_SECTIONS.empty.body}
-                cta={error ? STORE_SECTIONS.error.cta : STORE_SECTIONS.empty.cta}
-                onPress={error ? onRetry : () => openShop()}
-              />
-            </View>
-          ) : activeTab !== "all" && activeTabDef ? (
-            <LineLanding
-              tab={activeTabDef}
-              products={lineProducts}
-              onProductPress={openProduct}
-              onCategoryPress={(tile) => openShop({ category: tile.label })}
-              onSeeAll={() => {
-                const page = STORE_LINE_PAGES[activeTabDef.key] || {};
-                openShop(page.shopPill ? { pill: page.shopPill } : page.category ? { category: page.category } : undefined);
-              }}
+            <LinearGradient
+              colors={[gradient[0], ...gradient]}
+              locations={gradLocations}
+              style={[styles.backdrop, { top: -GRADIENT_OVERSCROLL, height: gradTotal }]}
+              pointerEvents="none"
             />
-          ) : (
-            <View style={styles.sections}>
-              <FestiveBanner theme={festival} onPress={() => openShop()} />
 
-              <PromoCarousel items={promos} onPressItem={(item) => go(item.route)} />
+            <Animated.View style={[{ paddingTop: insets.top + 8 }, headerStyle]}>
+              <StoreHeader
+                signedIn={Boolean(isAuthenticated)}
+                firstName={firstName}
+                avatarUrl={user?.avatar}
+                hasUnread={hasUnread}
+                points={points}
+                badge={badge}
+                ornament={festival.ornament}
+                accent={isDark ? festival.header.accent?.dark : festival.header.accent?.light}
+                eyebrow={eyebrow}
+                title={title}
+                chips={chips}
+                locationLabel={STORE_HEADER.locationLabel}
+                locationKind={locationKind}
+                locationText={locationText}
+                signInLabel={STORE_HEADER.signIn}
+                extendTop={insets.top + 8}
+                onPressLocation={onLocationPress}
+                onPressRewards={() => navigation.navigate("RedeemRewards")}
+                onPressProfile={() => navigation.navigate(isAuthenticated ? "Profile" : "Login")}
+                onPressSignIn={() => navigation.navigate("Login")}
+              />
+            </Animated.View>
 
-              {categoryTiles.length ? (
-                <View style={styles.block}>
-                  <SectionHeader
-                    title={homeView?.productTypeTitle || STORE_SECTIONS.categories.title}
-                    action={STORE_SECTIONS.categories.action}
-                    onAction={() => openShop()}
-                  />
-                  <CategoryGrid
-                    tiles={categoryTiles}
-                    moreSuffix={STORE_SECTIONS.categories.moreSuffix}
-                    onPressTile={(tile) => openShop({ category: tile.label })}
-                  />
-                  <SeeAllBar images={categoryTiles.map((t) => t.image)} label={STORE_SECTIONS.seeAllProducts} onPress={() => openShop()} />
-                </View>
-              ) : null}
-
-              <BentoGrid tall={bento.tall} tiles={bento.tiles} onPressItem={onBentoPress} />
-
-              {bestsellers.length ? (
-                <View style={styles.block}>
-                  <SectionHeader
-                    title={homeView?.primeSectionTitle || STORE_SECTIONS.bestsellers.title}
-                    action={STORE_SECTIONS.bestsellers.action}
-                    onAction={() => openShop()}
-                  />
-                  <ProductRail products={bestsellers} onProductPress={openProduct} onSeeAll={() => openShop()} />
-                </View>
-              ) : null}
-
-              {picks.length ? (
-                <FestivePicks
-                  title={festival.picks.title}
-                  picks={picks}
-                  activeKey={activePickKey}
-                  onChange={setPickKey}
-                  onProductPress={openProduct}
-                  onSeeAll={(pick) => go(pick.route)}
-                />
-              ) : null}
-
-              {lineRails.map((line) => {
-                const page = STORE_LINE_PAGES[line.key] || {};
-                return (
-                  <View key={line.key} style={styles.block}>
-                    <SectionHeader
-                      title={page.title || line.key}
-                      caption={page.subtitle}
-                      action={STORE_SECTIONS.lineRail.action}
-                      onAction={() => openShop(page.shopPill ? { pill: page.shopPill } : page.category ? { category: page.category } : undefined)}
-                    />
-                    <ProductRail products={line.list} onProductPress={openProduct} />
-                  </View>
-                );
-              })}
-
-              <TrustStrip title={STORE_SECTIONS.trustTitle} items={STORE_TRUST} />
-              <BrandFooter />
+            <View
+              style={styles.pinBlock}
+              onLayout={(e) => {
+                searchY.value = e.nativeEvent.layout.y;
+              }}
+            >
+              <View style={{ paddingHorizontal: gutter }}>
+                <StoreSearchBar onPress={openSearch} hints={STORE_HEADER.searchHints} prefix={STORE_HEADER.searchPrefix} />
+              </View>
+              <StoreTabs tabs={tabs} activeKey={activeTab} onChange={changeTab} badges={festival.tabBadges} style={styles.tabs} />
             </View>
-          )}
-        </Animated.ScrollView>
 
-        <Animated.View
-          style={[styles.compact, { paddingTop: insets.top }, compactStyle]}
-          pointerEvents={compactVisible ? "auto" : "none"}
-          onLayout={(e) => setCompactH(e.nativeEvent.layout.height)}
-        >
-          <BlurView intensity={isDark ? 40 : 70} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glassStrong }]} />
-          <View style={{ paddingHorizontal: gutter, paddingTop: 8, paddingBottom: 6 }}>
-            <StoreSearchBar compact onPress={openSearch} hints={STORE_HEADER.searchHints} prefix={STORE_HEADER.searchPrefix} />
-          </View>
-          <StoreTabs compact tabs={tabs} activeKey={activeTab} onChange={changeTab} />
-        </Animated.View>
+            {!hasProducts ? (
+              <View style={styles.sections}>
+                <EmptyState
+                  icon={{ mci: error ? "cloud-off-outline" : "package-variant-closed" }}
+                  title={error ? STORE_SECTIONS.error.title : STORE_SECTIONS.empty.title}
+                  body={error || STORE_SECTIONS.empty.body}
+                  cta={error ? STORE_SECTIONS.error.cta : STORE_SECTIONS.empty.cta}
+                  onPress={error ? onRetry : () => openShop()}
+                />
+              </View>
+            ) : activeTab !== "all" && activeTabDef ? (
+              <LineLanding
+                tab={activeTabDef}
+                products={lineProducts}
+                onProductPress={openProduct}
+                onCategoryPress={(tile) => openShop({ category: tile.label })}
+                onSeeAll={() => {
+                  const page = STORE_LINE_PAGES[activeTabDef.key] || {};
+                  openShop(page.shopPill ? { pill: page.shopPill } : page.category ? { category: page.category } : undefined);
+                }}
+              />
+            ) : (
+              <View
+                style={styles.sections}
+                onLayout={(e) => {
+                  sectionsY.value = e.nativeEvent.layout.y;
+                }}
+              >
+                {blocks.map((block, i) => (
+                  <Reveal key={block.key} index={i} staggered={block.staggered}>
+                    {block.node}
+                  </Reveal>
+                ))}
+              </View>
+            )}
+          </Animated.ScrollView>
 
-        <BackToTop visible={compactVisible && topVisible} top={compactH + 10} onPress={scrollToTop} label={STORE_HEADER.backToTop} />
-        <FloatingNav />
-      </View>
+          <Animated.View
+            style={[styles.compact, { paddingTop: insets.top, borderBottomColor: c.line }, compactStyle]}
+            pointerEvents={compactVisible ? "auto" : "none"}
+            onLayout={(e) => setCompactH(e.nativeEvent.layout.height)}
+          >
+            <BlurView intensity={isDark ? 40 : 70} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glassStrong }]} />
+            <View style={{ paddingHorizontal: gutter, paddingTop: 8, paddingBottom: 6 }}>
+              <StoreSearchBar compact onPress={openSearch} hints={STORE_HEADER.searchHints} prefix={STORE_HEADER.searchPrefix} />
+            </View>
+            <StoreTabs compact tabs={tabs} activeKey={activeTab} onChange={changeTab} badges={festival.tabBadges} />
+            <LinearGradient
+              colors={[withAlpha(c.gold, 0), withAlpha(c.gold, isDark ? 0.55 : 0.7), withAlpha(c.gold, 0)]}
+              start={{ x: 0, y: 0.5 }}
+              end={{ x: 1, y: 0.5 }}
+              style={styles.compactRule}
+              pointerEvents="none"
+            />
+          </Animated.View>
+
+          <BackToTop visible={compactVisible && topVisible} top={compactH + 10} onPress={scrollToTop} label={STORE_HEADER.backToTop} />
+          <FloatingNav />
+        </View>
+      </HomeScrollProvider>
     </VariantSheetProvider>
   );
 }
@@ -439,9 +612,10 @@ const styles = StyleSheet.create({
   backdrop: { position: "absolute", left: 0, right: 0 },
   pinBlock: { marginTop: 12 },
   tabs: { marginTop: 6 },
-  sections: { gap: 20, paddingTop: 8 },
-  block: { gap: 12 },
-  compact: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 30, overflow: "hidden" },
+  sections: { gap: 26, paddingTop: 12 },
+  block: { gap: 14 },
+  compact: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 30, overflow: "hidden", borderBottomWidth: StyleSheet.hairlineWidth },
+  compactRule: { position: "absolute", left: 0, right: 0, bottom: 0, height: 1.5 },
   empty: { alignItems: "center", gap: 10, padding: 28, borderWidth: StyleSheet.hairlineWidth, marginTop: 24 },
   emptyIcon: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center", marginBottom: 4 },
   emptyBody: { textAlign: "center" },

@@ -1,4 +1,5 @@
 import { buildAboutPageExtrasDefaults } from "../content/aboutPageContent";
+import { ABOUT_GALLERY_DEFAULTS } from "../content/aboutVisualContent";
 import {
   buildCommunitySectionDefaults,
   getCommunityPostImageFallback,
@@ -103,8 +104,21 @@ export function getAppMarketingHeroSlides(marketingSlides = []) {
 function normalizeAboutPhoto(photo) {
   if (!photo || typeof photo !== "object") return null;
   const url = asTrimmedString(photo.url);
-  if (!url) return null;
-  return { url, caption: asTrimmedString(photo.caption) };
+  const source = photo.source != null ? photo.source : null;
+  if (!url && source == null) return null;
+  return {
+    url,
+    source,
+    caption: asTrimmedString(photo.caption),
+  };
+}
+
+function resolveAboutPhotos(photosIn) {
+  const fromAdmin = Array.isArray(photosIn)
+    ? photosIn.map(normalizeAboutPhoto).filter(Boolean)
+    : [];
+  if (fromAdmin.length) return fromAdmin;
+  return ABOUT_GALLERY_DEFAULTS.map((photo) => normalizeAboutPhoto(photo)).filter(Boolean);
 }
 
 export const ABOUT_SECTION_DEFAULTS = {
@@ -180,11 +194,9 @@ function normalizeValueItem(item) {
 export function normalizeAboutSection(about) {
   const extras = buildAboutPageExtrasDefaults();
   if (!about || typeof about !== "object") {
-    return { ...ABOUT_SECTION_DEFAULTS, ...extras, photos: [] };
+    return { ...ABOUT_SECTION_DEFAULTS, ...extras, photos: resolveAboutPhotos([]) };
   }
-  const photos = Array.isArray(about.photos)
-    ? about.photos.map(normalizeAboutPhoto).filter(Boolean)
-    : [];
+  const photos = resolveAboutPhotos(about.photos);
 
   const highlightsIn = Array.isArray(about.highlights) ? about.highlights : [];
   const highlights =

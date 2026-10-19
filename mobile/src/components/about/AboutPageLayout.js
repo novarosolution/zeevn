@@ -3,11 +3,11 @@ import { Platform, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTheme } from "../../context/ThemeContext";
-import { getKankregSurfaces, KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { getKankregSurfaces, KANKREG_PALETTE, ZEEVAN_GOLD, ZEEVAN_GREEN } from "../../theme/kankregWeb";
 import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { HOME_SPACE } from "../../theme/homeEditorial";
-import { fonts, icon, layout, radius, spacing, typography } from "../../theme/tokens";
+import { fonts, icon, layout, spacing, typography } from "../../theme/tokens";
 import { FONT_BODY_SEMIBOLD, FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import { KankregSectionHead } from "../kankreg/KankregPageChrome";
 import GoldHairline from "../ui/GoldHairline";
@@ -17,18 +17,6 @@ import {
   ABOUT_PAGE_SECTION_LABELS,
 } from "../../content/aboutPageContent";
 import SectionReveal from "../motion/SectionReveal";
-import { platformShadow, shadowStyleForPlatform } from "../../theme/shadowPlatform";
-
-const panelShadow = platformShadow({
-  web: { boxShadow: "0 1px 2px rgba(25,20,15,.04), 0 14px 38px -20px rgba(25,20,15,.22)" },
-  ios: {
-    shadowColor: "#3D2A12",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.09,
-    shadowRadius: 10,
-  },
-  android: { elevation: 3 },
-});
 
 function AboutSectionDivider({ label }) {
   if (!label) {
@@ -42,18 +30,10 @@ function AboutSectionDivider({ label }) {
   );
 }
 
-function SidebarCard({ children, animIndex, surfaces }) {
+function SidebarPanel({ children, animIndex }) {
   return (
     <SectionReveal index={animIndex} preset="slide-right">
-      <View
-        style={[
-          styles.sidebarCard,
-          { backgroundColor: surfaces.card, borderColor: surfaces.border },
-          panelShadow,
-        ]}
-      >
-        {children}
-      </View>
+      <View style={styles.sidebarPanel}>{children}</View>
     </SectionReveal>
   );
 }
@@ -66,23 +46,25 @@ export function AboutSidebar({ about, sticky = false }) {
   return (
     <View style={[styles.sidebar, sticky && isMd && styles.sidebarSticky]}>
       {about.sidebarStats?.length ? (
-        <SidebarCard animIndex={ABOUT_PAGE_ANIM.sidebarStats} surfaces={surfaces}>
+        <SidebarPanel animIndex={ABOUT_PAGE_ANIM.sidebarStats}>
           <Text style={createKankregEyebrowStyle(isDark)}>{ABOUT_PAGE_SECTION_LABELS.sidebarStats}</Text>
           <View style={styles.statsGrid}>
             {about.sidebarStats.map((stat, idx) => (
               <SectionReveal key={`${stat.value}-${stat.label}`} index={ABOUT_PAGE_ANIM.sidebarStats + idx} preset="scale-in">
                 <View style={styles.statCell}>
-                  <Text style={[styles.statValue, { color: KANKREG_PALETTE.gold }]}>{stat.value}</Text>
+                  <Text style={[styles.statValue, { color: isDark ? ZEEVAN_GOLD.bright : ZEEVAN_GREEN.deep }]}>
+                    {stat.value}
+                  </Text>
                   <Text style={[styles.statLabel, { color: surfaces.textMuted }]}>{stat.label}</Text>
                 </View>
               </SectionReveal>
             ))}
           </View>
-        </SidebarCard>
+        </SidebarPanel>
       ) : null}
 
       {about.highlights?.length ? (
-        <SidebarCard animIndex={ABOUT_PAGE_ANIM.sidebarHighlights} surfaces={surfaces}>
+        <SidebarPanel animIndex={ABOUT_PAGE_ANIM.sidebarHighlights}>
           <Text style={createKankregEyebrowStyle(isDark)}>{ABOUT_PAGE_SECTION_LABELS.sidebarPromise}</Text>
           <Text style={[styles.sidebarTitle, { color: surfaces.text }]}>
             {ABOUT_PAGE_SECTION_LABELS.sidebarPromiseTitle}
@@ -102,18 +84,18 @@ export function AboutSidebar({ about, sticky = false }) {
               </View>
             </SectionReveal>
           ))}
-        </SidebarCard>
+        </SidebarPanel>
       ) : null}
 
       {about.pillars?.length ? (
-        <SidebarCard animIndex={ABOUT_PAGE_ANIM.sidebarPillars} surfaces={surfaces}>
+        <SidebarPanel animIndex={ABOUT_PAGE_ANIM.sidebarPillars}>
           <Text style={createKankregEyebrowStyle(isDark)}>{ABOUT_PAGE_SECTION_LABELS.sidebarPillars}</Text>
           <Text style={[styles.sidebarTitle, { color: surfaces.text }]}>{ABOUT_PAGE_SECTION_LABELS.sidebarPillarsTitle}</Text>
           {about.pillars.filter((p) => p.enabled !== false).map((pillar, idx) => (
             <SectionReveal key={pillar.id} index={ABOUT_PAGE_ANIM.sidebarPillars + idx} preset="fade-up">
               <View style={styles.pillarRow}>
                 <View style={[styles.pillarIcon, isDark && styles.pillarIconDark]}>
-                  <Ionicons name={pillar.icon || "leaf-outline"} size={icon.sm} color={KANKREG_PALETTE.goldBright} />
+                  <Ionicons name={pillar.icon || "leaf-outline"} size={icon.sm} color={ZEEVAN_GOLD.base} />
                 </View>
                 <View style={styles.pillarCopy}>
                   <Text style={[styles.pillarTitle, { color: surfaces.text }]}>{pillar.title}</Text>
@@ -122,14 +104,14 @@ export function AboutSidebar({ about, sticky = false }) {
               </View>
             </SectionReveal>
           ))}
-        </SidebarCard>
+        </SidebarPanel>
       ) : null}
     </View>
   );
 }
 
 export function AboutMissionSection({ mission }) {
-  const { isDark, colors: c, shadowPremium } = useTheme();
+  const { isDark, colors: c } = useTheme();
   const surfaces = getKankregSurfaces(isDark, c);
   const { isMd } = useKankregLayout();
   if (!mission?.paragraphs?.length) return null;
@@ -138,8 +120,10 @@ export function AboutMissionSection({ mission }) {
     <View
       style={[
         styles.missionWrap,
-        { backgroundColor: isDark ? c.surfaceMuted : KANKREG_PALETTE.paper2, borderColor: surfaces.borderSubtle },
-        shadowStyleForPlatform(shadowPremium),
+        {
+          backgroundColor: isDark ? c.surfaceMuted : KANKREG_PALETTE.paper2,
+          borderColor: surfaces.borderSubtle,
+        },
       ]}
     >
       <KankregSectionHead eyebrow={mission.eyebrow} title={mission.title} />
@@ -170,11 +154,11 @@ export function AboutCraftSection({ craft, sectionRef }) {
             index={ABOUT_PAGE_ANIM.craftStepStart + idx}
             preset={isMd ? "slide-right" : "fade-up"}
           >
-            <View
-              style={[styles.craftStep, { backgroundColor: surfaces.card, borderColor: surfaces.border }, panelShadow]}
-            >
+            <View style={styles.craftStep}>
               <View style={styles.craftStepHead}>
-                <Text style={[styles.craftStepNum, { color: KANKREG_PALETTE.gold }]}>{step.label}</Text>
+                <Text style={[styles.craftStepNum, { color: isDark ? ZEEVAN_GOLD.bright : ZEEVAN_GREEN.deep }]}>
+                  {step.label}
+                </Text>
                 {idx < craft.steps.length - 1 && isMd ? <View style={styles.craftConnector} /> : null}
               </View>
               <Text style={[styles.craftStepTitle, { color: surfaces.text }]}>{step.title}</Text>
@@ -194,30 +178,32 @@ export function AboutCtaSection({ ctaBand, navigation }) {
 
   return (
     <LinearGradient
-      colors={isDark ? ["#1a2820", "#121816"] : ["#f0f5f2", "#e8f0eb"]}
-      style={[styles.ctaWrap, isDark && { borderColor: "rgba(52, 211, 153, 0.2)" }]}
+      colors={
+        isDark
+          ? [ZEEVAN_GREEN.deep, "#121816"]
+          : [ZEEVAN_GREEN.deep, "#2A3D1F"]
+      }
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.ctaWrap}
     >
+      <View style={styles.ctaGoldRule} pointerEvents="none" />
       <View style={[styles.ctaInner, stackFooterNewsletter && styles.ctaInnerStack]}>
         <View style={styles.ctaCopy}>
-          <Text style={[styles.ctaTitle, { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink }]}>
-            {ctaBand.title}
-          </Text>
-          {ctaBand.body ? (
-            <Text style={[styles.ctaBody, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]}>
-              {ctaBand.body}
-            </Text>
-          ) : null}
+          <Text style={styles.ctaTitle}>{ctaBand.title}</Text>
+          {ctaBand.body ? <Text style={styles.ctaBody}>{ctaBand.body}</Text> : null}
         </View>
         <View style={[styles.ctaActions, stackFooterNewsletter && styles.ctaActionsStack]}>
           <PremiumButton
             label={ctaBand.ctaLabel || "Shop"}
-            variant="primary"
+            variant="gold"
             onPress={() => navigation.navigate("Shop")}
           />
           <PremiumButton
             label={ctaBand.ctaSecondaryLabel || "Support"}
             variant="ghost"
             onPress={() => navigation.navigate("Support")}
+            textStyle={styles.ctaGhostText}
           />
         </View>
       </View>
@@ -287,9 +273,9 @@ const styles = StyleSheet.create({
   sectionDividerLabel: {
     fontFamily: fonts.semibold,
     fontSize: 10,
-    letterSpacing: 1.4,
+    letterSpacing: 2,
     textTransform: "uppercase",
-    color: KANKREG_PALETTE.greenDeep,
+    color: ZEEVAN_GREEN.deep,
     textAlign: "center",
     opacity: 0.85,
   },
@@ -301,14 +287,14 @@ const styles = StyleSheet.create({
     width: 300,
     flexShrink: 0,
     position: Platform.OS === "web" ? "sticky" : "relative",
-    top: 24,
+    top: 88,
     alignSelf: "flex-start",
   },
-  sidebarCard: {
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    padding: spacing.lg,
+  sidebarPanel: {
+    paddingVertical: spacing.md,
     gap: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: KANKREG_PALETTE.line,
   },
   sidebarTitle: {
     fontFamily: FONT_HEADING,
@@ -328,7 +314,7 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontFamily: FONT_PRICE,
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: "500",
   },
   statLabel: {
@@ -350,7 +336,7 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: KANKREG_PALETTE.gold,
+    backgroundColor: ZEEVAN_GOLD.base,
     marginTop: 8,
   },
   highlightCopy: {
@@ -380,8 +366,8 @@ const styles = StyleSheet.create({
   pillarIcon: {
     width: 36,
     height: 36,
-    borderRadius: 10,
-    backgroundColor: "rgba(169,119,46,0.12)",
+    borderRadius: 18,
+    backgroundColor: ZEEVAN_GOLD.soft,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -401,9 +387,12 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   missionWrap: {
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    padding: spacing.lg,
+    borderRadius: 0,
+    borderWidth: 0,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
     width: "100%",
   },
   missionBody: {
@@ -418,25 +407,26 @@ const styles = StyleSheet.create({
   missionPara: {
     flex: 1,
     fontSize: typography.body,
-    lineHeight: typography.body * 1.6,
+    lineHeight: typography.body * 1.7,
   },
   craftWrap: {
     width: "100%",
   },
   craftTimeline: {
     flexDirection: "row",
-    gap: spacing.md,
+    gap: spacing.lg,
     marginTop: spacing.md,
   },
   craftTimelineStack: {
     flexDirection: "column",
+    gap: spacing.lg,
   },
   craftStep: {
     flex: 1,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    padding: spacing.md,
+    paddingVertical: spacing.sm,
     minWidth: 160,
+    borderTopWidth: 2,
+    borderTopColor: ZEEVAN_GOLD.base,
   },
   craftStepHead: {
     flexDirection: "row",
@@ -445,31 +435,39 @@ const styles = StyleSheet.create({
   },
   craftStepNum: {
     fontFamily: FONT_BODY_SEMIBOLD,
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "600",
   },
   craftConnector: {
     flex: 1,
     height: 1,
-    backgroundColor: "rgba(169,119,46,0.35)",
+    backgroundColor: "rgba(212,165,116,0.45)",
     marginLeft: spacing.sm,
   },
   craftStepTitle: {
-    fontFamily: fonts.semibold,
-    fontSize: typography.body + 1,
+    fontFamily: FONT_HEADING,
+    fontSize: typography.body + 3,
     marginBottom: spacing.xs,
   },
   craftStepBody: {
-    fontSize: typography.caption,
-    lineHeight: typography.caption * 1.55,
+    fontSize: typography.caption + 1,
+    lineHeight: typography.caption * 1.7,
   },
   ctaWrap: {
-    borderRadius: radius.xl,
-    borderWidth: 1,
-    borderColor: KANKREG_PALETTE.line,
+    borderRadius: 16,
     overflow: "hidden",
     width: "100%",
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
+    position: "relative",
+  },
+  ctaGoldRule: {
+    position: "absolute",
+    top: 0,
+    left: "20%",
+    right: "20%",
+    height: 2,
+    backgroundColor: ZEEVAN_GOLD.base,
+    opacity: 0.85,
   },
   ctaInner: {
     flexDirection: "row",
@@ -488,21 +486,27 @@ const styles = StyleSheet.create({
   },
   ctaTitle: {
     fontFamily: FONT_HEADING,
-    fontSize: 26,
-    fontWeight: "500",
+    fontSize: 28,
+    fontWeight: "400",
     marginBottom: spacing.xs,
+    color: "#FAF8F4",
   },
   ctaBody: {
     fontSize: typography.body,
     lineHeight: typography.body * 1.55,
     maxWidth: 480,
+    color: "rgba(250,248,244,0.78)",
   },
   ctaActions: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
+    alignItems: "center",
   },
   ctaActionsStack: {
     width: "100%",
+  },
+  ctaGhostText: {
+    color: "rgba(250,248,244,0.88)",
   },
 });

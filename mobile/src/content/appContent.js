@@ -238,8 +238,8 @@ export const HOME_SCREEN_UI = {
     showQualityAssurance: true,
     showCertificationsStrip: true,
     showFeaturedEditorial: false,
-    phoneWelcomeTitle: "Welcome to Zeevan",
-    phoneWelcomeSubtitle: "Your one-stop store for purity",
+    phoneWelcomeTitle: "Shop by line",
+    phoneWelcomeSubtitle: "Ghee · tel · masala · honey",
     welcomeTag: "",
     heroStats: [],
     statsSectionIndex: 2,
@@ -382,6 +382,8 @@ export const HOME_PAGE_FOOTER_COLUMNS = [
 /** `icon`: "brand" = logo mark; else Ionicons name. */
 export const HOME_PAGE_TRUST_BADGES = [
   { key: "quality", label: "Trusted quality", icon: "shield-checkmark-outline" },
+  { key: "pure", label: "Pure ingredients", icon: "leaf-outline" },
+  { key: "ship", label: "Fresh packing", icon: "cube-outline" },
   { key: "secure", label: "Secure checkout", icon: "lock-closed-outline" },
 ];
 

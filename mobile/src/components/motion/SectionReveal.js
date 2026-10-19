@@ -46,7 +46,8 @@ export default function SectionReveal({
   const { isMobileWeb } = useKankregLayout();
   const leanWeb = HOME_SCREEN_UI.web?.leanHome !== false;
   const homeGsapEnabled = HOME_SCREEN_UI.web?.enableHomeGsap === true;
-  const revealImmediate = immediate || isMobileWeb;
+  /** Phone web: skip heavy GSAP; use Reanimated entering for light motion. */
+  const revealImmediate = immediate;
   const computedDelay = useMemo(() => {
     if (typeof delay === "number") return Math.max(0, delay);
     if (typeof index === "number") return staggerDelay(index);
@@ -74,7 +75,15 @@ export default function SectionReveal({
     [gsapRef],
   );
 
-  if (Platform.OS === "web") {
+  const buildEntering = () => {
+    if (preset === "fade-in") return FadeIn.delay(computedDelay).duration(duration);
+    if (preset === "slide-right") return FadeInRight.springify().delay(computedDelay).damping(18).mass(0.85);
+    if (preset === "scale-in") return ZoomIn.springify().delay(computedDelay).damping(18).mass(0.85);
+    return FadeInDown.springify().delay(computedDelay).damping(18).mass(0.85);
+  };
+
+  /** Desktop web — GSAP scroll reveals. */
+  if (Platform.OS === "web" && !isMobileWeb) {
     const Container = as || View;
     return (
       <Container ref={skipGsap ? undefined : setRef} style={[style, pointerStyle]}>
@@ -92,13 +101,8 @@ export default function SectionReveal({
     );
   }
 
-  const entering = (() => {
-    if (preset === "fade-in") return FadeIn.delay(computedDelay).duration(duration);
-    if (preset === "slide-right") return FadeInRight.springify().delay(computedDelay).damping(18).mass(0.85);
-    if (preset === "scale-in") return ZoomIn.springify().delay(computedDelay).damping(18).mass(0.85);
-    return FadeInDown.springify().delay(computedDelay).damping(18).mass(0.85);
-  })();
-
+  /** Native + phone web — Reanimated entering (light, premium). */
+  const entering = buildEntering();
   const Container = as || Animated.View;
   return (
     <Container entering={entering} style={[style, pointerStyle]}>

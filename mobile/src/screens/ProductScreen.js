@@ -36,7 +36,7 @@ import KankregBuyBar from "../components/kankreg/KankregBuyBar";
 import WebProductView from "../components/kankreg/WebProductView";
 import { ProductPageSkeleton } from "../components/loading";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
-import NativeProductView from "../components/native/NativeProductView";
+import { StoreProduct, StoreProductNotFound, StoreProductSkeleton } from "../components/store/entry";
 
 export default function ProductScreen({ route, navigation }) {
   const { productId } = route.params ?? {};
@@ -193,6 +193,10 @@ export default function ProductScreen({ route, navigation }) {
     return Math.min(320, Math.max(220, Math.round(width * 0.55)));
   }, [width]);
 
+  if (loading && Platform.OS !== "web") {
+    return <StoreProductSkeleton navigation={navigation} />;
+  }
+
   if (loading) {
     return (
       <CustomerScreenShell style={styles.screen}>
@@ -200,6 +204,10 @@ export default function ProductScreen({ route, navigation }) {
         {Platform.OS === "web" ? <BottomNavBar /> : null}
       </CustomerScreenShell>
     );
+  }
+
+  if (!product && Platform.OS !== "web") {
+    return <StoreProductNotFound navigation={navigation} message={error} />;
   }
 
   if (!product) {
@@ -295,47 +303,42 @@ export default function ProductScreen({ route, navigation }) {
 
   if (Platform.OS !== "web") {
     return (
-      <CustomerScreenShell style={styles.screen}>
-        <NativeProductView
-          product={product}
-          navigation={navigation}
-          heroImageUri={selectedImageUri}
-          imageFailed={imageFailed}
-          galleryImages={galleryImages}
-          selectedImage={selectedImage}
-          onSelectImage={setSelectedImage}
-          variants={variants}
-          selectedVariantLabel={selectedVariantLabel}
-          onSelectVariant={setSelectedVariantLabel}
-          displayPrice={displayPrice}
-          showMrp={showMrp}
-          mrp={mrp}
-          offPct={offPct}
-          liveRatingAvg={liveRatingAvg}
-          reviewCountDisplay={reviewCountDisplay}
-          isOutOfStock={isOutOfStock}
-          isComingSoon={isComingSoon}
-          comingSoonNote={comingSoonNote}
-          quantity={quantity}
-          onAddToCart={handleAddToCart}
-          onRemoveFromCart={handleRemoveFromCart}
-          onBuyNow={handleBuyNow}
-          relatedProducts={relatedProducts}
-          onRelatedPress={(p) => navigation.push("Product", { productId: p.id })}
-          onAddRelated={(p) => addToCart(productToCartLine(p, ""))}
-          reviews={reviews}
-          reviewRating={reviewRating}
-          onReviewRatingChange={setReviewRating}
-          reviewComment={reviewComment}
-          onReviewCommentChange={setReviewComment}
-          reviewBusy={reviewBusy}
-          reviewSuccess={reviewSuccess}
-          reviewError={error}
-          onSubmitReview={handleSubmitReview}
-          isAuthenticated={isAuthenticated}
-          shelfMatch={shelfMatch}
-        />
-      </CustomerScreenShell>
+      <StoreProduct
+        product={product}
+        navigation={navigation}
+        galleryImages={galleryImages}
+        selectedImage={selectedImage}
+        onSelectImage={setSelectedImage}
+        variants={variants}
+        selectedVariantLabel={selectedVariantLabel}
+        onSelectVariant={setSelectedVariantLabel}
+        displayPrice={displayPrice}
+        showMrp={showMrp}
+        mrp={mrp}
+        offPct={offPct}
+        liveRatingAvg={liveRatingAvg}
+        reviewCountDisplay={reviewCountDisplay}
+        isOutOfStock={isOutOfStock}
+        isComingSoon={isComingSoon}
+        comingSoonNote={comingSoonNote}
+        quantity={quantity}
+        onAddToCart={handleAddToCart}
+        onRemoveFromCart={handleRemoveFromCart}
+        onBuyNow={handleBuyNow}
+        relatedProducts={relatedProducts}
+        onRelatedPress={(p) => navigation.push("Product", { productId: p.id })}
+        reviews={reviews}
+        reviewRating={reviewRating}
+        onReviewRatingChange={setReviewRating}
+        reviewComment={reviewComment}
+        onReviewCommentChange={setReviewComment}
+        reviewBusy={reviewBusy}
+        reviewSuccess={reviewSuccess}
+        reviewError={error}
+        onSubmitReview={handleSubmitReview}
+        isAuthenticated={isAuthenticated}
+        shelfMatch={shelfMatch}
+      />
     );
   }
 

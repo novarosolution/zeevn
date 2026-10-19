@@ -4,25 +4,32 @@ import { CERTIFICATIONS_STRIP } from "../../content/certificationsContent";
 import { HOME_SCREEN_UI } from "../../content/appContent";
 import { useTheme } from "../../context/ThemeContext";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { ZEEVAN_GREEN } from "../../theme/kankregWeb";
-import { FONT_HEADING } from "../../theme/typographyRoles";
-import { fonts, spacing } from "../../theme/tokens";
+import { WP } from "../../theme/webPremium";
+import { fonts } from "../../theme/tokens";
+import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 import WebSectionBackdrop from "./WebSectionBackdrop";
+import { WebSectionHead } from "./webPremiumParts";
 
 const BG = require("../../../assets/section-bg-warm-4k.jpg");
-const INK = "#1A1C14";
 const MUTED = "#3F3C2E";
-const BADGE = 88;
-const BADGE_IMG = 76;
+const BADGE = 96;
+const BADGE_IMG = 82;
+const CSS_ID = "zeevan-cert-badges-v1";
 
-/** Premium certifications row — fixed-size badges so flex never collapses them. */
+injectWebCssOnce(
+  CSS_ID,
+  `.zv-cert { filter: grayscale(0.55); opacity: 0.88; transition: filter 0.4s ease, opacity 0.4s ease, transform 0.5s ${WP.ease}; }
+.zv-cert:hover { filter: none; opacity: 1; transform: translateY(-4px); }
+@media (prefers-reduced-motion: reduce) { .zv-cert { transition: none !important; } .zv-cert:hover { transform: none; } }`
+);
+
+/** Certifications row — fixed-size badges (quiet until hovered) so flex never collapses them. */
 export default function WebCertificationsStrip() {
-  if (HOME_SCREEN_UI.web?.showCertificationsStrip === false) return null;
-
   const { isDark } = useTheme();
   const { isMobileWeb, pageGutterClamp } = useKankregLayout();
+  if (HOME_SCREEN_UI.web?.showCertificationsStrip === false) return null;
+
   const copy = CERTIFICATIONS_STRIP;
-  const ink = isDark ? "#FAF8F4" : INK;
   const muted = isDark ? "rgba(250,248,244,0.72)" : MUTED;
 
   return (
@@ -31,20 +38,15 @@ export default function WebCertificationsStrip() {
       tone="warm"
       isDark={isDark}
       accessibilityLabel={copy.title}
-      style={styles.pad}
+      style={[styles.pad, isMobileWeb && styles.padMobile]}
     >
       <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
-        <Text style={[styles.eyebrow, { color: isDark ? "#E8BC84" : ZEEVAN_GREEN.deep }]}>
-          {copy.eyebrow}
-        </Text>
-        <Text style={[styles.title, { color: ink }, isMobileWeb && styles.titleMobile]}>
-          {copy.title}
-        </Text>
+        <WebSectionHead align="center" eyebrow={copy.eyebrow} title={copy.title} />
 
         <View style={[styles.frame, isDark && styles.frameDark]}>
           <View style={styles.row}>
             {copy.badges.map((badge) => (
-              <View key={badge.key} style={styles.badge}>
+              <View key={badge.key} className="zv-cert" style={styles.badge}>
                 <Image
                   source={badge.image}
                   style={styles.badgeImg}
@@ -56,53 +58,31 @@ export default function WebCertificationsStrip() {
           </View>
         </View>
 
-        {copy.hint ? (
-          <Text style={[styles.hint, { color: muted }]}>{copy.hint}</Text>
-        ) : null}
+        {copy.hint ? <Text style={[styles.hint, { color: muted }]}>{copy.hint}</Text> : null}
       </View>
     </WebSectionBackdrop>
   );
 }
 
 const styles = StyleSheet.create({
-  pad: {
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.md,
-    marginBottom: 0,
-  },
+  pad: { paddingTop: 88, paddingBottom: 96, marginBottom: 0 },
+  padMobile: { paddingTop: 48, paddingBottom: 56 },
   inner: {
     width: "100%",
-    maxWidth: 1080,
+    maxWidth: 1180,
     alignSelf: "center",
     alignItems: "center",
-    gap: spacing.md,
+    gap: 40,
   },
-  eyebrow: {
-    fontFamily: fonts.semibold,
-    fontSize: 11,
-    letterSpacing: 2,
-    textTransform: "uppercase",
-  },
-  title: {
-    fontFamily: FONT_HEADING,
-    fontSize: 26,
-    lineHeight: 32,
-    letterSpacing: -0.3,
-    textAlign: "center",
-  },
-  titleMobile: { fontSize: 22, lineHeight: 28 },
   frame: {
     width: "100%",
-    backgroundColor: "rgba(255,253,248,0.97)",
-    borderRadius: 14,
+    backgroundColor: "#FFFFFF",
+    borderRadius: WP.radius.tile,
     borderWidth: 1,
-    borderColor: "rgba(26, 28, 20, 0.12)",
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
-    ...Platform.select({
-      web: { boxShadow: "0 10px 24px -18px rgba(36, 68, 36, 0.16)" },
-      default: {},
-    }),
+    borderColor: "rgba(36, 68, 36, 0.08)",
+    paddingVertical: 28,
+    paddingHorizontal: 20,
+    ...Platform.select({ web: { boxShadow: WP.shadow.card }, default: {} }),
   },
   frameDark: {
     backgroundColor: "rgba(255,255,255,0.08)",
@@ -113,7 +93,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
+    gap: 16,
     width: "100%",
   },
   badge: {
@@ -130,10 +110,10 @@ const styles = StyleSheet.create({
   },
   hint: {
     fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 14.5,
+    lineHeight: 22,
     textAlign: "center",
-    maxWidth: 420,
-    paddingHorizontal: spacing.sm,
+    maxWidth: 460,
+    paddingHorizontal: 8,
   },
 });

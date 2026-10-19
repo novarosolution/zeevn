@@ -1,36 +1,35 @@
 import React from "react";
 import { Image, Platform, StyleSheet, Text, View } from "react-native";
 import { QUALITY_ASSURANCE_SECTION } from "../../content/qualityAssuranceContent";
-import { useTheme } from "../../context/ThemeContext";
+import { WEB_HOME_PREMIUM } from "../../content/webHomeContent";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { WP } from "../../theme/webPremium";
 import { FONT_HEADING } from "../../theme/typographyRoles";
 import { fonts, spacing } from "../../theme/tokens";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 import SectionReveal from "../motion/SectionReveal";
-import WebSectionBackdrop from "./WebSectionBackdrop";
 import WebPhoneSnapCarousel from "./WebPhoneSnapCarousel";
+import { WebSectionHead } from "./webPremiumParts";
 
 const CARD_CSS_ID = "zeevan-quality-assurance-v2";
 const CARD_CLASS = "zeevan-quality-card";
 const PHOTO_CLASS = "zeevan-quality-photo";
-const TEAL = "#083636";
-const TEAL_BODY = "#1A4A4A";
+const BODY_INK = "#3B4632";
 
 injectWebCssOnce(
   CARD_CSS_ID,
   `.${CARD_CLASS} {
-  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+  transition: transform 0.5s ${WP.ease}, box-shadow 0.5s ease;
 }
 .${CARD_CLASS}:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 28px 52px -28px rgba(13, 79, 79, 0.28);
+  transform: translateY(-8px);
+  box-shadow: 0 34px 60px -28px rgba(0, 0, 0, 0.55);
 }
 .${PHOTO_CLASS} {
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 1s ${WP.ease};
 }
 .${CARD_CLASS}:hover .${PHOTO_CLASS} {
-  transform: scale(1.04);
+  transform: scale(1.05);
 }
 @media (prefers-reduced-motion: reduce) {
   .${CARD_CLASS}, .${PHOTO_CLASS} { transition: none !important; }
@@ -39,32 +38,19 @@ injectWebCssOnce(
 }`
 );
 
-/** Premium “Only Perfect Makes The Cut” quality strip — four cards (web only). */
+/** “Only Perfect Makes The Cut” — a deep-olive band of four quality cards (web only), the page's one dark break. */
 export default function WebQualityAssuranceSection() {
-  const { isDark } = useTheme();
   const { isMobileWeb, pageGutterClamp } = useKankregLayout();
   const copy = QUALITY_ASSURANCE_SECTION;
-  const titleColor = isDark ? KANKREG_PALETTE.goldBright : TEAL;
 
   const renderCard = (card) => (
-    <View
-      key={card.key}
-      className={CARD_CLASS}
-      style={[styles.card, isMobileWeb && styles.cardMobile, isDark && styles.cardDark]}
-    >
+    <View key={card.key} className={CARD_CLASS} style={[styles.card, isMobileWeb && styles.cardMobile]}>
       <View style={styles.copy}>
-        <Text style={[styles.cardTitle, isMobileWeb && styles.cardTitleMobile, isDark && styles.cardTitleDark]}>
-          {card.title}
-        </Text>
-        <Text style={[styles.cardBody, isDark && styles.cardBodyDark]}>{card.body}</Text>
+        <Text style={[styles.cardTitle, isMobileWeb && styles.cardTitleMobile]}>{card.title}</Text>
+        <Text style={styles.cardBody}>{card.body}</Text>
       </View>
       <View style={styles.photoWrap}>
-        <Image
-          source={card.image}
-          className={PHOTO_CLASS}
-          style={styles.photo}
-          resizeMode="cover"
-        />
+        <Image source={card.image} className={PHOTO_CLASS} style={styles.photo} resizeMode="cover" />
         {card.note ? <Text style={styles.note}>{card.note}</Text> : null}
       </View>
     </View>
@@ -72,89 +58,88 @@ export default function WebQualityAssuranceSection() {
 
   return (
     <SectionReveal preset="fade-up" style={styles.reveal}>
-      <WebSectionBackdrop
-        source={copy.background}
-        tone="cool"
-        isDark={isDark}
+      <View
+        style={[styles.shell, isMobileWeb && styles.shellMobile]}
+        accessibilityRole="region"
         accessibilityLabel={copy.title}
-        style={[styles.pad, isMobileWeb && styles.padMobile]}
       >
-        <View style={[styles.inner, isMobileWeb && styles.innerMobile, !isMobileWeb && { paddingHorizontal: pageGutterClamp }]}>
-          <Text
-            style={[
-              styles.title,
-              { color: titleColor },
-              isMobileWeb && styles.titleMobile,
-              isMobileWeb && { paddingHorizontal: pageGutterClamp },
-            ]}
-          >
-            {copy.title}
-          </Text>
+        <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
+          {isMobileWeb ? (
+            <Text style={styles.titleMobile}>{copy.title}</Text>
+          ) : (
+            <WebSectionHead align="center" onDark eyebrow={WEB_HOME_PREMIUM.quality.eyebrow} title={copy.title} />
+          )}
 
           {isMobileWeb ? (
             <WebPhoneSnapCarousel
               items={copy.cards}
               keyExtractor={(c) => c.key}
-              dotColor={TEAL}
-              dotMuted="rgba(8,54,54,0.2)"
+              dotColor={WP.gold.bright}
+              dotMuted="rgba(250,248,244,0.28)"
               renderItem={(card) => renderCard(card)}
             />
           ) : (
             <View style={styles.grid}>{copy.cards.map((card) => renderCard(card))}</View>
           )}
         </View>
-      </WebSectionBackdrop>
+      </View>
     </SectionReveal>
   );
 }
 
 const styles = StyleSheet.create({
   reveal: { width: "100%" },
-  pad: {
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xl,
+  shell: {
+    position: "relative",
+    overflow: "hidden",
+    paddingVertical: 96,
+    alignSelf: "center",
+    backgroundColor: "#1B2A18",
+    ...Platform.select({
+      web: {
+        width: "100vw",
+        maxWidth: "100vw",
+        marginLeft: "calc(50% - 50vw)",
+        marginRight: "calc(50% - 50vw)",
+        backgroundImage:
+          "radial-gradient(120% 90% at 50% 0%, #2B4125 0%, #1B2A18 52%, #131D11 100%)",
+      },
+      default: { width: "100%" },
+    }),
   },
-  padMobile: {
-    paddingTop: spacing.lg + 4,
-    paddingBottom: spacing.lg + 4,
-  },
+  shellMobile: { paddingVertical: spacing.xl },
   inner: {
     width: "100%",
     maxWidth: 1280,
     alignSelf: "center",
-    gap: spacing.xl,
+    gap: 56,
   },
-  innerMobile: {
-    gap: spacing.md + 2,
-  },
-  title: {
+  titleMobile: {
     fontFamily: FONT_HEADING,
-    fontSize: 36,
-    lineHeight: 44,
+    fontSize: 26,
+    lineHeight: 32,
     letterSpacing: -0.4,
     textAlign: "center",
-    alignSelf: "center",
-    maxWidth: 720,
+    color: WP.cream,
   },
-  titleMobile: { fontSize: 26, lineHeight: 32 },
   grid: {
     flexDirection: "row",
     flexWrap: "nowrap",
-    gap: 16,
+    gap: 24,
     width: "100%",
   },
   card: {
     flex: 1,
     minWidth: 0,
-    minHeight: 440,
-    borderRadius: 18,
+    minHeight: 460,
+    borderRadius: WP.radius.tile,
     overflow: "hidden",
-    backgroundColor: "#FFFEFA",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "rgba(8, 54, 54, 0.1)",
+    borderColor: "rgba(250, 248, 244, 0.08)",
     ...Platform.select({
       web: {
-        boxShadow: "0 16px 36px -22px rgba(13, 79, 79, 0.22)",
+        boxShadow: "0 30px 60px -34px rgba(0, 0, 0, 0.6)",
         cursor: "default",
         display: "flex",
         flexDirection: "column",
@@ -162,31 +147,28 @@ const styles = StyleSheet.create({
       default: {},
     }),
   },
-  cardDark: { backgroundColor: "#1c2426", borderColor: "rgba(255,255,255,0.1)" },
   cardMobile: { flex: 0, minHeight: 400, height: 400, width: "100%" },
-  cardTitleMobile: { fontSize: 20, lineHeight: 26 },
   copy: {
-    paddingTop: 22,
-    paddingHorizontal: 18,
-    paddingBottom: 14,
-    gap: 8,
+    paddingTop: 28,
+    paddingHorizontal: 24,
+    paddingBottom: 18,
+    gap: 10,
     flexGrow: 0,
   },
   cardTitle: {
     fontFamily: FONT_HEADING,
-    fontSize: 18,
-    lineHeight: 24,
-    letterSpacing: -0.2,
-    color: TEAL,
+    fontSize: 21,
+    lineHeight: 27,
+    letterSpacing: -0.3,
+    color: WP.green.ink,
   },
-  cardTitleDark: { color: KANKREG_PALETTE.goldBright },
+  cardTitleMobile: { fontSize: 20, lineHeight: 26 },
   cardBody: {
     fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 19,
-    color: TEAL_BODY,
+    fontSize: 14.5,
+    lineHeight: 22,
+    color: BODY_INK,
   },
-  cardBodyDark: { color: "rgba(250, 248, 244, 0.82)" },
   photoWrap: {
     flex: 1,
     minHeight: 220,

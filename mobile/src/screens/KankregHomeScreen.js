@@ -36,7 +36,9 @@ import HomeStatsStrip from "../components/home/HomeStatsStrip";
 import HomeTestimonials from "../components/home/HomeTestimonials";
 import HomeComingSoonStrip from "../components/home/HomeComingSoonStrip";
 import { HomeCatalogGridCard, HomeCatalogViewAllLink } from "../components/home/HomeCatalogProductViews";
-import { SectionHeader, ScrollFadeUp } from "../components/home/editorial";
+import { ScrollFadeUp } from "../components/home/editorial";
+import { WebSectionHead } from "../components/home/webPremiumParts";
+import { WEB_HOME_PREMIUM } from "../content/webHomeContent";
 import { KankregPageWrap } from "../components/kankreg/KankregPageWrap";
 import KankregTrustStrip from "../components/kankreg/KankregTrustStrip";
 import CatalogGridReveal from "../components/kankreg/CatalogGridReveal";
@@ -118,7 +120,7 @@ const styles = StyleSheet.create({
   },
   webSection: {
     width: "100%",
-    gap: HOME_SPACE.md,
+    gap: 28,
   },
   phoneBestsellers: {
     width: "100%",
@@ -281,6 +283,11 @@ export default function KankregHomeScreen({ navigation }) {
         homeView?.primeSectionTitle ||
         HOME_SCREEN_UI.bestsellers.titleFallback
       : homeView?.primeSectionTitle || HOME_SCREEN_UI.bestsellers.titleFallback;
+  // The eyebrow and the title were both "Bestsellers" — keep the admin's wording when it differs, else use the redesign's.
+  const bestsellersEyebrow =
+    primeTitle && primeTitle !== HOME_SCREEN_UI.bestsellers.webSectionTitle
+      ? primeTitle
+      : WEB_HOME_PREMIUM.bestsellers.eyebrow;
   const showPrime = homeView?.showPrimeSection !== false;
   const categorySectionEnabled =
     Platform.OS === "web"
@@ -455,7 +462,7 @@ export default function KankregHomeScreen({ navigation }) {
             },
           ]}
         >
-          <KankregPageWrap gap={isMobileWeb ? spacing.sm + 2 : HOME_SPACE.md}>
+          <KankregPageWrap gap={isMobileWeb ? spacing.sm + 2 : 72}>
             {configError && !loading ? (
               <PremiumErrorBanner
                 severity="error"
@@ -499,11 +506,11 @@ export default function KankregHomeScreen({ navigation }) {
               webLean ? (
                 <DeferredMount minHeight={480} rootMargin="320px 0px">
                   <View style={styles.webSection} nativeID="home-bestsellers">
-                    <SectionHeader
-                      eyebrow={primeTitle}
+                    <WebSectionHead
+                      eyebrow={bestsellersEyebrow}
                       title={HOME_SCREEN_UI.bestsellers.webSectionTitle}
                       kicker={HOME_SCREEN_UI.bestsellers.webKicker}
-                      right={
+                      action={
                         <HomeCatalogViewAllLink
                           label={HOME_SCREEN_UI.bestsellers.webAction}
                           onPress={() => navigation.navigate("Shop")}
@@ -552,11 +559,11 @@ export default function KankregHomeScreen({ navigation }) {
               ) : (
               <ScrollFadeUp index={1}>
                 <View style={styles.webSection} nativeID="home-bestsellers">
-                  <SectionHeader
-                    eyebrow={primeTitle}
+                  <WebSectionHead
+                    eyebrow={bestsellersEyebrow}
                     title={HOME_SCREEN_UI.bestsellers.webSectionTitle}
                     kicker={HOME_SCREEN_UI.bestsellers.webKicker}
-                    right={
+                    action={
                       <HomeCatalogViewAllLink
                         label={HOME_SCREEN_UI.bestsellers.webAction}
                         onPress={() => navigation.navigate("Shop")}
@@ -640,7 +647,7 @@ export default function KankregHomeScreen({ navigation }) {
               },
             ]}
           >
-            <KankregPageWrap gap={isMobileWeb ? spacing.md : HOME_SPACE.md}>
+            <KankregPageWrap gap={isMobileWeb ? spacing.md : 72}>
               <WebLineFocusSection
                 lineKey="tel"
                 title="Cold-pressed Tel"
@@ -710,7 +717,7 @@ export default function KankregHomeScreen({ navigation }) {
             { paddingHorizontal: pageGutterClamp, paddingTop: HOME_SPACE.sm },
           ]}
         >
-          <KankregPageWrap gap={isMobileWeb ? spacing.md : HOME_SPACE.md}>
+          <KankregPageWrap gap={isMobileWeb ? spacing.md : 72}>
             {showAboutStory ? (
               <ScrollFadeUp index={4}>
                 <DeferredMount minHeight={400} rootMargin="280px 0px">

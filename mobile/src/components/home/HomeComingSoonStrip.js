@@ -1,85 +1,51 @@
 import React, { memo } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { FONT_HEADING } from "../../theme/typographyRoles";
-import {
-  COMING_SOON_PANEL_GRAD_DARK,
-  COMING_SOON_PANEL_GRAD_LIGHT,
-  COMING_SOON_RED,
-  COMING_SOON_RIBBON_GRAD,
-} from "../../theme/comingSoonTheme";
-import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
+import { WP } from "../../theme/webPremium";
+import { fonts } from "../../theme/tokens";
 import { HOME_SCREEN_UI } from "../../content/appContent";
+import { WEB_HOME_PREMIUM } from "../../content/webHomeContent";
 import { isProductComingSoon } from "../../utils/productAvailability";
-import { platformShadow } from "../../theme/shadowPlatform";
 
-/** Premium home strip — highlights products admin marked as coming soon. */
+/**
+ * Home shelf for products the admin marked "coming soon": a slim cream-and-gold notice with the upcoming products as
+ * chips, instead of a full-width panel competing with the catalog.
+ */
 function HomeComingSoonStrip({ products = [] }) {
   const { isDark } = useTheme();
+  const { isMobileWeb } = useKankregLayout();
   const copy = HOME_SCREEN_UI.comingSoon;
   const items = (Array.isArray(products) ? products : []).filter(isProductComingSoon);
 
   if (!items.length) return null;
 
+  const ink = isDark ? WP.cream : WP.ink;
+  const accent = isDark ? WP.gold.bright : WP.gold.deep;
+
   return (
-    <View
-      style={[
-        styles.shell,
-        isDark ? styles.shellDark : null,
-        platformShadow({
-          web: {
-            boxShadow: isDark
-              ? "0 16px 40px rgba(0,0,0,0.35)"
-              : "0 14px 36px rgba(127, 29, 29, 0.12), inset 0 1px 0 rgba(255,255,255,0.92)",
-          },
-          default: {},
-        }),
-      ]}
-    >
-      <LinearGradient
-        colors={isDark ? COMING_SOON_PANEL_GRAD_DARK : COMING_SOON_PANEL_GRAD_LIGHT}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <LinearGradient
-        colors={COMING_SOON_RIBBON_GRAD}
-        start={{ x: 0, y: 0.5 }}
-        end={{ x: 1, y: 0.5 }}
-        style={styles.topAccent}
-      />
-      <View style={styles.row}>
+    <View style={[styles.shell, isMobileWeb && styles.shellPhone, isDark && styles.shellDark]}>
+      <View style={styles.lead}>
         <View style={styles.iconWrap}>
-          <Ionicons name="time-outline" size={icon.md} color={COMING_SOON_RED.ink} />
+          <Ionicons name="sparkles" size={18} color={WP.gold.ink} />
         </View>
         <View style={styles.copy}>
-          <Text style={[styles.eyebrow, { color: isDark ? "#FCA5A5" : COMING_SOON_RED.mid }]}>
-            {copy.stripEyebrow}
+          <Text style={[styles.eyebrow, { color: accent }]}>
+            {(copy.stripEyebrow && copy.stripEyebrow !== "Soon" ? copy.stripEyebrow : WEB_HOME_PREMIUM.comingSoon.eyebrow).toUpperCase()}
           </Text>
-          <Text style={[styles.title, { color: isDark ? COMING_SOON_RED.ink : COMING_SOON_RED.deep }]}>
-            {copy.stripTitle}
-          </Text>
-          <Text style={[styles.body, { color: isDark ? COMING_SOON_RED.inkMuted : "#7F1D1D" }]}>
-            {copy.stripBody}
-          </Text>
+          <Text style={[styles.title, { color: ink }]}>{copy.stripTitle || WEB_HOME_PREMIUM.comingSoon.title}</Text>
         </View>
       </View>
       <View style={styles.chips}>
         {items.slice(0, 4).map((p) => (
-          <View key={p.id} style={[styles.chip, isDark ? styles.chipDark : styles.chipLight]}>
-            <Text
-              style={[styles.chipName, { color: isDark ? COMING_SOON_RED.ink : COMING_SOON_RED.deep }]}
-              numberOfLines={1}
-            >
+          <View key={p.id} style={[styles.chip, isDark && styles.chipDark]}>
+            <Text style={[styles.chipName, { color: ink }]} numberOfLines={1}>
               {p.name}
             </Text>
             {p.comingSoonNote ? (
-              <Text
-                style={[styles.chipNote, { color: isDark ? "#FCA5A5" : COMING_SOON_RED.mid }]}
-                numberOfLines={1}
-              >
+              <Text style={[styles.chipNote, { color: accent }]} numberOfLines={1}>
                 {p.comingSoonNote}
               </Text>
             ) : null}
@@ -94,90 +60,64 @@ export default memo(HomeComingSoonStrip);
 
 const styles = StyleSheet.create({
   shell: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: COMING_SOON_RED.cardBorder,
-    overflow: "hidden",
-    marginBottom: spacing.lg,
-    padding: spacing.lg,
-    gap: spacing.md,
-    ...Platform.select({ web: { maxWidth: "100%" }, default: {} }),
-  },
-  shellDark: {
-    borderColor: COMING_SOON_RED.cardBorderDark,
-  },
-  topAccent: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 3,
-  },
-  row: {
+    width: "100%",
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.md,
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 20,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    marginBottom: 28,
+    borderRadius: WP.radius.card,
+    borderWidth: 1,
+    borderColor: "rgba(184, 136, 76, 0.4)",
+    backgroundColor: "#FFFFFF",
+    overflow: "hidden",
+    ...Platform.select({
+      web: {
+        backgroundImage: "linear-gradient(100deg, #FBF3E1 0%, #F6E8C9 100%)",
+        boxShadow: "0 14px 30px -24px rgba(120, 82, 28, 0.45)",
+        maxWidth: "100%",
+      },
+      default: {},
+    }),
   },
+  shellPhone: { paddingVertical: 14, paddingHorizontal: 16, gap: 12, marginBottom: 18 },
+  shellDark: {
+    backgroundColor: "#211b12",
+    borderColor: "rgba(230, 190, 136, 0.28)",
+    ...Platform.select({ web: { backgroundImage: "linear-gradient(100deg, #261f14 0%, #1d1810 100%)" }, default: {} }),
+  },
+  lead: { flexDirection: "row", alignItems: "center", gap: 14 },
   iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: COMING_SOON_RED.border,
-    backgroundColor: COMING_SOON_RED.mid,
+    ...Platform.select({
+      web: { backgroundImage: WP.gradient.gold, boxShadow: "0 8px 18px -8px rgba(120, 82, 28, 0.6)" },
+      default: { backgroundColor: WP.gold.base },
+    }),
   },
-  copy: {
-    flex: 1,
-    minWidth: 0,
-    gap: 4,
-  },
-  eyebrow: {
-    fontFamily: fonts.semibold,
-    fontSize: typography.caption,
-    letterSpacing: 1.4,
-    textTransform: "uppercase",
-  },
-  title: {
-    fontFamily: FONT_HEADING,
-    fontSize: typography.h3,
-    letterSpacing: -0.3,
-    lineHeight: typography.h3 + 4,
-  },
-  body: {
-    fontFamily: fonts.regular,
-    fontSize: typography.bodySmall,
-    lineHeight: 20,
-    marginTop: 2,
-  },
-  chips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
+  copy: { gap: 2 },
+  eyebrow: { fontFamily: fonts.bold, fontSize: 10.5, letterSpacing: 2.4 },
+  title: { fontFamily: FONT_HEADING, fontSize: 22, lineHeight: 26, letterSpacing: -0.3 },
+  chips: { flex: 1, minWidth: 200, flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "flex-end" },
   chip: {
     maxWidth: "100%",
-    borderRadius: radius.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    gap: 2,
-  },
-  chipLight: {
-    borderColor: COMING_SOON_RED.cardBorder,
-    backgroundColor: "rgba(254, 242, 242, 0.72)",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    gap: 1,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(184, 136, 76, 0.35)",
+    backgroundColor: "rgba(255, 252, 246, 0.8)",
   },
   chipDark: {
-    borderColor: COMING_SOON_RED.cardBorderDark,
-    backgroundColor: "rgba(127, 29, 29, 0.28)",
+    borderColor: "rgba(230, 190, 136, 0.25)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
-  chipName: {
-    fontFamily: fonts.semibold,
-    fontSize: typography.bodySmall,
-  },
-  chipNote: {
-    fontFamily: fonts.medium,
-    fontSize: typography.caption,
-  },
+  chipName: { fontFamily: fonts.semibold, fontSize: 14 },
+  chipNote: { fontFamily: fonts.medium, fontSize: 12 },
 });

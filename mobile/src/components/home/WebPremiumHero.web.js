@@ -1,26 +1,28 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import BrandLogo from "../BrandLogo";
+import { Ionicons } from "@expo/vector-icons";
 import SectionReveal from "../motion/SectionReveal";
-import { BRAND_LOGO_SIZE, HOME_SCREEN_UI } from "../../content/appContent";
+import { HOME_SCREEN_UI, HOME_TRUST_STRIP } from "../../content/appContent";
 import { HOME_HERO_PACKAGING } from "../../content/homeHeroContent";
+import { WEB_HOME_PREMIUM } from "../../content/webHomeContent";
 import { resolveWebHomeHeroSlides } from "../../utils/homeHeroSlides";
 import { HtmlImg, toImageSrc } from "./compareWebDom";
-import { HOME_SPACE } from "../../theme/homeEditorial";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { KANKREG_CHROME, KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { WP, webHeroSize } from "../../theme/webPremium";
 import { FONT_HEADING } from "../../theme/typographyRoles";
-import { useTheme } from "../../context/ThemeContext";
-import { fonts, icon, spacing } from "../../theme/tokens";
-import { Ionicons } from "@expo/vector-icons";
+import { fonts } from "../../theme/tokens";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
+import { ensureWebPremiumCss } from "../../utils/webPremiumCss";
 
 const HERO_CSS_ID = "zeevan-atelier-hero-v2";
 const HERO_STAGE_CLASS = "zeevan-atelier-hero-stage";
 const HERO_MEDIA_CLASS = "zeevan-atelier-hero-media";
+const SLIDE_MS = 6500;
+const BAR_HEIGHT = 68;
 
 if (Platform.OS === "web") {
+  ensureWebPremiumCss();
   injectWebCssOnce(
     HERO_CSS_ID,
     `.${HERO_STAGE_CLASS} {
@@ -34,11 +36,11 @@ if (Platform.OS === "web") {
   height: 100%;
   object-fit: cover;
   object-position: center center;
-  transition: opacity 0.85s cubic-bezier(0.22, 1, 0.36, 1), transform 6.5s ease;
+  transition: opacity 1s cubic-bezier(0.22, 1, 0.36, 1), transform 9s linear;
   will-change: opacity, transform;
 }
 .${HERO_STAGE_CLASS} .${HERO_MEDIA_CLASS}[data-active="1"] {
-  transform: scale(1.04);
+  transform: scale(1.07);
 }
 .${HERO_STAGE_CLASS} .${HERO_MEDIA_CLASS}[data-active="0"] {
   transform: scale(1);
@@ -60,12 +62,14 @@ function shopParamsForSlide(slide) {
   return undefined;
 }
 
+const pad2 = (n) => String(n).padStart(2, "0");
+
 /**
- * Web home hero — responsive full-bleed slider (desktop wide + phone portrait art).
+ * Web home hero — full-bleed slider. Desktop: editorial headline with two calls to action, a progress pager and a
+ * frosted trust bar along the bottom edge. Phone web: a compact promo band.
  */
 export default function WebPremiumHero({ navigation, heroSlides = [], products = [] }) {
-  const { isDark } = useTheme();
-  const { pageGutterClamp, isMobileWeb } = useKankregLayout();
+  const { width, pageGutterClamp, isMobileWeb } = useKankregLayout();
   const reduceMotion = useReducedMotion();
   const [paused, setPaused] = useState(false);
 
@@ -94,29 +98,40 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
     [activeSlides.length]
   );
 
+  // Auto-advance in step with the CSS progress bar: pausing (hover) keeps the time left on this slide.
+  const remainRef = useRef(SLIDE_MS);
+  const startedRef = useRef(0);
+  const lastSlideRef = useRef(-1);
   useEffect(() => {
-    if (reduceMotion || paused || activeSlides.length < 2) return undefined;
-    const id = setInterval(() => go(1), 6500);
-    return () => clearInterval(id);
-  }, [activeSlides.length, reduceMotion, paused, go]);
+    if (reduceMotion || activeSlides.length < 2) return undefined;
+    if (lastSlideRef.current !== slideIndex) {
+      lastSlideRef.current = slideIndex;
+      remainRef.current = SLIDE_MS;
+    }
+    if (paused) return undefined;
+    startedRef.current = Date.now();
+    const timer = setTimeout(() => go(1), remainRef.current);
+    return () => {
+      clearTimeout(timer);
+      remainRef.current = Math.max(300, remainRef.current - (Date.now() - startedRef.current));
+    };
+  }, [activeSlides.length, reduceMotion, paused, slideIndex, go]);
 
   if (Platform.OS !== "web" || !activeSlides.length) return null;
 
-  const headline =
-    current?.title || HOME_HERO_PACKAGING.title || "Pure Bilona ghee";
+  const headline = current?.title || HOME_HERO_PACKAGING.title || "Pure Bilona ghee";
   const support =
     current?.subtitle ||
     HOME_SCREEN_UI.web?.atelierSupport ||
     HOME_HERO_PACKAGING.subtitle ||
     "Hand-churned A2 ghee — slow craft for your table.";
-  const cta = isMobileWeb
-    ? "Shop Now"
-    : current?.cta || HOME_SCREEN_UI.web?.atelierCta || "Shop the collection";
+  const cta = isMobileWeb ? "Shop now" : current?.cta || HOME_SCREEN_UI.web?.atelierCta || "Shop the collection";
+  const eyebrow = String(
+    current?.badge || HOME_SCREEN_UI.web?.heroEyebrow || WEB_HOME_PREMIUM.hero.eyebrowFallback
+  ).toUpperCase();
 
-  const openShop = () => {
-    const params = shopParamsForSlide(current);
-    navigation.navigate("Shop", params);
-  };
+  const openShop = () => navigation.navigate("Shop", shopParamsForSlide(current));
+  const openStory = () => navigation.navigate("About");
 
   const fullBleedStyle = isMobileWeb
     ? { width: "100%", alignSelf: "stretch", maxWidth: "100%" }
@@ -128,11 +143,69 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
         alignSelf: "center",
       };
 
-  /** Phone web: short promo band (~Anveshan). Desktop: tall atelier stage. */
-  const stageHeight = isMobileWeb ? 188 : 420;
-  const stageAspect = isMobileWeb
-    ? { height: stageHeight, minHeight: stageHeight, maxHeight: stageHeight }
-    : { aspectRatio: 16 / 9, minHeight: 480, maxHeight: 720 };
+  const titleSize = webHeroSize(width);
+  const showTrust = !isMobileWeb && HOME_SCREEN_UI.web?.showHeroTrustChips !== false;
+  const many = activeSlides.length > 1;
+
+  const pager = many ? (
+    <View style={[styles.pager, isMobileWeb && styles.pagerPhone]}>
+      {!isMobileWeb ? (
+        <Text style={styles.counter} accessibilityLabel={`Slide ${slideIndex + 1} of ${activeSlides.length}`}>
+          <Text style={styles.counterNow}>{pad2(slideIndex + 1)}</Text>
+          {`  /  ${pad2(activeSlides.length)}`}
+        </Text>
+      ) : null}
+      <View style={styles.segments} accessibilityRole="tablist">
+        {activeSlides.map((slide, index) => {
+          const on = index === slideIndex;
+          return (
+            <Pressable
+              key={slide.id || `seg-${index}`}
+              onPress={() => setSlideIndex(index)}
+              hitSlop={{ top: 12, bottom: 12, left: 2, right: 2 }}
+              style={[styles.segment, isMobileWeb && styles.segmentPhone]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: on }}
+              accessibilityLabel={slide.title || `Slide ${index + 1}`}
+            >
+              {on ? (
+                <View
+                  key={`fill-${slideIndex}`}
+                  className="zv-hero-fill"
+                  dataSet={{ paused: paused ? "1" : "0" }}
+                  style={styles.segmentFill}
+                />
+              ) : index < slideIndex ? (
+                <View style={[styles.segmentFill, styles.segmentDone]} />
+              ) : null}
+            </Pressable>
+          );
+        })}
+      </View>
+      {!isMobileWeb ? (
+        <View style={styles.arrows}>
+          <Pressable
+            onPress={() => go(-1)}
+            className="zv-glass"
+            style={styles.arrow}
+            accessibilityRole="button"
+            accessibilityLabel={WEB_HOME_PREMIUM.hero.prev}
+          >
+            <Ionicons name="arrow-back" size={18} color={WP.cream} />
+          </Pressable>
+          <Pressable
+            onPress={() => go(1)}
+            className="zv-glass"
+            style={styles.arrow}
+            accessibilityRole="button"
+            accessibilityLabel={WEB_HOME_PREMIUM.hero.next}
+          >
+            <Ionicons name="arrow-forward" size={18} color={WP.cream} />
+          </Pressable>
+        </View>
+      ) : null}
+    </View>
+  ) : null;
 
   return (
     <View
@@ -142,16 +215,10 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
     >
       <View
         className={HERO_STAGE_CLASS}
-        style={[
-          styles.stage,
-          isMobileWeb ? styles.stagePhone : { minHeight: stageHeight },
-          stageAspect,
-          isDark && styles.stageDark,
-          isMobileWeb && styles.stagePhoneMaroon,
-        ]}
+        style={[styles.stage, isMobileWeb ? styles.stagePhone : styles.stageDesktop]}
       >
         {activeSlides.map((slide, index) => {
-          const src = toImageSrc(slide.url, { width: isMobileWeb ? 900 : 1600 });
+          const src = toImageSrc(slide.url, { width: isMobileWeb ? 900 : 1800 });
           if (!src) return null;
           const active = index === slideIndex;
           return (
@@ -168,13 +235,14 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
           );
         })}
 
-        <View style={[styles.scrim, isMobileWeb && styles.scrimPhone]} pointerEvents="none" />
+        <View style={styles.scrimSide} pointerEvents="none" />
+        <View style={styles.scrimBottom} pointerEvents="none" />
 
         <View
           style={[
             styles.copyWrap,
+            isMobileWeb ? styles.copyWrapPhone : { paddingBottom: showTrust ? BAR_HEIGHT + 64 : 72 },
             { paddingHorizontal: pageGutterClamp },
-            isMobileWeb && styles.copyWrapPhone,
           ]}
         >
           <SectionReveal
@@ -184,75 +252,80 @@ export default function WebPremiumHero({ navigation, heroSlides = [], products =
             delay={40}
             style={[styles.reveal, isMobileWeb && styles.revealPhone]}
           >
-            {!isMobileWeb ? (
-              <BrandLogo
-                height={BRAND_LOGO_SIZE.homeHero + 12}
-                variant="onDark"
-                showTagline={false}
-              />
-            ) : null}
-            {current?.badge && !isMobileWeb ? <Text style={styles.badge}>{current.badge}</Text> : null}
-            <Text style={[styles.headline, isMobileWeb && styles.headlinePhone]} numberOfLines={isMobileWeb ? 2 : 3}>
-              {isMobileWeb ? headline : headline}
-            </Text>
-            {!isMobileWeb ? (
-              <Text style={[styles.support, isMobileWeb && styles.supportPhone]}>{support}</Text>
-            ) : null}
-            <Pressable
-              onPress={openShop}
-              style={({ hovered, pressed }) => [
-                styles.cta,
-                isMobileWeb ? styles.ctaPhone : styles.ctaDesktop,
-                hovered && (isMobileWeb ? styles.ctaPhoneHover : styles.ctaHover),
-                pressed && { opacity: 0.92 },
-              ]}
-              accessibilityRole="button"
-              accessibilityLabel={cta}
-            >
-              <Text style={[styles.ctaText, !isMobileWeb && styles.ctaTextDesktop, isMobileWeb && styles.ctaTextPhone]}>
-                {cta}
+            <View style={styles.eyebrowRow}>
+              <View style={[styles.eyebrowLine, isMobileWeb && styles.eyebrowLinePhone]} />
+              <Text style={[styles.eyebrow, isMobileWeb && styles.eyebrowPhone]} numberOfLines={1}>
+                {eyebrow}
               </Text>
+            </View>
+
+            <Text
+              style={[
+                styles.headline,
+                isMobileWeb
+                  ? { fontSize: 26, lineHeight: 30, letterSpacing: -0.4 }
+                  : { fontSize: titleSize, lineHeight: Math.round(titleSize * 1.04), letterSpacing: -titleSize * 0.022 },
+              ]}
+              numberOfLines={isMobileWeb ? 2 : 3}
+              accessibilityRole="header"
+            >
+              {headline}
+            </Text>
+
+            {!isMobileWeb ? <Text style={styles.support}>{support}</Text> : null}
+
+            <View style={[styles.ctaRow, isMobileWeb && styles.ctaRowPhone]}>
+              <Pressable
+                onPress={openShop}
+                className="zv-btn"
+                style={[styles.ctaGold, isMobileWeb && styles.ctaGoldPhone]}
+                accessibilityRole="button"
+                accessibilityLabel={cta}
+              >
+                <Text style={[styles.ctaGoldText, isMobileWeb && styles.ctaGoldTextPhone]}>{cta}</Text>
+                <Ionicons name="arrow-forward" size={isMobileWeb ? 14 : 17} color={WP.gold.ink} />
+              </Pressable>
               {!isMobileWeb ? (
-                <Ionicons name="arrow-forward" size={icon.xs} color="#FFFFFF" />
+                <Pressable
+                  onPress={openStory}
+                  className="zv-glass"
+                  style={styles.ctaGlass}
+                  accessibilityRole="button"
+                  accessibilityLabel={WEB_HOME_PREMIUM.hero.secondaryCta}
+                >
+                  <Text style={styles.ctaGlassText}>{WEB_HOME_PREMIUM.hero.secondaryCta}</Text>
+                </Pressable>
               ) : null}
-            </Pressable>
+            </View>
           </SectionReveal>
         </View>
 
-        {!isMobileWeb && activeSlides.length > 1 ? (
-          <>
-            <Pressable
-              onPress={() => go(-1)}
-              style={({ hovered }) => [styles.arrow, styles.arrowLeft, hovered && styles.arrowHover]}
-              accessibilityLabel="Previous slide"
-            >
-              <Ionicons name="chevron-back" size={20} color="#FAF8F4" />
-            </Pressable>
-            <Pressable
-              onPress={() => go(1)}
-              style={({ hovered }) => [styles.arrow, styles.arrowRight, hovered && styles.arrowHover]}
-              accessibilityLabel="Next slide"
-            >
-              <Ionicons name="chevron-forward" size={20} color="#FAF8F4" />
-            </Pressable>
-          </>
+        {pager ? (
+          <View
+            style={[
+              styles.controls,
+              isMobileWeb ? styles.controlsPhone : { bottom: showTrust ? BAR_HEIGHT + 30 : 34 },
+            ]}
+            pointerEvents="box-none"
+          >
+            <View style={[styles.controlsInner, { paddingHorizontal: pageGutterClamp }]} pointerEvents="box-none">
+              {pager}
+            </View>
+          </View>
         ) : null}
 
-        {activeSlides.length > 1 ? (
-          <View
-            style={[styles.dots, isMobileWeb && styles.dotsPhone]}
-            accessibilityRole="tablist"
-          >
-            {activeSlides.map((slide, index) => (
-              <Pressable
-                key={slide.id || `dot-${index}`}
-                onPress={() => setSlideIndex(index)}
-                style={[styles.dot, isMobileWeb && styles.dotPhone, index === slideIndex && styles.dotActive]}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: index === slideIndex }}
-                accessibilityLabel={slide.title || `Slide ${index + 1}`}
-              />
-            ))}
+        {showTrust ? (
+          <View style={styles.bar}>
+            <View style={[styles.barInner, { paddingHorizontal: pageGutterClamp }]}>
+              {HOME_TRUST_STRIP.map((item, i) => (
+                <View key={item.key} style={[styles.barItem, i > 0 && styles.barItemRule]}>
+                  <Ionicons name={item.icon} size={18} color={WP.gold.bright} />
+                  <Text style={styles.barText} numberOfLines={1}>
+                    {item.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
           </View>
         ) : null}
       </View>
@@ -271,200 +344,228 @@ const styles = StyleSheet.create({
     width: "100%",
     position: "relative",
     justifyContent: "flex-end",
-    backgroundColor: KANKREG_CHROME.cream,
+    backgroundColor: "#151510",
+    overflow: "hidden",
+  },
+  stageDesktop: {
+    minHeight: 560,
+    ...Platform.select({ web: { height: "clamp(560px, 82vh, 800px)" }, default: { height: 700 } }),
   },
   stagePhone: {
-    overflow: "hidden",
+    height: 250,
+    minHeight: 250,
+    maxHeight: 250,
     justifyContent: "center",
-  },
-  stagePhoneMaroon: {
     backgroundColor: "#1F331F",
   },
-  stageDark: {
-    backgroundColor: "#151210",
-  },
-  scrim: {
+  scrimSide: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(18, 16, 12, 0.28)",
-    ...Platform.select({
-      web: {
-        backgroundImage:
-          "linear-gradient(180deg, rgba(18,16,12,0.18) 0%, rgba(18,16,12,0.22) 40%, rgba(18,16,12,0.62) 100%)",
-        backgroundColor: "transparent",
-      },
-      default: {},
-    }),
+    ...Platform.select({ web: { backgroundImage: WP.gradient.heroSide }, default: { backgroundColor: "rgba(14,16,10,0.35)" } }),
   },
-  scrimPhone: {
-    backgroundColor: "transparent",
-    ...Platform.select({
-      web: {
-        backgroundImage:
-          "linear-gradient(100deg, rgba(20,28,16,0.78) 0%, rgba(20,28,16,0.38) 52%, rgba(20,28,16,0.12) 100%)",
-      },
-      default: { backgroundColor: "rgba(20, 28, 16, 0.5)" },
-    }),
+  scrimBottom: {
+    ...StyleSheet.absoluteFillObject,
+    ...Platform.select({ web: { backgroundImage: WP.gradient.heroBottom }, default: {} }),
   },
   copyWrap: {
     width: "100%",
     maxWidth: 1280,
     alignSelf: "center",
-    paddingBottom: HOME_SPACE.xl + 12,
-    paddingTop: HOME_SPACE.xl,
     zIndex: 2,
   },
   copyWrapPhone: {
-    paddingTop: 16,
-    paddingBottom: 18,
-    alignItems: "flex-start",
+    paddingTop: 18,
+    paddingBottom: 22,
     justifyContent: "center",
   },
   reveal: {
-    maxWidth: 520,
-    gap: spacing.sm,
+    maxWidth: 640,
+    gap: 18,
   },
   revealPhone: {
-    maxWidth: "82%",
-    gap: 6,
+    maxWidth: "86%",
+    gap: 8,
   },
-  badge: {
-    alignSelf: "flex-start",
-    marginTop: spacing.sm,
-    fontFamily: fonts.semibold,
-    fontSize: 11,
-    letterSpacing: 0.14,
-    textTransform: "uppercase",
-    color: "rgba(250, 248, 244, 0.78)",
+  eyebrowRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
   },
+  eyebrowLine: {
+    width: 40,
+    height: 1,
+    backgroundColor: WP.gold.bright,
+  },
+  eyebrowLinePhone: { width: 22 },
+  eyebrow: {
+    fontFamily: fonts.bold,
+    fontSize: 12.5,
+    letterSpacing: 3,
+    color: WP.gold.bright,
+  },
+  eyebrowPhone: { fontSize: 10.5, letterSpacing: 2.2 },
   headline: {
     fontFamily: FONT_HEADING,
-    fontSize: 42,
-    lineHeight: 48,
-    letterSpacing: -0.6,
-    color: "#FAF8F4",
-    marginTop: spacing.xs,
-  },
-  headlinePhone: {
-    fontSize: 20,
-    lineHeight: 24,
-    letterSpacing: -0.25,
-    textAlign: "left",
-    alignSelf: "stretch",
-    marginTop: 0,
+    color: WP.cream,
+    textShadowColor: "rgba(0, 0, 0, 0.35)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 24,
   },
   support: {
     fontFamily: fonts.regular,
-    fontSize: 16,
-    lineHeight: 24,
-    color: "rgba(250, 248, 244, 0.86)",
-    maxWidth: 420,
-    marginBottom: spacing.xs,
+    fontSize: 18,
+    lineHeight: 28,
+    color: "rgba(250, 248, 244, 0.9)",
+    maxWidth: 500,
   },
-  supportPhone: {
-    textAlign: "left",
-    alignSelf: "stretch",
-    maxWidth: 340,
-  },
-  cta: {
+  ctaRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginTop: spacing.sm,
-    paddingVertical: 12,
-    paddingHorizontal: 22,
-    borderRadius: 10,
-    backgroundColor: "#FAF8F4",
-    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+    flexWrap: "wrap",
+    gap: 14,
+    marginTop: 8,
   },
-  ctaDesktop: {
-    alignSelf: "flex-start",
-    backgroundColor: KANKREG_CHROME.buttonAccent,
-    paddingVertical: 14,
-    paddingHorizontal: 26,
-    borderRadius: 12,
+  ctaRowPhone: { marginTop: 4, gap: 10 },
+  ctaGold: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 30,
+    borderRadius: WP.radius.pill,
     ...Platform.select({
-      web: { boxShadow: "0 12px 28px -10px rgba(31, 51, 31, 0.45)" },
+      web: { backgroundImage: WP.gradient.gold, boxShadow: WP.shadow.gold },
+      default: { backgroundColor: WP.gold.base },
+    }),
+  },
+  ctaGoldPhone: { paddingVertical: 10, paddingHorizontal: 18, gap: 6 },
+  ctaGoldText: {
+    fontFamily: fonts.bold,
+    fontSize: 15,
+    letterSpacing: 0.3,
+    color: WP.gold.ink,
+  },
+  ctaGoldTextPhone: { fontSize: 12.5 },
+  ctaGlass: {
+    paddingVertical: 15,
+    paddingHorizontal: 28,
+    borderRadius: WP.radius.pill,
+    borderWidth: 1,
+    borderColor: "rgba(250, 248, 244, 0.5)",
+    backgroundColor: "rgba(250, 248, 244, 0.1)",
+    ...Platform.select({
+      web: { backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", cursor: "pointer" },
       default: {},
     }),
   },
-  ctaPhone: {
-    alignSelf: "flex-start",
-    marginTop: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 9,
-    backgroundColor: KANKREG_CHROME.buttonAccent,
-  },
-  ctaHover: {
-    backgroundColor: KANKREG_CHROME.buttonAccentHover,
-  },
-  ctaPhoneHover: {
-    backgroundColor: KANKREG_CHROME.buttonAccentHover,
-  },
-  ctaText: {
+  ctaGlassText: {
     fontFamily: fonts.semibold,
-    fontSize: 14,
-    color: KANKREG_PALETTE.ink,
-  },
-  ctaTextDesktop: {
-    color: "#FFFFFF",
     fontSize: 15,
     letterSpacing: 0.3,
+    color: WP.cream,
   },
-  ctaTextPhone: {
-    fontFamily: fonts.bold,
+  controls: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    zIndex: 4,
+  },
+  controlsPhone: { bottom: 12 },
+  controlsInner: {
+    width: "100%",
+    maxWidth: 1280,
+    alignSelf: "center",
+    alignItems: "flex-end",
+  },
+  pager: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 18,
+  },
+  pagerPhone: { gap: 0 },
+  counter: {
+    fontFamily: fonts.medium,
     fontSize: 13,
-    letterSpacing: 0.25,
-    color: "#FFFFFF",
+    letterSpacing: 1.2,
+    color: "rgba(250, 248, 244, 0.62)",
+    ...Platform.select({ web: { fontVariant: ["tabular-nums"] }, default: {} }),
+  },
+  counterNow: {
+    fontFamily: fonts.bold,
+    color: WP.cream,
+  },
+  segments: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  segment: {
+    width: 56,
+    height: 3,
+    borderRadius: 2,
+    overflow: "hidden",
+    backgroundColor: "rgba(250, 248, 244, 0.3)",
+    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+  },
+  segmentPhone: { width: 22, height: 3 },
+  segmentFill: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: WP.cream,
+  },
+  segmentDone: { opacity: 0.85 },
+  arrows: {
+    flexDirection: "row",
+    gap: 10,
   },
   arrow: {
-    position: "absolute",
-    top: "50%",
-    marginTop: -22,
-    width: 44,
-    height: 44,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(250, 248, 244, 0.28)",
-    backgroundColor: "rgba(18, 16, 12, 0.35)",
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 4,
-    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+    borderWidth: 1,
+    borderColor: "rgba(250, 248, 244, 0.38)",
+    backgroundColor: "rgba(250, 248, 244, 0.1)",
+    ...Platform.select({
+      web: { backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", cursor: "pointer" },
+      default: {},
+    }),
   },
-  arrowLeft: { left: 20 },
-  arrowRight: { right: 20 },
-  arrowHover: {
-    backgroundColor: "rgba(18, 16, 12, 0.55)",
-    borderColor: "rgba(250, 248, 244, 0.5)",
-  },
-  dots: {
+  bar: {
     position: "absolute",
-    bottom: HOME_SPACE.md,
-    right: HOME_SPACE.lg,
-    flexDirection: "row",
-    gap: 6,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: BAR_HEIGHT,
     zIndex: 3,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(250, 248, 244, 0.16)",
+    backgroundColor: "rgba(14, 16, 10, 0.46)",
+    justifyContent: "center",
+    ...Platform.select({ web: { backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" }, default: {} }),
   },
-  dotsPhone: {
-    bottom: 8,
-    right: 12,
-    left: "auto",
-    justifyContent: "flex-end",
+  barInner: {
+    width: "100%",
+    maxWidth: 1280,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
   },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 999,
-    backgroundColor: "rgba(250, 248, 244, 0.35)",
-    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+  barItem: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 6,
   },
-  dotPhone: {
-    width: 5,
-    height: 5,
+  barItemRule: {
+    borderLeftWidth: 1,
+    borderLeftColor: "rgba(250, 248, 244, 0.16)",
   },
-  dotActive: {
-    width: 22,
-    backgroundColor: "#FAF8F4",
+  barText: {
+    fontFamily: fonts.semibold,
+    fontSize: 13.5,
+    letterSpacing: 0.4,
+    color: "rgba(250, 248, 244, 0.92)",
   },
 });

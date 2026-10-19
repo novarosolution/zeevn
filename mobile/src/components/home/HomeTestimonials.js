@@ -9,15 +9,16 @@ import {
   View,
 } from "react-native";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import { fonts, icon, layout, lineHeight, radius, spacing, typography } from "../../theme/tokens";
+import { fonts, icon, layout, spacing, typography } from "../../theme/tokens";
 import { ALCHEMY } from "../../theme/customerAlchemy";
-import { FONT_HEADING, FONT_BODY_SEMIBOLD } from "../../theme/typographyRoles";
+import { FONT_HEADING, FONT_HEADING_SEMI, FONT_BODY_SEMIBOLD } from "../../theme/typographyRoles";
 import { HOME_TESTIMONIALS } from "../../content/appContent";
 import { platformShadow } from "../../theme/shadowPlatform";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import useGsapReveal from "../../hooks/useGsapReveal";
+import { WP } from "../../theme/webPremium";
+import { WebEyebrow, WebSectionTitle } from "./webPremiumParts";
 
 const testimonialCardShadow = platformShadow({
   ios: {
@@ -72,13 +73,14 @@ function Avatar({ name, isDark, avatar }) {
 
 export default function HomeTestimonials({ c, isDark }) {
   const reduced = useReducedMotion();
-  const { isMd } = useKankregLayout();
+  const { isMd, isLg } = useKankregLayout();
   const [active, setActive] = useState(0);
   const [hovered, setHovered] = useState(false);
   const sliderRef = useRef(null);
   const [sliderWidth, setSliderWidth] = useState(0);
   const items = HOME_TESTIMONIALS.items;
-  const isMultiColumn = isMd;
+  // A grid from tablet width up (it used to switch back to a one-card slider on full desktop).
+  const isMultiColumn = isMd || isLg;
   const { ref: revealRef } = useGsapReveal({ preset: "fade-up", start: "top 88%", reducedMotion: reduced });
 
   const goTo = useCallback(
@@ -107,25 +109,27 @@ export default function HomeTestimonials({ c, isDark }) {
     return () => clearInterval(t);
   }, [reduced, hovered, items.length, sliderWidth, isMultiColumn]);
 
-  const card = (item, idx) => (
+  const card = (item) => (
     <View
       key={item.key}
+      className={Platform.OS === "web" ? "zv-tile" : undefined}
       style={[
         styles.card,
         isMultiColumn ? styles.cardGridCell : { width: sliderWidth || "100%" },
-        {
-          borderColor: isDark ? "rgba(52, 211, 153, 0.22)" : "rgba(22, 69, 51, 0.14)",
-          backgroundColor: isDark ? c.surfaceOverlay : ALCHEMY.cardBg,
-        },
+        isDark && styles.cardDark,
       ]}
     >
-      <LinearGradient
-        colors={[ALCHEMY.gold, "rgba(212, 175, 55, 0.4)", "transparent"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.cardSheen, styles.peNone]}
-      />
-      <View style={styles.cardHeader}>
+      <Text
+        style={[styles.quoteMark, { color: isDark ? WP.gold.bright : WP.gold.base }]}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+      >
+        &ldquo;
+      </Text>
+      <Text style={[styles.cardQuote, { color: isDark ? WP.cream : WP.ink }]} numberOfLines={7}>
+        {item.quote}
+      </Text>
+      <View style={styles.cardFoot}>
         <Avatar name={item.name} isDark={isDark} avatar={item.avatar} />
         <View style={styles.cardHeaderText}>
           <Text style={[styles.cardName, { color: c.textPrimary }]} numberOfLines={1}>
@@ -135,11 +139,8 @@ export default function HomeTestimonials({ c, isDark }) {
             {item.city}
           </Text>
         </View>
-        <StarRow rating={item.rating} color={isDark ? ALCHEMY.goldBright : ALCHEMY.gold} />
+        <StarRow rating={item.rating} color={isDark ? WP.gold.bright : WP.gold.base} />
       </View>
-      <Text style={[styles.cardQuote, { color: c.textSecondary }]} numberOfLines={6}>
-        &ldquo;{item.quote}&rdquo;
-      </Text>
     </View>
   );
 
@@ -154,12 +155,10 @@ export default function HomeTestimonials({ c, isDark }) {
           }
         : {})}
     >
-      <Text style={[styles.overline, { color: c.textMuted }]}>
-        {HOME_TESTIMONIALS.overline}
-      </Text>
-      <Text style={[styles.title, { color: c.textPrimary }]}>
-        {HOME_TESTIMONIALS.title}
-      </Text>
+      <View style={styles.head}>
+        <WebEyebrow align="center">{HOME_TESTIMONIALS.overline}</WebEyebrow>
+        <WebSectionTitle align="center">{HOME_TESTIMONIALS.title}</WebSectionTitle>
+      </View>
 
       {isMultiColumn ? (
         <View style={styles.grid}>{items.map((item, idx) => card(item, idx))}</View>
@@ -227,25 +226,14 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginBottom: spacing.xl,
   },
-  overline: {
-    fontSize: typography.overline + 1,
-    fontFamily: fonts.extrabold,
-    letterSpacing: 1.6,
-    textTransform: "uppercase",
-    textAlign: "center",
-    marginBottom: spacing.xs,
-  },
-  title: {
-    fontSize: Platform.OS === "web" ? typography.h2 + 2 : typography.h2,
-    lineHeight: Platform.OS === "web" ? 36 : 32,
-    fontFamily: FONT_HEADING,
-    letterSpacing: -0.4,
-    textAlign: "center",
-    marginBottom: spacing.lg,
+  head: {
+    alignItems: "center",
+    gap: 14,
+    marginBottom: Platform.OS === "web" ? 44 : spacing.lg,
   },
   grid: {
     flexDirection: "row",
-    gap: spacing.md,
+    gap: 24,
     flexWrap: "wrap",
     justifyContent: "center",
   },
@@ -255,33 +243,43 @@ const styles = StyleSheet.create({
   card: {
     position: "relative",
     overflow: "hidden",
-    borderRadius: radius.xxl,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderTopWidth: 2,
-    borderTopColor: ALCHEMY.gold,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.lg + 2,
-    ...testimonialCardShadow,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(36, 68, 36, 0.08)",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 30,
+    paddingTop: 26,
+    paddingBottom: 28,
+    ...Platform.select({
+      web: { boxShadow: WP.shadow.card },
+      default: testimonialCardShadow,
+    }),
+  },
+  cardDark: {
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255,255,255,0.14)",
   },
   cardGridCell: {
-    flexBasis: 320,
+    flexBasis: 250,
     flexGrow: 1,
-    maxWidth: 380,
+    minWidth: 0,
   },
-  cardSheen: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 80,
-    opacity: 0.18,
+  quoteMark: {
+    fontFamily: FONT_HEADING,
+    fontSize: 76,
+    lineHeight: 64,
+    height: 44,
+    marginBottom: 6,
   },
-  cardHeader: {
+  cardFoot: {
     flexDirection: "row",
     alignItems: "center",
+    flexWrap: "wrap",
     gap: spacing.sm,
-    marginBottom: spacing.sm + 2,
+    marginTop: 26,
+    paddingTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(36, 68, 36, 0.08)",
   },
   cardHeaderText: {
     flex: 1,
@@ -298,10 +296,10 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   cardQuote: {
-    fontFamily: fonts.medium,
-    fontSize: typography.body - 1,
-    lineHeight: lineHeight.body + 2,
-    letterSpacing: 0.1,
+    fontFamily: FONT_HEADING_SEMI,
+    fontSize: 19,
+    lineHeight: 30,
+    letterSpacing: -0.1,
   },
   starRow: {
     flexDirection: "row",

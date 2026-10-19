@@ -10,6 +10,8 @@ import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 import SectionReveal from "../motion/SectionReveal";
 import WebSectionBackdrop from "./WebSectionBackdrop";
 import WebPhoneSnapCarousel from "./WebPhoneSnapCarousel";
+import { WebSectionHead } from "./webPremiumParts";
+import { WEB_HOME_PREMIUM } from "../../content/webHomeContent";
 
 const CARD_CSS_ID = "zeevan-native-ingredients-v2";
 const CARD_CLASS = "zeevan-native-card";
@@ -98,16 +100,15 @@ export default function WebNativeIngredientsSection() {
         style={[styles.pad, isMobileWeb && styles.padMobile]}
       >
         <View style={[styles.inner, isMobileWeb && styles.innerMobile, !isMobileWeb && { paddingHorizontal: pageGutterClamp }]}>
-          <Text
-            style={[
-              styles.title,
-              { color: titleColor },
-              isMobileWeb && styles.titleMobile,
-              isMobileWeb && { paddingHorizontal: pageGutterClamp },
-            ]}
-          >
-            {copy.title}
-          </Text>
+          {isMobileWeb ? (
+            <Text
+              style={[styles.title, { color: titleColor }, styles.titleMobile, { paddingHorizontal: pageGutterClamp }]}
+            >
+              {copy.title}
+            </Text>
+          ) : (
+            <WebSectionHead align="center" eyebrow={WEB_HOME_PREMIUM.ingredients.eyebrow} title={copy.title} />
+          )}
 
           {isMobileWeb ? (
             <WebPhoneSnapCarousel
@@ -129,8 +130,8 @@ export default function WebNativeIngredientsSection() {
 const styles = StyleSheet.create({
   reveal: { width: "100%" },
   pad: {
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xl,
+    paddingTop: 88,
+    paddingBottom: 88,
   },
   padMobile: {
     paddingTop: spacing.lg + 4,
@@ -161,14 +162,14 @@ const styles = StyleSheet.create({
   grid: {
     flexDirection: "row",
     flexWrap: "nowrap",
-    gap: 16,
+    gap: 24,
     width: "100%",
   },
   card: {
     flex: 1,
     minWidth: 0,
-    minHeight: 420,
-    borderRadius: 18,
+    minHeight: 440,
+    borderRadius: 24,
     overflow: "hidden",
     position: "relative",
     ...Platform.select({

@@ -1,36 +1,24 @@
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import {
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Animated from "react-native-reanimated";
 import PremiumProductCard from "../PremiumProductCard";
 import useAddToCartAnim from "../../hooks/useAddToCartAnim";
-import {
-  HOME_SPACE,
-  HOME_TYPE,
-  homeEditorialInk,
-  homeEditorialMuted,
-} from "../../theme/homeEditorial";
-import { KANKREG_PALETTE, WEB_COMMERCE, ZEEVAN_GOLD, ZEEVAN_GREEN } from "../../theme/kankregWeb";
+import { KANKREG_PALETTE } from "../../theme/kankregWeb";
+import { WP } from "../../theme/webPremium";
 import { useTheme } from "../../context/ThemeContext";
-import { fonts, icon, radius } from "../../theme/tokens";
-import { FONT_PRICE } from "../../theme/typographyRoles";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
+import { fonts } from "../../theme/tokens";
+import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import { formatINRWhole } from "../../utils/currency";
 import { SHOP_SCREEN_UI } from "../../content/appContent";
-import ComingSoonProductOverlay from "../product/ComingSoonProductOverlay";
+import { WEB_HOME_PREMIUM } from "../../content/webHomeContent";
 import { getComingSoonImageBlurStyle } from "../../utils/comingSoonImageStyle";
-import { COMING_SOON_RED } from "../../theme/comingSoonTheme";
 import { getImageUriCandidates, getProductThumbImageUri, prefetchProductHeroImage } from "../../utils/image";
 import ProgressiveProductImage from "../ui/ProgressiveProductImage";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
-
-const MAROON = WEB_COMMERCE.saveBadgeBg;
+import { ensureWebPremiumCss } from "../../utils/webPremiumCss";
+import { WebPillLink } from "./webPremiumParts";
 
 const PRODUCT_CARD_CSS_ID = "zeevan-atelier-product-card-v2";
 const PRODUCT_CARD_CLASS = "zeevan-product-card";
@@ -39,41 +27,39 @@ const PRODUCT_CTA_CLASS = "zeevan-product-cta";
 const PRODUCT_TITLE_CLASS = "zeevan-product-title";
 
 const PRODUCT_IMAGE_ASPECT = 1;
+const STAGE_RADIUS = 16;
 
 if (Platform.OS === "web") {
+  ensureWebPremiumCss();
   injectWebCssOnce(
     PRODUCT_CARD_CSS_ID,
     `.${PRODUCT_CARD_CLASS} {
-  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease, border-color 0.3s ease;
+  transition: transform 0.5s ${WP.ease}, box-shadow 0.5s ease, border-color 0.3s ease;
   will-change: transform;
 }
 .${PRODUCT_CARD_CLASS}:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 24px 48px -26px rgba(36, 68, 36, 0.28);
-  border-color: rgba(92, 104, 52, 0.32);
+  transform: translateY(-8px);
+  box-shadow: ${WP.shadow.lift};
+  border-color: rgba(184, 136, 76, 0.42);
 }
 .${PRODUCT_PHOTO_CLASS} {
-  transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 1.1s ${WP.ease};
 }
 .${PRODUCT_CARD_CLASS}:hover .${PRODUCT_PHOTO_CLASS} {
-  transform: scale(1.06);
+  transform: scale(1.07);
 }
 .${PRODUCT_TITLE_CLASS} {
   transition: color 0.3s ease;
 }
 .${PRODUCT_CARD_CLASS}:hover .${PRODUCT_TITLE_CLASS} {
-  color: ${ZEEVAN_GREEN.deep};
+  color: ${WP.green.ink};
 }
 .${PRODUCT_CTA_CLASS} {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.25s ease;
+  transition: filter 0.3s ease, box-shadow 0.35s ease, transform 0.35s ${WP.ease};
 }
 .${PRODUCT_CARD_CLASS}:hover .${PRODUCT_CTA_CLASS}:not([aria-disabled="true"]) {
-  background-color: ${ZEEVAN_GREEN.deep};
-  border-color: ${ZEEVAN_GREEN.deep};
-  color: #FAF8F4;
-}
-.${PRODUCT_CARD_CLASS}:hover .${PRODUCT_CTA_CLASS}:not([aria-disabled="true"]) * {
-  color: #FAF8F4;
+  filter: brightness(1.14) saturate(1.05);
+  box-shadow: ${WP.shadow.green};
 }
 @media (prefers-reduced-motion: reduce) {
   .${PRODUCT_CARD_CLASS}, .${PRODUCT_PHOTO_CLASS}, .${PRODUCT_CTA_CLASS}, .${PRODUCT_TITLE_CLASS} {
@@ -85,58 +71,29 @@ if (Platform.OS === "web") {
   );
 }
 
-/** Quiet text link for home catalog section header. */
+/** "View all" pill for a home catalog section header. */
 export function HomeCatalogViewAllLink({ label, onPress }) {
-  const { isDark } = useTheme();
-  const muted = homeEditorialMuted(isDark);
-
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="link"
-      accessibilityLabel={label}
-      style={({ hovered, focused }) => [
-        viewAllStyles.wrap,
-        hovered && Platform.OS === "web" ? viewAllStyles.wrapHover : null,
-        focused && Platform.OS === "web" ? viewAllStyles.wrapFocus : null,
-      ]}
-    >
-      <Text style={[viewAllStyles.label, { color: muted }]}>{label}</Text>
-      <Ionicons name="arrow-forward" size={icon.micro} color={muted} />
-    </Pressable>
-  );
+  return <WebPillLink label={label} onPress={onPress} />;
 }
 
-const viewAllStyles = StyleSheet.create({
-  wrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingVertical: 4,
-    paddingHorizontal: 2,
-    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
-  },
-  wrapHover: {
-    opacity: 0.82,
-  },
-  wrapFocus: {
-    ...Platform.select({
-      web: {
-        outlineStyle: "solid",
-        outlineWidth: 2,
-        outlineColor: KANKREG_PALETTE.gold,
-        outlineOffset: 2,
-        borderRadius: 4,
-      },
-      default: {},
-    }),
-  },
-  label: {
-    fontFamily: fonts.semibold,
-    fontSize: HOME_TYPE.kicker,
-    letterSpacing: 0.2,
-  },
-});
+/** Soft cream veil + gold "Coming soon" pill over the (blurred) photo of an upcoming product. */
+function SoonVeil({ note, compact }) {
+  return (
+    <View style={styles.soonVeil} pointerEvents="none">
+      <View style={[styles.soonPill, compact && styles.soonPillCompact]}>
+        <Ionicons name="sparkles" size={compact ? 12 : 14} color={WP.gold.ink} />
+        <Text style={[styles.soonPillText, compact && styles.soonPillTextCompact]} numberOfLines={1}>
+          {SHOP_SCREEN_UI.card.comingSoon}
+        </Text>
+      </View>
+      {note ? (
+        <Text style={[styles.soonNote, compact && styles.soonNoteCompact]} numberOfLines={2}>
+          {note}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
 
 const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
   product,
@@ -151,11 +108,15 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
   featured = false,
 }) {
   const { isDark } = useTheme();
-  const ink = homeEditorialInk(isDark);
-  const muted = homeEditorialMuted(isDark);
+  const { isMobileWeb } = useKankregLayout();
+  // Tight columns (the Shop grid beside its filter rail) get the compact type and a one-word ADD.
+  const [cardWidth, setCardWidth] = useState(0);
+  const narrow = cardWidth > 0 && cardWidth < 200;
+  const compact = isMobileWeb || narrow;
   const isWeb = Platform.OS === "web";
-  /** Anveshan commerce chrome on all web (Home + Shop identical cards). */
-  const phoneShop = isWeb;
+  const ink = isDark ? WP.cream : WP.ink;
+  const muted = isDark ? "rgba(250, 248, 244, 0.6)" : WP.inkFaint;
+  const meta = isDark ? WP.gold.bright : WP.gold.deep;
   const copy = SHOP_SCREEN_UI.card;
 
   const primaryImage = useMemo(() => {
@@ -169,7 +130,7 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
   const imageUris = useMemo(
     () =>
       getImageUriCandidates(primaryImage, {
-        width: isWeb ? (featured ? 960 : 420) : 640,
+        width: isWeb ? (featured ? 960 : 520) : 640,
         quality: isWeb ? "auto:eco" : "auto:good",
       }),
     [featured, isWeb, primaryImage]
@@ -212,45 +173,43 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
   const name = String(product?.name || "").trim();
   const ratingAvg = Number(product?.ratingAverage ?? product?.rating ?? 0) || 0;
   const reviewCount = Number(product?.reviewCount ?? 0) || 0;
-  const showRating = isWeb && ratingAvg > 0;
+  const showRating = ratingAvg > 0 && !unavailable;
 
   const ctaLabel = isComingSoon
     ? copy.comingSoon
     : isOutOfStock
       ? copy.soldOut
-      : quantity > 0
-        ? copy.inBagLabel
+      : narrow
+        ? WEB_HOME_PREMIUM.card.addShort
         : copy.addLabel;
 
   return (
     <View
       className={isWeb ? PRODUCT_CARD_CLASS : undefined}
-      style={[
-        editorialStyles.card,
-        featured && editorialStyles.cardFeatured,
-        isDark && editorialStyles.cardDark,
-        isComingSoon && editorialStyles.cardComingSoon,
-        isComingSoon && isDark && editorialStyles.cardComingSoonDark,
-      ]}
+      onLayout={(e) => {
+        const next = Math.round(e.nativeEvent.layout.width);
+        if (next !== cardWidth) setCardWidth(next);
+      }}
+      style={[styles.card, compact && styles.cardCompact, isDark && styles.cardDark]}
     >
       <Pressable
         onPressIn={() => prefetchProductHeroImage(primaryImage)}
         onPress={onPress}
-        style={({ focused }) => [
-          editorialStyles.cardPressable,
-          featured && editorialStyles.cardPressableFeatured,
-          focused && isWeb ? editorialStyles.cardFocus : null,
-        ]}
+        style={({ focused }) => [styles.cardPressable, focused && isWeb ? styles.cardFocus : null]}
         accessibilityRole="button"
         accessibilityLabel={`Open ${name || "product"}`}
       >
-        <View style={[editorialStyles.imageFrame, featured && editorialStyles.imageFrameFeatured]}>
+        <View style={[styles.stage, isDark && styles.stageDark]}>
           {imageUri && imageCandidateIndex < imageUris.length ? (
             <ProgressiveProductImage
               uri={imageUri}
               previewUri={getProductThumbImageUri(primaryImage)}
               className={isWeb ? PRODUCT_PHOTO_CLASS : undefined}
-              style={[editorialStyles.image, isComingSoon && getComingSoonImageBlurStyle()]}
+              style={[
+                styles.image,
+                isOutOfStock && { opacity: 0.45 },
+                isComingSoon && getComingSoonImageBlurStyle(),
+              ]}
               contentFit="cover"
               recyclingKey={`${product?.id || "p"}:${imageUri}`}
               onError={() => setImageCandidateIndex((idx) => idx + 1)}
@@ -258,55 +217,53 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
               rounded={0}
             />
           ) : (
-            <View style={[editorialStyles.imageFallback, isDark && editorialStyles.imageFallbackDark]}>
-              <Ionicons name="image-outline" size={icon.md} color={muted} />
+            <View style={[styles.imageFallback, isDark && styles.imageFallbackDark]}>
+              <Ionicons name="image-outline" size={30} color={muted} />
             </View>
           )}
 
-          {badge && !isComingSoon && !isOutOfStock ? (
-            <View
-              style={[
-                editorialStyles.badge,
-                phoneShop && savePct ? editorialStyles.badgeRight : null,
-                isDark && editorialStyles.badgeDark,
-              ]}
-            >
-              <Text style={editorialStyles.badgeText} numberOfLines={1}>
+          {savePct && !unavailable ? (
+            <View style={[styles.sale, compact && styles.saleCompact]}>
+              <Text style={[styles.saleText, compact && styles.saleTextCompact]}>{`${savePct}% OFF`}</Text>
+            </View>
+          ) : null}
+
+          {badge && !unavailable ? (
+            <View style={[styles.badge, savePct && styles.badgeBelowSale, compact && styles.badgeCompact]}>
+              <Text style={[styles.badgeText, compact && styles.badgeTextCompact]} numberOfLines={1}>
                 {badge}
               </Text>
             </View>
           ) : null}
 
-          {savePct && !unavailable ? (
-            <View style={[editorialStyles.savePill, phoneShop && editorialStyles.savePillPhone]}>
-              <Text style={[editorialStyles.saveText, phoneShop && editorialStyles.saveTextPhone]}>
-                {phoneShop ? `${savePct}% OFF` : `${copy.saveLabel} ${savePct}%`}
-              </Text>
+          {showRating ? (
+            <View style={[styles.rating, compact && styles.ratingCompact]}>
+              <Ionicons name="star" size={compact ? 11 : 12} color={WP.gold.deep} />
+              <Text style={styles.ratingText}>{ratingAvg.toFixed(1)}</Text>
+              {reviewCount > 0 && !compact ? <Text style={styles.ratingCount}>({reviewCount})</Text> : null}
             </View>
           ) : null}
 
           {isComingSoon ? (
-            <ComingSoonProductOverlay note={launchNote} compact={false} isDark={isDark} />
+            <SoonVeil note={launchNote} compact={compact} />
           ) : isOutOfStock ? (
-            <View style={editorialStyles.soldOutBadge}>
-              <Text style={editorialStyles.soldOutText}>{copy.soldOut}</Text>
+            <View style={styles.soldOutBadge}>
+              <Text style={styles.soldOutText}>{copy.soldOut}</Text>
             </View>
           ) : null}
         </View>
 
-        <View style={[editorialStyles.bodyTop, featured && editorialStyles.bodyTopFeatured]}>
-          {(category || unit) || isWeb ? (
-            <Text style={[editorialStyles.meta, { color: muted }]} numberOfLines={1}>
-              {[category, unit].filter(Boolean).join(" · ") || " "}
-            </Text>
-          ) : null}
+        <View style={[styles.body, compact && styles.bodyCompact]}>
+          <Text style={[styles.meta, { color: meta }]} numberOfLines={1}>
+            {[category, unit].filter(Boolean).join(" · ").toUpperCase() || " "}
+          </Text>
 
           <Text
             className={isWeb ? PRODUCT_TITLE_CLASS : undefined}
             style={[
-              editorialStyles.title,
-              isWeb && editorialStyles.titleWeb,
-              featured && editorialStyles.titleFeatured,
+              styles.title,
+              compact && styles.titleCompact,
+              featured && styles.titleFeatured,
               { color: ink },
             ]}
             numberOfLines={2}
@@ -314,40 +271,12 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
             {name}
           </Text>
 
-          {isWeb ? (
-            <View style={editorialStyles.ratingRow}>
-              {showRating ? (
-                <>
-                  <Ionicons name="star" size={11} color={ZEEVAN_GOLD.deep} />
-                  <Text style={[editorialStyles.ratingText, { color: ink }]}>
-                    {ratingAvg.toFixed(1)}
-                  </Text>
-                  {reviewCount > 0 ? (
-                    <Text style={[editorialStyles.ratingCount, { color: muted }]}>
-                      ({reviewCount})
-                    </Text>
-                  ) : null}
-                </>
-              ) : (
-                <Text style={[editorialStyles.ratingCount, { color: muted }]} numberOfLines={1}>
-                  {copy.newArrivalLabel || "Small batch"}
-                </Text>
-              )}
-            </View>
-          ) : null}
-
-          <View style={editorialStyles.priceRow}>
-            <Text
-              style={[editorialStyles.price, featured && editorialStyles.priceFeatured, { color: ink }]}
-              numberOfLines={1}
-            >
+          <View style={styles.priceRow}>
+            <Text style={[styles.price, compact && styles.priceCompact, { color: ink }]} numberOfLines={1}>
               {formatINRWhole(safePrice)}
             </Text>
             {listMrp ? (
-              <Text
-                style={[editorialStyles.mrp, { color: phoneShop ? MAROON : muted }]}
-                numberOfLines={1}
-              >
+              <Text style={[styles.mrp, { color: muted }]} numberOfLines={1}>
                 {formatINRWhole(listMrp)}
               </Text>
             ) : null}
@@ -355,32 +284,31 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
         </View>
       </Pressable>
 
-      <View style={[editorialStyles.bodyActions, featured && editorialStyles.bodyActionsFeatured]}>
-        {quantity > 0 ? (
+      <View style={[styles.actions, compact && styles.actionsCompact]}>
+        {quantity > 0 && !unavailable ? (
           <View
-            style={[editorialStyles.stepper, isDark && editorialStyles.stepperDark]}
+            style={[styles.stepper, compact && styles.ctaCompact]}
             accessibilityRole="adjustable"
             accessibilityLabel={`Quantity ${quantity}`}
           >
             <TouchableOpacity
               onPress={onRemoveFromCart}
-              style={editorialStyles.stepBtn}
+              style={styles.stepBtn}
               accessibilityRole="button"
               accessibilityLabel="Decrease quantity"
               hitSlop={8}
             >
-              <Ionicons name="remove" size={icon.sm} color={ink} />
+              <Ionicons name="remove" size={20} color="#FFFFFF" />
             </TouchableOpacity>
-            <Text style={[editorialStyles.stepQty, { color: ink }]}>{quantity}</Text>
+            <Text style={styles.stepQty}>{quantity}</Text>
             <TouchableOpacity
               onPress={handleAddToCart}
-              style={editorialStyles.stepBtn}
-              disabled={unavailable}
+              style={styles.stepBtn}
               accessibilityRole="button"
               accessibilityLabel="Increase quantity"
               hitSlop={8}
             >
-              <Ionicons name="add" size={icon.sm} color={ink} />
+              <Ionicons name="add" size={20} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         ) : (
@@ -388,38 +316,30 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
             <Pressable
               onPress={handleAddToCart}
               disabled={unavailable}
-              className={isWeb ? PRODUCT_CTA_CLASS : undefined}
-              style={({ hovered }) => [
-                editorialStyles.addBtn,
-                phoneShop && editorialStyles.addBtnPhone,
-                isDark && !phoneShop && editorialStyles.addBtnDark,
-                unavailable && editorialStyles.addBtnDisabled,
-                isComingSoon && editorialStyles.addBtnComingSoon,
-                hovered && isWeb && !unavailable && !phoneShop ? editorialStyles.addBtnHover : null,
+              className={isWeb ? `${PRODUCT_CTA_CLASS}${unavailable ? "" : " zv-btn"}` : undefined}
+              style={[
+                styles.cta,
+                compact && styles.ctaCompact,
+                isOutOfStock && styles.ctaSoldOut,
+                isComingSoon && styles.ctaSoon,
               ]}
               accessibilityRole="button"
               accessibilityState={{ disabled: unavailable }}
               accessibilityLabel={
-                isComingSoon
-                  ? `${name || "Product"} coming soon`
-                  : `${copy.addA11y}: ${name || "product"}`
+                isComingSoon ? `${name || "Product"} coming soon` : `${copy.addA11y}: ${name || "product"}`
               }
             >
-              {!unavailable && !phoneShop ? (
-                <Ionicons
-                  name="bag-outline"
-                  size={icon.xs}
-                  color={ink}
-                  style={editorialStyles.addIcon}
-                />
-              ) : null}
+              {!unavailable ? <Ionicons name="add" size={18} color="#FFFFFF" /> : null}
               <Text
+                numberOfLines={1}
                 style={[
-                  editorialStyles.addBtnText,
-                  { color: unavailable ? muted : phoneShop ? "#FFFFFF" : ink },
+                  styles.ctaText,
+                  compact && styles.ctaTextCompact,
+                  isOutOfStock && { color: isDark ? "rgba(250,248,244,0.5)" : "#8C8672" },
+                  isComingSoon && { color: isDark ? WP.gold.bright : WP.gold.deep },
                 ]}
               >
-                {phoneShop && !unavailable ? "ADD" : ctaLabel}
+                {ctaLabel}
               </Text>
             </Pressable>
           </Animated.View>
@@ -433,8 +353,7 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
 export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
   item,
   idx,
-  styles,
-  catalogGridColStyle,
+  styles: gridStyles,
   navigation,
   quantity,
   onAddToCart,
@@ -476,7 +395,7 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
       />
     );
 
-  return <View style={[styles?.productGridCell, gridCardStyles.cell]}>{card}</View>;
+  return <View style={[gridStyles?.productGridCell, gridCardStyles.cell]}>{card}</View>;
 });
 
 const gridCardStyles = StyleSheet.create({
@@ -487,295 +406,211 @@ const gridCardStyles = StyleSheet.create({
   },
 });
 
-const editorialStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   card: {
     flex: 1,
-    borderRadius: 14,
+    padding: 10,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: "rgba(36, 68, 36, 0.1)",
+    borderColor: "rgba(36, 68, 36, 0.08)",
     backgroundColor: KANKREG_PALETTE.card,
     overflow: "hidden",
-    ...Platform.select({
-      web: {
-        boxShadow: "0 12px 28px -22px rgba(25, 20, 15, 0.2)",
-      },
-      default: {},
-    }),
+    ...Platform.select({ web: { boxShadow: WP.shadow.card }, default: {} }),
   },
-  cardFeatured: {},
+  cardCompact: { padding: 8, borderRadius: 18 },
+  cardDark: {
+    backgroundColor: "#181513",
+    borderColor: "#3f3933",
+    ...Platform.select({ web: { boxShadow: "0 10px 28px -22px rgba(0, 0, 0, 0.5)" }, default: {} }),
+  },
   cardPressable: {
     width: "100%",
     ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
   },
-  cardPressableFeatured: {},
-  bodyTop: {
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    gap: 4,
-  },
-  bodyTopFeatured: {
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    gap: 4,
-  },
-  bodyActions: {
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-    paddingTop: 6,
-  },
-  bodyActionsFeatured: {
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-  },
-  cardDark: {
-    backgroundColor: "#181513",
-    borderColor: "#3f3933",
-    ...Platform.select({
-      web: { boxShadow: "0 10px 28px -22px rgba(0, 0, 0, 0.38)" },
-      default: {},
-    }),
-  },
-  cardComingSoon: {
-    borderColor: COMING_SOON_RED.cardBorder,
-  },
-  cardComingSoonDark: {
-    borderColor: COMING_SOON_RED.cardBorderDark,
-  },
   cardFocus: {
     ...Platform.select({
-      web: {
-        outlineStyle: "solid",
-        outlineWidth: 2,
-        outlineColor: KANKREG_PALETTE.gold,
-        outlineOffset: 2,
-      },
+      web: { outlineStyle: "solid", outlineWidth: 2, outlineColor: WP.gold.base, outlineOffset: 2 },
       default: {},
     }),
   },
-  imageFrame: {
+
+  stage: {
     width: "100%",
     aspectRatio: PRODUCT_IMAGE_ASPECT,
+    borderRadius: STAGE_RADIUS,
     overflow: "hidden",
-    backgroundColor: KANKREG_PALETTE.paper2,
     position: "relative",
+    backgroundColor: "#F5F5F5",
+    ...Platform.select({ web: { backgroundImage: WP.gradient.stage }, default: {} }),
   },
-  imageFrameFeatured: {
-    aspectRatio: PRODUCT_IMAGE_ASPECT,
+  stageDark: {
+    backgroundColor: "#24201d",
+    ...Platform.select({ web: { backgroundImage: "linear-gradient(180deg, #2a2420 0%, #1c1815 100%)" }, default: {} }),
   },
-  image: {
-    width: "100%",
-    height: "100%",
+  image: { width: "100%", height: "100%" },
+  imageFallback: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: KANKREG_PALETTE.paper2 },
+  imageFallbackDark: { backgroundColor: "#24201d" },
+
+  sale: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    paddingVertical: 5,
+    paddingHorizontal: 11,
+    borderRadius: WP.radius.pill,
+    ...Platform.select({
+      web: { backgroundImage: WP.gradient.gold, boxShadow: "0 6px 14px -6px rgba(120, 82, 28, 0.6)" },
+      default: { backgroundColor: WP.gold.base },
+    }),
   },
+  saleCompact: { top: 8, left: 8, paddingVertical: 4, paddingHorizontal: 8 },
+  saleText: { fontFamily: fonts.bold, fontSize: 11, letterSpacing: 0.7, color: WP.gold.ink },
+  saleTextCompact: { fontSize: 9.5, letterSpacing: 0.5 },
   badge: {
     position: "absolute",
-    top: 8,
-    left: 8,
-    paddingVertical: 3,
-    paddingHorizontal: 7,
-    borderRadius: 6,
-    backgroundColor: "rgba(250, 248, 244, 0.92)",
-    borderWidth: 1,
-    borderColor: "rgba(36, 68, 36, 0.12)",
+    top: 12,
+    left: 12,
+    maxWidth: "78%",
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: WP.radius.pill,
+    backgroundColor: "rgba(250, 248, 244, 0.94)",
   },
-  /** Sits under the “% OFF” pill so the two never collide on narrow rail cards. */
-  badgeRight: {
-    top: 36,
-    left: 8,
-    maxWidth: "84%",
-  },
-  badgeDark: {
-    backgroundColor: "rgba(24, 21, 19, 0.88)",
-    borderColor: "#3f3933",
-  },
-  titleWeb: {
-    minHeight: 36,
-  },
-  ratingRow: {
+  badgeBelowSale: { top: 44 },
+  badgeCompact: { top: 8, left: 8, paddingVertical: 3, paddingHorizontal: 7 },
+  badgeText: { fontFamily: fonts.bold, fontSize: 9.5, letterSpacing: 0.7, textTransform: "uppercase", color: WP.green.ink },
+  badgeTextCompact: { fontSize: 8.5, letterSpacing: 0.4 },
+  rating: {
+    position: "absolute",
+    left: 12,
+    bottom: 12,
     flexDirection: "row",
     alignItems: "center",
-    gap: 3,
-    minHeight: 16,
+    gap: 4,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: WP.radius.pill,
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
+    ...Platform.select({ web: { boxShadow: "0 6px 16px -8px rgba(0, 0, 0, 0.35)" }, default: {} }),
   },
-  ratingText: {
-    fontFamily: fonts.semibold,
-    fontSize: 11,
-    lineHeight: 14,
-  },
-  ratingCount: {
-    fontFamily: fonts.regular,
-    fontSize: 11,
-    lineHeight: 14,
-  },
-  badgeText: {
-    fontFamily: fonts.semibold,
-    fontSize: 9,
-    letterSpacing: 0.1,
-    textTransform: "uppercase",
-    color: ZEEVAN_GREEN.deep,
-  },
-  savePill: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    paddingVertical: 3,
-    paddingHorizontal: 7,
-    borderRadius: 6,
-    backgroundColor: ZEEVAN_GOLD.base,
-  },
-  savePillPhone: {
-    top: 8,
-    left: 8,
-    right: "auto",
-    borderRadius: 4,
-    backgroundColor: MAROON,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  saveText: {
-    fontFamily: fonts.bold,
-    fontSize: 9,
-    letterSpacing: 0.04,
-    color: KANKREG_PALETTE.ink,
-  },
-  saveTextPhone: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    letterSpacing: 0.3,
-  },
-  addBtnPhone: {
-    borderWidth: 0,
-    backgroundColor: ZEEVAN_GREEN.deep,
-    borderRadius: 8,
-    paddingVertical: 10,
-  },
-  titleFeatured: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    lineHeight: 18,
-    minHeight: 0,
-  },
-  priceFeatured: {
-    fontSize: 14,
-  },
-  imageFallback: {
-    flex: 1,
+  ratingCompact: { left: 8, bottom: 8, paddingVertical: 3, paddingHorizontal: 7 },
+  ratingText: { fontFamily: fonts.bold, fontSize: 12.5, color: "#2E2208" },
+  ratingCount: { fontFamily: fonts.regular, fontSize: 11.5, color: "#7A7460" },
+
+  soonVeil: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: KANKREG_PALETTE.paper2,
+    gap: 10,
+    paddingHorizontal: 16,
+    ...Platform.select({
+      web: {
+        backgroundImage:
+          "linear-gradient(180deg, rgba(31,51,31,0.46) 0%, rgba(31,51,31,0.62) 100%)",
+      },
+      default: { backgroundColor: "rgba(31,51,31,0.5)" },
+    }),
   },
-  imageFallbackDark: {
-    backgroundColor: "#24201d",
+  soonPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    borderRadius: WP.radius.pill,
+    ...Platform.select({
+      web: { backgroundImage: WP.gradient.gold, boxShadow: WP.shadow.gold },
+      default: { backgroundColor: WP.gold.base },
+    }),
   },
+  soonPillCompact: { paddingVertical: 6, paddingHorizontal: 11, gap: 5 },
+  soonPillText: { fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1.2, textTransform: "uppercase", color: WP.gold.ink },
+  soonPillTextCompact: { fontSize: 10, letterSpacing: 0.8 },
+  soonNote: {
+    fontFamily: fonts.medium,
+    fontSize: 12.5,
+    lineHeight: 17,
+    textAlign: "center",
+    maxWidth: 200,
+    color: "rgba(250, 248, 244, 0.92)",
+  },
+  soonNoteCompact: { fontSize: 10.5, lineHeight: 14, maxWidth: 140 },
   soldOutBadge: {
     position: "absolute",
     top: 12,
     left: 12,
     paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: "rgba(25, 20, 15, 0.72)",
+    paddingHorizontal: 11,
+    borderRadius: WP.radius.pill,
+    backgroundColor: "rgba(25, 20, 15, 0.78)",
   },
   soldOutText: {
-    fontFamily: fonts.semibold,
-    fontSize: 11,
-    color: "rgba(255, 253, 248, 0.92)",
-    letterSpacing: 0.3,
+    fontFamily: fonts.bold,
+    fontSize: 10.5,
+    letterSpacing: 1,
     textTransform: "uppercase",
+    color: "rgba(255, 253, 248, 0.95)",
   },
-  meta: {
-    fontFamily: fonts.semibold,
-    fontSize: 10,
-    lineHeight: 13,
-    letterSpacing: 0.12,
-    textTransform: "uppercase",
-  },
+
+  body: { paddingHorizontal: 6, paddingTop: 14, gap: 7 },
+  bodyCompact: { paddingHorizontal: 3, paddingTop: 10, gap: 5 },
+  meta: { fontFamily: fonts.bold, fontSize: 10.5, lineHeight: 14, letterSpacing: 1.6 },
   title: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    lineHeight: 18,
-    letterSpacing: -0.1,
-    minHeight: 18,
+    fontFamily: FONT_HEADING,
+    fontSize: 18,
+    lineHeight: 23,
+    letterSpacing: -0.25,
+    minHeight: 46,
   },
-  priceRow: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    flexWrap: "wrap",
-    gap: 6,
-    marginTop: 2,
-  },
-  price: {
-    fontFamily: FONT_PRICE,
-    fontSize: 14,
-    letterSpacing: -0.2,
-  },
-  mrp: {
-    fontFamily: fonts.regular,
-    fontSize: 11,
-    textDecorationLine: "line-through",
-  },
-  addBtn: {
+  titleCompact: { fontSize: 15, lineHeight: 19, minHeight: 38 },
+  titleFeatured: { fontSize: 20, lineHeight: 25 },
+  priceRow: { flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", columnGap: 8, rowGap: 2 },
+  price: { fontFamily: FONT_PRICE, fontSize: 21, letterSpacing: -0.4 },
+  priceCompact: { fontSize: 17 },
+  mrp: { fontFamily: fonts.regular, fontSize: 13.5, textDecorationLine: "line-through" },
+
+  actions: { paddingHorizontal: 4, paddingTop: 12, paddingBottom: 4 },
+  actionsCompact: { paddingHorizontal: 2, paddingTop: 9 },
+  cta: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 6,
     alignSelf: "stretch",
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    borderRadius: 8,
+    gap: 6,
+    minHeight: 46,
+    paddingHorizontal: 12,
+    borderRadius: WP.radius.pill,
+    ...Platform.select({
+      web: { backgroundImage: WP.gradient.green, boxShadow: "0 10px 22px -14px rgba(31, 51, 31, 0.7)", cursor: "pointer" },
+      default: { backgroundColor: WP.green.deep },
+    }),
+  },
+  ctaCompact: { minHeight: 40 },
+  ctaSoldOut: {
+    backgroundColor: "rgba(36, 68, 36, 0.08)",
+    ...Platform.select({ web: { backgroundImage: "none", boxShadow: "none", cursor: "not-allowed" }, default: {} }),
+  },
+  ctaSoon: {
+    backgroundColor: "rgba(212, 165, 116, 0.16)",
     borderWidth: 1,
-    borderColor: "rgba(36, 68, 36, 0.18)",
-    backgroundColor: "transparent",
-    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+    borderColor: "rgba(184, 136, 76, 0.55)",
+    ...Platform.select({ web: { backgroundImage: "none", boxShadow: "none", cursor: "default" }, default: {} }),
   },
-  addBtnDark: {
-    borderColor: "#3f3933",
-  },
-  addBtnHover: {
-    borderColor: ZEEVAN_GREEN.deep,
-    backgroundColor: ZEEVAN_GREEN.deep,
-  },
-  addBtnDisabled: {
-    opacity: 0.55,
-  },
-  addBtnComingSoon: {
-    backgroundColor: COMING_SOON_RED.mid,
-    borderColor: COMING_SOON_RED.borderStrong,
-    opacity: 1,
-  },
-  addIcon: {
-    marginTop: 1,
-  },
-  addBtnText: {
-    fontFamily: fonts.semibold,
-    fontSize: 12,
-    letterSpacing: 0.04,
-  },
+  ctaText: { fontFamily: fonts.bold, fontSize: 14, letterSpacing: 1, textTransform: "uppercase", color: "#FFFFFF" },
+  ctaTextCompact: { fontSize: 12.5, letterSpacing: 0.7 },
   stepper: {
     flexDirection: "row",
     alignItems: "center",
     alignSelf: "stretch",
     justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: "rgba(36, 68, 36, 0.18)",
-    borderRadius: 8,
-    paddingVertical: 2,
-    paddingHorizontal: 4,
-    backgroundColor: "rgba(92, 104, 52, 0.06)",
+    minHeight: 46,
+    paddingHorizontal: 6,
+    borderRadius: WP.radius.pill,
+    ...Platform.select({
+      web: { backgroundImage: WP.gradient.green, boxShadow: "0 10px 22px -14px rgba(31, 51, 31, 0.7)" },
+      default: { backgroundColor: WP.green.deep },
+    }),
   },
-  stepperDark: {
-    borderColor: "#3f3933",
-    backgroundColor: "rgba(255,255,255,0.04)",
-  },
-  stepBtn: {
-    width: 34,
-    height: 34,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  stepQty: {
-    fontFamily: fonts.semibold,
-    fontSize: HOME_TYPE.kicker,
-    minWidth: 24,
-    textAlign: "center",
-  },
+  stepBtn: { width: 40, height: 40, alignItems: "center", justifyContent: "center" },
+  stepQty: { fontFamily: fonts.bold, fontSize: 16, minWidth: 28, textAlign: "center", color: "#FFFFFF" },
 });

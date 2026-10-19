@@ -6,6 +6,10 @@ function isLocalHost(hostname) {
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
 }
 
+function isIpHostname(hostname) {
+  return /^\d+\.\d+\.\d+\.\d+$/.test(String(hostname || ""));
+}
+
 function unique(items) {
   return Array.from(new Set(items.filter(Boolean)));
 }
@@ -77,8 +81,8 @@ function hostVariants(urlString) {
       candidates.push(urlString);
     }
 
-    // Prefer HTTPS for remote http URLs (e.g. misconfigured API).
-    if (!isLocalHost(url.hostname) && url.protocol === "http:") {
+    // Prefer HTTPS for remote http URLs — but never for bare IPs (EC2 has no TLS).
+    if (!isLocalHost(url.hostname) && !isIpHostname(url.hostname) && url.protocol === "http:") {
       const httpsUrl = new URL(urlString);
       httpsUrl.protocol = "https:";
       candidates.unshift(httpsUrl.toString());
@@ -125,7 +129,8 @@ export function resolveImageUri(rawUri) {
 function upgradeRemoteImageUrl(uri) {
   if (!uri || !/^http:\/\//i.test(uri)) return uri;
   try {
-    if (isLocalHost(new URL(uri).hostname)) return uri;
+    const host = new URL(uri).hostname;
+    if (isLocalHost(host) || isIpHostname(host)) return uri;
   } catch {
     return uri;
   }

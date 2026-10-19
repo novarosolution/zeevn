@@ -27,6 +27,8 @@
     "dev": "expo start --web --port 8082",
     "web:export": "expo export --platform web",
     "export:web": "npm run optimize:web && npm run web:export && node scripts/post-export-web.js",
+    "export:web:ec2": "EXPO_PUBLIC_API_URL=http://54.173.67.136 EXPO_PUBLIC_SITE_URL=http://54.173.67.136 EXPO_PUBLIC_API_URL_FALLBACK=https://www.zeevan.shop/aws npm run export:web",
+    "export:web:shop": "EXPO_PUBLIC_API_URL=https://www.zeevan.shop/aws EXPO_PUBLIC_SITE_URL=https://zeevan.shop EXPO_PUBLIC_API_URL_FALLBACK=https://zeevn-i760.onrender.com npm run export:web",
     "optimize:web": "node scripts/optimize-zeevan-heroes.js && node scripts/optimize-marketing-web.js",
     "icons:generate": "node scripts/generate-app-icons.js",
     "icons:app": "node scripts/generate-app-icons.js",

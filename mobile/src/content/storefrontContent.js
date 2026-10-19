@@ -225,7 +225,8 @@ const diwaliTheme = {
     title: "Shubh Deepavali",
     cta: "Shop festive",
     route: { name: "Shop", params: { category: "Gift Sets" } },
-    spotlight: { match: { lineKey: "gifts" } },
+    /** Prefer gift sets; FestiveBanner falls back to honey/ghee so the tilted jar card always shows. */
+    spotlight: { match: { lineKeys: ["gifts", "honey", "ghee"] } },
     palette: {
       light: {
         gradient: ["#3F1409", "#7B2A0D", "#C8691A"],

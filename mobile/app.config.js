@@ -37,6 +37,7 @@ module.exports = {
     },
     ios: {
       ...expo.ios,
+      // Native projects still use this id; display name / icons are Zeevan.
       bundleIdentifier: "com.novarosolution.kankreg",
       usesAppleSignIn: true,
       infoPlist: {
@@ -50,12 +51,12 @@ module.exports = {
       package: "com.novarosolution.kankreg",
     },
     splash: {
-      image: "./assets/splash-icon.png",
+      image: "./assets/splash-mark.png",
       resizeMode: "contain",
       backgroundColor: "#FFFFFF",
       dark: {
-        image: "./assets/splash-icon.png",
-        backgroundColor: "#151210",
+        image: "./assets/splash-mark-dark.png",
+        backgroundColor: "#1A1714",
       },
     },
     icon: "./assets/app-icon-light.png",
@@ -66,13 +67,15 @@ module.exports = {
       [
         "expo-splash-screen",
         {
-          image: "./assets/splash-icon.png",
+          image: "./assets/splash-mark.png",
           resizeMode: "contain",
           backgroundColor: "#FFFFFF",
           dark: {
-            image: "./assets/splash-icon.png",
+            image: "./assets/splash-mark-dark.png",
             backgroundColor: "#1A1714",
           },
+          ios: { imageWidth: 240 },
+          android: { imageWidth: 288 },
         },
       ],
       [

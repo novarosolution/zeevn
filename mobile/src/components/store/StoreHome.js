@@ -232,11 +232,15 @@ export default function StoreHome({
     };
   }, [festival, products]);
 
-  // The product whose photo the hero shows (the theme says which; falls back to a featured product).
+  // The product whose photo the hero shows (theme match → featured → any imaged product).
   const spotlight = useMemo(
     () =>
       pickTileProduct(products, festival.banner.spotlight?.match || { featured: true }) ||
-      pickTileProduct(products, { featured: true }),
+      pickTileProduct(products, { featured: true }) ||
+      pickTileProduct(products, { lineKey: "honey" }) ||
+      pickTileProduct(products, { lineKey: "ghee" }) ||
+      products.find((p) => productImageUri(p)) ||
+      null,
     [festival, products]
   );
 

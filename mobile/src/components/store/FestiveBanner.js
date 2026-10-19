@@ -6,9 +6,11 @@ import { Ionicons } from "@expo/vector-icons";
 import Svg, { Path, Rect } from "react-native-svg";
 import { useStoreTheme } from "../../theme/storefront";
 import { getProductPricing, productImageUri } from "../../utils/storefront";
+import { CLUSTER_H, CLUSTER_W, DiyaCluster, GlowSpot, Rangoli } from "./HomeArt";
 import PressableScale from "./PressableScale";
 
 const RADIUS = 28;
+const LAMP_SCALE = 0.62;
 
 const FALLBACK_PALETTE = {
   gradient: ["#1D3A1E", "#2D5629", "#587534"],
@@ -66,27 +68,49 @@ function Spotlight({ uri, size, top, palette, discount }) {
   );
 }
 
-/** Soft static glow — no animated HomeArt (those loops hung Home). */
-function SoftGlow({ color, size, style, opacity = 0.35 }) {
+/** Soft radial washes + static rangoli — no motion loops. */
+function DiwaliBackdrop({ palette }) {
   return (
-    <View
-      pointerEvents="none"
-      style={[
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: color,
-          opacity,
-        },
-        style,
-      ]}
+    <>
+      <GlowSpot size={330} color={palette.gold} opacity={0.38} style={{ position: "absolute", right: -92, bottom: -118 }} />
+      <GlowSpot size={220} color="#F6C877" opacity={0.22} style={{ position: "absolute", right: 28, top: -70 }} />
+      <Rangoli size={252} color={palette.gold} opacity={0.17} duration={0} style={{ position: "absolute", right: -92, top: -34 }} />
+    </>
+  );
+}
+
+function EverydayBackdrop({ palette }) {
+  return (
+    <>
+      <GlowSpot size={300} color={palette.gold} opacity={0.26} style={{ position: "absolute", right: -90, bottom: -110 }} />
+      <Rangoli size={252} color={palette.gold} opacity={0.15} duration={0} style={{ position: "absolute", right: -92, top: -26 }} />
+    </>
+  );
+}
+
+function DiwaliLamps({ compact }) {
+  return (
+    <DiyaCluster
+      style={
+        compact
+          ? {
+              position: "absolute",
+              right: 4,
+              bottom: 2,
+              width: CLUSTER_W,
+              height: CLUSTER_H,
+              transform: [{ scale: LAMP_SCALE }],
+              transformOrigin: "100% 100%",
+            }
+          : { position: "absolute", right: -4, bottom: 6, width: CLUSTER_W, height: CLUSTER_H }
+      }
     />
   );
 }
 
 /**
- * Home hero banner — festival/brand announcement. Static ornamentals only.
+ * Home festival banner — full Diwali look (tilted product card, gold glows, diyas).
+ * Ornaments stay static so Home scroll does not hitch.
  */
 export default function FestiveBanner({ theme, product, onPress, ctaLabel }) {
   const { type, isDark } = useStoreTheme();
@@ -99,10 +123,10 @@ export default function FestiveBanner({ theme, product, onPress, ctaLabel }) {
   const festive = ornament === "diya";
   const label = ctaLabel || banner.cta || "Shop now";
 
-  const spotSize = Math.round(Math.min(150, Math.max(104, width * 0.38)));
-  const spotUri = product ? productImageUri(product, spotSize) : "";
+  const spotSize = Math.round(Math.min(158, Math.max(112, width * 0.4)));
+  const spotUri = product ? productImageUri(product, Math.round(spotSize * 1.4)) : "";
   const discount = product ? getProductPricing(product).discountPct : null;
-  const spotTop = Math.round(height / 2 - spotSize / 2 + 8);
+  const spotTop = Math.round(height / 2 - spotSize / 2 + 6);
 
   const glow = {
     shadowColor: palette.gradient[2],
@@ -122,13 +146,10 @@ export default function FestiveBanner({ theme, product, onPress, ctaLabel }) {
     >
       <View style={[styles.clip, { borderColor: palette.border }]}>
         <LinearGradient colors={palette.gradient} start={{ x: 0.05, y: 0 }} end={{ x: 0.95, y: 1 }} style={StyleSheet.absoluteFill} />
-        <SoftGlow
-          color={palette.gold}
-          size={festive ? 280 : 240}
-          opacity={festive ? 0.28 : 0.2}
-          style={{ position: "absolute", right: -80, bottom: -100 }}
-        />
+        {festive ? <DiwaliBackdrop palette={palette} /> : <EverydayBackdrop palette={palette} />}
         {spotUri ? <Spotlight uri={spotUri} size={spotSize} top={spotTop} palette={palette} discount={discount} /> : null}
+        {festive && !spotUri ? <DiwaliLamps compact={false} /> : null}
+        {festive && spotUri ? <DiwaliLamps compact /> : null}
         <LinearGradient
           colors={["rgba(255,255,255,0.16)", "rgba(255,255,255,0)"]}
           locations={[0, 1]}
@@ -205,7 +226,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 4 },
   },
-  spot: { position: "absolute", right: 20 },
+  spot: { position: "absolute", right: 18 },
   spotShadow: {
     flex: 1,
     borderRadius: 22,

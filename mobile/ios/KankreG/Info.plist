@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>KankreG</string>
+    <string>Zeevan</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -27,14 +27,14 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>kankreg</string>
+          <string>zeevan</string>
           <string>com.novarosolution.kankreg</string>
         </array>
       </dict>
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>exp+kankreg</string>
+          <string>exp+zeevan</string>
         </array>
       </dict>
     </array>
@@ -56,9 +56,9 @@
     <key>NSLocationAlwaysUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your location</string>
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Allow KankreG to use your location to auto-fill delivery address.</string>
+    <string>Allow Zeevan to use your location to auto-fill delivery address.</string>
     <key>NSUserNotificationUsageDescription</key>
-    <string>Allow KankreG to send order updates and important announcements.</string>
+    <string>Allow Zeevan to send order updates and important announcements.</string>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

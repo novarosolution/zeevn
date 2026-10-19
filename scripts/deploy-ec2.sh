@@ -23,6 +23,7 @@ ssh_cmd "mkdir -p $APP_DIR/web"
 rsync -az --delete -e "ssh -i $KEY -o StrictHostKeyChecking=accept-new" \
   "$ROOT/mobile/dist/" "$USER@$HOST:$APP_DIR/web/"
 
-echo "==> Reload nginx"
-ssh_cmd "sudo nginx -t && sudo systemctl reload nginx"
+echo "==> Install nginx site (API + /media proxy)"
+scp_cmd "$ROOT/deploy/nginx-zeevan.conf" "$USER@$HOST:/tmp/nginx-zeevan.conf"
+ssh_cmd "sudo cp /tmp/nginx-zeevan.conf /etc/nginx/sites-available/zeevan && sudo ln -sfn /etc/nginx/sites-available/zeevan /etc/nginx/sites-enabled/zeevan && sudo rm -f /etc/nginx/sites-enabled/default && sudo nginx -t && sudo systemctl reload nginx"
 echo "Done. Web: http://$HOST  API: http://$HOST:5001"

@@ -3,15 +3,20 @@ import Constants from "expo-constants";
 /** Local dev API — backend `npm run dev` on port 5001. */
 export const ZEEVAN_API_LOCAL_URL = "http://127.0.0.1:5001";
 
+function isLoopbackHostname(host) {
+  const h = String(host || "").toLowerCase();
+  return h === "localhost" || h === "127.0.0.1" || h === "0.0.0.0" || h === "10.0.2.2";
+}
+
+/** True for loopback / emulator / private LAN — not public cloud IPs. */
 function isLocalHostname(host) {
   const h = String(host || "").toLowerCase();
-  return (
-    h === "localhost" ||
-    h === "127.0.0.1" ||
-    h === "0.0.0.0" ||
-    h === "10.0.2.2" ||
-    /^\d+\.\d+\.\d+\.\d+$/.test(h)
-  );
+  if (isLoopbackHostname(h)) return true;
+  // RFC1918 private ranges (dev LAN). Public EC2 IPs must NOT match.
+  if (/^10\.\d+\.\d+\.\d+$/.test(h)) return true;
+  if (/^192\.168\.\d+\.\d+$/.test(h)) return true;
+  if (/^172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+$/.test(h)) return true;
+  return false;
 }
 
 function isInvalidApiHost(hostname) {
@@ -43,6 +48,8 @@ function upgradeInsecureRemoteUrl(url) {
   try {
     const { hostname } = new URL(url);
     if (isLocalHostname(hostname)) return url;
+    // Bare IPs (EC2 http://54.x) have no TLS — keep http.
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(hostname)) return url;
     return url.replace(/^http:\/\//i, "https://");
   } catch {
     return url;
@@ -74,6 +81,7 @@ function sanitizeRemoteApiUrl(raw) {
   try {
     const { hostname } = new URL(upgraded);
     if (isInvalidApiHost(hostname) || isLocalHostname(hostname)) return null;
+    // Allow public IP hosts over http (EC2) as well as https domains.
   } catch {
     return null;
   }
@@ -90,6 +98,36 @@ function getConfiguredApiUrl() {
   return null;
 }
 
+/**
+ * Browser production host → same-origin API.
+ * Fixes stale exports that baked `EXPO_PUBLIC_API_URL=http://127.0.0.1:5001`
+ * (product `/media/…` URLs then pointed at the visitor's own machine and never loaded).
+ */
+function getWebRuntimeApiBaseUrl() {
+  if (typeof window === "undefined" || !window.location?.hostname) return null;
+  const host = String(window.location.hostname).toLowerCase();
+  if (isLoopbackHostname(host)) return null;
+
+  const origin = String(window.location.origin || "").replace(/\/+$/, "");
+  if (!origin) return null;
+
+  // Vercel (zeevan.shop) proxies the EC2 API under `/aws`.
+  if (/(^|\.)zeevan\.(shop|app)$/i.test(host) || host.endsWith(".vercel.app")) {
+    return `${origin}/aws`;
+  }
+
+  // EC2 IP / nginx site — `/api` and `/media` are reverse-proxied.
+  return origin;
+}
+
+function hostnameOf(url) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return "";
+  }
+}
+
 /** WebSocket host — same origin as API, without `/api` suffix. */
 export function getSocketBaseUrl() {
   const api = getApiBaseUrl();
@@ -97,9 +135,20 @@ export function getSocketBaseUrl() {
   return api.replace(/\/api\/?$/i, "");
 }
 
-/** Dev → local backend; production → EXPO_PUBLIC_API_URL (required). */
+/**
+ * Dev → local backend; production web → current origin (+ `/aws` on the shop);
+ * native production → EXPO_PUBLIC_API_URL.
+ */
 export function getApiBaseUrl() {
+  const webRuntime = getWebRuntimeApiBaseUrl();
   const configured = getConfiguredApiUrl();
+
+  if (webRuntime) {
+    // Never serve localhost media URLs to real visitors.
+    if (!configured || isLocalHostname(hostnameOf(configured))) return webRuntime;
+    return webRuntime;
+  }
+
   if (configured) return configured;
   if (typeof __DEV__ !== "undefined" && __DEV__) {
     return ZEEVAN_API_LOCAL_URL;

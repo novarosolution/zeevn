@@ -9,7 +9,8 @@ import { resolveBundledModuleSrc } from "../utils/image";
 import { ZEEVAN_PRODUCT_LINES, matchProductLine } from "./zeevanCatalogContent";
 
 const PACKAGING_MODULES = {
-  ghee: require("../../assets/zeevan-ghee-packaging-portrait.png"),
+  // JPG — not packaging-portrait.png (hero WebP rewrite turns hashed .png into a 404).
+  ghee: require("../../assets/zeevan-pack-ghee-v2.jpg"),
   tel: require("../../assets/zeevan-tel-product.jpg"),
   masala: require("../../assets/zeevan-masala-product.jpg"),
   honey: require("../../assets/zeevan-honey-product.jpg"),

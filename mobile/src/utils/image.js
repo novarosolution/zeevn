@@ -278,7 +278,10 @@ function preferWebHeroBundlerVariant(uri, deliveryWidth) {
     return `${webpMatch[1]}${safeSuffix}${webpMatch[2] || ""}`;
   }
 
-  const pngMatch = value.match(/^(.*)\.png(\?.*)?$/i);
+  // Only rewrite hero PNGs that already have an optimized sibling stem
+  // (`…-web-720.webp`). Blind `.png` → `-web-N.webp` breaks hashed Metro
+  // packaging assets (e.g. product covers) with a 404.
+  const pngMatch = value.match(/^(.*zeevan-ghee-packaging-portrait)\.[a-f0-9]+\.png(\?.*)?$/i);
   if (pngMatch) {
     return `${pngMatch[1]}${safeSuffix}${pngMatch[2] || ""}`;
   }

@@ -4,30 +4,12 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Svg, { Path, Rect } from "react-native-svg";
-import Animated, { FadeInUp, interpolate, useAnimatedStyle, useSharedValue } from "react-native-reanimated";
 import { useStoreTheme } from "../../theme/storefront";
 import { getProductPricing, productImageUri } from "../../utils/storefront";
-import {
-  CLUSTER_H,
-  CLUSTER_W,
-  DiyaCluster,
-  Embers,
-  GlowSpot,
-  LightString,
-  Rangoli,
-  Sheen,
-  SwaySprig,
-  TwinkleStar,
-  useLoop,
-} from "./HomeArt";
-import { useHomeScroll } from "./HomeMotion";
 import PressableScale from "./PressableScale";
 
 const RADIUS = 28;
-/** Compact lamp cluster scale when a product photo shares the card. */
-const LAMP_SCALE = 0.62;
 
-/** Used only if a theme forgets its palette, so the hero never renders blank. */
 const FALLBACK_PALETTE = {
   gradient: ["#1D3A1E", "#2D5629", "#587534"],
   eyebrow: "#EDC27D",
@@ -40,16 +22,9 @@ const FALLBACK_PALETTE = {
 };
 
 function CtaArrow({ color }) {
-  const t = useLoop(760);
-  const animatedStyle = useAnimatedStyle(() => ({ transform: [{ translateX: interpolate(t.value, [0, 1], [0, 3.5]) }] }));
-  return (
-    <Animated.View style={animatedStyle}>
-      <Ionicons name="arrow-forward" size={15} color={color} />
-    </Animated.View>
-  );
+  return <Ionicons name="arrow-forward" size={15} color={color} />;
 }
 
-/** A short gold rule with a diamond in the middle — the hero's only ornament in the copy block. */
 function OrnamentRule({ color, width = 78 }) {
   return (
     <Svg width={width} height={10} viewBox={`0 0 ${width} 10`}>
@@ -60,27 +35,20 @@ function OrnamentRule({ color, width = 78 }) {
   );
 }
 
-/**
- * The product photo, tilted like a print on a shelf, floating gently with a soft shadow, and lagging a little
- * behind the page as you scroll (a touch of depth). A round sticker shows the discount when there is one.
- */
 function Spotlight({ uri, size, top, palette, discount }) {
   const { type } = useStoreTheme();
-  const float = useLoop(3200);
-  const scroll = useHomeScroll();
-  const idle = useSharedValue(0);
-  const scrollY = scroll?.scrollY ?? idle;
-  const floatStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: interpolate(float.value, [0, 1], [3, -4]) + Math.max(0, Math.min(scrollY.value * 0.08, 16)) },
-      { rotate: "-5deg" },
-    ],
-  }));
   return (
-    <Animated.View pointerEvents="none" style={[styles.spot, { width: size, height: size, top }, floatStyle]}>
+    <View pointerEvents="none" style={[styles.spot, { width: size, height: size, top, transform: [{ rotate: "-5deg" }] }]}>
       <View style={styles.spotShadow}>
         <View style={styles.spotClip}>
-          <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} cachePolicy="memory-disk" />
+          <Image
+            source={{ uri }}
+            style={StyleSheet.absoluteFill}
+            contentFit="contain"
+            contentPosition="center"
+            transition={0}
+            cachePolicy="memory-disk"
+          />
           <LinearGradient colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]} style={styles.spotGloss} />
         </View>
       </View>
@@ -94,91 +62,31 @@ function Spotlight({ uri, size, top, palette, discount }) {
           </Text>
         </View>
       ) : null}
-    </Animated.View>
+    </View>
   );
 }
 
-/** Diwali backdrop (behind the photo): glow, rangoli and the string of fairy lights. */
-function DiwaliBackdrop({ palette, width }) {
+/** Soft static glow — no animated HomeArt (those loops hung Home). */
+function SoftGlow({ color, size, style, opacity = 0.35 }) {
   return (
-    <>
-      <GlowSpot size={330} color={palette.gold} opacity={0.38} style={{ position: "absolute", right: -92, bottom: -118 }} />
-      <Rangoli size={252} color={palette.gold} opacity={0.17} style={{ position: "absolute", right: -92, top: -34 }} />
-      <LightString width={width} sag={46} count={18} style={styles.lights} />
-    </>
-  );
-}
-
-/** Diwali foreground (in front of the photo): the lamps, rising embers and a few stars. */
-function DiwaliLamps({ palette, width, height, compact }) {
-  const embers = compact
-    ? [
-        { left: width - 84, bottom: 44, size: 2.6, rise: 54, drift: 6, delay: 0, duration: 3100 },
-        { left: width - 52, bottom: 54, size: 3, rise: 66, drift: -5, delay: 900, duration: 3500 },
-        { left: width - 24, bottom: 40, size: 2.2, rise: 50, drift: 5, delay: 1500, duration: 3000 },
-        { left: width - 68, bottom: 50, size: 2, rise: 72, drift: -4, delay: 2200, duration: 3900 },
-      ]
-    : [
-        { left: width - 72, bottom: 90, size: 3.2, rise: 78, drift: 7, delay: 0, duration: 3100 },
-        { left: width - 62, bottom: 88, size: 2.4, rise: 92, drift: -6, delay: 1100, duration: 3600 },
-        { left: width - 124, bottom: 68, size: 2.8, rise: 70, drift: 6, delay: 500, duration: 3300 },
-        { left: width - 116, bottom: 66, size: 2.2, rise: 84, drift: -5, delay: 1700, duration: 3900 },
-        { left: width - 24, bottom: 56, size: 2.4, rise: 60, drift: 5, delay: 900, duration: 3000 },
-        { left: width - 78, bottom: 94, size: 2, rise: 100, drift: 8, delay: 2300, duration: 4200 },
-      ];
-  return (
-    <>
-      <DiyaCluster
-        style={
-          compact
-            ? { position: "absolute", right: 4, bottom: 2, width: CLUSTER_W, height: CLUSTER_H, transform: [{ scale: LAMP_SCALE }], transformOrigin: "100% 100%" }
-            : { position: "absolute", right: -4, bottom: 6, width: CLUSTER_W, height: CLUSTER_H }
-        }
-      />
-      <Embers items={embers} color="#FFD66B" />
-      <TwinkleStar x={width * 0.5} y={height * 0.3} r={5} color={palette.gold} delay={200} />
-      <TwinkleStar x={width * 0.46} y={height * 0.62} r={3.6} color={palette.gold} delay={1500} />
-      {compact ? null : <TwinkleStar x={width * 0.8} y={height * 0.4} r={6.5} color={palette.gold} delay={900} />}
-    </>
-  );
-}
-
-/** Everyday backdrop: a faint rangoli and two swaying sprigs (they peek out from behind the photo). */
-function EverydayBackdrop({ palette, width, height }) {
-  return (
-    <>
-      <GlowSpot size={300} color={palette.gold} opacity={0.26} style={{ position: "absolute", right: -90, bottom: -110 }} />
-      <Rangoli size={252} color={palette.gold} opacity={0.15} duration={90000} style={{ position: "absolute", right: -92, top: -26 }} />
-      <SwaySprig
-        width={width}
-        height={height}
-        from={{ x: width - 18, y: height + 8 }}
-        ctrl={{ x: width - 98, y: height - 62 }}
-        to={{ x: width - 72, y: height - 154 }}
-        color={palette.gold}
-        leaves={6}
-      />
-      <SwaySprig
-        width={width}
-        height={height}
-        from={{ x: width + 6, y: height - 8 }}
-        ctrl={{ x: width - 42, y: height - 84 }}
-        to={{ x: width - 22, y: height - 176 }}
-        color={palette.gold}
-        leaves={5}
-        flip
-        delay={600}
-      />
-      <TwinkleStar x={width * 0.52} y={height * 0.3} r={4.4} color={palette.gold} delay={0} />
-      <TwinkleStar x={width * 0.46} y={height * 0.66} r={3.4} color={palette.gold} delay={800} />
-    </>
+    <View
+      pointerEvents="none"
+      style={[
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: color,
+          opacity,
+        },
+        style,
+      ]}
+    />
   );
 }
 
 /**
- * Home hero — the festival (or brand) announcement: layered gradient, animated artwork, a tilted product photo,
- * the serif headline and a call to action. Copy and colours come from the theme (`banner.*`); `ornament` picks the
- * artwork and `product` the spotlight photo. Optional `banner.eyebrow` / `banner.subtitle` add more copy.
+ * Home hero banner — festival/brand announcement. Static ornamentals only.
  */
 export default function FestiveBanner({ theme, product, onPress, ctaLabel }) {
   const { type, isDark } = useStoreTheme();
@@ -214,56 +122,48 @@ export default function FestiveBanner({ theme, product, onPress, ctaLabel }) {
     >
       <View style={[styles.clip, { borderColor: palette.border }]}>
         <LinearGradient colors={palette.gradient} start={{ x: 0.05, y: 0 }} end={{ x: 0.95, y: 1 }} style={StyleSheet.absoluteFill} />
-        {festive ? <DiwaliBackdrop palette={palette} width={width} /> : <EverydayBackdrop palette={palette} width={width} height={height} />}
+        <SoftGlow
+          color={palette.gold}
+          size={festive ? 280 : 240}
+          opacity={festive ? 0.28 : 0.2}
+          style={{ position: "absolute", right: -80, bottom: -100 }}
+        />
         {spotUri ? <Spotlight uri={spotUri} size={spotSize} top={spotTop} palette={palette} discount={discount} /> : null}
-        {festive ? <DiwaliLamps palette={palette} width={width} height={height} compact={Boolean(spotUri)} /> : null}
         <LinearGradient
           colors={["rgba(255,255,255,0.16)", "rgba(255,255,255,0)"]}
           locations={[0, 1]}
           style={styles.gloss}
           pointerEvents="none"
         />
-        <Sheen width={width} />
 
         <View style={styles.copy} pointerEvents="none">
           {banner.eyebrow ? (
-            <Animated.View entering={FadeInUp.duration(420)} style={styles.eyebrowRow}>
+            <View style={styles.eyebrowRow}>
               <View style={[styles.eyebrowDot, { backgroundColor: palette.gold }]} />
               <Text style={type.eyebrow(palette.eyebrow, 10.5)} numberOfLines={1} maxFontSizeMultiplier={1.15}>
                 {banner.eyebrow}
               </Text>
-            </Animated.View>
+            </View>
           ) : null}
-          <Animated.Text
-            entering={FadeInUp.delay(80).duration(480)}
+          <Text
             style={[type.display(titleSize, { color: palette.title, ls: -0.7, lh: titleSize + 3 }), styles.title]}
             numberOfLines={2}
             maxFontSizeMultiplier={1.12}
           >
             {banner.title}
-          </Animated.Text>
-          <Animated.View entering={FadeInUp.delay(140).duration(460)}>
-            <OrnamentRule color={palette.gold} />
-          </Animated.View>
+          </Text>
+          <OrnamentRule color={palette.gold} />
           {banner.subtitle ? (
-            <Animated.Text
-              entering={FadeInUp.delay(180).duration(480)}
-              style={[type.ui(13.5, "medium", palette.subtitle), styles.subtitle]}
-              numberOfLines={2}
-              maxFontSizeMultiplier={1.15}
-            >
+            <Text style={[type.ui(13.5, "medium", palette.subtitle), styles.subtitle]} numberOfLines={2} maxFontSizeMultiplier={1.15}>
               {banner.subtitle}
-            </Animated.Text>
+            </Text>
           ) : null}
-          <Animated.View
-            entering={FadeInUp.delay(240).duration(460)}
-            style={[styles.cta, { backgroundColor: palette.ctaBg, shadowColor: palette.ctaBg }]}
-          >
+          <View style={[styles.cta, { backgroundColor: palette.ctaBg, shadowColor: palette.ctaBg }]}>
             <Text style={type.ui(13.5, "extrabold", palette.ctaText, { letterSpacing: 0.2 })} maxFontSizeMultiplier={1.15}>
               {label}
             </Text>
             <CtaArrow color={palette.ctaText} />
-          </Animated.View>
+          </View>
         </View>
       </View>
     </PressableScale>
@@ -273,7 +173,6 @@ export default function FestiveBanner({ theme, product, onPress, ctaLabel }) {
 const styles = StyleSheet.create({
   wrap: { marginHorizontal: 16, borderRadius: RADIUS },
   clip: { flex: 1, borderRadius: RADIUS, borderWidth: 1, overflow: "hidden" },
-  lights: { position: "absolute", top: 0, left: 0 },
   gloss: { position: "absolute", top: 0, left: 0, right: 0, height: "46%" },
   copy: {
     position: "absolute",
@@ -310,14 +209,14 @@ const styles = StyleSheet.create({
   spotShadow: {
     flex: 1,
     borderRadius: 22,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#F7F4EC",
     shadowColor: "#000000",
     shadowOpacity: 0.4,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 10 },
     ...Platform.select({ android: { elevation: 10 }, default: {} }),
   },
-  spotClip: { flex: 1, borderRadius: 22, borderWidth: 3, borderColor: "rgba(255, 255, 255, 0.95)", overflow: "hidden" },
+  spotClip: { flex: 1, borderRadius: 22, borderWidth: 2, borderColor: "rgba(255, 255, 255, 0.88)", overflow: "hidden" },
   spotGloss: { position: "absolute", top: 0, left: 0, right: 0, height: "42%" },
   sticker: {
     position: "absolute",

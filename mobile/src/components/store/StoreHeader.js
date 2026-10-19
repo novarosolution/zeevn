@@ -1,45 +1,34 @@
-import React, { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import React from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import Animated, { FadeInRight } from "react-native-reanimated";
 import { STORE_HEADER } from "../../content/storefrontContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
-import { DiyaGlyph, HeaderArt } from "./HomeArt";
 import { useCountUp } from "./HomeMotion";
 import PressableScale from "./PressableScale";
 
-/**
- * One pill under the location bar. A `festival` chip carries the theme's flickering lamp and accent colour;
- * the others show a small icon and a few words.
- */
-function InfoChip({ chip, index, accent, ornament }) {
+function InfoChip({ chip, accent }) {
   const { c, type, isDark } = useStoreTheme();
   const festival = chip.kind === "festival";
   const tint = isDark ? c.gold : c.brandAlt;
   return (
-    <Animated.View
-      entering={FadeInRight.delay(140 + index * 90).duration(420)}
+    <View
+      accessible
+      accessibilityLabel={chip.label}
       style={[
         styles.chip,
         festival && styles.chipFestival,
         {
-          backgroundColor: withAlpha(c.card, isDark ? 0.16 : festival ? 0.8 : 0.7),
+          backgroundColor: withAlpha(c.card, isDark ? 0.85 : 0.92),
           borderColor: festival
             ? withAlpha(accent, isDark ? 0.42 : 0.34)
             : withAlpha(isDark ? c.gold : c.brand, isDark ? 0.24 : 0.14),
         },
       ]}
-      accessible
-      accessibilityLabel={chip.label}
     >
       {festival ? (
-        ornament === "diya" ? (
-          <DiyaGlyph size={22} />
-        ) : (
-          <Ionicons name="sparkles" size={14} color={accent} />
-        )
+        <Ionicons name="sparkles" size={14} color={accent} />
       ) : (
         <MaterialCommunityIcons name={chip.icon} size={14} color={tint} />
       )}
@@ -49,7 +38,7 @@ function InfoChip({ chip, index, accent, ornament }) {
       >
         {chip.label}
       </Text>
-    </Animated.View>
+    </View>
   );
 }
 
@@ -106,11 +95,6 @@ function RewardsPill({ points, onPress }) {
   );
 }
 
-/**
- * Home header — delivery location, rewards and account on top, then one row of small chips (festival countdown,
- * delivery time, free-delivery threshold, distance) over a warm gradient with quiet animated ornaments.
- * Kept short on purpose so the hero is in view the moment Home opens.
- */
 export default function StoreHeader({
   signedIn,
   firstName,
@@ -118,12 +102,11 @@ export default function StoreHeader({
   hasUnread = false,
   points = 0,
   ornament = "none",
-  accent,
-  chips = [],
-  locationLabel,
-  locationKind,
   locationText,
-  signInLabel = "Sign in",
+  locationKind = "",
+  locationLabel = STORE_HEADER.deliveringTo,
+  chips = [],
+  accent,
   extendTop = 0,
   onPressLocation,
   onPressRewards,
@@ -131,18 +114,12 @@ export default function StoreHeader({
   onPressSignIn,
 }) {
   const { c, type, shadow, gutter, isDark } = useStoreTheme();
-  const { width } = useWindowDimensions();
-  const [height, setHeight] = useState(110);
   const chipAccent = accent || c.goldText;
-  // The ornaments also reach down behind the search bar and tabs, so the glow feels like one warm sky.
-  const artHeight = height + extendTop + 96;
+  void ornament;
+  void extendTop;
 
   return (
-    <View onLayout={(e) => setHeight(Math.round(e.nativeEvent.layout.height))}>
-      <View pointerEvents="none" style={[styles.art, { top: -extendTop, height: artHeight }]}>
-        <HeaderArt ornament={ornament} isDark={isDark} width={width} height={artHeight} />
-      </View>
-
+    <View>
       <View style={{ paddingHorizontal: gutter }}>
         <View style={styles.topBar}>
           <Pressable
@@ -166,7 +143,7 @@ export default function StoreHeader({
                 </Text>
                 <Ionicons name="chevron-down" size={12} color={c.inkSoft} />
               </View>
-              <Text style={type.ui(15, "bold", c.ink)} numberOfLines={1}>
+              <Text style={type.ui(16.5, "extrabold", c.ink)} numberOfLines={1}>
                 {locationText}
               </Text>
             </View>
@@ -178,14 +155,20 @@ export default function StoreHeader({
             ) : (
               <PressableScale
                 onPress={onPressSignIn}
-                accessibilityRole="button"
-                accessibilityLabel={signInLabel}
                 style={[styles.signIn, shadow.soft, { backgroundColor: c.brand }]}
+                accessibilityRole="button"
+                accessibilityLabel={STORE_HEADER.signIn}
               >
-                <Text style={type.ui(13.5, "extrabold", c.onBrand, { letterSpacing: 0.2 })}>{signInLabel}</Text>
+                <Text style={type.ui(13.5, "extrabold", c.onBrand)}>{STORE_HEADER.signIn}</Text>
               </PressableScale>
             )}
-            <Avatar name={firstName} avatarUrl={avatarUrl} signedIn={signedIn} hasUnread={hasUnread} onPress={onPressProfile} />
+            <Avatar
+              name={firstName}
+              avatarUrl={avatarUrl}
+              signedIn={signedIn}
+              hasUnread={hasUnread}
+              onPress={signedIn ? onPressProfile : onPressSignIn}
+            />
           </View>
         </View>
       </View>
@@ -194,11 +177,11 @@ export default function StoreHeader({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.chipScroll}
           contentContainerStyle={[styles.chips, { paddingHorizontal: gutter }]}
+          style={styles.chipScroll}
         >
-          {chips.map((chip, i) => (
-            <InfoChip key={chip.key} chip={chip} index={i} accent={chipAccent} ornament={ornament} />
+          {chips.map((chip) => (
+            <InfoChip key={chip.key} chip={chip} accent={chipAccent} />
           ))}
         </ScrollView>
       ) : null}
@@ -207,7 +190,6 @@ export default function StoreHeader({
 }
 
 const styles = StyleSheet.create({
-  art: { position: "absolute", left: 0, right: 0 },
   topBar: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 46 },
   location: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 10 },
   pin: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", borderWidth: StyleSheet.hairlineWidth },
@@ -225,7 +207,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  chipFestival: { height: 30, paddingLeft: 8, paddingRight: 12, borderRadius: 15, borderWidth: 1 },
+  chipFestival: { height: 30, paddingLeft: 8, paddingRight: 12, borderRadius: 15 },
   rewards: {
     height: 42,
     paddingHorizontal: 13,

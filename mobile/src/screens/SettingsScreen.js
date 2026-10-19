@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import { Ionicons } from "@expo/vector-icons";
+import Constants from "expo-constants";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 import { KankregPageWrap } from "../components/kankreg/KankregPageChrome";
 import { KANKREG_PAGE_SECTION_GAP } from "../theme/kankregScreenStyles";
@@ -26,8 +27,7 @@ import PremiumSwitch from "../components/ui/PremiumSwitch";
 import CollapsibleSection from "../components/ui/CollapsibleSection";
 import { SETTINGS_SCREEN } from "../content/appContent";
 import AppIconPicker from "../components/settings/AppIconPicker";
-import NativeMenuList from "../components/native/NativeMenuList";
-import NativeCard from "../components/native/NativeCard";
+import { StoreSettings } from "../components/store/entry";
 import { FIGMA } from "../theme/figmaApp";
 
 function SettingsItem({ icon, title, subtitle, onPress, danger = false, styles, c }) {
@@ -68,6 +68,8 @@ export default function SettingsScreen({ navigation }) {
   const [iconMsg, setIconMsg] = useState("");
   const [iconMsgSeverity, setIconMsgSeverity] = useState("success");
   const [error, setError] = useState("");
+  const [pushState, setPushState] = useState(null);
+  const [signingOut, setSigningOut] = useState(false);
   const { colors: c, shadowPremium, mode, setMode, isDark } = useTheme();
   const styles = useMemo(
     () => createSettingsStyles(c, shadowPremium, isDark, { isCompactWeb }),
@@ -94,6 +96,7 @@ export default function SettingsScreen({ navigation }) {
       setError("");
       setPermissionMsg("");
       const result = await registerForPushNotifications(token);
+      setPushState(Boolean(result.enabled));
       if (result.enabled) {
         setPermissionMsg("Notifications on.");
       } else {
@@ -112,73 +115,43 @@ export default function SettingsScreen({ navigation }) {
   let groupIndex = 0;
   const isNativeApp = Platform.OS !== "web";
 
-  const nativeMenuItems = [
-    { key: "edit", label: "Edit profile", icon: "create-outline", route: "EditProfile" },
-    { key: "profile", label: "Account overview", icon: "person-outline", route: "Profile" },
-    { key: "address", label: "Manage address", icon: "location-outline", route: "ManageAddress" },
-    { key: "orders", label: "My orders", icon: "bag-handle-outline", route: "MyOrders" },
-    { key: "notifications", label: "Notification inbox", icon: "mail-unread-outline", route: "Notifications" },
-    { key: "support", label: "Help & support", icon: "chatbubble-ellipses-outline", route: "Support" },
-  ];
-
   const handleNativeSignOut = async () => {
     try {
+      setSigningOut(true);
       await logout();
       resetNavigationToHome(navigation);
     } catch (err) {
+      setSigningOut(false);
       setError(err.message || "Could not sign out.");
     }
   };
 
   if (isNativeApp) {
+    const notices = [
+      error ? { id: "error", tone: "error", message: error } : null,
+      permissionMsg ? { id: "push", tone: "success", message: permissionMsg } : null,
+      iconMsg ? { id: "icon", tone: iconMsgSeverity === "error" ? "error" : "success", message: iconMsg } : null,
+    ].filter(Boolean);
+    const dismissNotice = (id) => {
+      if (id === "error") setError("");
+      else if (id === "push") setPermissionMsg("");
+      else setIconMsg("");
+    };
     return (
-      <CustomerScreenShell style={styles.screen}>
-        <KankregScrollPage scrollVariant="inner" style={customerScrollFill} showsVerticalScrollIndicator={false}>
-          <View style={styles.nativeWrap}>
-            <KankregCustomerPageHeader
-              eyebrow={SETTINGS_SCREEN.pageEyebrow}
-              title={SETTINGS_SCREEN.pageTitle}
-              showBack={false}
-            />
-            {error ? (
-              <View style={styles.bannerWrap}>
-                <PremiumErrorBanner severity="error" message={error} compact />
-              </View>
-            ) : null}
-            {permissionMsg ? (
-              <View style={styles.bannerWrap}>
-                <PremiumErrorBanner severity="success" message={permissionMsg} compact />
-              </View>
-            ) : null}
-            <NativeCard style={styles.nativeCard}>
-              <Pressable style={styles.nativeRow} onPress={cycleTheme}>
-                <Ionicons name="contrast-outline" size={17} color={isDark ? c.primaryBright : FIGMA.gold} />
-                <Text style={styles.nativeRowLabel}>Theme</Text>
-                <Text style={styles.nativeRowMeta}>{themeSubtitle}</Text>
-              </Pressable>
-              <Pressable style={styles.nativeRow} onPress={handleEnableNotifications}>
-                <Ionicons name="notifications-outline" size={17} color={isDark ? c.primaryBright : FIGMA.gold} />
-                <Text style={styles.nativeRowLabel}>Push notifications</Text>
-                <Text style={styles.nativeRowChevron}>›</Text>
-              </Pressable>
-            </NativeCard>
-            {iconMsg ? (
-              <View style={styles.bannerWrap}>
-                <PremiumErrorBanner severity={iconMsgSeverity} message={iconMsg} compact />
-              </View>
-            ) : null}
-            <NativeCard style={styles.nativeIconCard}>
-              <AppIconPicker onStatus={handleAppIconStatus} />
-            </NativeCard>
-            <NativeMenuList
-              navigation={navigation}
-              items={nativeMenuItems}
-              onSignOut={isAuthenticated ? handleNativeSignOut : undefined}
-            />
-          </View>
-        </KankregScrollPage>
-        <BottomNavBar />
-      </CustomerScreenShell>
+      <StoreSettings
+        navigation={navigation}
+        mode={mode}
+        onMode={setMode}
+        notices={notices}
+        onDismissNotice={dismissNotice}
+        onIconStatus={handleAppIconStatus}
+        onEnableNotifications={handleEnableNotifications}
+        notificationsLabel={pushState === null ? "Enable" : pushState ? "On" : "Off"}
+        signedIn={isAuthenticated}
+        onSignOut={handleNativeSignOut}
+        signingOut={signingOut}
+        version={Constants.expoConfig?.version || "1.0.0"}
+      />
     );
   }
 
@@ -337,69 +310,6 @@ export default function SettingsScreen({ navigation }) {
                   title="Delivery dashboard"
                   subtitle="Your orders"
                   onPress={() => navigation.navigate("DeliveryDashboard")}
-                  styles={styles}
-                  c={c}
-                />
-              </CollapsibleSection>
-            </SectionReveal>
-          ) : null}
-
-          {isAuthenticated && user?.isAdmin ? (
-            <SectionReveal preset="fade-up" index={groupIndex} delay={staggerDelay(groupIndex++, { initialDelay: 80 })}>
-              <CollapsibleSection title={SETTINGS_SCREEN.adminGroup} subtitle={SETTINGS_SCREEN.adminGroupSub}>
-                <SettingsItem
-                  icon="speedometer-outline"
-                  title="Dashboard"
-                  onPress={() => navigation.navigate("AdminDashboard")}
-                  styles={styles}
-                  c={c}
-                />
-                <SettingsItem
-                  icon="cube-outline"
-                  title="Products"
-                  onPress={() => navigation.navigate("AdminProducts")}
-                  styles={styles}
-                  c={c}
-                />
-                <SettingsItem
-                  icon="receipt-outline"
-                  title="Orders"
-                  onPress={() => navigation.navigate("AdminOrders")}
-                  styles={styles}
-                  c={c}
-                />
-                <SettingsItem
-                  icon="people-outline"
-                  title="Users"
-                  onPress={() => navigation.navigate("AdminUsers")}
-                  styles={styles}
-                  c={c}
-                />
-                <SettingsItem
-                  icon="megaphone-outline"
-                  title="Broadcasts"
-                  onPress={() => navigation.navigate("AdminNotifications")}
-                  styles={styles}
-                  c={c}
-                />
-                <SettingsItem
-                  icon="stats-chart-outline"
-                  title="Analytics"
-                  onPress={() => navigation.navigate("AdminAnalytics")}
-                  styles={styles}
-                  c={c}
-                />
-                <SettingsItem
-                  icon="ticket-outline"
-                  title="Coupons"
-                  onPress={() => navigation.navigate("AdminCoupons")}
-                  styles={styles}
-                  c={c}
-                />
-                <SettingsItem
-                  icon="chatbox-ellipses-outline"
-                  title="Support inbox"
-                  onPress={() => navigation.navigate("AdminSupport")}
                   styles={styles}
                   c={c}
                 />

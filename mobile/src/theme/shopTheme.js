@@ -8,7 +8,7 @@ export function getShopTheme(isDark = false) {
     pageBg: isDark ? "transparent" : KANKREG_PALETTE.paper,
     introBand: isDark ? "rgba(255,255,255,0.04)" : KANKREG_PALETTE.paper2,
     surface: isDark ? "rgba(255,255,255,0.055)" : KANKREG_PALETTE.card,
-    surfaceMuted: isDark ? "rgba(255,255,255,0.035)" : "#F5F0E6",
+    surfaceMuted: isDark ? "rgba(255,255,255,0.035)" : "#F7F7F7",
     surfaceChip: isDark ? "rgba(255,255,255,0.08)" : KANKREG_PALETTE.paper2,
     border: isDark ? "rgba(168, 184, 108, 0.22)" : KANKREG_PALETTE.line,
     borderStrong: isDark ? "rgba(168, 184, 108, 0.34)" : ALCHEMY.lineStrong,

@@ -69,7 +69,7 @@ export default function OrderLiveMapLeaflet({
   }, [mapPoints]);
 
   const partnerBikeIcon = useMemo(() => {
-    const bg = isDark ? "rgba(28,25,23,0.96)" : "#FFFCF8";
+    const bg = isDark ? "rgba(28,25,23,0.96)" : "#FFFFFF";
     const border = isDark ? "#E8C85A" : "#C9A227";
     const shadow = isDark ? "0 4px 14px rgba(0,0,0,0.38)" : "0 3px 10px rgba(61,42,18,0.14)";
     const html = `<div style="width:42px;height:42px;border-radius:21px;background:${bg};border:2px solid ${border};box-shadow:${shadow};display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1;">🚴</div>`;
@@ -94,7 +94,7 @@ export default function OrderLiveMapLeaflet({
 
   const shopIcon = useMemo(() => {
     const border = isDark ? "#E8C85A" : "#C9A227";
-    const bg = isDark ? "rgba(28,25,23,0.96)" : "#FFFCF8";
+    const bg = isDark ? "rgba(28,25,23,0.96)" : "#FFFFFF";
     return L.divIcon({
       className: "order-live-map-shop-icon",
       html: `<div style="width:34px;height:34px;border-radius:17px;background:${bg};border:2px solid ${border};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.18);font-size:15px;line-height:1;">🏪</div>`,

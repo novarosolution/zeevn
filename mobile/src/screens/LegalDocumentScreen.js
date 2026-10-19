@@ -13,6 +13,7 @@ import { useKankregLayout } from "../theme/kankregBreakpoints";
 import { fonts, layout, radius, spacing, typography } from "../theme/tokens";
 import { customerScrollFill } from "../theme/screenLayout";
 import GoldHairline from "../components/ui/GoldHairline";
+import { StoreLegal } from "../components/store/entry";
 import { shadowStyleForPlatform } from "../theme/shadowPlatform";
 
 const DOC_BY_ROUTE = {
@@ -27,6 +28,10 @@ export default function LegalDocumentScreen({ navigation, route }) {
   const doc = LEGAL_PAGES[docKey];
   const surfaces = getKankregSurfaces(isDark, c);
   const styles = useMemo(() => createStyles(surfaces, isDark, shadowPremium), [surfaces, isDark, shadowPremium]);
+
+  if (Platform.OS !== "web") {
+    return <StoreLegal navigation={navigation} doc={doc} icon={docKey === "terms" ? "document-text-outline" : "shield-checkmark-outline"} />;
+  }
 
   return (
     <CustomerScreenShell>

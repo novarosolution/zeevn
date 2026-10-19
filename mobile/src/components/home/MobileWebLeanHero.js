@@ -50,7 +50,7 @@ export default function MobileWebLeanHero({ slide, onPress, layoutWidth }) {
         objectFit: "contain",
         objectPosition: "top center",
         display: "block",
-        backgroundColor: "#FAF8F4",
+        backgroundColor: "#FFFFFF",
       }}
       onLoad={dismissShell}
     />
@@ -78,6 +78,6 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
     alignSelf: "stretch",
     overflow: "hidden",
-    backgroundColor: "#FAF8F4",
+    backgroundColor: "#FFFFFF",
   },
 });

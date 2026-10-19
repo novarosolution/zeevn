@@ -1,7 +1,6 @@
 import React, { useEffect } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -335,7 +334,6 @@ export default function StoreOrderConfirmed({ navigation, order }) {
         </View>
       </ScrollView>
       <View style={[styles.scrim, { height: insets.top }]} pointerEvents="none">
-        <BlurView intensity={isDark ? 40 : 60} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
         <View style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(c.page, 0.55) }]} />
       </View>
       <FloatingNav />

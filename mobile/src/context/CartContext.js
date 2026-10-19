@@ -5,6 +5,7 @@ import { useToastSafe } from "./ToastContext";
 import { fetchMyCart, replaceMyCart } from "../services/userService";
 import { cartLineKey } from "../utils/productCart";
 import { deferAfterFirstPaint } from "../utils/deferAfterFirstPaint";
+import { isCartFlightActive } from "../utils/cartFeedback";
 
 const CartContext = createContext(undefined);
 
@@ -45,7 +46,7 @@ export function CartProvider({ children }) {
       });
       const name = String(product?.name || "Item").trim();
       const short = name.length > 28 ? `${name.slice(0, 27)}…` : name;
-      toastCart(`${short} added to bag`);
+      if (!isCartFlightActive()) toastCart(`${short} added to bag`);
     },
     [toastCart, toastInfo]
   );

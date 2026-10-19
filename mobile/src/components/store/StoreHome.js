@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshControl, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -28,8 +27,6 @@ import {
 } from "../../content/storefrontContent";
 import { getProductLineByKey } from "../../content/zeevanCatalogContent";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
-import { getHeroSlideImageUri } from "../../utils/image";
-import { getAppHeroSlides } from "../../utils/homeViewMedia";
 import {
   STORE_LINE_ORDER,
   buildCategoryTiles,
@@ -107,7 +104,7 @@ export default function StoreHome({
 }) {
   const { c, isDark, gutter } = useStoreTheme();
   const insets = useSafeAreaInsets();
-  const { width, height: windowH } = useWindowDimensions();
+  const { height: windowH } = useWindowDimensions();
   const { user, isAuthenticated } = useAuth();
   const { displayLabel, savedLabel, snippet } = useDeliveryLocation();
 
@@ -255,21 +252,8 @@ export default function StoreHome({
   );
   const activePickKey = picks.some((p) => p.key === pickKey) ? pickKey : picks[0]?.key;
 
-  const promos = useMemo(() => {
-    const slides = getAppHeroSlides(homeView?.heroSlides);
-    if (!slides.length) return STORE_PROMOS;
-    const rewards = STORE_PROMOS.find((p) => p.kind === "rewards");
-    const fromAdmin = slides.map((slide, i) => ({
-      key: `slide-${slide.id || i}`,
-      kind: "image",
-      image: getHeroSlideImageUri(slide.url, { layoutWidth: width }),
-      title: slide.title,
-      subtitle: slide.subtitle,
-      cta: slide.cta || STORE_SECTIONS.promoCta,
-      route: { name: "Shop" },
-    }));
-    return [...(rewards ? [rewards] : []), ...fromAdmin].slice(0, 5);
-  }, [homeView?.heroSlides, width]);
+  /** Bundled Diwali line posters — don't let stale admin hero URLs wipe the new art. */
+  const promos = useMemo(() => STORE_PROMOS, []);
 
   const categoryTiles = useMemo(() => buildCategoryTiles(products, { max: 8 }), [products]);
 
@@ -297,140 +281,166 @@ export default function StoreHome({
     [go, openProduct]
   );
 
+  const openOrders = useCallback(() => navigation.navigate("MyOrders"), [navigation]);
+  const openBanner = useCallback(() => go(festival.banner.route), [go, festival.banner.route]);
+  const openPromo = useCallback((item) => go(item.route), [go]);
+  const openBentoRoute = useCallback(() => go(festival.bento.route), [go, festival.bento.route]);
+  const openPickRoute = useCallback((pick) => go(pick.route), [go]);
+
   /* ---- sections, in the order the content layout asks for ---- */
   const layout = Array.isArray(festival.layout) ? festival.layout : STORE_HOME.layout;
-  const blocks = [];
-  layout.forEach((key) => {
-    switch (key) {
-      case "tracker":
-        if (!activeOrders.length) break;
-        blocks.push({ key, node: <StoreTracker orders={activeOrders} onPress={() => navigation.navigate("MyOrders")} /> });
-        break;
-      case "banner":
-        blocks.push({ key, node: <FestiveBanner theme={festival} product={spotlight} onPress={() => go(festival.banner.route)} /> });
-        break;
-      case "promos":
-        blocks.push({
-          key,
-          node: <PromoCarousel items={promos} signedIn={Boolean(isAuthenticated)} points={points} onPressItem={(item) => go(item.route)} />,
-        });
-        break;
-      case "categories":
-        if (!categoryTiles.length) break;
-        blocks.push({
-          key,
-          staggered: true,
-          node: (
-            <View style={styles.block}>
-              <SectionHeader
-                title={homeView?.productTypeTitle || STORE_SECTIONS.categories.title}
-                action={STORE_SECTIONS.categories.action}
-                onAction={() => openShop()}
-              />
-              <CategoryGrid
-                tiles={categoryTiles}
-                moreSuffix={STORE_SECTIONS.categories.moreSuffix}
-                allLabel={STORE_SECTIONS.categories.allTile}
-                onPressTile={(tile) => openShop({ category: tile.label })}
-                onPressAll={() => openShop()}
-              />
-            </View>
-          ),
-        });
-        break;
-      case "bento":
-        blocks.push({
-          key,
-          staggered: true,
-          node: (
-            <View style={styles.block}>
-              {festival.bento.title ? (
-                <SectionHeader
-                  title={festival.bento.title}
-                  action={festival.bento.action}
-                  onAction={() => go(festival.bento.route)}
-                />
-              ) : null}
-              <BentoGrid tall={bento.tall} tiles={bento.tiles} colors={festival.bento.colors} onPressItem={onBentoPress} />
-            </View>
-          ),
-        });
-        break;
-      case "bestsellers":
-        if (!bestsellers.length) break;
-        blocks.push({
-          key,
-          node: (
-            <Band tone="olive" style={styles.band}>
-              <SectionHeader
-                title={homeView?.primeSectionTitle || STORE_SECTIONS.bestsellers.title}
-                action={STORE_SECTIONS.bestsellers.action}
-                onAction={() => openShop()}
-              />
-              <ProductRail
-                products={bestsellers}
-                rankTop={STORE_SECTIONS.bestsellers.rankTop}
-                seeAllLabel={STORE_SECTIONS.bestsellers.action}
-                hideEta={etaLabel}
-                onProductPress={openProduct}
-                onSeeAll={() => openShop()}
-              />
-            </Band>
-          ),
-        });
-        break;
-      case "picks":
-        if (!picks.length) break;
-        blocks.push({
-          key,
-          node: (
-            <Band tone="gold">
-              <FestivePicks
-                title={festival.picks.title}
-                picks={picks}
-                activeKey={activePickKey}
-                onChange={setPickKey}
-                onProductPress={openProduct}
-                onSeeAll={(pick) => go(pick.route)}
-                hideEta={etaLabel}
-              />
-            </Band>
-          ),
-        });
-        break;
-      case "lines":
-        lineRails.forEach((line) => {
-          const page = STORE_LINE_PAGES[line.key] || {};
-          blocks.push({
-            key: `line-${line.key}`,
+  const blocks = useMemo(() => {
+    const next = [];
+    layout.forEach((key) => {
+      switch (key) {
+        case "tracker":
+          if (!activeOrders.length) break;
+          next.push({ key, node: <StoreTracker orders={activeOrders} onPress={openOrders} /> });
+          break;
+        case "banner":
+          next.push({ key, node: <FestiveBanner theme={festival} product={spotlight} onPress={openBanner} /> });
+          break;
+        case "promos":
+          next.push({
+            key,
+            node: <PromoCarousel items={promos} signedIn={Boolean(isAuthenticated)} points={points} onPressItem={openPromo} />,
+          });
+          break;
+        case "categories":
+          if (!categoryTiles.length) break;
+          next.push({
+            key,
+            staggered: true,
             node: (
               <View style={styles.block}>
                 <SectionHeader
-                  icon={STORE_TABS.find((tab) => tab.lineKey === line.key)?.icon}
-                  title={page.title || line.key}
-                  action={STORE_SECTIONS.lineRail.action}
-                  onAction={() => openShop(page.shopPill ? { pill: page.shopPill } : page.category ? { category: page.category } : undefined)}
+                  title={homeView?.productTypeTitle || STORE_SECTIONS.categories.title}
+                  action={STORE_SECTIONS.categories.action}
+                  onAction={() => openShop()}
                 />
-                <ProductRail products={line.list} seeAllLabel={STORE_SECTIONS.lineRail.action} hideEta={etaLabel} onProductPress={openProduct} />
+                <CategoryGrid
+                  tiles={categoryTiles}
+                  moreSuffix={STORE_SECTIONS.categories.moreSuffix}
+                  allLabel={STORE_SECTIONS.categories.allTile}
+                  onPressTile={(tile) => openShop({ category: tile.label })}
+                  onPressAll={() => openShop()}
+                />
               </View>
             ),
           });
-        });
-        break;
-      case "trust":
-        blocks.push({
-          key,
-          staggered: true,
-          node: <TrustStrip items={STORE_TRUST} />,
-        });
-        break;
-      case "footer":
-        blocks.push({ key, node: <BrandFooter /> });
-        break;
-      default:
-        break;
-    }
-  });
+          break;
+        case "bento":
+          next.push({
+            key,
+            staggered: true,
+            node: (
+              <View style={styles.block}>
+                {festival.bento.title ? (
+                  <SectionHeader title={festival.bento.title} action={festival.bento.action} onAction={openBentoRoute} />
+                ) : null}
+                <BentoGrid tall={bento.tall} tiles={bento.tiles} colors={festival.bento.colors} onPressItem={onBentoPress} />
+              </View>
+            ),
+          });
+          break;
+        case "bestsellers":
+          if (!bestsellers.length) break;
+          next.push({
+            key,
+            node: (
+              <Band tone="olive" style={styles.band}>
+                <SectionHeader
+                  title={homeView?.primeSectionTitle || STORE_SECTIONS.bestsellers.title}
+                  action={STORE_SECTIONS.bestsellers.action}
+                  onAction={() => openShop()}
+                />
+                <ProductRail
+                  products={bestsellers}
+                  rankTop={STORE_SECTIONS.bestsellers.rankTop}
+                  seeAllLabel={STORE_SECTIONS.bestsellers.action}
+                  hideEta={etaLabel}
+                  onProductPress={openProduct}
+                  onSeeAll={() => openShop()}
+                />
+              </Band>
+            ),
+          });
+          break;
+        case "picks":
+          if (!picks.length) break;
+          next.push({
+            key,
+            node: (
+              <Band tone="gold">
+                <FestivePicks
+                  title={festival.picks.title}
+                  picks={picks}
+                  activeKey={activePickKey}
+                  onChange={setPickKey}
+                  onProductPress={openProduct}
+                  onSeeAll={openPickRoute}
+                  hideEta={etaLabel}
+                />
+              </Band>
+            ),
+          });
+          break;
+        case "lines":
+          lineRails.forEach((line) => {
+            const page = STORE_LINE_PAGES[line.key] || {};
+            next.push({
+              key: `line-${line.key}`,
+              node: (
+                <View style={styles.block}>
+                  <SectionHeader
+                    icon={STORE_TABS.find((tab) => tab.lineKey === line.key)?.icon}
+                    title={page.title || line.key}
+                    action={STORE_SECTIONS.lineRail.action}
+                    onAction={() => openShop(page.shopPill ? { pill: page.shopPill } : page.category ? { category: page.category } : undefined)}
+                  />
+                  <ProductRail products={line.list} seeAllLabel={STORE_SECTIONS.lineRail.action} hideEta={etaLabel} onProductPress={openProduct} />
+                </View>
+              ),
+            });
+          });
+          break;
+        case "trust":
+          next.push({ key, staggered: true, node: <TrustStrip items={STORE_TRUST} /> });
+          break;
+        case "footer":
+          next.push({ key, node: <BrandFooter /> });
+          break;
+        default:
+          break;
+      }
+    });
+    return next;
+  }, [
+    layout,
+    activeOrders,
+    openOrders,
+    festival,
+    spotlight,
+    openBanner,
+    promos,
+    isAuthenticated,
+    points,
+    openPromo,
+    categoryTiles,
+    homeView?.productTypeTitle,
+    homeView?.primeSectionTitle,
+    openShop,
+    openBentoRoute,
+    bento,
+    onBentoPress,
+    bestsellers,
+    etaLabel,
+    openProduct,
+    picks,
+    activePickKey,
+    openPickRoute,
+    lineRails,
+  ]);
 
   const bottomPad = STORE_NAV_HEIGHT + Math.max(16, insets.bottom + 6) + 28;
   const gradient = isDark ? festival.header.gradientDark : festival.header.gradient;
@@ -444,7 +454,7 @@ export default function StoreHome({
           <Animated.ScrollView
             ref={scrollRef}
             onScroll={onScroll}
-            scrollEventThrottle={16}
+            scrollEventThrottle={32}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: bottomPad }}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brand} />}
@@ -532,8 +542,12 @@ export default function StoreHome({
             pointerEvents={compactVisible ? "auto" : "none"}
             onLayout={(e) => setCompactH(e.nativeEvent.layout.height)}
           >
-            <BlurView intensity={isDark ? 40 : 70} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glassStrong }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? withAlpha("#1A1712", 0.94) : withAlpha("#FFFFFF", 0.94) }]} />
+            <LinearGradient
+              colors={[withAlpha("#FFFFFF", isDark ? 0.06 : 0.28), withAlpha("#FFFFFF", 0)]}
+              style={styles.compactSheen}
+              pointerEvents="none"
+            />
             <View style={{ paddingHorizontal: gutter, paddingTop: 8, paddingBottom: 6 }}>
               <StoreSearchBar compact onPress={openSearch} hints={STORE_HEADER.searchHints} prefix={STORE_HEADER.searchPrefix} />
             </View>
@@ -564,6 +578,7 @@ const styles = StyleSheet.create({
   block: { gap: 14 },
   band: { gap: 14 },
   compact: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 30, overflow: "hidden", borderBottomWidth: StyleSheet.hairlineWidth },
+  compactSheen: { position: "absolute", top: 0, left: 0, right: 0, height: "42%" },
   compactRule: { position: "absolute", left: 0, right: 0, bottom: 0, height: 1.5 },
   empty: { alignItems: "center", gap: 10, padding: 28, borderWidth: StyleSheet.hairlineWidth, marginTop: 24 },
   emptyIcon: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center", marginBottom: 4 },

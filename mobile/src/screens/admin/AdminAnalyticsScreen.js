@@ -1051,7 +1051,7 @@ function createAdminAnalyticsStyles(c, themeShadowLift, themeShadowPremium, isDa
     borderWidth: 1,
     borderColor: hairline,
     borderRadius: radius.lg,
-    backgroundColor: isDark ? c.surface : "#FFFCF8",
+    backgroundColor: isDark ? c.surface : "#FFFFFF",
     padding: spacing.md,
     flexDirection: "row",
     alignItems: "center",

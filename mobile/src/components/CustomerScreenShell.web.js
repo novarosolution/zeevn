@@ -2,26 +2,14 @@ import React from "react";
 import { StyleSheet, View } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 import { KANKREG_PALETTE } from "../theme/kankregWeb";
-import {
-  buildSiteBackgroundCss,
-  getSiteBackgroundUri,
-  SITE_BG_FALLBACK,
-  siteBackgroundStyle,
-} from "../theme/siteBackground";
+import { SITE_BG_FALLBACK, siteBackgroundStyle } from "../theme/siteBackground";
 import { injectWebCssOnce } from "../utils/injectWebCssOnce";
 
-const bgUri = getSiteBackgroundUri();
-const bgStack = buildSiteBackgroundCss(bgUri);
-
 injectWebCssOnce(
-  "zeevan-web-chrome-v2",
-  `html, body, #root {
-  background-color: ${SITE_BG_FALLBACK};
-  background-image: ${bgStack};
-  background-size: auto, auto, auto, cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
+  "zeevan-web-chrome-v4-white",
+  `html, body, #root, [data-expo-root] {
+  background-color: ${SITE_BG_FALLBACK} !important;
+  background-image: none !important;
 }
 body {
   -webkit-font-smoothing: antialiased;
@@ -40,16 +28,14 @@ a, button, [role="button"], [role="link"], [role="tab"] {
 }`
 );
 
-/** Web — cream page canvas + global polish (customer funnel). */
+/** Web — pure white page canvas + global polish (customer funnel). */
 export default function CustomerScreenShell({ children, style }) {
   const { colors: c, isDark } = useTheme();
   return (
     <View
       style={[
         styles.shell,
-        isDark
-          ? { backgroundColor: c.background }
-          : [siteBackgroundStyle(false), { backgroundColor: KANKREG_PALETTE.paper }],
+        isDark ? { backgroundColor: c.background } : siteBackgroundStyle(false),
         style,
       ]}
     >

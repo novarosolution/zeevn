@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   shell: {
     position: "relative",
     overflow: "hidden",
-    backgroundColor: "#F3EBDD",
+    backgroundColor: "#FFFFFF",
     alignSelf: "center",
     ...Platform.select({
       web: {

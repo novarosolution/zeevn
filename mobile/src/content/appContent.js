@@ -138,9 +138,9 @@ export const HOME_SCREEN_UI = {
     webAction: "View all",
     webSectionTitle: "Bestsellers",
     webKicker: "Loved across Indian kitchens",
-    /** Phone web: centred Anveshan-style header above the line tabs. */
+    /** Phone web: section title above the line tabs. */
     phoneEyebrow: "Bestsellers",
-    phoneTitle: "Explore our best sellers",
+    phoneTitle: "Best sellers",
   },
   comingSoon: {
     stripEyebrow: "Soon",
@@ -241,8 +241,6 @@ export const HOME_SCREEN_UI = {
     showQualityAssurance: true,
     showCertificationsStrip: true,
     showFeaturedEditorial: false,
-    phoneWelcomeTitle: "Shop by line",
-    phoneWelcomeSubtitle: "Ghee · tel · masala · honey",
     welcomeTag: "",
     heroStats: [],
     statsSectionIndex: 2,
@@ -572,7 +570,6 @@ export const LEGAL_PAGES = {
 };
 
 export const KANKREG_ROLE_NAV_ITEMS = {
-  admin: { key: "Admin", label: "Admin" },
   delivery: { key: "Delivery", label: "Delivery" },
 };
 

@@ -1,37 +1,33 @@
 /**
- * Home “Native Ingredients” value cards — web atelier section.
+ * Home “Native Ingredients” value panels — web atelier section.
  */
 export const NATIVE_INGREDIENTS_SECTION = {
-  title: "Native Ingredients. No Substitutes.",
+  title: "Native ingredients. No substitutes.",
   cards: [
     {
       key: "geography",
-      title: "From Native Geographies to Ideal Growing Seasons",
-      body: "We take care of every factor when sourcing local ingredients.",
-      tone: "light",
+      title: "Native lands, right seasons",
+      body: "Every source chosen for place, climate, and care — not convenience.",
       image: require("../../assets/values-geography.jpg"),
     },
     {
       key: "flavour",
-      title: "What Do We Look For?",
-      body: "Not high yield. Not lower cost. Just flavour, nutrition, and soul.",
-      tone: "dark",
+      title: "Flavour over yield",
+      body: "Not the cheapest. Not the highest yield. Only taste, nutrition, and soul.",
       image: require("../../assets/values-flavour.jpg"),
     },
     {
       key: "purity",
-      title: "Impurities, Out. Goodness, In.",
-      body: "Only the best milk & purest craft make the cut.",
-      tone: "dark",
+      title: "Impurities out",
+      body: "Only the best milk and purest craft make the cut.",
       image: require("../../assets/values-purity.jpg"),
     },
     {
       key: "desi",
-      title: "A2 Milk of Desi Cows, Seeds from Rain-Fed Regions.",
-      body: "We dare you to find better local ingredients.",
-      tone: "dark",
+      title: "A2 desi & rain-fed",
+      body: "Desi cow milk and rain-fed seeds — local ingredients, nothing lesser.",
       image: require("../../assets/values-desi.jpg"),
     },
   ],
-  background: require("../../assets/section-bg-warm-4k.jpg"),
+  background: require("../../assets/native-ingredients-bg-premium.jpg"),
 };

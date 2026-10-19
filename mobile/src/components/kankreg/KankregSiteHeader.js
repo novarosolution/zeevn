@@ -15,11 +15,15 @@ import {
 } from "../../theme/web";
 import KankregBrandMark from "./KankregBrandMark";
 import { KankregMobileNav } from "./loadKankregMobileNav";
-import { buildKankregMobileNavItems, buildKankregNavItems, isAdminRoute, routeMatchesNav } from "./kankregNav";
+import { buildKankregMobileNavItems, buildKankregNavItems, routeMatchesNav } from "./kankregNav";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { KANKREG_HEADER } from "../../content/appContent";
 import { safeNavigate } from "../../navigation/navigationRef";
 import { setLcpShellVisible } from "../../utils/lcpShell";
+import { ensureWebPremiumCss } from "../../utils/webPremiumCss";
+
+if (Platform.OS === "web") ensureWebPremiumCss();
+
 export const KANKREG_HEADER_BODY_HEIGHT = WEB_HEADER_HEIGHT;
 export { getKankregChromeTop } from "../../theme/kankregChrome";
 
@@ -93,11 +97,6 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
     return null;
   }
 
-  /** Admin desk is full-screen — no customer Home/Shop/Cart chrome. */
-  if (isAdminRoute(currentRouteName)) {
-    return null;
-  }
-
   const webHeaderHeight = getWebHeaderHeight(width);
   const useCompactChrome = isMobileWeb;
 
@@ -106,8 +105,8 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
     isNative && styles.topbarNative,
     useCompactChrome && styles.topbarCompact,
     {
-      backgroundColor: isDark ? "rgba(20, 17, 15, 0.92)" : KANKREG_CHROME.topbarSolid,
-      borderBottomColor: isDark ? c.border : "rgba(31, 92, 71, 0.1)",
+      backgroundColor: "transparent",
+      borderBottomColor: "transparent",
       paddingTop: 0,
       minHeight: webHeaderHeight,
     },
@@ -116,6 +115,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
   return (
     <>
     <View
+      className={isDark ? "zv-chrome-glass-dark" : "zv-chrome-glass"}
       style={[
         styles.shell,
         {
@@ -123,8 +123,6 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
           position: "fixed",
           zIndex: WEB_Z_INDEX.header,
         },
-        !isDark ? styles.shellLightWeb : null,
-        isDark ? { backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)" } : null,
       ]}
       accessibilityRole="header"
     >

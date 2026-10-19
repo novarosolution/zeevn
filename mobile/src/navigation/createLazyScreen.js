@@ -18,10 +18,6 @@ const FALLBACK_BY_SCREEN = {
   EditProfileScreen: ListCardsSkeleton,
   NotificationsScreen: ListCardsSkeleton,
   SettingsScreen: ListCardsSkeleton,
-  AdminDashboardScreen: ListCardsSkeleton,
-  AdminProductsScreen: ListCardsSkeleton,
-  AdminOrdersScreen: ListCardsSkeleton,
-  AdminAnalyticsScreen: ListCardsSkeleton,
 };
 
 function DefaultFallback() {

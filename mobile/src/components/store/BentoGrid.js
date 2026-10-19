@@ -24,7 +24,14 @@ function TileArt({ item, frameStyle, iconSize, radius = 16 }) {
           { borderTopLeftRadius: radius, borderTopRightRadius: radius, borderColor: withAlpha("#FFFFFF", 0.75), backgroundColor: c.well },
         ]}
       >
-        <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={200} cachePolicy="memory-disk" />
+        <Image
+          source={{ uri }}
+          style={StyleSheet.absoluteFill}
+          contentFit="contain"
+          contentPosition="center"
+          transition={200}
+          cachePolicy="memory-disk"
+        />
       </View>
     );
   }

@@ -10,6 +10,7 @@ import {
 } from "../utils/homeViewMedia";
 
 import { readCatalogDiskCache, writeCatalogDiskCache } from "../utils/catalogDiskCache";
+import { getProductPackagingImageUri } from "../content/productPackagingImages";
 
 const publicApi = { auth: false };
 
@@ -29,8 +30,10 @@ let homeViewCache = {
 const HOME_VIEW_CACHE_TTL_MS = 5 * 60 * 1000;
 
 export function normalizeProduct(raw) {
-  const primaryImage =
+  const packagingUri = getProductPackagingImageUri(raw);
+  const apiPrimary =
     raw.image || (Array.isArray(raw.images) && raw.images.length ? raw.images[0] : "");
+  const primaryImage = packagingUri || apiPrimary;
 
   const priceNum = Number(raw.price);
   const price = Number.isFinite(priceNum) && priceNum >= 0 ? priceNum : 0;
@@ -115,12 +118,16 @@ export function normalizeProduct(raw) {
     price,
     mrp,
     image: primaryImage,
-    images:
-      Array.isArray(raw.images) && raw.images.length
+    images: packagingUri
+      ? [packagingUri]
+      : Array.isArray(raw.images) && raw.images.length
         ? raw.images
         : primaryImage
           ? [primaryImage]
           : [],
+    lifestyleImage: packagingUri
+      ? packagingUri
+      : String(raw.lifestyleImage ?? "").trim(),
     category: String(raw.category ?? "").trim() || "General",
     homeSection: String(raw.homeSection ?? "").trim() || "Prime Products",
     productType: String(raw.productType ?? raw.category ?? "").trim() || "General",
@@ -139,7 +146,6 @@ export function normalizeProduct(raw) {
     ratingAverage: Number.isFinite(ratingAvg) ? Math.min(5, Math.max(0, ratingAvg)) : 0,
     reviewCount: Number.isFinite(reviewCt) ? Math.max(0, Math.floor(reviewCt)) : 0,
     badgeText: String(raw.badgeText ?? "").trim(),
-    lifestyleImage: String(raw.lifestyleImage ?? "").trim(),
     variants,
     usps,
     processTitle: String(raw.processTitle ?? "").trim(),

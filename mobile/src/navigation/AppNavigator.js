@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Platform, StyleSheet, View } from "react-native";
 import AuthGateShell from "../components/AuthGateShell";
@@ -36,29 +36,6 @@ function withAuthGuard(Component) {
   });
 }
 
-function withRoleGuard(Component, roleCheck) {
-  return withPageTransition(function RoleGuardedScreen(props) {
-    const { isAuthenticated, isAuthLoading, user } = useAuth();
-    useEffect(() => {
-      if (isAuthLoading) return;
-      if (!isAuthenticated) return;
-      if (!roleCheck(user)) {
-        props.navigation.replace("Home");
-      }
-    }, [isAuthLoading, isAuthenticated, user, props.navigation]);
-    if (isAuthLoading) {
-      return <AuthGateShell navigation={props.navigation} />;
-    }
-    if (!isAuthenticated) {
-      return <AuthGateShell signedOut navigation={props.navigation} />;
-    }
-    if (!roleCheck(user)) {
-      return <AuthGateShell navigation={props.navigation} />;
-    }
-    return <Component {...props} />;
-  });
-}
-
 const WrappedLogin = withPageTransition(CoreScreens.LoginScreen);
 const WrappedRegister = withPageTransition(CoreScreens.RegisterScreen);
 const WrappedFindLocation = withPageTransition(FindLocationScreen);
@@ -82,20 +59,6 @@ const ProtectedManageAddress = withAuthGuard(LazyScreens.ManageAddressScreen);
 const ProtectedSupport = withAuthGuard(LazyScreens.SupportScreen);
 /** Auth only — role is checked inside the screen after a fresh profile fetch (avoids stale cache + wrong redirect). */
 const ProtectedDeliveryDashboard = withAuthGuard(LazyScreens.DeliveryDashboardScreen);
-const ProtectedAdminDashboard = withRoleGuard(LazyScreens.AdminDashboardScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminDelivery = withRoleGuard(LazyScreens.AdminDeliveryScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminProducts = withRoleGuard(LazyScreens.AdminProductsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminInventory = withRoleGuard(LazyScreens.AdminInventoryScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminAddProduct = withRoleGuard(LazyScreens.AdminAddProductScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminOrders = withRoleGuard(LazyScreens.AdminOrdersScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminOrderDetail = withRoleGuard(LazyScreens.AdminOrderDetailScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminUsers = withRoleGuard(LazyScreens.AdminUsersScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminNotifications = withRoleGuard(LazyScreens.AdminNotificationsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminAnalytics = withRoleGuard(LazyScreens.AdminAnalyticsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminCoupons = withRoleGuard(LazyScreens.AdminCouponsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminRewards = withRoleGuard(LazyScreens.AdminRewardsScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminSupport = withRoleGuard(LazyScreens.AdminSupportScreen, (user) => Boolean(user?.isAdmin));
-const ProtectedAdminHomeView = withRoleGuard(LazyScreens.AdminHomeViewScreen, (user) => Boolean(user?.isAdmin));
 
 export default function AppNavigator({ navigationRef, navReady = false }) {
   const screenOptions = useMemo(
@@ -176,23 +139,6 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
 
       <Stack.Group>
         <Stack.Screen name="DeliveryDashboard" component={ProtectedDeliveryDashboard} />
-      </Stack.Group>
-
-      <Stack.Group>
-        <Stack.Screen name="AdminDashboard" component={ProtectedAdminDashboard} />
-        <Stack.Screen name="AdminDelivery" component={ProtectedAdminDelivery} />
-        <Stack.Screen name="AdminProducts" component={ProtectedAdminProducts} />
-        <Stack.Screen name="AdminInventory" component={ProtectedAdminInventory} />
-        <Stack.Screen name="AdminAddProduct" component={ProtectedAdminAddProduct} />
-        <Stack.Screen name="AdminOrders" component={ProtectedAdminOrders} />
-        <Stack.Screen name="AdminOrderDetail" component={ProtectedAdminOrderDetail} />
-        <Stack.Screen name="AdminUsers" component={ProtectedAdminUsers} />
-        <Stack.Screen name="AdminNotifications" component={ProtectedAdminNotifications} />
-        <Stack.Screen name="AdminAnalytics" component={ProtectedAdminAnalytics} />
-        <Stack.Screen name="AdminCoupons" component={ProtectedAdminCoupons} />
-        <Stack.Screen name="AdminRewards" component={ProtectedAdminRewards} />
-        <Stack.Screen name="AdminSupport" component={ProtectedAdminSupport} />
-        <Stack.Screen name="AdminHomeView" component={ProtectedAdminHomeView} />
       </Stack.Group>
     </Stack.Navigator>
     </DeliveryLocationProvider>

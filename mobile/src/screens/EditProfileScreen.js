@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Keyboard, Platform, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -27,7 +27,7 @@ import SkeletonBlock from "../components/ui/SkeletonBlock";
 import SectionReveal from "../components/motion/SectionReveal";
 import useReducedMotion from "../hooks/useReducedMotion";
 import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
-import PremiumStickyBar from "../components/ui/PremiumStickyBar";
+import { StoreEditProfile } from "../components/store/entry";
 import { FIGMA } from "../theme/figmaApp";
 
 export default function EditProfileScreen({ navigation }) {
@@ -47,8 +47,6 @@ export default function EditProfileScreen({ navigation }) {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({ name: "", phone: "" });
-  const [showStickySave, setShowStickySave] = useState(false);
-  const stickyStateRef = useRef({ name: "", phone: "", saving: false });
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -125,28 +123,6 @@ export default function EditProfileScreen({ navigation }) {
     return undefined;
   }, [success, reducedMotion]);
 
-  useEffect(() => {
-    const hasDirty = Boolean(String(name || "").trim() || String(phone || "").trim());
-    setShowStickySave(hasDirty && !saving);
-    stickyStateRef.current = { name, phone, saving };
-  }, [name, phone, saving]);
-
-  useEffect(() => {
-    if (Platform.OS === "web") return undefined;
-    const showSub = Keyboard.addListener("keyboardDidShow", () => setShowStickySave(false));
-    const hideSub = Keyboard.addListener("keyboardDidHide", () => {
-      const snapshot = stickyStateRef.current;
-      const hasDirty = Boolean(
-        String(snapshot?.name || "").trim() || String(snapshot?.phone || "").trim()
-      );
-      setShowStickySave(hasDirty && !snapshot?.saving);
-    });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
-
   const handlePickAvatar = async () => {
     if (!token) return;
     try {
@@ -213,6 +189,32 @@ export default function EditProfileScreen({ navigation }) {
   }
   if (!isAuthenticated) {
     return <AuthGateShell signedOut navigation={navigation} />;
+  }
+
+  if (isNativeApp) {
+    return (
+      <StoreEditProfile
+        navigation={navigation}
+        loading={loading}
+        error={error}
+        success={success}
+        onDismissError={() => setError("")}
+        onDismissSuccess={() => setSuccess("")}
+        name={name}
+        onName={setName}
+        phone={phone}
+        onPhone={setPhone}
+        fieldErrors={fieldErrors}
+        avatarUrl={avatarUrl}
+        avatarUploading={avatarUploading}
+        onPickAvatar={handlePickAvatar}
+        onRemoveAvatar={handleRemoveAvatar}
+        hasAddress={hasAddress}
+        saving={saving}
+        onSave={handleSave}
+        account={user?.email || user?.phone}
+      />
+    );
   }
 
   return (
@@ -373,20 +375,6 @@ export default function EditProfileScreen({ navigation }) {
           </SectionReveal>
         )}
 </KankregScrollPage>
-      {Platform.OS !== "web" && showStickySave ? (
-        <PremiumStickyBar>
-          <PremiumButton
-            label={saving ? "Saving…" : "Save changes"}
-            iconLeft="checkmark-circle-outline"
-            variant="primary"
-            size="lg"
-            fullWidth
-            loading={saving}
-            disabled={saving}
-            onPress={handleSave}
-          />
-        </PremiumStickyBar>
-      ) : null}
       <BottomNavBar />
     </CustomerScreenShell>
   );

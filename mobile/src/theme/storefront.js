@@ -1,6 +1,6 @@
 /**
  * Storefront design system — the premium Zeevan look for the native app
- * (Home, Shop, Profile, floating nav). Olive + ghee-gold on warm cream, with a
+ * (Home, Shop, Profile, floating nav). Olive + ghee-gold on a pure white page, with a
  * soft serif (Fraunces) for display text and Hanken Grotesk for UI.
  */
 import { useEffect, useMemo, useSyncExternalStore } from "react";
@@ -28,13 +28,13 @@ export const STORE_RADIUS = {
 };
 
 const LIGHT = {
-  page: "#F7F3E8",
-  pageDeep: "#EFE8D6",
+  page: "#FFFFFF",
+  pageDeep: "#FFFFFF",
   card: "#FFFFFF",
-  cardSoft: "#FFFCF7",
-  soft: "#F2ECDC",
-  softStrong: "#E8E0C8",
-  well: "#FAF7F0",
+  cardSoft: "#FFFFFF",
+  soft: "#F5F5F5",
+  softStrong: "#EEEEEE",
+  well: "#FFFFFF",
   ink: "#1A2216",
   inkSoft: "#4A5340",
   inkMute: "#86816A",
@@ -54,10 +54,13 @@ const LIGHT = {
   danger: "#B8442F",
   dangerSoft: "#FBE9E4",
   shadow: "#3D2A12",
-  glass: "rgba(255, 252, 245, 0.80)",
-  glassStrong: "rgba(255, 252, 245, 0.95)",
+  /** Lite glass fills (opaque enough without BlurView). */
+  glass: "rgba(255, 255, 255, 0.88)",
+  glassStrong: "rgba(255, 255, 255, 0.94)",
+  glassBorder: "rgba(255, 255, 255, 0.7)",
   scrim: "rgba(20, 24, 14, 0.50)",
-  headerGradient: ["#F2D082", "#F7E0A8", "#FAEECF", "#FAF6EC"],
+  /** Header wash only — fades into the white page below. */
+  headerGradient: ["#F2D082", "#F7E0A8", "#FAEECF", "#FFFFFF"],
   headerLocations: [0, 0.34, 0.7, 1],
   /** Pastel tile washes (category grid, bento) — cycled by index. */
   tiles: [
@@ -105,8 +108,9 @@ const DARK = {
   danger: "#F28B76",
   dangerSoft: "rgba(242, 139, 118, 0.14)",
   shadow: "#000000",
-  glass: "rgba(27, 23, 18, 0.78)",
-  glassStrong: "rgba(27, 23, 18, 0.95)",
+  glass: "rgba(27, 23, 18, 0.88)",
+  glassStrong: "rgba(27, 23, 18, 0.94)",
+  glassBorder: "rgba(255, 255, 255, 0.14)",
   scrim: "rgba(0, 0, 0, 0.62)",
   headerGradient: ["#3C2D12", "#2B2110", "#1B150C", "#0F0D0A"],
   headerLocations: [0, 0.34, 0.7, 1],

@@ -1457,7 +1457,7 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     borderColor: isDark ? c.border : "rgba(36, 68, 36, 0.1)",
     borderTopWidth: 2,
     borderTopColor: isDark ? "rgba(220,172,116,0.45)" : ALCHEMY.gold,
-    backgroundColor: isDark ? c.surface : "#FFFEFA",
+    backgroundColor: isDark ? c.surface : "#FFFFFF",
     overflow: "hidden",
     paddingVertical: 4,
     ...Platform.select({

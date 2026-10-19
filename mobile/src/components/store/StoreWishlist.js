@@ -1,6 +1,5 @@
 import React from "react";
 import { FlatList, RefreshControl, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { STORE_WISHLIST } from "../../content/storefrontContent";
@@ -84,7 +83,6 @@ export default function StoreWishlist({ navigation, items, loading, refreshing, 
         />
 
         <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
-          <BlurView intensity={isDark ? 40 : 70} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glassStrong }]} />
           <View style={[styles.headerRow, { paddingHorizontal: gutter }]}>
             <PressableScale

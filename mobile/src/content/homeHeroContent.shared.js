@@ -48,9 +48,9 @@ export function resolvePhoneHeroFrameHeight(width, heightRatio, layoutHeight) {
 
 export const HOME_HERO_PACKAGING = {
   key: "hero-packaging",
-  title: "Pure Bilona ghee",
-  subtitle: "A2 desi cow ghee — taste of purity",
-  badge: "A2 · Bilona",
+  title: "A2 Desi Cow Ghee",
+  subtitle: "Taste of purity — 1 litre jar",
+  badge: "A2 · Desi",
   cta: "Shop ghee",
   action: "catalog",
   shopPill: "Ghee",

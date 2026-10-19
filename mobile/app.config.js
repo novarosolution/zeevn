@@ -52,7 +52,7 @@ module.exports = {
     splash: {
       image: "./assets/splash-icon.png",
       resizeMode: "contain",
-      backgroundColor: "#FAF8F4",
+      backgroundColor: "#FFFFFF",
       dark: {
         image: "./assets/splash-icon.png",
         backgroundColor: "#151210",
@@ -68,7 +68,7 @@ module.exports = {
         {
           image: "./assets/splash-icon.png",
           resizeMode: "contain",
-          backgroundColor: "#F7F2E8",
+          backgroundColor: "#FFFFFF",
           dark: {
             image: "./assets/splash-icon.png",
             backgroundColor: "#1A1714",
@@ -82,7 +82,7 @@ module.exports = {
             ios: "./assets/app-icon-light.png",
             android: {
               foregroundImage: "./assets/app-icon-light.png",
-              backgroundColor: "#FAF8F4",
+              backgroundColor: "#FFFFFF",
             },
           },
           dark: {

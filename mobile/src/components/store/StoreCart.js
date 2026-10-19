@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Image } from "expo-image";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -109,7 +108,7 @@ function CartLine({ item, onIncrease, onDecrease, onRemove, compact = false }) {
     <View style={[styles.line, shadow.soft, { backgroundColor: c.card, borderColor: c.line, borderRadius: r.xl }]}>
       <View style={[styles.thumb, { width: thumb, height: thumb, backgroundColor: c.well, borderColor: c.line, borderRadius: r.lg }]}>
         {uri ? (
-          <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={150} cachePolicy="memory-disk" />
+          <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="contain" transition={150} cachePolicy="memory-disk" />
         ) : (
           <MaterialCommunityIcons name="image-outline" size={26} color={c.inkMute} />
         )}
@@ -456,7 +455,6 @@ function PayDock({ bottom, total, meta, label, disabled, loading, onPress }) {
     <View style={[styles.payWrap, { bottom, left: gutter, right: gutter }]} pointerEvents="box-none">
       <View style={[styles.payShadow, shadow.lift, { borderColor: isDark ? c.line : withAlpha("#FFFFFF", 0.85) }]}>
         <View style={styles.payClip}>
-          <BlurView intensity={isDark ? 45 : 70} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glassStrong }]} />
           <View style={styles.payRow}>
             <View style={styles.flex}>

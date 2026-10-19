@@ -9,6 +9,7 @@ import BackendOfflineBanner from "../components/BackendOfflineBanner";
 import { deferAfterFirstPaint } from "../utils/deferAfterFirstPaint";
 import { scheduleCatalogPrefetch } from "../utils/prefetchCatalog";
 import { navigationRef } from "../navigation/navigationRef";
+import { FlyToCartLayer } from "../components/store/entry";
 
 /**
  * Defer health checks, sockets, and celebration overlays until after first paint.
@@ -36,11 +37,15 @@ export default function DeferredHeavyProviders({ children }) {
                 <OrderCelebrationProvider navigationRef={navigationRef}>
                   <BackendOfflineBanner />
                   {children}
+                  <FlyToCartLayer />
                 </OrderCelebrationProvider>
               </LiveSocketProvider>
             </ApiHealthProvider>
           ) : (
-            children
+            <>
+              {children}
+              <FlyToCartLayer />
+            </>
           )}
         </CartProvider>
       </WishlistProvider>

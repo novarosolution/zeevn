@@ -30,8 +30,7 @@ import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
 import AddressTypeSelector from "../components/address/AddressTypeSelector";
 import { ALCHEMY } from "../theme/customerAlchemy";
 import SectionReveal from "../components/motion/SectionReveal";
-import PremiumStickyBar from "../components/ui/PremiumStickyBar";
-import NativeCard from "../components/native/NativeCard";
+import { StoreAddress } from "../components/store/entry";
 import { FIGMA } from "../theme/figmaApp";
 
 export default function ManageAddressScreen({ navigation }) {
@@ -151,6 +150,39 @@ export default function ManageAddressScreen({ navigation }) {
     return <AuthGateShell signedOut navigation={navigation} />;
   }
 
+  if (isNativeApp) {
+    return (
+      <StoreAddress
+        navigation={navigation}
+        error={error}
+        success={success}
+        onDismissError={() => setError("")}
+        onDismissSuccess={() => setSuccess("")}
+        addressType={addressType}
+        onAddressType={setAddressType}
+        houseNumber={houseNumber}
+        onHouseNumber={setHouseNumber}
+        line1={line1}
+        onLine1={setLine1}
+        landmark={landmark}
+        onLandmark={setLandmark}
+        city={city}
+        onCity={setCity}
+        postalCode={postalCode}
+        onPostalCode={setPostalCode}
+        country={country}
+        onCountry={setCountry}
+        gps={latitude != null && longitude != null}
+        fieldErrors={fieldErrors}
+        detecting={detecting}
+        detectLabel={detecting ? MANAGE_ADDRESS_SCREEN_UI.useGpsLoading : MANAGE_ADDRESS_SCREEN_UI.useGps}
+        onDetect={handleDetect}
+        saving={saving}
+        onSave={handleSave}
+      />
+    );
+  }
+
   return (
     <CustomerScreenShell style={styles.screen}>
       <KankregScrollPage
@@ -171,19 +203,7 @@ export default function ManageAddressScreen({ navigation }) {
           <View style={isWide ? styles.desktopColPreview : null}>
             {(line1 || city) ? (
               <SectionReveal delay={40} preset="fade-up">
-                <View style={[styles.previewWrap, isNativeApp && styles.nativePreviewWrap]}>
-                  {isNativeApp ? (
-                    <NativeCard style={styles.nativePreviewCard}>
-                      <Text style={styles.previewKicker}>Saved address</Text>
-                      <Text style={styles.previewTitle}>{addressType || "Home"} · Default</Text>
-                      <Text style={styles.previewLine}>
-                        {[houseNumber, line1].filter(Boolean).join(", ")}
-                      </Text>
-                      <Text style={styles.previewLine}>
-                        {[city, postalCode].filter(Boolean).join(" - ")}
-                      </Text>
-                    </NativeCard>
-                  ) : (
+                <View style={styles.previewWrap}>
                     <PremiumCard goldAccent padding="lg">
                       <View style={styles.previewHead}>
                         <View style={styles.previewIconWrap}>
@@ -215,7 +235,6 @@ export default function ManageAddressScreen({ navigation }) {
                         </View>
                       ) : null}
                     </PremiumCard>
-                  )}
                 </View>
               </SectionReveal>
             ) : null}
@@ -330,20 +349,6 @@ export default function ManageAddressScreen({ navigation }) {
           </View>
         </View>
 </KankregScrollPage>
-      {Platform.OS !== "web" ? (
-        <PremiumStickyBar>
-          <PremiumButton
-            label={saving ? "Saving…" : "Save address"}
-            iconLeft="save-outline"
-            variant="primary"
-            size="lg"
-            fullWidth
-            loading={saving}
-            disabled={saving}
-            onPress={handleSave}
-          />
-        </PremiumStickyBar>
-      ) : null}
       <BottomNavBar />
     </CustomerScreenShell>
   );

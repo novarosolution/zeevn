@@ -50,7 +50,7 @@ const HERO_MEDIA_CLASS = "kankreg-hero-media";
 const HERO_CONTAIN_CLASS = "kankreg-hero-contain";
 const HERO_MOBILE_SCROLLER_CLASS = "kankreg-hero-mobile-scroller";
 const HERO_MOBILE_PAGE_CLASS = "kankreg-hero-mobile-page";
-const HERO_PHONE_FIT_BG = "#FAF8F4";
+const HERO_PHONE_FIT_BG = "#FFFFFF";
 
 injectWebCssOnce(
   "kankreg-hero-kenburns-keyframes-v2",
@@ -159,9 +159,9 @@ function resolveHeroSlideHeightRatio(slide, { isNative, isMobileWeb }) {
 }
 
 function resolveHeroImageFit(slide, { isTop, isMobileWebTop, isApp = false, isNative = false }) {
-  if (isMobileWebTop) return "cover";
-  if (isApp || isNative) return "contain";
+  /** Prefer slide art direction — marketing posters are full-bleed `cover`. */
   if (slide?.imageFit === "contain" || slide?.imageFit === "cover") return slide.imageFit;
+  if (isMobileWebTop || isApp || isNative) return "cover";
   if (isTop && !isMobileWebTop) return "cover";
   return "cover";
 }
@@ -487,14 +487,6 @@ function HeroSlideCard({
   const isContainFit = imageFit === "contain";
   const isPackagingSlide = slide.id === "hero-packaging" || slide.key === "hero-packaging";
   const marketingArtOnly = captionMode === "none";
-  const portraitPosition =
-    isPhoneBand && isContainFit
-      ? "top"
-      : isMobileWebTop && slide?.layout === "portrait"
-        ? isContainFit
-          ? "top"
-          : slide.contentPosition || "top"
-        : slide.contentPosition || "center";
   const kenBurns =
     imageFit === "cover" &&
     isTop &&
@@ -504,7 +496,8 @@ function HeroSlideCard({
     !reducedMotion &&
     !isMobileWebTop;
   const kenClass = isProduct && kenBurns ? KEN_BURNS_PRODUCT_CLASS : kenBurns ? KEN_BURNS_CLASS : undefined;
-  const contentPosition = portraitPosition;
+  /** Full-bleed cover art stays centered so jars/scenes are not clipped oddly. */
+  const contentPosition = slide.contentPosition || "center";
   const captionLeft = isTop && !isMobileWebTop && slide.captionAlign !== "center";
   const eyebrowLabel =
     isNative && editorialEyebrow

@@ -1,9 +1,8 @@
-import { Image, Platform } from "react-native";
-import { KANKREG_PALETTE } from "./kankregWeb";
+import { Image } from "react-native";
 
 const SITE_BG = require("../../assets/site-bg-premium-4k.jpg");
 
-/** Resolved web URL for the site-wide premium backdrop. */
+/** Resolved web URL for the site-wide backdrop (kept for callers; unused when canvas is flat white). */
 export function getSiteBackgroundUri() {
   try {
     const src = Image.resolveAssetSource(SITE_BG);
@@ -13,38 +12,20 @@ export function getSiteBackgroundUri() {
   }
 }
 
-/** Fallback solid when the photo is still loading / dark mode. */
-export const SITE_BG_FALLBACK = KANKREG_PALETTE.paper;
+/** Flat white page canvas (light web). */
+export const SITE_BG_FALLBACK = "#FFFFFF";
 
 /**
- * CSS background stack — photo + soft olive/gold veils (light web only).
- * @param {string} [uri]
+ * CSS background stack — solid white (light web). Kept as a function for callers.
+ * @param {string} [_uri]
  */
-export function buildSiteBackgroundCss(uri = getSiteBackgroundUri()) {
-  const photo = uri ? `url("${uri}")` : "none";
-  return [
-    "radial-gradient(1100px 560px at 88% -8%, rgba(120, 136, 68, 0.16), transparent 56%)",
-    "radial-gradient(900px 520px at -4% 108%, rgba(212, 165, 116, 0.12), transparent 54%)",
-    "linear-gradient(180deg, rgba(255,252,246,0.72) 0%, rgba(247,241,230,0.55) 45%, rgba(239,231,216,0.68) 100%)",
-    photo,
-  ].join(", ");
+export function buildSiteBackgroundCss(_uri = getSiteBackgroundUri()) {
+  return "none";
 }
 
 export function siteBackgroundStyle(isDark) {
-  if (isDark || Platform.OS !== "web") {
-    return { backgroundColor: isDark ? "#050403" : SITE_BG_FALLBACK };
+  if (isDark) {
+    return { backgroundColor: "#050403" };
   }
-  const uri = getSiteBackgroundUri();
-  return {
-    backgroundColor: SITE_BG_FALLBACK,
-    ...(uri
-      ? {
-          backgroundImage: buildSiteBackgroundCss(uri),
-          backgroundSize: "auto, auto, auto, cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          backgroundAttachment: "fixed",
-        }
-      : {}),
-  };
+  return { backgroundColor: SITE_BG_FALLBACK };
 }

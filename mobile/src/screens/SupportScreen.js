@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Linking, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { KeyboardAvoidingView, Linking, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import Animated, { FadeInLeft, FadeInRight } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,7 +29,7 @@ import PremiumInput from "../components/ui/PremiumInput";
 import PremiumButton from "../components/ui/PremiumButton";
 import PremiumCard from "../components/ui/PremiumCard";
 import SkeletonBlock from "../components/ui/SkeletonBlock";
-import NativeCard from "../components/native/NativeCard";
+import { StoreSupport } from "../components/store/entry";
 import { FIGMA } from "../theme/figmaApp";
 
 function buildSupportContactLinks() {
@@ -151,6 +151,26 @@ export default function SupportScreen({ navigation }) {
     return <AuthGateShell signedOut navigation={navigation} />;
   }
 
+  if (isNativeApp) {
+    return (
+      <StoreSupport
+        navigation={navigation}
+        loading={loading}
+        error={error}
+        onDismissError={() => setError("")}
+        toast={toast}
+        thread={thread}
+        message={message}
+        onMessage={setMessage}
+        sending={sending}
+        onSend={handleSend}
+        onEmail={() => handleContactPress(buildSupportContactLinks()[1])}
+        emailLabel={SUPPORT_EMAIL_DISPLAY}
+        faqs={SUPPORT_SCREEN.faqs}
+      />
+    );
+  }
+
   return (
     <CustomerScreenShell style={styles.screen}>
       <KeyboardAvoidingView
@@ -174,26 +194,6 @@ export default function SupportScreen({ navigation }) {
         <SectionReveal preset="fade-up" delay={20}>
           <View style={[styles.contactGrid, isNativeApp && styles.nativeContactGrid]}>
             {buildSupportContactLinks().map((link) => {
-              if (isNativeApp) {
-                const palette = getContactPalette(link.accent, c, isDark);
-                return (
-                  <NativeCard key={link.key} style={styles.nativeContactCard}>
-                    <Pressable
-                      onPress={() => handleContactPress(link)}
-                      style={styles.nativeContactInner}
-                    >
-                      <View style={[styles.contactIconWrap, { backgroundColor: palette.bg, borderColor: palette.border }]}>
-                        <Ionicons name={link.icon} size={icon.md} color={palette.icon} />
-                      </View>
-                      <View style={styles.nativeContactText}>
-                        <Text style={styles.contactTitle}>{link.title}</Text>
-                        <Text style={styles.contactDescription} numberOfLines={2}>{link.description}</Text>
-                      </View>
-                      <Ionicons name="chevron-forward" size={16} color={FIGMA.inkFaint} />
-                    </Pressable>
-                  </NativeCard>
-                );
-              }
               const palette = getContactPalette(link.accent, c, isDark);
               return (
                 <PremiumCard

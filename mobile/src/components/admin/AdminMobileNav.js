@@ -45,7 +45,7 @@ export default function AdminMobileNav({ links, groups, current, onNavigate, onE
                     imageKey={link.image}
                     icon={link.icon}
                     tone={link.tone}
-                    size={26}
+                    size={30}
                     compact
                     active={on}
                   />

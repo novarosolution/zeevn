@@ -122,7 +122,7 @@ if (fs.existsSync(indexHtml)) {
   const headInject = [
     '<meta name="description" content="Zeevan — premium A2 bilona ghee, cold-pressed oils, masala &amp; Haldar honey. Shop artisan pantry staples with live delivery tracking." />',
     '<meta name="robots" content="index, follow, max-image-preview:large" />',
-    '<meta name="theme-color" content="#FAF8F4" />',
+    '<meta name="theme-color" content="#FFFFFF" />',
     '<meta name="color-scheme" content="light dark" />',
     '<meta property="og:site_name" content="Zeevan" />',
     '<meta property="og:type" content="website" />',
@@ -207,7 +207,7 @@ if (fs.existsSync(indexHtml)) {
   });
 
   if (portraitHref || wideHref) {
-    const shellStyle = `<style id="kankreg-lcp-shell-style">#kankreg-lcp-shell-wrap{position:fixed;inset:0;z-index:90;pointer-events:none!important;background:#FAF8F4;font-family:system-ui,-apple-system,sans-serif}#kankreg-lcp-shell-wrap *{pointer-events:none!important}#kankreg-lcp-shell{width:100%;height:100dvh;object-fit:contain;object-position:center top;display:block;pointer-events:none!important}</style>`;
+    const shellStyle = `<style id="kankreg-lcp-shell-style">#kankreg-lcp-shell-wrap{position:fixed;inset:0;z-index:90;pointer-events:none!important;background:#FFFFFF;font-family:system-ui,-apple-system,sans-serif}#kankreg-lcp-shell-wrap *{pointer-events:none!important}#kankreg-lcp-shell{width:100%;height:100dvh;object-fit:contain;object-position:center top;display:block;pointer-events:none!important}</style>`;
     const portraitDims =
       portraitHref ? ` width="${LCP_PORTRAIT_WIDTH}" height="${LCP_PORTRAIT_HEIGHT}"` : "";
     const wideDims = wideHref ? ` width="${LCP_WIDE_WIDTH}" height="${LCP_WIDE_HEIGHT}"` : "";

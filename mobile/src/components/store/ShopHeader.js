@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
@@ -87,9 +86,7 @@ export default function ShopHeader({
   }, [searching]);
 
   return (
-    <View style={[styles.wrap, { paddingTop: insets.top + 6, borderBottomColor: c.line }]}>
-      <BlurView intensity={isDark ? 40 : 70} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glassStrong }]} />
+    <View style={[styles.wrap, { paddingTop: insets.top + 6, borderBottomColor: c.line, backgroundColor: c.page }]}>
       <View style={[styles.row, { paddingHorizontal: gutter }]}>
         <RoundButton icon="chevron-back" onPress={onBack} label="Back" />
 

@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo, useState } from "react";
+import React, { memo, useCallback, useMemo, useRef, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -21,16 +21,17 @@ import {
   productImageUri,
 } from "../../utils/storefront";
 import AddControl from "./AddControl";
+import { FLIGHT_MS, flyToCart, hasCartTarget } from "./flyToCart";
+import { markCartFlight } from "../../utils/cartFeedback";
 import PressableScale from "./PressableScale";
 import { useVariantSheet } from "./VariantSheet";
 
 const AnimatedView = Animated.View;
 
-/** Photo stage: warm cream like the product photography, in light and dark mode. */
-const STAGE = ["#FBF6E9", "#F0E6CF"];
 const WELL_RADIUS = 18;
+const WELL_FILL = "#F5F5F5";
 
-// The photo well stays cream in light and dark mode, so the page dots use fixed dark tones.
+// Page dots use fixed dark tones on the light product well.
 const DOT_ACTIVE = "#2F4F22";
 const DOT_IDLE = "rgba(40, 32, 12, 0.42)";
 const DOT_RING = "rgba(255, 255, 255, 0.75)";
@@ -108,7 +109,7 @@ function CardImage({ uris, size, gallery, dim, c }) {
 
   if (!gallery || uris.length < 2) {
     return (
-      <Image source={{ uri: uris[0] }} style={imageStyle} contentFit="cover" transition={220} cachePolicy="memory-disk" />
+      <Image source={{ uri: uris[0] }} style={imageStyle} contentFit="contain" transition={0} cachePolicy="memory-disk" />
     );
   }
 
@@ -125,7 +126,7 @@ function CardImage({ uris, size, gallery, dim, c }) {
         getItemLayout={(_, i) => ({ length: size, offset: size * i, index: i })}
         renderItem={({ item }) => (
           <View style={{ width: size, height: size }}>
-            <Image source={{ uri: item }} style={imageStyle} contentFit="cover" transition={220} cachePolicy="memory-disk" />
+            <Image source={{ uri: item }} style={imageStyle} contentFit="contain" transition={0} cachePolicy="memory-disk" />
           </View>
         )}
       />
@@ -184,7 +185,13 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
     return null;
   }, [state, pricing.discountPct, product.badgeText]);
 
-  const handleAdd = useCallback(() => addToCart(productToCartLine(product)), [addToCart, product]);
+  const wellRef = useRef(null);
+  const handleAdd = useCallback(() => {
+    if (hasCartTarget()) markCartFlight(FLIGHT_MS + 500); // the flight replaces the "added to bag" toast
+    addToCart(productToCartLine(product));
+    // Let the product photo hop into the cart button.
+    wellRef.current?.measureInWindow?.((x, y, w, h) => flyToCart({ uri: uris[0], from: { x, y, width: w, height: h } }));
+  }, [addToCart, product, uris]);
   const handleRemove = useCallback(() => removeFromCart(product.id), [removeFromCart, product.id]);
   const handleOptions = useCallback(() => variantSheet.open(product), [variantSheet, product]);
   const handleWish = useCallback(() => {
@@ -222,14 +229,8 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
       accessibilityLabel={STORE_CARD.a11y.tile(product.name, formatINRWhole(pricing.price))}
     >
       {rank ? <RankBadge rank={rank} /> : null}
-      <View style={[styles.well, { width: imageSize, height: imageSize, backgroundColor: c.well, borderRadius: WELL_RADIUS }]}>
-        <LinearGradient colors={STAGE} style={StyleSheet.absoluteFill} />
+      <View ref={wellRef} collapsable={false} style={[styles.well, { width: imageSize, height: imageSize, backgroundColor: c.well || WELL_FILL, borderRadius: WELL_RADIUS }]}>
         <CardImage uris={uris} size={imageSize} gallery={gallery} dim={dim} c={c} />
-        <LinearGradient
-          colors={["rgba(20, 14, 6, 0)", "rgba(20, 14, 6, 0.14)"]}
-          style={styles.shade}
-          pointerEvents="none"
-        />
         <View style={[StyleSheet.absoluteFill, styles.wellRim]} pointerEvents="none" />
         {badge ? (
           <View style={[styles.badge, { backgroundColor: badgeColors.bg }]}>
@@ -322,7 +323,6 @@ const styles = StyleSheet.create({
   },
   well: { overflow: "hidden" },
   image: { width: "100%", height: "100%" },
-  shade: { position: "absolute", left: 0, right: 0, bottom: 0, height: "38%" },
   wellRim: { borderRadius: WELL_RADIUS, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.55)" },
   placeholder: { flex: 1, alignItems: "center", justifyContent: "center" },
   badge: {

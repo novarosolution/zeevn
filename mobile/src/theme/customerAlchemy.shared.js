@@ -8,7 +8,7 @@ export const ALCHEMY = {
   cream: KANKREG_PALETTE.paper,
   creamDeep: KANKREG_PALETTE.paper2,
   creamAlt: KANKREG_PALETTE.card,
-  creamAltDeep: "#f4ecd8",
+  creamAltDeep: "#FFFFFF",
   creamHighlight: KANKREG_PALETTE.card,
   ivory: "#ffffff",
   pearl: KANKREG_PALETTE.paper2,
@@ -25,7 +25,7 @@ export const ALCHEMY = {
   cardBg: KANKREG_PALETTE.card,
   line: ZEEVAN_GREEN.border,
   lineStrong: "rgba(36, 68, 36, 0.4)",
-  veil: "rgba(248, 240, 224, 0.85)",
+  veil: "rgba(255, 255, 255, 0.92)",
   green: KANKREG_PALETTE.green,
   danger: KANKREG_PALETTE.danger,
 };
@@ -36,7 +36,7 @@ export function getCustomerShellGradient(isDark, themeColors) {
   if (isDark) {
     return ["#050403", "#0B0806", "#17120F", c.backgroundGradientEnd];
   }
-  return [KANKREG_PALETTE.card, KANKREG_PALETTE.paper, KANKREG_PALETTE.paper2, "#E8E4D0"];
+  return ["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"];
 }
 
 /** Theme-aware ink/surface tokens — prefer over raw `ALCHEMY.*` in dynamic styles. */

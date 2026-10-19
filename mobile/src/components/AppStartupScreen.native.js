@@ -7,7 +7,9 @@
  * animate (on the UI thread), so a busy JS thread cannot make it stutter.
  *
  * `intro={false}` skips the entrance and keeps just the gentle idle glint — used where this stands in for a loading
- * page (e.g. while the session is restored). Metro picks this file over `AppStartupScreen.js` on iOS/Android only.
+ * page (e.g. while the session is restored). `play={false}` holds frame zero (the splash picture, nothing animating)
+ * until it flips to true — the launch overlay uses it so the entrance starts only once the system splash is gone and
+ * the app has finished mounting. Metro picks this file over `AppStartupScreen.js` on iOS/Android only.
  */
 import React, { useEffect } from "react";
 import { Image, Platform, StyleSheet, Text, View } from "react-native";
@@ -116,6 +118,7 @@ export default function AppStartupScreen({
   footnote = STARTUP_COPY.loading,
   isDark,
   intro = true,
+  play = true,
 }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -142,6 +145,8 @@ export default function AppStartupScreen({
       return undefined;
     }
     if (intro) {
+      // Frame zero: everything at rest, exactly the system splash. Nothing runs until `play`.
+      if (!play) return undefined;
       const out = Easing.out(Easing.cubic);
       bloom.value = withTiming(1, { duration: 900, easing: out });
       lift.value = withDelay(420, withTiming(1, { duration: 760, easing: Easing.inOut(Easing.cubic) }));
@@ -162,7 +167,7 @@ export default function AppStartupScreen({
       glint.value = withTiming(0.55, { duration: 400 });
     }
     return () => all.forEach(cancelAnimation);
-  }, [intro, reduced, bloom, lift, word, tag, foot, orbit, glint]);
+  }, [intro, play, reduced, bloom, lift, word, tag, foot, orbit, glint]);
 
   const washStyle = useAnimatedStyle(() => ({ opacity: bloom.value }));
   const groupStyle = useAnimatedStyle(() => ({ transform: [{ translateY: -LIFT * lift.value }] }));
@@ -206,7 +211,7 @@ export default function AppStartupScreen({
           <EmblemComet size={CANVAS} dark={dark} />
         </Animated.View>
         {DUST.map((d, i) => (
-          <Mote key={i} {...d} color={p.dust} enabled={!reduced} />
+          <Mote key={i} {...d} color={p.dust} enabled={!reduced && play} />
         ))}
       </Animated.View>
 

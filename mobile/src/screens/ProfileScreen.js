@@ -261,29 +261,6 @@ export default function ProfileScreen({ navigation }) {
     </SectionReveal>
   );
 
-  const adminBlock = user?.isAdmin ? (
-    <SectionReveal delay={290} preset="fade-up">
-      <PremiumCard
-        goldAccent
-        onPress={() => navigation.navigate("AdminDashboard")}
-        padding="md"
-        style={profileStyles.ribbonCard}
-        accessibilityLabel="Open admin dashboard"
-      >
-        <View style={profileStyles.ribbonRow}>
-          <View style={profileStyles.ribbonIconWrap}>
-            <Ionicons name="shield-checkmark" size={glyphSize.md} color={ALCHEMY.brown} />
-          </View>
-          <View style={profileStyles.ribbonTextCol}>
-            <Text style={profileStyles.ribbonTitle}>{PROFILE_SCREEN.adminRibbonTitle}</Text>
-            <Text style={profileStyles.ribbonHint}>{PROFILE_SCREEN.adminRibbonHint}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={glyphSize.sm} color={c.textMuted} />
-        </View>
-      </PremiumCard>
-    </SectionReveal>
-  ) : null;
-
   const deliveryBlock = user?.isDeliveryPartner ? (
     <SectionReveal delay={320} preset="fade-up">
       <PremiumCard
@@ -343,7 +320,6 @@ export default function ProfileScreen({ navigation }) {
               avatarUrl={fullAvatar}
               memberTag={nativeMemberBadge}
             />
-            {adminBlock}
             {deliveryBlock}
             <NativeMenuList
               navigation={navigation}
@@ -381,7 +357,6 @@ export default function ProfileScreen({ navigation }) {
               {kpiBlock}
               {personalDetailsBlock}
               {addressBlock}
-              {adminBlock}
               {deliveryBlock}
             </KankregProfileGrid>
           </KankregPageWrap>

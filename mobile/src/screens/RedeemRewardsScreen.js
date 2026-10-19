@@ -30,8 +30,7 @@ import PremiumLoader from "../components/ui/PremiumLoader";
 import PremiumSectionHeader from "../components/ui/PremiumSectionHeader";
 import SectionReveal from "../components/motion/SectionReveal";
 import KankregRewardHero from "../components/kankreg/KankregRewardHero";
-import NativeRewardsBalance from "../components/native/NativeRewardsBalance";
-import NativeRewardOfferRow from "../components/native/NativeRewardOfferRow";
+import { StoreRewards } from "../components/store/entry";
 import { FIGMA } from "../theme/figmaApp";
 
 function formatExpiryShort(iso) {
@@ -135,6 +134,28 @@ export default function RedeemRewardsScreen({ navigation }) {
     return <AuthGateShell signedOut navigation={navigation} />;
   }
 
+  if (isNativeApp) {
+    return (
+      <StoreRewards
+        navigation={navigation}
+        loading={loading}
+        error={error}
+        onDismissError={() => setError("")}
+        toast={toast}
+        onDismissToast={() => setToast("")}
+        balance={balance}
+        catalog={catalog}
+        wallet={wallet}
+        busyId={busyId}
+        onRedeem={handleRedeem}
+        lastRedeem={lastRedeem}
+        onCopy={(code) => copyCode(code, "Code")}
+        onCart={goToCartWithCode}
+        cartAware={Number(totalAmount) > 0 && catalogSubtotal != null}
+      />
+    );
+  }
+
   return (
     <CustomerScreenShell style={styles.screen}>
       <KankregScrollPage
@@ -150,19 +171,10 @@ export default function RedeemRewardsScreen({ navigation }) {
           showBack={false}
           showHairline={!isNativeApp}
         />
-        {isNativeApp ? (
-          <View style={styles.nativeWrap}>
-            <NativeRewardsBalance
-              points={balance}
-              tierHint="520 pts to Gold tier"
-            />
-          </View>
-        ) : (
-          <KankregRewardHero
-            points={balance}
-            tierHint="Earn points on delivered orders and unlock Gold tier perks."
-          />
-        )}
+        <KankregRewardHero
+          points={balance}
+          tierHint="Earn points on delivered orders and unlock Gold tier perks."
+        />
 
         {!isNativeApp ? (
           <SectionReveal delay={40} preset="fade-up">
@@ -290,23 +302,6 @@ export default function RedeemRewardsScreen({ navigation }) {
             description="Check back soon — new offers appear here."
             compact
           />
-        ) : isNativeApp ? (
-          <View style={styles.nativeCatalog}>
-            {catalog.map((item) => (
-              <NativeRewardOfferRow
-                key={item._id}
-                title={item.title}
-                subtitle={
-                  item.benefitSummary ||
-                  (item.minOrderAmount > 0 ? `Order above ${formatINR(item.minOrderAmount)}` : item.description)
-                }
-                pointsCost={item.pointsCost}
-                onRedeem={() => handleRedeem(item._id)}
-                busy={busyId === item._id}
-                disabled={!item.canRedeem}
-              />
-            ))}
-          </View>
         ) : (
           <CatalogGridReveal>
           {catalog.map((item) => (

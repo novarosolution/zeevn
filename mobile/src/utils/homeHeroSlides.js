@@ -68,8 +68,8 @@ export function resolveWebHomeHeroSlides({
   if (HOME_SCREEN_UI.web?.showWebHero === false) return [];
 
   const max = HOME_SCREEN_UI.heroSlider?.maxProductSlides ?? 4;
-  /** Phone web uses wide landscape banners (shorter slider), not tall portrait posters. */
-  const portrait = false;
+  /** Desktop web: 16:9. Phone web: 3:4 portrait posters (same art as native). */
+  const portrait = Boolean(isMobileWeb);
 
   const admin = imagesOnly(getActiveHeroSlides(heroSlides));
   if (admin.length) {

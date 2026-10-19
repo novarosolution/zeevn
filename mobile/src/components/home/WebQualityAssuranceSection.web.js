@@ -11,50 +11,103 @@ import SectionReveal from "../motion/SectionReveal";
 import WebPhoneSnapCarousel from "./WebPhoneSnapCarousel";
 import { WebSectionHead } from "./webPremiumParts";
 
-const CARD_CSS_ID = "zeevan-quality-assurance-v2";
-const CARD_CLASS = "zeevan-quality-card";
-const PHOTO_CLASS = "zeevan-quality-photo";
-const BODY_INK = "#3B4632";
+const CARD_CSS_ID = "zeevan-quality-assurance-v3";
+const CARD_CLASS = "zeevan-quality-panel";
+const PHOTO_CLASS = "zeevan-quality-panel-img";
+const ACTIVE_CLASS = "zeevan-quality-panel-active";
+const BG_CLASS = "zeevan-quality-bg";
 
 injectWebCssOnce(
   CARD_CSS_ID,
-  `.${CARD_CLASS} {
-  transition: transform 0.5s ${WP.ease}, box-shadow 0.5s ease;
+  `.${BG_CLASS} {
+  animation: zeevan-quality-bg-drift 28s ease-in-out infinite alternate;
+}
+.${CARD_CLASS} {
+  transition: transform 0.55s ${WP.ease}, box-shadow 0.55s ease, border-color 0.35s ease;
 }
 .${CARD_CLASS}:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 34px 60px -28px rgba(0, 0, 0, 0.55);
+  transform: translateY(-10px) scale(1.015);
+  box-shadow: 0 36px 64px -26px rgba(0, 0, 0, 0.65);
+  border-color: rgba(241, 212, 147, 0.35);
 }
 .${PHOTO_CLASS} {
-  transition: transform 1s ${WP.ease};
+  transition: transform 1.15s ${WP.ease};
 }
 .${CARD_CLASS}:hover .${PHOTO_CLASS} {
-  transform: scale(1.05);
+  transform: scale(1.1);
+}
+.${CARD_CLASS} .zeevan-quality-gold {
+  transition: width 0.45s ${WP.ease}, background-color 0.3s ease;
+}
+.${CARD_CLASS}:hover .zeevan-quality-gold {
+  width: 44px;
+  background-color: ${WP.gold.bright};
+}
+@keyframes zeevan-quality-bg-drift {
+  from { transform: scale(1.02) translate3d(0, 0, 0); }
+  to { transform: scale(1.08) translate3d(-1.5%, -1%, 0); }
+}
+@keyframes zeevan-quality-phone-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes zeevan-quality-phone-glow {
+  0%, 100% { box-shadow: 0 16px 36px -20px rgba(0, 0, 0, 0.55); }
+  50% { box-shadow: 0 22px 44px -16px rgba(221, 174, 98, 0.45); }
+}
+.zeevan-quality-phone-card {
+  animation: zeevan-quality-phone-in 0.65s ${WP.ease} both;
+}
+.${ACTIVE_CLASS} {
+  animation: zeevan-quality-phone-in 0.65s ${WP.ease} both, zeevan-quality-phone-glow 2.8s ease-in-out infinite;
+  border-color: rgba(241, 212, 147, 0.42) !important;
 }
 @media (prefers-reduced-motion: reduce) {
-  .${CARD_CLASS}, .${PHOTO_CLASS} { transition: none !important; }
+  .${BG_CLASS}, .${CARD_CLASS}, .${PHOTO_CLASS}, .zeevan-quality-gold { transition: none !important; animation: none !important; }
   .${CARD_CLASS}:hover { transform: none; }
   .${CARD_CLASS}:hover .${PHOTO_CLASS} { transform: none; }
+  .zeevan-quality-phone-card, .${ACTIVE_CLASS} { animation: none !important; }
 }`
 );
 
-/** “Only Perfect Makes The Cut” — a deep-olive band of four quality cards (web only), the page's one dark break. */
-export default function WebQualityAssuranceSection() {
-  const { isMobileWeb, pageGutterClamp } = useKankregLayout();
-  const copy = QUALITY_ASSURANCE_SECTION;
-
-  const renderCard = (card) => (
-    <View key={card.key} className={CARD_CLASS} style={[styles.card, isMobileWeb && styles.cardMobile]}>
-      <View style={styles.copy}>
-        <Text style={[styles.cardTitle, isMobileWeb && styles.cardTitleMobile]}>{card.title}</Text>
-        <Text style={styles.cardBody}>{card.body}</Text>
-      </View>
-      <View style={styles.photoWrap}>
-        <Image source={card.image} className={PHOTO_CLASS} style={styles.photo} resizeMode="cover" />
+function QualityPanel({ card, mobile, active, delayMs = 0 }) {
+  return (
+    <View
+      className={[
+        CARD_CLASS,
+        mobile ? "zeevan-quality-phone-card" : "",
+        mobile && active ? ACTIVE_CLASS : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={[
+        styles.panel,
+        mobile && styles.panelMobile,
+        mobile && Platform.OS === "web" ? { animationDelay: `${delayMs}ms` } : null,
+      ]}
+      accessibilityRole="summary"
+      accessibilityLabel={`${card.title}. ${card.body}`}
+    >
+      <Image source={card.image} className={PHOTO_CLASS} style={styles.panelImg} resizeMode="cover" />
+      <View style={styles.scrim} pointerEvents="none" />
+      <View style={[styles.copy, mobile && styles.copyMobile]}>
+        <View className="zeevan-quality-gold" style={styles.goldRule} />
+        <Text style={[styles.panelTitle, mobile && styles.panelTitleMobile]} numberOfLines={2}>
+          {card.title}
+        </Text>
+        <Text style={[styles.panelBody, mobile && styles.panelBodyMobile]} numberOfLines={3}>
+          {card.body}
+        </Text>
         {card.note ? <Text style={styles.note}>{card.note}</Text> : null}
       </View>
     </View>
   );
+}
+
+/** Quality band — premium photo panels over a generated dark atmospheric background. */
+export default function WebQualityAssuranceSection() {
+  const { isMobileWeb, pageGutterClamp } = useKankregLayout();
+  const copy = QUALITY_ASSURANCE_SECTION;
 
   return (
     <SectionReveal preset="fade-up" style={styles.reveal}>
@@ -63,12 +116,24 @@ export default function WebQualityAssuranceSection() {
         accessibilityRole="region"
         accessibilityLabel={copy.title}
       >
-        <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
-          {isMobileWeb ? (
-            <Text style={styles.titleMobile}>{copy.title}</Text>
-          ) : (
-            <WebSectionHead align="center" onDark eyebrow={WEB_HOME_PREMIUM.quality.eyebrow} title={copy.title} />
-          )}
+        <Image
+          source={copy.background}
+          className={BG_CLASS}
+          style={styles.bgImg}
+          resizeMode="cover"
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        />
+        <View style={styles.bgScrim} pointerEvents="none" />
+
+        <View style={[styles.inner, { paddingHorizontal: isMobileWeb ? 0 : pageGutterClamp }]}>
+          <View style={{ paddingHorizontal: isMobileWeb ? pageGutterClamp : 0 }}>
+            {isMobileWeb ? (
+              <Text style={styles.titleMobile}>{copy.title}</Text>
+            ) : (
+              <WebSectionHead align="center" onDark eyebrow={WEB_HOME_PREMIUM.quality.eyebrow} title={copy.title} />
+            )}
+          </View>
 
           {isMobileWeb ? (
             <WebPhoneSnapCarousel
@@ -76,10 +141,18 @@ export default function WebQualityAssuranceSection() {
               keyExtractor={(c) => c.key}
               dotColor={WP.gold.bright}
               dotMuted="rgba(250,248,244,0.28)"
-              renderItem={(card) => renderCard(card)}
+              renderItem={(card, { index, active }) => (
+                <QualityPanel card={card} mobile active={active} delayMs={index * 90} />
+              )}
             />
           ) : (
-            <View style={styles.grid}>{copy.cards.map((card) => renderCard(card))}</View>
+            <View style={styles.grid}>
+              {copy.cards.map((card, i) => (
+                <SectionReveal key={card.key} index={i} preset="fade-up" style={styles.gridCell}>
+                  <QualityPanel card={card} />
+                </SectionReveal>
+              ))}
+            </View>
           )}
         </View>
       </View>
@@ -94,25 +167,39 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     paddingVertical: 96,
     alignSelf: "center",
-    backgroundColor: "#1B2A18",
+    backgroundColor: "#12180F",
     ...Platform.select({
       web: {
         width: "100vw",
         maxWidth: "100vw",
         marginLeft: "calc(50% - 50vw)",
         marginRight: "calc(50% - 50vw)",
-        backgroundImage:
-          "radial-gradient(120% 90% at 50% 0%, #2B4125 0%, #1B2A18 52%, #131D11 100%)",
       },
       default: { width: "100%" },
     }),
   },
   shellMobile: { paddingVertical: spacing.xl },
+  bgImg: {
+    ...StyleSheet.absoluteFillObject,
+    width: "100%",
+    height: "100%",
+  },
+  bgScrim: {
+    ...StyleSheet.absoluteFillObject,
+    ...Platform.select({
+      web: {
+        backgroundImage:
+          "linear-gradient(180deg, rgba(12,18,10,0.55) 0%, rgba(12,18,10,0.72) 45%, rgba(12,18,10,0.88) 100%)",
+      },
+      default: { backgroundColor: "rgba(12,18,10,0.72)" },
+    }),
+  },
   inner: {
     width: "100%",
     maxWidth: 1280,
     alignSelf: "center",
-    gap: 56,
+    gap: 48,
+    zIndex: 1,
   },
   titleMobile: {
     fontFamily: FONT_HEADING,
@@ -121,77 +208,97 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
     textAlign: "center",
     color: WP.cream,
+    marginBottom: 4,
   },
   grid: {
     flexDirection: "row",
     flexWrap: "nowrap",
-    gap: 24,
+    gap: 16,
     width: "100%",
   },
-  card: {
+  gridCell: { flex: 1, minWidth: 0 },
+  panel: {
     flex: 1,
     minWidth: 0,
-    minHeight: 460,
-    borderRadius: WP.radius.tile,
+    aspectRatio: 0.72,
+    minHeight: 420,
+    borderRadius: 22,
     overflow: "hidden",
-    backgroundColor: "#FFFFFF",
+    position: "relative",
+    justifyContent: "flex-end",
+    backgroundColor: "#1A1208",
     borderWidth: 1,
-    borderColor: "rgba(250, 248, 244, 0.08)",
+    borderColor: "rgba(250, 248, 244, 0.1)",
     ...Platform.select({
       web: {
-        boxShadow: "0 30px 60px -34px rgba(0, 0, 0, 0.6)",
+        boxShadow: "0 28px 52px -30px rgba(0, 0, 0, 0.6)",
         cursor: "default",
-        display: "flex",
-        flexDirection: "column",
       },
       default: {},
     }),
   },
-  cardMobile: { flex: 0, minHeight: 400, height: 400, width: "100%" },
-  copy: {
-    paddingTop: 28,
-    paddingHorizontal: 24,
-    paddingBottom: 18,
-    gap: 10,
-    flexGrow: 0,
+  panelMobile: {
+    flex: 0,
+    width: "100%",
+    minHeight: 380,
+    height: 380,
+    aspectRatio: undefined,
+    borderRadius: 18,
   },
-  cardTitle: {
-    fontFamily: FONT_HEADING,
-    fontSize: 21,
-    lineHeight: 27,
-    letterSpacing: -0.3,
-    color: WP.green.ink,
-  },
-  cardTitleMobile: { fontSize: 20, lineHeight: 26 },
-  cardBody: {
-    fontFamily: fonts.regular,
-    fontSize: 14.5,
-    lineHeight: 22,
-    color: BODY_INK,
-  },
-  photoWrap: {
-    flex: 1,
-    minHeight: 220,
-    position: "relative",
-    overflow: "hidden",
-  },
-  photo: {
+  panelImg: {
     ...StyleSheet.absoluteFillObject,
     width: "100%",
     height: "100%",
   },
+  scrim: {
+    ...StyleSheet.absoluteFillObject,
+    ...Platform.select({
+      web: {
+        backgroundImage:
+          "linear-gradient(180deg, rgba(10,14,8,0.05) 0%, rgba(10,14,8,0.2) 36%, rgba(10,14,8,0.78) 70%, rgba(10,14,8,0.94) 100%)",
+      },
+      default: { backgroundColor: "rgba(10,14,8,0.6)" },
+    }),
+  },
+  copy: {
+    zIndex: 2,
+    paddingHorizontal: 20,
+    paddingBottom: 22,
+    paddingTop: 56,
+    gap: 8,
+  },
+  copyMobile: {
+    paddingHorizontal: 18,
+    paddingBottom: 18,
+    paddingTop: 48,
+    gap: 6,
+  },
+  goldRule: {
+    width: 28,
+    height: 1.5,
+    backgroundColor: WP.gold.base,
+    marginBottom: 4,
+  },
+  panelTitle: {
+    fontFamily: FONT_HEADING,
+    fontSize: 22,
+    lineHeight: 27,
+    letterSpacing: -0.35,
+    color: WP.cream,
+  },
+  panelTitleMobile: { fontSize: 21, lineHeight: 26 },
+  panelBody: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 21,
+    color: "rgba(250, 248, 244, 0.88)",
+  },
+  panelBodyMobile: { fontSize: 13.5, lineHeight: 20 },
   note: {
-    position: "absolute",
-    left: 10,
-    right: 10,
-    bottom: 8,
+    marginTop: 4,
     fontFamily: fonts.regular,
     fontSize: 10,
     lineHeight: 14,
-    color: "#FFFFFF",
-    textAlign: "center",
-    textShadowColor: "rgba(0,0,0,0.55)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    color: "rgba(250, 248, 244, 0.55)",
   },
 });

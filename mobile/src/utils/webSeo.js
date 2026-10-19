@@ -128,7 +128,7 @@ export function injectWebSeoBootstrap() {
   upsertMeta("name", "description", DEFAULT_DESCRIPTION);
   upsertMeta("name", "robots", "index, follow, max-image-preview:large");
   upsertMeta("name", "application-name", APP_DISPLAY_NAME);
-  upsertMeta("name", "theme-color", "#FAF8F4");
+  upsertMeta("name", "theme-color", "#FFFFFF");
   upsertMeta("name", "color-scheme", "light dark");
 
   upsertMeta("property", "og:site_name", APP_DISPLAY_NAME);

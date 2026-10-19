@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import Constants from "expo-constants";
 import { Image } from "expo-image";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -294,7 +293,6 @@ export default function StoreProfile({
           {STORE_PROFILE.rows.map((row) => (
             <InfoRow key={row.key} row={row} trailing={trailingFor(row.key)} onPress={() => go(row.route)} />
           ))}
-          {user?.isAdmin ? <InfoRow row={STORE_PROFILE.adminRow} onPress={() => go(STORE_PROFILE.adminRow.route)} /> : null}
           {user?.isDeliveryPartner ? <InfoRow row={STORE_PROFILE.deliveryRow} onPress={() => go(STORE_PROFILE.deliveryRow.route)} /> : null}
         </View>
 
@@ -321,7 +319,6 @@ export default function StoreProfile({
       </ScrollView>
 
       <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
-        <BlurView intensity={isDark ? 40 : 70} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
         <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glassStrong }]} />
         <View style={[styles.headerRow, { paddingHorizontal: gutter }]}>
           <PressableScale

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
-import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withSequence, withSpring } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } from "react-native-reanimated";
 import { STORE_SECTIONS } from "../../content/storefrontContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { hapticTick } from "../../utils/haptics";
@@ -55,7 +55,7 @@ function PickTab({ pick, active, width, onPress }) {
         ]}
       >
         {uri ? (
-          <Image source={{ uri }} style={styles.circleImg} contentFit="cover" cachePolicy="memory-disk" />
+          <Image source={{ uri }} style={styles.circleImg} contentFit="contain" contentPosition="center" cachePolicy="memory-disk" />
         ) : (
           <StoreIcon icon={pick.icon || { mci: "gift-outline" }} size={26} color={withAlpha(c.brand, 0.5)} />
         )}
@@ -98,7 +98,7 @@ export default function FestivePicks({ title, picks, activeKey, onChange, onProd
           />
         ))}
       </View>
-      <Animated.View key={active.key} entering={FadeIn.duration(260)}>
+      <View key={active.key}>
         <ProductRail
           products={active.products.slice(0, 8)}
           onProductPress={onProductPress}
@@ -106,7 +106,7 @@ export default function FestivePicks({ title, picks, activeKey, onChange, onProd
           seeAllLabel={STORE_SECTIONS.picks.action}
           hideEta={hideEta}
         />
-      </Animated.View>
+      </View>
     </View>
   );
 }

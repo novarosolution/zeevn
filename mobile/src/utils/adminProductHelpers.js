@@ -1,3 +1,4 @@
+import { getProductPackagingImageUri } from "../content/productPackagingImages";
 import { parseCatalogBoolean } from "./catalogBoolean";
 
 const LOW_STOCK_MAX = 5;
@@ -12,6 +13,8 @@ export const PRODUCT_FILTER_TABS = [
 ];
 
 export function productCoverUri(p) {
+  const packaging = getProductPackagingImageUri(p);
+  if (packaging) return packaging;
   const imgs = Array.isArray(p?.images) ? p.images : [];
   const first = imgs.find((u) => String(u || "").trim());
   if (first) return String(first).trim();

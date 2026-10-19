@@ -2,7 +2,7 @@
   "_about": "Zeevan launch emblem: a gold ring with a sprouting leaf. One source for the native splash images (scripts/generate-splash-assets.js) and the animated boot screen (src/components/startup/ZeevanEmblem.js), so the two always match. Coordinates live in a 100-unit box; the canvas adds 30 units of margin on every side.",
   "box": 100,
   "margin": 30,
-  "background": { "light": "#F7F2E8", "dark": "#1A1714" },
+  "background": { "light": "#FFFFFF", "dark": "#1A1714" },
   "ring": { "cx": 50, "cy": 50, "r": 45.5 },
   "gradients": {
     "gold": { "from": [15, 0], "to": [85, 100] },

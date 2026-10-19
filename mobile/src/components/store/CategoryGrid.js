@@ -36,7 +36,16 @@ function CategoryTile({ tile, size, index, moreSuffix, onPress }) {
             pointerEvents="none"
           />
           {tile.image ? (
-            <Image source={{ uri: tile.image }} style={styles.img} contentFit="cover" transition={200} cachePolicy="memory-disk" />
+            <View style={[styles.imgWell, { backgroundColor: withAlpha(c.card, isDark ? 0.35 : 0.55) }]}>
+              <Image
+                source={{ uri: tile.image }}
+                style={styles.img}
+                contentFit="contain"
+                contentPosition="center"
+                transition={200}
+                cachePolicy="memory-disk"
+              />
+            </View>
           ) : (
             <StoreIcon icon={tile.icon || { mci: "pot-steam-outline" }} size={size * 0.38} color={withAlpha(c.brand, 0.45)} />
           )}
@@ -154,9 +163,17 @@ export function SeeAllBar({ images = [], label, onPress }) {
 
 const styles = StyleSheet.create({
   grid: { flexDirection: "row", flexWrap: "wrap", gap: GAP, rowGap: 14 },
-  box: { overflow: "hidden", alignItems: "center", justifyContent: "flex-end" },
+  box: { overflow: "hidden", alignItems: "center", justifyContent: "center" },
   gloss: { position: "absolute", top: 0, left: 0, right: 0, height: "45%" },
-  img: { width: "92%", height: "78%", marginBottom: 0 },
+  imgWell: {
+    ...StyleSheet.absoluteFillObject,
+    margin: 6,
+    borderRadius: 14,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  img: { width: "100%", height: "100%" },
   allBox: { justifyContent: "center", borderWidth: 1 },
   allDisc: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   more: {

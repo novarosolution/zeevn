@@ -23,11 +23,11 @@ export const KANKREG_PALETTE = {
   ink: "#1A1C14",
   inkSoft: "#4A4634",
   inkFaint: "#7A7460",
-  paper: "#F7F1E6",
-  paper2: "#EFE7D8",
-  card: "#FFFCF6",
-  line: "#E2D6C2",
-  lineSoft: "#EBE3D4",
+  paper: "#FFFFFF",
+  paper2: "#FFFFFF",
+  card: "#FFFFFF",
+  line: "#E8E8E8",
+  lineSoft: "#F0F0F0",
   green: ZEEVAN_GREEN.base,
   greenBright: ZEEVAN_GREEN.bright,
   greenDeep: ZEEVAN_GREEN.deep,
@@ -54,9 +54,11 @@ export const WEB_COMMERCE = {
 /** Web chrome — announce strip, header, trust band, CTAs. */
 export const KANKREG_CHROME = {
   announceBg: ZEEVAN_GREEN.deep,
-  cream: KANKREG_PALETTE.paper,
-  topbarBg: KANKREG_PALETTE.paper,
-  topbarSolid: KANKREG_PALETTE.paper,
+  /** Page canvas below the header — always pure white. */
+  cream: "#FFFFFF",
+  /** Header keeps a soft warm wash; body screens use `cream` / paper white. */
+  topbarBg: "#FAF6EC",
+  topbarSolid: "#FAF6EC",
   buttonAccent: ZEEVAN_GREEN.base,
   buttonAccentHover: ZEEVAN_GREEN.bright,
   buttonSecondary: ZEEVAN_GREEN.deep,

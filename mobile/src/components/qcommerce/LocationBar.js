@@ -126,7 +126,7 @@ function createStyles(c, isDark) {
       borderRadius: radius.lg,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: isDark ? "rgba(28, 25, 23, 0.85)" : "#FFFCF8",
+      backgroundColor: isDark ? "rgba(28, 25, 23, 0.85)" : "#FFFFFF",
     },
     textWrap: {
       flex: 1,

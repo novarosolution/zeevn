@@ -1,28 +1,19 @@
-import React, { useCallback, useEffect, useRef } from "react";
-import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import React, { useState } from "react";
+import { FlatList, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Defs, LinearGradient as SvgGradient, Path, Stop } from "react-native-svg";
-import Animated, {
-  interpolate,
-  runOnJS,
-  useAnimatedReaction,
-  useAnimatedScrollHandler,
-  useAnimatedStyle,
-  useSharedValue,
-} from "react-native-reanimated";
 import { STORE_SECTIONS } from "../../content/storefrontContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
-import { useLoop } from "./HomeArt";
-import { DepthSlide, PagerDots } from "./HomeMotion";
 import { Sparkle } from "./Ornaments";
 import PressableScale from "./PressableScale";
 import StoreIcon from "./StoreIcon";
 
 const GAP = 10;
-const CARD_H = 176;
-const AUTOPLAY_MS = 5600;
-const AnimatedFlatList = Animated.FlatList;
+/** Compact landscape promo band (~16:9). */
+const CARD_RATIO = 9 / 16;
+const CARD_H_MIN = 148;
+const CARD_H_MAX = 188;
 
 export function CoinArt({ size = 132 }) {
   return (
@@ -53,16 +44,11 @@ export function CoinArt({ size = 132 }) {
   );
 }
 
-/** Gently bobbing coins. */
 function FloatingCoins() {
-  const t = useLoop(2200);
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: interpolate(t.value, [0, 1], [3, -6]) }, { rotate: `${interpolate(t.value, [0, 1], [-2, 3])}deg` }],
-  }));
   return (
-    <Animated.View style={[styles.coinArt, animatedStyle]} pointerEvents="none">
+    <View style={styles.coinArt} pointerEvents="none">
       <CoinArt />
-    </Animated.View>
+    </View>
   );
 }
 
@@ -75,14 +61,14 @@ function CtaPill({ label, color, textColor }) {
   );
 }
 
-function RewardsCard({ item, width, isDark, signedIn, points }) {
+function RewardsCard({ item, width, height, isDark, signedIn, points }) {
   const { c, r, type } = useStoreTheme();
   const colors = isDark ? ["#4A3812", "#2E2209"] : ["#FFF0C9", "#F8D68C"];
   const personal = signedIn && item.signedIn;
   const title = personal ? item.signedIn.title(Number(points || 0).toLocaleString("en-IN")) : item.title;
   const cta = personal ? item.signedIn.cta : item.cta;
   return (
-    <View style={[styles.card, { width, borderRadius: r.xxl }]}>
+    <View style={[styles.card, { width, height, borderRadius: r.xxl }]}>
       <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
       <FloatingCoins />
       <View style={styles.copy}>
@@ -96,49 +82,60 @@ function RewardsCard({ item, width, isDark, signedIn, points }) {
   );
 }
 
-/**
- * A photo slide. The built-in banners already carry their headline, so they show the picture with a round arrow;
- * admin slides can add a title, subtitle and call to action, which sit on a soft dark gradient.
- */
-function ImageCard({ item, width }) {
-  const { c, r, type, isDark } = useStoreTheme();
+/** Photo slide with left copy + gold CTA over a soft scrim (product stays visible on the right). */
+function ImageCard({ item, width, height }) {
+  const { c, r, type } = useStoreTheme();
   const source = typeof item.image === "number" ? item.image : { uri: item.image };
-  const zoom = useLoop(9000);
-  const zoomStyle = useAnimatedStyle(() => ({ transform: [{ scale: interpolate(zoom.value, [0, 1], [1, 1.07]) }] }));
   const hasCopy = Boolean(item.eyebrow || item.title || item.subtitle);
   return (
-    <View style={[styles.card, { width, borderRadius: r.xxl, backgroundColor: c.soft }]}>
-      <Animated.View style={[StyleSheet.absoluteFill, zoomStyle]}>
-        <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" transition={250} cachePolicy="memory-disk" />
-      </Animated.View>
+    <View style={[styles.card, { width, height, borderRadius: r.xxl, backgroundColor: "#1A1208" }]}>
+      <Image
+        source={source}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        contentPosition="center"
+        transition={0}
+        cachePolicy="memory-disk"
+      />
       {hasCopy || item.cta ? (
         <LinearGradient
-          colors={["transparent", withAlpha(isDark ? "#0A0806" : "#1A140C", hasCopy ? 0.78 : 0.4)]}
-          locations={[0.35, 1]}
+          colors={[withAlpha("#0E100A", 0.72), withAlpha("#0E100A", 0.28), "transparent"]}
+          locations={[0, 0.42, 0.78]}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
           style={StyleSheet.absoluteFill}
           pointerEvents="none"
         />
       ) : null}
       <View style={styles.imageCopy} pointerEvents="none">
         {item.eyebrow ? (
-          <Text style={type.eyebrow(c.goldBright, 10)} numberOfLines={1}>
+          <Text style={type.eyebrow(c.goldBright, 9.5)} numberOfLines={1}>
             {item.eyebrow}
           </Text>
         ) : null}
         {item.title ? (
-          <Text style={type.display(22, { color: "#FFFFFF", ls: -0.4, lh: 26 })} numberOfLines={2}>
+          <Text style={type.display(20, { color: "#FAF8F4", ls: -0.45, lh: 24 })} numberOfLines={2}>
             {item.title}
           </Text>
         ) : null}
         {item.subtitle ? (
-          <Text style={type.ui(12.5, "medium", withAlpha("#FFFFFF", 0.86))} numberOfLines={1}>
+          <Text style={type.ui(12, "medium", withAlpha("#FAF8F4", 0.88))} numberOfLines={2}>
             {item.subtitle}
           </Text>
         ) : null}
         {item.cta ? (
-          <View style={[styles.imageCta, { backgroundColor: withAlpha("#FFFFFF", 0.94) }]}>
-            <Text style={type.ui(12.5, "extrabold", "#244424", { letterSpacing: 0.2 })}>{item.cta}</Text>
-            <StoreIcon icon={{ ion: "arrow-forward" }} size={13} color="#244424" />
+          <View
+            style={[
+              styles.imageCta,
+              {
+                backgroundColor: withAlpha(c.gold, 0.92),
+                borderWidth: StyleSheet.hairlineWidth,
+                borderColor: withAlpha("#FFFFFF", 0.55),
+              },
+            ]}
+          >
+            <Text style={type.ui(12.5, "extrabold", "#2E2208", { letterSpacing: 0.2 })}>{item.cta}</Text>
+            <StoreIcon icon={{ ion: "arrow-forward" }} size={13} color="#2E2208" />
           </View>
         ) : null}
       </View>
@@ -151,78 +148,60 @@ function ImageCard({ item, width }) {
   );
 }
 
-function Slide({ item, index, scrollX, step, width, isDark, signedIn, points, onPress }) {
+function Slide({ item, width, height, isDark, signedIn, points, onPress }) {
   const { shadow } = useStoreTheme();
   return (
-    <DepthSlide index={index} scrollX={scrollX} step={step}>
-      <PressableScale
-        onPress={onPress}
-        scaleTo={0.98}
-        accessibilityRole="button"
-        accessibilityLabel={item.title || item.a11y || item.cta || STORE_SECTIONS.promoA11y}
-        style={[shadow.soft, { height: CARD_H }]}
-      >
-        {item.kind === "rewards" ? (
-          <RewardsCard item={item} width={width} isDark={isDark} signedIn={signedIn} points={points} />
-        ) : (
-          <ImageCard item={item} width={width} />
-        )}
-      </PressableScale>
-    </DepthSlide>
+    <PressableScale
+      onPress={onPress}
+      scaleTo={0.98}
+      accessibilityRole="button"
+      accessibilityLabel={item.title || item.a11y || item.cta || STORE_SECTIONS.promoA11y}
+      style={[shadow.soft, { height }]}
+    >
+      {item.kind === "rewards" ? (
+        <RewardsCard item={item} width={width} height={height} isDark={isDark} signedIn={signedIn} points={points} />
+      ) : (
+        <ImageCard item={item} width={width} height={height} />
+      )}
+    </PressableScale>
   );
 }
 
-/** Peeking, auto-advancing promo carousel with depth scaling and animated page dots. */
+function StaticDots({ count, active, style }) {
+  const { c } = useStoreTheme();
+  if (count < 2) return null;
+  return (
+    <View style={[styles.pager, style]}>
+      {Array.from({ length: count }, (_, i) => (
+        <View
+          key={i}
+          style={[
+            styles.pagerDot,
+            {
+              width: i === active ? 22 : 6,
+              backgroundColor: i === active ? c.brand : c.lineStrong,
+            },
+          ]}
+        />
+      ))}
+    </View>
+  );
+}
+
+/** Peeking promo carousel — no scroll-driven Reanimated work (keeps Home smooth). */
 export default function PromoCarousel({ items, onPressItem, signedIn = false, points = 0 }) {
   const { isDark, gutter } = useStoreTheme();
   const { width } = useWindowDimensions();
   const cardW = Math.round(width * 0.88);
+  const cardH = Math.round(Math.min(CARD_H_MAX, Math.max(CARD_H_MIN, cardW * CARD_RATIO)));
   const step = cardW + GAP;
-  const listRef = useRef(null);
-  const indexRef = useRef(0);
-  const pausedUntil = useRef(0);
-  const scrollX = useSharedValue(0);
-
-  const setIndex = useCallback((next) => {
-    indexRef.current = next;
-  }, []);
-  const pause = useCallback(() => {
-    pausedUntil.current = Date.now() + 9000;
-  }, []);
-
-  const onScroll = useAnimatedScrollHandler({
-    onScroll: (e) => {
-      scrollX.value = e.contentOffset.x;
-    },
-    onBeginDrag: () => {
-      runOnJS(pause)();
-    },
-  });
-
-  useAnimatedReaction(
-    () => Math.round(scrollX.value / step),
-    (now, prev) => {
-      if (now !== prev) runOnJS(setIndex)(now);
-    },
-    [step]
-  );
-
-  useEffect(() => {
-    if (items.length < 2) return undefined;
-    const id = setInterval(() => {
-      if (Date.now() < pausedUntil.current) return;
-      const next = (indexRef.current + 1) % items.length;
-      listRef.current?.scrollToOffset({ offset: next * step, animated: true });
-    }, AUTOPLAY_MS);
-    return () => clearInterval(id);
-  }, [items.length, step]);
+  const [active, setActive] = useState(0);
 
   if (!items.length) return null;
 
   return (
     <View style={styles.wrap}>
-      <AnimatedFlatList
-        ref={listRef}
+      <FlatList
         data={items}
         horizontal
         keyExtractor={(item) => item.key}
@@ -230,16 +209,17 @@ export default function PromoCarousel({ items, onPressItem, signedIn = false, po
         snapToInterval={step}
         snapToAlignment="start"
         decelerationRate="fast"
-        scrollEventThrottle={16}
-        onScroll={onScroll}
+        scrollEventThrottle={32}
+        onMomentumScrollEnd={(e) => {
+          const next = Math.round(e.nativeEvent.contentOffset.x / step);
+          setActive(Math.max(0, Math.min(items.length - 1, next)));
+        }}
         contentContainerStyle={{ paddingHorizontal: gutter, gap: GAP }}
-        renderItem={({ item, index }) => (
+        renderItem={({ item }) => (
           <Slide
             item={item}
-            index={index}
-            scrollX={scrollX}
-            step={step}
             width={cardW}
+            height={cardH}
             isDark={isDark}
             signedIn={signedIn}
             points={points}
@@ -247,14 +227,14 @@ export default function PromoCarousel({ items, onPressItem, signedIn = false, po
           />
         )}
       />
-      <PagerDots count={items.length} scrollX={scrollX} step={step} />
+      <StaticDots count={items.length} active={active} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: { gap: 12 },
-  card: { height: CARD_H, overflow: "hidden" },
+  card: { overflow: "hidden" },
   copy: { flex: 1, padding: 18, justifyContent: "center", gap: 5, maxWidth: "68%" },
   heading: { marginBottom: 1 },
   cta: { alignSelf: "flex-start", marginTop: 7, paddingHorizontal: 16, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
@@ -262,9 +242,12 @@ const styles = StyleSheet.create({
   imageCopy: {
     position: "absolute",
     left: 16,
-    right: 16,
-    bottom: 16,
-    gap: 4,
+    right: "42%",
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    gap: 5,
+    paddingVertical: 14,
   },
   arrowDisc: {
     position: "absolute",
@@ -282,8 +265,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    height: 32,
-    paddingHorizontal: 13,
-    borderRadius: 16,
+    height: 34,
+    paddingHorizontal: 14,
+    borderRadius: 17,
   },
+  pager: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 5 },
+  pagerDot: { height: 6, borderRadius: 3 },
 });

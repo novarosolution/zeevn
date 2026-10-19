@@ -9,3 +9,11 @@ export { default as StoreProduct, StoreProductNotFound, StoreProductSkeleton } f
 export { default as StoreCart } from "./StoreCart";
 export { default as StoreOrders } from "./StoreOrders";
 export { default as StoreOrderConfirmed, StoreOrderPlaced } from "./StoreOrderConfirmed";
+export { default as StoreNotifications } from "./StoreNotifications";
+export { default as StoreSettings } from "./StoreSettings";
+export { default as StoreSupport } from "./StoreSupport";
+export { default as StoreEditProfile } from "./StoreEditProfile";
+export { default as StoreAddress } from "./StoreAddress";
+export { default as StoreRewards } from "./StoreRewards";
+export { FlyToCartLayer } from "./flyToCart";
+export { default as StoreLegal } from "./StoreLegal";

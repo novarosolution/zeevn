@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { FlatList, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
-import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -139,7 +138,7 @@ function Gallery({ uris, thumbs, size, index, onIndex, badge, soldTag, dim }) {
                   <Image
                     source={{ uri: item }}
                     style={[StyleSheet.absoluteFill, dim && { opacity: 0.4 }]}
-                    contentFit="cover"
+                    contentFit="contain"
                     transition={200}
                     cachePolicy="memory-disk"
                     onError={() => setFailed((f) => ({ ...f, [i]: true }))}
@@ -193,7 +192,7 @@ function Gallery({ uris, thumbs, size, index, onIndex, badge, soldTag, dim }) {
                   { backgroundColor: c.well, borderColor: active ? c.brand : c.line, borderWidth: active ? 2 : 1, opacity: active ? 1 : 0.85 },
                 ]}
               >
-                <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" transition={120} />
+                <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="contain" transition={120} />
               </Pressable>
             );
           })}
@@ -391,7 +390,6 @@ function BuyDock({ bottom, price, quantity, unavailable, onAdd, onRemove, onBuyN
     <View style={[styles.dockWrap, { bottom, left: gutter, right: gutter }]} pointerEvents="box-none">
       <View style={[styles.dockShadow, shadow.float, { borderColor: isDark ? c.line : withAlpha("#FFFFFF", 0.85) }]}>
         <View style={styles.dockClip}>
-          <BlurView intensity={isDark ? 45 : 65} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glass }]} />
           <View style={styles.dockRow}>
             <View style={styles.dockPrice}>
@@ -1022,7 +1020,6 @@ export default function StoreProduct({
         <View style={[styles.topBar, { paddingTop: insets.top + 6 }]} pointerEvents="box-none">
           {solid ? (
             <Animated.View entering={FadeIn.duration(160)} exiting={FadeOut.duration(120)} style={StyleSheet.absoluteFill} pointerEvents="none">
-              <BlurView intensity={isDark ? 40 : 70} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
               <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glassStrong, borderBottomColor: c.line, borderBottomWidth: StyleSheet.hairlineWidth }]} />
             </Animated.View>
           ) : null}

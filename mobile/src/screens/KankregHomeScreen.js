@@ -55,9 +55,7 @@ import { HOME_SCREEN_UI, SHOP_SCREEN_UI } from "../content/appContent";
 import { deferAfterFirstPaint } from "../utils/deferAfterFirstPaint";
 import { createQuoteBlockStyles } from "../theme/screenThemes";
 import { productToCartLine } from "../utils/productCart";
-import WebPhoneCategoryCircles from "../components/home/WebPhoneCategoryCircles";
 import WebPhoneProductRail from "../components/home/WebPhoneProductRail";
-import WebPhoneTrustStrip from "../components/home/WebPhoneTrustStrip";
 import WebPhoneQuoteBand from "../components/home/WebPhoneQuoteBand";
 import { StoreHome, StoreHomeSkeleton } from "../components/store/entry";
 import AppStartupScreen from "../components/AppStartupScreen";
@@ -124,8 +122,8 @@ const styles = StyleSheet.create({
   },
   phoneBestsellers: {
     width: "100%",
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.md,
     backgroundColor: "transparent",
   },
 });
@@ -401,20 +399,10 @@ export default function KankregHomeScreen({ navigation }) {
           />
         ) : null}
 
-        {/* Desktop pantry intro; phone uses category circles instead (cleaner first scroll). */}
+        {/* Desktop pantry intro; phone jumps straight into bestsellers + line tabs. */}
         {webCfg.showIntroBand !== false && !isMobileWeb ? (
           <WebHomeIntroBand navigation={navigation} />
         ) : null}
-
-        {isMobileWeb && ready ? (
-          <WebPhoneCategoryCircles
-            products={shopCatalog}
-            onPressShopAll={() => navigation.navigate("Shop")}
-            onPressCategory={(label) => navigation.navigate("Shop", getShopNavParamsForLabel(label))}
-          />
-        ) : null}
-
-        {isMobileWeb && ready ? <WebPhoneTrustStrip /> : null}
 
         {showPrime && ready && isMobileWeb ? (
           <View nativeID="home-bestsellers" style={styles.phoneBestsellers}>
@@ -425,7 +413,7 @@ export default function KankregHomeScreen({ navigation }) {
             ) : null}
             {homeCatalog.length ? (
               <WebPhoneProductRail
-                title={HOME_SCREEN_UI.bestsellers.phoneTitle || "Explore our best sellers"}
+                title={HOME_SCREEN_UI.bestsellers.phoneTitle || "Best sellers"}
                 kicker={HOME_SCREEN_UI.bestsellers.webKicker || "Fresh jars, honest labels"}
                 products={homeCatalog}
                 navigation={navigation}
@@ -436,7 +424,6 @@ export default function KankregHomeScreen({ navigation }) {
                 viewAllLabel={HOME_SCREEN_UI.bestsellers.webAction || "View all"}
                 limit={10}
                 lineTabs
-                centerTitle
               />
             ) : (
               <View style={{ paddingHorizontal: pageGutterClamp }}>

@@ -136,6 +136,10 @@ function upgradeRemoteImageUrl(uri) {
 }
 
 export function getImageUriCandidates(rawUri, { width, quality = "auto" } = {}) {
+  if (typeof rawUri === "number") {
+    const bundled = resolveBundledModuleSrc(rawUri);
+    return bundled ? [bundled] : [];
+  }
   const raw = String(rawUri || "").trim();
   if (!raw) return [];
 

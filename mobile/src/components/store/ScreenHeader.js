@@ -1,31 +1,29 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { BlurView } from "expo-blur";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useStoreTheme } from "../../theme/storefront";
 import PressableScale from "./PressableScale";
 
-/** Height of the bar itself (below the status bar) — scroll content starts at `insets.top + SCREEN_HEADER_PAD`. */
 export const SCREEN_HEADER_PAD = 64;
 
-/**
- * Frosted top bar shared by the app's detail screens (bag, checkout, orders, confirmation):
- * round back button, centred title and an optional trailing slot. Sits over the scroll view.
- */
+/** Solid top bar (no BlurView) — shared by bag, checkout, orders, confirmation. */
 export default function ScreenHeader({ title, onBack, backLabel = "Back", right, divider = false }) {
-  const { c, type, isDark, gutter } = useStoreTheme();
+  const { c, type, gutter } = useStoreTheme();
   const insets = useSafeAreaInsets();
 
   return (
     <View
       style={[
         styles.wrap,
-        { paddingTop: insets.top + 6, borderBottomColor: c.line, borderBottomWidth: divider ? StyleSheet.hairlineWidth : 0 },
+        {
+          paddingTop: insets.top + 6,
+          backgroundColor: c.page,
+          borderBottomColor: c.line,
+          borderBottomWidth: divider ? StyleSheet.hairlineWidth : 0,
+        },
       ]}
     >
-      <BlurView intensity={isDark ? 40 : 70} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glassStrong }]} />
       <View style={[styles.row, { paddingHorizontal: gutter }]}>
         {onBack ? (
           <PressableScale
@@ -50,10 +48,17 @@ export default function ScreenHeader({ title, onBack, backLabel = "Back", right,
 }
 
 const styles = StyleSheet.create({
-  wrap: { position: "absolute", top: 0, left: 0, right: 0, paddingBottom: 10, zIndex: 20, overflow: "hidden" },
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", height: 46 },
-  title: { position: "absolute", left: 72, right: 72, textAlign: "center" },
-  round: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", borderWidth: StyleSheet.hairlineWidth },
-  spacer: { width: 44, height: 44 },
-  right: { minWidth: 44, alignItems: "flex-end" },
+  wrap: { zIndex: 20 },
+  row: { height: 52, flexDirection: "row", alignItems: "center", gap: 10 },
+  title: { flex: 1, textAlign: "center" },
+  right: { minWidth: 42, alignItems: "flex-end" },
+  spacer: { width: 42, height: 42 },
+  round: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    borderWidth: StyleSheet.hairlineWidth,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

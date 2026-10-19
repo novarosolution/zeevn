@@ -41,7 +41,7 @@ export default function KankregCartRow({
               uri={imageUri}
               previewUri={thumbPreview}
               style={styles.thumbImage}
-              contentFit="cover"
+              contentFit="contain"
               priority="normal"
               rounded={14}
             />

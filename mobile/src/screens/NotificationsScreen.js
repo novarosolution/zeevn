@@ -30,7 +30,7 @@ import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import PremiumChip from "../components/ui/PremiumChip";
 import PremiumButton from "../components/ui/PremiumButton";
 import PremiumCard from "../components/ui/PremiumCard";
-import NativeNotificationRow from "../components/native/NativeNotificationRow";
+import { StoreNotifications } from "../components/store/entry";
 import { FIGMA } from "../theme/figmaApp";
 
 function UnreadDot({ color }) {
@@ -210,6 +210,28 @@ export default function NotificationsScreen({ navigation }) {
     return <AuthGateShell signedOut navigation={navigation} />;
   }
 
+  if (isNativeApp) {
+    return (
+      <StoreNotifications
+        navigation={navigation}
+        loading={loading}
+        refreshing={refreshing}
+        onRefresh={onPullRefresh}
+        error={error}
+        onDismissError={() => setError("")}
+        items={filteredNotifications}
+        counts={{ all: activeNotifications.length, unread: unreadCount, archived: archivedNotifications.length }}
+        filter={filter}
+        onFilter={setFilter}
+        onOpen={async (item) => {
+          await handleOpenNotification(item);
+          if (item.kind === "order") navigation.navigate("MyOrders");
+        }}
+        onArchiveToggle={handleArchiveToggle}
+      />
+    );
+  }
+
   const headerRefresh =
     Platform.OS === "web" ? (
       <PremiumButton
@@ -266,8 +288,7 @@ export default function NotificationsScreen({ navigation }) {
             let cardIdx = 0;
             return (
               <>
-                {!isNativeApp ? (
-                  <>
+                <>
                     <View style={styles.filterRow}>
                       <PremiumChip
                         label={`${NOTIFICATIONS_SCREEN_UI.filters.all} · ${activeNotifications.length}`}
@@ -291,8 +312,7 @@ export default function NotificationsScreen({ navigation }) {
                         onPress={() => setFilter("archived")}
                       />
                     </View>
-                  </>
-                ) : null}
+                </>
                 {filteredNotifications.length === 0 ? (
                   <View style={styles.panel}>
                     <PremiumEmptyState
@@ -302,18 +322,7 @@ export default function NotificationsScreen({ navigation }) {
                     />
                   </View>
                 ) : null}
-                {isNativeApp ? (
-                  <View style={styles.nativeList}>
-                    {filteredNotifications.map((item) => (
-                      <NativeNotificationRow
-                        key={item._id}
-                        item={item}
-                        onPress={() => handleOpenNotification(item)}
-                      />
-                    ))}
-                  </View>
-                ) : (
-                  notificationSections.map((section) => (
+                {notificationSections.map((section) => (
                     <View key={section.key} style={styles.groupBlock}>
                       <Text style={styles.groupHeading}>{section.label}</Text>
                       {section.items.map((item) => {
@@ -352,8 +361,7 @@ export default function NotificationsScreen({ navigation }) {
                         );
                       })}
                     </View>
-                  ))
-                )}
+                ))}
               </>
             );
           })()

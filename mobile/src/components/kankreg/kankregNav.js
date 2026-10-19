@@ -6,28 +6,6 @@ import {
   KANKREG_WEB_NAV_ITEMS,
 } from "../../content/appContent";
 
-export const ADMIN_ROUTES = new Set([
-  "AdminDashboard",
-  "AdminDelivery",
-  "AdminProducts",
-  "AdminInventory",
-  "AdminAddProduct",
-  "AdminOrders",
-  "AdminOrderDetail",
-  "AdminUsers",
-  "AdminNotifications",
-  "AdminAnalytics",
-  "AdminCoupons",
-  "AdminRewards",
-  "AdminSupport",
-  "AdminHomeView",
-]);
-
-/** True when the active stack route is the admin desk (hide customer chrome). */
-export function isAdminRoute(routeName) {
-  return Boolean(routeName) && ADMIN_ROUTES.has(String(routeName));
-}
-
 const ROUTE_GROUPS = {
   Home: ["Home"],
   Shop: ["Shop"],
@@ -38,7 +16,6 @@ const ROUTE_GROUPS = {
   Orders: ["MyOrders"],
   Rewards: ["RedeemRewards"],
   Account: ["Profile", "EditProfile", "ManageAddress", "Settings", "Notifications", "Support"],
-  Admin: [...ADMIN_ROUTES],
   Delivery: ["DeliveryDashboard"],
   Auth: ["Login", "Register"],
 };
@@ -53,7 +30,6 @@ const NAV_HANDLERS = {
   Orders: ({ go }) => () => go("MyOrders", true),
   Rewards: ({ go }) => () => go("RedeemRewards", true),
   Account: ({ go }) => () => go("Profile", true),
-  Admin: ({ go }) => () => go("AdminDashboard", true),
   Delivery: ({ go }) => () => go("DeliveryDashboard", true),
 };
 
@@ -97,14 +73,6 @@ export function buildKankregMobileNavItems({ go, goProduct, user }) {
 function buildRoleNavItems(ctx) {
   const roleItems = [];
   const { user } = ctx;
-  if (user?.isAdmin) {
-    const { key, label } = KANKREG_ROLE_NAV_ITEMS.admin;
-    roleItems.push({
-      key,
-      label,
-      onPress: NAV_HANDLERS.Admin(ctx),
-    });
-  }
   if (user?.isDeliveryPartner) {
     const { key, label } = KANKREG_ROLE_NAV_ITEMS.delivery;
     roleItems.push({

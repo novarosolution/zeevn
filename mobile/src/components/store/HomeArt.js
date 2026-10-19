@@ -118,25 +118,20 @@ export const GlowSpot = memo(function GlowSpot({ size, color, opacity = 0.5, sty
  * Local units: lamp 44 × 26, flame 32 × 36, glow 64 × 64 — all multiplied by `scale`.
  */
 function Diya({ x, y, scale = 1, phase = 0 }) {
-  const flick = useLoop(520 + phase * 140, { delay: phase * 170, ease: "quad" });
-  const sway = useLoop(1500 + phase * 230, { delay: phase * 90 });
-  const flameStyle = useAnimatedStyle(() => ({
-    transform: [
-      { rotate: `${interpolate(sway.value, [0, 1], [-3.5, 3.5])}deg` },
-      { scaleY: interpolate(flick.value, [0, 1], [0.9, 1.1]) },
-      { scaleX: interpolate(flick.value, [0, 1], [1.06, 0.94]) },
-    ],
-  }));
-  const glowStyle = useAnimatedStyle(() => ({ opacity: interpolate(flick.value, [0, 1], [0.55, 1]) }));
-
+  /** Static flame — continuous flicker loops were waking the UI thread on Home. */
+  void phase;
   return (
     <>
-      <Animated.View
+      <View
         pointerEvents="none"
-        style={[
-          { position: "absolute", left: x - 32 * scale, top: y - 17 * scale - 32 * scale, width: 64 * scale, height: 64 * scale },
-          glowStyle,
-        ]}
+        style={{
+          position: "absolute",
+          left: x - 32 * scale,
+          top: y - 17 * scale - 32 * scale,
+          width: 64 * scale,
+          height: 64 * scale,
+          opacity: 0.85,
+        }}
       >
         <Svg width={64 * scale} height={64 * scale} viewBox="-32 -32 64 64">
           <Defs>
@@ -148,7 +143,7 @@ function Diya({ x, y, scale = 1, phase = 0 }) {
           </Defs>
           <Circle cx={0} cy={0} r={32} fill="url(#flame-glow)" />
         </Svg>
-      </Animated.View>
+      </View>
 
       <View
         pointerEvents="none"
@@ -172,19 +167,22 @@ function Diya({ x, y, scale = 1, phase = 0 }) {
         </Svg>
       </View>
 
-      <Animated.View
+      <View
         pointerEvents="none"
-        style={[
-          { position: "absolute", left: x - 16 * scale, top: y - 38 * scale, width: 32 * scale, height: 36 * scale, transformOrigin: "50% 92%" },
-          flameStyle,
-        ]}
+        style={{
+          position: "absolute",
+          left: x - 16 * scale,
+          top: y - 38 * scale,
+          width: 32 * scale,
+          height: 36 * scale,
+        }}
       >
         <Svg width={32 * scale} height={36 * scale} viewBox="-16 -38 32 36">
           <Path d="M0 -35 C 8.5 -25 10 -13 0 -5 C -10 -13 -8.5 -25 0 -35 Z" fill="#FFA32B" />
           <Path d="M0 -30 C 5.2 -22.5 6.2 -14 0 -8 C -6.2 -14 -5.2 -22.5 0 -30 Z" fill="#FFD25E" />
           <Path d="M0 -23 C 2.7 -18.5 3.2 -13.5 0 -10 C -3.2 -13.5 -2.7 -18.5 0 -23 Z" fill="#FFF6D2" />
         </Svg>
-      </Animated.View>
+      </View>
     </>
   );
 }
@@ -291,16 +289,32 @@ const RANGOLI_DOTS = (() => {
 
 /** Lotus mandala ringed with dots, turning once every `duration` ms. */
 export const Rangoli = memo(function Rangoli({ size = 240, color = "#F6C453", opacity = 0.2, duration = 72000, style }) {
-  const enabled = useMotionEnabled();
+  const enabled = useMotionEnabled() && duration > 0;
   const spin = useSharedValue(0);
   useEffect(() => {
-    if (!enabled) return undefined;
+    if (!enabled) {
+      cancelAnimation(spin);
+      return undefined;
+    }
     const from = spin.value % 360;
     spin.value = from;
     spin.value = withRepeat(withTiming(from + 360, { duration, easing: Easing.linear }), -1, false);
     return () => cancelAnimation(spin);
   }, [enabled, duration, spin]);
   const turn = useAnimatedStyle(() => ({ transform: [{ rotate: `${spin.value}deg` }] }));
+
+  if (!enabled) {
+    return (
+      <View pointerEvents="none" style={[{ width: size, height: size }, style]}>
+        <Svg width={size} height={size} viewBox="0 0 240 240">
+          <LotusMandala cx={120} cy={120} radius={104} color={color} opacity={opacity} />
+          {RANGOLI_DOTS.map((d, i) => (
+            <Circle key={i} cx={d.x} cy={d.y} r={d.r} fill={color} opacity={opacity * 2.4} />
+          ))}
+        </Svg>
+      </View>
+    );
+  }
 
   return (
     <Animated.View pointerEvents="none" style={[{ width: size, height: size }, style, turn]}>

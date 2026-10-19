@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(31, 92, 71, 0.18)",
-    backgroundColor: "#FFFCF6",
+    backgroundColor: "#FFFFFF",
     ...cardShadow,
   },
   cardPhone: {
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     position: "relative",
     overflow: "hidden",
     borderRadius: radius.lg + 2,
-    backgroundColor: "#F3EBD8",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "rgba(31, 92, 71, 0.12)",
   },
@@ -459,7 +459,7 @@ const styles = StyleSheet.create({
     paddingTop: HOME_SPACE.sm + 2,
     paddingBottom: HOME_SPACE.md + 4,
     gap: HOME_SPACE.sm,
-    backgroundColor: "#FFFCF6",
+    backgroundColor: "#FFFFFF",
   },
   cardBodyDark: {
     backgroundColor: "#181513",

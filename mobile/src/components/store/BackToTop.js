@@ -1,14 +1,12 @@
 import React, { useEffect } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { BlurView } from "expo-blur";
+import { Pressable, StyleSheet, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useStoreTheme } from "../../theme/storefront";
 import { hapticTick } from "../../utils/haptics";
-
-/** “↑ Back to top” pill that springs in below the pinned header once you've scrolled a while. */
+/** “↑ Back to top” solid pill. */
 export default function BackToTop({ visible, onPress, top, label = "Back to top" }) {
-  const { c, type, shadow, isDark } = useStoreTheme();
+  const { c, type, shadow } = useStoreTheme();
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -29,14 +27,14 @@ export default function BackToTop({ visible, onPress, top, label = "Back to top"
         }}
         accessibilityRole="button"
         accessibilityLabel={label}
-        style={[styles.shadow, shadow.lift]}
+        style={[
+          styles.pill,
+          shadow.lift,
+          { backgroundColor: c.card, borderColor: c.line },
+        ]}
       >
-        <View style={[styles.pill, { borderColor: c.line }]}>
-          <BlurView intensity={isDark ? 40 : 70} tint={isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glass }]} />
-          <Ionicons name="arrow-up-circle-outline" size={20} color={c.ink} />
-          <Text style={type.ui(14, "bold", c.ink)}>{label}</Text>
-        </View>
+        <Ionicons name="arrow-up-circle-outline" size={20} color={c.ink} />
+        <Text style={type.ui(14, "bold", c.ink)}>{label}</Text>
       </Pressable>
     </Animated.View>
   );
@@ -44,15 +42,13 @@ export default function BackToTop({ visible, onPress, top, label = "Back to top"
 
 const styles = StyleSheet.create({
   wrap: { position: "absolute", left: 0, right: 0, alignItems: "center", zIndex: 40 },
-  shadow: { borderRadius: 22 },
   pill: {
+    height: 44,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
     flexDirection: "row",
     alignItems: "center",
     gap: 7,
-    height: 44,
     paddingHorizontal: 16,
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
-    overflow: "hidden",
   },
 });

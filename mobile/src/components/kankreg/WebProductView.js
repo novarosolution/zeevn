@@ -355,7 +355,7 @@ export default function WebProductView({
     <View style={[styles.gallery, phoneBleed && styles.galleryBleed]}>
       <HeroParallax strength="subtle" maxScroll={360} dim={false} scale style={styles.heroParallax}>
         <LinearGradient
-          colors={isDark ? ["#1a1410", "#14100c"] : ["#FFFDF6", "#F2E9D4"]}
+          colors={isDark ? ["#1a1410", "#14100c"] : ["#FFFFFF", "#F5F5F5"]}
           start={{ x: 0.2, y: 0 }}
           end={{ x: 0.8, y: 1 }}
           style={[
@@ -1152,7 +1152,7 @@ function createStyles(c, isDark) {
       borderRadius: 18,
       borderWidth: 1,
       borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(36, 68, 36, 0.1)",
-      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#FCFAF6",
+      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#FFFFFF",
       ...Platform.select({
         web: {
           position: "sticky",
@@ -1237,7 +1237,7 @@ function createStyles(c, isDark) {
       borderWidth: 1,
       borderColor: KANKREG_PALETTE.line,
       overflow: "hidden",
-      backgroundColor: isDark ? c.surfaceMuted : "#F2E9D4",
+      backgroundColor: isDark ? c.surfaceMuted : "#F5F5F5",
       padding: 7,
       ...Platform.select({
         web: {
@@ -1265,7 +1265,7 @@ function createStyles(c, isDark) {
       width: "100%",
       justifyContent: "center",
       alignItems: "center",
-      backgroundColor: isDark ? "#1a1410" : "#FFFDF6",
+      backgroundColor: isDark ? "#1a1410" : "#FFFFFF",
       borderRadius: 24,
       overflow: "hidden",
       position: "relative",
@@ -1677,7 +1677,7 @@ function createStyles(c, isDark) {
       borderColor: KANKREG_PALETTE.line,
       borderRadius: 14,
       overflow: "hidden",
-      backgroundColor: isDark ? c.surface : "#FFFEFA",
+      backgroundColor: isDark ? c.surface : "#FFFFFF",
     },
     qtyBoxDark: {
       borderColor: c.border,
@@ -1712,7 +1712,7 @@ function createStyles(c, isDark) {
       borderWidth: 1.5,
       borderColor: KANKREG_PALETTE.greenDeep || KANKREG_PALETTE.green,
       borderRadius: 12,
-      backgroundColor: isDark ? "rgba(31,77,54,0.08)" : "#FFFEFA",
+      backgroundColor: isDark ? "rgba(31,77,54,0.08)" : "#FFFFFF",
       paddingHorizontal: 16,
     },
     btnCartIcon: {
@@ -1782,7 +1782,7 @@ function createStyles(c, isDark) {
       borderRadius: 99,
       borderWidth: 1,
       borderColor: KANKREG_PALETTE.line,
-      backgroundColor: isDark ? c.surface : "#FFFEFA",
+      backgroundColor: isDark ? c.surface : "#FFFFFF",
     },
     tchipDark: {
       borderColor: c.border,
@@ -1802,7 +1802,7 @@ function createStyles(c, isDark) {
       borderStyle: "dashed",
       borderColor: KANKREG_PALETTE.line,
       borderRadius: 14,
-      backgroundColor: isDark ? "rgba(255,255,255,0.02)" : "#F3EBD8",
+      backgroundColor: isDark ? "rgba(255,255,255,0.02)" : "#F5F5F5",
       alignItems: "flex-start",
     },
     delivBoxDark: {
@@ -1876,7 +1876,7 @@ function createStyles(c, isDark) {
     featCard: {
       flexGrow: 0,
       flexShrink: 0,
-      backgroundColor: isDark ? c.surface : "#FFFEFA",
+      backgroundColor: isDark ? c.surface : "#FFFFFF",
       borderWidth: 1,
       borderColor: "#F0E8D7",
       borderRadius: 16,
@@ -1944,7 +1944,7 @@ function createStyles(c, isDark) {
       borderColor: KANKREG_PALETTE.line,
       borderRadius: 18,
       overflow: "hidden",
-      backgroundColor: isDark ? c.surface : "#FFFEFA",
+      backgroundColor: isDark ? c.surface : "#FFFFFF",
     },
     ntableDark: {
       borderColor: c.border,
@@ -1989,7 +1989,7 @@ function createStyles(c, isDark) {
     qrcard: {
       flex: 0.9,
       minWidth: 260,
-      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#F3EBD8",
+      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#F5F5F5",
       borderWidth: 1,
       borderColor: KANKREG_PALETTE.line,
       borderRadius: 18,
@@ -2141,7 +2141,7 @@ function createStyles(c, isDark) {
       borderRadius: radius.lg,
       borderWidth: 1,
       borderColor: KANKREG_PALETTE.line,
-      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#FFFEFA",
+      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#FFFFFF",
       gap: 6,
     },
     usageCardDark: {
@@ -2208,7 +2208,7 @@ function createStyles(c, isDark) {
       borderRadius: 16,
       borderWidth: 1,
       borderColor: "#F0E8D7",
-      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#FFFEFA",
+      backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "#FFFFFF",
       gap: 6,
     },
     revCardDark: {

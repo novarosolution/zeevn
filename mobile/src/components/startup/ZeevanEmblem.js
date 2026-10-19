@@ -46,7 +46,6 @@ export const Emblem = memo(function Emblem({ size, dark = false }) {
       <Circle cx={halo.cx} cy={halo.cy} r={halo.r} fill="url(#zv-halo)" />
       {mark.layers.map((layer, i) => {
         const common = {
-          key: i,
           fill: layer.fill ? paint(layer.fill) : "none",
           stroke: layer.stroke ? paint(layer.stroke) : undefined,
           strokeWidth: layer.width,
@@ -54,9 +53,9 @@ export const Emblem = memo(function Emblem({ size, dark = false }) {
           opacity: layer.opacity,
         };
         return layer.kind === "circle" ? (
-          <Circle {...common} cx={layer.cx} cy={layer.cy} r={layer.r} />
+          <Circle key={i} {...common} cx={layer.cx} cy={layer.cy} r={layer.r} />
         ) : (
-          <Path {...common} d={layer.d} />
+          <Path key={i} {...common} d={layer.d} />
         );
       })}
     </Svg>

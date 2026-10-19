@@ -46,7 +46,7 @@ export default function AdminToolsGrid({ navigation, current, compact = false })
                     imageKey={link.image}
                     icon={link.icon}
                     tone={link.tone}
-                    size={compact ? 40 : 48}
+                    size={compact ? 44 : 52}
                     active={on}
                   />
                   <View style={styles.copy}>
@@ -91,22 +91,22 @@ function createStyles(chrome, compact) {
         web: compact ? "calc(50% - 6px)" : "calc(25% - 9px)",
         default: "48%",
       }),
-      minWidth: Platform.select({ web: 160, default: 140 }),
+      minWidth: Platform.select({ web: 168, default: 140 }),
       maxWidth: Platform.select({ web: undefined, default: "48%" }),
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
-      paddingVertical: 12,
-      paddingHorizontal: 12,
-      borderRadius: 16,
+      gap: 14,
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+      borderRadius: 18,
       borderWidth: 1,
       borderColor: chrome.line,
-      backgroundColor: chrome.card,
+      backgroundColor: "#FFFFFF",
       ...Platform.select({
         web: {
           cursor: "pointer",
           transition: "transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease",
-          boxShadow: "0 1px 2px rgba(25,20,15,.04), 0 10px 24px -18px rgba(25,20,15,.12)",
+          boxShadow: "0 1px 2px rgba(25,20,15,.03), 0 12px 28px -20px rgba(25,20,15,.14)",
         },
         default: {},
       }),
@@ -118,27 +118,26 @@ function createStyles(chrome, compact) {
     cardHover: Platform.select({
       web: {
         transform: [{ translateY: -2 }],
-        borderColor: chrome.linkOnBorder,
-        boxShadow: "0 8px 22px -12px rgba(25,20,15,.2)",
+        borderColor: "rgba(85,107,50,0.35)",
+        boxShadow: "0 10px 26px -14px rgba(31,51,31,.22)",
       },
       default: {},
     }),
     cardPressed: { opacity: 0.92 },
-    copy: { flex: 1, minWidth: 0 },
+    copy: { flex: 1, minWidth: 0, gap: 2 },
     label: {
       fontFamily: FONT_HEADING,
-      fontSize: 15,
+      fontSize: 15.5,
       fontWeight: "500",
       color: chrome.ink,
-      letterSpacing: -0.2,
+      letterSpacing: -0.25,
     },
     labelOn: {
       color: chrome.goldDeep,
     },
     hint: {
-      marginTop: 2,
-      fontSize: 11.5,
-      lineHeight: 15,
+      fontSize: 12,
+      lineHeight: 16,
       color: chrome.inkFaint,
       fontFamily: fonts.regular,
     },

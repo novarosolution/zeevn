@@ -2,11 +2,11 @@ import { Platform } from "react-native";
 import { WP } from "../theme/webPremium";
 import { injectWebCssOnce } from "./injectWebCssOnce";
 
-const CSS_ID = "zeevan-web-premium-v1";
+const CSS_ID = "zeevan-web-premium-v2";
 
 /**
- * Shared interaction CSS for the website Home: button sheen + lift, card/tile hover, hero progress, link underline.
- * Components opt in with `className="zv-btn"` etc.; everything is motion-safe (prefers-reduced-motion switches it off).
+ * Shared interaction CSS for the website Home: button sheen + lift, frosted glass, card/tile hover, hero progress.
+ * Components opt in with `className="zv-btn"` / `zv-glass` etc.; motion-safe via prefers-reduced-motion.
  */
 export function ensureWebPremiumCss() {
   if (Platform.OS !== "web") return;
@@ -37,9 +37,38 @@ export function ensureWebPremiumCss() {
 .zv-btn:focus-visible { outline: 2px solid ${WP.gold.base}; outline-offset: 3px; }
 
 .zv-glass {
-  transition: transform 0.3s ${WP.ease}, background-color 0.25s ease, border-color 0.25s ease;
+  background: rgba(255, 255, 255, 0.22) !important;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  box-shadow: 0 8px 28px -14px rgba(14, 16, 10, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
+  backdrop-filter: blur(14px) saturate(1.25);
+  transition: transform 0.3s ${WP.ease}, background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.3s ease;
 }
-.zv-glass:hover { transform: translateY(-1px); }
+.zv-glass:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.zv-glass-dark {
+  background: rgba(14, 16, 10, 0.38) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 30px -14px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(16px) saturate(1.2);
+}
+
+.zv-chrome-glass {
+  background: rgba(250, 246, 236, 0.72) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  border-bottom: 1px solid rgba(31, 92, 71, 0.1);
+}
+.zv-chrome-glass-dark {
+  background: rgba(20, 17, 15, 0.72) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
+  backdrop-filter: blur(18px) saturate(1.15);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
 
 .zv-tile { transition: transform 0.5s ${WP.ease}, box-shadow 0.5s ease, border-color 0.3s ease; }
 .zv-tile:hover { transform: translateY(-6px); box-shadow: ${WP.shadow.lift}; }

@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { buildSiteBackgroundCss, getSiteBackgroundUri, SITE_BG_FALLBACK } from "./siteBackground";
+import { SITE_BG_FALLBACK } from "./siteBackground";
 import {
   WEB_FONT_STACK_BODY,
   WEB_FONT_STACK_DISPLAY,
@@ -81,19 +81,14 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
     html.style.background = backgroundSolid || "#050403";
     html.style.colorScheme = "dark";
   } else {
-    const g = buildSiteBackgroundCss(getSiteBackgroundUri());
-    body.style.background = g;
+    body.style.background = SITE_BG_FALLBACK;
     body.style.backgroundColor = SITE_BG_FALLBACK;
-    body.style.backgroundSize = "auto, auto, auto, cover";
-    body.style.backgroundPosition = "center";
-    body.style.backgroundRepeat = "no-repeat";
-    body.style.backgroundAttachment = "fixed";
-    html.style.background = g;
+    body.style.backgroundImage = "none";
+    body.style.backgroundAttachment = "scroll";
+    html.style.background = SITE_BG_FALLBACK;
     html.style.backgroundColor = SITE_BG_FALLBACK;
-    html.style.backgroundSize = "auto, auto, auto, cover";
-    html.style.backgroundPosition = "center";
-    html.style.backgroundRepeat = "no-repeat";
-    html.style.backgroundAttachment = "fixed";
+    html.style.backgroundImage = "none";
+    html.style.backgroundAttachment = "scroll";
     html.style.colorScheme = "light";
   }
 

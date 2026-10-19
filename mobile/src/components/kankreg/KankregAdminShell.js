@@ -94,7 +94,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
           imageKey={link.image}
           icon={link.icon}
           tone={link.tone}
-          size={row ? 30 : 34}
+          size={row ? 32 : 38}
           compact={row}
           active={on}
         />

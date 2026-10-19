@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import Animated, { interpolate, useAnimatedStyle } from "react-native-reanimated";
 import { useAuth } from "../../context/AuthContext";
 import { useLiveSocket } from "../../context/LiveSocketContext";
 import { STORE_HOME } from "../../content/storefrontContent";
@@ -17,7 +16,6 @@ import {
   isCancelledOrder,
   isDeliveredOrder,
 } from "../../utils/orderStatus";
-import { PulseDot, Sheen, useLoop } from "./HomeArt";
 import PressableScale from "./PressableScale";
 
 const isInProgress = (order) => order && !isDeliveredOrder(order.status) && !isCancelledOrder(order.status);
@@ -67,22 +65,10 @@ export function useActiveOrders() {
   return orders;
 }
 
-/** The current step breathes so the strip reads as "in progress". Only this one segment runs a loop. */
-function BreathingSegment({ faint, tint }) {
-  const t = useLoop(900);
-  const breathe = useAnimatedStyle(() => ({ opacity: interpolate(t.value, [0, 1], [0.45, 1]) }));
-  return (
-    <View style={[styles.segment, { backgroundColor: faint }]}>
-      <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: tint, borderRadius: 2.5 }, breathe]} />
-    </View>
-  );
-}
-
-/** One segment of the journey: filled when done, breathing while current, faint when still ahead. */
+/** One segment of the journey: filled when done, solid when current, faint when still ahead. */
 function Segment({ state, done, current, faint }) {
-  if (state === "done") return <View style={[styles.segment, { backgroundColor: done }]} />;
-  if (state === "current") return <BreathingSegment faint={faint} tint={current} />;
-  return <View style={[styles.segment, { backgroundColor: faint }]} />;
+  const color = state === "done" ? done : state === "current" ? current : faint;
+  return <View style={[styles.segment, { backgroundColor: color }]} />;
 }
 
 /** The round glyph on the card: a receipt, a parcel, then a van as the order progresses. */
@@ -93,16 +79,12 @@ function StageIcon({ step, color }) {
 }
 
 /**
- * Home "live order" card — status, item count and a six-step progress strip for the newest order in progress.
- * A light card (so it reads as a tool, next to the campaign hero below it); a small "+N" badge says how many
- * more orders are in progress. Tapping opens My Orders. Renders nothing when there is no active order.
+ * Home "live order" card — static (no sheen / pulse loops) so Home scroll stays smooth.
  */
 export default function StoreTracker({ orders, onPress }) {
   const { c, r, type, shadow, gutter, isDark } = useStoreTheme();
-  const { width } = useWindowDimensions();
   const copy = STORE_HOME.tracker;
   const order = orders?.[0];
-  const cardW = width - gutter * 2;
   const counts = useMemo(
     () => (order?.products || []).reduce((sum, product) => sum + Number(product?.quantity || 0), 0),
     [order]
@@ -126,8 +108,6 @@ export default function StoreTracker({ orders, onPress }) {
         accessibilityLabel={`${copy.live}. ${label}. ${hint} ${more > 0 ? `${copy.more(more)}. ` : ""}${copy.ctaA11y}`}
       >
         <View style={[styles.card, { borderRadius: r.xl, borderColor: c.line }]}>
-          <Sheen width={cardW} delay={2600} pause={7800} color={withAlpha(c.gold, 0.2)} />
-
           <View style={styles.row}>
             <View style={styles.discWrap}>
               <View style={[styles.disc, { backgroundColor: isDark ? withAlpha(c.gold, 0.14) : c.brandSoft, borderColor: withAlpha(accent, 0.22) }]}>
@@ -142,7 +122,7 @@ export default function StoreTracker({ orders, onPress }) {
 
             <View style={styles.main}>
               <View style={styles.topRow}>
-                <PulseDot size={8} color={accent} />
+                <View style={[styles.liveDot, { backgroundColor: accent }]} />
                 <Text style={type.eyebrow(c.inkMute, 9.5)} numberOfLines={1}>
                   {`${copy.live} · #${shortId}`}
                 </Text>
@@ -204,6 +184,7 @@ const styles = StyleSheet.create({
   },
   main: { flex: 1, minWidth: 0, gap: 1 },
   topRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  liveDot: { width: 8, height: 8, borderRadius: 4 },
   cta: { flexDirection: "row", alignItems: "center", gap: 6, height: 38, paddingHorizontal: 14, borderRadius: 19 },
   segments: { flexDirection: "row", gap: 5 },
   segment: { flex: 1, height: 5, borderRadius: 2.5, overflow: "hidden" },

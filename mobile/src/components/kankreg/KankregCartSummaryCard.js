@@ -45,7 +45,7 @@ export default function KankregCartSummaryCard({
       style={[
         styles.card,
         {
-          backgroundColor: isDark ? c.surface : "#FFFEFA",
+          backgroundColor: isDark ? c.surface : "#FFFFFF",
           borderColor: isDark ? c.border : KANKREG_PALETTE.line,
         },
         isDark ? cardShadowDark : cardShadowLight,

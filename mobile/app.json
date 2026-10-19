@@ -25,7 +25,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/app-icon-light.png",
-        "backgroundColor": "#FAF8F4"
+        "backgroundColor": "#FFFFFF"
       },
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
@@ -48,7 +48,7 @@
         {
           "image": "./assets/splash-mark.png",
           "resizeMode": "contain",
-          "backgroundColor": "#F7F2E8",
+          "backgroundColor": "#FFFFFF",
           "dark": {
             "image": "./assets/splash-mark-dark.png",
             "backgroundColor": "#1A1714"

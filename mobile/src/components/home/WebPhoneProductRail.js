@@ -267,12 +267,12 @@ const styles = StyleSheet.create({
   reveal: { width: "100%" },
   wrap: {
     width: "100%",
-    gap: 10,
+    gap: 14,
     paddingVertical: spacing.xs,
   },
   head: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "flex-end",
     justifyContent: "space-between",
     gap: 12,
   },
@@ -281,17 +281,17 @@ const styles = StyleSheet.create({
   },
   headCopy: {
     flex: 1,
-    gap: 2,
+    gap: 3,
   },
   headCopyCenter: {
     alignItems: "center",
   },
   title: {
     fontFamily: FONT_HEADING,
-    fontSize: 22,
-    lineHeight: 28,
+    fontSize: 26,
+    lineHeight: 32,
     color: KANKREG_PALETTE.ink,
-    letterSpacing: -0.3,
+    letterSpacing: -0.4,
   },
   titleCenter: {
     textAlign: "center",
@@ -309,11 +309,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   viewAll: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
     borderRadius: 999,
     backgroundColor: ZEEVAN_GREEN.deep,
-    marginTop: 2,
+    marginBottom: 1,
   },
   viewAllCenter: {
     alignSelf: "center",
@@ -330,19 +330,20 @@ const styles = StyleSheet.create({
   tabs: {
     flexDirection: "row",
     alignItems: "flex-end",
-    gap: 6,
+    gap: 4,
+    paddingBottom: 2,
   },
   tab: {
     alignItems: "center",
-    gap: 4,
-    paddingTop: 4,
-    paddingHorizontal: 10,
-    minWidth: 64,
+    gap: 5,
+    paddingTop: 2,
+    paddingHorizontal: 12,
+    minWidth: 58,
   },
   tabLabel: {
     fontFamily: fonts.medium,
-    fontSize: 11.5,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 15,
     color: KANKREG_PALETTE.inkFaint,
   },
   tabLabelOn: {
@@ -350,10 +351,10 @@ const styles = StyleSheet.create({
     color: ZEEVAN_GREEN.deep,
   },
   tabRule: {
-    marginTop: 4,
-    height: 3,
+    marginTop: 2,
+    height: 2,
     width: "100%",
-    borderRadius: 2,
+    borderRadius: 1,
     backgroundColor: "transparent",
   },
   tabRuleOn: {
@@ -361,7 +362,8 @@ const styles = StyleSheet.create({
   },
   rail: {
     gap: RAIL_GAP,
-    paddingVertical: 2,
+    paddingTop: 4,
+    paddingBottom: 2,
     alignItems: "stretch",
   },
   cardAnim: {
@@ -381,7 +383,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    marginTop: 2,
+    marginTop: 4,
   },
   track: {
     flex: 1,
@@ -400,9 +402,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   arrow: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     borderWidth: 1,
     borderColor: ZEEVAN_GREEN.border,
     backgroundColor: "#FFFFFF",

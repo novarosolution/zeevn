@@ -1,8 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const PRODUCTS_KEY = "@zeevan_catalog_products_v2_packaging";
-const HOME_VIEW_KEY = "@zeevan_catalog_home_view_v2_packaging";
-const CATALOG_TS_KEY = "@zeevan_catalog_saved_at_v2_packaging";
+const PRODUCTS_KEY = "@zeevan_catalog_products_v3_pack";
+const HOME_VIEW_KEY = "@zeevan_catalog_home_view_v3_pack";
+const CATALOG_TS_KEY = "@zeevan_catalog_saved_at_v3_pack";
 
 /** Disk cache TTL — show stale catalog instantly on phone while refreshing. */
 export const CATALOG_DISK_TTL_MS = 30 * 60 * 1000;

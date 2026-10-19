@@ -1,21 +1,21 @@
 /**
  * Official Zeevan packaging stills — used as product cover/gallery for each line
  * across app + web (overrides stale API / Cloudinary photos).
+ *
+ * Resolve URIs lazily: Expo web `require()` is often a string/`{uri}` object, and
+ * early module-init resolution can return empty before the asset registry is ready.
  */
 import { resolveBundledModuleSrc } from "../utils/image";
 import { ZEEVAN_PRODUCT_LINES, matchProductLine } from "./zeevanCatalogContent";
 
 const PACKAGING_MODULES = {
-  ghee: require("../../assets/zeevan-a2-desi-cow-ghee.jpg"),
+  ghee: require("../../assets/zeevan-ghee-packaging-portrait.png"),
   tel: require("../../assets/zeevan-tel-product.jpg"),
   masala: require("../../assets/zeevan-masala-product.jpg"),
   honey: require("../../assets/zeevan-honey-product.jpg"),
 };
 
-const uriByLine = {};
-for (const key of Object.keys(PACKAGING_MODULES)) {
-  uriByLine[key] = resolveBundledModuleSrc(PACKAGING_MODULES[key]) || "";
-}
+const uriCache = Object.create(null);
 
 /** First matching Zeevan line key for a catalog product, or null. */
 export function resolveProductLineKey(product) {
@@ -29,7 +29,11 @@ export function resolveProductLineKey(product) {
 /** Bundled packaging URI for a line key (ghee / tel / masala / honey). */
 export function getPackagingImageUriForLine(lineKey) {
   const key = String(lineKey || "").trim().toLowerCase();
-  return uriByLine[key] || "";
+  if (!key || !PACKAGING_MODULES[key]) return "";
+  if (uriCache[key]) return uriCache[key];
+  const uri = resolveBundledModuleSrc(PACKAGING_MODULES[key]) || "";
+  if (uri) uriCache[key] = uri;
+  return uri;
 }
 
 /** Packaging URI for a product when it belongs to a known Zeevan line. */

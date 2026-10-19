@@ -44,7 +44,6 @@ import BackToTop from "./BackToTop";
 import Band from "./Band";
 import BentoGrid from "./BentoGrid";
 import CategoryGrid from "./CategoryGrid";
-import FestiveBanner from "./FestiveBanner";
 import FestivePicks from "./FestivePicks";
 import FloatingNav from "./FloatingNav";
 import { HomeScrollProvider, Reveal } from "./HomeMotion";
@@ -150,15 +149,13 @@ export default function StoreHome({
   const compactStyle = useAnimatedStyle(() => {
     const start = searchY.value - insets.top - 4;
     return {
-      opacity: interpolate(scrollY.value, [start - 26, start], [0, 1], Extrapolation.CLAMP),
-      transform: [{ translateY: interpolate(scrollY.value, [start - 26, start], [-14, 0], Extrapolation.CLAMP) }],
+      opacity: interpolate(scrollY.value, [start - 20, start], [0, 1], Extrapolation.CLAMP),
     };
   });
 
-  // The header drifts up a touch faster than the page and fades, so it hands over to the pinned bar.
+  // Fade the header as the compact bar takes over — opacity only (translate was extra scroll work).
   const headerStyle = useAnimatedStyle(() => ({
     opacity: interpolate(scrollY.value, [0, HEADER_FADE_AT], [1, 0], Extrapolation.CLAMP),
-    transform: [{ translateY: -interpolate(scrollY.value, [0, HEADER_FADE_AT], [0, 16], Extrapolation.CLAMP) }],
   }));
 
   const scrollToTop = useCallback(() => scrollRef.current?.scrollTo?.({ y: 0, animated: true }), [scrollRef]);
@@ -232,18 +229,6 @@ export default function StoreHome({
     };
   }, [festival, products]);
 
-  // The product whose photo the hero shows (theme match → featured → any imaged product).
-  const spotlight = useMemo(
-    () =>
-      pickTileProduct(products, festival.banner.spotlight?.match || { featured: true }) ||
-      pickTileProduct(products, { featured: true }) ||
-      pickTileProduct(products, { lineKey: "honey" }) ||
-      pickTileProduct(products, { lineKey: "ghee" }) ||
-      products.find((p) => productImageUri(p)) ||
-      null,
-    [festival, products]
-  );
-
   const picks = useMemo(
     () =>
       festival.picks.items
@@ -262,13 +247,15 @@ export default function StoreHome({
   const categoryTiles = useMemo(() => buildCategoryTiles(products, { max: 8 }), [products]);
 
   const bestsellers = useMemo(
-    () => [...homeProducts].sort((a, b) => (Number(b.reviewCount) || 0) - (Number(a.reviewCount) || 0)).slice(0, 8),
+    () => [...homeProducts].sort((a, b) => (Number(b.reviewCount) || 0) - (Number(a.reviewCount) || 0)).slice(0, 6),
     [homeProducts]
   );
 
   const lineRails = useMemo(
     () =>
-      STORE_LINE_ORDER.map((key) => ({ key, list: productsForLine(homeProducts, key) })).filter((line) => line.list.length > 0),
+      STORE_LINE_ORDER.map((key) => ({ key, list: productsForLine(homeProducts, key).slice(0, 6) })).filter(
+        (line) => line.list.length > 0
+      ),
     [homeProducts]
   );
 
@@ -286,7 +273,6 @@ export default function StoreHome({
   );
 
   const openOrders = useCallback(() => navigation.navigate("MyOrders"), [navigation]);
-  const openBanner = useCallback(() => go(festival.banner.route), [go, festival.banner.route]);
   const openPromo = useCallback((item) => go(item.route), [go]);
   const openBentoRoute = useCallback(() => go(festival.bento.route), [go, festival.bento.route]);
   const openPickRoute = useCallback((pick) => go(pick.route), [go]);
@@ -300,9 +286,6 @@ export default function StoreHome({
         case "tracker":
           if (!activeOrders.length) break;
           next.push({ key, node: <StoreTracker orders={activeOrders} onPress={openOrders} /> });
-          break;
-        case "banner":
-          next.push({ key, node: <FestiveBanner theme={festival} product={spotlight} onPress={openBanner} /> });
           break;
         case "promos":
           next.push({
@@ -424,8 +407,6 @@ export default function StoreHome({
     activeOrders,
     openOrders,
     festival,
-    spotlight,
-    openBanner,
     promos,
     isAuthenticated,
     points,
@@ -458,8 +439,9 @@ export default function StoreHome({
           <Animated.ScrollView
             ref={scrollRef}
             onScroll={onScroll}
-            scrollEventThrottle={32}
+            scrollEventThrottle={48}
             showsVerticalScrollIndicator={false}
+            removeClippedSubviews
             contentContainerStyle={{ paddingBottom: bottomPad }}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brand} />}
           >

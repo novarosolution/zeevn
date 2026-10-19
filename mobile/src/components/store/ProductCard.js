@@ -2,7 +2,6 @@ import React, { memo, useCallback, useMemo, useRef, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } from "react-native-reanimated";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
@@ -36,13 +35,15 @@ const DOT_ACTIVE = "#2F4F22";
 const DOT_IDLE = "rgba(40, 32, 12, 0.42)";
 const DOT_RING = "rgba(255, 255, 255, 0.75)";
 
-function Heart({ active, onPress }) {
+function Heart({ active, onPress, lite }) {
   const { c, shadow } = useStoreTheme();
   const scale = useSharedValue(1);
   const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   const handlePress = () => {
-    scale.value = withSequence(withSpring(1.28, { damping: 8, stiffness: 420 }), withSpring(1, { damping: 12 }));
+    if (!lite) {
+      scale.value = withSequence(withSpring(1.28, { damping: 8, stiffness: 420 }), withSpring(1, { damping: 12 }));
+    }
     onPress?.();
   };
 
@@ -54,7 +55,7 @@ function Heart({ active, onPress }) {
       accessibilityLabel={active ? STORE_CARD.wishlistRemove : STORE_CARD.wishlistAdd}
       style={styles.heartHit}
     >
-      <AnimatedView style={[styles.heart, shadow.soft, { backgroundColor: withAlpha(c.card, 0.94) }, popStyle]}>
+      <AnimatedView style={[styles.heart, shadow.soft, { backgroundColor: withAlpha(c.card, 0.94) }, lite ? null : popStyle]}>
         <Ionicons name={active ? "heart" : "heart-outline"} size={16} color={active ? c.danger : c.inkSoft} />
       </AnimatedView>
     </Pressable>
@@ -66,11 +67,10 @@ function RankBadge({ rank }) {
   const { c, type } = useStoreTheme();
   return (
     <View
-      style={[styles.rank, { borderColor: c.card }]}
+      style={[styles.rank, { borderColor: c.card, backgroundColor: c.gold }]}
       accessible
       accessibilityLabel={STORE_SECTIONS.bestsellers.rankA11y(rank)}
     >
-      <LinearGradient colors={[c.goldBright, c.gold]} style={StyleSheet.absoluteFill} />
       <Text style={type.display(14, { color: "#3A2A0C", ls: 0, lh: 17 })} allowFontScaling={false}>
         {rank}
       </Text>
@@ -109,7 +109,14 @@ function CardImage({ uris, size, gallery, dim, c }) {
 
   if (!gallery || uris.length < 2) {
     return (
-      <Image source={{ uri: uris[0] }} style={imageStyle} contentFit="contain" transition={0} cachePolicy="memory-disk" />
+      <Image
+        source={{ uri: uris[0] }}
+        style={imageStyle}
+        contentFit="contain"
+        transition={0}
+        cachePolicy="memory-disk"
+        recyclingKey={uris[0]}
+      />
     );
   }
 
@@ -155,7 +162,7 @@ function CardImage({ uris, size, gallery, dim, c }) {
  * @param {string} hideEta  delivery time to leave out when the product has exactly this one (Home already
  *                          promises it in the header), so only exceptions show on a tile
  */
-function ProductCard({ product, width = 172, onPress, gallery = false, rank, hideEta, style }) {
+function ProductCard({ product, width = 172, onPress, gallery = false, rank, hideEta, lite = false, style }) {
   const { c, r, type, shadow } = useStoreTheme();
   const { addToCart, removeFromCart, getItemQuantity } = useCart();
   const wishlist = useWishlist();
@@ -218,10 +225,11 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
   return (
     <PressableScale
       onPress={onPress}
-      scaleTo={0.97}
+      scaleTo={0.98}
+      lite={lite}
       style={[
         styles.card,
-        shadow.card,
+        lite ? shadow.soft : shadow.card,
         { width, backgroundColor: c.card, borderColor: c.line, borderRadius: r.xl },
         style,
       ]}
@@ -230,8 +238,8 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
     >
       {rank ? <RankBadge rank={rank} /> : null}
       <View ref={wellRef} collapsable={false} style={[styles.well, { width: imageSize, height: imageSize, backgroundColor: c.well || WELL_FILL, borderRadius: WELL_RADIUS }]}>
-        <CardImage uris={uris} size={imageSize} gallery={gallery} dim={dim} c={c} />
-        <View style={[StyleSheet.absoluteFill, styles.wellRim]} pointerEvents="none" />
+        <CardImage uris={uris} size={imageSize} gallery={gallery && !lite} dim={dim} c={c} />
+        {!lite ? <View style={[StyleSheet.absoluteFill, styles.wellRim]} pointerEvents="none" /> : null}
         {badge ? (
           <View style={[styles.badge, { backgroundColor: badgeColors.bg }]}>
             <Text
@@ -242,8 +250,8 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
             </Text>
           </View>
         ) : null}
-        <Heart active={wished} onPress={handleWish} />
-        {showRating ? <RatingChip rating={rating} /> : null}
+        <Heart active={wished} onPress={handleWish} lite={lite} />
+        {showRating && !lite ? <RatingChip rating={rating} /> : null}
         {state === "sold" ? (
           <View style={styles.soldWrap} pointerEvents="none">
             <View style={[styles.soldTag, { backgroundColor: c.glassStrong, borderColor: c.line }]}>

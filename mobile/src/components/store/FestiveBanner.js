@@ -1,16 +1,13 @@
-import React from "react";
+import React, { memo } from "react";
 import { Platform, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
-import Svg, { Path, Rect } from "react-native-svg";
 import { useStoreTheme } from "../../theme/storefront";
 import { getProductPricing, productImageUri } from "../../utils/storefront";
-import { CLUSTER_H, CLUSTER_W, DiyaCluster, GlowSpot, Rangoli } from "./HomeArt";
 import PressableScale from "./PressableScale";
 
 const RADIUS = 28;
-const LAMP_SCALE = 0.62;
 
 const FALLBACK_PALETTE = {
   gradient: ["#1D3A1E", "#2D5629", "#587534"],
@@ -23,17 +20,32 @@ const FALLBACK_PALETTE = {
   border: "rgba(237, 194, 125, 0.42)",
 };
 
-function CtaArrow({ color }) {
-  return <Ionicons name="arrow-forward" size={15} color={color} />;
+/** Cheap diamond rule — Views only (no SVG). */
+function OrnamentRule({ color }) {
+  return (
+    <View style={styles.ruleRow}>
+      <View style={[styles.ruleLine, { backgroundColor: color }]} />
+      <View style={[styles.ruleDiamond, { backgroundColor: color }]} />
+      <View style={[styles.ruleLine, { backgroundColor: color }]} />
+    </View>
+  );
 }
 
-function OrnamentRule({ color, width = 78 }) {
+function SoftGlow({ color, size, style, opacity = 0.28 }) {
   return (
-    <Svg width={width} height={10} viewBox={`0 0 ${width} 10`}>
-      <Rect x={0} y={4.4} width={width / 2 - 8} height={1.2} rx={0.6} fill={color} opacity={0.7} />
-      <Path d={`M${width / 2} 0.5 L${width / 2 + 4.5} 5 L${width / 2} 9.5 L${width / 2 - 4.5} 5 Z`} fill={color} />
-      <Rect x={width / 2 + 8} y={4.4} width={width / 2 - 8} height={1.2} rx={0.6} fill={color} opacity={0.7} />
-    </Svg>
+    <View
+      pointerEvents="none"
+      style={[
+        {
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: color,
+          opacity,
+        },
+        style,
+      ]}
+    />
   );
 }
 
@@ -50,8 +62,8 @@ function Spotlight({ uri, size, top, palette, discount }) {
             contentPosition="center"
             transition={0}
             cachePolicy="memory-disk"
+            recyclingKey={uri}
           />
-          <LinearGradient colors={["rgba(255,255,255,0.22)", "rgba(255,255,255,0)"]} style={styles.spotGloss} />
         </View>
       </View>
       {discount ? (
@@ -68,103 +80,67 @@ function Spotlight({ uri, size, top, palette, discount }) {
   );
 }
 
-/** Soft radial washes + static rangoli — no motion loops. */
-function DiwaliBackdrop({ palette }) {
-  return (
-    <>
-      <GlowSpot size={330} color={palette.gold} opacity={0.38} style={{ position: "absolute", right: -92, bottom: -118 }} />
-      <GlowSpot size={220} color="#F6C877" opacity={0.22} style={{ position: "absolute", right: 28, top: -70 }} />
-      <Rangoli size={252} color={palette.gold} opacity={0.17} duration={0} style={{ position: "absolute", right: -92, top: -34 }} />
-    </>
-  );
-}
-
-function EverydayBackdrop({ palette }) {
-  return (
-    <>
-      <GlowSpot size={300} color={palette.gold} opacity={0.26} style={{ position: "absolute", right: -90, bottom: -110 }} />
-      <Rangoli size={252} color={palette.gold} opacity={0.15} duration={0} style={{ position: "absolute", right: -92, top: -26 }} />
-    </>
-  );
-}
-
-function DiwaliLamps({ compact }) {
-  return (
-    <DiyaCluster
-      style={
-        compact
-          ? {
-              position: "absolute",
-              right: 4,
-              bottom: 2,
-              width: CLUSTER_W,
-              height: CLUSTER_H,
-              transform: [{ scale: LAMP_SCALE }],
-              transformOrigin: "100% 100%",
-            }
-          : { position: "absolute", right: -4, bottom: 6, width: CLUSTER_W, height: CLUSTER_H }
-      }
-    />
-  );
-}
-
 /**
- * Home festival banner — full Diwali look (tilted product card, gold glows, diyas).
- * Ornaments stay static so Home scroll does not hitch.
+ * Festival banner — tilted product card + soft glows.
+ * No HomeArt SVG/diya clusters (those hitch scroll on low-end phones).
  */
-export default function FestiveBanner({ theme, product, onPress, ctaLabel }) {
+function FestiveBanner({ theme, product, onPress, ctaLabel }) {
   const { type, isDark } = useStoreTheme();
   const { width: screenW } = useWindowDimensions();
   const width = screenW - 32;
-  const height = Math.round(Math.min(252, Math.max(214, width * 0.65)));
-  const titleSize = Math.max(25, Math.min(32, Math.round(width * 0.09)));
+  const height = Math.round(Math.min(236, Math.max(200, width * 0.58)));
+  const titleSize = Math.max(24, Math.min(30, Math.round(width * 0.085)));
   const { banner, ornament } = theme;
   const palette = (isDark ? banner.palette?.dark : banner.palette?.light) || FALLBACK_PALETTE;
   const festive = ornament === "diya";
   const label = ctaLabel || banner.cta || "Shop now";
 
-  const spotSize = Math.round(Math.min(158, Math.max(112, width * 0.4)));
-  const spotUri = product ? productImageUri(product, Math.round(spotSize * 1.4)) : "";
+  const spotSize = Math.round(Math.min(148, Math.max(108, width * 0.38)));
+  const spotUri = product ? productImageUri(product, Math.round(spotSize * 1.2)) : "";
   const discount = product ? getProductPricing(product).discountPct : null;
-  const spotTop = Math.round(height / 2 - spotSize / 2 + 6);
-
-  const glow = {
-    shadowColor: palette.gradient[2],
-    shadowOpacity: isDark ? 0.5 : 0.34,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
-    ...Platform.select({ android: { elevation: 8 }, default: {} }),
-  };
+  const spotTop = Math.round(height / 2 - spotSize / 2 + 4);
 
   return (
     <PressableScale
       onPress={onPress}
-      scaleTo={0.985}
-      style={[styles.wrap, glow, { height, backgroundColor: palette.gradient[1] }]}
+      scaleTo={0.99}
+      lite
+      style={[
+        styles.wrap,
+        {
+          height,
+          backgroundColor: palette.gradient[1],
+          shadowColor: palette.gradient[2],
+          shadowOpacity: isDark ? 0.4 : 0.28,
+          shadowRadius: 16,
+          shadowOffset: { width: 0, height: 8 },
+          ...Platform.select({ android: { elevation: 6 }, default: {} }),
+        },
+      ]}
       accessibilityRole="button"
       accessibilityLabel={[banner.title, banner.subtitle].filter(Boolean).join(". ")}
     >
       <View style={[styles.clip, { borderColor: palette.border }]}>
         <LinearGradient colors={palette.gradient} start={{ x: 0.05, y: 0 }} end={{ x: 0.95, y: 1 }} style={StyleSheet.absoluteFill} />
-        {festive ? <DiwaliBackdrop palette={palette} /> : <EverydayBackdrop palette={palette} />}
-        {spotUri ? <Spotlight uri={spotUri} size={spotSize} top={spotTop} palette={palette} discount={discount} /> : null}
-        {festive && !spotUri ? <DiwaliLamps compact={false} /> : null}
-        {festive && spotUri ? <DiwaliLamps compact /> : null}
-        <LinearGradient
-          colors={["rgba(255,255,255,0.16)", "rgba(255,255,255,0)"]}
-          locations={[0, 1]}
-          style={styles.gloss}
-          pointerEvents="none"
+        <SoftGlow
+          color={palette.gold}
+          size={festive ? 260 : 220}
+          opacity={festive ? 0.26 : 0.18}
+          style={{ position: "absolute", right: -72, bottom: -90 }}
         />
+        <SoftGlow
+          color="#F6C877"
+          size={160}
+          opacity={0.16}
+          style={{ position: "absolute", right: 40, top: -48 }}
+        />
+        {spotUri ? <Spotlight uri={spotUri} size={spotSize} top={spotTop} palette={palette} discount={discount} /> : null}
 
         <View style={styles.copy} pointerEvents="none">
           {banner.eyebrow ? (
-            <View style={styles.eyebrowRow}>
-              <View style={[styles.eyebrowDot, { backgroundColor: palette.gold }]} />
-              <Text style={type.eyebrow(palette.eyebrow, 10.5)} numberOfLines={1} maxFontSizeMultiplier={1.15}>
-                {banner.eyebrow}
-              </Text>
-            </View>
+            <Text style={type.eyebrow(palette.eyebrow, 10.5)} numberOfLines={1} maxFontSizeMultiplier={1.15}>
+              {banner.eyebrow}
+            </Text>
           ) : null}
           <Text
             style={[type.display(titleSize, { color: palette.title, ls: -0.7, lh: titleSize + 3 }), styles.title]}
@@ -175,15 +151,15 @@ export default function FestiveBanner({ theme, product, onPress, ctaLabel }) {
           </Text>
           <OrnamentRule color={palette.gold} />
           {banner.subtitle ? (
-            <Text style={[type.ui(13.5, "medium", palette.subtitle), styles.subtitle]} numberOfLines={2} maxFontSizeMultiplier={1.15}>
+            <Text style={[type.ui(13, "medium", palette.subtitle), styles.subtitle]} numberOfLines={2} maxFontSizeMultiplier={1.15}>
               {banner.subtitle}
             </Text>
           ) : null}
-          <View style={[styles.cta, { backgroundColor: palette.ctaBg, shadowColor: palette.ctaBg }]}>
+          <View style={[styles.cta, { backgroundColor: palette.ctaBg }]}>
             <Text style={type.ui(13.5, "extrabold", palette.ctaText, { letterSpacing: 0.2 })} maxFontSizeMultiplier={1.15}>
               {label}
             </Text>
-            <CtaArrow color={palette.ctaText} />
+            <Ionicons name="arrow-forward" size={15} color={palette.ctaText} />
           </View>
         </View>
       </View>
@@ -191,10 +167,11 @@ export default function FestiveBanner({ theme, product, onPress, ctaLabel }) {
   );
 }
 
+export default memo(FestiveBanner);
+
 const styles = StyleSheet.create({
   wrap: { marginHorizontal: 16, borderRadius: RADIUS },
   clip: { flex: 1, borderRadius: RADIUS, borderWidth: 1, overflow: "hidden" },
-  gloss: { position: "absolute", top: 0, left: 0, right: 0, height: "46%" },
   copy: {
     position: "absolute",
     left: 20,
@@ -202,17 +179,17 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: "52%",
     justifyContent: "center",
-    paddingTop: 22,
     gap: 8,
   },
-  eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 7 },
-  eyebrowDot: { width: 5, height: 5, borderRadius: 2.5, transform: [{ rotate: "45deg" }] },
   title: {
-    textShadowColor: "rgba(0, 0, 0, 0.28)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 8,
+    textShadowColor: "rgba(0, 0, 0, 0.22)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   subtitle: { marginBottom: 2 },
+  ruleRow: { flexDirection: "row", alignItems: "center", gap: 8, width: 78 },
+  ruleLine: { flex: 1, height: 1.2, borderRadius: 1, opacity: 0.75 },
+  ruleDiamond: { width: 7, height: 7, transform: [{ rotate: "45deg" }] },
   cta: {
     alignSelf: "flex-start",
     flexDirection: "row",
@@ -222,9 +199,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     borderRadius: 20,
     marginTop: 2,
-    shadowOpacity: 0.45,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
   },
   spot: { position: "absolute", right: 18 },
   spotShadow: {
@@ -232,26 +206,21 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: "#F7F4EC",
     shadowColor: "#000000",
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 10 },
-    ...Platform.select({ android: { elevation: 10 }, default: {} }),
+    shadowOpacity: 0.28,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    ...Platform.select({ android: { elevation: 6 }, default: {} }),
   },
   spotClip: { flex: 1, borderRadius: 22, borderWidth: 2, borderColor: "rgba(255, 255, 255, 0.88)", overflow: "hidden" },
-  spotGloss: { position: "absolute", top: 0, left: 0, right: 0, height: "42%" },
   sticker: {
     position: "absolute",
-    top: -14,
-    left: -14,
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    top: -12,
+    left: -12,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     transform: [{ rotate: "-12deg" }],
-    shadowColor: "#000000",
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
   },
 });

@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { STORE_BRAND } from "../../content/storefrontContent";
@@ -28,17 +28,26 @@ export function TrustStrip({ items }) {
       <View style={styles.trustRow}>
         {items.map((item, i) => (
           <Stagger key={item.key} index={i} step={0.1} distance={10} scaleFrom={1} style={styles.trustItem}>
-            <View
-              style={[
-                styles.trustIcon,
-                {
-                  backgroundColor: isDark ? withAlpha(c.gold, 0.14) : c.goldSoft,
-                  borderColor: withAlpha(c.gold, isDark ? 0.34 : 0.5),
-                },
-              ]}
-            >
-              <StoreIcon icon={item.icon} size={22} color={c.goldText} />
-            </View>
+            {item.image ? (
+              <Image
+                source={item.image}
+                style={styles.trustImage}
+                resizeMode="cover"
+                accessibilityIgnoresInvertColors
+              />
+            ) : (
+              <View
+                style={[
+                  styles.trustIcon,
+                  {
+                    backgroundColor: isDark ? withAlpha(c.gold, 0.14) : c.goldSoft,
+                    borderColor: withAlpha(c.gold, isDark ? 0.34 : 0.5),
+                  },
+                ]}
+              >
+                <StoreIcon icon={item.icon} size={24} color={c.goldText} />
+              </View>
+            )}
             <Text style={[type.ui(11.5, "bold", c.inkSoft), styles.trustLabel]}>{item.label}</Text>
           </Stagger>
         ))}
@@ -68,12 +77,18 @@ const styles = StyleSheet.create({
   trustRow: { flexDirection: "row" },
   trustItem: { flex: 1, alignItems: "center", gap: 8 },
   trustIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
+  },
+  /** 1024px source assets — rendered large enough for crisp @3x. */
+  trustImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
   },
   trustLabel: { textAlign: "center", lineHeight: 15, minHeight: 30 },
   footer: { alignItems: "center", gap: 6, paddingTop: 2, paddingBottom: 8 },

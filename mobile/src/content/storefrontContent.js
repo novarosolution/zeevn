@@ -251,7 +251,7 @@ const diwaliTheme = {
     },
   },
   /** Gifting first, then the everyday shelves. */
-  layout: ["tracker", "banner", "promos", "bento", "picks", "categories", "bestsellers", "lines", "trust", "footer"],
+  layout: ["tracker", "promos", "bento", "picks", "categories", "bestsellers", "lines", "trust", "footer"],
   bento: {
     title: "Diwali gifting",
     action: "See all",
@@ -368,7 +368,7 @@ export function getFestivalCountdown(theme, now = new Date()) {
  * website, not on the app Home.
  */
 export const STORE_HOME = {
-  layout: ["tracker", "banner", "promos", "categories", "bento", "bestsellers", "picks", "lines", "trust", "footer"],
+  layout: ["tracker", "promos", "categories", "bento", "bestsellers", "picks", "lines", "trust", "footer"],
 
   /** Live order card. The status ("Out for delivery") comes from the order; its hint is read out to screen readers only. */
   tracker: {
@@ -478,10 +478,30 @@ export const STORE_PROMOS = [
 
 /** The four “Why Zeevan” icons (a line break in a label splits it over two lines). */
 export const STORE_TRUST = [
-  { key: "a2", label: "A2 desi\ncow milk", icon: { mci: "cow" } },
-  { key: "bilona", label: "Bilona\nmethod", icon: { mci: "pot-steam-outline" } },
-  { key: "natural", label: "100%\nnatural", icon: { mci: "leaf" } },
-  { key: "gujarat", label: "Made in\nGujarat", icon: { mci: "map-marker-outline" } },
+  {
+    key: "a2",
+    label: "A2 desi\ncow milk",
+    icon: { glyph: "trustCow" },
+    image: require("../../assets/trust/a2-cow.jpg"),
+  },
+  {
+    key: "bilona",
+    label: "Bilona\nmethod",
+    icon: { glyph: "trustBilona" },
+    image: require("../../assets/trust/bilona.jpg"),
+  },
+  {
+    key: "natural",
+    label: "100%\nnatural",
+    icon: { glyph: "trustLeaf" },
+    image: require("../../assets/trust/natural.jpg"),
+  },
+  {
+    key: "gujarat",
+    label: "Made in\nGujarat",
+    icon: { glyph: "trustPin" },
+    image: require("../../assets/trust/gujarat.jpg"),
+  },
 ];
 
 /* ---- Shop (category listing) ---- */

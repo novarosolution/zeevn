@@ -93,9 +93,23 @@ function hostVariants(urlString) {
   }
 }
 
-/** `require()` module id → web/native URI (Metro assets, Cloudinary, API paths). */
+/** `require()` module id / web asset object / URL → usable image URI. */
 export function resolveBundledModuleSrc(moduleRef) {
+  if (moduleRef == null || moduleRef === "") return "";
+
+  // Expo web often returns a string URL or `{ uri }` instead of a Metro numeric id.
+  if (typeof moduleRef === "string") {
+    const raw = moduleRef.trim();
+    if (!raw) return "";
+    return resolveImageUri(raw) || raw;
+  }
+  if (typeof moduleRef === "object") {
+    const raw = String(moduleRef.uri || moduleRef.default || "").trim();
+    if (!raw) return "";
+    return resolveImageUri(raw) || raw;
+  }
   if (typeof moduleRef !== "number") return "";
+
   const asset = RNImage.resolveAssetSource(moduleRef);
   const raw = String(asset?.uri || "").trim();
   if (!raw) return "";

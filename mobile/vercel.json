@@ -1,7 +1,6 @@
 {
   "buildCommand": "EXPO_PUBLIC_API_URL=https://www.zeevan.shop/aws EXPO_PUBLIC_SITE_URL=https://zeevan.shop EXPO_PUBLIC_API_URL_FALLBACK=https://zeevn-i760.onrender.com npm run export:web",
   "outputDirectory": "dist",
-  "rebuildHint": "2026-10-20-img-fix",
   "installCommand": "npm ci --include=dev",
   "rewrites": [
     {

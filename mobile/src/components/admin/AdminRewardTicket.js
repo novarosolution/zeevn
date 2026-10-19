@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { getAdminChrome } from "../../theme/adminLayout";
 import { FONT_HEADING } from "../../theme/typographyRoles";
@@ -50,8 +50,15 @@ function createStyles(chrome) {
       backgroundColor: chrome.card,
       borderWidth: 1,
       borderColor: chrome.line,
-      borderRadius: 14,
-      padding: 16,
+      borderRadius: 16,
+      padding: 18,
+      ...Platform.select({
+        web: {
+          boxShadow: "0 1px 2px rgba(25,20,15,.04), 0 12px 28px -18px rgba(25,20,15,.14)",
+          transition: "transform 0.15s ease, box-shadow 0.15s ease",
+        },
+        default: {},
+      }),
     },
     top: {
       flexDirection: "row",

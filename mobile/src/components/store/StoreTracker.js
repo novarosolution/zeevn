@@ -10,6 +10,7 @@ import { fetchMyOrders } from "../../services/userService";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import {
   ORDER_PROGRESS_STEPS,
+  formatDeliveryEta,
   getActiveProgressStep,
   getOrderStatusHint,
   getOrderStatusLabel,
@@ -110,7 +111,7 @@ export default function StoreTracker({ orders, onPress }) {
 
   const step = getActiveProgressStep(order.status);
   const label = getOrderStatusLabel(order.status);
-  const hint = getOrderStatusHint(order.status);
+  const hint = formatDeliveryEta(order.tracking, order.status) || getOrderStatusHint(order.status);
   const shortId = String(order._id || "").slice(-6).toUpperCase();
   const accent = isDark ? c.gold : c.brand;
   const more = orders.length - 1;
@@ -152,6 +153,11 @@ export default function StoreTracker({ orders, onPress }) {
               {counts ? (
                 <Text style={type.ui(12.5, "medium", c.inkMute)} numberOfLines={1}>
                   {copy.items(counts)}
+                </Text>
+              ) : null}
+              {hint ? (
+                <Text style={type.ui(12, "medium", c.inkMute)} numberOfLines={1}>
+                  {hint}
                 </Text>
               ) : null}
             </View>

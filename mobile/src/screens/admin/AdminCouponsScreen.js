@@ -7,8 +7,19 @@ import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { createAdminCoupon, fetchAdminCoupons, updateAdminCoupon } from "../../services/adminService";
-import { adminCardGridItem, adminCardGridStyle, adminGatePanel, adminShellContent, useAdminCompactLayout } from "../../theme/adminLayout";
+import {
+  adminCardGridItem,
+  adminCardGridStyle,
+  adminGatePanel,
+  adminShellContent,
+  adminTwoColAside,
+  adminTwoColMain,
+  adminTwoColStyle,
+  useAdminCompactLayout,
+} from "../../theme/adminLayout";
 import AdminCouponTicket from "../../components/admin/AdminCouponTicket";
+import AdminPanel from "../../components/admin/AdminPanel";
+import AdminAlerts from "../../components/admin/AdminAlerts";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { layout, radius, spacing } from "../../theme/tokens";
@@ -17,7 +28,6 @@ import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumChip from "../../components/ui/PremiumChip";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
@@ -145,22 +155,33 @@ export default function AdminCouponsScreen({ navigation, route }) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <KankregAdminShell navigation={navigation} route={route} title={ADMIN_SCREEN_COPY.coupons.title} subtitle={ADMIN_SCREEN_COPY.coupons.subtitle}>
+        <KankregAdminShell
+          navigation={navigation}
+          route={route}
+          title={ADMIN_SCREEN_COPY.coupons.title}
+          subtitle={ADMIN_SCREEN_COPY.coupons.subtitle}
+          headerRight={
+            <PremiumButton
+              label="Refresh"
+              variant="secondary"
+              size="sm"
+              iconLeft="refresh-outline"
+              onPress={loadCoupons}
+              disabled={loading}
+            />
+          }
+        >
         <View style={styles.panel}>
+          <AdminAlerts error={error} success={success} onCloseError={() => setError("")} onCloseSuccess={() => setSuccess("")} />
+          <View style={adminTwoColStyle(compact)}>
+          <View style={adminTwoColMain(compact, 1.15)}>
           <SectionReveal preset="fade-up" delay={0}>
-          {error ? (
-            <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
-            </View>
-          ) : null}
-          {success ? (
-            <View style={styles.bannerSpacer}>
-              <PremiumErrorBanner severity="success" message={success} onClose={() => setSuccess("")} compact />
-            </View>
-          ) : null}
-
-          <PremiumCard padding="lg" style={styles.formCard}>
-            <Text style={[styles.formTitle, { color: c.textPrimary }]}>Create Coupon</Text>
+          <AdminPanel
+            title="Create coupon"
+            icon="pricetag-outline"
+            meta="Codes customers can apply"
+            description="Set type, value, limits, and visibility for checkout."
+          >
             <View style={styles.fieldGap}>
               <PremiumInput
                 label="Coupon code"
@@ -270,7 +291,7 @@ export default function AdminCouponsScreen({ navigation, route }) {
               />
             </View>
             <PremiumButton
-              label={submitting ? "Creating..." : "Create Coupon"}
+              label={submitting ? "Creating…" : "Create coupon"}
               variant="primary"
               size="md"
               onPress={handleCreate}
@@ -279,22 +300,29 @@ export default function AdminCouponsScreen({ navigation, route }) {
               fullWidth
               style={styles.createBtnMargin}
             />
-          </PremiumCard>
+          </AdminPanel>
           </SectionReveal>
+          </View>
 
+          <View style={adminTwoColAside(compact)}>
           <SectionReveal preset="fade-up" delay={60}>
-          <Text style={[styles.listTitle, { color: c.textPrimary }]}>All Coupons</Text>
+          <AdminPanel
+            title="All coupons"
+            icon="ticket-outline"
+            meta={`${coupons.length} codes`}
+            description="Toggle active codes and track usage at a glance."
+          >
           {loading ? (
             <PremiumLoader size="sm" caption="Loading coupons…" />
           ) : coupons.length === 0 ? (
             <PremiumEmptyState
               iconName="pricetag-outline"
-              title="No coupons yet"
-              description="Create a coupon above to offer discounts at checkout."
+              title={ADMIN_SCREEN_COPY.coupons.empty}
+              description="Create a coupon above for checkout discounts."
               compact
             />
           ) : (
-            <View style={adminCardGridStyle(compact)}>
+            <View style={adminCardGridStyle(true)}>
               {coupons.map((coupon) => {
                 const expired =
                   coupon.expiresAt && new Date(coupon.expiresAt).getTime() < Date.now();
@@ -308,7 +336,7 @@ export default function AdminCouponsScreen({ navigation, route }) {
                     ? `${coupon.value}% off`
                     : `₹${coupon.value} off`);
                 return (
-                  <View key={coupon._id} style={adminCardGridItem(compact)}>
+                  <View key={coupon._id} style={adminCardGridItem(true)}>
                     <AdminCouponTicket
                       code={coupon.code}
                       description={desc}
@@ -322,7 +350,10 @@ export default function AdminCouponsScreen({ navigation, route }) {
               })}
             </View>
           )}
+          </AdminPanel>
           </SectionReveal>
+          </View>
+          </View>
         </View>
         </KankregAdminShell>
 </KankregScrollPage>
@@ -337,7 +368,7 @@ function createAdminCouponsStyles(c, shadowPremium) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" })},
+      maxWidth: "100%"},
     panel: adminShellContent(),
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: {

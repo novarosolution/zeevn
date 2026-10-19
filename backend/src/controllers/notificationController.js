@@ -121,7 +121,9 @@ async function getMyNotifications(req, res, next) {
   try {
     const userId = String(req.user._id);
     const includeArchived = String(req.query.includeArchived || "false") === "true";
-    const notifications = await Notification.find({ forAllUsers: true })
+    const notifications = await Notification.find({
+      $or: [{ forAllUsers: true }, { forUser: req.user._id }],
+    })
       .sort({ createdAt: -1 })
       .limit(100);
 

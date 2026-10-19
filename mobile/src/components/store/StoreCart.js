@@ -18,6 +18,7 @@ import PressableScale from "./PressableScale";
 import ScreenHeader, { SCREEN_HEADER_PAD } from "./ScreenHeader";
 import StoreBanner from "./StoreBanner";
 import StoreField from "./StoreField";
+import CheckoutPlacingOverlay from "../loading/CheckoutPlacingOverlay";
 
 const PAY_DOCK_HEIGHT = 78;
 const SUCCESS_INK = "#2F5A22";
@@ -688,6 +689,7 @@ export default function StoreCart({
       ) : null}
 
       <FloatingNav />
+      <CheckoutPlacingOverlay visible={placing} />
     </View>
   );
 }

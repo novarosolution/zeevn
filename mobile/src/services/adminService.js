@@ -35,8 +35,8 @@ export const updateAdminRole = (_token, userId, isAdmin) =>
 export const updateDeliveryPartnerRole = (_token, userId, isDeliveryPartner) =>
   apiPatch(`/admin/users/${userId}/delivery-role`, { isDeliveryPartner });
 
-export const updateOrderStatus = (_token, orderId, status) =>
-  apiPatch(`/admin/orders/${orderId}/status`, { status });
+export const updateOrderStatus = (_token, orderId, status, note) =>
+  apiPatch(`/admin/orders/${orderId}/status`, { status, note: note || undefined });
 
 export const updateAdminOrderDetails = (_token, orderId, payload) =>
   apiPut(`/admin/orders/${orderId}`, payload);

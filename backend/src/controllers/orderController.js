@@ -55,6 +55,47 @@ function pushOrderLiveUpdate(order) {
 
 const LIVE_ASSIGN_STATUSES = ["ready_for_pickup", "shipped", "out_for_delivery"];
 
+/** Snapshot zone ETA onto the order so the customer sees a promise even if the zone changes later. */
+function buildInitialTracking(deliveryQuote) {
+  const min = Number(deliveryQuote?.etaMinutesMin || 0) || null;
+  const max = Number(deliveryQuote?.etaMinutesMax || 0) || null;
+  return {
+    etaMinutesMin: min,
+    etaMinutesMax: max,
+    promisedAt: max ? new Date(Date.now() + max * 60 * 1000) : null,
+  };
+}
+
+/** Describe who is changing status so the pre-save hook can log it to `statusHistory`. */
+function setStatusActor(order, { by = null, byRole = "system", note = "" } = {}) {
+  order.$locals.statusActor = { by, byRole, note };
+}
+
+const TRACKING_TEXT_FIELDS = ["note", "courierName", "trackingId", "trackingUrl"];
+
+function applyTrackingPatch(order, patch = {}) {
+  const next = { ...(order.tracking?.toObject?.() || order.tracking || {}) };
+  for (const key of TRACKING_TEXT_FIELDS) {
+    if (patch[key] !== undefined) next[key] = String(patch[key] || "").trim();
+  }
+  for (const key of ["etaMinutesMin", "etaMinutesMax"]) {
+    if (patch[key] !== undefined) {
+      const n = patch[key] === null || patch[key] === "" ? null : Number(patch[key]);
+      if (n !== null && (!Number.isFinite(n) || n < 0)) {
+        return `Invalid ${key}.`;
+      }
+      next[key] = n;
+    }
+  }
+  if (patch.promisedAt !== undefined) {
+    const d = patch.promisedAt ? new Date(patch.promisedAt) : null;
+    if (d && Number.isNaN(d.getTime())) return "Invalid promised delivery time.";
+    next.promisedAt = d;
+  }
+  order.tracking = next;
+  return null;
+}
+
 function applyPartnerAssignment(order, partnerId) {
   order.assignedDeliveryUser = partnerId;
   order.deliveryAcceptStatus = "pending";
@@ -392,6 +433,7 @@ async function createOrder(req, res, next) {
         discountAmount,
       },
       status: initialStatus,
+      tracking: buildInitialTracking(deliveryQuote),
     });
     order.invoice = {
       ...(order.invoice || {}),
@@ -1041,6 +1083,17 @@ async function updateAdminOrderDetails(req, res, next) {
       }
       order.status = req.body.status;
     }
+    setStatusActor(order, {
+      by: req.user?._id || null,
+      byRole: "admin",
+      note: String(req.body?.statusNote || "").trim(),
+    });
+    if (req.body?.tracking && typeof req.body.tracking === "object") {
+      const trackingError = applyTrackingPatch(order, req.body.tracking);
+      if (trackingError) {
+        return res.status(400).json({ message: trackingError });
+      }
+    }
     if (req.body?.paymentMethod !== undefined) {
       order.paymentMethod = String(req.body.paymentMethod || "Cash on Delivery").trim();
     }
@@ -1281,6 +1334,7 @@ async function markMyDeliveryOrderDelivered(req, res, next) {
     }
 
     order.status = "delivered";
+    setStatusActor(order, { by: req.user._id, byRole: "delivery", note: "Marked delivered by partner" });
     await order.save();
 
     const updated = await Order.findById(order._id)
@@ -1297,7 +1351,7 @@ async function markMyDeliveryOrderDelivered(req, res, next) {
 async function updateOrderStatus(req, res, next) {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, note } = req.body;
     if (!ORDER_STATUS_VALUES.includes(status)) {
       return res.status(400).json({ message: "Invalid order status." });
     }
@@ -1309,6 +1363,7 @@ async function updateOrderStatus(req, res, next) {
 
     const previousStatus = order.status;
     order.status = status;
+    setStatusActor(order, { by: req.user?._id || null, byRole: "admin", note: String(note || "").trim() });
     await order.save();
 
     if (status === "cancelled" && previousStatus !== "cancelled" && order.stockAdjustedAt) {
@@ -1396,6 +1451,7 @@ async function verifyPayment(req, res, next) {
       order.invoice.status = "paid";
       order.invoice.updatedAt = new Date();
     }
+    setStatusActor(order, { by: req.user._id, byRole: "customer", note: "Online payment verified" });
     await finalizePaidOrder(order);
 
     const populated = await Order.findById(order._id)
@@ -1465,6 +1521,7 @@ async function razorpayWebhook(req, res, next) {
           order.invoice.status = "paid";
           order.invoice.updatedAt = new Date();
         }
+        setStatusActor(order, { byRole: "system", note: "Payment captured (Razorpay)" });
         await finalizePaidOrder(order);
         const populated = await Order.findById(order._id)
           .populate("user", "name email")
@@ -1515,6 +1572,7 @@ async function cancelPendingOrder(req, res, next) {
       order.invoice.status = "void";
       order.invoice.updatedAt = new Date();
     }
+    setStatusActor(order, { by: req.user._id, byRole: "customer", note: "Cancelled before payment" });
     await order.save();
 
     const populated = await Order.findById(order._id)
@@ -1593,6 +1651,15 @@ async function sweepExpiredPendingPayments() {
           paymentExpiresAt: null,
           "invoice.status": "void",
           "invoice.updatedAt": new Date(),
+        },
+        $push: {
+          statusHistory: {
+            status: "cancelled",
+            at: now,
+            by: null,
+            byRole: "system",
+            note: "Payment window expired",
+          },
         },
       }
     );

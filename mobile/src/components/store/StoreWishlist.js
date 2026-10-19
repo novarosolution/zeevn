@@ -9,6 +9,7 @@ import FloatingNav from "./FloatingNav";
 import PressableScale from "./PressableScale";
 import ProductCard from "./ProductCard";
 import { VariantSheetProvider } from "./VariantSheet";
+import SkeletonBlock from "../ui/SkeletonBlock";
 
 const GAP = 12;
 
@@ -61,7 +62,22 @@ export default function StoreWishlist({ navigation, items, loading, refreshing, 
               </View>
             ) : null
           }
-          ListEmptyComponent={loading ? null : empty}
+          ListEmptyComponent={
+            loading ? (
+              <View style={[styles.skeleton, { paddingHorizontal: gutter }]}>
+                <View style={styles.skeletonRow}>
+                  <SkeletonBlock width={cardW} height={cardW} rounded={20} />
+                  <SkeletonBlock width={cardW} height={cardW} rounded={20} />
+                </View>
+                <View style={styles.skeletonRow}>
+                  <SkeletonBlock width={cardW} height={cardW} rounded={20} />
+                  <SkeletonBlock width={cardW} height={cardW} rounded={20} />
+                </View>
+              </View>
+            ) : (
+              empty
+            )
+          }
           renderItem={({ item }) => (
             <ProductCard product={item} width={cardW} gallery onPress={() => navigation.navigate("Product", { productId: item.id })} />
           )}
@@ -105,4 +121,6 @@ const styles = StyleSheet.create({
   emptyIcon: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", marginBottom: 4 },
   emptyBody: { textAlign: "center" },
   emptyBtn: { marginTop: 8, height: 46, paddingHorizontal: 26, borderRadius: 23, alignItems: "center", justifyContent: "center" },
+  skeleton: { gap: GAP + 2, paddingTop: 8 },
+  skeletonRow: { flexDirection: "row", gap: GAP },
 });

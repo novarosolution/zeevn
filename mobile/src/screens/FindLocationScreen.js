@@ -12,6 +12,7 @@ import { FIGMA, figmaPageBg, figmaSurfaceBg, figmaTextPrimary, figmaTextSecondar
 import { fonts, spacing } from "../theme/tokens";
 import { platformShadow } from "../theme/shadowPlatform";
 import { APP_DISPLAY_NAME } from "../constants/brand";
+import GoldRingLoader from "../components/loading/GoldRingLoader";
 
 /**
  * Full-screen native location discovery — radar animation, result card, confirm CTA.
@@ -106,11 +107,19 @@ export default function FindLocationScreen({ navigation, route }) {
     !isAuthenticated ||
     !bootstrapped
   ) {
-    return <View style={[styles.boot, { backgroundColor: pageBg }]} />;
+    return (
+      <View style={[styles.boot, { backgroundColor: pageBg }]}>
+        <GoldRingLoader size={44} />
+      </View>
+    );
   }
 
   if (!needsFindScreen && !forceReveal) {
-    return <View style={[styles.boot, { backgroundColor: pageBg }]} />;
+    return (
+      <View style={[styles.boot, { backgroundColor: pageBg }]}>
+        <GoldRingLoader size={44} />
+      </View>
+    );
   }
 
   return (
@@ -201,6 +210,8 @@ const styles = StyleSheet.create({
   },
   boot: {
     flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   topMark: {
     alignItems: "center",

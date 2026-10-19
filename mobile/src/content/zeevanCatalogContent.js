@@ -152,16 +152,20 @@ export function resolveProductLineKey(rawLabel) {
 export function matchProductLine(product, lineKey) {
   const line = getProductLineByKey(lineKey);
   if (!line || !product) return false;
-  const haystack = [
-    product.category,
-    product.productType,
-    product.name,
-    product.title,
-    ...(Array.isArray(product.tags) ? product.tags : []),
-  ]
-    .map((v) => String(v || "").toLowerCase())
+  const lower = (v) => String(v || "").toLowerCase();
+  const hit = (l, text) => l.aliases.some((alias) => text.includes(alias));
+
+  /** Category / type wins — stops "Haldi Powder" (masala) matching honey's "haldi" alias. */
+  const typed = [product.category, product.productType].map(lower).join(" ").trim();
+  if (typed) {
+    const owner = ZEEVAN_PRODUCT_LINES.find((l) => hit(l, typed));
+    if (owner) return owner.key === line.key;
+  }
+
+  const haystack = [product.name, product.title, ...(Array.isArray(product.tags) ? product.tags : [])]
+    .map(lower)
     .join(" ");
-  return line.aliases.some((alias) => haystack.includes(alias));
+  return hit(line, haystack);
 }
 
 export function matchProductLinePill(product, pill) {

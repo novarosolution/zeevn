@@ -10,6 +10,7 @@ import AdminDataTable from "../../components/admin/AdminDataTable";
 import AdminCategoryBar from "../../components/admin/AdminCategoryBar";
 import AdminRevenueBars from "../../components/admin/AdminRevenueBars";
 import AdminStatusPill, { orderStatusTone } from "../../components/admin/AdminStatusPill";
+import AdminToolsGrid from "../../components/admin/AdminToolsGrid";
 import { useAuth } from "../../context/AuthContext";
 import {
   fetchAdminAnalytics,
@@ -17,7 +18,13 @@ import {
   fetchAdminOrders,
 } from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
-import { adminTwoColAside, adminTwoColMain, adminTwoColStyle, useAdminCompactLayout } from "../../theme/adminLayout";
+import {
+  adminShellContent,
+  adminTwoColAside,
+  adminTwoColMain,
+  adminTwoColStyle,
+  useAdminCompactLayout,
+} from "../../theme/adminLayout";
 import { formatOrderPublicRef } from "../../content/appContent";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, layout, spacing } from "../../theme/tokens";
@@ -238,9 +245,16 @@ export default function AdminDashboardScreen({ navigation, route }) {
                 onPress={() => navigation.navigate("AdminDelivery")}
               />
               <PremiumButton
+                label="Orders"
+                iconLeft="receipt-outline"
+                variant="secondary"
+                size="sm"
+                onPress={() => navigation.navigate("AdminOrders")}
+              />
+              <PremiumButton
                 label="Analytics"
                 iconLeft="bar-chart-outline"
-                variant="ghost"
+                variant="primary"
                 size="sm"
                 onPress={() => navigation.navigate("AdminAnalytics")}
               />
@@ -252,23 +266,14 @@ export default function AdminDashboardScreen({ navigation, route }) {
           ) : null}
 
           {loading ? (
-            <PremiumLoader caption="Loading command center…" />
+            <PremiumLoader caption="Loading command…" />
           ) : (
-            <>
+            <View style={styles.desk}>
               <SectionReveal preset="fade-up">
-                <AdminKpiGrid compact={compact}>
-                  <AdminKpiCard label="Open orders" value={opsKpis.open} />
-                  <AdminKpiCard label="Awaiting accept" value={opsKpis.pendingAccept} />
-                  <AdminKpiCard label="Out for delivery" value={opsKpis.out} />
-                  <AdminKpiCard label="Low stock" value={opsKpis.lowStock} />
-                  <AdminKpiCard label="Riders live GPS" value={opsKpis.partnersOnline} />
-                  <AdminKpiCard label="Need reassign" value={opsKpis.needsReassign} />
-                </AdminKpiGrid>
-              </SectionReveal>
-
-              <SectionReveal preset="fade-up" delay={40}>
                 <AdminPanel
                   title="Needs attention"
+                  icon="alert-circle-outline"
+                  description="Stuck accepts and unassigned live runs surface here first."
                   meta={attention.length ? `${attention.length} items` : "All clear"}
                   action="All orders"
                   onAction={() => navigation.navigate("AdminOrders")}
@@ -299,26 +304,81 @@ export default function AdminDashboardScreen({ navigation, route }) {
                 </AdminPanel>
               </SectionReveal>
 
+              <SectionReveal preset="fade-up" delay={40}>
+                <AdminPanel
+                  title="Live ops"
+                  icon="flash-outline"
+                  meta="Tap a tile to jump"
+                  description="Open runs, accepts, stock, and rider GPS — one tap into the desk."
+                >
+                  <AdminKpiGrid compact={compact}>
+                    <AdminKpiCard
+                      label="Open orders"
+                      value={opsKpis.open}
+                      tone={Number(opsKpis.open) > 0 ? "hot" : "default"}
+                      onPress={() => navigation.navigate("AdminOrders")}
+                    />
+                    <AdminKpiCard
+                      label="Awaiting accept"
+                      value={opsKpis.pendingAccept}
+                      tone={Number(opsKpis.pendingAccept) > 0 ? "warn" : "default"}
+                      onPress={() => navigation.navigate("AdminOrders")}
+                    />
+                    <AdminKpiCard
+                      label="Out for delivery"
+                      value={opsKpis.out}
+                      onPress={() => navigation.navigate("AdminOrders")}
+                    />
+                    <AdminKpiCard
+                      label="Low stock"
+                      value={opsKpis.lowStock}
+                      tone={Number(opsKpis.lowStock) > 0 ? "warn" : "default"}
+                      onPress={() => navigation.navigate("AdminInventory")}
+                    />
+                    <AdminKpiCard
+                      label="Riders live GPS"
+                      value={opsKpis.partnersOnline}
+                      onPress={() => navigation.navigate("AdminDelivery")}
+                    />
+                    <AdminKpiCard
+                      label="Need reassign"
+                      value={opsKpis.needsReassign}
+                      tone={Number(opsKpis.needsReassign) > 0 ? "hot" : "default"}
+                      onPress={() => navigation.navigate("AdminOrders")}
+                    />
+                  </AdminKpiGrid>
+                </AdminPanel>
+              </SectionReveal>
+
               <SectionReveal preset="fade-up" delay={60}>
-                <AdminKpiGrid compact={compact}>
-                  <AdminKpiCard label="Revenue (30d)" value={kpis.revenue} />
-                  <AdminKpiCard label="Orders (30d)" value={kpis.orders} />
-                  <AdminKpiCard label="Avg. order" value={kpis.aov} />
-                  <AdminKpiCard label="Cancel rate" value={kpis.refund} />
-                </AdminKpiGrid>
+                <AdminPanel
+                  title="Last 30 days"
+                  icon="trending-up-outline"
+                  meta="Store pulse"
+                  description="Revenue, orders, and cancel rate for the rolling month."
+                  action="Analytics"
+                  onAction={() => navigation.navigate("AdminAnalytics")}
+                >
+                  <AdminKpiGrid compact={compact} columns={4}>
+                    <AdminKpiCard label="Revenue" value={kpis.revenue} onPress={() => navigation.navigate("AdminAnalytics")} />
+                    <AdminKpiCard label="Orders" value={kpis.orders} onPress={() => navigation.navigate("AdminOrders")} />
+                    <AdminKpiCard label="Avg. order" value={kpis.aov} />
+                    <AdminKpiCard label="Cancel rate" value={kpis.refund} />
+                  </AdminKpiGrid>
+                </AdminPanel>
               </SectionReveal>
 
               <View style={[adminTwoColStyle(compact), styles.cols, compact && styles.colsCompact]}>
                 <View style={adminTwoColMain(compact)}>
                   <SectionReveal preset="fade-up" delay={80}>
-                    <AdminPanel title="Revenue" meta="Last 14 days">
+                    <AdminPanel title="Revenue" icon="cash-outline" meta="Last 14 days" description="Daily revenue bars for the last two weeks.">
                       <AdminRevenueBars labels={chartData.labels} values={chartData.values} />
                     </AdminPanel>
                   </SectionReveal>
                 </View>
                 <View style={adminTwoColAside(compact)}>
                   <SectionReveal preset="fade-up" delay={100}>
-                    <AdminPanel title="Top categories">
+                    <AdminPanel title="Top categories" icon="pie-chart-outline" description="Share of catalogue by category.">
                       {categories.length ? (
                         categories.map((cat, idx) => (
                           <AdminCategoryBar key={`${cat.name}-${idx}`} name={cat.name} percent={cat.percent} />
@@ -334,6 +394,8 @@ export default function AdminDashboardScreen({ navigation, route }) {
               <SectionReveal preset="fade-up" delay={120}>
                 <AdminPanel
                   title="Recent orders"
+                  icon="receipt-outline"
+                  description="Latest six orders — open a row to manage status and tracking."
                   action="View all"
                   onAction={() => navigation.navigate("AdminOrders")}
                   style={styles.ordersPanel}
@@ -351,7 +413,11 @@ export default function AdminDashboardScreen({ navigation, route }) {
                   />
                 </AdminPanel>
               </SectionReveal>
-            </>
+
+              <SectionReveal preset="fade-up" delay={140}>
+                <AdminToolsGrid navigation={navigation} current="AdminDashboard" compact={compact} />
+              </SectionReveal>
+            </View>
           )}
         </KankregAdminShell>
       </KankregScrollPage>
@@ -364,17 +430,18 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
+    maxWidth: "100%",
   },
   denied: {
     padding: spacing.lg,
     gap: spacing.md,
   },
+  desk: adminShellContent(),
   banner: { marginBottom: spacing.md },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
-  cols: { marginTop: spacing.md },
-  colsCompact: { marginTop: spacing.sm },
-  ordersPanel: { marginTop: spacing.md, paddingHorizontal: 0, paddingBottom: 6 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
+  cols: { marginTop: 0 },
+  colsCompact: { marginTop: 0 },
+  ordersPanel: { paddingHorizontal: 0, paddingBottom: 6 },
   attentionBtn: { marginBottom: 6, justifyContent: "flex-start" },
   attentionBtnText: { fontFamily: fonts.medium, fontSize: 12, textAlign: "left" },
   muted: {

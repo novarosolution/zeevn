@@ -169,7 +169,7 @@ function OrdersPremiumCardBase({
           showLiveMap && compact ? (
             <KankregOrderTrack status={statusStr} compact showStatusHint={false} />
           ) : (
-            <OrderProgressStrip status={statusStr} c={c} isDark={isDark} compact={compact} />
+            <OrderProgressStrip order={order} status={statusStr} c={c} isDark={isDark} compact={compact} />
           )
         ) : null}
 

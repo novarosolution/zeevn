@@ -38,6 +38,7 @@ import GoldHairline from "../components/ui/GoldHairline";
 import SectionReveal from "../components/motion/SectionReveal";
 import { staggerDelay } from "../theme/motion";
 import { CART_ADDRESS, CART_UI } from "../content/appContent";
+import CheckoutPlacingOverlay from "../components/loading/CheckoutPlacingOverlay";
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -849,6 +850,7 @@ export default function CartScreen({ navigation, route }) {
         />
       ) : null}
       <BottomNavBar />
+      <CheckoutPlacingOverlay visible={isPlacingOrder} />
     </CustomerScreenShell>
   );
 }

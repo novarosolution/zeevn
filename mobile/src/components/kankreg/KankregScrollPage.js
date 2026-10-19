@@ -42,7 +42,9 @@ export default function KankregScrollPage({
 }) {
   const insets = useSafeAreaInsets();
   const { pageGutterClamp, isXs, isMobileWeb, showMobileWebTabBar } = useKankregLayout();
-  const skipWebGutter = flushWebGutter && Platform.OS === "web" && isMobileWeb;
+  const skipWebGutter =
+    (flushWebGutter && Platform.OS === "web" && isMobileWeb) ||
+    (scrollVariant === "admin" && Platform.OS === "web");
   const mobileWebBottomPad =
     Platform.OS === "web" && showMobileWebTabBar ? mobileWebTabBarScrollPadding(insets) : 0;
   const showSiteFooter =

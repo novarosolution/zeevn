@@ -110,6 +110,8 @@ export const SHOP_SCREEN_UI = {
     unitFallback: "1 pc",
     saveLabel: "Save",
     featuredBadge: "Featured",
+    /** Web card: quiet line shown where ratings would sit until a product has reviews. */
+    newArrivalLabel: "Small batch · Pure",
     noImage: "No image",
     imageUnavailable: "Unavailable",
   },

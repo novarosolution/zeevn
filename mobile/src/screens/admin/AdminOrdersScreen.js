@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ADMIN_GATE } from "../../content/adminContent";
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
+import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
 import SectionReveal from "../../components/motion/SectionReveal";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
 import AdminScreenShell from "../../components/admin/AdminScreenShell";
@@ -8,7 +8,8 @@ import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { AdminOrderStatusBadge, AdminPaymentStatusChip } from "../../components/admin/AdminOrderBadges";
 import { useAuth } from "../../context/AuthContext";
 import { useLiveSocket } from "../../context/LiveSocketContext";
-import { fetchAdminOrders } from "../../services/adminService";
+import { fetchAdminOrders, updateOrderStatus } from "../../services/adminService";
+import { ORDER_ADMIN_NEXT_STATUS, getAdminNextStatusLabel } from "../../utils/orderStatus";
 import { useTheme } from "../../context/ThemeContext";
 import {
   adminBadgeClusterStyle,
@@ -42,6 +43,7 @@ import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import AdminPanel from "../../components/admin/AdminPanel";
 import AdminAlerts from "../../components/admin/AdminAlerts";
+import AdminToolbar, { AdminToolbarSlot } from "../../components/admin/AdminToolbar";
 import { buildOrderTableColumns } from "../../components/admin/adminTableColumns";
 
 export default function AdminOrdersScreen({ navigation, route }) {
@@ -52,6 +54,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [renderCount, setRenderCount] = useState(30);
+  const [busyId, setBusyId] = useState("");
 
   const { colors: c, shadowPremium } = useTheme();
   const compactAdmin = useAdminCompactLayout();
@@ -77,6 +80,49 @@ export default function AdminOrdersScreen({ navigation, route }) {
       setError(err.message || "Failed to load orders.");
     }
   }, [token]);
+
+  const quickStatus = useCallback(
+    async (order, status) => {
+      if (!order?._id || !status) return;
+      const id = String(order._id);
+      try {
+        setBusyId(id);
+        setError("");
+        setSuccess("");
+        await updateOrderStatus(token, id, status);
+        setSuccess(`Order moved to ${String(status).replace(/_/g, " ")}.`);
+        await loadOrders();
+      } catch (err) {
+        setError(err.message || "Unable to update order.");
+      } finally {
+        setBusyId("");
+      }
+    },
+    [token, loadOrders]
+  );
+
+  const quickAdvance = useCallback(
+    (order) => {
+      const next = ORDER_ADMIN_NEXT_STATUS[String(order?.status || "")];
+      if (!next) return;
+      quickStatus(order, next);
+    },
+    [quickStatus]
+  );
+
+  const quickCancel = useCallback(
+    (order) => {
+      Alert.alert("Cancel order", "Customer will see this order as cancelled.", [
+        { text: "Keep", style: "cancel" },
+        {
+          text: "Cancel order",
+          style: "destructive",
+          onPress: () => quickStatus(order, "cancelled"),
+        },
+      ]);
+    },
+    [quickStatus]
+  );
 
   useEffect(() => {
     if (!user?.isAdmin) return;
@@ -151,8 +197,18 @@ export default function AdminOrdersScreen({ navigation, route }) {
     const total = orders.length;
     const newOrders = orders.filter((order) => matchesAdminOrderFilter(order.status, "pending")).length;
     const inKitchen = orders.filter((order) => matchesAdminOrderFilter(order.status, "processing")).length;
+    const out = orders.filter((order) => matchesAdminOrderFilter(order.status, "out_for_delivery")).length;
     const delivered = orders.filter((order) => order.status === "delivered").length;
-    return { total, newOrders, inKitchen, delivered };
+    const cancelled = orders.filter((order) => order.status === "cancelled").length;
+    const tabCounts = {
+      all: total,
+      pending: newOrders,
+      processing: inKitchen,
+      out_for_delivery: out,
+      delivered,
+      cancelled,
+    };
+    return { total, newOrders, inKitchen, delivered, tabCounts };
   }, [orders]);
 
   if (user && !user.isAdmin) {
@@ -193,16 +249,25 @@ export default function AdminOrdersScreen({ navigation, route }) {
           <KankregAdminShell
             navigation={navigation}
             route={route}
-            title="Orders"
-            subtitle={`${stats.total.toLocaleString()} total orders`}
+            title={ADMIN_SCREEN_COPY.orders.title}
+            subtitle={ADMIN_SCREEN_COPY.orders.subtitle}
             headerRight={
-              <PremiumButton
-                label="Export CSV"
-                variant="ghost"
-                size="sm"
-                iconLeft="download-outline"
-                onPress={() => exportOrdersCsv(visibleOrders)}
-              />
+              <View style={styles.headerActions}>
+                <PremiumButton
+                  label="Export"
+                  variant="ghost"
+                  size="sm"
+                  iconLeft="download-outline"
+                  onPress={() => exportOrdersCsv(visibleOrders)}
+                />
+                <PremiumButton
+                  label="Refresh"
+                  variant="primary"
+                  size="sm"
+                  iconLeft="refresh-outline"
+                  onPress={loadOrders}
+                />
+              </View>
             }
           >
             <View style={styles.panel}>
@@ -214,56 +279,80 @@ export default function AdminOrdersScreen({ navigation, route }) {
                   onCloseSuccess={() => setSuccess("")}
                 />
 
-                <AdminKpiGrid compact={compactAdmin}>
-                  <AdminKpiCard label="Total" value={stats.total.toLocaleString()} />
-                  <AdminKpiCard label="Pending" value={String(stats.newOrders)} />
-                  <AdminKpiCard label="Processing" value={String(stats.inKitchen)} />
-                  <AdminKpiCard label="Delivered" value={String(stats.delivered)} />
-                </AdminKpiGrid>
-
-                <AdminFilterTabs
-                  style={styles.filterTabs}
-                  value={ADMIN_ORDER_TABS.some((t) => t.key === statusFilter) ? statusFilter : "all"}
-                  onChange={setStatusFilter}
-                  items={ADMIN_ORDER_TABS.map((tab) => ({
-                    key: tab.key,
-                    label: tab.key === "all" ? `${tab.label} · ${stats.total}` : tab.label,
-                  }))}
-                />
-
-                <View style={styles.actionsRow}>
-                  <View style={styles.searchInputWrap}>
-                    <PremiumInput
-                      label="Search orders"
-                      value={search}
-                      onChangeText={setSearch}
-                      placeholder="Order ref, id, name, or email"
-                      iconLeft="search-outline"
-                      iconRight={search ? "close-circle" : undefined}
-                      onIconRightPress={search ? () => setSearch("") : undefined}
-                      autoCapitalize="none"
+                <AdminPanel
+                  title="Pipeline"
+                  icon="git-network-outline"
+                  meta="Tap a tile to filter"
+                  description="Jump straight into pending, kitchen, or delivered views."
+                >
+                  <AdminKpiGrid compact={compactAdmin}>
+                    <AdminKpiCard
+                      label="Total"
+                      value={stats.total.toLocaleString()}
+                      onPress={() => setStatusFilter("all")}
                     />
-                  </View>
-                  <PremiumButton
-                    label="Refresh"
-                    iconLeft="refresh-outline"
-                    variant="secondary"
-                    size="sm"
-                    fullWidth={compactAdmin}
-                    onPress={loadOrders}
-                    style={styles.refreshBtn}
-                  />
-                </View>
+                    <AdminKpiCard
+                      label="Pending"
+                      value={String(stats.newOrders)}
+                      tone={stats.newOrders > 0 ? "warn" : "default"}
+                      onPress={() => setStatusFilter("pending")}
+                    />
+                    <AdminKpiCard
+                      label="Processing"
+                      value={String(stats.inKitchen)}
+                      onPress={() => setStatusFilter("processing")}
+                    />
+                    <AdminKpiCard
+                      label="Delivered"
+                      value={String(stats.delivered)}
+                      onPress={() => setStatusFilter("delivered")}
+                    />
+                  </AdminKpiGrid>
+                </AdminPanel>
 
-                <Text style={styles.listCount}>
-                  {visibleOrders.length} of {orders.length} orders
-                </Text>
+                <AdminPanel
+                  title="Orders desk"
+                  icon="search-outline"
+                  meta={`${visibleOrders.length} of ${orders.length}`}
+                  description="Filter by status, then search by ref, customer, or email."
+                >
+                  <AdminFilterTabs
+                    style={styles.filterTabs}
+                    value={ADMIN_ORDER_TABS.some((t) => t.key === statusFilter) ? statusFilter : "all"}
+                    onChange={setStatusFilter}
+                    items={ADMIN_ORDER_TABS.map((tab) => ({
+                      key: tab.key,
+                      label: `${tab.label} · ${stats.tabCounts[tab.key] ?? 0}`,
+                    }))}
+                  />
+
+                  <AdminToolbar>
+                    <AdminToolbarSlot flex>
+                      <PremiumInput
+                        label="Search orders"
+                        value={search}
+                        onChangeText={setSearch}
+                        placeholder="Order ref, id, name, or email"
+                        iconLeft="search-outline"
+                        iconRight={search ? "close-circle" : undefined}
+                        onIconRightPress={search ? () => setSearch("") : undefined}
+                        autoCapitalize="none"
+                      />
+                    </AdminToolbarSlot>
+                  </AdminToolbar>
+                </AdminPanel>
               </SectionReveal>
 
               <SectionReveal preset="fade-up" delay={60}>
                 <View style={styles.listContent}>
                   {!compactAdmin && renderedOrders.length > 0 ? (
-                    <AdminPanel noPadding style={styles.tablePanel}>
+                    <AdminPanel
+                      noPadding
+                      style={styles.tablePanel}
+                      title="Results"
+                      icon="list-outline"
+                      description="Click a row to open the manage desk."
+                    >
                       <AdminDataTable
                         rows={renderedOrders}
                         keyExtractor={(row) => row._id}
@@ -329,13 +418,40 @@ export default function AdminOrdersScreen({ navigation, route }) {
                                 : "—"}
                             </Text>
                             <View style={styles.quickActionsRow}>
+                              {ORDER_ADMIN_NEXT_STATUS[item.status] ? (
+                                <PremiumButton
+                                  label={
+                                    busyId === String(item._id)
+                                      ? "Updating…"
+                                      : `Advance · ${getAdminNextStatusLabel(item.status)}`
+                                  }
+                                  iconLeft="play-forward-outline"
+                                  variant="primary"
+                                  size="sm"
+                                  loading={busyId === String(item._id)}
+                                  disabled={Boolean(busyId)}
+                                  onPress={() => quickAdvance(item)}
+                                  style={styles.quickBtn}
+                                />
+                              ) : null}
+                              {item.status !== "cancelled" && item.status !== "delivered" ? (
+                                <PremiumButton
+                                  label="Cancel"
+                                  iconLeft="close-circle-outline"
+                                  variant="danger"
+                                  size="sm"
+                                  disabled={Boolean(busyId)}
+                                  onPress={() => quickCancel(item)}
+                                  style={styles.quickBtn}
+                                />
+                              ) : null}
                               <PremiumButton
-                                label="Manage order"
+                                label="Manage"
                                 iconLeft="open-outline"
-                                variant="primary"
+                                variant="secondary"
                                 size="sm"
-                                fullWidth
                                 onPress={() => openOrder(item)}
+                                style={styles.quickBtn}
                               />
                             </View>
                           </PremiumCard>
@@ -377,15 +493,15 @@ function createAdminOrdersStyles(c, shadowPremium, compact = false) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
+      maxWidth: "100%",
     },
     panel: adminShellContent(),
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
-    orderCardShell: { width: "100%", overflow: "hidden" },
-    actionsRow: { ...adminToolbarRow, marginBottom: spacing.sm },
+    headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
+    orderCardShell: { width: "100%", overflow: "hidden", marginBottom: 2 },
+    actionsRow: { ...adminToolbarRow, marginBottom: spacing.xs },
     searchInputWrap: { ...adminToolbarPrimary },
-    refreshBtn: { alignSelf: "flex-end" },
     filterTabs: { marginTop: spacing.sm, marginBottom: spacing.sm },
     listCount: {
       fontSize: typography.caption,
@@ -434,7 +550,14 @@ function createAdminOrdersStyles(c, shadowPremium, compact = false) {
     },
     quickActionsRow: {
       marginTop: spacing.md,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.xs,
       ...adminCardActionsStyle(compact),
+    },
+    quickBtn: {
+      flexGrow: 1,
+      minWidth: compact ? "100%" : 120,
     },
     loadMoreBtn: { marginTop: spacing.sm },
   });

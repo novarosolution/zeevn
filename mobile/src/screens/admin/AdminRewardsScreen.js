@@ -12,6 +12,7 @@ import {
   updateAdminReward} from "../../services/adminService";
 import { adminCardGridItem, adminCardGridStyle, adminGatePanel, adminShellContent, useAdminCompactLayout } from "../../theme/adminLayout";
 import AdminRewardTicket from "../../components/admin/AdminRewardTicket";
+import AdminPanel from "../../components/admin/AdminPanel";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { layout, radius, spacing } from "../../theme/tokens";
@@ -172,8 +173,12 @@ export default function AdminRewardsScreen({ navigation, route }) {
                 </View>
               ) : null}
 
-              <PremiumCard padding="lg" style={styles.formCard}>
-                <Text style={[styles.formTitle, { color: c.textPrimary }]}>Create reward</Text>
+              <AdminPanel
+                title="Create reward"
+                icon="gift-outline"
+                meta="Loyalty redemptions"
+                description="Points cost, discount type, and redemption caps for the Rewards shop."
+              >
                 <View style={styles.fieldGap}>
                   <PremiumInput
                     label="Title"
@@ -303,17 +308,22 @@ export default function AdminRewardsScreen({ navigation, route }) {
                   fullWidth
                   style={styles.createBtnMargin}
                 />
-              </PremiumCard>
+              </AdminPanel>
             </SectionReveal>
 
             <SectionReveal preset="fade-up" delay={60}>
-              <Text style={[styles.listTitle, { color: c.textPrimary }]}>All rewards</Text>
+              <AdminPanel
+                title="All rewards"
+                icon="star-outline"
+                meta={`${rewards.length} offers`}
+                description="Pause or activate catalog items customers can redeem."
+              >
               {loading ? (
                 <PremiumLoader size="sm" caption="Loading rewards…" />
               ) : rewards.length === 0 ? (
                 <PremiumEmptyState
                   iconName="gift-outline"
-                  title="No rewards yet"
+                  title={ADMIN_SCREEN_COPY.rewards.empty}
                   description="Create catalog items customers can redeem with loyalty points."
                   compact
                 />
@@ -346,6 +356,7 @@ export default function AdminRewardsScreen({ navigation, route }) {
                   })}
                 </View>
               )}
+              </AdminPanel>
             </SectionReveal>
           </View>
           </KankregAdminShell>
@@ -361,7 +372,7 @@ function createStyles(c, shadowPremium) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" })},
+      maxWidth: "100%"},
     panel: adminShellContent(),
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: {

@@ -43,6 +43,20 @@
         }
       ],
       "expo-notifications",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-mark.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#F7F2E8",
+          "dark": {
+            "image": "./assets/splash-mark-dark.png",
+            "backgroundColor": "#1A1714"
+          },
+          "ios": { "imageWidth": 240 },
+          "android": { "imageWidth": 288 }
+        }
+      ],
       "expo-asset",
       "expo-font",
       [

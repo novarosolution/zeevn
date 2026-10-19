@@ -24,6 +24,7 @@ import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
 import { formatOrderPublicRef } from "../../content/appContent";
 import { formatINR } from "../../utils/currency";
 import { getOrderItemQty } from "../../utils/adminOrderHelpers";
+import { ORDER_ADMIN_NEXT_STATUS, getAdminNextStatusLabel } from "../../utils/orderStatus";
 import PremiumLoader from "../../components/ui/PremiumLoader";
 import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
@@ -52,6 +53,13 @@ function buildEditForm(order) {
     invoiceTaxRatePercent: String(Number(order.invoice?.taxRatePercent || 0)),
     invoiceStatus: order.invoice?.status || "draft",
     invoiceNotes: order.invoice?.notes || "",
+    statusNote: "",
+    trackingNote: order.tracking?.note || "",
+    etaMinutesMin: order.tracking?.etaMinutesMin != null ? String(order.tracking.etaMinutesMin) : "",
+    etaMinutesMax: order.tracking?.etaMinutesMax != null ? String(order.tracking.etaMinutesMax) : "",
+    courierName: order.tracking?.courierName || "",
+    trackingId: order.tracking?.trackingId || "",
+    trackingUrl: order.tracking?.trackingUrl || "",
   };
 }
 
@@ -116,7 +124,7 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
       setBusy(true);
       setError("");
       setSuccess("");
-      await updateOrderStatus(token, id, status);
+      await updateOrderStatus(token, id, status, editForm?.statusNote);
       setSuccess(`Status updated to "${status.replace(/_/g, " ")}".`);
       await loadOrder();
     } catch (err) {
@@ -153,6 +161,14 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
           status: editForm.invoiceStatus,
           notes: editForm.invoiceNotes,
         },
+        tracking: {
+          note: editForm.trackingNote,
+          etaMinutesMin: editForm.etaMinutesMin,
+          etaMinutesMax: editForm.etaMinutesMax,
+          courierName: editForm.courierName,
+          trackingId: editForm.trackingId,
+          trackingUrl: editForm.trackingUrl,
+        },
       });
       setSuccess("Order details saved.");
       await loadOrder();
@@ -185,6 +201,18 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleCancelOrder = () => {
+    if (!order) return;
+    Alert.alert("Cancel order", "Customer will see this order as cancelled.", [
+      { text: "Keep open", style: "cancel" },
+      {
+        text: "Cancel order",
+        style: "destructive",
+        onPress: () => handleStatus(order._id, "cancelled"),
+      },
+    ]);
   };
 
   const handleDelete = () => {
@@ -281,6 +309,27 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
                         </View>
                       </View>
                       <View style={styles.heroActions}>
+                        {ORDER_ADMIN_NEXT_STATUS[order.status] ? (
+                          <PremiumButton
+                            label={`Advance · ${getAdminNextStatusLabel(order.status)}`}
+                            iconLeft="play-forward-outline"
+                            variant="primary"
+                            size="sm"
+                            loading={busy}
+                            disabled={busy}
+                            onPress={() => handleStatus(order._id, ORDER_ADMIN_NEXT_STATUS[order.status])}
+                          />
+                        ) : null}
+                        {order.status !== "cancelled" && order.status !== "delivered" ? (
+                          <PremiumButton
+                            label="Cancel order"
+                            iconLeft="close-circle-outline"
+                            variant="danger"
+                            size="sm"
+                            disabled={busy}
+                            onPress={handleCancelOrder}
+                          />
+                        ) : null}
                         <PremiumButton
                           label="Refresh"
                           iconLeft="refresh-outline"
@@ -303,6 +352,7 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
                       onSaveDetails={handleSaveDetails}
                       onAssignDelivery={handleAssignDelivery}
                       onStatus={handleStatus}
+                      onCancelOrder={handleCancelOrder}
                       onDelete={handleDelete}
                     />
                   ) : null}
@@ -322,7 +372,7 @@ function createStyles(c, shadowPremium) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
+      maxWidth: "100%",
     },
     panel: adminShellContent(),
     backLink: { marginBottom: spacing.sm },
@@ -378,6 +428,10 @@ function createStyles(c, shadowPremium) {
       paddingTop: spacing.sm,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: c.border,
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.xs,
+      alignItems: "center",
     },
   });
 }

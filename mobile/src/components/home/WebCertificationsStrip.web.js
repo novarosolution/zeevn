@@ -12,8 +12,10 @@ import WebSectionBackdrop from "./WebSectionBackdrop";
 const BG = require("../../../assets/section-bg-warm-4k.jpg");
 const INK = "#1A1C14";
 const MUTED = "#3F3C2E";
+const BADGE = 88;
+const BADGE_IMG = 76;
 
-/** Premium certifications row — individual badges, no crop/clip (web). */
+/** Premium certifications row — fixed-size badges so flex never collapses them. */
 export default function WebCertificationsStrip() {
   if (HOME_SCREEN_UI.web?.showCertificationsStrip === false) return null;
 
@@ -40,9 +42,9 @@ export default function WebCertificationsStrip() {
         </Text>
 
         <View style={[styles.frame, isDark && styles.frameDark]}>
-          <View style={[styles.row, isMobileWeb && styles.rowMobile]}>
+          <View style={styles.row}>
             {copy.badges.map((badge) => (
-              <View key={badge.key} style={[styles.badge, isMobileWeb && styles.badgeMobile]}>
+              <View key={badge.key} style={styles.badge}>
                 <Image
                   source={badge.image}
                   style={styles.badgeImg}
@@ -54,7 +56,9 @@ export default function WebCertificationsStrip() {
           </View>
         </View>
 
-        {copy.hint ? <Text style={[styles.hint, { color: muted }]}>{copy.hint}</Text> : null}
+        {copy.hint ? (
+          <Text style={[styles.hint, { color: muted }]}>{copy.hint}</Text>
+        ) : null}
       </View>
     </WebSectionBackdrop>
   );
@@ -93,8 +97,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "rgba(26, 28, 20, 0.12)",
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
     ...Platform.select({
       web: { boxShadow: "0 10px 24px -18px rgba(36, 68, 36, 0.16)" },
       default: {},
@@ -106,39 +110,30 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    flexWrap: "nowrap",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-    width: "100%",
-  },
-  rowMobile: {
     flexWrap: "wrap",
+    alignItems: "center",
     justifyContent: "center",
-    gap: 12,
+    gap: 10,
+    width: "100%",
   },
   badge: {
-    flex: 1,
-    minWidth: 0,
+    width: BADGE,
+    height: BADGE,
+    flexGrow: 0,
+    flexShrink: 0,
     alignItems: "center",
     justifyContent: "center",
-    height: 72,
-  },
-  badgeMobile: {
-    flex: 0,
-    width: "30%",
-    height: 64,
   },
   badgeImg: {
-    width: "100%",
-    height: "100%",
-    maxWidth: 96,
+    width: BADGE_IMG,
+    height: BADGE_IMG,
   },
   hint: {
     fontFamily: fonts.regular,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 20,
     textAlign: "center",
-    maxWidth: 520,
+    maxWidth: 420,
+    paddingHorizontal: spacing.sm,
   },
 });

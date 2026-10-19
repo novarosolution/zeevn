@@ -16,7 +16,7 @@ import AdminAlerts from "../../components/admin/AdminAlerts";
 import AdminStatusPill from "../../components/admin/AdminStatusPill";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { layout, radius, spacing } from "../../theme/tokens";
+import { fonts, layout, radius, spacing } from "../../theme/tokens";
 import PremiumLoader from "../../components/ui/PremiumLoader";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
@@ -151,11 +151,16 @@ export default function AdminSupportScreen({ navigation, route }) {
           <View style={adminTwoColStyle(compact)}>
             <View style={adminTwoColMain(compact)}>
             <SectionReveal preset="fade-up" delay={40}>
-            <AdminPanel title="Conversations">
+            <AdminPanel
+              title="Conversations"
+              icon="chatbubbles-outline"
+              meta={`${(threads || []).length} threads`}
+              description="Select a thread to read and reply on the right."
+            >
               {(threads || []).length === 0 ? (
                 <PremiumEmptyState
                   iconName="chatbubbles-outline"
-                  title="No support messages yet"
+                  title={ADMIN_SCREEN_COPY.support.empty}
                   description="Customer threads will appear here when they reach out."
                   compact
                 />
@@ -184,7 +189,13 @@ export default function AdminSupportScreen({ navigation, route }) {
             </View>
             <View style={adminTwoColAside(compact)}>
             <SectionReveal preset="fade-up" delay={100}>
-            <AdminPanel title="Thread details">
+            <AdminPanel
+              title="Thread details"
+              icon="mail-open-outline"
+              description="Reply as admin — customers see this in their Support inbox."
+              action={selectedThread ? (selectedThread.status === "closed" ? "Mark open" : "Mark closed") : undefined}
+              onAction={selectedThread ? handleToggleStatus : undefined}
+            >
               <View style={styles.rowBetween}>
                 {selectedThread ? (
                   <PremiumButton
@@ -198,7 +209,7 @@ export default function AdminSupportScreen({ navigation, route }) {
               {!selectedThread ? (
                 <PremiumEmptyState
                   iconName="hand-left-outline"
-                  title="Select a conversation"
+                  title={ADMIN_SCREEN_COPY.support.selectThread}
                   description="Choose a thread from the list to read and reply."
                   compact
                 />
@@ -264,7 +275,7 @@ function createAdminSupportStyles(c, shadowPremium) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" })},
+      maxWidth: "100%"},
     panel: adminShellContent(),
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: {
@@ -276,35 +287,50 @@ function createAdminSupportStyles(c, shadowPremium) {
       fontWeight: "800",
       marginBottom: spacing.xs},
     threadCard: {
-      marginBottom: spacing.xs},
+      marginBottom: spacing.sm,
+      borderRadius: 14,
+    },
     threadTitle: {
-      fontSize: 13,
-      fontWeight: "700"},
+      fontSize: 14,
+      fontWeight: "700",
+      fontFamily: fonts.semibold,
+    },
     threadMeta: {
       marginTop: 3,
-      fontSize: 11},
+      fontSize: 12,
+      lineHeight: 16,
+    },
     rowBetween: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       gap: spacing.sm,
-      marginBottom: spacing.xs},
+      marginBottom: spacing.sm,
+    },
     messageBubble: {
       borderWidth: 1,
-      borderRadius: radius.lg,
-      padding: spacing.sm,
-      marginBottom: spacing.xs},
+      borderRadius: 14,
+      padding: spacing.sm + 2,
+      marginBottom: spacing.sm,
+    },
     adminBubble: {
       borderColor: c.primaryBorder,
-      backgroundColor: c.primarySoft},
+      backgroundColor: c.primarySoft,
+      marginLeft: spacing.md,
+    },
     userBubble: {
       borderColor: c.border,
-      backgroundColor: c.surfaceMuted},
+      backgroundColor: c.surfaceMuted,
+      marginRight: spacing.md,
+    },
     messageAuthor: {
       color: c.textSecondary,
       fontSize: 10,
       fontWeight: "700",
-      marginBottom: 2},
+      marginBottom: 4,
+      letterSpacing: 0.2,
+      textTransform: "uppercase",
+    },
     messageText: {
       color: c.textPrimary,
       fontSize: 12,

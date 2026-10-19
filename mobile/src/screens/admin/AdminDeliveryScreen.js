@@ -19,9 +19,15 @@ import {
   fetchAdminDeliveryPartners,
   fetchAdminDeliveryZones,
 } from "../../services/adminService";
-import { useAdminCompactLayout } from "../../theme/adminLayout";
+import {
+  adminShellContent,
+  adminTwoColAside,
+  adminTwoColMain,
+  adminTwoColStyle,
+  useAdminCompactLayout,
+} from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, layout, spacing } from "../../theme/tokens";
+import { fonts, spacing } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
 
 export default function AdminDeliveryScreen({ navigation, route }) {
@@ -138,125 +144,155 @@ export default function AdminDeliveryScreen({ navigation, route }) {
           {loading ? (
             <PremiumLoader caption="Loading zones & riders…" />
           ) : (
-            <>
+            <View style={styles.desk}>
               <SectionReveal preset="fade-up">
-                <AdminKpiGrid compact={compact}>
-                  <AdminKpiCard label="Active zones" value={String(kpis.activeZones)} />
-                  <AdminKpiCard label="Partners" value={String(kpis.partners)} />
-                  <AdminKpiCard label="GPS recent" value={String(kpis.online)} />
-                  <AdminKpiCard label="Active runs" value={String(kpis.activeRuns)} />
-                </AdminKpiGrid>
-              </SectionReveal>
-
-              <SectionReveal preset="fade-up" delay={40}>
-                <AdminPanel title="Add zone" meta="Pincodes, comma-separated">
-                  <View style={styles.formGap}>
-                    <PremiumInput label="Zone name" value={name} onChangeText={setName} tone="warm" />
-                    <PremiumInput
-                      label="Pincodes"
-                      value={pins}
-                      onChangeText={setPins}
-                      placeholder="380001, 380015"
-                      tone="warm"
+                <AdminPanel
+                  title="Coverage pulse"
+                  icon="map-outline"
+                  meta="Live desk"
+                  description="Active zones, partners online, and live delivery runs."
+                >
+                  <AdminKpiGrid compact={compact}>
+                    <AdminKpiCard label="Active zones" value={String(kpis.activeZones)} />
+                    <AdminKpiCard label="Partners" value={String(kpis.partners)} />
+                    <AdminKpiCard
+                      label="GPS recent"
+                      value={String(kpis.online)}
+                      tone={Number(kpis.online) > 0 ? "default" : "warn"}
                     />
-                    <PremiumInput
-                      label="Delivery fee (₹)"
-                      value={fee}
-                      onChangeText={setFee}
-                      keyboardType="number-pad"
-                      tone="warm"
+                    <AdminKpiCard
+                      label="Active runs"
+                      value={String(kpis.activeRuns)}
+                      tone={Number(kpis.activeRuns) > 0 ? "hot" : "default"}
                     />
-                    <PremiumButton
-                      label={busy ? "Saving…" : "Create zone"}
-                      iconLeft="add-outline"
-                      loading={busy}
-                      disabled={busy}
-                      onPress={handleCreateZone}
-                    />
-                  </View>
+                  </AdminKpiGrid>
                 </AdminPanel>
               </SectionReveal>
 
-              <SectionReveal preset="fade-up" delay={80}>
-                <AdminPanel title="Zones" meta={`${zones.length} total`}>
-                  {!zones.length ? (
-                    <Text style={[styles.muted, { color: c.textMuted }]}>
-                      {ADMIN_SCREEN_COPY.delivery.emptyZones}
-                    </Text>
-                  ) : (
-                    zones.map((z) => (
-                      <View key={String(z._id)} style={[styles.row, { borderColor: c.border }]}>
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <Text style={[styles.rowTitle, { color: c.textPrimary }]} numberOfLines={1}>
-                            {z.name}
-                          </Text>
-                          <Text style={[styles.rowMeta, { color: c.textMuted }]} numberOfLines={2}>
-                            {(z.postalCodes || []).slice(0, 6).join(", ")}
-                            {(z.postalCodes || []).length > 6 ? "…" : ""}
-                          </Text>
-                        </View>
-                        <View style={styles.rowRight}>
-                          <PremiumChip
-                            label={z.isActive === false ? "Off" : "Active"}
-                            tone={z.isActive === false ? "neutral" : "green"}
-                            size="sm"
-                            selected
-                          />
-                          <Text style={[styles.fee, { color: c.textPrimary }]}>
-                            {formatINR(Number(z.deliveryFee || 0))}
-                          </Text>
-                        </View>
-                      </View>
-                    ))
-                  )}
-                </AdminPanel>
-              </SectionReveal>
-
-              <SectionReveal preset="fade-up" delay={120}>
-                <AdminPanel title="Riders" meta="Enable partners in Users">
-                  {!partners.length ? (
-                    <Text style={[styles.muted, { color: c.textMuted }]}>
-                      {ADMIN_SCREEN_COPY.delivery.emptyPartners}
-                    </Text>
-                  ) : (
-                    partners.map((p) => (
-                      <View key={String(p._id)} style={[styles.row, { borderColor: c.border }]}>
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <Text style={[styles.rowTitle, { color: c.textPrimary }]} numberOfLines={1}>
-                            {p.name || "Partner"}
-                          </Text>
-                          <Text style={[styles.rowMeta, { color: c.textMuted }]} numberOfLines={1}>
-                            {p.phone || p.email || "—"} · {p.activeOrderCount || 0} active
-                          </Text>
-                        </View>
-                        <PremiumChip
-                          label={
-                            p.lastLocationAgeSeconds != null && p.lastLocationAgeSeconds < 900
-                              ? "Live GPS"
-                              : "Offline"
-                          }
-                          tone={
-                            p.lastLocationAgeSeconds != null && p.lastLocationAgeSeconds < 900
-                              ? "green"
-                              : "neutral"
-                          }
-                          size="sm"
-                          selected
+              <View style={[adminTwoColStyle(compact), styles.deskCols]}>
+                <View style={adminTwoColMain(compact)}>
+                  <SectionReveal preset="fade-up" delay={40}>
+                    <AdminPanel
+                      title="Add zone"
+                      icon="add-circle-outline"
+                      meta="Pincodes, comma-separated"
+                      description="Name the area, list pincodes, set the delivery fee."
+                    >
+                      <View style={styles.formGap}>
+                        <PremiumInput label="Zone name" value={name} onChangeText={setName} tone="warm" />
+                        <PremiumInput
+                          label="Pincodes"
+                          value={pins}
+                          onChangeText={setPins}
+                          placeholder="380001, 380015"
+                          tone="warm"
+                        />
+                        <PremiumInput
+                          label="Delivery fee (₹)"
+                          value={fee}
+                          onChangeText={setFee}
+                          keyboardType="number-pad"
+                          tone="warm"
+                        />
+                        <PremiumButton
+                          label={busy ? "Saving…" : "Create zone"}
+                          iconLeft="add-outline"
+                          loading={busy}
+                          disabled={busy}
+                          onPress={handleCreateZone}
                         />
                       </View>
-                    ))
-                  )}
-                  <PremiumButton
-                    label="Manage users"
-                    iconLeft="people-outline"
-                    variant="ghost"
-                    size="sm"
-                    onPress={() => navigation.navigate("AdminUsers")}
-                    style={{ marginTop: spacing.sm }}
-                  />
-                </AdminPanel>
-              </SectionReveal>
-            </>
+                    </AdminPanel>
+                  </SectionReveal>
+
+                  <SectionReveal preset="fade-up" delay={80}>
+                    <AdminPanel
+                      title="Zones"
+                      icon="location-outline"
+                      meta={`${zones.length} total`}
+                      description="Toggle coverage and review fees per zone."
+                    >
+                      {!zones.length ? (
+                        <Text style={[styles.muted, { color: c.textMuted }]}>
+                          {ADMIN_SCREEN_COPY.delivery.emptyZones}
+                        </Text>
+                      ) : (
+                        zones.map((z) => (
+                          <View key={String(z._id)} style={[styles.row, { borderColor: c.border }]}>
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <Text style={[styles.rowTitle, { color: c.textPrimary }]} numberOfLines={1}>
+                                {z.name}
+                              </Text>
+                              <Text style={[styles.rowMeta, { color: c.textMuted }]} numberOfLines={2}>
+                                {(z.postalCodes || []).slice(0, 6).join(", ")}
+                                {(z.postalCodes || []).length > 6 ? "…" : ""}
+                              </Text>
+                            </View>
+                            <View style={styles.rowRight}>
+                              <PremiumChip
+                                label={z.isActive === false ? "Off" : "Active"}
+                                tone={z.isActive === false ? "neutral" : "green"}
+                                size="sm"
+                                selected
+                              />
+                              <Text style={[styles.fee, { color: c.textPrimary }]}>
+                                {formatINR(Number(z.deliveryFee || 0))}
+                              </Text>
+                            </View>
+                          </View>
+                        ))
+                      )}
+                    </AdminPanel>
+                  </SectionReveal>
+                </View>
+
+                <View style={adminTwoColAside(compact)}>
+                  <SectionReveal preset="fade-up" delay={100}>
+                    <AdminPanel
+                      title="Riders"
+                      icon="bicycle-outline"
+                      meta="Enable partners in Users"
+                      description="Live GPS and active run counts for delivery partners."
+                      action="Users"
+                      onAction={() => navigation.navigate("AdminUsers")}
+                    >
+                      {!partners.length ? (
+                        <Text style={[styles.muted, { color: c.textMuted }]}>
+                          {ADMIN_SCREEN_COPY.delivery.emptyPartners}
+                        </Text>
+                      ) : (
+                        partners.map((p) => (
+                          <View key={String(p._id)} style={[styles.row, { borderColor: c.border }]}>
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <Text style={[styles.rowTitle, { color: c.textPrimary }]} numberOfLines={1}>
+                                {p.name || "Partner"}
+                              </Text>
+                              <Text style={[styles.rowMeta, { color: c.textMuted }]} numberOfLines={1}>
+                                {p.phone || p.email || "—"} · {p.activeOrderCount || 0} active
+                              </Text>
+                            </View>
+                            <PremiumChip
+                              label={
+                                p.lastLocationAgeSeconds != null && p.lastLocationAgeSeconds < 900
+                                  ? "Live GPS"
+                                  : "Offline"
+                              }
+                              tone={
+                                p.lastLocationAgeSeconds != null && p.lastLocationAgeSeconds < 900
+                                  ? "green"
+                                  : "neutral"
+                              }
+                              size="sm"
+                              selected
+                            />
+                          </View>
+                        ))
+                      )}
+                    </AdminPanel>
+                  </SectionReveal>
+                </View>
+              </View>
+            </View>
           )}
         </KankregAdminShell>
       </KankregScrollPage>
@@ -269,10 +305,12 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
+    maxWidth: "100%",
   },
+  desk: adminShellContent(),
   denied: { padding: spacing.lg, gap: spacing.md },
   banner: { marginBottom: spacing.md },
+  deskCols: { gap: spacing.md },
   formGap: { gap: spacing.sm },
   muted: { fontSize: 13, paddingVertical: spacing.sm, fontFamily: fonts.regular },
   row: {

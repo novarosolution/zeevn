@@ -31,6 +31,7 @@
     "icons:generate": "node scripts/generate-app-icons.js",
     "icons:app": "node scripts/generate-app-icons.js",
     "brand:generate": "node scripts/generate-zeevan-brand-assets.js",
+    "splash:generate": "node scripts/generate-splash-assets.js",
     "lint": "expo lint",
     "postinstall": "node scripts/ensure-vector-icons-vendor.js"
   },

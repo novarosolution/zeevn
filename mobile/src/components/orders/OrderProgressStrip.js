@@ -1,16 +1,21 @@
 import React, { memo } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { MY_ORDERS_UI } from "../../content/appContent";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { FONT_HEADING, FONT_HEADING_SEMI, FONT_BODY_SEMIBOLD, FONT_PRICE } from "../../theme/typographyRoles";
-import { semanticRadius } from "../../theme/tokens";
+import { fonts, semanticRadius } from "../../theme/tokens";
 import {
   ORDER_PROGRESS_STEPS,
+  PROGRESS_STEP_STATUSES,
+  formatDeliveryEta,
+  formatEventClock,
   getActiveProgressStep,
   isCancelledOrder,
   isDeliveredOrder,
+  isPartnerPending,
+  latestHistoryAt,
 } from "../../utils/orderStatus";
 
 const TRACK_STEP_ICONS = {
@@ -22,13 +27,14 @@ const TRACK_STEP_ICONS = {
   done: "gift-outline",
 };
 
-/** Premium vertical order progress timeline. */
-function OrderProgressStripBase({ status, c, isDark, compact = false }) {
-  if (String(status || "") === "pending_payment") {
+/** Premium vertical order progress timeline. Pass `order` for timestamps, ETA, note, courier. */
+function OrderProgressStripBase({ status, order, c, isDark, compact = false }) {
+  const resolvedStatus = status || order?.status;
+  if (String(resolvedStatus || "") === "pending_payment") {
     return null;
   }
 
-  if (isCancelledOrder(status)) {
+  if (isCancelledOrder(resolvedStatus)) {
     return (
       <View style={[styles.trackShell, styles.trackShellCancelled, isDark && styles.trackShellCancelledDark]}>
         <View style={styles.trackCancelledInner}>
@@ -44,12 +50,20 @@ function OrderProgressStripBase({ status, c, isDark, compact = false }) {
     );
   }
 
-  const delivered = isDeliveredOrder(status);
-  const activeIdx = getActiveProgressStep(status);
+  const delivered = isDeliveredOrder(resolvedStatus);
+  const activeIdx = getActiveProgressStep(resolvedStatus);
   const totalSteps = ORDER_PROGRESS_STEPS.length;
   const stepLabel = delivered ? totalSteps : Math.min(activeIdx + 1, totalSteps);
-  const progressLabel = delivered ? "Delivered" : `Step ${stepLabel} of ${totalSteps}`;
+  const etaLabel = formatDeliveryEta(order?.tracking, resolvedStatus);
+  const progressLabel = delivered ? "Delivered" : etaLabel || `Step ${stepLabel} of ${totalSteps}`;
   const pct = delivered ? 100 : Math.round((activeIdx / (totalSteps - 1)) * 100);
+  const history = order?.statusHistory;
+  const tracking = order?.tracking || {};
+  const partnerPending = isPartnerPending(order);
+  const courierUrl = String(tracking.trackingUrl || "").trim();
+  const courierId = String(tracking.trackingId || "").trim();
+  const courierName = String(tracking.courierName || "").trim();
+  const note = String(tracking.note || "").trim();
 
   const shellGradient = isDark
     ? ["rgba(20, 83, 45, 0.22)", "rgba(15, 23, 42, 0.5)", "rgba(15, 23, 42, 0.35)"]
@@ -81,6 +95,7 @@ function OrderProgressStripBase({ status, c, isDark, compact = false }) {
             const current = !delivered && idx === activeIdx;
             const barDone = delivered || activeIdx > idx;
             const stepIcon = TRACK_STEP_ICONS[step.key] || "ellipse-outline";
+            const at = formatEventClock(latestHistoryAt(history, PROGRESS_STEP_STATUSES[step.key]));
             return (
               <View key={step.key} style={[styles.trackRow, compact && styles.trackRowCompact]}>
                 <View style={styles.trackLeftCol}>
@@ -122,9 +137,9 @@ function OrderProgressStripBase({ status, c, isDark, compact = false }) {
                   >
                     {step.title}
                   </Text>
-                  {!compact ? (
+                  {!compact || at ? (
                     <Text style={[styles.trackSub, { color: c.textMuted }, current && { color: c.textSecondary }]}>
-                      {step.subtitle}
+                      {at || (!compact ? step.subtitle : "")}
                     </Text>
                   ) : null}
                 </View>
@@ -132,6 +147,33 @@ function OrderProgressStripBase({ status, c, isDark, compact = false }) {
             );
           })}
         </View>
+        {partnerPending || note || courierName || courierId ? (
+          <View style={styles.trackExtras}>
+            {partnerPending ? (
+              <Text style={[styles.trackExtraText, { color: c.textSecondary }]}>
+                {MY_ORDERS_UI.trackPartnerPending}
+              </Text>
+            ) : null}
+            {note ? (
+              <Text style={[styles.trackExtraText, { color: c.textSecondary }]}>
+                {MY_ORDERS_UI.trackNoteLabel}: {note}
+              </Text>
+            ) : null}
+            {courierName || courierId ? (
+              courierUrl ? (
+                <Pressable onPress={() => Linking.openURL(courierUrl)} accessibilityRole="link">
+                  <Text style={[styles.trackExtraLink, { color: c.primary }]}>
+                    {MY_ORDERS_UI.trackCourierLabel}: {courierName || "Track"} {courierId ? `· ${courierId}` : ""}
+                  </Text>
+                </Pressable>
+              ) : (
+                <Text style={[styles.trackExtraText, { color: c.textSecondary }]}>
+                  {MY_ORDERS_UI.trackCourierLabel}: {courierName || "Track"} {courierId ? `· ${courierId}` : ""}
+                </Text>
+              )
+            ) : null}
+          </View>
+        ) : null}
       </LinearGradient>
     </View>
   );
@@ -293,6 +335,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     marginTop: 2,
     lineHeight: 15,
+  },
+  trackExtras: {
+    paddingHorizontal: 14,
+    paddingBottom: 12,
+    gap: 4,
+  },
+  trackExtraText: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  trackExtraLink: {
+    fontFamily: FONT_BODY_SEMIBOLD,
+    fontSize: 11,
+    lineHeight: 16,
   },
 });
 

@@ -23,6 +23,11 @@ export const ADMIN_ROUTES = new Set([
   "AdminHomeView",
 ]);
 
+/** True when the active stack route is the admin desk (hide customer chrome). */
+export function isAdminRoute(routeName) {
+  return Boolean(routeName) && ADMIN_ROUTES.has(String(routeName));
+}
+
 const ROUTE_GROUPS = {
   Home: ["Home"],
   Shop: ["Shop"],

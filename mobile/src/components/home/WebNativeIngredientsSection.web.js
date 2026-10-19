@@ -9,6 +9,7 @@ import { fonts, spacing } from "../../theme/tokens";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 import SectionReveal from "../motion/SectionReveal";
 import WebSectionBackdrop from "./WebSectionBackdrop";
+import WebPhoneSnapCarousel from "./WebPhoneSnapCarousel";
 
 const CARD_CSS_ID = "zeevan-native-ingredients-v2";
 const CARD_CLASS = "zeevan-native-card";
@@ -46,6 +47,47 @@ export default function WebNativeIngredientsSection() {
   const copy = NATIVE_INGREDIENTS_SECTION;
   const titleColor = isDark ? KANKREG_PALETTE.goldBright : TITLE_INK;
 
+  const renderCard = (card, extra = {}) => {
+    const light = card.tone === "light";
+    return (
+      <View
+        key={card.key}
+        className={CARD_CLASS}
+        style={[styles.card, isMobileWeb && styles.cardMobile, extra.style]}
+      >
+        <Image
+          source={card.image}
+          className={PHOTO_CLASS}
+          style={styles.photo}
+          resizeMode="cover"
+        />
+        <View
+          style={[styles.scrim, light ? styles.scrimLight : styles.scrimDark]}
+          pointerEvents="none"
+        />
+        <View style={styles.copy}>
+          <Text
+            style={[
+              styles.cardTitle,
+              isMobileWeb && styles.cardTitleMobile,
+              { color: light ? ZEEVAN_GREEN.deep : "#FAF8F4" },
+            ]}
+          >
+            {card.title}
+          </Text>
+          <Text
+            style={[
+              styles.cardBody,
+              { color: light ? "#2A3A1A" : "rgba(250, 248, 244, 0.94)" },
+            ]}
+          >
+            {card.body}
+          </Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SectionReveal preset="fade-up" style={styles.reveal}>
       <WebSectionBackdrop
@@ -53,56 +95,31 @@ export default function WebNativeIngredientsSection() {
         tone="warm"
         isDark={isDark}
         accessibilityLabel={copy.title}
-        style={styles.pad}
+        style={[styles.pad, isMobileWeb && styles.padMobile]}
       >
-        <View style={[styles.inner, { paddingHorizontal: pageGutterClamp }]}>
-          <Text style={[styles.title, { color: titleColor }, isMobileWeb && styles.titleMobile]}>
+        <View style={[styles.inner, isMobileWeb && styles.innerMobile, !isMobileWeb && { paddingHorizontal: pageGutterClamp }]}>
+          <Text
+            style={[
+              styles.title,
+              { color: titleColor },
+              isMobileWeb && styles.titleMobile,
+              isMobileWeb && { paddingHorizontal: pageGutterClamp },
+            ]}
+          >
             {copy.title}
           </Text>
 
-          <View style={[styles.grid, isMobileWeb && styles.gridMobile]}>
-            {copy.cards.map((card) => {
-              const light = card.tone === "light";
-              return (
-                <View
-                  key={card.key}
-                  className={CARD_CLASS}
-                  style={[styles.card, isMobileWeb && styles.cardMobile]}
-                >
-                  <Image
-                    source={card.image}
-                    className={PHOTO_CLASS}
-                    style={styles.photo}
-                    resizeMode="cover"
-                  />
-                  <View
-                    style={[styles.scrim, light ? styles.scrimLight : styles.scrimDark]}
-                    pointerEvents="none"
-                  />
-                  <View style={styles.copy}>
-                    <Text
-                      style={[
-                        styles.cardTitle,
-                        { color: light ? ZEEVAN_GREEN.deep : "#FAF8F4" },
-                      ]}
-                    >
-                      {card.title}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.cardBody,
-                        {
-                          color: light ? "#2A3A1A" : "rgba(250, 248, 244, 0.94)",
-                        },
-                      ]}
-                    >
-                      {card.body}
-                    </Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
+          {isMobileWeb ? (
+            <WebPhoneSnapCarousel
+              items={copy.cards}
+              keyExtractor={(c) => c.key}
+              dotColor={TITLE_INK}
+              dotMuted="rgba(92,58,26,0.22)"
+              renderItem={(card) => renderCard(card, { style: { width: "100%" } })}
+            />
+          ) : (
+            <View style={styles.grid}>{copy.cards.map((card) => renderCard(card))}</View>
+          )}
         </View>
       </WebSectionBackdrop>
     </SectionReveal>
@@ -115,11 +132,18 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
   },
+  padMobile: {
+    paddingTop: spacing.lg + 4,
+    paddingBottom: spacing.lg + 4,
+  },
   inner: {
     width: "100%",
     maxWidth: 1280,
     alignSelf: "center",
     gap: spacing.xl,
+  },
+  innerMobile: {
+    gap: spacing.md + 2,
   },
   title: {
     fontFamily: FONT_HEADING,
@@ -131,17 +155,14 @@ const styles = StyleSheet.create({
     maxWidth: 720,
   },
   titleMobile: {
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: 26,
+    lineHeight: 32,
   },
   grid: {
     flexDirection: "row",
     flexWrap: "nowrap",
     gap: 16,
     width: "100%",
-  },
-  gridMobile: {
-    flexDirection: "column",
   },
   card: {
     flex: 1,
@@ -159,8 +180,13 @@ const styles = StyleSheet.create({
     }),
   },
   cardMobile: {
-    minHeight: 360,
+    flex: 0,
+    minHeight: 400,
     width: "100%",
+  },
+  cardTitleMobile: {
+    fontSize: 20,
+    lineHeight: 26,
   },
   photo: {
     ...StyleSheet.absoluteFillObject,

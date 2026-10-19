@@ -143,9 +143,13 @@ async function emitDeliveryPartnerLocation(partnerUser, location) {
 
 function emitNotificationCreated(notification) {
   if (!io || !notification) return;
-  io.emit("notifications:new", {
-    notification: toPlain(notification),
-  });
+  const payload = { notification: toPlain(notification) };
+  const target = notification.forUser?._id || notification.forUser;
+  if (!notification.forAllUsers && target) {
+    io.to(`user:${String(target)}`).emit("notifications:new", payload);
+    return;
+  }
+  io.emit("notifications:new", payload);
 }
 
 function emitSupportThreadUpdated(thread) {

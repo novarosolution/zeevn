@@ -109,6 +109,61 @@ export function getAdminNextStatusLabel(currentStatus) {
   return getOrderStatusLabel(next);
 }
 
+/** Statuses that mark each progress-strip step as reached. */
+export const PROGRESS_STEP_STATUSES = {
+  placed: ["pending_payment", "pending"],
+  confirmed: ["confirmed", "paid"],
+  preparing: ["preparing"],
+  ready: ["ready_for_pickup"],
+  out: ["shipped", "out_for_delivery"],
+  done: ["delivered"],
+};
+
+export function formatEventClock(at) {
+  if (!at) return "";
+  const d = new Date(at);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString(undefined, { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+
+export function latestHistoryAt(history, statuses) {
+  if (!Array.isArray(history) || !statuses?.length) return null;
+  let found = null;
+  for (const ev of history) {
+    if (statuses.includes(ev?.status)) found = ev.at;
+  }
+  return found;
+}
+
+export function formatDeliveryEta(tracking, status) {
+  if (isDeliveredOrder(status) || isCancelledOrder(status)) return "";
+  const t = tracking || {};
+  if (t.promisedAt) {
+    const d = new Date(t.promisedAt);
+    if (!Number.isNaN(d.getTime())) {
+      return `Arriving by ${d.toLocaleString(undefined, {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      })}`;
+    }
+  }
+  const min = Number(t.etaMinutesMin);
+  const max = Number(t.etaMinutesMax);
+  if (min > 0 && max > 0) return `ETA ${min}–${max} min`;
+  if (max > 0) return `ETA about ${max} min`;
+  if (min > 0) return `ETA about ${min} min`;
+  return "";
+}
+
+export function isPartnerPending(order) {
+  return String(order?.deliveryAcceptStatus || "") === "pending";
+}
+
+export const INVOICE_STATUS_VALUES = ["draft", "final", "paid", "void"];
+
 /** Match backend ORDER_STATUSES_ALLOW_ADDRESS_EDIT */
 export const ORDER_STATUSES_ALLOW_ADDRESS_EDIT = [
   "pending_payment",

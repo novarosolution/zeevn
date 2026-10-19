@@ -55,12 +55,15 @@ export default function AdminStatusPill({ label, tone = "pend", style }) {
 const styles = StyleSheet.create({
   pill: {
     alignSelf: "flex-start",
-    paddingHorizontal: 9,
-    paddingVertical: 3,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(25,20,15,0.06)",
   },
   text: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontFamily: fonts.semibold,
+    letterSpacing: 0.2,
   },
 });

@@ -9,7 +9,14 @@ import { useTheme } from "../../context/ThemeContext";
 import {
   fetchAdminNotifications,
   sendAdminBroadcastNotification} from "../../services/adminService";
-import { adminGatePanel, adminShellContent } from "../../theme/adminLayout";
+import {
+  adminGatePanel,
+  adminShellContent,
+  adminTwoColAside,
+  adminTwoColMain,
+  adminTwoColStyle,
+  useAdminCompactLayout,
+} from "../../theme/adminLayout";
 import AdminPanel from "../../components/admin/AdminPanel";
 import AdminAlerts from "../../components/admin/AdminAlerts";
 import AdminDataTable from "../../components/admin/AdminDataTable";
@@ -25,6 +32,7 @@ import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 export default function AdminNotificationsScreen({ navigation, route }) {
   const { colors: c, shadowPremium } = useTheme();
+  const compact = useAdminCompactLayout();
   const styles = useMemo(() => createAdminNotificationsStyles(c, shadowPremium), [c, shadowPremium]);
     const { user, token } = useAuth();
   const [title, setTitle] = useState("");
@@ -117,10 +125,34 @@ export default function AdminNotificationsScreen({ navigation, route }) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <KankregAdminShell navigation={navigation} route={route} title={ADMIN_SCREEN_COPY.notifications.title} subtitle={ADMIN_SCREEN_COPY.notifications.subtitle}>
+          <KankregAdminShell
+            navigation={navigation}
+            route={route}
+            title={ADMIN_SCREEN_COPY.notifications.title}
+            subtitle={ADMIN_SCREEN_COPY.notifications.subtitle}
+            headerRight={
+              <PremiumButton
+                label="Refresh"
+                variant="secondary"
+                size="sm"
+                iconLeft="refresh-outline"
+                onPress={loadNotifications}
+                disabled={loading}
+                loading={loading}
+              />
+            }
+          >
+          <View style={styles.panel}>
           <AdminAlerts error={error} success={success} onCloseError={() => setError("")} onCloseSuccess={() => setSuccess("")} />
 
-            <AdminPanel title="Compose broadcast">
+          <View style={adminTwoColStyle(compact)}>
+            <View style={adminTwoColMain(compact, 1.1)}>
+            <AdminPanel
+              title="Compose broadcast"
+              icon="megaphone-outline"
+              meta="Push to all customers"
+              description="Title + message go to every signed-in customer."
+            >
               <View style={styles.fieldGap}>
                 <PremiumInput
                   label="Notification title"
@@ -142,7 +174,7 @@ export default function AdminNotificationsScreen({ navigation, route }) {
               </View>
 
               <PremiumButton
-                label={sending ? "Sending..." : "Send to all users"}
+                label={sending ? "Sending…" : "Send to all users"}
                 iconLeft="megaphone-outline"
                 variant="primary"
                 size="md"
@@ -151,21 +183,16 @@ export default function AdminNotificationsScreen({ navigation, route }) {
                 onPress={handleSend}
                 fullWidth
               />
-
-              <PremiumButton
-                label={loading ? "Refreshing…" : "Refresh list"}
-                iconLeft="refresh-outline"
-                variant="secondary"
-                size="sm"
-                disabled={loading}
-                loading={loading}
-                onPress={loadNotifications}
-                fullWidth
-                style={styles.refreshBelowSend}
-              />
             </AdminPanel>
-
-          <AdminPanel title="Sent notifications" noPadding style={{ marginTop: spacing.md }}>
+            </View>
+            <View style={adminTwoColAside(compact)}>
+          <AdminPanel
+            title="Sent notifications"
+            icon="time-outline"
+            meta={`${items.length} broadcasts`}
+            description="History of broadcasts sent from this desk."
+            noPadding
+          >
             {loading ? (
               <View style={styles.loaderWrap}>
                 <PremiumLoader size="sm" caption="Loading sent notifications…" />
@@ -173,8 +200,8 @@ export default function AdminNotificationsScreen({ navigation, route }) {
             ) : items.length === 0 ? (
               <PremiumEmptyState
                 iconName="notifications-outline"
-                title="No notifications sent yet"
-                description="Broadcast a message above to reach all users."
+                title={ADMIN_SCREEN_COPY.notifications.empty}
+                description="Compose a message above to reach everyone."
                 compact
               />
             ) : (
@@ -194,6 +221,9 @@ export default function AdminNotificationsScreen({ navigation, route }) {
               />
             )}
           </AdminPanel>
+            </View>
+          </View>
+          </View>
           </KankregAdminShell>
 </KankregScrollPage>
       </KeyboardAvoidingView>

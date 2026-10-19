@@ -58,12 +58,15 @@ function createStyles(chrome) {
     wrap: {
       borderWidth: 1,
       borderColor: chrome.line,
-      borderRadius: radius.lg,
-      backgroundColor: chrome.paper,
+      borderRadius: Platform.select({ web: 16, default: radius.lg }),
+      backgroundColor: chrome.card,
       overflow: "hidden",
       marginBottom: spacing.sm,
       ...Platform.select({
-        web: { transition: "box-shadow .18s ease" },
+        web: {
+          transition: "box-shadow .18s ease, border-color .18s ease",
+          boxShadow: "0 1px 2px rgba(25,20,15,.03), 0 10px 24px -18px rgba(25,20,15,.1)",
+        },
         default: {},
       }),
     },
@@ -72,8 +75,9 @@ function createStyles(chrome) {
       alignItems: "center",
       gap: spacing.sm,
       paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm + 2,
-      minHeight: 52,
+      paddingVertical: spacing.sm + 4,
+      minHeight: 56,
+      backgroundColor: Platform.select({ web: chrome.paper, default: "transparent" }),
     },
     headPressed: {
       opacity: 0.92,

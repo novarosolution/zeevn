@@ -40,21 +40,22 @@ const styles = StyleSheet.create({
     }),
   },
   dotGridLight: {
-    opacity: 0.45,
+    opacity: 0.55,
     ...Platform.select({
       web: {
         backgroundImage:
-          "radial-gradient(circle at 1px 1px, rgba(25,20,15,0.09) 1px, transparent 0)",
+          "radial-gradient(circle at 1px 1px, rgba(25,20,15,0.07) 1px, transparent 0), linear-gradient(180deg, rgba(255,252,247,0.55), rgba(239,231,219,0.2))",
+        backgroundSize: "26px 26px, 100% 100%",
       },
       default: {},
     }),
   },
   dotGridDark: {
-    opacity: 0.35,
+    opacity: 0.4,
     ...Platform.select({
       web: {
         backgroundImage:
-          "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0)",
+          "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0)",
       },
       default: {},
     }),

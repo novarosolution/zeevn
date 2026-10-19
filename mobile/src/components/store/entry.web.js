@@ -2,6 +2,7 @@
 const Inert = () => null;
 
 export const StoreHome = Inert;
+export const StoreHomeSkeleton = Inert;
 export const StoreShop = Inert;
 export const StoreProfile = Inert;
 export const StoreWishlist = Inert;

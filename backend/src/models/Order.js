@@ -40,6 +40,22 @@ const orderItemSchema = new mongoose.Schema(
   { _id: false }
 );
 
+/** One row per lifecycle change — powers the customer timeline + admin audit. */
+const statusEventSchema = new mongoose.Schema(
+  {
+    status: { type: String, required: true, trim: true },
+    at: { type: Date, default: Date.now },
+    by: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    byRole: {
+      type: String,
+      enum: ["customer", "admin", "delivery", "system"],
+      default: "system",
+    },
+    note: { type: String, default: "", trim: true, maxlength: 300 },
+  },
+  { _id: false }
+);
+
 const orderSchema = new mongoose.Schema(
   {
     user: {
@@ -189,6 +205,23 @@ const orderSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    /**
+     * Customer-facing tracking details. ETA is snapshotted from the delivery zone at
+     * place-order and may be refined by admin; courier fields are optional (own fleet).
+     */
+    tracking: {
+      note: { type: String, default: "", trim: true, maxlength: 300 },
+      etaMinutesMin: { type: Number, default: null },
+      etaMinutesMax: { type: Number, default: null },
+      promisedAt: { type: Date, default: null },
+      courierName: { type: String, default: "", trim: true, maxlength: 80 },
+      trackingId: { type: String, default: "", trim: true, maxlength: 80 },
+      trackingUrl: { type: String, default: "", trim: true, maxlength: 400 },
+    },
+    statusHistory: {
+      type: [statusEventSchema],
+      default: [],
+    },
   },
   { timestamps: true }
 );
@@ -196,5 +229,38 @@ const orderSchema = new mongoose.Schema(
 orderSchema.index({ createdAt: 1 });
 orderSchema.index({ assignedDeliveryUser: 1, status: 1 });
 orderSchema.index({ deliveryZone: 1 });
+
+/**
+ * Record every status transition. Controllers may describe the actor via
+ * `order.$locals.statusActor = { by, byRole, note }` before `save()`.
+ */
+orderSchema.pre("save", function recordStatusHistory(next) {
+  const actor = this.$locals?.statusActor || {};
+  const last = this.statusHistory?.length
+    ? this.statusHistory[this.statusHistory.length - 1]
+    : null;
+  const changed = this.isNew || this.isModified("status");
+  if (changed && (!last || last.status !== this.status)) {
+    this.statusHistory.push({
+      status: this.status,
+      at: new Date(),
+      by: actor.by || null,
+      byRole: actor.byRole || (this.isNew ? "customer" : "system"),
+      note: String(actor.note || "").trim().slice(0, 300),
+    });
+    this.$locals.statusChanged = !this.isNew;
+  }
+  next();
+});
+
+orderSchema.post("save", function notifyStatusChange(doc) {
+  if (!doc.$locals?.statusChanged) return;
+  doc.$locals.statusChanged = false;
+  // Lazy require: avoids a model → service → model cycle at load time.
+  const { notifyCustomerOrderStatus } = require("../services/orderStatusNotificationService");
+  notifyCustomerOrderStatus(doc).catch((err) => {
+    console.warn("[orders] customer status notify failed:", err?.message || err);
+  });
+});
 
 module.exports = mongoose.model("Order", orderSchema);

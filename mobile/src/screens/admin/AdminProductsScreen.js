@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ADMIN_GATE } from "../../content/adminContent";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import { Alert, Platform, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
@@ -10,6 +10,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { deleteAdminProduct, fetchAdminProducts } from "../../services/adminService";
 import { adminGatePanel, adminShellContent, adminToolbarPrimary, adminToolbarRow, useAdminCompactLayout } from "../../theme/adminLayout";
 import AdminPanel from "../../components/admin/AdminPanel";
+import AdminToolbar, { AdminToolbarSlot } from "../../components/admin/AdminToolbar";
 import AdminKpiCard, { AdminKpiGrid } from "../../components/admin/AdminKpiCard";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
@@ -91,6 +92,14 @@ export default function AdminProductsScreen({ navigation, route }) {
   }, [products, search, filter]);
 
   const stats = useMemo(() => catalogSummary(products), [products]);
+  const tabCounts = useMemo(() => {
+    const counts = { all: products.length };
+    for (const tab of PRODUCT_FILTER_TABS) {
+      if (tab.key === "all") continue;
+      counts[tab.key] = products.filter((p) => matchesProductFilter(p, tab.key)).length;
+    }
+    return counts;
+  }, [products]);
   const visibleProducts = useMemo(
     () => filteredProducts.slice(0, renderCount),
     [filteredProducts, renderCount]
@@ -154,16 +163,25 @@ export default function AdminProductsScreen({ navigation, route }) {
         <KankregAdminShell
           navigation={navigation}
           route={route}
-          title="Products"
-          subtitle={`${stats.total} SKUs · ${stats.low} low · ${stats.out} out`}
+          title={ADMIN_SCREEN_COPY.products.title}
+          subtitle={ADMIN_SCREEN_COPY.products.subtitle}
           headerRight={
-            <PremiumButton
-              label="Add product"
-              variant="primary"
-              size="sm"
-              iconLeft="add"
-              onPress={() => navigation.navigate("AdminAddProduct")}
-            />
+            <View style={styles.headerActions}>
+              <PremiumButton
+                label="Refresh"
+                variant="ghost"
+                size="sm"
+                iconLeft="refresh-outline"
+                onPress={loadProducts}
+              />
+              <PremiumButton
+                label="Add product"
+                variant="primary"
+                size="sm"
+                iconLeft="add-outline"
+                onPress={() => navigation.navigate("AdminAddProduct")}
+              />
+            </View>
           }
         >
           <View style={styles.panel}>
@@ -174,49 +192,72 @@ export default function AdminProductsScreen({ navigation, route }) {
             ) : null}
 
             <SectionReveal preset="fade-up" delay={0}>
-              <AdminKpiGrid compact={compact}>
-                <AdminKpiCard label="Total SKUs" value={String(stats.total)} />
-                <AdminKpiCard label="Published" value={String(stats.inStock)} />
-                <AdminKpiCard label="Low stock" value={String(stats.low)} deltaUp={false} />
-                <AdminKpiCard label="Out / draft" value={String(stats.out + stats.draft)} deltaUp={false} />
-              </AdminKpiGrid>
-
-              <AdminFilterTabs
-                style={styles.filterTabs}
-                value={filter}
-                onChange={setFilter}
-                items={PRODUCT_FILTER_TABS.map((tab) => ({
-                  key: tab.key,
-                  label: tab.key === "all" ? `${tab.label} · ${stats.total}` : tab.label,
-                }))}
-              />
-
-              <View style={styles.actionsRow}>
-                <View style={styles.searchInputWrap}>
-                  <PremiumInput
-                    label="Search catalog"
-                    value={search}
-                    onChangeText={setSearch}
-                    placeholder="Name, SKU, brand, category"
-                    iconLeft="search-outline"
-                    iconRight={search ? "close-circle" : undefined}
-                    onIconRightPress={search ? () => setSearch("") : undefined}
-                    autoCapitalize="none"
+              <AdminPanel
+                title="Catalog pulse"
+                icon="cube-outline"
+                meta="Tap to filter"
+                description="Published, low stock, and draft SKUs at a glance."
+              >
+                <AdminKpiGrid compact={compact}>
+                  <AdminKpiCard label="Total SKUs" value={String(stats.total)} onPress={() => setFilter("all")} />
+                  <AdminKpiCard
+                    label="Published"
+                    value={String(stats.inStock)}
+                    onPress={() => setFilter("published")}
                   />
-                </View>
-                <PremiumButton label="Refresh" variant="secondary" size="sm" onPress={loadProducts} />
-                <PremiumButton
-                  label="Inventory"
-                  variant="ghost"
-                  size="sm"
-                  iconLeft="layers-outline"
-                  onPress={() => navigation.navigate("AdminInventory")}
-                />
-              </View>
+                  <AdminKpiCard
+                    label="Low stock"
+                    value={String(stats.low)}
+                    tone={stats.low > 0 ? "warn" : "default"}
+                    onPress={() => setFilter("low")}
+                  />
+                  <AdminKpiCard
+                    label="Out / draft"
+                    value={String(stats.out + stats.draft)}
+                    tone={stats.out + stats.draft > 0 ? "hot" : "default"}
+                    onPress={() => setFilter("out")}
+                  />
+                </AdminKpiGrid>
+              </AdminPanel>
 
-              <Text style={styles.listCount}>
-                {filteredProducts.length} of {products.length} products
-              </Text>
+              <AdminPanel
+                title="Find products"
+                icon="search-outline"
+                meta={`${filteredProducts.length} of ${products.length}`}
+                description="Filter tabs + search — open a row to edit pricing and media."
+              >
+                <AdminFilterTabs
+                  style={styles.filterTabs}
+                  value={filter}
+                  onChange={setFilter}
+                  items={PRODUCT_FILTER_TABS.map((tab) => ({
+                    key: tab.key,
+                    label: `${tab.label} · ${tabCounts[tab.key] ?? 0}`,
+                  }))}
+                />
+
+                <AdminToolbar>
+                  <AdminToolbarSlot flex>
+                    <PremiumInput
+                      label="Search catalog"
+                      value={search}
+                      onChangeText={setSearch}
+                      placeholder="Name, SKU, brand, category"
+                      iconLeft="search-outline"
+                      iconRight={search ? "close-circle" : undefined}
+                      onIconRightPress={search ? () => setSearch("") : undefined}
+                      autoCapitalize="none"
+                    />
+                  </AdminToolbarSlot>
+                  <PremiumButton
+                    label="Stock desk"
+                    variant="ghost"
+                    size="sm"
+                    iconLeft="layers-outline"
+                    onPress={() => navigation.navigate("AdminInventory")}
+                  />
+                </AdminToolbar>
+              </AdminPanel>
             </SectionReveal>
 
             <View style={styles.listContent}>
@@ -322,13 +363,14 @@ function createAdminProductsStyles(c, shadowPremium) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
+      maxWidth: "100%",
     },
     panel: adminShellContent(),
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
     bannerSpacer: { marginBottom: spacing.sm },
     filterTabs: { marginVertical: spacing.sm },
+    headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
     actionsRow: { ...adminToolbarRow, marginBottom: spacing.sm },
     searchInputWrap: { ...adminToolbarPrimary },
     listCount: {

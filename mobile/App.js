@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Appearance, Platform, View } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import {
@@ -28,9 +27,10 @@ import { isRunningInExpoGo } from "expo";
 import { ToastProvider } from "./src/context/ToastContext";
 import { ThemeProvider, useTheme } from "./src/context/ThemeContext";
 import useAppIconSync from "./src/hooks/useAppIconSync";
-import AppStartupScreen from "./src/components/AppStartupScreen";
+import BootSplash, { BootBackdrop } from "./src/components/BootSplash";
 import AppNavigator from "./src/navigation/AppNavigator";
 import DeferredHeavyProviders from "./src/bootstrap/DeferredHeavyProviders";
+import { markAppReady } from "./src/bootstrap/appReady";
 import { applyWebPremiumChrome, injectWebDocumentMeta, webRootStyle } from "./src/theme/web";
 import { updateWebRouteSeo } from "./src/utils/webSeo";
 
@@ -61,8 +61,6 @@ const DEFERRED_FONTS = {
       }
     : {}),
 };
-
-const STARTUP_WELCOME_KEY = "@kankreg_startup_welcome_shown";
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -188,6 +186,7 @@ function AppNavigationShell() {
         onReady={() => {
           setNavReady(true);
           flushPendingNavigationActions();
+          markAppReady();
         }}
       >
         <AppNavigator navigationRef={navigationRef} navReady={navReady} />
@@ -198,33 +197,11 @@ function AppNavigationShell() {
 
 export default function App() {
   const [fontsLoaded] = useFonts(CRITICAL_FONTS);
-  const [bootFootnote, setBootFootnote] = useState("Loading Zeevan…");
 
   useEffect(() => {
     if (!fontsLoaded) return;
     Font.loadAsync(DEFERRED_FONTS).catch(() => {});
   }, [fontsLoaded]);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const seen = await AsyncStorage.getItem(STARTUP_WELCOME_KEY);
-        if (cancelled) return;
-        if (seen === "1") {
-          setBootFootnote("Loading Zeevan…");
-        } else {
-          setBootFootnote("Loading Zeevan…");
-          await AsyncStorage.setItem(STARTUP_WELCOME_KEY, "1");
-        }
-      } catch {
-        if (!cancelled) setBootFootnote("Opening…");
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -233,9 +210,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded) {
+    if (!fontsLoaded) return undefined;
+    if (Platform.OS === "web") {
       SplashScreen.hideAsync().catch(() => {});
+      return undefined;
     }
+    // On iOS / Android `BootSplash` lifts the system splash on its own first frame; this only guards against it never mounting.
+    const timer = setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 2500);
+    return () => clearTimeout(timer);
   }, [fontsLoaded]);
 
   if (!fontsLoaded && Platform.OS !== "web") {
@@ -243,11 +225,7 @@ export default function App() {
       <SafeAreaProvider style={safeAreaRootStyle}>
         <View style={webRootStyle}>
           <StatusBar style={Appearance.getColorScheme() === "dark" ? "light" : "dark"} />
-          <AppStartupScreen
-            isDark={Appearance.getColorScheme() === "dark"}
-            useAppFonts={false}
-            footnote={bootFootnote}
-          />
+          <BootBackdrop />
         </View>
       </SafeAreaProvider>
     );
@@ -263,6 +241,7 @@ export default function App() {
             </DeferredHeavyProviders>
           </ToastProvider>
         </ThemeProvider>
+        <BootSplash />
       </View>
     </SafeAreaProvider>
   );

@@ -57,7 +57,7 @@ import WebPhoneCategoryCircles from "../components/home/WebPhoneCategoryCircles"
 import WebPhoneProductRail from "../components/home/WebPhoneProductRail";
 import WebPhoneTrustStrip from "../components/home/WebPhoneTrustStrip";
 import WebPhoneQuoteBand from "../components/home/WebPhoneQuoteBand";
-import { StoreHome } from "../components/store/entry";
+import { StoreHome, StoreHomeSkeleton } from "../components/store/entry";
 import AppStartupScreen from "../components/AppStartupScreen";
 import { useAuth } from "../context/AuthContext";
 import { fetchMyNotifications } from "../services/userService";
@@ -298,13 +298,17 @@ export default function KankregHomeScreen({ navigation }) {
     );
   }, [ready, showHomeExtras, processSection]);
 
-  if (loading) {
-    return (
+  // Web keeps the boot screen. Native shows a skeleton in the shape of the Home — and nothing at all when a saved
+  // copy of the catalog is already on the device, so a returning customer lands straight on the Home.
+  if (loading && (Platform.OS === "web" || products.length === 0)) {
+    return Platform.OS === "web" ? (
       <AppStartupScreen
         isDark={isDark}
         coverChrome
         footnote="Curating ghee, tel, masala & honey…"
       />
+    ) : (
+      <StoreHomeSkeleton />
     );
   }
 
@@ -414,7 +418,7 @@ export default function KankregHomeScreen({ navigation }) {
             ) : null}
             {homeCatalog.length ? (
               <WebPhoneProductRail
-                title={HOME_SCREEN_UI.bestsellers.webSectionTitle || "Bestsellers"}
+                title={HOME_SCREEN_UI.bestsellers.phoneTitle || "Explore our best sellers"}
                 kicker={HOME_SCREEN_UI.bestsellers.webKicker || "Fresh jars, honest labels"}
                 products={homeCatalog}
                 navigation={navigation}
@@ -424,6 +428,8 @@ export default function KankregHomeScreen({ navigation }) {
                 onViewAll={() => navigation.navigate("Shop")}
                 viewAllLabel={HOME_SCREEN_UI.bestsellers.webAction || "View all"}
                 limit={10}
+                lineTabs
+                centerTitle
               />
             ) : (
               <View style={{ paddingHorizontal: pageGutterClamp }}>

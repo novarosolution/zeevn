@@ -10,7 +10,7 @@ import {
   View} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { ADMIN_GATE } from "../../content/adminContent";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import { useAuth } from "../../context/AuthContext";
@@ -194,8 +194,8 @@ export default function AdminInventoryScreen({ navigation, route }) {
       <KankregAdminShell
         navigation={navigation}
         route={route}
-        title="Inventory"
-        subtitle={`${stats.total} SKUs · ${stats.low} low · ${stats.out} out`}
+        title={ADMIN_SCREEN_COPY.inventory.title}
+        subtitle={ADMIN_SCREEN_COPY.inventory.subtitle}
       >
       <FlatList
         data={compact ? visible : []}
@@ -207,11 +207,28 @@ export default function AdminInventoryScreen({ navigation, route }) {
         ]}
         ListHeaderComponent={
           <View style={styles.headerBlock}>
-            <AdminKpiGrid compact={compact}>
-              <AdminKpiCard label="SKUs" value={String(stats.total)} />
-              <AdminKpiCard label="Low stock" value={String(stats.low)} deltaUp={false} />
-              <AdminKpiCard label="Out of stock" value={String(stats.out)} deltaUp={false} />
-            </AdminKpiGrid>
+            <AdminPanel
+              title="Stock pulse"
+              icon="layers-outline"
+              meta="Tap to filter"
+              description="Adjust qty inline or mark items out of stock."
+            >
+              <AdminKpiGrid compact={compact}>
+                <AdminKpiCard label="SKUs" value={String(stats.total)} onPress={() => setFilter("all")} />
+                <AdminKpiCard
+                  label="Low stock"
+                  value={String(stats.low)}
+                  tone={stats.low > 0 ? "warn" : "default"}
+                  onPress={() => setFilter("low")}
+                />
+                <AdminKpiCard
+                  label="Out of stock"
+                  value={String(stats.out)}
+                  tone={stats.out > 0 ? "hot" : "default"}
+                  onPress={() => setFilter("out")}
+                />
+              </AdminKpiGrid>
+            </AdminPanel>
             <AdminFilterTabs
               value={filter}
               onChange={setFilter}
@@ -276,7 +293,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
             <View style={styles.emptyWrap}>
               <PremiumEmptyState
                 iconName="file-tray-outline"
-                title="No products match this view"
+                title={ADMIN_SCREEN_COPY.inventory.empty}
                 description="Try another filter or clear your search."
                 compact
               />
@@ -400,7 +417,7 @@ function createStyles(c, shadowPremium, isDark) {
       flex: 1,
       width: "100%",
       alignSelf: "center",
-      maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" })},
+      maxWidth: "100%"},
     listContent: {
       paddingHorizontal: Platform.select({ web: spacing.xl, default: spacing.lg })},
     headerBlock: { marginBottom: spacing.sm },

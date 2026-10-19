@@ -8,7 +8,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from "react-native-reanimated";
-import { radius } from "../../theme/tokens";
+import { radius as tokensRadius } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import { LOADING_THEME } from "../../theme/loadingTheme";
 import useReducedMotion from "../../hooks/useReducedMotion";
@@ -17,7 +17,8 @@ import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 const SHIMMER_CSS_ID = "kankreg-skeleton-shimmer";
 const SHIMMER_CLASS = "kankreg-skeleton-shimmer";
 
-function SkeletonBlockBase({ width = "100%", height = 16, rounded = "md", style }) {
+function SkeletonBlockBase({ width = "100%", height = 16, rounded = "md", radius, style }) {
+  const resolvedRounded = radius ?? rounded;
   const { isDark } = useTheme();
   const reducedMotion = useReducedMotion();
   const shimmerPos = useSharedValue(0);
@@ -32,7 +33,7 @@ function SkeletonBlockBase({ width = "100%", height = 16, rounded = "md", style 
     transform: [{ translateX: (shimmerPos.value * 2 - 1) * 120 }],
   }));
 
-  const borderRadius = typeof rounded === "number" ? rounded : ROUNDED_TOKENS[rounded] ?? radius.md;
+  const borderRadius = typeof resolvedRounded === "number" ? resolvedRounded : ROUNDED_TOKENS[resolvedRounded] ?? tokensRadius.md;
   const baseColor = isDark ? LOADING_THEME.skeletonBaseDark : LOADING_THEME.skeletonBaseLight;
   const gradientColors = isDark ? LOADING_THEME.shimmerDark : LOADING_THEME.shimmerLight;
   const borderColor = isDark ? LOADING_THEME.skeletonBorderDark : "rgba(22, 69, 51, 0.06)";
@@ -92,11 +93,11 @@ const styles = StyleSheet.create({
 
 const ROUNDED_TOKENS = {
   none: 0,
-  sm: radius.sm,
-  md: radius.md,
-  lg: radius.lg,
-  xl: radius.xl,
-  pill: radius.pill,
+  sm: tokensRadius.sm,
+  md: tokensRadius.md,
+  lg: tokensRadius.lg,
+  xl: tokensRadius.xl,
+  pill: tokensRadius.pill,
   full: 999,
 };
 

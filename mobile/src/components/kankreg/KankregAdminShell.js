@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { Ionicons } from "@expo/vector-icons";
+import { ADMIN_NAV_FLAT, ADMIN_NAV_GROUPS } from "../../content/adminNav";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { FONT_HEADING } from "../../theme/typographyRoles";
 import { platformElevation } from "../../theme/platformStyles";
@@ -11,49 +12,14 @@ import { fonts, spacing } from "../../theme/tokens";
 import { adminShellMainPadding, getAdminChrome } from "../../theme/adminLayout";
 import AdminBackLink from "../admin/AdminBackLink";
 import AdminMobileNav from "../admin/AdminMobileNav";
+import AdminNavIcon from "../admin/AdminNavIcon";
 import AdminTopBar from "../admin/AdminTopBar";
 
-/** Blinkit-style ops desk IA — Live Ops · Catalogue · Growth · People */
-const NAV_GROUPS = [
-  {
-    key: "ops",
-    label: "Live Ops",
-    links: [
-      { key: "AdminDashboard", label: "Command", icon: "flash-outline" },
-      { key: "AdminOrders", label: "Orders", icon: "receipt-outline" },
-      { key: "AdminDelivery", label: "Zones & riders", icon: "bicycle-outline" },
-    ],
-  },
-  {
-    key: "catalog",
-    label: "Catalogue",
-    links: [
-      { key: "AdminProducts", label: "Products", icon: "cube-outline" },
-      { key: "AdminInventory", label: "Stock desk", icon: "layers-outline" },
-      { key: "AdminAnalytics", label: "Analytics", icon: "bar-chart-outline" },
-    ],
-  },
-  {
-    key: "growth",
-    label: "Growth",
-    links: [
-      { key: "AdminCoupons", label: "Coupons", icon: "pricetag-outline" },
-      { key: "AdminRewards", label: "Rewards", icon: "gift-outline" },
-      { key: "AdminHomeView", label: "Store & home", icon: "storefront-outline" },
-      { key: "AdminNotifications", label: "Notify", icon: "notifications-outline" },
-    ],
-  },
-  {
-    key: "people",
-    label: "People",
-    links: [
-      { key: "AdminUsers", label: "Users", icon: "people-outline" },
-      { key: "AdminSupport", label: "Support", icon: "chatbubbles-outline" },
-    ],
-  },
-];
+/** Re-export for screens that import groups from the shell. */
+export { ADMIN_NAV_GROUPS };
 
-const FLAT_LINKS = NAV_GROUPS.flatMap((g) => g.links);
+const NAV_GROUPS = ADMIN_NAV_GROUPS;
+const FLAT_LINKS = ADMIN_NAV_FLAT;
 
 /** kankreg admin design board — ink sidebar + cream main + grouped nav. */
 export default function KankregAdminShell({ navigation, route, title, subtitle, headerRight, children }) {
@@ -101,6 +67,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
       <Pressable
         key={link.key}
         onPress={() => stackNav.navigate(link.key)}
+        accessibilityLabel={`${link.label}. ${link.hint || ""}`}
         style={[
           styles.sideLink,
           row && styles.sideLinkRow,
@@ -123,14 +90,24 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
         accessibilityRole="button"
         accessibilityState={{ selected: on }}
       >
-        <Ionicons
-          name={link.icon}
-          size={16}
-          color={on ? chrome.goldBright : palette.linkMuted}
+        <AdminNavIcon
+          imageKey={link.image}
+          icon={link.icon}
+          tone={link.tone}
+          size={row ? 30 : 34}
+          compact={row}
+          active={on}
         />
-        <Text style={[styles.sideLinkText, { color: palette.linkMuted }, on && styles.sideLinkTextOn]}>
-          {link.label}
-        </Text>
+        <View style={styles.sideLinkCopy}>
+          <Text style={[styles.sideLinkText, { color: palette.linkMuted }, on && styles.sideLinkTextOn]}>
+            {link.label}
+          </Text>
+          {!row && link.hint ? (
+            <Text style={styles.sideLinkHint} numberOfLines={1}>
+              {link.hint}
+            </Text>
+          ) : null}
+        </View>
       </Pressable>
     );
   }
@@ -142,13 +119,27 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
         <Text style={[styles.brand, { color: palette.brand }]}>Zeevan</Text>
       </View>
       <Text style={styles.badge}>ADMIN CONSOLE</Text>
-      {NAV_GROUPS.map((group) => (
-        <View key={group.key}>
-          <Text style={[styles.grp, { color: palette.groupLabel }]}>{group.label}</Text>
-          {group.links.map((link) => renderLink(link))}
-        </View>
-      ))}
-      <View style={styles.sideSpacer} />
+      <ScrollView
+        style={styles.sideScroll}
+        contentContainerStyle={styles.sideScrollInner}
+        showsVerticalScrollIndicator={false}
+      >
+        {NAV_GROUPS.map((group) => (
+          <View key={group.key}>
+            <Text style={[styles.grp, { color: palette.groupLabel }]}>{group.label}</Text>
+            {group.links.map((link) => renderLink(link))}
+          </View>
+        ))}
+      </ScrollView>
+      <Pressable
+        onPress={() => stackNav.navigate("Home")}
+        style={styles.exitStore}
+        accessibilityRole="button"
+        accessibilityLabel="Exit to store"
+      >
+        <Ionicons name="storefront-outline" size={15} color={KANKREG_PALETTE.goldBright} />
+        <Text style={styles.exitStoreText}>Exit to store</Text>
+      </Pressable>
       <View style={[styles.me, { borderTopColor: palette.meBorder }]}>
         <View style={styles.meAv}>
           <Text style={styles.meAvText}>{adminInitial}</Text>
@@ -172,6 +163,15 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
       </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sideScrollContent}>
         {FLAT_LINKS.map((link) => renderLink(link, true))}
+        <Pressable
+          onPress={() => stackNav.navigate("Home")}
+          style={styles.exitStoreRow}
+          accessibilityRole="button"
+          accessibilityLabel="Exit to store"
+        >
+          <Ionicons name="storefront-outline" size={14} color={KANKREG_PALETTE.goldBright} />
+          <Text style={styles.exitStoreText}>Store</Text>
+        </Pressable>
       </ScrollView>
     </View>
   ) : null;
@@ -182,8 +182,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
         styles.shell,
         !showSidebar && styles.shellStack,
         isPhone && styles.shellPhone,
-        { backgroundColor: palette.shellBg, borderColor: palette.shellBorder },
-        Platform.OS === "web" ? { boxShadow: palette.shellShadow } : null,
+        { backgroundColor: palette.shellBg },
       ]}
     >
       {sidebarContent}
@@ -207,9 +206,10 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
         {showMobileNav ? (
           <View style={isPhone ? { paddingHorizontal: pageGutter } : styles.mobileNavWrap}>
             <AdminMobileNav
-              links={FLAT_LINKS}
+              groups={NAV_GROUPS}
               current={current}
               onNavigate={(key) => stackNav.navigate(key)}
+              onExitStore={() => stackNav.navigate("Home")}
             />
           </View>
         ) : null}
@@ -231,17 +231,15 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
 const styles = StyleSheet.create({
   shell: {
     flexDirection: "row",
-    minHeight: Platform.OS === "web" ? "72vh" : undefined,
+    minHeight: Platform.OS === "web" ? "100vh" : undefined,
     flex: 1,
-    borderRadius: Platform.OS === "web" ? 22 : 0,
+    borderRadius: 0,
     overflow: "hidden",
-    borderWidth: Platform.OS === "web" ? 1 : 0,
-    marginHorizontal: Platform.OS === "web" ? spacing.md : 0,
-    marginBottom: Platform.OS === "web" ? spacing.lg : 0,
-    ...Platform.select({
-      web: {},
-      default: {},
-    }),
+    borderWidth: 0,
+    marginHorizontal: 0,
+    marginBottom: 0,
+    width: "100%",
+    alignSelf: "stretch",
   },
   shellPhone: {
     marginHorizontal: 0,
@@ -252,13 +250,58 @@ const styles = StyleSheet.create({
   },
   shellStack: { flexDirection: "column" },
   side: {
-    width: 224,
+    width: Platform.select({ web: 268, default: 224 }),
     paddingVertical: 22,
     paddingHorizontal: 14,
     flexDirection: "column",
-    minHeight: Platform.OS === "web" ? 680 : undefined,
+    minHeight: Platform.OS === "web" ? "100vh" : undefined,
+    ...Platform.select({
+      web: {
+        position: "sticky",
+        top: 0,
+        alignSelf: "flex-start",
+        height: "100vh",
+        borderRightWidth: 1,
+        borderRightColor: "rgba(255,255,255,0.06)",
+      },
+      default: {},
+    }),
   },
-  sideSpacer: { flex: 1, minHeight: 12 },
+  exitStore: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(232,200,90,0.32)",
+    backgroundColor: "rgba(232,200,90,0.1)",
+    ...Platform.select({
+      web: { cursor: "pointer", transition: "background-color 0.12s ease" },
+      default: {},
+    }),
+  },
+  exitStoreText: {
+    fontSize: 12,
+    fontFamily: fonts.semibold,
+    color: KANKREG_PALETTE.goldBright,
+  },
+  exitStoreRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginHorizontal: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(232,200,90,0.28)",
+    backgroundColor: "rgba(232,200,90,0.08)",
+  },
+  sideScroll: { flex: 1, minHeight: 0 },
+  sideScrollInner: { paddingBottom: 12 },
   sideRow: { width: "100%", paddingVertical: 14 },
   topNavStrip: {
     flexDirection: "row",
@@ -280,31 +323,36 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   brandDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
     backgroundColor: KANKREG_PALETTE.goldBright,
+    ...Platform.select({
+      web: { boxShadow: "0 0 0 3px rgba(232,200,90,0.18)" },
+      default: {},
+    }),
   },
   brand: {
     fontFamily: FONT_HEADING,
-    fontSize: 21,
+    fontSize: 22,
     fontWeight: "600",
+    letterSpacing: -0.3,
   },
   badge: {
     fontSize: 9,
-    letterSpacing: 2.2,
+    letterSpacing: 2.4,
     color: KANKREG_PALETTE.goldBright,
     paddingHorizontal: 10,
-    marginBottom: 22,
+    marginBottom: 20,
     fontFamily: fonts.bold,
   },
   grp: {
     fontSize: 9,
-    letterSpacing: 1.6,
+    letterSpacing: 1.7,
     textTransform: "uppercase",
     paddingHorizontal: 12,
-    paddingTop: 14,
-    paddingBottom: 6,
+    paddingTop: 16,
+    paddingBottom: 7,
     fontFamily: fonts.semibold,
   },
   brandRowLabel: {
@@ -319,19 +367,30 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 11,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    marginVertical: 3,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    marginVertical: 2,
+    ...Platform.select({
+      web: { cursor: "pointer", transition: "background-color 0.12s ease, border-color 0.12s ease" },
+      default: {},
+    }),
   },
-  sideLinkRow: { marginVertical: 0, marginHorizontal: 4 },
+  sideLinkRow: { marginVertical: 0, marginHorizontal: 4, paddingVertical: 6 },
+  sideLinkCopy: { flex: 1, minWidth: 0 },
   sideLinkText: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontFamily: fonts.medium,
   },
   sideLinkTextOn: {
     color: KANKREG_PALETTE.goldBright,
     fontFamily: fonts.semibold,
+  },
+  sideLinkHint: {
+    marginTop: 1,
+    fontSize: 10,
+    color: "#8a8074",
+    fontFamily: fonts.regular,
   },
   me: {
     marginTop: "auto",
@@ -343,9 +402,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
   },
   meAv: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: KANKREG_PALETTE.goldBright,
     alignItems: "center",
     justifyContent: "center",
@@ -357,7 +416,7 @@ const styles = StyleSheet.create({
   },
   meText: { flex: 1, minWidth: 0 },
   meName: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontFamily: fonts.semibold,
   },
   meEmail: {
@@ -369,8 +428,11 @@ const styles = StyleSheet.create({
   content: { flex: 1, width: "100%" },
   contentWeb: {
     paddingHorizontal: adminShellMainPadding(),
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.lg,
+    paddingTop: spacing.md + 2,
+    paddingBottom: spacing.xl + 8,
+    maxWidth: 1320,
+    width: "100%",
+    alignSelf: "stretch",
   },
   contentPhone: {
     paddingTop: spacing.xs,

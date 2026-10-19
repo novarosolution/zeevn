@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { adminTwoColAside, adminTwoColMain, adminTwoColStyle, useAdminCompactLayout } from "../../theme/adminLayout";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
@@ -8,15 +8,25 @@ import { formatINR } from "../../utils/currency";
 import { getOrderItemQty } from "../../utils/adminOrderHelpers";
 import {
   ALL_ORDER_STATUSES,
+  INVOICE_STATUS_VALUES,
   ORDER_ADMIN_NEXT_STATUS,
+  formatEventClock,
   getOrderStatusLabel,
   getAdminNextStatusLabel,
 } from "../../utils/orderStatus";
 import AdminPanel from "./AdminPanel";
+import AdminOrderQuickActions from "./AdminOrderQuickActions";
 import PremiumInput from "../ui/PremiumInput";
 import PremiumButton from "../ui/PremiumButton";
 import PremiumChip from "../ui/PremiumChip";
 import SectionReveal from "../motion/SectionReveal";
+
+const ETA_PRESETS = [
+  { min: "20", max: "35", label: "20–35m" },
+  { min: "30", max: "45", label: "30–45m" },
+  { min: "45", max: "60", label: "45–60m" },
+  { min: "60", max: "90", label: "60–90m" },
+];
 
 function InfoRow({ label, value, c }) {
   return (
@@ -37,16 +47,61 @@ export default function AdminOrderManagePanel({
   onAssignDelivery,
   onStatus,
   onDelete,
+  onCancelOrder,
 }) {
   const { colors: c } = useTheme();
   const compact = useAdminCompactLayout();
   const panelStyles = useMemo(() => createStyles(c), [c]);
   const nextStatus = ORDER_ADMIN_NEXT_STATUS[order.status];
   const statuses = ALL_ORDER_STATUSES;
+  const phone = String(order.shippingAddress?.phone || order.user?.phone || "").trim();
+
+  const applyEtaPreset = (preset) => {
+    onUpdateField("etaMinutesMin", preset.min);
+    onUpdateField("etaMinutesMax", preset.max);
+  };
+
+  const callCustomer = () => {
+    if (!phone) return;
+    Linking.openURL(`tel:${phone.replace(/\s+/g, "")}`);
+  };
 
   const leftColumn = (
     <>
-      <AdminPanel title="Line items" meta={`${getOrderItemQty(order)} units`}>
+      <AdminPanel
+        title="Customer contact"
+        icon="call-outline"
+        meta={phone ? "Reachable" : "No phone"}
+        description="Call or note the shipping contact for this run."
+      >
+        <InfoRow label="Name" value={order.shippingAddress?.fullName || order.user?.name} c={c} />
+        <InfoRow label="Phone" value={phone || "—"} c={c} />
+        <InfoRow label="Email" value={order.user?.email} c={c} />
+        <View style={panelStyles.contactActions}>
+          <PremiumButton
+            label="Call customer"
+            iconLeft="call-outline"
+            variant="primary"
+            size="sm"
+            disabled={!phone}
+            onPress={callCustomer}
+          />
+          <PremiumButton
+            label="Copy phone"
+            iconLeft="copy-outline"
+            variant="ghost"
+            size="sm"
+            disabled={!phone || Platform.OS !== "web"}
+            onPress={() => {
+              if (Platform.OS === "web" && phone && globalThis.navigator?.clipboard?.writeText) {
+                globalThis.navigator.clipboard.writeText(phone);
+              }
+            }}
+          />
+        </View>
+      </AdminPanel>
+
+      <AdminPanel title="Line items" icon="basket-outline" meta={`${getOrderItemQty(order)} units`} description="Products and quantities on this order.">
         {(order.products || []).length ? (
           (order.products || []).map((product, index) => (
             <View
@@ -67,7 +122,7 @@ export default function AdminOrderManagePanel({
         )}
       </AdminPanel>
 
-      <AdminPanel title="Payment summary">
+      <AdminPanel title="Payment summary" icon="card-outline" description="Fees, discounts, and gateway refs.">
         <InfoRow label="Items total" value={formatINR(Number(order.priceBreakdown?.itemsTotal || 0))} c={c} />
         <InfoRow label="Delivery fee" value={formatINR(Number(order.priceBreakdown?.deliveryFee || 0))} c={c} />
         <InfoRow label="Platform fee" value={formatINR(Number(order.priceBreakdown?.platformFee || 0))} c={c} />
@@ -92,7 +147,7 @@ export default function AdminOrderManagePanel({
         ) : null}
       </AdminPanel>
 
-      <AdminPanel title="Shipping address">
+      <AdminPanel title="Shipping address" icon="home-outline" description="Delivery destination and zone.">
         {order.deliveryZoneName ? (
           <InfoRow label="Delivery zone" value={order.deliveryZoneName} c={c} />
         ) : null}
@@ -116,7 +171,21 @@ export default function AdminOrderManagePanel({
 
   const rightColumn = (
     <>
-      <AdminPanel title="Fulfillment">
+      <AdminOrderQuickActions
+        status={order.status}
+        busy={busy}
+        compact={compact}
+        onAdvance={(status) => onStatus(order._id, status)}
+        onStatus={(status) => onStatus(order._id, status)}
+        onCancel={() => (onCancelOrder ? onCancelOrder() : onStatus(order._id, "cancelled"))}
+      />
+
+      <AdminPanel
+        title="Fulfillment"
+        icon="flash-outline"
+        meta={getOrderStatusLabel(order.status)}
+        description="Advance the run, or jump to any status. Notes show on the customer timeline."
+      >
         {nextStatus ? (
           <PremiumButton
             label={busy ? "Updating…" : `Advance to ${getAdminNextStatusLabel(order.status)}`}
@@ -139,6 +208,16 @@ export default function AdminOrderManagePanel({
           </Text>
         )}
 
+        <View style={panelStyles.fieldGap}>
+          <PremiumInput
+            label="Status note (customer timeline)"
+            value={editForm.statusNote}
+            onChangeText={(v) => onUpdateField("statusNote", v)}
+            iconLeft="chatbubble-ellipses-outline"
+            placeholder="e.g. Rider left the store"
+          />
+        </View>
+
         <Text style={[panelStyles.fieldLabel, { color: c.textSecondary }]}>Set status</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={panelStyles.statusChips}>
           {statuses.map((status) => (
@@ -154,7 +233,11 @@ export default function AdminOrderManagePanel({
         </ScrollView>
       </AdminPanel>
 
-      <AdminPanel title="Delivery partner">
+      <AdminPanel
+        title="Delivery partner"
+        icon="bicycle-outline"
+        description="Assign a rider — they must accept before the run goes live."
+      >
         <Text style={[panelStyles.emptyHint, { color: c.textSecondary, marginBottom: spacing.sm }]}>
           {order.assignedDeliveryUser?.name
             ? `Assigned: ${order.assignedDeliveryUser.name}${order.assignedDeliveryUser.phone ? ` · ${order.assignedDeliveryUser.phone}` : ""}`
@@ -214,7 +297,106 @@ export default function AdminOrderManagePanel({
         )}
       </AdminPanel>
 
-      <AdminPanel title="Edit order details">
+      <AdminPanel
+        title="Customer tracking"
+        icon="navigate-outline"
+        meta="Shown on My Orders"
+        description="ETA presets, courier, and tracking link for the customer app."
+      >
+        <Text style={[panelStyles.fieldLabel, { color: c.textSecondary }]}>ETA presets</Text>
+        <View style={panelStyles.assigneeChips}>
+          {ETA_PRESETS.map((preset) => (
+            <PremiumChip
+              key={preset.label}
+              label={preset.label}
+              tone="gold"
+              size="sm"
+              selected={editForm.etaMinutesMin === preset.min && editForm.etaMinutesMax === preset.max}
+              onPress={() => applyEtaPreset(preset)}
+            />
+          ))}
+        </View>
+        <View style={panelStyles.fieldGap}>
+          <PremiumInput
+            label="Tracking note"
+            value={editForm.trackingNote}
+            onChangeText={(v) => onUpdateField("trackingNote", v)}
+            iconLeft="navigate-outline"
+            placeholder="e.g. Almost at your gate"
+          />
+        </View>
+        <View style={panelStyles.splitRow}>
+          <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
+            <PremiumInput
+              label="ETA min (minutes)"
+              value={editForm.etaMinutesMin}
+              onChangeText={(v) => onUpdateField("etaMinutesMin", v)}
+              keyboardType="number-pad"
+            />
+          </View>
+          <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
+            <PremiumInput
+              label="ETA max (minutes)"
+              value={editForm.etaMinutesMax}
+              onChangeText={(v) => onUpdateField("etaMinutesMax", v)}
+              keyboardType="number-pad"
+            />
+          </View>
+        </View>
+        <View style={panelStyles.fieldGap}>
+          <PremiumInput
+            label="Courier name"
+            value={editForm.courierName}
+            onChangeText={(v) => onUpdateField("courierName", v)}
+            iconLeft="bicycle-outline"
+          />
+        </View>
+        <View style={panelStyles.fieldGap}>
+          <PremiumInput
+            label="Tracking ID"
+            value={editForm.trackingId}
+            onChangeText={(v) => onUpdateField("trackingId", v)}
+            autoCapitalize="characters"
+          />
+        </View>
+        <View style={panelStyles.fieldGap}>
+          <PremiumInput
+            label="Tracking URL"
+            value={editForm.trackingUrl}
+            onChangeText={(v) => onUpdateField("trackingUrl", v)}
+            autoCapitalize="none"
+            iconLeft="link-outline"
+          />
+        </View>
+        <PremiumButton
+          label={busy ? "Saving…" : "Save tracking"}
+          iconLeft="save-outline"
+          variant="secondary"
+          size="md"
+          fullWidth
+          loading={busy}
+          disabled={busy}
+          onPress={onSaveDetails}
+        />
+        {(order.statusHistory || []).length ? (
+          <View style={panelStyles.timeline}>
+            <Text style={[panelStyles.fieldLabel, { color: c.textSecondary }]}>Status timeline</Text>
+            {[...order.statusHistory].reverse().map((ev, i) => (
+              <View key={`${ev.status}-${ev.at}-${i}`} style={panelStyles.timelineRow}>
+                <Text style={[panelStyles.timelineStatus, { color: c.textPrimary }]}>
+                  {getOrderStatusLabel(ev.status)}
+                </Text>
+                <Text style={[panelStyles.timelineMeta, { color: c.textMuted }]}>
+                  {formatEventClock(ev.at)}
+                  {ev.note ? ` · ${ev.note}` : ""}
+                </Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </AdminPanel>
+
+      <AdminPanel title="Edit order details" icon="create-outline" description="Payment method and shipping fields.">
         <View style={panelStyles.fieldGap}>
           <PremiumInput
             label="Payment method"
@@ -289,7 +471,7 @@ export default function AdminOrderManagePanel({
         />
       </AdminPanel>
 
-      <AdminPanel title="Invoice">
+      <AdminPanel title="Invoice" icon="document-text-outline" description="Invoice number, tax, and due dates.">
         <View style={panelStyles.fieldGap}>
           <PremiumInput
             label="Invoice number"
@@ -328,13 +510,19 @@ export default function AdminOrderManagePanel({
             />
           </View>
           <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
-            <PremiumInput
-              label="Status"
-              value={editForm.invoiceStatus}
-              onChangeText={(v) => onUpdateField("invoiceStatus", v)}
-              placeholder="draft / final / paid"
-              autoCapitalize="none"
-            />
+            <Text style={[panelStyles.fieldLabel, { color: c.textSecondary }]}>Invoice status</Text>
+            <View style={panelStyles.assigneeChips}>
+              {INVOICE_STATUS_VALUES.map((status) => (
+                <PremiumChip
+                  key={status}
+                  label={status}
+                  tone="gold"
+                  size="sm"
+                  selected={editForm.invoiceStatus === status}
+                  onPress={() => onUpdateField("invoiceStatus", status)}
+                />
+              ))}
+            </View>
           </View>
         </View>
         <View style={panelStyles.fieldGap}>
@@ -439,10 +627,17 @@ function createStyles(c) {
       fontSize: typography.h3,
     },
     primaryAction: { marginBottom: spacing.md },
+    contactActions: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: spacing.xs,
+      marginTop: spacing.sm,
+    },
     fieldLabel: {
       fontSize: typography.caption,
       fontFamily: fonts.semibold,
       marginBottom: spacing.xs,
+      marginTop: spacing.xs,
     },
     statusChips: {
       flexDirection: "row",
@@ -454,6 +649,7 @@ function createStyles(c) {
       flexDirection: "row",
       flexWrap: "wrap",
       gap: spacing.xs,
+      marginBottom: spacing.sm,
     },
     fieldGap: { marginBottom: spacing.sm },
     splitRow: {
@@ -462,6 +658,10 @@ function createStyles(c) {
       ...Platform.select({ web: {}, default: { flexWrap: "wrap" } }),
     },
     halfField: { flex: 1, minWidth: 140 },
+    timeline: { marginTop: spacing.xs, gap: 8 },
+    timelineRow: { gap: 2 },
+    timelineStatus: { fontFamily: fonts.semibold, fontSize: typography.bodySmall },
+    timelineMeta: { fontFamily: fonts.regular, fontSize: typography.caption },
   });
 }
 

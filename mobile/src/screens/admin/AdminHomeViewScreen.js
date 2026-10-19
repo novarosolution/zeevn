@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ADMIN_GATE } from "../../content/adminContent";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
@@ -201,7 +201,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
   return (
     <AdminScreenShell style={styles.screen}>
       <KankregScrollPage
-        scrollVariant="inner"
+        scrollVariant="admin"
         showFooter={false}
         style={customerScrollFill}
         showsVerticalScrollIndicator={false}
@@ -209,17 +209,30 @@ export default function AdminHomeViewScreen({ navigation, route }) {
         <KankregAdminShell
           navigation={navigation}
           route={route}
-          title="Home view editor"
-          subtitle="Control the customer home screen"
+          title={ADMIN_SCREEN_COPY.homeView.title}
+          subtitle={ADMIN_SCREEN_COPY.homeView.subtitle}
           headerRight={
-            <PremiumButton label="Save changes" variant="primary" size="sm" onPress={handleSave} loading={saving} disabled={saving} />
+            <PremiumButton
+              label={saving ? "Saving…" : "Save"}
+              variant="primary"
+              size="sm"
+              iconLeft="save-outline"
+              onPress={handleSave}
+              loading={saving}
+              disabled={saving}
+            />
           }
         >
         <View style={[adminTwoColStyle(compact), styles.panel]}>
           <View style={adminTwoColMain(compact)}>
           <AdminAlerts error={error} success={success} onCloseError={() => setError("")} onCloseSuccess={() => setSuccess("")} />
 
-          <AdminPanel title="Home layout">
+          <AdminPanel
+            title="Hero & layout"
+            icon="sparkles-outline"
+            meta="Customer home"
+            description="Hero copy, slides, and which home sections stay visible."
+          >
           <Section label={copy.heroSection} hint={copy.heroHint} styles={styles} revealIndex={0}>
             <View style={styles.fieldGap}>
               <PremiumInput label="Hero title" value={heroTitle} onChangeText={setHeroTitle} iconLeft="sparkles-outline" />
@@ -281,6 +294,12 @@ export default function AdminHomeViewScreen({ navigation, route }) {
           />
           </AdminPanel>
 
+          <AdminPanel
+            title="Shop location"
+            icon="navigate-outline"
+            meta="Maps & distance"
+            description="Name, coords, and radius used for Find location."
+          >
           <Section label={copy.shopLocationSection} hint={copy.shopLocationHint} styles={styles} revealIndex={4}>
             <View style={styles.fieldGap}>
               <PremiumInput
@@ -342,7 +361,13 @@ export default function AdminHomeViewScreen({ navigation, route }) {
               loading={gpsLoading}
             />
           </Section>
+          </AdminPanel>
 
+          <AdminPanel
+            title="Look & festival"
+            icon="color-palette-outline"
+            description="Theme accents and seasonal festival presentation."
+          >
           <Section label={copy.cardLayoutSection} hint={copy.cardLayoutHint} styles={styles} revealIndex={5}>
             <View style={styles.row}>
               <PremiumChip
@@ -378,8 +403,13 @@ export default function AdminHomeViewScreen({ navigation, route }) {
               ))}
             </View>
           </Section>
+          </AdminPanel>
 
-          <Section label={copy.quickLinks} hint={null} styles={styles} revealIndex={7}>
+          <AdminPanel
+            title="Quick links"
+            icon="link-outline"
+            description="Shortcut tiles shown on the customer home."
+          >
             <View style={[styles.linkStack, { borderColor: c.border }]}>
               <QuickLinkRow
                 title={copy.linkProductsTitle}
@@ -399,11 +429,23 @@ export default function AdminHomeViewScreen({ navigation, route }) {
                 c={c}
               />
             </View>
-          </Section>
+          </AdminPanel>
+
+          <PremiumButton
+            label={saving ? "Saving…" : "Save storefront"}
+            iconLeft="save-outline"
+            variant="primary"
+            size="md"
+            fullWidth
+            loading={saving}
+            disabled={saving}
+            onPress={handleSave}
+            style={styles.saveBottom}
+          />
 
           </View>
           <View style={adminTwoColAside(compact)}>
-            <AdminPanel title="Live preview">
+            <AdminPanel title="Live preview" icon="phone-portrait-outline" description="Phone frame of the customer home.">
               <AdminPhonePreview
                 heroTitle={heroTitle}
                 heroSubtitle={heroSubtitle}
@@ -430,6 +472,7 @@ function createAdminHomeViewStyles(c, shadowPremium) {
     gateCta: {
       marginTop: spacing.md,
       alignSelf: "flex-start"},
+    saveBottom: { marginTop: spacing.sm, marginBottom: spacing.md },
     toggleCard: {
       marginBottom: spacing.sm},
     modeChip: {

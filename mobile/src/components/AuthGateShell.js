@@ -61,7 +61,7 @@ export default function AuthGateShell({ navigation, signedOut = false }) {
     <CustomerScreenShell style={styles.shell}>
       <SessionExpiredBanner onSignIn={goToLogin} />
       <View style={styles.fill}>
-        <AppStartupScreen useAppFonts={false} footnote="Checking your session…" />
+        <AppStartupScreen useAppFonts={false} footnote="Checking your session…" intro={false} />
       </View>
       <BottomNavBar />
     </CustomerScreenShell>

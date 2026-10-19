@@ -15,7 +15,7 @@ import {
 } from "../../theme/web";
 import KankregBrandMark from "./KankregBrandMark";
 import { KankregMobileNav } from "./loadKankregMobileNav";
-import { buildKankregMobileNavItems, buildKankregNavItems, routeMatchesNav } from "./kankregNav";
+import { buildKankregMobileNavItems, buildKankregNavItems, isAdminRoute, routeMatchesNav } from "./kankregNav";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { KANKREG_HEADER } from "../../content/appContent";
 import { safeNavigate } from "../../navigation/navigationRef";
@@ -90,6 +90,11 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
 
   /** Native app uses per-screen chrome + bottom tab bar (figmaforkankreg.html). */
   if (isNative) {
+    return null;
+  }
+
+  /** Admin desk is full-screen — no customer Home/Shop/Cart chrome. */
+  if (isAdminRoute(currentRouteName)) {
     return null;
   }
 

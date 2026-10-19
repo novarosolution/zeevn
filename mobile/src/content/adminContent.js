@@ -11,64 +11,75 @@ export const ADMIN_GATE = {
 
 export const ADMIN_SCREEN_COPY = {
   dashboard: {
-    title: "Command center",
-    subtitle: "Live ops — open runs, rider accepts, stock alerts",
+    title: "Command",
+    subtitle: "What needs you now — open runs, accepts, stock",
   },
   delivery: {
     title: "Zones & riders",
-    subtitle: "Delivery areas, fees, and partner GPS health",
-    emptyZones: "No delivery zones yet — seed or create one",
-    emptyPartners: "No delivery partners enabled",
+    subtitle: "Set areas, fees, and check partner GPS",
+    emptyZones: "No delivery zones yet — create one to start",
+    emptyPartners: "No delivery partners enabled yet",
   },
   products: {
     title: "Products",
-    subtitle: "Catalog, pricing, and stock status",
-    empty: "No products in catalog",
-    emptySearch: "No matching products",
+    subtitle: "Add, price, and publish catalogue items",
+    empty: "No products yet — add your first jar",
+    emptySearch: "No products match that search",
   },
   orders: {
     title: "Orders",
-    subtitle: "New orders alert via email & WhatsApp — confirm and complete here",
+    subtitle: "Confirm, assign, and track every run",
     emptyFilter: "No orders match this filter",
+    empty: "No orders yet",
   },
   users: {
     title: "Users",
-    subtitle: "Registered customers, roles, and access",
+    subtitle: "Customers, admins, and delivery partners",
+    empty: "No users found",
   },
   notifications: {
     title: "Notify",
-    subtitle: "Broadcast push messages to customers",
-    empty: "No notifications sent yet",
+    subtitle: "Send a broadcast push to customers",
+    empty: "No broadcasts sent yet",
   },
   analytics: {
     title: "Analytics",
-    subtitle: "Store performance and trends",
+    subtitle: "Revenue, orders, and catalogue trends",
   },
   coupons: {
     title: "Coupons",
-    subtitle: "Discount campaigns and usage",
+    subtitle: "Create codes and track redemptions",
+    empty: "No coupons yet",
   },
   rewards: {
     title: "Rewards",
-    subtitle: "Points catalog and redemptions",
+    subtitle: "Points catalog and claim status",
     empty: "No rewards yet",
   },
   support: {
     title: "Support",
-    subtitle: "Customer conversations and replies",
+    subtitle: "Reply to customer conversations",
     empty: "No support messages yet",
-    selectThread: "Select a conversation",
+    selectThread: "Select a conversation to reply",
   },
   homeView: {
-    title: "Home view editor",
-    subtitle: "Control the customer home screen",
+    title: "Store & home",
+    subtitle: "Hero, festival look, and home sections",
   },
   addProduct: {
     title: "Add product",
-    subtitle: "Create a new catalogue item",
+    subtitle: "Name, price, stock, and photos",
   },
   inventory: {
-    title: "Inventory",
-    subtitle: "Stock auto-updates when orders are placed — adjust qty or mark out of stock",
+    title: "Stock desk",
+    subtitle: "Adjust qty or mark out of stock",
+    empty: "No stock rows yet",
   },
+};
+
+/** Shared empty / loading strings for list screens. */
+export const ADMIN_LIST_UI = {
+  loading: "Loading…",
+  refresh: "Refresh",
+  searchPlaceholder: "Search…",
 };

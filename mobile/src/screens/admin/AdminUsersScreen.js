@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ADMIN_GATE } from "../../content/adminContent";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import { Alert, Platform, StyleSheet, Text, View } from "react-native";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
 import AdminScreenShell from "../../components/admin/AdminScreenShell";
@@ -36,6 +36,8 @@ import PremiumChip from "../../components/ui/PremiumChip";
 import AdminPanel from "../../components/admin/AdminPanel";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import AdminStatusPill from "../../components/admin/AdminStatusPill";
+import AdminKpiCard, { AdminKpiGrid } from "../../components/admin/AdminKpiCard";
+import AdminToolbar, { AdminToolbarSlot } from "../../components/admin/AdminToolbar";
 import { FONT_HEADING } from "../../theme/typographyRoles";
 
 export default function AdminUsersScreen({ navigation, route }) {
@@ -140,15 +142,6 @@ export default function AdminUsersScreen({ navigation, route }) {
     );
   }
 
-  function MetricCard({ label, value }) {
-    return (
-      <View style={styles.metricCard}>
-        <Text style={styles.metricValue}>{value}</Text>
-        <Text style={styles.metricLabel}>{label}</Text>
-      </View>
-    );
-  }
-
   function RoleBadges({ isAdmin, isDeliveryPartner }) {
     return (
       <View style={styles.roleBadgeRow}>
@@ -226,8 +219,8 @@ export default function AdminUsersScreen({ navigation, route }) {
         <KankregAdminShell
           navigation={navigation}
           route={route}
-          title="Users"
-          subtitle={`${stats.total.toLocaleString()} registered`}
+          title={ADMIN_SCREEN_COPY.users.title}
+          subtitle={ADMIN_SCREEN_COPY.users.subtitle}
         >
         <View style={styles.panel}>
           <SectionReveal preset="fade-up" delay={0}>
@@ -242,51 +235,53 @@ export default function AdminUsersScreen({ navigation, route }) {
             </View>
           ) : null}
 
-          <View style={styles.statsGrid}>
-            <MetricCard label="Total" value={stats.total} />
-            <MetricCard label="Admins" value={stats.admins} />
-            <MetricCard label="Customers" value={stats.customers} />
-            <MetricCard label="Address Saved" value={stats.usersWithAddress} />
-            <MetricCard label="Delivery" value={stats.deliveryPartners} />
-          </View>
-
-          <View style={styles.actionsRow}>
-            <View style={styles.searchInputWrap}>
-              <PremiumInput
-                label="Search users"
-                value={search}
-                onChangeText={setSearch}
-                placeholder="Name, email, or phone"
-                iconLeft="search-outline"
-                iconRight={search ? "close-circle" : undefined}
-                onIconRightPress={search ? () => setSearch("") : undefined}
-                autoCapitalize="none"
+          <AdminPanel
+            title="People pulse"
+            icon="people-outline"
+            meta="Tap to filter"
+            description="Admins, customers, and delivery partners — tap a tile to filter."
+          >
+            <AdminKpiGrid compact={compactAdmin}>
+              <AdminKpiCard label="Total" value={String(stats.total)} onPress={() => setRoleFilter("all")} />
+              <AdminKpiCard label="Admins" value={String(stats.admins)} onPress={() => setRoleFilter("admins")} />
+              <AdminKpiCard label="Customers" value={String(stats.customers)} onPress={() => setRoleFilter("customers")} />
+              <AdminKpiCard label="Address saved" value={String(stats.usersWithAddress)} />
+              <AdminKpiCard
+                label="Delivery"
+                value={String(stats.deliveryPartners)}
+                onPress={() => setRoleFilter("delivery")}
               />
+            </AdminKpiGrid>
+          </AdminPanel>
+
+          <AdminPanel
+            title="Directory"
+            icon="search-outline"
+            meta={`${visibleUsers.length} shown`}
+            description="Search by name, email, or phone. Assign admin or delivery roles from the list."
+          >
+            <AdminToolbar>
+              <AdminToolbarSlot flex>
+                <PremiumInput
+                  label="Search users"
+                  value={search}
+                  onChangeText={setSearch}
+                  placeholder="Name, email, or phone"
+                  iconLeft="search-outline"
+                  iconRight={search ? "close-circle" : undefined}
+                  onIconRightPress={search ? () => setSearch("") : undefined}
+                  autoCapitalize="none"
+                />
+              </AdminToolbarSlot>
+              <PremiumButton label="Refresh" iconLeft="refresh-outline" variant="secondary" size="sm" onPress={loadUsers} />
+            </AdminToolbar>
+            <View style={styles.filtersRow}>
+              <FilterPill label="All" active={roleFilter === "all"} onPress={() => setRoleFilter("all")} />
+              <FilterPill label="Admins" active={roleFilter === "admins"} onPress={() => setRoleFilter("admins")} />
+              <FilterPill label="Customers" active={roleFilter === "customers"} onPress={() => setRoleFilter("customers")} />
+              <FilterPill label="Delivery" active={roleFilter === "delivery"} onPress={() => setRoleFilter("delivery")} />
             </View>
-            <PremiumButton label="Refresh" iconLeft="refresh-outline" variant="secondary" size="sm" onPress={loadUsers} />
-          </View>
-          <View style={styles.filtersRow}>
-            <FilterPill
-              label="All"
-              active={roleFilter === "all"}
-              onPress={() => setRoleFilter("all")}
-            />
-            <FilterPill
-              label="Admins"
-              active={roleFilter === "admins"}
-              onPress={() => setRoleFilter("admins")}
-            />
-            <FilterPill
-              label="Customers"
-              active={roleFilter === "customers"}
-              onPress={() => setRoleFilter("customers")}
-            />
-            <FilterPill
-              label="Delivery"
-              active={roleFilter === "delivery"}
-              onPress={() => setRoleFilter("delivery")}
-            />
-          </View>
+          </AdminPanel>
           </SectionReveal>
 
           <SectionReveal preset="fade-up" delay={60}>
@@ -348,7 +343,7 @@ export default function AdminUsersScreen({ navigation, route }) {
             {visibleUsers.length === 0 ? (
               <PremiumEmptyState
                 iconName="people-outline"
-                title="No users match"
+                title={ADMIN_SCREEN_COPY.users.empty}
                 description={search.trim() || roleFilter !== "all" ? "Try clearing search or switching the role filter." : "No accounts loaded yet."}
                 compact
               />
@@ -492,7 +487,7 @@ function createAdminUsersStyles(c, shadowPremium, compact = false) {
     flex: 1,
     width: "100%",
     alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" })},
+    maxWidth: "100%"},
     panel: adminShellContent(),
     gatePanel: adminGatePanel(c, shadowPremium),
   gateCta: {

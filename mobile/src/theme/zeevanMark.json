@@ -1,0 +1,27 @@
+{
+  "_about": "Zeevan launch emblem: a gold ring with a sprouting leaf. One source for the native splash images (scripts/generate-splash-assets.js) and the animated boot screen (src/components/startup/ZeevanEmblem.js), so the two always match. Coordinates live in a 100-unit box; the canvas adds 30 units of margin on every side.",
+  "box": 100,
+  "margin": 30,
+  "background": { "light": "#F7F2E8", "dark": "#1A1714" },
+  "ring": { "cx": 50, "cy": 50, "r": 45.5 },
+  "gradients": {
+    "gold": { "from": [15, 0], "to": [85, 100] },
+    "leaf": { "from": [82, 24], "to": [28, 70] }
+  },
+  "palette": {
+    "light": { "top": "#F1D493", "mid": "#D6A24C", "bot": "#A8772B", "glint": "#FFE9B8", "dust": "#C99338" },
+    "dark": { "top": "#F7E2B4", "mid": "#E4B873", "bot": "#B98A3C", "glint": "#FFF3D6", "dust": "#EBC585" }
+  },
+  "halo": { "cx": 50, "cy": 55, "r": 32, "opacity": { "light": 0.22, "dark": 0.2 } },
+  "layers": [
+    { "kind": "circle", "cx": 50, "cy": 50, "r": 45.5, "stroke": "gold", "width": 2.1 },
+    { "kind": "circle", "cx": 50, "cy": 50, "r": 41.2, "stroke": "gold", "width": 0.55, "opacity": 0.55 },
+    { "kind": "path", "d": "M50 0.6 L52.7 3.6 L50 6.6 L47.3 3.6 Z", "fill": "gold" },
+    { "kind": "path", "d": "M50 80 C50.6 70 49.4 60 50 51", "stroke": "gold", "width": 2.5, "cap": "round" },
+    { "kind": "path", "d": "M50 60.5 C47 44 58.5 31 77 28 C78 45.5 68.5 58.5 50 60.5 Z", "fill": "leaf" },
+    { "kind": "path", "d": "M50 69 C49 56.5 40 47.5 25.5 45.5 C25.5 59 35 68 50 69 Z", "fill": "leaf" },
+    { "kind": "path", "d": "M51.2 58.6 C57.5 50.5 64.5 42 72.5 33", "stroke": "#FFF8E6", "width": 0.9, "cap": "round", "opacity": 0.6 },
+    { "kind": "path", "d": "M49 67 C44 60 38 54 30.5 49.5", "stroke": "#FFF8E6", "width": 0.8, "cap": "round", "opacity": 0.55 },
+    { "kind": "path", "d": "M36.5 79.5 C43.5 83 56.5 83 63.5 79.5", "stroke": "gold", "width": 2, "cap": "round", "opacity": 0.85 }
+  ]
+}

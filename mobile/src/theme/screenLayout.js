@@ -303,16 +303,27 @@ export function customerInnerPageScrollContent(insets, extra = {}) {
   ];
 }
 
-/** Admin tool screens: same gutters + gap as customer inner pages, but bottom padding clears home indicator only (no floating nav). */
+/**
+ * Admin tool screens: full-bleed on web (no customer header offset).
+ * Bottom padding clears home indicator only (no floating customer nav).
+ */
 export function adminInnerPageScrollContent(insets, extra = {}) {
   return [
-    customerPageScrollBase,
     {
-      paddingTop: customerScrollPaddingTop(insets),
+      width: "100%",
+      alignSelf: "stretch",
+      maxWidth: "100%",
+      paddingHorizontal: 0,
+    },
+    {
+      paddingTop: Platform.select({
+        web: spacing.xs,
+        default: customerScrollPaddingTop(insets, { nativeMin: spacing.xs }),
+      }),
       paddingBottom: adminScrollPaddingBottom(insets),
-      gap: Platform.select({ web: CUSTOMER_INNER_PAGE_GAP, default: spacing.md }),
+      gap: Platform.select({ web: spacing.md, default: spacing.md }),
       ...Platform.select({
-        web: { flexGrow: 1 },
+        web: { flexGrow: 1, minHeight: "100vh" },
         default: {},
       }),
       ...extra,

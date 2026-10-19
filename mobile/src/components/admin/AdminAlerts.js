@@ -18,5 +18,10 @@ export default function AdminAlerts({ error, success, onCloseError, onCloseSucce
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: spacing.xs, marginBottom: spacing.sm },
+  wrap: {
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+    borderRadius: 14,
+    overflow: "hidden",
+  },
 });

@@ -7,7 +7,11 @@ import { fonts } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
 import { getOrderItemQty } from "../../utils/adminOrderHelpers";
 import { productCoverUri, productStockMeta } from "../../utils/adminProductHelpers";
-import { getOrderStatusLabel } from "../../utils/orderStatus";
+import {
+  ORDER_ADMIN_NEXT_STATUS,
+  getAdminNextStatusLabel,
+  getOrderStatusLabel,
+} from "../../utils/orderStatus";
 import AdminStatusPill, { orderStatusTone } from "./AdminStatusPill";
 import AdminProductCell from "./AdminProductCell";
 
@@ -101,14 +105,23 @@ export function buildOrderTableColumns({ onView, rowPressable = false }) {
       ),
     },
     {
+      key: "next",
+      label: "Next",
+      flex: 0.9,
+      render: (row) => {
+        const next = ORDER_ADMIN_NEXT_STATUS[String(row.status || "")];
+        return next ? getAdminNextStatusLabel(row.status) : "—";
+      },
+    },
+    {
       key: "view",
       label: "",
-      width: 56,
+      width: 72,
       align: "right",
       render: (row) =>
         onView ? (
           <AdminTableAction
-            label="View"
+            label="Manage"
             onPress={() => onView(row)}
             decorative={rowPressable}
           />

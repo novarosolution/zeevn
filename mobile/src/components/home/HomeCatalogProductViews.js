@@ -210,6 +210,9 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
   const unit = String(product?.unit || "").trim();
   const badge = String(product?.badgeText || (featured ? copy.featuredBadge : "")).trim();
   const name = String(product?.name || "").trim();
+  const ratingAvg = Number(product?.ratingAverage ?? product?.rating ?? 0) || 0;
+  const reviewCount = Number(product?.reviewCount ?? 0) || 0;
+  const showRating = isWeb && ratingAvg > 0;
 
   const ctaLabel = isComingSoon
     ? copy.comingSoon
@@ -261,8 +264,16 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
           )}
 
           {badge && !isComingSoon && !isOutOfStock ? (
-            <View style={[editorialStyles.badge, isDark && editorialStyles.badgeDark]}>
-              <Text style={editorialStyles.badgeText}>{badge}</Text>
+            <View
+              style={[
+                editorialStyles.badge,
+                phoneShop && savePct ? editorialStyles.badgeRight : null,
+                isDark && editorialStyles.badgeDark,
+              ]}
+            >
+              <Text style={editorialStyles.badgeText} numberOfLines={1}>
+                {badge}
+              </Text>
             </View>
           ) : null}
 
@@ -284,9 +295,9 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
         </View>
 
         <View style={[editorialStyles.bodyTop, featured && editorialStyles.bodyTopFeatured]}>
-          {(category || unit) ? (
+          {(category || unit) || isWeb ? (
             <Text style={[editorialStyles.meta, { color: muted }]} numberOfLines={1}>
-              {[category, unit].filter(Boolean).join(" · ")}
+              {[category, unit].filter(Boolean).join(" · ") || " "}
             </Text>
           ) : null}
 
@@ -294,6 +305,7 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
             className={isWeb ? PRODUCT_TITLE_CLASS : undefined}
             style={[
               editorialStyles.title,
+              isWeb && editorialStyles.titleWeb,
               featured && editorialStyles.titleFeatured,
               { color: ink },
             ]}
@@ -301,6 +313,28 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
           >
             {name}
           </Text>
+
+          {isWeb ? (
+            <View style={editorialStyles.ratingRow}>
+              {showRating ? (
+                <>
+                  <Ionicons name="star" size={11} color={ZEEVAN_GOLD.deep} />
+                  <Text style={[editorialStyles.ratingText, { color: ink }]}>
+                    {ratingAvg.toFixed(1)}
+                  </Text>
+                  {reviewCount > 0 ? (
+                    <Text style={[editorialStyles.ratingCount, { color: muted }]}>
+                      ({reviewCount})
+                    </Text>
+                  ) : null}
+                </>
+              ) : (
+                <Text style={[editorialStyles.ratingCount, { color: muted }]} numberOfLines={1}>
+                  {copy.newArrivalLabel || "Small batch"}
+                </Text>
+              )}
+            </View>
+          ) : null}
 
           <View style={editorialStyles.priceRow}>
             <Text
@@ -543,9 +577,34 @@ const editorialStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(36, 68, 36, 0.12)",
   },
+  /** Sits under the “% OFF” pill so the two never collide on narrow rail cards. */
+  badgeRight: {
+    top: 36,
+    left: 8,
+    maxWidth: "84%",
+  },
   badgeDark: {
     backgroundColor: "rgba(24, 21, 19, 0.88)",
     borderColor: "#3f3933",
+  },
+  titleWeb: {
+    minHeight: 36,
+  },
+  ratingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    minHeight: 16,
+  },
+  ratingText: {
+    fontFamily: fonts.semibold,
+    fontSize: 11,
+    lineHeight: 14,
+  },
+  ratingCount: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    lineHeight: 14,
   },
   badgeText: {
     fontFamily: fonts.semibold,

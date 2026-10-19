@@ -763,6 +763,7 @@ export const STORE_ORDERS = {
     paymentPending: "Awaiting payment",
     partnerOnWay: "On the way to you",
     callPartner: "Call delivery partner",
+    partnerPending: "Partner is confirming this run.",
   },
   actions: {
     reorder: "Order again",

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { ADMIN_GATE } from "../../content/adminContent";
+import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import { Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,6 +17,7 @@ import { FONT_HEADING, FONT_HEADING_SEMI, FONT_BODY_SEMIBOLD } from "../../theme
 import { adminPanel, useAdminCompactLayout } from "../../theme/adminLayout";
 import AdminKpiCard, { AdminKpiGrid } from "../../components/admin/AdminKpiCard";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
+import AdminPanel from "../../components/admin/AdminPanel";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
@@ -311,51 +312,58 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
       <KankregAdminShell
         navigation={navigation}
         route={route}
-        title="Analytics"
-        subtitle="Store performance"
+        title={ADMIN_SCREEN_COPY.analytics.title}
+        subtitle={ADMIN_SCREEN_COPY.analytics.subtitle}
         headerRight={
           <PremiumButton label="Export PDF" variant="ghost" size="sm" iconLeft="document-text-outline" onPress={handleExportPdf} disabled={!analytics} />
         }
       >
       {analytics && !loading ? (
         <>
-          <AdminFilterTabs
-            value={rangePreset}
-            onChange={setRangePreset}
-            items={[
-              { key: "7d", label: "7d" },
-              { key: "30d", label: "30d" },
-              { key: "90d", label: "90d" },
-              { key: "custom", label: "Custom" },
-            ]}
-            style={{ marginBottom: spacing.md }}
-          />
-          <AdminKpiGrid compact={compactAdmin}>
-            <AdminKpiCard
-              label="Visitors"
-              value={String(analytics.totals?.users || 0)}
-              delta="12%"
-              deltaUp
+          <AdminPanel
+            title="Period"
+            icon="bar-chart-outline"
+            meta="Store performance"
+            description="Pick a range, then scan visitors, orders, revenue, and AOV."
+          >
+            <AdminFilterTabs
+              value={rangePreset}
+              onChange={setRangePreset}
+              items={[
+                { key: "7d", label: "7d" },
+                { key: "30d", label: "30d" },
+                { key: "90d", label: "90d" },
+                { key: "custom", label: "Custom" },
+              ]}
+              style={{ marginBottom: spacing.md }}
             />
-            <AdminKpiCard
-              label="Orders"
-              value={String(analytics.totals?.orders || 0)}
-              delta="9%"
-              deltaUp
-            />
-            <AdminKpiCard
-              label="Revenue"
-              value={formatINR(analytics.revenue?.total || 0)}
-              delta="18%"
-              deltaUp
-            />
-            <AdminKpiCard
-              label="Avg. order"
-              value={formatINR(Math.round(analytics.revenue?.averageOrderValue || 0))}
-              delta="4%"
-              deltaUp
-            />
-          </AdminKpiGrid>
+            <AdminKpiGrid compact={compactAdmin}>
+              <AdminKpiCard
+                label="Visitors"
+                value={String(analytics.totals?.users || 0)}
+                delta="12%"
+                deltaUp
+              />
+              <AdminKpiCard
+                label="Orders"
+                value={String(analytics.totals?.orders || 0)}
+                delta="9%"
+                deltaUp
+              />
+              <AdminKpiCard
+                label="Revenue"
+                value={formatINR(analytics.revenue?.total || 0)}
+                delta="18%"
+                deltaUp
+              />
+              <AdminKpiCard
+                label="Avg. order"
+                value={formatINR(Math.round(analytics.revenue?.averageOrderValue || 0))}
+                delta="4%"
+                deltaUp
+              />
+            </AdminKpiGrid>
+          </AdminPanel>
         </>
       ) : null}
       <LinearGradient colors={heroColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.heroGradient, { borderColor: hairline }]}>

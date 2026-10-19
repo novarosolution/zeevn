@@ -68,7 +68,12 @@ export default function AdminDataTable({ columns, rows, keyExtractor, onRowPress
                 onPress={() => onRowPress(row)}
                 accessibilityRole={Platform.OS === "web" ? "link" : "button"}
                 accessibilityLabel="Open row"
-                style={({ pressed }) => [styles.tr, styles.trInteractive, pressed ? styles.trPressed : null]}
+                style={({ pressed, hovered }) => [
+                  styles.tr,
+                  styles.trInteractive,
+                  hovered && Platform.OS === "web" ? styles.trHover : null,
+                  pressed ? styles.trPressed : null,
+                ]}
               >
                 {cells}
               </Pressable>
@@ -100,54 +105,76 @@ function createStyles(chrome, interactive) {
       flexDirection: "row",
       borderBottomWidth: 1,
       borderBottomColor: chrome.line,
-      paddingVertical: 4,
+      paddingVertical: 2,
+      backgroundColor: Platform.select({ web: chrome.paper, default: "transparent" }),
+      ...Platform.select({
+        web: {
+          position: "sticky",
+          top: 0,
+          zIndex: 2,
+        },
+        default: {},
+      }),
     },
     th: {
       flex: 1,
-      paddingHorizontal: 10,
-      paddingVertical: 9,
+      paddingHorizontal: Platform.select({ web: 14, default: 10 }),
+      paddingVertical: Platform.select({ web: 12, default: 9 }),
       minWidth: 72,
     },
     thText: {
       fontSize: 10,
-      letterSpacing: 0.6,
+      letterSpacing: 0.8,
       textTransform: "uppercase",
       color: chrome.inkFaint,
       fontFamily: fonts.semibold,
     },
     tr: {
       flexDirection: "row",
-      borderBottomWidth: 1,
+      borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: chrome.lineSoft,
     },
     trInteractive: interactive
       ? Platform.select({
-          web: { cursor: "pointer" },
+          web: {
+            cursor: "pointer",
+            transition: "background-color 0.12s ease, box-shadow 0.12s ease",
+          },
           default: {},
         })
       : {},
+    trHover: {
+      backgroundColor: chrome.rowHover,
+      ...Platform.select({
+        web: {
+          boxShadow: `inset 3px 0 0 ${chrome.goldBright || chrome.gold}`,
+        },
+        default: {},
+      }),
+    },
     trPressed: {
       backgroundColor: chrome.rowHover,
       ...Platform.select({ web: { opacity: 0.92 }, default: {} }),
     },
     td: {
       flex: 1,
-      paddingHorizontal: 10,
-      paddingVertical: 11,
+      paddingHorizontal: Platform.select({ web: 14, default: 10 }),
+      paddingVertical: Platform.select({ web: 13, default: 11 }),
       justifyContent: "center",
       minWidth: 72,
     },
     tdText: {
-      fontSize: 12.5,
+      fontSize: Platform.select({ web: 13, default: 12.5 }),
       color: chrome.inkSoft,
       fontFamily: fonts.regular,
+      lineHeight: 18,
     },
     tdStrong: {
       color: chrome.ink,
       fontFamily: fonts.semibold,
     },
     alignRight: { alignItems: "flex-end" },
-    empty: { padding: 24, alignItems: "center" },
-    emptyText: { fontSize: 13, color: chrome.inkFaint },
+    empty: { padding: 28, alignItems: "center" },
+    emptyText: { fontSize: 13, color: chrome.inkFaint, fontFamily: fonts.medium },
   });
 }

@@ -14,11 +14,13 @@ import { formatOrderShortId, getPartnerInitial } from "../../utils/orderDisplay"
 import { formatPaymentStatusLabel, getInvoiceStatusBadge, resolveInvoiceNumber } from "../../utils/orderInvoiceMeta";
 import {
   ORDER_PROGRESS_STEPS,
+  formatDeliveryEta,
   getActiveProgressStep,
   getOrderStatusHint,
   getOrderStatusLabel,
   isCancelledOrder,
   isDeliveredOrder,
+  isPartnerPending,
 } from "../../utils/orderStatus";
 import { formatCompactShippingLine } from "../../utils/shippingAddressFormat";
 import { productImageUri } from "../../utils/storefront";
@@ -88,10 +90,13 @@ function Thumbs({ products }) {
   );
 }
 
-function Progress({ status }) {
+function Progress({ order }) {
   const { c, type } = useStoreTheme();
+  const status = order?.status;
   const step = getActiveProgressStep(status);
-  const hint = getOrderStatusHint(status);
+  const hint = formatDeliveryEta(order?.tracking, status) || getOrderStatusHint(status);
+  const pending = isPartnerPending(order);
+  const note = String(order?.tracking?.note || "").trim();
   return (
     <View style={styles.progress}>
       <View style={styles.segments}>
@@ -105,6 +110,8 @@ function Progress({ status }) {
       <View style={styles.progressText}>
         <Text style={type.ui(13.5, "extrabold", c.ink)}>{ORDER_PROGRESS_STEPS[step].title}</Text>
         {hint ? <Text style={type.ui(12.5, "medium", c.inkMute)}>{hint}</Text> : null}
+        {pending ? <Text style={type.ui(12, "medium", c.goldText)}>{STORE_ORDERS.card.partnerPending}</Text> : null}
+        {note ? <Text style={type.ui(12, "medium", c.inkMute)}>{note}</Text> : null}
       </View>
     </View>
   );
@@ -337,7 +344,7 @@ function OrderCardBase({
           <Text style={type.display(compact ? 19 : 22, { semi: true, ls: -0.4, lh: 26 })}>{formatINR(order.totalPrice)}</Text>
         </View>
 
-        {inFlight ? <Progress status={status} /> : null}
+        {inFlight ? <Progress order={order} /> : null}
 
         {!compact && ship ? (
           <View style={[styles.shipRow, { backgroundColor: c.soft, borderRadius: r.md }]}>

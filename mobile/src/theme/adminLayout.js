@@ -16,13 +16,13 @@ export function getAdminChrome(c, isDark) {
     inkFaint: c.textMuted,
     card: isDark ? c.surface : ALCHEMY.cardBg,
     paper: isDark ? c.surfaceMuted : ALCHEMY.creamAlt,
-    canvas: isDark ? c.background : "#d9d0c0",
+    canvas: isDark ? c.background : "#efe7db",
     line: isDark ? c.border : ALCHEMY.line,
     lineSoft: isDark ? semantic.border.subtle : "rgba(227, 216, 196, 0.65)",
-    topBarBg: isDark ? "rgba(24, 21, 19, 0.94)" : "rgba(245, 239, 228, 0.72)",
+    topBarBg: isDark ? "rgba(24, 21, 19, 0.92)" : "rgba(252, 248, 241, 0.82)",
     sidebarBg: isDark ? c.surfaceElevated : KANKREG_PALETTE.ink,
-    mainBg: isDark ? c.background : KANKREG_PALETTE.paper,
-    shellBg: isDark ? c.surface : KANKREG_PALETTE.card,
+    mainBg: isDark ? c.background : "#f3ece1",
+    shellBg: isDark ? c.surface : "#f3ece1",
     shellBorder: isDark ? c.border : KANKREG_PALETTE.line,
     linkMuted: isDark ? c.textMuted : "#bcb1a3",
     linkOnBg: isDark ? "rgba(52, 211, 153, 0.14)" : "rgba(42, 117, 89, 0.16)",
@@ -44,8 +44,8 @@ export function getAdminChrome(c, isDark) {
     brand: isDark ? c.primaryBright : KANKREG_PALETTE.paper,
     groupLabel: isDark ? c.textMuted : "#6f6557",
     shellShadow: isDark
-      ? "0 1px 2px rgba(0,0,0,.35), 0 20px 48px -24px rgba(0,0,0,.55)"
-      : "0 1px 2px rgba(25,20,15,.04), 0 20px 48px -24px rgba(25,20,15,.22)",
+      ? "0 1px 2px rgba(0,0,0,.35), 0 24px 56px -28px rgba(0,0,0,.6)"
+      : "0 1px 2px rgba(25,20,15,.05), 0 28px 64px -28px rgba(25,20,15,.28)",
   };
 }
 
@@ -155,32 +155,32 @@ export function adminPanel(c, shadowPremium, isDark) {
   const dark = typeof isDark === "boolean" ? isDark : themeIsDark(c);
   const semantic = getSemanticColors(c);
   const base = {
-    backgroundColor: dark ? semantic.bg.surface : ALCHEMY.cardBg,
+    backgroundColor: dark ? semantic.bg.surface : "#fffcf7",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: dark ? semantic.border.subtle : ALCHEMY.line,
-    borderRadius: semanticRadius.panel,
-    borderTopWidth: 3,
+    borderColor: dark ? semantic.border.subtle : "rgba(25,20,15,0.08)",
+    borderRadius: Platform.select({ web: 18, default: semanticRadius.panel }),
+    borderTopWidth: Platform.select({ web: 2, default: 3 }),
     borderTopColor: dark ? semantic.border.accent : ALCHEMY.gold,
     padding: Platform.select({
-      web: spacing.lg + 10,
+      web: spacing.md + 10,
       default: spacing.md + 2,
     }),
+    marginBottom: Platform.select({ web: spacing.md, default: 0 }),
     ...shadowStyleForPlatform(shadowPremium),
   };
-  if (Platform.OS !== "web" || !shadowPremium?.boxShadow) {
+  if (Platform.OS !== "web") {
     return base;
   }
+  const softShadow = dark
+    ? "0 1px 2px rgba(0,0,0,.28), 0 18px 40px -28px rgba(0,0,0,.55)"
+    : "0 1px 2px rgba(25,20,15,.04), 0 16px 36px -24px rgba(25,20,15,.18)";
   const inset = dark
     ? "inset 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.04)"
-    : "inset 0 0 0 1px rgba(255,253,249,0.72), inset 0 1px 0 rgba(255,253,251,0.92)";
+    : "inset 0 0 0 1px rgba(255,253,249,0.85), inset 0 1px 0 rgba(255,255,255,0.95)";
   return {
     ...base,
-    boxShadow: `${shadowPremium.boxShadow}, ${inset}`,
-    ...(Platform.OS === "web"
-      ? {
-          transition: "box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease",
-        }
-      : {}),
+    boxShadow: `${softShadow}, ${inset}`,
+    transition: "box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease",
   };
 }
 
@@ -221,7 +221,7 @@ export function adminModuleSection(isDark, c) {
 
 /** Inner padding for `KankregAdminShell` main column. */
 export function adminShellMainPadding() {
-  return Platform.select({ web: spacing.lg, default: spacing.md });
+  return Platform.select({ web: spacing.lg + 4, default: spacing.md });
 }
 
 /**
@@ -232,8 +232,20 @@ export function adminShellContent() {
   return {
     width: "100%",
     flex: 1,
-    gap: spacing.md,
-    paddingBottom: spacing.xs,
+    gap: Platform.select({ web: spacing.md + 6, default: spacing.md }),
+    paddingBottom: Platform.select({ web: spacing.xl, default: spacing.xs }),
+  };
+}
+
+/** Soft inset well for filters / composers inside panels. */
+export function adminInsetWell(chrome) {
+  return {
+    borderRadius: Platform.select({ web: 14, default: 12 }),
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: chrome?.line || "rgba(25,20,15,0.08)",
+    backgroundColor: chrome?.paper || "rgba(245,239,228,0.65)",
+    padding: Platform.select({ web: spacing.md, default: spacing.sm }),
+    gap: spacing.sm,
   };
 }
 
@@ -265,13 +277,13 @@ export const adminToolbarPrimary = Platform.select({
   default: { width: "100%" },
 });
 
-/** Root view for admin screens — centered column on web. */
+/** Root view for admin screens — full-bleed desk on web. */
 export function adminScreenRoot(c) {
   return {
     flex: 1,
     width: "100%",
-    alignSelf: "center",
-    maxWidth: Platform.select({ web: layout.maxContentWidth + 72, default: "100%" }),
+    alignSelf: "stretch",
+    maxWidth: "100%",
     backgroundColor: c?.background ?? "transparent",
   };
 }

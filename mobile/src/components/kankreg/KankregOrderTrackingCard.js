@@ -22,6 +22,7 @@ import {
 import { fonts } from "../../theme/tokens";
 import NativeTag from "../native/NativeTag";
 import KankregOrderTrack from "./KankregOrderTrack";
+import { formatDeliveryEta } from "../../utils/orderStatus";
 
 function StaticMapHero({ etaLabel }) {
   return (
@@ -61,6 +62,7 @@ export default function KankregOrderTrackingCard({
   children,
 }) {
   const { isDark } = useTheme();
+  const resolvedEta = etaLabel || formatDeliveryEta(order?.tracking, order?.status);
   const shortId = formatOrderShortId(order?._id);
   const summary = formatOrderItemsSummary(order?.products);
   const statusLabel = formatOrderStatusLabel(order?.status);
@@ -80,7 +82,7 @@ export default function KankregOrderTrackingCard({
       {showLiveMap && liveMapSlot ? (
         <View style={styles.liveMapWrap}>{liveMapSlot}</View>
       ) : (
-        <StaticMapHero etaLabel={etaLabel} />
+        <StaticMapHero etaLabel={resolvedEta} />
       )}
 
       <View style={styles.body}>

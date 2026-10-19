@@ -38,15 +38,13 @@ export default function WebWhyChooseSection() {
             <View key={item.key} style={styles.iconCardFlat}>
               <Ionicons
                 name={item.icon || "leaf-outline"}
-                size={40}
+                size={52}
                 color={isDark ? "#C4D088" : ZEEVAN_GREEN.deep}
               />
               <Text style={[styles.cardTitle, styles.cardTitlePhone, { color: ink }]}>
                 {item.title}
               </Text>
-              <Text style={[styles.cardBody, { color: muted }]} numberOfLines={2}>
-                {item.body}
-              </Text>
+              <Text style={[styles.cardBody, { color: muted }]}>{item.body}</Text>
             </View>
           ) : (
             <View key={item.key} style={[styles.card, isDark && styles.cardDark]}>
@@ -64,7 +62,7 @@ export default function WebWhyChooseSection() {
     <SectionReveal preset="fade-up" style={styles.reveal}>
       {isMobileWeb ? (
         <View
-          style={[styles.pad, styles.padPhone, { backgroundColor: isDark ? "#1A1712" : "#F3EDE0" }]}
+          style={[styles.pad, styles.padPhone, { backgroundColor: isDark ? "#1A1712" : "#FFFFFF" }]}
           accessibilityLabel={copy.title}
         >
           {body}
@@ -81,7 +79,12 @@ export default function WebWhyChooseSection() {
 const styles = StyleSheet.create({
   reveal: { width: "100%" },
   pad: { paddingVertical: spacing.lg + 4 },
-  padPhone: { paddingVertical: spacing.lg, marginTop: spacing.sm },
+  padPhone: {
+    paddingVertical: spacing.lg + 4,
+    marginTop: spacing.sm,
+    borderRadius: 18,
+    marginHorizontal: 0,
+  },
   inner: {
     width: "100%",
     maxWidth: 1100,
@@ -102,7 +105,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 8,
   },
-  titleMobile: { fontSize: 22, lineHeight: 28 },
+  titleMobile: { fontSize: 24, lineHeight: 30, color: ZEEVAN_GREEN.deep },
   grid: {
     flexDirection: "row",
     gap: 16,
@@ -130,8 +133,8 @@ const styles = StyleSheet.create({
     width: "48%",
     maxWidth: "48%",
     alignItems: "center",
-    gap: 8,
-    paddingVertical: 10,
+    gap: 10,
+    paddingVertical: 14,
     paddingHorizontal: 6,
   },
   cardDark: {
@@ -139,8 +142,9 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.14)",
   },
   cardTitlePhone: {
-    fontSize: 14,
-    marginTop: 2,
+    fontSize: 15,
+    lineHeight: 20,
+    marginTop: 4,
   },
   icon: {
     width: "100%",

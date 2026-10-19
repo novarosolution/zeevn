@@ -8,7 +8,7 @@ import useLoadingShell from "./useLoadingShell";
 /** List screens — filter chips + stacked card placeholders. */
 export default function ListCardsSkeleton({
   cardCount = 3,
-  cardHeight = 86,
+  cardHeight = 128,
   showChips = true,
   chipWidths = [72, 92],
   style,

@@ -138,6 +138,9 @@ export const HOME_SCREEN_UI = {
     webAction: "View all",
     webSectionTitle: "Bestsellers",
     webKicker: "Loved across Indian kitchens",
+    /** Phone web: centred Anveshan-style header above the line tabs. */
+    phoneEyebrow: "Bestsellers",
+    phoneTitle: "Explore our best sellers",
   },
   comingSoon: {
     stripEyebrow: "Soon",
@@ -997,6 +1000,9 @@ export const MY_ORDERS_UI = {
   trackTitle: "Track order",
   trackCancelledTitle: "Order cancelled",
   trackCancelledSub: "This order will not be fulfilled.",
+  trackPartnerPending: "Delivery partner is confirming this run.",
+  trackNoteLabel: "Kitchen note",
+  trackCourierLabel: "Courier",
   filters: {
     all: "All",
     active: "Active",

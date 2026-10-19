@@ -202,11 +202,51 @@ Things worth knowing:
 - **Payment pending / live map.** `StoreOrders` embeds the existing `PaymentStatusBanner` and `OrderLiveMapCard`
   unchanged, so Razorpay resume and live tracking behave exactly as before.
 
+## Product tiles
+
+Every product tile (Home rails, Shop grid, Wishlist, "You may also like") is `components/store/ProductCard.js`:
+a photo on a cream stage with the offer badge, heart and a "★ 4.8" rating chip on it (the rating shows from 3.5 up,
+and only when there are reviews), then the name, the size (or an urgent "2 left" / delivery time) and the price with
+a green **ADD** pill (`AddControl.js`) that turns into a **− 1 +** stepper, or opens the size sheet when the product
+has sizes. Tiles narrower than 150 pt (the Shop grid beside its category rail) stack instead: price on one line, ADD
+stretched full width under it, so a four-digit price never wraps. Tile copy is `STORE_CARD`.
+
+## Startup and loading screens
+
+What a customer sees on a cold start, in order — **native only** (the website keeps `AppStartupScreen.js`; the
+native version is `AppStartupScreen.native.js`, picked by Metro on iOS / Android):
+
+| Step | What it is | Where |
+| --- | --- | --- |
+| 1. System splash | Cream (`#F7F2E8`) or espresso (`#1A1714`, dark mode) field with the gold ring-and-leaf emblem | iOS `ios/KankreG/Images.xcassets/SplashScreenLogo.imageset` + `SplashScreen.storyboard`; Android `drawable[-night]-*dpi/splashscreen_logo.png`, `values[-night]/colors.xml`; `app.json` → `expo-splash-screen` (for a fresh `expo prebuild`) |
+| 2. Startup screen | Frame zero *is* the splash, then: a warm bloom, a gold glint circling the ring, the emblem gliding up as the wordmark and the "Ghee · Tel · Masala · Honey" line rise, drifting gold motes, a small footer line | `components/AppStartupScreen.native.js`, `components/startup/ZeevanEmblem.js` |
+| 3. Hand-off | `BootSplash.native.js` lifts the system splash on its first frame, holds the animation for at least 1.9 s (0.7 s with **Reduce Motion**), waits for the navigation tree to mount (`bootstrap/appReady.js`), then fades out — never longer than 4.5 s | `MIN_MS` / `MAX_MS` in `BootSplash.native.js` |
+| 4. Home | Straight to the cached Home, or the skeleton below when there is nothing cached yet | |
+
+- **One drawing, two outputs.** The emblem lives in `src/theme/zeevanMark.json` (paths + light/dark palette). Edit it,
+  then run `npm run splash:generate` — it rewrites the iOS and Android splash images and `assets/splash-mark*.png`
+  so the system splash and the animated screen can never drift apart. The splash colours in that file must match
+  `SplashScreenBackground.colorset` (iOS) and `colors.xml` (Android).
+- **Copy.** The footer line and the default loading line are `STARTUP_COPY` in `src/content/startupContent.js`.
+- **While the session is restored** (`AuthGateShell`), the same screen shows without the entrance
+  (`intro={false}`): the emblem with a slowly circling glint and "Checking your session…".
+- **Expo Go shows its own splash** (the app icon on white) before this; the system splash images only appear in a
+  development build or a store build.
+
+**Home while the catalog loads.** `StoreHomeSkeleton` draws the real header gradient, then placeholders in the exact
+shape of the chips, search pill, category tabs, hero, promo card, collection tiles and a product rail — all glinting in
+step — with the bottom nav already in place. It shows only when there is nothing cached to display (cold start, no
+saved catalog); otherwise Home appears at once and refreshes quietly. The building blocks are in
+`components/store/StoreSkeleton.js`: `ShimmerProvider` (one shared glint timeline, still with Reduce Motion), `Bone`
+and `ProductCardSkeleton` (same footprint as a product tile).
+
 ## Files at a glance
 
 ```
 mobile/src/
   content/storefrontContent.js     ← all copy + festival config (edit this)
+  content/startupContent.js        ← startup screen copy
+  theme/zeevanMark.json            ← launch emblem drawing + splash colours → `npm run splash:generate`
   theme/storefront.js              ← colours, radii, shadows, type (light + dark)
   utils/storefront.js              ← catalog helpers (pricing, ranges, ETA, phone format)
   components/store/                ← the premium UI components (native only; entry.web.js stubs keep web untouched)
@@ -217,6 +257,9 @@ mobile/src/
   components/store/TrustFooter.js  ← the four trust icons and the footer wordmark
   components/store/HomeArt.js      ← animated artwork: diyas, fairy lights, rangoli, embers, sheen
   components/store/HomeMotion.js   ← scroll reveal / stagger / count-up helpers
+  components/store/ProductCard.js, AddControl.js ← product tile + ADD pill / stepper
+  components/store/StoreSkeleton.js, StoreHomeSkeleton.js ← shimmer blocks + the Home loading skeleton
+  components/AppStartupScreen.native.js, BootSplash.native.js, startup/ZeevanEmblem.js ← animated launch screen
   screens/WishlistScreen.js        ← wishlist route
   context/WishlistContext.js       ← wishlist storage
   components/store/StoreProduct.js ← product detail (native)

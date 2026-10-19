@@ -7,7 +7,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } 
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { STORE_CARD, STORE_SECTIONS } from "../../content/storefrontContent";
-import { useStoreTheme } from "../../theme/storefront";
+import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { formatINRWhole } from "../../utils/currency";
 import { hapticTap } from "../../utils/haptics";
 import { getProductCardFlags } from "../../utils/productAvailability";
@@ -25,6 +25,10 @@ import PressableScale from "./PressableScale";
 import { useVariantSheet } from "./VariantSheet";
 
 const AnimatedView = Animated.View;
+
+/** Photo stage: warm cream like the product photography, in light and dark mode. */
+const STAGE = ["#FBF6E9", "#F0E6CF"];
+const WELL_RADIUS = 18;
 
 // The photo well stays cream in light and dark mode, so the page dots use fixed dark tones.
 const DOT_ACTIVE = "#2F4F22";
@@ -49,7 +53,7 @@ function Heart({ active, onPress }) {
       accessibilityLabel={active ? STORE_CARD.wishlistRemove : STORE_CARD.wishlistAdd}
       style={styles.heartHit}
     >
-      <AnimatedView style={[styles.heart, shadow.soft, { backgroundColor: c.card }, popStyle]}>
+      <AnimatedView style={[styles.heart, shadow.soft, { backgroundColor: withAlpha(c.card, 0.94) }, popStyle]}>
         <Ionicons name={active ? "heart" : "heart-outline"} size={16} color={active ? c.danger : c.inkSoft} />
       </AnimatedView>
     </Pressable>
@@ -69,6 +73,17 @@ function RankBadge({ rank }) {
       <Text style={type.display(14, { color: "#3A2A0C", ls: 0, lh: 17 })} allowFontScaling={false}>
         {rank}
       </Text>
+    </View>
+  );
+}
+
+/** "★ 4.8" in a frosted pill on the photo's bottom-left corner. */
+function RatingChip({ rating }) {
+  const { c, type, shadow } = useStoreTheme();
+  return (
+    <View style={[styles.rating, shadow.soft, { backgroundColor: withAlpha("#FFFFFF", 0.94) }]}>
+      <Ionicons name="star" size={11} color={c.gold} />
+      <Text style={type.ui(11.5, "extrabold", "#3A2A0C")}>{rating.toFixed(1)}</Text>
     </View>
   );
 }
@@ -93,7 +108,7 @@ function CardImage({ uris, size, gallery, dim, c }) {
 
   if (!gallery || uris.length < 2) {
     return (
-      <Image source={{ uri: uris[0] }} style={imageStyle} contentFit="cover" transition={180} cachePolicy="memory-disk" />
+      <Image source={{ uri: uris[0] }} style={imageStyle} contentFit="cover" transition={220} cachePolicy="memory-disk" />
     );
   }
 
@@ -110,7 +125,7 @@ function CardImage({ uris, size, gallery, dim, c }) {
         getItemLayout={(_, i) => ({ length: size, offset: size * i, index: i })}
         renderItem={({ item }) => (
           <View style={{ width: size, height: size }}>
-            <Image source={{ uri: item }} style={imageStyle} contentFit="cover" transition={180} cachePolicy="memory-disk" />
+            <Image source={{ uri: item }} style={imageStyle} contentFit="cover" transition={220} cachePolicy="memory-disk" />
           </View>
         )}
       />
@@ -130,13 +145,12 @@ function CardImage({ uris, size, gallery, dim, c }) {
 }
 
 /**
- * Blinkit-style product tile: image well with offer badge + heart, unit label with an overlapping ADD,
- * price / MRP, name and delivery / stock hints.
+ * Product tile: a photo on a cream stage (offer badge, heart and rating on it), then the name, size, and a
+ * price with the green ADD pill on one line.
  *
  * @param {number} width   tile width in points
  * @param {boolean} gallery swipeable image gallery (use in vertical grids, not horizontal rails)
- */
-/**
+ * @param {number} rank     gold medal number (Bestsellers)
  * @param {string} hideEta  delivery time to leave out when the product has exactly this one (Home already
  *                          promises it in the header), so only exceptions show on a tile
  */
@@ -161,7 +175,7 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
   const eta = hideEta && rawEta === hideEta ? "" : rawEta;
   const stockHint = getStockHint(product);
   const rating = Number(product.ratingAverage) || 0;
-  const showRating = rating >= 3.5 && (Number(product.reviewCount) || 0) > 0;
+  const showRating = rating >= 3.5 && (Number(product.reviewCount) || 0) > 0 && state === "ready";
 
   const badge = useMemo(() => {
     if (state === "soon") return { text: STORE_CARD.comingSoon, tone: "soon" };
@@ -186,6 +200,13 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
         : { bg: c.brand, fg: c.onBrand };
 
   const dim = state === "sold";
+  // Narrow tiles (the Shop grid beside its category rail) put the price on its own line and stretch ADD beneath it.
+  const stacked = width < 150;
+  const priceText = (
+    <Text style={type.ui(17, "extrabold", c.ink, { letterSpacing: -0.3 })} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+      {formatINRWhole(pricing.price)}
+    </Text>
+  );
 
   return (
     <PressableScale
@@ -201,8 +222,15 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
       accessibilityLabel={STORE_CARD.a11y.tile(product.name, formatINRWhole(pricing.price))}
     >
       {rank ? <RankBadge rank={rank} /> : null}
-      <View style={[styles.well, { width: imageSize, height: imageSize, backgroundColor: c.well, borderRadius: r.lg }]}>
+      <View style={[styles.well, { width: imageSize, height: imageSize, backgroundColor: c.well, borderRadius: WELL_RADIUS }]}>
+        <LinearGradient colors={STAGE} style={StyleSheet.absoluteFill} />
         <CardImage uris={uris} size={imageSize} gallery={gallery} dim={dim} c={c} />
+        <LinearGradient
+          colors={["rgba(20, 14, 6, 0)", "rgba(20, 14, 6, 0.14)"]}
+          style={styles.shade}
+          pointerEvents="none"
+        />
+        <View style={[StyleSheet.absoluteFill, styles.wellRim]} pointerEvents="none" />
         {badge ? (
           <View style={[styles.badge, { backgroundColor: badgeColors.bg }]}>
             <Text
@@ -214,6 +242,7 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
           </View>
         ) : null}
         <Heart active={wished} onPress={handleWish} />
+        {showRating ? <RatingChip rating={rating} /> : null}
         {state === "sold" ? (
           <View style={styles.soldWrap} pointerEvents="none">
             <View style={[styles.soldTag, { backgroundColor: c.glassStrong, borderColor: c.line }]}>
@@ -223,43 +252,20 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
         ) : null}
       </View>
 
-      <View style={styles.actionRow}>
-        <View style={styles.unitCol}>
-          <Text style={type.ui(12.5, "semibold", c.inkMute)} numberOfLines={1}>
-            {unit}
-          </Text>
-        </View>
-        <AddControl
-          compact={width < 160}
-          state={state}
-          mode={pricing.hasOptions ? "options" : "stepper"}
-          quantity={quantity}
-          onAdd={handleAdd}
-          onRemove={handleRemove}
-          onOpenOptions={handleOptions}
-          label={product.name}
-        />
-      </View>
-
       <View style={styles.info}>
-        <View style={styles.priceRow}>
-          {pricing.from ? <Text style={type.ui(11.5, "semibold", c.inkMute)}>{STORE_CARD.from}</Text> : null}
-          <Text style={type.ui(17, "extrabold", c.ink, { letterSpacing: -0.2 })}>{formatINRWhole(pricing.price)}</Text>
-          {pricing.mrp ? (
-            <Text style={[type.ui(12, "regular", c.inkMute), styles.strike]}>{formatINRWhole(pricing.mrp)}</Text>
-          ) : null}
-        </View>
-        <Text style={[type.ui(13.5, "semibold", c.ink), styles.name]} numberOfLines={2}>
+        <Text style={[type.ui(14, "bold", c.ink), styles.name]} numberOfLines={2}>
           {product.name}
         </Text>
-        <View style={styles.metaRow}>
-          {showRating ? (
-            <View style={styles.meta}>
-              <Ionicons name="star" size={11.5} color={c.gold} />
-              <Text style={type.ui(11.5, "bold", c.inkSoft)}>{rating.toFixed(1)}</Text>
+
+        <View style={styles.unitRow}>
+          <Text style={[type.ui(12.5, "semibold", c.inkMute), styles.unit]} numberOfLines={1}>
+            {unit}
+          </Text>
+          {stockHint ? (
+            <View style={[styles.stock, { backgroundColor: c.dangerSoft }]}>
+              <Text style={type.ui(10.5, "bold", c.danger)}>{stockHint}</Text>
             </View>
-          ) : null}
-          {eta ? (
+          ) : eta ? (
             <View style={styles.meta}>
               <Ionicons name="time-outline" size={12} color={c.inkMute} />
               <Text style={type.ui(11.5, "semibold", c.inkMute)} numberOfLines={1}>
@@ -267,11 +273,38 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
               </Text>
             </View>
           ) : null}
-          {stockHint ? (
-            <View style={[styles.stock, { backgroundColor: c.dangerSoft }]}>
-              <Text style={type.ui(10.5, "bold", c.danger)}>{stockHint}</Text>
+        </View>
+
+        <View style={[styles.buyRow, stacked && styles.buyRowStacked]}>
+          {stacked ? (
+            <View style={styles.priceRow}>
+              {pricing.from ? <Text style={type.ui(11, "semibold", c.inkMute)}>{STORE_CARD.from}</Text> : null}
+              {priceText}
+              {!pricing.from && pricing.mrp ? (
+                <Text style={[type.ui(12, "regular", c.inkMute), styles.strike]}>{formatINRWhole(pricing.mrp)}</Text>
+              ) : null}
             </View>
-          ) : null}
+          ) : (
+            <View style={styles.priceCol}>
+              {pricing.from ? (
+                <Text style={type.ui(11, "semibold", c.inkMute)}>{STORE_CARD.from}</Text>
+              ) : pricing.mrp ? (
+                <Text style={[type.ui(12, "regular", c.inkMute), styles.strike]}>{formatINRWhole(pricing.mrp)}</Text>
+              ) : null}
+              {priceText}
+            </View>
+          )}
+          <AddControl
+            block={stacked}
+            compact={width < 160}
+            state={state}
+            mode={pricing.hasOptions ? "options" : "stepper"}
+            quantity={quantity}
+            onAdd={handleAdd}
+            onRemove={handleRemove}
+            onOpenOptions={handleOptions}
+            label={product.name}
+          />
         </View>
       </View>
     </PressableScale>
@@ -289,6 +322,8 @@ const styles = StyleSheet.create({
   },
   well: { overflow: "hidden" },
   image: { width: "100%", height: "100%" },
+  shade: { position: "absolute", left: 0, right: 0, bottom: 0, height: "38%" },
+  wellRim: { borderRadius: WELL_RADIUS, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.55)" },
   placeholder: { flex: 1, alignItems: "center", justifyContent: "center" },
   badge: {
     position: "absolute",
@@ -314,10 +349,21 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   heart: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
+  rating: {
+    position: "absolute",
+    left: 8,
+    bottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    height: 22,
+    paddingHorizontal: 8,
+    borderRadius: 11,
+  },
   dots: {
     position: "absolute",
-    bottom: 22,
-    left: 10,
+    bottom: 13,
+    right: 10,
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
@@ -330,20 +376,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  actionRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    marginTop: -18,
-    paddingLeft: 6,
-    paddingRight: 0,
-  },
-  unitCol: { flex: 1, minWidth: 0, paddingBottom: 1 },
-  info: { paddingHorizontal: 6, paddingTop: 8, gap: 3 },
-  priceRow: { flexDirection: "row", alignItems: "baseline", gap: 6, flexWrap: "wrap" },
-  strike: { textDecorationLine: "line-through" },
+  info: { paddingHorizontal: 4, paddingTop: 10, gap: 3 },
   name: { lineHeight: 18, minHeight: 36 },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 8, minHeight: 20, marginTop: 1 },
-  meta: { flexDirection: "row", alignItems: "center", gap: 4 },
+  unitRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 6, minHeight: 18 },
+  unit: { flexShrink: 1 },
+  meta: { flexDirection: "row", alignItems: "center", gap: 3 },
   stock: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: 7 },
+  buyRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 6, marginTop: 6 },
+  buyRowStacked: { flexDirection: "column", alignItems: "stretch", gap: 8 },
+  priceCol: { flexShrink: 1, minHeight: 36, justifyContent: "flex-end", paddingBottom: 1 },
+  priceRow: { flexDirection: "row", alignItems: "baseline", gap: 6 },
+  strike: { textDecorationLine: "line-through" },
 });

@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { getAdminChrome } from "../../theme/adminLayout";
 import { fonts } from "../../theme/tokens";
@@ -10,49 +10,79 @@ export default function AdminFilterTabs({ items, value, onChange, style }) {
   const styles = useMemo(() => createStyles(chrome), [chrome]);
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      style={style}
-      contentContainerStyle={styles.row}
-    >
-      {items.map((item) => {
-        const key = item.key ?? item.value ?? item.label;
-        const on = value === key;
-        return (
-          <Pressable
-            key={key}
-            onPress={() => onChange(key)}
-            style={[styles.tab, on && styles.tabOn]}
-            accessibilityRole="button"
-            accessibilityState={{ selected: on }}
-          >
-            <Text style={[styles.tabText, on && styles.tabTextOn]}>{item.label}</Text>
-          </Pressable>
-        );
-      })}
-    </ScrollView>
+    <View style={[styles.track, style]}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.row}
+      >
+        {items.map((item) => {
+          const key = item.key ?? item.value ?? item.label;
+          const on = value === key;
+          return (
+            <Pressable
+              key={key}
+              onPress={() => onChange(key)}
+              style={({ hovered }) => [
+                styles.tab,
+                on && styles.tabOn,
+                hovered && !on && styles.tabHover,
+              ]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+            >
+              <Text style={[styles.tabText, on && styles.tabTextOn]}>{item.label}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
   );
 }
 
 function createStyles(chrome) {
   return StyleSheet.create({
+    track: Platform.select({
+      web: {
+        alignSelf: "stretch",
+        borderRadius: 14,
+        padding: 4,
+        backgroundColor: chrome.paper,
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: chrome.line,
+      },
+      default: {},
+    }),
     row: {
       flexDirection: "row",
-      gap: 6,
-      paddingVertical: 2,
+      gap: Platform.select({ web: 4, default: 6 }),
+      paddingVertical: Platform.select({ web: 0, default: 2 }),
     },
     tab: {
-      paddingHorizontal: 13,
-      paddingVertical: 7,
-      borderRadius: 999,
-      borderWidth: 1,
+      paddingHorizontal: Platform.select({ web: 14, default: 13 }),
+      paddingVertical: Platform.select({ web: 8, default: 7 }),
+      borderRadius: Platform.select({ web: 10, default: 999 }),
+      borderWidth: Platform.select({ web: 0, default: 1 }),
       borderColor: chrome.line,
-      backgroundColor: chrome.card,
+      backgroundColor: Platform.select({ web: "transparent", default: chrome.card }),
+      ...Platform.select({
+        web: { cursor: "pointer", transition: "background-color 0.12s ease, color 0.12s ease" },
+        default: {},
+      }),
     },
+    tabHover: Platform.select({
+      web: { backgroundColor: "rgba(25,20,15,0.04)" },
+      default: {},
+    }),
     tabOn: {
       backgroundColor: chrome.tabOnBg,
       borderColor: chrome.tabOnBorder,
+      ...Platform.select({
+        web: {
+          boxShadow: "0 1px 3px rgba(25,20,15,0.12)",
+        },
+        default: {},
+      }),
     },
     tabText: {
       fontSize: 12,

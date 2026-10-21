@@ -1,8 +1,9 @@
-import React, { useCallback, useMemo } from "react";
-import { Linking, Pressable, StyleSheet, Text, View } from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { WebView } from "react-native-webview";
+import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 
 function embedCheckoutUrl(url) {
   const next = String(url || "")
@@ -12,16 +13,9 @@ function embedCheckoutUrl(url) {
   return `${next}${next.includes("?") ? "&" : "?"}embedded=1`;
 }
 
-function isReturnUrl(href) {
-  return /\/orders(?:\?|$|\/)|order-confirmed/i.test(String(href || ""));
-}
-
-function isUpiIntent(href) {
-  return /^(upi|phonepe|gpay|tez|paytmmp|paytm|intent):/i.test(String(href || ""));
-}
-
 export default function YoupiCheckoutScreen({ navigation, route }) {
   const insets = useSafeAreaInsets();
+  const opened = useRef(false);
   const checkoutUrl = useMemo(() => embedCheckoutUrl(route?.params?.checkoutUrl), [route?.params?.checkoutUrl]);
 
   const finish = useCallback(
@@ -36,16 +30,22 @@ export default function YoupiCheckoutScreen({ navigation, route }) {
     [navigation]
   );
 
-  if (!checkoutUrl) {
-    return (
-      <View style={[styles.root, styles.center]}>
-        <Text style={styles.msg}>Payment link is missing.</Text>
-        <Pressable onPress={() => finish(false)} style={styles.closeBtn}>
-          <Text style={styles.closeText}>Back</Text>
-        </Pressable>
-      </View>
-    );
-  }
+  useEffect(() => {
+    if (!checkoutUrl || opened.current) return undefined;
+    opened.current = true;
+    let alive = true;
+    (async () => {
+      try {
+        await WebBrowser.openAuthSessionAsync(checkoutUrl, Linking.createURL("orders"));
+      } catch {
+        // Stay on this screen; user can tap Close.
+      }
+      if (alive) finish(true);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [checkoutUrl, finish]);
 
   return (
     <View style={styles.root}>
@@ -57,35 +57,17 @@ export default function YoupiCheckoutScreen({ navigation, route }) {
         <Text style={styles.title}>Pay securely</Text>
         <View style={styles.barSpacer} />
       </View>
-      <WebView
-        source={{ uri: checkoutUrl }}
-        onShouldStartLoadWithRequest={(req) => {
-          const href = req?.url || "";
-          if (isReturnUrl(href)) {
-            finish(true);
-            return false;
-          }
-          if (isUpiIntent(href)) {
-            Linking.openURL(href).catch(() => {});
-            return false;
-          }
-          return true;
-        }}
-        onNavigationStateChange={(nav) => {
-          if (isReturnUrl(nav?.url)) finish(true);
-        }}
-        setSupportMultipleWindows={false}
-        javaScriptEnabled
-        style={styles.frame}
-      />
+      <View style={styles.center}>
+        <ActivityIndicator color="#1c1917" />
+        <Text style={styles.msg}>{checkoutUrl ? "Complete payment, then return here." : "Payment link is missing."}</Text>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#fff" },
-  frame: { flex: 1, backgroundColor: "#fff" },
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 12 },
   bar: {
     flexDirection: "row",
     alignItems: "center",

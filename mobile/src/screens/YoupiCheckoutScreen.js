@@ -5,7 +5,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 
 function embedCheckoutUrl(url) {
-  const next = String(url || "").trim();
+  const next = String(url || "")
+    .trim()
+    .replace(/^(https?:\/\/)localhost(?=[:/?#]|$)/i, "$1127.0.0.1");
   if (!next) return "";
   return `${next}${next.includes("?") ? "&" : "?"}embedded=1`;
 }

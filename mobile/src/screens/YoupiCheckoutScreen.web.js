@@ -3,7 +3,9 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 function embedCheckoutUrl(url) {
-  const next = String(url || "").trim();
+  const next = String(url || "")
+    .trim()
+    .replace(/^(https?:\/\/)localhost(?=[:/?#]|$)/i, "$1127.0.0.1");
   if (!next) return "";
   return `${next}${next.includes("?") ? "&" : "?"}embedded=1`;
 }

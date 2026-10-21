@@ -16,6 +16,11 @@ function getYoupiReturnUrl() {
   return String(process.env.YOUPI_RETURN_URL || "https://www.zeevan.shop/orders").trim();
 }
 
+/** macOS Control Center owns localhost:7000 (AirTunes 403). Always use 127.0.0.1. */
+function preferLoopbackUrl(url) {
+  return String(url || "").replace(/^(https?:\/\/)localhost(?=[:/?#]|$)/i, "$1127.0.0.1");
+}
+
 function isYoupiConfigured() {
   return Boolean(getYoupiApiUrl() && getYoupiMerchantId());
 }
@@ -74,7 +79,7 @@ async function createYoupiPayment({ orderId, amountInRupees, returnUrl, metadata
     );
   }
 
-  const checkoutUrl = String(data.checkoutUrl || data.checkout_url || "").trim();
+  const checkoutUrl = preferLoopbackUrl(data.checkoutUrl || data.checkout_url);
   const paymentId = String(data.paymentId || data.payment_id || "").trim();
   if (!checkoutUrl || !paymentId) {
     throw youpiError("YouPI did not return checkoutUrl/paymentId.");
@@ -126,4 +131,5 @@ module.exports = {
   getYoupiReturnUrl,
   createYoupiPayment,
   verifyYoupiWebhook,
+  preferLoopbackUrl,
 };

@@ -177,10 +177,16 @@ export async function openRazorpayCheckout({ order, razorpayKeyId, user, themeCo
 
 /** Stay inside Zeevan — never open a new browser tab or Safari/Chrome. */
 export function openYoupiCheckout(order) {
-  const checkoutUrl = String(order?.youpi?.checkoutUrl || "").trim();
-  if (!checkoutUrl) throw new Error("Missing YouPI checkout URL.");
+  const youpi = order?.youpi || {};
+  const upiUri = String(youpi.upiUri || "").trim();
+  const vpa = String(youpi.vpa || "8320631598@ybl").trim();
+  if (!upiUri && !vpa && !youpi.checkoutUrl) throw new Error("Missing UPI payment details.");
   safeNavigate("YoupiCheckout", {
-    checkoutUrl,
+    checkoutUrl: String(youpi.checkoutUrl || "").trim(),
+    upiUri,
+    vpa,
+    payeeName: String(youpi.payeeName || "Zeevan").trim(),
+    amount: order?.totalPrice,
     orderId: String(order?._id || order?.id || ""),
   });
   return { status: "embedded" };

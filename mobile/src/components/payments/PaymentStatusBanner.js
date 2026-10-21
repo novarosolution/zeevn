@@ -49,7 +49,7 @@ export default function PaymentStatusBanner({ order, token, user, onRefresh }) {
     setBusy(true);
     setLocalError("");
     try {
-      if (order?.youpi?.checkoutUrl) {
+      if (order?.youpi?.upiUri || order?.youpi?.vpa || order?.youpi?.checkoutUrl) {
         openYoupiCheckout(order);
         return;
       }

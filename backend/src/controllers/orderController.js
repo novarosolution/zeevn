@@ -26,6 +26,9 @@ const {
 const {
   isYoupiConfigured,
   getYoupiReturnUrl,
+  getUpiCollectVpa,
+  getUpiCollectPayee,
+  buildUpiCollectUri,
   createYoupiPayment,
   verifyYoupiWebhook,
 } = require("../services/youpiService");
@@ -277,7 +280,7 @@ async function createOrder(req, res, next) {
         (m) => m.toLowerCase() === raw.toLowerCase()
       );
       let next = match || raw;
-      if (next === "Razorpay" && isYoupiConfigured()) next = "YouPI";
+      if (next === "Razorpay" && (isYoupiConfigured() || getUpiCollectVpa())) next = "YouPI";
       return next;
     })();
     if (!SUPPORTED_PAYMENT_METHODS.includes(normalizedPaymentMethod)) {
@@ -457,26 +460,32 @@ async function createOrder(req, res, next) {
 
     let razorpayKeyId = "";
     if (normalizedPaymentMethod === "YouPI") {
-      try {
-        const youpi = await createYoupiPayment({
-          orderId: String(order._id),
-          amountInRupees: totalPrice,
-          returnUrl: `${getYoupiReturnUrl().replace(/\/+$/, "")}?orderId=${String(order._id)}`,
-          metadata: { userId: String(req.user._id) },
-        });
-        order.youpi = {
-          paymentId: youpi.paymentId,
-          orderId: youpi.orderId,
-          checkoutUrl: youpi.checkoutUrl,
-          status: youpi.status,
-          utr: "",
-        };
-      } catch (youpiErr) {
-        await Order.findByIdAndDelete(order._id);
-        return res.status(youpiErr.statusCode || 500).json({
-          message: youpiErr.message || "Unable to start YouPI payment.",
-          code: youpiErr.code || "YOUPI_ERROR",
-        });
+      const upiUri = buildUpiCollectUri({ amountInRupees: totalPrice, orderId: order._id });
+      order.youpi = {
+        paymentId: "",
+        orderId: String(order._id),
+        checkoutUrl: "",
+        upiUri,
+        vpa: getUpiCollectVpa(),
+        payeeName: getUpiCollectPayee(),
+        status: "ACTIVE",
+        utr: "",
+      };
+      if (isYoupiConfigured()) {
+        try {
+          const youpi = await createYoupiPayment({
+            orderId: String(order._id),
+            amountInRupees: totalPrice,
+            returnUrl: `${getYoupiReturnUrl().replace(/\/+$/, "")}?orderId=${String(order._id)}`,
+            metadata: { userId: String(req.user._id) },
+          });
+          order.youpi.paymentId = youpi.paymentId;
+          order.youpi.orderId = youpi.orderId;
+          order.youpi.checkoutUrl = youpi.checkoutUrl;
+          order.youpi.status = youpi.status || "ACTIVE";
+        } catch {
+          // Collect on the real VPA even if YouPI is down.
+        }
       }
     } else if (normalizedPaymentMethod === "Razorpay") {
       try {

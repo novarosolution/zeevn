@@ -16,6 +16,21 @@ function getYoupiReturnUrl() {
   return String(process.env.YOUPI_RETURN_URL || "https://www.zeevan.shop/orders").trim();
 }
 
+function getUpiCollectVpa() {
+  return String(process.env.UPI_COLLECT_VPA || "8320631598@ybl").trim();
+}
+
+function getUpiCollectPayee() {
+  return String(process.env.UPI_COLLECT_PAYEE || "Zeevan").trim();
+}
+
+function buildUpiCollectUri({ amountInRupees, orderId }) {
+  const amount = Number(amountInRupees);
+  const am = Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
+  const tn = String(orderId || "Zeevan").replace(/[^a-zA-Z0-9_-]/g, "").slice(-18);
+  return `upi://pay?pa=${encodeURIComponent(getUpiCollectVpa())}&pn=${encodeURIComponent(getUpiCollectPayee())}&am=${encodeURIComponent(am)}&cu=INR&tn=${encodeURIComponent(tn || "Zeevan")}`;
+}
+
 /** macOS Control Center owns localhost:7000 (AirTunes 403). Always use 127.0.0.1. */
 function preferLoopbackUrl(url) {
   return String(url || "").replace(/^(https?:\/\/)localhost(?=[:/?#]|$)/i, "$1127.0.0.1");
@@ -130,6 +145,9 @@ if (require.main === module) {
 module.exports = {
   isYoupiConfigured,
   getYoupiReturnUrl,
+  getUpiCollectVpa,
+  getUpiCollectPayee,
+  buildUpiCollectUri,
   createYoupiPayment,
   verifyYoupiWebhook,
   preferLoopbackUrl,

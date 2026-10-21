@@ -400,7 +400,7 @@ export default function CartScreen({ navigation, route }) {
         throw new Error("Order created but response was incomplete. Check My Orders.");
       }
 
-      if (created?.youpi?.checkoutUrl) {
+      if (created?.youpi?.upiUri || created?.youpi?.vpa || created?.youpi?.checkoutUrl) {
         openYoupiCheckout(created);
         return;
       }

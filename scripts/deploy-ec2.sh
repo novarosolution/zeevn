@@ -15,13 +15,21 @@ ssh_cmd "sudo mkdir -p $APP_DIR && sudo chown -R $USER:$USER $APP_DIR"
 ssh_cmd "if [ -d $APP_DIR/.git ]; then cd $APP_DIR && git fetch origin && git reset --hard origin/main; else git clone https://github.com/novarosolution/zeevn.git $APP_DIR; fi"
 
 echo "==> Backend deps + restart"
-scp_cmd "$ROOT/backend/.env" "$USER@$HOST:$APP_DIR/backend/.env"
+if [ "${DEPLOY_OVERWRITE_ENV:-}" = "1" ]; then
+  scp_cmd "$ROOT/backend/.env" "$USER@$HOST:$APP_DIR/backend/.env"
+else
+  echo "Keeping server backend/.env (set DEPLOY_OVERWRITE_ENV=1 to replace it)"
+fi
 ssh_cmd "cd $APP_DIR/backend && npm ci --omit=dev && pm2 startOrReload ecosystem.config.cjs --only zeevan-api || pm2 start server.js --name zeevan-api && pm2 save"
 
 echo "==> Upload web dist"
-ssh_cmd "mkdir -p $APP_DIR/web"
-rsync -az --delete -e "ssh -i $KEY -o StrictHostKeyChecking=accept-new" \
-  "$ROOT/mobile/dist/" "$USER@$HOST:$APP_DIR/web/"
+if [ -d "$ROOT/mobile/dist" ]; then
+  ssh_cmd "mkdir -p $APP_DIR/web"
+  rsync -az --delete -e "ssh -i $KEY -o StrictHostKeyChecking=accept-new" \
+    "$ROOT/mobile/dist/" "$USER@$HOST:$APP_DIR/web/"
+else
+  echo "Skipping web dist (mobile/dist missing — Vercel serves zeevan.shop)"
+fi
 
 echo "==> Install nginx site (API + /media proxy)"
 scp_cmd "$ROOT/deploy/nginx-zeevan.conf" "$USER@$HOST:/tmp/nginx-zeevan.conf"

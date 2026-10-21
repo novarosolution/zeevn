@@ -143,6 +143,13 @@ const orderSchema = new mongoose.Schema(
       paymentId: { type: String, default: "", trim: true },
       signature: { type: String, default: "", trim: true },
     },
+    youpi: {
+      paymentId: { type: String, default: "", trim: true },
+      orderId: { type: String, default: "", trim: true },
+      checkoutUrl: { type: String, default: "", trim: true },
+      utr: { type: String, default: "", trim: true },
+      status: { type: String, default: "", trim: true },
+    },
     paymentExpiresAt: {
       type: Date,
       default: null,

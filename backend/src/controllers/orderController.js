@@ -24,6 +24,12 @@ const {
   verifyWebhookSignature,
 } = require("../services/razorpayService");
 const {
+  isYoupiConfigured,
+  getYoupiReturnUrl,
+  createYoupiPayment,
+  verifyYoupiWebhook,
+} = require("../services/youpiService");
+const {
   fetchDrivingRouteEncodedPolyline,
   getDirectionsApiKey,
 } = require("../services/googleDirectionsService");
@@ -221,8 +227,12 @@ async function resolveShippingCoordinates(shippingAddress) {
   };
 }
 const INVOICE_STATUS_VALUES = ["draft", "final", "paid", "void"];
-const SUPPORTED_PAYMENT_METHODS = ["Cash on Delivery", "Razorpay"];
+const SUPPORTED_PAYMENT_METHODS = ["Cash on Delivery", "Razorpay", "YouPI"];
 const RAZORPAY_PAYMENT_WINDOW_MS = 30 * 60 * 1000;
+
+function isOnlinePaymentMethod(method) {
+  return method === "Razorpay" || method === "YouPI";
+}
 
 function getRequestSubtotal(req) {
   const rawSubtotal = req.body?.subtotal ?? req.query?.subtotal;
@@ -266,7 +276,9 @@ async function createOrder(req, res, next) {
       const match = SUPPORTED_PAYMENT_METHODS.find(
         (m) => m.toLowerCase() === raw.toLowerCase()
       );
-      return match || raw;
+      let next = match || raw;
+      if (next === "Razorpay" && isYoupiConfigured()) next = "YouPI";
+      return next;
     })();
     if (!SUPPORTED_PAYMENT_METHODS.includes(normalizedPaymentMethod)) {
       return res.status(400).json({
@@ -401,9 +413,9 @@ async function createOrder(req, res, next) {
     const deliveryFee = Number(deliveryQuote.fee || 0);
     const totalPrice = Math.max(0, Number((itemsTotal + deliveryFee + PLATFORM_FEE - discountAmount).toFixed(2)));
 
-    const isRazorpay = normalizedPaymentMethod === "Razorpay";
-    const initialStatus = isRazorpay ? "pending_payment" : "pending";
-    const paymentExpiresAt = isRazorpay ? new Date(Date.now() + RAZORPAY_PAYMENT_WINDOW_MS) : null;
+    const isOnline = isOnlinePaymentMethod(normalizedPaymentMethod);
+    const initialStatus = isOnline ? "pending_payment" : "pending";
+    const paymentExpiresAt = isOnline ? new Date(Date.now() + RAZORPAY_PAYMENT_WINDOW_MS) : null;
 
     const resolvedShippingAddress = await resolveShippingCoordinates(shippingAddress);
 
@@ -444,7 +456,29 @@ async function createOrder(req, res, next) {
     };
 
     let razorpayKeyId = "";
-    if (isRazorpay) {
+    if (normalizedPaymentMethod === "YouPI") {
+      try {
+        const youpi = await createYoupiPayment({
+          orderId: String(order._id),
+          amountInRupees: totalPrice,
+          returnUrl: `${getYoupiReturnUrl().replace(/\/+$/, "")}?orderId=${String(order._id)}`,
+          metadata: { userId: String(req.user._id) },
+        });
+        order.youpi = {
+          paymentId: youpi.paymentId,
+          orderId: youpi.orderId,
+          checkoutUrl: youpi.checkoutUrl,
+          status: youpi.status,
+          utr: "",
+        };
+      } catch (youpiErr) {
+        await Order.findByIdAndDelete(order._id);
+        return res.status(youpiErr.statusCode || 500).json({
+          message: youpiErr.message || "Unable to start YouPI payment.",
+          code: youpiErr.code || "YOUPI_ERROR",
+        });
+      }
+    } else if (normalizedPaymentMethod === "Razorpay") {
       try {
         const rzpOrder = await createPaymentOrder({
           amountInRupees: totalPrice,
@@ -472,7 +506,7 @@ async function createOrder(req, res, next) {
     }
     await order.save();
 
-    if (!isRazorpay) {
+    if (!isOnline) {
       try {
         await deductStockForOrderLines(order.products);
         order.stockAdjustedAt = new Date();
@@ -503,13 +537,13 @@ async function createOrder(req, res, next) {
       .populate("products.product", "name price image inStock stockQty");
 
     const responsePayload = populatedOrder.toObject();
-    if (isRazorpay) {
+    if (normalizedPaymentMethod === "Razorpay") {
       responsePayload.razorpayKeyId = razorpayKeyId;
     }
 
     pushOrderLiveUpdate(populatedOrder);
 
-    if (!isRazorpay) {
+    if (!isOnline) {
       notifyAdminNewOrder(order._id).catch((err) => {
         console.error("[orders] admin notify failed:", err.message);
       });
@@ -1401,8 +1435,8 @@ async function verifyPayment(req, res, next) {
     if (String(order.user) !== String(req.user._id)) {
       return res.status(403).json({ message: "You can verify only your own order." });
     }
-    if (order.paymentMethod !== "Razorpay") {
-      return res.status(400).json({ message: "This order is not a Razorpay order." });
+    if (!isOnlinePaymentMethod(order.paymentMethod)) {
+      return res.status(400).json({ message: "This order is not an online payment order." });
     }
 
     if (order.paymentStatus === "paid") {
@@ -1410,6 +1444,14 @@ async function verifyPayment(req, res, next) {
         .populate("user", "name email")
         .populate("products.product", "name price image inStock stockQty");
       return res.json(populated);
+    }
+
+    if (order.paymentMethod === "YouPI") {
+      return res.status(202).json({
+        message: "Waiting for YouPI webhook confirmation.",
+        paymentStatus: order.paymentStatus,
+        order,
+      });
     }
 
     const {
@@ -1541,6 +1583,89 @@ async function razorpayWebhook(req, res, next) {
     }
 
     return res.status(200).send("ok");
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function youpiWebhook(req, res, next) {
+  try {
+    const rawBody = Buffer.isBuffer(req.rawBody)
+      ? req.rawBody
+      : Buffer.isBuffer(req.body)
+        ? req.body
+        : null;
+    if (!rawBody) return res.status(400).send("Missing raw body for webhook verification.");
+    if (!verifyYoupiWebhook(rawBody, req.headers["x-gateway-signature"])) {
+      return res.status(400).send("Invalid signature.");
+    }
+
+    let event;
+    try {
+      event = JSON.parse(rawBody.toString("utf8"));
+    } catch {
+      return res.status(400).send("Invalid JSON.");
+    }
+
+    const youpiOrderId = String(event?.orderId || event?.order_id || "").trim();
+    const youpiPaymentId = String(event?.paymentId || event?.payment_id || "").trim();
+    const outcome = String(event?.event || event?.status || "").toUpperCase();
+    if (!youpiOrderId && !youpiPaymentId) return res.status(200).json({ received: true });
+
+    const order = await Order.findOne({
+      $or: [
+        youpiOrderId ? { "youpi.orderId": youpiOrderId } : null,
+        youpiOrderId && mongoose.Types.ObjectId.isValid(youpiOrderId) ? { _id: youpiOrderId } : null,
+        youpiPaymentId ? { "youpi.paymentId": youpiPaymentId } : null,
+      ].filter(Boolean),
+    });
+    if (!order) return res.status(200).json({ received: true });
+
+    order.youpi = {
+      ...(order.youpi || {}),
+      orderId: youpiOrderId || order.youpi?.orderId || "",
+      paymentId: youpiPaymentId || order.youpi?.paymentId || "",
+      checkoutUrl: order.youpi?.checkoutUrl || "",
+      utr: String(event?.utr || order.youpi?.utr || ""),
+      status: outcome || order.youpi?.status || "",
+    };
+
+    if (outcome === "SUCCESS" && order.paymentStatus !== "paid") {
+      const expected = Number(order.totalPrice || 0).toFixed(2);
+      const paid = String(event?.amount || "").trim();
+      if (paid && paid !== expected) {
+        return res.status(400).send("Amount mismatch.");
+      }
+      order.paymentStatus = "paid";
+      order.status = "confirmed";
+      order.paymentExpiresAt = null;
+      if (order.invoice) {
+        order.invoice.status = "paid";
+        order.invoice.updatedAt = new Date();
+      }
+      setStatusActor(order, { byRole: "system", note: "Payment captured (YouPI)" });
+      await finalizePaidOrder(order);
+    } else if ((outcome === "FAILED" || outcome === "EXPIRED" || outcome === "CANCELLED") && order.paymentStatus === "pending") {
+      order.paymentStatus = "failed";
+      if (outcome === "CANCELLED" || outcome === "EXPIRED") {
+        order.status = "cancelled";
+        order.paymentExpiresAt = null;
+        if (order.invoice) {
+          order.invoice.status = "void";
+          order.invoice.updatedAt = new Date();
+        }
+      }
+      await order.save();
+    } else {
+      await order.save();
+    }
+
+    const populated = await Order.findById(order._id)
+      .populate("user", "name email")
+      .populate("assignedDeliveryUser", "name email phone")
+      .populate("products.product", "name price image inStock stockQty");
+    pushOrderLiveUpdate(populated);
+    return res.status(200).json({ received: true });
   } catch (error) {
     next(error);
   }
@@ -1710,6 +1835,7 @@ module.exports = {
   deleteOrder,
   verifyPayment,
   razorpayWebhook,
+  youpiWebhook,
   cancelPendingOrder,
   claimMyOrderReward,
   sweepExpiredPendingPayments,

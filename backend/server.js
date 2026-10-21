@@ -108,10 +108,20 @@ async function start() {
   startExpiredPaymentSweeper();
   const httpServer = http.createServer(app);
   initSocketServer(httpServer);
-  httpServer.listen(PORT, "0.0.0.0", () => {
-    console.log(`Zeevan API on port ${PORT} (listening on 0.0.0.0)`);
-    console.log("Try: GET http://127.0.0.1:" + PORT + "/products");
-    console.log("Live: WebSocket /socket.io");
+  await new Promise((resolve, reject) => {
+    httpServer.once("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        reject(new Error(`Port ${PORT} is already in use. Set PORT= in backend/.env to a free port.`));
+        return;
+      }
+      reject(err);
+    });
+    httpServer.listen(PORT, "0.0.0.0", () => {
+      console.log(`Zeevan API on port ${PORT} (listening on 0.0.0.0)`);
+      console.log("Try: GET http://127.0.0.1:" + PORT + "/products");
+      console.log("Live: WebSocket /socket.io");
+      resolve();
+    });
   });
 }
 

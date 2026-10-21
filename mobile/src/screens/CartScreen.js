@@ -56,6 +56,7 @@ import {
   getPublicRazorpayKeyId,
   loadRazorpayWebSdk,
   openRazorpayCheckout,
+  openYoupiCheckout,
   verifyOrderPayment} from "../services/paymentService";
 import KankregCartRow from "../components/kankreg/KankregCartRow";
 import KankregCartCouponStrip from "../components/kankreg/KankregCartCouponStrip";
@@ -395,10 +396,18 @@ export default function CartScreen({ navigation, route }) {
       }
 
       const orderId = created?._id || created?.id;
-      const keyId = created?.razorpayKeyId || getPublicRazorpayKeyId();
       if (!orderId) {
         throw new Error("Order created but response was incomplete. Check My Orders.");
       }
+
+      if (created?.youpi?.checkoutUrl) {
+        await openYoupiCheckout(created);
+        toastSuccess("Complete payment to confirm your order.", { title: "Pay with UPI" });
+        navigation.navigate("MyOrders");
+        return;
+      }
+
+      const keyId = created?.razorpayKeyId || getPublicRazorpayKeyId();
       if (Platform.OS === "web") {
         await loadRazorpayWebSdk();
       }

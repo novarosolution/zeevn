@@ -145,6 +145,8 @@ export default function AdminOrderManagePanel({
         {order.razorpay?.paymentId ? (
           <InfoRow label="Razorpay payment" value={order.razorpay.paymentId} c={c} />
         ) : null}
+        {order.youpi?.paymentId ? <InfoRow label="YouPI payment" value={order.youpi.paymentId} c={c} /> : null}
+        {order.youpi?.utr ? <InfoRow label="YouPI UTR" value={order.youpi.utr} c={c} /> : null}
       </AdminPanel>
 
       <AdminPanel title="Shipping address" icon="home-outline" description="Delivery destination and zone.">

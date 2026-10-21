@@ -779,7 +779,7 @@ export const STORE_CART = {
     payment: {
       title: "Payment",
       subtitle: "Choose how you'd like to pay.",
-      online: { title: "Pay online", caption: "UPI, cards & wallets", icon: "card-outline" },
+      online: { title: "Pay online", caption: "UPI via YouPI", icon: "card-outline" },
       cod: { title: "Cash on delivery", caption: "Pay when it arrives", icon: "cash-outline" },
       secure: "Payments are processed securely.",
     },

@@ -7,6 +7,7 @@ const {
   updateMyOrderAddress,
   verifyPayment,
   razorpayWebhook,
+  youpiWebhook,
   cancelPendingOrder,
   claimMyOrderReward,
 } = require("../controllers/orderController");
@@ -19,14 +20,23 @@ const router = express.Router();
  * express.raw() and stash it on req.rawBody. This MUST be registered before
  * any JSON middleware that might consume the stream.
  */
+function stashRawBody(req, _res, next) {
+  req.rawBody = req.body;
+  next();
+}
+
 router.post(
   "/razorpay-webhook",
   express.raw({ type: "application/json", limit: "1mb" }),
-  (req, _res, next) => {
-    req.rawBody = req.body;
-    next();
-  },
+  stashRawBody,
   razorpayWebhook
+);
+
+router.post(
+  "/youpi-webhook",
+  express.raw({ type: "application/json", limit: "1mb" }),
+  stashRawBody,
+  youpiWebhook
 );
 
 router.post("/", protect, createOrder);

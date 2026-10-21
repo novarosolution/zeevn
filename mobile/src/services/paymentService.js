@@ -182,3 +182,19 @@ export async function openRazorpayCheckout({ order, razorpayKeyId, user, themeCo
   }
   return { status: "fallback" };
 }
+
+/** Open YouPI hosted checkout. Webhook — not this callback — marks the order paid. */
+export async function openYoupiCheckout(order) {
+  const url = String(order?.youpi?.checkoutUrl || "").trim();
+  if (!url) throw new Error("Missing YouPI checkout URL.");
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    window.location.assign(url);
+    return { status: "redirect" };
+  }
+  try {
+    await Linking.openURL(url);
+  } catch {
+    throw new Error("Unable to open YouPI checkout.");
+  }
+  return { status: "fallback" };
+}

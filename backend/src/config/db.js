@@ -15,18 +15,26 @@ function normalizeMongoUri(uri) {
 }
 
 async function connectDB() {
-  try {
-    const rawUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/zeevan";
-    const mongoUri = normalizeMongoUri(rawUri);
-    if (mongoUri !== rawUri) {
-      console.warn(`MongoDB URI normalized for database name casing (${rawUri} → ${mongoUri})`);
-    }
-    const connection = await mongoose.connect(mongoUri);
-    console.log(`MongoDB connected: ${connection.connection.host}`);
-  } catch (error) {
-    console.error(`MongoDB connection error: ${error.message}`);
-    process.exit(1);
+  const rawUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/zeevan";
+  const mongoUri = normalizeMongoUri(rawUri);
+  if (mongoUri !== rawUri) {
+    console.warn(`MongoDB URI normalized for database name casing (${rawUri} → ${mongoUri})`);
   }
+
+  let lastErr;
+  for (let i = 1; i <= 8; i += 1) {
+    try {
+      const connection = await mongoose.connect(mongoUri);
+      console.log(`MongoDB connected: ${connection.connection.host}`);
+      return;
+    } catch (error) {
+      lastErr = error;
+      console.error(`MongoDB connection error (try ${i}/8): ${error.message}`);
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+  }
+  console.error(`MongoDB connection error: ${lastErr?.message || "unknown"}`);
+  process.exit(1);
 }
 
 module.exports = connectDB;

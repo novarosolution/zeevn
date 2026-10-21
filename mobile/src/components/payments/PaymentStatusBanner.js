@@ -11,6 +11,7 @@ import {
   getPublicRazorpayKeyId,
   loadRazorpayWebSdk,
   openRazorpayCheckout,
+  openYoupiCheckout,
   verifyOrderPayment,
 } from "../../services/paymentService";
 import PremiumErrorBanner from "../ui/PremiumErrorBanner";
@@ -48,6 +49,11 @@ export default function PaymentStatusBanner({ order, token, user, onRefresh }) {
     setBusy(true);
     setLocalError("");
     try {
+      if (order?.youpi?.checkoutUrl) {
+        await openYoupiCheckout(order);
+        setLocalError("Complete payment in YouPI, then refresh this page.");
+        return;
+      }
       const keyId = getPublicRazorpayKeyId();
       if (Platform.OS === "web") {
         await loadRazorpayWebSdk();

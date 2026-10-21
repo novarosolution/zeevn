@@ -46,6 +46,7 @@ function formatCompactINR(value) {
 function paymentLabel(order) {
   const m = String(order.paymentMethod || order.paymentMode || "").toLowerCase();
   if (m.includes("cod") || m.includes("cash")) return "COD";
+  if (m.includes("youpi")) return "YouPI";
   if (m.includes("razor")) return "Razorpay";
   return order.paymentMethod || "—";
 }

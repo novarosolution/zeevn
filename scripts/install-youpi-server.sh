@@ -35,6 +35,8 @@ if [ "$(awk '/MemAvailable/{print $2}' /proc/meminfo)" -lt 400000 ]; then
   fi
 fi
 
+sudo mkdir -p "$YOUPI_DIR"
+sudo chown -R "$(id -un):$(id -gn)" "$YOUPI_DIR"
 if [ ! -d "$YOUPI_DIR/.git" ]; then
   git clone --depth 1 https://github.com/youpi-pg/YouPI-PG.git "$YOUPI_DIR"
 fi

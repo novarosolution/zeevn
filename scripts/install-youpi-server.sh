@@ -26,14 +26,13 @@ set_kv() {
   fi
 }
 
-if [ "$(awk '/MemAvailable/{print $2}' /proc/meminfo)" -lt 400000 ]; then
-  if ! swapon --show | grep -q .; then
-    sudo fallocate -l 1G /swapfile 2>/dev/null || sudo dd if=/dev/zero of=/swapfile bs=1M count=1024
-    sudo chmod 600 /swapfile
-    sudo mkswap /swapfile
-    sudo swapon /swapfile
-  fi
+if ! swapon --show | grep -q .; then
+  sudo fallocate -l 2G /swapfile 2>/dev/null || sudo dd if=/dev/zero of=/swapfile bs=1M count=2048
+  sudo chmod 600 /swapfile
+  sudo mkswap /swapfile
+  sudo swapon /swapfile
 fi
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=256}"
 
 sudo mkdir -p "$YOUPI_DIR"
 sudo chown -R "$(id -un):$(id -gn)" "$YOUPI_DIR"

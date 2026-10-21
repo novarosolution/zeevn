@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { Ionicons } from "@expo/vector-icons";
-import { ADMIN_NAV_FLAT, ADMIN_NAV_GROUPS } from "../../content/adminNav";
+import { ADMIN_NAV_FLAT, ADMIN_NAV_GROUPS, openAdminNavLink } from "../../content/adminNav";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { FONT_HEADING } from "../../theme/typographyRoles";
 import { platformElevation } from "../../theme/platformStyles";
@@ -66,7 +66,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
     return (
       <Pressable
         key={link.key}
-        onPress={() => stackNav.navigate(link.key)}
+        onPress={() => openAdminNavLink(stackNav, link)}
         accessibilityLabel={`${link.label}. ${link.hint || ""}`}
         style={[
           styles.sideLink,
@@ -208,7 +208,11 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
             <AdminMobileNav
               groups={NAV_GROUPS}
               current={current}
-              onNavigate={(key) => stackNav.navigate(key)}
+              onNavigate={(key) => {
+                const link = FLAT_LINKS.find((item) => item.key === key);
+                if (link) openAdminNavLink(stackNav, link);
+                else stackNav.navigate(key);
+              }}
               onExitStore={() => stackNav.navigate("Home")}
             />
           </View>

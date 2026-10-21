@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { ADMIN_NAV_GROUPS } from "../../content/adminNav";
+import { ADMIN_NAV_GROUPS, openAdminNavLink } from "../../content/adminNav";
 import { useTheme } from "../../context/ThemeContext";
 import { getAdminChrome } from "../../theme/adminLayout";
 import { FONT_HEADING } from "../../theme/typographyRoles";
@@ -32,7 +32,7 @@ export default function AdminToolsGrid({ navigation, current, compact = false })
               return (
                 <Pressable
                   key={link.key}
-                  onPress={() => navigation.navigate(link.key)}
+                  onPress={() => openAdminNavLink(navigation, link)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
                   style={({ hovered, pressed }) => [

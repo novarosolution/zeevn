@@ -1,7 +1,21 @@
+import { Linking, Platform } from "react-native";
+
 /**
  * Single source for admin desk navigation — groups, labels, icons, copy.
  * Used by sidebar, mobile nav, and Command “All tools” launcher.
  */
+
+export function openAdminNavLink(navigation, link) {
+  if (link.href) {
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      window.open(link.href, "_blank", "noopener,noreferrer");
+      return;
+    }
+    Linking.openURL(link.href).catch(() => {});
+    return;
+  }
+  navigation.navigate(link.key);
+}
 
 export const ADMIN_NAV_GROUPS = [
   {
@@ -31,6 +45,15 @@ export const ADMIN_NAV_GROUPS = [
         icon: "bicycle-outline",
         image: "zones",
         tone: "#3d6b8c",
+      },
+      {
+        key: "YoupiAdmin",
+        label: "YouPI",
+        hint: "Gateway login",
+        icon: "card-outline",
+        image: "command",
+        tone: "#1f6f5b",
+        href: "https://www.zeevan.shop/youpi-admin/",
       },
     ],
   },

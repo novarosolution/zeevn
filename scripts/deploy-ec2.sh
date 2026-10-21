@@ -22,6 +22,9 @@ else
 fi
 ssh_cmd "cd $APP_DIR/backend && npm ci --omit=dev && pm2 startOrReload ecosystem.config.cjs --only zeevan-api || pm2 start server.js --name zeevan-api && pm2 save"
 
+echo "==> YouPI gateway + admin login"
+ssh_cmd "chmod +x $APP_DIR/scripts/install-youpi-server.sh && $APP_DIR/scripts/install-youpi-server.sh"
+
 echo "==> Upload web dist"
 if [ -d "$ROOT/mobile/dist" ]; then
   ssh_cmd "mkdir -p $APP_DIR/web"

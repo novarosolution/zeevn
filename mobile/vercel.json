@@ -20,6 +20,26 @@
       "destination": "http://54.173.67.136:5001/:path*"
     },
     {
+      "source": "/youpi-admin",
+      "destination": "http://54.173.67.136/youpi-admin/"
+    },
+    {
+      "source": "/youpi-admin/:path*",
+      "destination": "http://54.173.67.136/youpi-admin/:path*"
+    },
+    {
+      "source": "/pay",
+      "destination": "http://54.173.67.136/pay/"
+    },
+    {
+      "source": "/pay/:path*",
+      "destination": "http://54.173.67.136/pay/:path*"
+    },
+    {
+      "source": "/api/v1/admin/:path*",
+      "destination": "http://54.173.67.136/api/v1/admin/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

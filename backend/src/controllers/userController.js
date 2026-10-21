@@ -12,6 +12,27 @@ const generateRefreshToken =
 const verifyRefreshToken = generateTokenModule.verifyRefreshToken;
 const { verifyGoogleIdToken, verifyAppleIdentityToken } = require("../services/oauthService");
 
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function bootstrapAdminEmails() {
+  return String(process.env.ADMIN_EMAILS || "chaudharykuldip453@gmail.com")
+    .split(",")
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+async function applyBootstrapAdmin(user) {
+  if (!user) return user;
+  const email = normalizeEmail(user.email);
+  if (email && bootstrapAdminEmails().includes(email) && !user.isAdmin) {
+    user.isAdmin = true;
+    await user.save();
+  }
+  return user;
+}
+
 function hasProvider(user, provider, providerId) {
   return (user.authProviders || []).some(
     (p) => p.provider === provider && p.providerId === providerId
@@ -19,7 +40,8 @@ function hasProvider(user, provider, providerId) {
 }
 
 async function findOrCreateOAuthUser(profile) {
-  const { provider, providerId, email, name, avatar } = profile;
+  const { provider, providerId, name, avatar } = profile;
+  const email = normalizeEmail(profile.email);
   let user = await User.findOne({
     $or: [{ email }, { authProviders: { $elemMatch: { provider, providerId } } }],
   });
@@ -30,6 +52,9 @@ async function findOrCreateOAuthUser(profile) {
     }
     if (avatar && !user.avatar) user.avatar = avatar;
     if (name && (!user.name || user.name === user.email)) user.name = name;
+    if (normalizeEmail(user.email) && bootstrapAdminEmails().includes(normalizeEmail(user.email))) {
+      user.isAdmin = true;
+    }
     await user.save();
     return user;
   }
@@ -37,10 +62,10 @@ async function findOrCreateOAuthUser(profile) {
   const userCount = await User.countDocuments();
   user = await User.create({
     name: name || email.split("@")[0],
-    email,
+    email: normalizeEmail(email),
     password: "",
     avatar: avatar || "",
-    isAdmin: userCount === 0,
+    isAdmin: userCount === 0 || bootstrapAdminEmails().includes(normalizeEmail(email)),
     authProviders: [{ provider, providerId }],
   });
   return user;
@@ -73,7 +98,8 @@ function serializePublicUser(user) {
 
 async function registerUser(req, res, next) {
   try {
-    const { name, email, password, phone } = req.body;
+    const { name, password, phone } = req.body;
+    const email = normalizeEmail(req.body?.email);
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Name, email, and password are required." });
@@ -92,7 +118,7 @@ async function registerUser(req, res, next) {
       email,
       password: hashedPassword,
       phone: phone || "",
-      isAdmin: userCount === 0,
+      isAdmin: userCount === 0 || bootstrapAdminEmails().includes(email),
     });
 
     const token = generateToken(user._id);
@@ -111,7 +137,8 @@ async function registerUser(req, res, next) {
 
 async function loginUser(req, res, next) {
   try {
-    const { email, password } = req.body;
+    const email = normalizeEmail(req.body?.email);
+    const { password } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password are required." });
@@ -132,6 +159,8 @@ async function loginUser(req, res, next) {
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid email or password." });
     }
+
+    await applyBootstrapAdmin(user);
 
     const token = generateToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
@@ -215,6 +244,7 @@ async function getProfile(req, res, next) {
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
+    await applyBootstrapAdmin(user);
     res.json(serializePublicUser(user));
   } catch (error) {
     next(error);

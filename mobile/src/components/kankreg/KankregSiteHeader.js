@@ -97,6 +97,10 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
     return null;
   }
 
+  if (String(currentRouteName || "").startsWith("Admin")) {
+    return null;
+  }
+
   const webHeaderHeight = getWebHeaderHeight(width);
   const useCompactChrome = isMobileWeb;
 

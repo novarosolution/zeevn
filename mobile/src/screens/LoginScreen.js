@@ -59,9 +59,9 @@ export default function LoginScreen({ navigation }) {
     try {
       setIsSubmitting(true);
       setError("");
-      await loginWithCredentials({ email: normalizeEmail(email), password });
+      const nextUser = await loginWithCredentials({ email: normalizeEmail(email), password });
       showToast({ type: "success", title: "Welcome back", message: "You're signed in.", duration: 2200 });
-      await resetNavigationAfterAuth(navigation);
+      await resetNavigationAfterAuth(navigation, nextUser);
     } catch (err) {
       setError(err.message || "Unable to login. Please try again.");
     } finally {

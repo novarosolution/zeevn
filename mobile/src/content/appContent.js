@@ -570,6 +570,7 @@ export const LEGAL_PAGES = {
 };
 
 export const KANKREG_ROLE_NAV_ITEMS = {
+  admin: { key: "Admin", label: "Admin" },
   delivery: { key: "Delivery", label: "Delivery" },
 };
 

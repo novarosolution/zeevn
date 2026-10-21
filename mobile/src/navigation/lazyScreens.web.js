@@ -84,3 +84,4 @@ export const DeliveryDashboardScreen = createLazyScreenDevSafe(
   () => import("../screens/DeliveryDashboardScreen"),
   { screenName: "DeliveryDashboardScreen" }
 );
+export * from "./adminLazyScreens";

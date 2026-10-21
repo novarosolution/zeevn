@@ -25,3 +25,4 @@ export const DeliveryDashboardScreen = createLazyScreen(
   () => import("../screens/DeliveryDashboardScreen"),
   { screenName: "DeliveryDashboardScreen" }
 );
+export * from "./adminLazyScreens";

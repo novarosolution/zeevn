@@ -8,7 +8,11 @@ import {
  * After sign-in / register on native: show Find Location when delivery spot
  * isn't confirmed yet; otherwise land on Home. Web always goes Home.
  */
-export async function resetNavigationAfterAuth(navigation) {
+export async function resetNavigationAfterAuth(navigation, user) {
+  if (user?.isAdmin) {
+    navigation.reset({ index: 0, routes: [{ name: "AdminDashboard" }] });
+    return;
+  }
   if (Platform.OS === "web") {
     navigation.reset({ index: 0, routes: [{ name: "Home" }] });
     return;

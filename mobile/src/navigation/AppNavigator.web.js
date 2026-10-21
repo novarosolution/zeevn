@@ -53,6 +53,20 @@ const ProtectedRedeemRewards = withAuthGuard(LazyScreens.RedeemRewardsScreen);
 const ProtectedManageAddress = withAuthGuard(LazyScreens.ManageAddressScreen);
 const ProtectedSupport = withAuthGuard(LazyScreens.SupportScreen);
 const ProtectedDeliveryDashboard = withAuthGuard(LazyScreens.DeliveryDashboardScreen);
+const ProtectedAdminDashboard = withAuthGuard(LazyScreens.AdminDashboardScreen);
+const ProtectedAdminOrders = withAuthGuard(LazyScreens.AdminOrdersScreen);
+const ProtectedAdminOrderDetail = withAuthGuard(LazyScreens.AdminOrderDetailScreen);
+const ProtectedAdminDelivery = withAuthGuard(LazyScreens.AdminDeliveryScreen);
+const ProtectedAdminProducts = withAuthGuard(LazyScreens.AdminProductsScreen);
+const ProtectedAdminAddProduct = withAuthGuard(LazyScreens.AdminAddProductScreen);
+const ProtectedAdminInventory = withAuthGuard(LazyScreens.AdminInventoryScreen);
+const ProtectedAdminAnalytics = withAuthGuard(LazyScreens.AdminAnalyticsScreen);
+const ProtectedAdminHomeView = withAuthGuard(LazyScreens.AdminHomeViewScreen);
+const ProtectedAdminCoupons = withAuthGuard(LazyScreens.AdminCouponsScreen);
+const ProtectedAdminRewards = withAuthGuard(LazyScreens.AdminRewardsScreen);
+const ProtectedAdminNotifications = withAuthGuard(LazyScreens.AdminNotificationsScreen);
+const ProtectedAdminUsers = withAuthGuard(LazyScreens.AdminUsersScreen);
+const ProtectedAdminSupport = withAuthGuard(LazyScreens.AdminSupportScreen);
 
 export default function AppNavigator({ navigationRef, navReady = false }) {
   const screenOptions = {
@@ -98,6 +112,23 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
 
           <Stack.Group>
             <Stack.Screen name="DeliveryDashboard" component={ProtectedDeliveryDashboard} />
+          </Stack.Group>
+
+          <Stack.Group>
+            <Stack.Screen name="AdminDashboard" component={ProtectedAdminDashboard} />
+            <Stack.Screen name="AdminOrders" component={ProtectedAdminOrders} />
+            <Stack.Screen name="AdminOrderDetail" component={ProtectedAdminOrderDetail} />
+            <Stack.Screen name="AdminDelivery" component={ProtectedAdminDelivery} />
+            <Stack.Screen name="AdminProducts" component={ProtectedAdminProducts} />
+            <Stack.Screen name="AdminAddProduct" component={ProtectedAdminAddProduct} />
+            <Stack.Screen name="AdminInventory" component={ProtectedAdminInventory} />
+            <Stack.Screen name="AdminAnalytics" component={ProtectedAdminAnalytics} />
+            <Stack.Screen name="AdminHomeView" component={ProtectedAdminHomeView} />
+            <Stack.Screen name="AdminCoupons" component={ProtectedAdminCoupons} />
+            <Stack.Screen name="AdminRewards" component={ProtectedAdminRewards} />
+            <Stack.Screen name="AdminNotifications" component={ProtectedAdminNotifications} />
+            <Stack.Screen name="AdminUsers" component={ProtectedAdminUsers} />
+            <Stack.Screen name="AdminSupport" component={ProtectedAdminSupport} />
           </Stack.Group>
         </Stack.Navigator>
       </View>

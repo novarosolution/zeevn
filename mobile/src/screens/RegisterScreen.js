@@ -79,13 +79,13 @@ export default function RegisterScreen({ navigation }) {
     try {
       setIsSubmitting(true);
       setError("");
-      await registerWithCredentials({
+      const nextUser = await registerWithCredentials({
         name: name.trim().replace(/\s+/g, " "),
         email: em,
         password,
       });
       showToast({ type: "success", title: "Account created", message: "Welcome to Zeevan.", duration: 2400 });
-      await resetNavigationAfterAuth(navigation);
+      await resetNavigationAfterAuth(navigation, nextUser);
     } catch (err) {
       setError(err.message || "Unable to register. Please try again.");
     } finally {

@@ -17,6 +17,22 @@ const ROUTE_GROUPS = {
   Rewards: ["RedeemRewards"],
   Account: ["Profile", "EditProfile", "ManageAddress", "Settings", "Notifications", "Support"],
   Delivery: ["DeliveryDashboard"],
+  Admin: [
+    "AdminDashboard",
+    "AdminOrders",
+    "AdminOrderDetail",
+    "AdminDelivery",
+    "AdminProducts",
+    "AdminAddProduct",
+    "AdminInventory",
+    "AdminAnalytics",
+    "AdminHomeView",
+    "AdminCoupons",
+    "AdminRewards",
+    "AdminNotifications",
+    "AdminUsers",
+    "AdminSupport",
+  ],
   Auth: ["Login", "Register"],
 };
 
@@ -31,6 +47,7 @@ const NAV_HANDLERS = {
   Rewards: ({ go }) => () => go("RedeemRewards", true),
   Account: ({ go }) => () => go("Profile", true),
   Delivery: ({ go }) => () => go("DeliveryDashboard", true),
+  Admin: ({ go }) => () => go("AdminDashboard", true),
 };
 
 export function routeMatchesNav(navKey, routeName) {
@@ -73,6 +90,14 @@ export function buildKankregMobileNavItems({ go, goProduct, user }) {
 function buildRoleNavItems(ctx) {
   const roleItems = [];
   const { user } = ctx;
+  if (user?.isAdmin) {
+    const { key, label } = KANKREG_ROLE_NAV_ITEMS.admin;
+    roleItems.push({
+      key,
+      label,
+      onPress: NAV_HANDLERS.Admin(ctx),
+    });
+  }
   if (user?.isDeliveryPartner) {
     const { key, label } = KANKREG_ROLE_NAV_ITEMS.delivery;
     roleItems.push({

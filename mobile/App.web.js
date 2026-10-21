@@ -35,6 +35,7 @@ const linking = {
       Product: "product/:productId",
       Cart: "cart",
       Checkout: "checkout",
+      YoupiCheckout: "pay",
       RedeemRewards: "rewards",
       Login: "login",
       Register: "register",

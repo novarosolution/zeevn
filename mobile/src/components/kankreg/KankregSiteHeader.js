@@ -97,7 +97,7 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
     return null;
   }
 
-  if (String(currentRouteName || "").startsWith("Admin")) {
+  if (String(currentRouteName || "").startsWith("Admin") || currentRouteName === "YoupiCheckout") {
     return null;
   }
 

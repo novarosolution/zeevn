@@ -43,6 +43,7 @@ const WrappedLegal = withPageTransition(LazyScreens.LegalDocumentScreen);
 
 const ProtectedCart = withAuthGuard(LazyScreens.CartScreen);
 const ProtectedCheckout = withAuthGuard(LazyScreens.CheckoutScreen);
+const ProtectedYoupiCheckout = withAuthGuard(LazyScreens.YoupiCheckoutScreen);
 const ProtectedProfile = withAuthGuard(LazyScreens.ProfileScreen);
 const ProtectedEditProfile = withAuthGuard(LazyScreens.EditProfileScreen);
 const ProtectedMyOrders = withAuthGuard(LazyScreens.MyOrdersScreen);
@@ -99,6 +100,7 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
           <Stack.Group>
             <Stack.Screen name="Cart" component={ProtectedCart} />
             <Stack.Screen name="Checkout" component={ProtectedCheckout} />
+            <Stack.Screen name="YoupiCheckout" component={ProtectedYoupiCheckout} />
             <Stack.Screen name="Profile" component={ProtectedProfile} />
             <Stack.Screen name="EditProfile" component={ProtectedEditProfile} />
             <Stack.Screen name="MyOrders" component={ProtectedMyOrders} />

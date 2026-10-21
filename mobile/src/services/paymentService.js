@@ -1,6 +1,6 @@
-import { Linking, Platform } from "react-native";
+import { Platform } from "react-native";
 import { apiPost } from "./apiClient";
-import { RAZORPAY_PAY_URL } from "../content/appContent";
+import { safeNavigate } from "../navigation/navigationRef";
 
 /**
  * Razorpay payment service (client-side).
@@ -172,29 +172,16 @@ export async function openRazorpayCheckout({ order, razorpayKeyId, user, themeCo
     }
   }
 
-  const fallbackUrl = String(RAZORPAY_PAY_URL || "").trim();
-  if (fallbackUrl) {
-    try {
-      await Linking.openURL(fallbackUrl);
-    } catch {
-      // Non-fatal — caller surfaces the message.
-    }
-  }
-  return { status: "fallback" };
+  return { status: "dismissed" };
 }
 
-/** Open YouPI hosted checkout. Webhook — not this callback — marks the order paid. */
-export async function openYoupiCheckout(order) {
-  const url = String(order?.youpi?.checkoutUrl || "").trim();
-  if (!url) throw new Error("Missing YouPI checkout URL.");
-  if (Platform.OS === "web" && typeof window !== "undefined") {
-    window.location.assign(url);
-    return { status: "redirect" };
-  }
-  try {
-    await Linking.openURL(url);
-  } catch {
-    throw new Error("Unable to open YouPI checkout.");
-  }
-  return { status: "fallback" };
+/** Stay inside Zeevan — never open a new browser tab or Safari/Chrome. */
+export function openYoupiCheckout(order) {
+  const checkoutUrl = String(order?.youpi?.checkoutUrl || "").trim();
+  if (!checkoutUrl) throw new Error("Missing YouPI checkout URL.");
+  safeNavigate("YoupiCheckout", {
+    checkoutUrl,
+    orderId: String(order?._id || order?.id || ""),
+  });
+  return { status: "embedded" };
 }

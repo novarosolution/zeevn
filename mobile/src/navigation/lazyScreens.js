@@ -26,3 +26,7 @@ export const DeliveryDashboardScreen = createLazyScreen(
   { screenName: "DeliveryDashboardScreen" }
 );
 export * from "./adminLazyScreens";
+export const YoupiCheckoutScreen = createLazyScreen(
+  () => import("../screens/YoupiCheckoutScreen"),
+  { screenName: "YoupiCheckoutScreen" }
+);

@@ -48,6 +48,7 @@ const WrappedLegal = withPageTransition(LazyScreens.LegalDocumentScreen);
 
 const ProtectedCart = withAuthGuard(LazyScreens.CartScreen);
 const ProtectedCheckout = withAuthGuard(LazyScreens.CheckoutScreen);
+const ProtectedYoupiCheckout = withAuthGuard(LazyScreens.YoupiCheckoutScreen);
 const ProtectedProfile = withAuthGuard(LazyScreens.ProfileScreen);
 const ProtectedEditProfile = withAuthGuard(LazyScreens.EditProfileScreen);
 const ProtectedMyOrders = withAuthGuard(LazyScreens.MyOrdersScreen);
@@ -131,6 +132,11 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
           name="Checkout"
           component={ProtectedCheckout}
           options={Platform.OS === "web" ? undefined : { animation: "fade_from_bottom" }}
+        />
+        <Stack.Screen
+          name="YoupiCheckout"
+          component={ProtectedYoupiCheckout}
+          options={Platform.OS === "web" ? undefined : { animation: "fade_from_bottom", gestureEnabled: false }}
         />
         <Stack.Screen name="Profile" component={ProtectedProfile} />
         <Stack.Screen name="EditProfile" component={ProtectedEditProfile} />

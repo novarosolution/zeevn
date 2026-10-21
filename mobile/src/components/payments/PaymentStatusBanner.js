@@ -50,8 +50,7 @@ export default function PaymentStatusBanner({ order, token, user, onRefresh }) {
     setLocalError("");
     try {
       if (order?.youpi?.checkoutUrl) {
-        await openYoupiCheckout(order);
-        setLocalError("Complete payment in YouPI, then refresh this page.");
+        openYoupiCheckout(order);
         return;
       }
       const keyId = getPublicRazorpayKeyId();
@@ -74,8 +73,6 @@ export default function PaymentStatusBanner({ order, token, user, onRefresh }) {
         await onRefresh?.({ silent: true });
       } else if (checkout.status === "dismissed") {
         setLocalError("Checkout closed — tap Pay now when ready.");
-      } else if (checkout.status === "fallback") {
-        setLocalError("Complete payment in the browser window that opened.");
       }
     } catch (err) {
       setLocalError(err.message || "Payment failed.");

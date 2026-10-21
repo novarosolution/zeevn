@@ -401,9 +401,7 @@ export default function CartScreen({ navigation, route }) {
       }
 
       if (created?.youpi?.checkoutUrl) {
-        await openYoupiCheckout(created);
-        toastSuccess("Complete payment to confirm your order.", { title: "Pay with UPI" });
-        navigation.navigate("MyOrders");
+        openYoupiCheckout(created);
         return;
       }
 

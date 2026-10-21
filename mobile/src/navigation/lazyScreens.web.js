@@ -85,3 +85,8 @@ export const DeliveryDashboardScreen = createLazyScreenDevSafe(
   { screenName: "DeliveryDashboardScreen" }
 );
 export * from "./adminLazyScreens";
+export const YoupiCheckoutScreen = createLazyScreenDevSafe(
+  () => require("../screens/YoupiCheckoutScreen").default,
+  () => import("../screens/YoupiCheckoutScreen"),
+  { screenName: "YoupiCheckoutScreen" }
+);

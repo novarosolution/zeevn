@@ -52,6 +52,7 @@ async function createYoupiPayment({ orderId, amountInRupees, returnUrl, metadata
     amount: amount.toFixed(2),
     currency: "INR",
     returnUrl: String(returnUrl || getYoupiReturnUrl()),
+    autoActivate: true,
     metadata: metadata && typeof metadata === "object" ? metadata : undefined,
   };
 

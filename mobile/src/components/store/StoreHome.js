@@ -43,13 +43,14 @@ import {
 import BackToTop from "./BackToTop";
 import Band from "./Band";
 import BentoGrid from "./BentoGrid";
-import CategoryGrid from "./CategoryGrid";
+import FestiveFeature from "./FestiveFeature";
 import FestivePicks from "./FestivePicks";
 import FloatingNav from "./FloatingNav";
+import HeroCarousel from "./HeroCarousel";
 import { HomeScrollProvider, Reveal } from "./HomeMotion";
 import LineLanding from "./LineLanding";
 import ProductRail from "./ProductRail";
-import PromoCarousel from "./PromoCarousel";
+import RangeTiles from "./RangeTiles";
 import { SectionHeader } from "./SectionTitle";
 import StoreHeader from "./StoreHeader";
 import StoreIcon from "./StoreIcon";
@@ -60,9 +61,12 @@ import { BrandFooter, TrustStrip } from "./TrustFooter";
 import PressableScale from "./PressableScale";
 import { VariantSheetProvider } from "./VariantSheet";
 
+
 const GRADIENT_OVERSCROLL = 800;
 const GRADIENT_HEIGHT = 620;
 const BACK_TO_TOP_AT = 1100;
+/** Once the page has scrolled this far the hero is off screen, so it stops animating. */
+const HERO_OFF_AT = 560;
 /** The header is fully faded once the page has scrolled this far. */
 const HEADER_FADE_AT = 130;
 
@@ -123,6 +127,7 @@ export default function StoreHome({
   const viewportH = useSharedValue(windowH);
   const [compactVisible, setCompactVisible] = useState(false);
   const [topVisible, setTopVisible] = useState(false);
+  const [heroOnScreen, setHeroOnScreen] = useState(true);
   const [compactH, setCompactH] = useState(150);
 
   useEffect(() => {
@@ -137,6 +142,12 @@ export default function StoreHome({
     () => scrollY.value >= searchY.value - insets.top - 4,
     (now, prev) => {
       if (now !== prev) runOnJS(setCompactVisible)(now);
+    }
+  );
+  useAnimatedReaction(
+    () => scrollY.value < HERO_OFF_AT,
+    (now, prev) => {
+      if (now !== prev) runOnJS(setHeroOnScreen)(now);
     }
   );
   useAnimatedReaction(
@@ -276,6 +287,9 @@ export default function StoreHome({
   const openPromo = useCallback((item) => go(item.route), [go]);
   const openBentoRoute = useCallback(() => go(festival.bento.route), [go, festival.bento.route]);
   const openPickRoute = useCallback((pick) => go(pick.route), [go]);
+  // The festive card points at the gift sets only while there are some; otherwise it opens the whole shop.
+  const hasGifts = useMemo(() => productsForLine(products, "gifts").length > 0, [products]);
+  const openFestive = useCallback(() => go(hasGifts ? festival.banner?.route : null), [festival.banner?.route, go, hasGifts]);
 
   /* ---- sections, in the order the content layout asks for ---- */
   const layout = Array.isArray(festival.layout) ? festival.layout : STORE_HOME.layout;
@@ -290,7 +304,15 @@ export default function StoreHome({
         case "promos":
           next.push({
             key,
-            node: <PromoCarousel items={promos} signedIn={Boolean(isAuthenticated)} points={points} onPressItem={openPromo} />,
+            node: (
+              <HeroCarousel
+                items={promos}
+                signedIn={Boolean(isAuthenticated)}
+                points={points}
+                paused={!heroOnScreen}
+                onPressItem={openPromo}
+              />
+            ),
           });
           break;
         case "categories":
@@ -305,13 +327,7 @@ export default function StoreHome({
                   action={STORE_SECTIONS.categories.action}
                   onAction={() => openShop()}
                 />
-                <CategoryGrid
-                  tiles={categoryTiles}
-                  moreSuffix={STORE_SECTIONS.categories.moreSuffix}
-                  allLabel={STORE_SECTIONS.categories.allTile}
-                  onPressTile={(tile) => openShop({ category: tile.label })}
-                  onPressAll={() => openShop()}
-                />
+                <RangeTiles tiles={categoryTiles} onPressTile={(tile) => openShop({ category: tile.label })} />
               </View>
             ),
           });
@@ -330,12 +346,16 @@ export default function StoreHome({
             ),
           });
           break;
+        case "festive":
+          if (!festival.banner?.image) break;
+          next.push({ key, node: <FestiveFeature banner={festival.banner} onPress={openFestive} /> });
+          break;
         case "bestsellers":
           if (!bestsellers.length) break;
           next.push({
             key,
             node: (
-              <Band tone="olive" style={styles.band}>
+              <Band range="more" style={styles.band}>
                 <SectionHeader
                   title={homeView?.primeSectionTitle || STORE_SECTIONS.bestsellers.title}
                   action={STORE_SECTIONS.bestsellers.action}
@@ -378,7 +398,7 @@ export default function StoreHome({
             next.push({
               key: `line-${line.key}`,
               node: (
-                <View style={styles.block}>
+                <Band range={line.key} style={styles.band}>
                   <SectionHeader
                     icon={STORE_TABS.find((tab) => tab.lineKey === line.key)?.icon}
                     title={page.title || line.key}
@@ -386,7 +406,7 @@ export default function StoreHome({
                     onAction={() => openShop(page.shopPill ? { pill: page.shopPill } : page.category ? { category: page.category } : undefined)}
                   />
                   <ProductRail products={line.list} seeAllLabel={STORE_SECTIONS.lineRail.action} hideEta={etaLabel} onProductPress={openProduct} />
-                </View>
+                </Band>
               ),
             });
           });
@@ -410,6 +430,7 @@ export default function StoreHome({
     promos,
     isAuthenticated,
     points,
+    heroOnScreen,
     openPromo,
     categoryTiles,
     homeView?.productTypeTitle,
@@ -424,6 +445,7 @@ export default function StoreHome({
     picks,
     activePickKey,
     openPickRoute,
+    openFestive,
     lineRails,
   ]);
 
@@ -435,13 +457,13 @@ export default function StoreHome({
   return (
     <VariantSheetProvider>
       <HomeScrollProvider scrollY={scrollY} viewportH={viewportH} originY={sectionsY}>
-        <View style={[styles.screen, { backgroundColor: c.page }]}>
+        <View style={[styles.screen, { backgroundColor: c.canvas }]}>
+          {/* No removeClippedSubviews: on iOS (New Architecture) it leaves expo-image photos below the fold blank. */}
           <Animated.ScrollView
             ref={scrollRef}
             onScroll={onScroll}
             scrollEventThrottle={48}
             showsVerticalScrollIndicator={false}
-            removeClippedSubviews
             contentContainerStyle={{ paddingBottom: bottomPad }}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brand} />}
           >
@@ -528,7 +550,7 @@ export default function StoreHome({
             pointerEvents={compactVisible ? "auto" : "none"}
             onLayout={(e) => setCompactH(e.nativeEvent.layout.height)}
           >
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? withAlpha("#1A1712", 0.94) : withAlpha("#FFFFFF", 0.94) }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? withAlpha("#1A1712", 0.99) : withAlpha("#FBF6EC", 0.99) }]} />
             <LinearGradient
               colors={[withAlpha("#FFFFFF", isDark ? 0.06 : 0.28), withAlpha("#FFFFFF", 0)]}
               style={styles.compactSheen}
@@ -560,7 +582,7 @@ const styles = StyleSheet.create({
   backdrop: { position: "absolute", left: 0, right: 0 },
   pinBlock: { marginTop: 12 },
   tabs: { marginTop: 6 },
-  sections: { gap: 24, paddingTop: 12 },
+  sections: { gap: 28, paddingTop: 14 },
   block: { gap: 14 },
   band: { gap: 14 },
   compact: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 30, overflow: "hidden", borderBottomWidth: StyleSheet.hairlineWidth },

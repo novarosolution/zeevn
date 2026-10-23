@@ -72,13 +72,22 @@ export function Float({ children, amplitude = 5, duration = 1700, style }) {
 
 /* ---------------------------------------------------------------------------------------------- surfaces */
 
-/** White rounded card with a soft shadow. Pass `onPress` to make the whole card a springy button. */
+/**
+ * White rounded card with a soft warm shadow. Pass `onPress` to make the whole card a springy button.
+ * tone: default (white) · soft (warm white) · gold (ghee-gold tint, gold edge) · olive (sage tint).
+ */
 export function Card({ children, style, onPress, padded = true, tone = "default", ...rest }) {
-  const { c, r, shadow } = useStoreTheme();
+  const { c, r, shadow, isDark } = useStoreTheme();
+  const look = {
+    default: { bg: c.card, border: c.line },
+    soft: { bg: c.cardSoft, border: c.line },
+    gold: { bg: isDark ? withAlpha(c.gold, 0.1) : c.goldSoft, border: withAlpha(c.gold, isDark ? 0.34 : 0.55) },
+    olive: { bg: isDark ? withAlpha(c.brand, 0.1) : c.brandSoft, border: withAlpha(c.brandAlt, isDark ? 0.3 : 0.28) },
+  }[tone] || { bg: c.card, border: c.line };
   const base = [
     styles.card,
     shadow.soft,
-    { backgroundColor: tone === "soft" ? c.cardSoft : c.card, borderColor: c.line, borderRadius: r.xl },
+    { backgroundColor: look.bg, borderColor: look.border, borderRadius: r.xl },
     padded && styles.cardPad,
     style,
   ];
@@ -96,10 +105,15 @@ export function Card({ children, style, onPress, padded = true, tone = "default"
   );
 }
 
-/** Small tracked caps label above a block. */
+/** Small tracked caps label above a block, led by a tiny gold diamond. */
 export function SectionLabel({ children, style }) {
   const { c, type } = useStoreTheme();
-  return <Text style={[type.ui(12.5, "bold", c.inkMute, { letterSpacing: 1.1 }), styles.sectionLabel, style]}>{children}</Text>;
+  return (
+    <View style={[styles.sectionRow, style]}>
+      <View style={[styles.diamond, { backgroundColor: c.gold }]} />
+      <Text style={type.ui(12, "extrabold", c.goldText, { letterSpacing: 1.5, textTransform: "uppercase" })}>{children}</Text>
+    </View>
+  );
 }
 
 /** A card of rows, hairline-separated. */
@@ -132,8 +146,8 @@ export function Row({ icon, title, subtitle, trailing, onPress, tone = "default"
   const content = (
     <>
       {icon ? (
-        <View style={[styles.bubble, { backgroundColor: danger ? c.dangerSoft : c.soft }]}>
-          <StoreIcon icon={toIcon(icon)} size={20} color={color} />
+        <View style={[styles.bubble, { backgroundColor: danger ? c.dangerSoft : c.brandSoft }]}>
+          <StoreIcon icon={toIcon(icon)} size={20} color={danger ? c.danger : c.brand} />
         </View>
       ) : null}
       <View style={styles.rowText}>
@@ -254,18 +268,25 @@ export function Toggle({ value, onValueChange, disabled, label }) {
   );
 }
 
-/** Pill button. tone: primary (olive gradient) · secondary (olive tint) · danger (red tint) · ghost. */
+/**
+ * Pill button. tone: primary (olive gradient, soft sheen, olive glow) · gold (ghee-gold gradient) · secondary
+ * (olive tint) · danger (red tint) · ghost.
+ */
 export function Button({ label, icon, onPress, loading = false, disabled = false, tone = "primary", compact = false, style }) {
-  const { c, type, shadow, isDark } = useStoreTheme();
+  const { c, type, isDark } = useStoreTheme();
   const height = compact ? 44 : 54;
   const inactive = disabled || loading;
+  const filled = tone === "primary" || tone === "gold";
   const palette = {
     primary: { text: isDark ? "#18200C" : "#FFFFFF" },
+    gold: { text: "#2E2208" },
     secondary: { bg: c.brandSoft, text: c.brand, border: c.brandAlt },
     danger: { bg: c.dangerSoft, text: c.danger, border: withAlpha(c.danger, 0.4) },
     ghost: { bg: "transparent", text: c.ink, border: c.line },
   }[tone];
-  const gradient = isDark ? ["#C9DA8C", "#9DB45B"] : ["#4C7138", "#244424"];
+  const gradient =
+    tone === "gold" ? [c.goldBright, c.gold] : isDark ? ["#C9DA8C", "#9DB45B"] : ["#4C7138", "#244424"];
+  const glow = tone === "gold" ? c.gold : isDark ? "#9DB45B" : "#244424";
 
   return (
     <PressableScale
@@ -281,19 +302,26 @@ export function Button({ label, icon, onPress, loading = false, disabled = false
       style={[
         styles.button,
         { height, borderRadius: height / 2 },
-        tone === "primary" ? shadow.card : null,
-        tone !== "primary" && { backgroundColor: palette.bg, borderColor: palette.border, borderWidth: 1.5 },
+        filled && { backgroundColor: gradient[1], shadowColor: glow, shadowOffset: { width: 0, height: 6 }, shadowOpacity: isDark ? 0.3 : 0.28, shadowRadius: 12, elevation: 5 },
+        !filled && { backgroundColor: palette.bg, borderColor: palette.border, borderWidth: 1.5 },
         inactive && { opacity: loading ? 0.85 : 0.5 },
         style,
       ]}
     >
-      {tone === "primary" ? (
-        <LinearGradient
-          colors={gradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[StyleSheet.absoluteFill, { borderRadius: height / 2 }]}
-        />
+      {filled ? (
+        <>
+          <LinearGradient
+            colors={gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[StyleSheet.absoluteFill, { borderRadius: height / 2 }]}
+          />
+          <LinearGradient
+            colors={[withAlpha("#FFFFFF", isDark ? 0.22 : 0.2), withAlpha("#FFFFFF", 0)]}
+            style={[styles.sheen, { borderTopLeftRadius: height / 2, borderTopRightRadius: height / 2 }]}
+            pointerEvents="none"
+          />
+        </>
       ) : null}
       {loading ? (
         <ActivityIndicator size="small" color={palette.text} />
@@ -363,8 +391,12 @@ export function EmptyState({ icon = "sparkles-outline", title, body, actionLabel
     <Rise>
       <View style={styles.empty}>
         <Float>
-          <View style={[styles.emptyIcon, { backgroundColor: c.brandSoft, borderColor: withAlpha(c.brandAlt, 0.25) }]}>
-            <StoreIcon icon={toIcon(icon)} size={38} color={c.brand} />
+          <View style={[styles.emptyHalo, { borderColor: withAlpha(c.gold, 0.35), backgroundColor: withAlpha(c.gold, 0.08) }]}>
+            <View style={[styles.emptyIcon, { backgroundColor: c.card, borderColor: withAlpha(c.gold, 0.5) }]}>
+              <StoreIcon icon={toIcon(icon)} size={38} color={c.brand} />
+            </View>
+            <Ionicons name="sparkles" size={16} color={c.gold} style={styles.emptySpark} />
+            <Ionicons name="sparkles" size={11} color={c.goldBright} style={styles.emptySpark2} />
           </View>
         </Float>
         <Text style={[type.display(24, { semi: true, ls: -0.4 }), styles.emptyTitle]}>{title}</Text>
@@ -382,7 +414,9 @@ export function EmptyState({ icon = "sparkles-outline", title, body, actionLabel
 const styles = StyleSheet.create({
   card: { borderWidth: StyleSheet.hairlineWidth },
   cardPad: { padding: 16 },
-  sectionLabel: { textTransform: "uppercase", marginBottom: 10, marginLeft: 4 },
+  sectionRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10, marginLeft: 4 },
+  diamond: { width: 6, height: 6, borderRadius: 1, transform: [{ rotate: "45deg" }] },
+  sheen: { position: "absolute", top: 0, left: 0, right: 0, height: "56%" },
   group: { borderWidth: StyleSheet.hairlineWidth, overflow: "hidden" },
   divider: { height: StyleSheet.hairlineWidth, marginLeft: 66 },
   row: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 16, paddingVertical: 13, minHeight: 64 },
@@ -404,13 +438,16 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 3,
   },
-  button: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, paddingHorizontal: 24 },
+  button: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 9, paddingHorizontal: 24, overflow: "visible" },
   chip: { flexDirection: "row", alignItems: "center", gap: 8, height: 40, paddingHorizontal: 16, borderRadius: 20, borderWidth: 1 },
   chipCount: { minWidth: 22, height: 22, paddingHorizontal: 6, borderRadius: 11, alignItems: "center", justifyContent: "center" },
   avatar: { overflow: "hidden" },
   avatarFill: { flex: 1, alignItems: "center", justifyContent: "center" },
   empty: { alignItems: "center", paddingVertical: 44, paddingHorizontal: 28, gap: 10 },
-  emptyIcon: { width: 92, height: 92, borderRadius: 46, alignItems: "center", justifyContent: "center", borderWidth: 1, marginBottom: 6 },
+  emptyHalo: { width: 132, height: 132, borderRadius: 66, alignItems: "center", justifyContent: "center", borderWidth: 1, marginBottom: 6 },
+  emptyIcon: { width: 92, height: 92, borderRadius: 46, alignItems: "center", justifyContent: "center", borderWidth: 1 },
+  emptySpark: { position: "absolute", top: 10, right: 10 },
+  emptySpark2: { position: "absolute", bottom: 18, left: 8 },
   emptyTitle: { textAlign: "center" },
   emptyBody: { textAlign: "center", maxWidth: 290 },
   emptyAction: { marginTop: 10, alignSelf: "stretch" },

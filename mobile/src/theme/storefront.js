@@ -28,18 +28,24 @@ export const STORE_RADIUS = {
 };
 
 const LIGHT = {
-  page: "#FFFFFF",
-  pageDeep: "#FFFFFF",
+  /** The ivory canvas (the launcher-icon cream) every screen sits on — white cards and product photos float on it. */
+  page: "#FBF6EC",
+  pageDeep: "#F4ECD9",
+  canvas: "#FBF6EC",
+  canvasDeep: "#F4ECD9",
+  /** Fine gold hairline for premium card edges. */
+  goldLine: "rgba(160, 108, 36, 0.2)",
   card: "#FFFFFF",
-  cardSoft: "#FFFFFF",
-  soft: "#F5F5F5",
-  softStrong: "#EEEEEE",
+  cardSoft: "#FFFCF6",
+  /** Warm sand for inputs, segmented tracks and quiet fills (never a cold grey on ivory). */
+  soft: "#F4EDDE",
+  softStrong: "#EBE1CB",
   well: "#FFFFFF",
   ink: "#1A2216",
   inkSoft: "#4A5340",
-  inkMute: "#86816A",
-  line: "rgba(36, 68, 36, 0.09)",
-  lineStrong: "rgba(36, 68, 36, 0.18)",
+  inkMute: "#7C765F",
+  line: "rgba(104, 82, 40, 0.11)",
+  lineStrong: "rgba(104, 82, 40, 0.2)",
   brand: "#244424",
   brandAlt: "#5C6834",
   brandBright: "#788844",
@@ -55,13 +61,16 @@ const LIGHT = {
   dangerSoft: "#FBE9E4",
   shadow: "#3D2A12",
   /** Lite glass fills (opaque enough without BlurView). */
-  glass: "rgba(255, 255, 255, 0.88)",
-  glassStrong: "rgba(255, 255, 255, 0.94)",
+  glass: "rgba(251, 246, 236, 0.9)",
+  glassStrong: "rgba(251, 246, 236, 0.96)",
   glassBorder: "rgba(255, 255, 255, 0.7)",
   scrim: "rgba(20, 24, 14, 0.50)",
-  /** Header wash only — fades into the white page below. */
-  headerGradient: ["#F2D082", "#F7E0A8", "#FAEECF", "#FFFFFF"],
+  /** Header wash only — fades into the ivory page below. */
+  headerGradient: ["#F2D082", "#F7E0A8", "#FAEECF", "#FBF6EC"],
   headerLocations: [0, 0.34, 0.7, 1],
+  /** The softer gold wash behind an inner screen's title (StoreScreen). */
+  washGradient: ["#F6E2B0", "#F9EAC8", "#FBF1DE", "#FBF6EC"],
+  washLocations: [0, 0.38, 0.74, 1],
   /** Pastel tile washes (category grid, bento) — cycled by index. */
   tiles: [
     ["#F1F5E3", "#DDE8C3"],
@@ -79,11 +88,26 @@ const LIGHT = {
     ["#F3F5D4", "#D9E4A8"],
     ["#FFECD0", "#F2CC7E"],
   ],
+  /**
+   * One soft wash per range (ghee / tel / masala / honey / gifts): `wash` is the gradient fill, `accent` the deeper
+   * tone for small marks and `ink` the text colour that sits on the wash. Used by the range tiles and rail bands.
+   */
+  ranges: {
+    ghee: { wash: ["#FFF5D8", "#F9DE9A"], accent: "#B8821E", ink: "#46300A" },
+    tel: { wash: ["#F5F9E4", "#D9E6AE"], accent: "#667F25", ink: "#26350F" },
+    masala: { wash: ["#FEEBDF", "#F4C0A0"], accent: "#B94F25", ink: "#4A1D0A" },
+    honey: { wash: ["#FFF0C9", "#F7CA6C"], accent: "#A8690C", ink: "#46290A" },
+    gifts: { wash: ["#FBF0D9", "#EBCD92"], accent: "#A06C24", ink: "#3A2A0C" },
+    more: { wash: ["#F3F6E6", "#DCE5C0"], accent: "#5C6834", ink: "#243014" },
+  },
 };
 
 const DARK = {
   page: "#0F0D0A",
   pageDeep: "#16120D",
+  canvas: "#0F0D0A",
+  canvasDeep: "#16120D",
+  goldLine: "rgba(232, 188, 132, 0.22)",
   card: "#1B1712",
   cardSoft: "#211C15",
   soft: "#2A241B",
@@ -114,6 +138,8 @@ const DARK = {
   scrim: "rgba(0, 0, 0, 0.62)",
   headerGradient: ["#3C2D12", "#2B2110", "#1B150C", "#0F0D0A"],
   headerLocations: [0, 0.34, 0.7, 1],
+  washGradient: ["#33260F", "#231A0C", "#17120B", "#0F0D0A"],
+  washLocations: [0, 0.38, 0.74, 1],
   tiles: [
     ["#232B17", "#1A2111"],
     ["#33290F", "#271F0B"],
@@ -129,6 +155,14 @@ const DARK = {
     ["#2B3119", "#212713"],
     ["#392D15", "#2A2010"],
   ],
+  ranges: {
+    ghee: { wash: ["#3E3014", "#2B200C"], accent: "#E8BC84", ink: "#F6E7C2" },
+    tel: { wash: ["#2C3518", "#1F2711"], accent: "#B9CC7A", ink: "#E4EDC8" },
+    masala: { wash: ["#41251A", "#2C190F"], accent: "#F0974A", ink: "#F9DCC8" },
+    honey: { wash: ["#43310F", "#2F2209"], accent: "#F2CE9B", ink: "#FBE8C2" },
+    gifts: { wash: ["#3A2D18", "#2A200F"], accent: "#E8BC84", ink: "#F6E7C2" },
+    more: { wash: ["#2A3118", "#1E2412"], accent: "#B9CC7A", ink: "#E4EDC8" },
+  },
 };
 
 /** `#RRGGBB` + alpha → `rgba()`. Leaves non-hex colours untouched. */
@@ -250,4 +284,9 @@ export function useStoreTheme() {
 export function pickTileColors(c, index = 0) {
   const list = c.tiles;
   return list[Math.abs(index) % list.length];
+}
+
+/** The wash / accent / ink set for a range key ("ghee", "tel", …); unknown ranges get the olive "more" set. */
+export function pickRange(c, lineKey) {
+  return c.ranges[String(lineKey || "").toLowerCase()] || c.ranges.more;
 }

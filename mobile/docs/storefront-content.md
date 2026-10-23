@@ -18,14 +18,14 @@ Products, prices, categories, ratings, stock and delivery estimates always come 
 | Festival dates (Diwali, …) | `FESTIVAL_CALENDAR` |
 | Switch the festival look without an app release | Admin console → Home view editor → **Festival look** |
 | Force or disable a festival look in the build | `STORE_FESTIVAL_OVERRIDE` |
-| Festival countdown chip, hero title / button / colours / which product photo it shows, bento tiles, "Diwali Picks" | the theme object (`diwaliTheme`, `everydayTheme`) |
+| Festival countdown chip, the festive photo card (title / button / photo), bento tiles, "Diwali Picks" | the theme object (`diwaliTheme`, `everydayTheme`) |
 | Which Home sections show, and in what order | `STORE_HOME.layout` (a theme can bring its own `layout`) |
 | Home header chips ("Delivers in …", free-delivery), location label, sign-in, search hints | `STORE_HEADER`, `STORE_FREE_DELIVERY` |
 | Home section headings and "See all" labels | `STORE_SECTIONS` |
 | Live order card labels | `STORE_HOME.tracker` |
 | Product tile copy (ADD, % OFF, Out of stock, spoken labels) | `STORE_CARD` |
 | Category tabs under the search bar | `STORE_TABS` (+ `STORE_LINE_PAGES` for each tab's landing copy) |
-| Promo carousel cards | `STORE_PROMOS` (admin hero slides override these when set) |
+| Hero slides — the tall photo carousel at the top of Home (one slide per range, then the rewards card) | `STORE_PROMOS` |
 | "Why Zeevan" trust row | `STORE_TRUST` |
 | Shop screen labels, sort/filter copy | `STORE_SHOP` |
 | Account page (banner, tiles, list rows) | `STORE_PROFILE` |
@@ -36,7 +36,9 @@ Products, prices, categories, ratings, stock and delivery estimates always come 
 | Bottom navigation tabs and which screens light them up | `STORE_NAV` |
 
 Colours and spacing are not in the content file. They live in `src/theme/storefront.js`
-(light and dark palettes, radii, shadows, type).
+(light and dark palettes, radii, shadows, type). Home sits on the ivory `canvas` colour (the launcher-icon cream) and
+each range has its own soft wash in `ranges` (ghee, tel, masala, honey, gifts) — used by the range tiles, the rail
+panels and the range landing page. `pickRange(c, "ghee")` returns a range's `wash` / `accent` / `ink`.
 
 ## Festivals
 
@@ -83,8 +85,8 @@ A theme is plain data (see `diwaliTheme`) — changing it never needs a componen
 | --- | --- |
 | `greeting` | Turns the festival chip on (the first chip under the location bar). It shows the countdown below, or this greeting when there is no date. Leave `""` for no festival chip. |
 | `occasion` | Optional countdown for that chip: `{ date, days(n), tomorrow, today }` → "20 days to Diwali" → "Diwali is tomorrow" → "Happy Diwali". Disappears after the day. |
-| `header` | `gradient` / `gradientDark` behind the header (end on the page colour) and `accent` (chip colour, light + dark). |
-| `banner` | Hero card: `title`, `cta`, `route` (where the button goes — Diwali opens Gift Sets), `spotlight` (`{ match }` — which product's photo floats on the card; Diwali picks the gift hamper) and `palette.light` / `palette.dark` (gradient, text, button and gold colours). The hero is deliberately just a headline and a button; add an optional `eyebrow` and/or `subtitle` string if you want more copy. |
+| `header` | `gradient` / `gradientDark` behind the header (end on the page colour — the ivory `#FBF6EC` in light mode) and `accent` (chip colour, light + dark). |
+| `banner` | The festive photo card on Home (the `festive` section): `image` (a wide photo — a theme without one shows no card), `title`, `cta` and `route` (where the button goes — Diwali opens Gift Sets while there are gift products, otherwise the whole shop). `spotlight` and `palette.light` / `palette.dark` belong to the older tilted-jar hero card (`FestiveBanner.js`), which is no longer in the default layouts. |
 | `tabBadges` | A small gold badge on a category tab, e.g. `{ gifts: "Diwali" }`. |
 | `ornament` | Hero + header artwork: `"diya"` (fairy lights, rangoli, flickering diyas, rising embers) or `"none"` (calm olive sprigs). |
 | `layout` | Optional section order for this theme (see *Home layout*). |
@@ -118,34 +120,41 @@ move it to reorder:
 
 ```js
 export const STORE_HOME = {
-  layout: ["tracker", "banner", "promos", "categories", "bento", "bestsellers", "picks", "lines", "trust", "footer"],
+  layout: ["tracker", "promos", "trust", "categories", "bestsellers", "lines", "footer"],
 };
 ```
 
 | Key | Section |
 | --- | --- |
 | `tracker` | Live order card — only while a signed-in customer has an order in progress (status, item count, six-step progress, "Track") |
-| `banner` | The festival (or brand) hero: headline, button and a tilted product photo with a discount sticker |
-| `promos` | Rewards card (shows the customer's points when signed in) + photo slides (admin hero slides when set) |
-| `categories` | "Shop by category" grid |
-| `bento` | Festive (or range) collection with its own heading |
-| `bestsellers` | Best-rated products rail on an olive panel; the top three wear a gold #1 / #2 / #3 medal (`STORE_SECTIONS.bestsellers.rankTop`) |
-| `picks` | Tabbed festive picks on a gold panel |
-| `lines` | One rail per range, headed by the range icon — delete this key for a much shorter Home |
-| `trust` | The four "Why Zeevan" icons |
+| `promos` | The hero: tall portrait photographs, one per range, that peek at the next, push in slowly, auto-advance with story-style progress bars, then the rewards card (it shows the customer's points when signed in) |
+| `trust` | The four "Why Zeevan" pillars as one white card, right under the hero |
+| `categories` | "Shop by category" as big photo tiles — one per product type, each jar standing in its range's colour (two columns; an odd last tile spans the width) |
+| `festive` | The festival theme's wide photo card (`banner.image`, title and button) — only themes that set an image show it |
+| `bestsellers` | Best-rated products rail on a sage panel; the top three wear a gold #1 / #2 / #3 medal (`STORE_SECTIONS.bestsellers.rankTop`) |
+| `lines` | One rail per range on that range's tinted panel, headed by the range icon — delete this key for a much shorter Home |
 | `footer` | The Zeevan wordmark sign-off — keep it last |
+| `banner`, `bento`, `picks` | Still supported if you add them to a layout: the tilted-jar festival hero, the festive collage tiles and the tabbed festive picks. They are not in the default layouts, so the same products are not shown three times |
 
-A festival theme can set its own `layout`; Diwali puts its gifting collections (`bento`, `picks`) above the
-category grid. A section with nothing to show (no products, no matching picks, no active order) is skipped
-automatically.
+A festival theme can set its own `layout`; Diwali adds its `festive` photo card after the category tiles. A section
+with nothing to show (no products, no matching picks, no active order) is skipped automatically.
 
 **Why there is so little text.** Home is picture-led on purpose: section headings are one line, the hero is a headline
 and a button, and long-form storytelling (how it's made, ours-vs-ordinary, reviews, certifications) lives on the About
 page and the website, not in the app Home. A delivery time that every product shares ("10 mins") is promised once in
 the header chip and left off the product tiles; a product with a different time still shows its own.
 
-Sections rise into view once, as you scroll to them, and tiles inside them stagger in. With the phone's
-**Reduce Motion** setting on, everything appears without movement and the ornaments hold still.
+The first blocks on the screen fade up one after another, once, when Home appears (`Reveal` in `HomeMotion.js` — a
+native layout animation; nothing runs per frame while scrolling). The hero's push-in and auto-advance pause while it
+is scrolled out of view or while you drag it. With the phone's **Reduce Motion** setting on, everything appears
+without movement and the search suggestions, hero and sparkles hold still.
+
+**Photos on tinted tiles.** The product photos are shot on white. The range tiles and the range landing page lay them
+over the tint with `mixBlendMode: "multiply"` (React Native 0.77+, New Architecture) so the jar looks printed on it;
+where that is not available (dark mode, old architecture, web) the photo keeps a white frame instead.
+
+**Do not put `removeClippedSubviews` back on Home's scroll view.** On iOS (New Architecture) it leaves `expo-image`
+photos that were below the fold blank — the hero, tiles and product photos then never appear.
 
 ### How bento tiles and picks choose products
 
@@ -218,7 +227,7 @@ native version is `AppStartupScreen.native.js`, picked by Metro on iOS / Android
 
 | Step | What it is | Where |
 | --- | --- | --- |
-| 1. System splash | Cream (`#F7F2E8`) or espresso (`#1A1714`, dark mode) field with the gold ring-and-leaf emblem | iOS `ios/KankreG/Images.xcassets/SplashScreenLogo.imageset` + `SplashScreen.storyboard`; Android `drawable[-night]-*dpi/splashscreen_logo.png`, `values[-night]/colors.xml`; `app.json` → `expo-splash-screen` (for a fresh `expo prebuild`) |
+| 1. System splash | Ivory (`#FBF6EC`, the launcher-icon cream) or espresso (`#1A1714`, dark mode) field with the gold ring-and-leaf emblem | iOS `ios/KankreG/Images.xcassets/SplashScreenLogo.imageset` + `SplashScreen.storyboard`; Android `drawable[-night]-*dpi/splashscreen_logo.png`, `values[-night]/colors.xml`; `app.json` → `expo-splash-screen` (for a fresh `expo prebuild`) |
 | 2. Startup screen | Frame zero *is* the splash, then: a warm bloom, a gold glint circling the ring, the emblem gliding up as the wordmark and the "Ghee · Tel · Masala · Honey" line rise, drifting gold motes, a small footer line | `components/AppStartupScreen.native.js`, `components/startup/ZeevanEmblem.js` |
 | 3. Hand-off | `BootSplash.native.js` lifts the system splash on its first frame, holds the animation for at least 1.9 s (0.7 s with **Reduce Motion**), waits for the navigation tree to mount (`bootstrap/appReady.js`), then fades out — never longer than 4.5 s | `MIN_MS` / `MAX_MS` in `BootSplash.native.js` |
 | 4. Home | Straight to the cached Home, or the skeleton below when there is nothing cached yet | |
@@ -234,8 +243,8 @@ native version is `AppStartupScreen.native.js`, picked by Metro on iOS / Android
   development build or a store build.
 
 **Home while the catalog loads.** `StoreHomeSkeleton` draws the real header gradient, then placeholders in the exact
-shape of the chips, search pill, category tabs, hero, promo card, collection tiles and a product rail — all glinting in
-step — with the bottom nav already in place. It shows only when there is nothing cached to display (cold start, no
+shape of the chips, search pill, category tabs, hero card (with the next one peeking in), the brand-pillar card, the
+range tiles and a product rail — all glinting in step — with the bottom nav already in place. It shows only when there is nothing cached to display (cold start, no
 saved catalog); otherwise Home appears at once and refreshes quietly. The building blocks are in
 `components/store/StoreSkeleton.js`: `ShimmerProvider` (one shared glint timeline, still with Reduce Motion), `Bone`
 and `ProductCardSkeleton` (same footprint as a product tile).
@@ -250,13 +259,16 @@ mobile/src/
   theme/storefront.js              ← colours, radii, shadows, type (light + dark)
   utils/storefront.js              ← catalog helpers (pricing, ranges, ETA, phone format)
   components/store/                ← the premium UI components (native only; entry.web.js stubs keep web untouched)
-  components/store/FestiveBanner.js ← Home hero (copy + colours come from the theme)
+  components/store/HeroCarousel.js ← Home hero: tall photo slides, push-in, story bars, auto-advance (`STORE_PROMOS`)
+  components/store/RangeTiles.js   ← "Shop by category" photo tiles; also exports `Jar` / `Spotlight` / `canBlend`
+  components/store/FestiveFeature.js ← the festival's wide photo card (`banner.image`)
+  components/store/FestiveBanner.js ← older tilted-jar festival hero (not in the default layouts)
   components/store/StoreHeader.js  ← Home header (location, rewards, a row of chips)
   components/store/StoreTracker.js ← live order card + `useActiveOrders`
-  components/store/Band.js         ← the tinted panels behind Bestsellers and Picks
-  components/store/TrustFooter.js  ← the four trust icons and the footer wordmark
+  components/store/Band.js         ← the tinted panel behind a rail (one per range; fades into the page)
+  components/store/TrustFooter.js  ← the four-pillar card and the footer wordmark
   components/store/HomeArt.js      ← animated artwork: diyas, fairy lights, rangoli, embers, sheen
-  components/store/HomeMotion.js   ← scroll reveal / stagger / count-up helpers
+  components/store/HomeMotion.js   ← first-screen entrance (`Reveal`) + small motion helpers
   components/store/ProductCard.js, AddControl.js ← product tile + ADD pill / stepper
   components/store/StoreSkeleton.js, StoreHomeSkeleton.js ← shimmer blocks + the Home loading skeleton
   components/AppStartupScreen.native.js, BootSplash.native.js, startup/ZeevanEmblem.js ← animated launch screen

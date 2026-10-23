@@ -1,26 +1,41 @@
 import React, { memo } from "react";
 import { StyleSheet, View } from "react-native";
-import { useStoreTheme, withAlpha } from "../../theme/storefront";
+import { LinearGradient } from "expo-linear-gradient";
+import { pickRange, useStoreTheme, withAlpha } from "../../theme/storefront";
+
+/** Older tone names → the range wash they map to. */
+const TONES = { olive: "tel", gold: "gifts" };
 
 /**
- * Full-width tinted panel — solid fill (no LinearGradient) for cheaper Home scroll.
+ * A soft tinted sheet behind a section: it opens with a rounded, hairline-edged top in the wash colour and
+ * dissolves into the page by the bottom, so stacked sections breathe instead of boxing each other in.
+ * Pass a range (`range="honey"`) or a `tone` ("gold" | "olive"). One static gradient — no per-frame work.
  */
-function Band({ tone = "gold", children, style }) {
+function Band({ tone = "gold", range, children, style }) {
   const { c, isDark } = useStoreTheme();
-  const bg =
-    tone === "olive"
-      ? isDark
-        ? withAlpha(c.brand, 0.1)
-        : "#EBF0D8"
-      : isDark
-        ? withAlpha(c.gold, 0.1)
-        : "#FAEED4";
-  const border = withAlpha(tone === "olive" ? c.brand : c.gold, isDark ? 0.14 : 0.22);
-  return <View style={[styles.band, { backgroundColor: bg, borderColor: border }, style]}>{children}</View>;
+  const set = pickRange(c, range || TONES[tone] || tone);
+  const colors = [
+    withAlpha(set.wash[1], isDark ? 0.5 : 0.6),
+    withAlpha(set.wash[0], isDark ? 0.2 : 0.42),
+    withAlpha(set.wash[0], 0),
+  ];
+  return (
+    <View style={[styles.band, { borderColor: withAlpha(set.accent, isDark ? 0.3 : 0.22) }, style]}>
+      <LinearGradient colors={colors} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
+      {children}
+    </View>
+  );
 }
 
 export default memo(Band);
 
 const styles = StyleSheet.create({
-  band: { borderRadius: 32, borderWidth: StyleSheet.hairlineWidth, paddingVertical: 18, overflow: "hidden" },
+  band: {
+    borderTopLeftRadius: 34,
+    borderTopRightRadius: 34,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 22,
+    paddingBottom: 14,
+    overflow: "hidden",
+  },
 });

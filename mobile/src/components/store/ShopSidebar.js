@@ -31,17 +31,19 @@ export default function ShopSidebar({ items, activeKey, onSelect, bottomPad = 0 
               style={[styles.item, active && { backgroundColor: withAlpha(c.brand, 0.07) }]}
             >
               {active ? <View style={[styles.bar, { backgroundColor: c.brand }]} /> : null}
-              <View
-                style={[
-                  styles.circle,
-                  { backgroundColor: c.card, borderColor: active ? c.brandAlt : c.line, borderWidth: active ? 2 : StyleSheet.hairlineWidth },
-                ]}
-              >
-                {item.image ? (
-                  <Image source={{ uri: item.image }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="memory-disk" />
-                ) : (
-                  <StoreIcon icon={item.icon} active={active} size={26} color={active ? c.brand : c.inkMute} />
-                )}
+              <View style={[styles.glow, active && { shadowColor: c.gold, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.5, shadowRadius: 8 }]}>
+                <View
+                  style={[
+                    styles.circle,
+                    { backgroundColor: c.card, borderColor: active ? c.gold : c.line, borderWidth: active ? 2.5 : StyleSheet.hairlineWidth },
+                  ]}
+                >
+                  {item.image ? (
+                    <Image source={{ uri: item.image }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="memory-disk" />
+                  ) : (
+                    <StoreIcon icon={item.icon} active={active} size={26} color={active ? c.brand : c.inkMute} />
+                  )}
+                </View>
               </View>
               <Text style={[type.ui(12.5, active ? "extrabold" : "medium", active ? c.brand : c.inkSoft), styles.label]} numberOfLines={2}>
                 {item.label}
@@ -58,6 +60,7 @@ const styles = StyleSheet.create({
   rail: { borderRightWidth: StyleSheet.hairlineWidth },
   item: { alignItems: "center", paddingVertical: 12, paddingHorizontal: 6, gap: 7 },
   bar: { position: "absolute", left: 0, top: 18, height: 44, width: 4, borderTopRightRadius: 4, borderBottomRightRadius: 4 },
+  glow: { width: 60, height: 60, borderRadius: 30 },
   circle: { width: 60, height: 60, borderRadius: 30, overflow: "hidden", alignItems: "center", justifyContent: "center" },
   label: { textAlign: "center", lineHeight: 16 },
 });

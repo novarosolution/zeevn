@@ -132,7 +132,7 @@ export const STORE_CARD = {
  *  - `layout`                 optional section order — omit it to use `STORE_HOME.layout`
  *  - `tabBadges`              small badge on a category tab ({ gifts: "Diwali" })
  *  - `bento` / `picks`        festive collections (heading, route, tiles); `bento.colors` optionally recolours the tiles
- *  - `shopBanner`             the strip on top of the Shop screen
+ *  - `shopBanner`             the photo strip on top of the Shop screen (`title`, `subtitle`, `image`)
  */
 
 const everydayTheme = {
@@ -142,7 +142,7 @@ const everydayTheme = {
   /** Small badge on a category tab, e.g. { gifts: "Diwali" }. */
   tabBadges: {},
   header: {
-    gradient: ["#F2D082", "#F7E0A8", "#FAEECF", "#FFFFFF"],
+    gradient: ["#F3D58C", "#F8E4B4", "#FBF0D6", "#FBF6EC"],
     gradientDark: ["#3C2D12", "#2B2110", "#1B150C", "#0F0D0A"],
     accent: { light: "#5C6834", dark: "#C4D088" },
   },
@@ -201,7 +201,7 @@ const everydayTheme = {
       { key: "honey", title: "Honey", match: { lineKeys: ["honey"] }, route: { name: "Shop", params: { pill: "Honey" } } },
     ],
   },
-  shopBanner: { title: "Pure from the farm", subtitle: "Small batches, honest labels" },
+  shopBanner: { title: "Pure from the farm", subtitle: "Small batches, honest labels", image: require("../../assets/home-pantry-strip-bg.jpg") },
 };
 
 const diwaliTheme = {
@@ -217,13 +217,15 @@ const diwaliTheme = {
     today: "Happy Diwali",
   },
   header: {
-    gradient: ["#EFA33A", "#F6C877", "#FAE3B2", "#FFFFFF"],
+    gradient: ["#F2B14E", "#F7CF8A", "#FBE8C4", "#FBF6EC"],
     gradientDark: ["#4A2D0E", "#321F0C", "#1C130A", "#0F0D0A"],
     accent: { light: "#7A3A08", dark: "#F2CE9B" },
   },
   banner: {
     title: "Shubh Deepavali",
     cta: "Shop festive",
+    /** Wide photo for Home's festive feature card (a theme without an `image` shows no such card). */
+    image: require("../../assets/diwali-sale-banner-4k.jpg"),
     route: { name: "Shop", params: { category: "Gift Sets" } },
     /** Prefer gift sets; FestiveBanner falls back to honey/ghee so the tilted jar card always shows. */
     spotlight: { match: { lineKeys: ["gifts", "honey", "ghee"] } },
@@ -250,8 +252,8 @@ const diwaliTheme = {
       },
     },
   },
-  /** Gifting first, then the everyday shelves. */
-  layout: ["tracker", "promos", "bento", "picks", "categories", "bestsellers", "lines", "trust", "footer"],
+  /** Hero, the brand pillars, the ranges, the festive photo card, then the shelves. */
+  layout: ["tracker", "promos", "trust", "categories", "festive", "bestsellers", "lines", "footer"],
   bento: {
     title: "Diwali gifting",
     action: "See all",
@@ -300,7 +302,7 @@ const diwaliTheme = {
       { key: "pantry", title: "Tel & Masala", match: { lineKeys: ["tel", "masala"] }, route: { name: "Shop", params: { pill: "Tel" } } },
     ],
   },
-  shopBanner: { title: "Celebrate Diwali", subtitle: "Gift purity, light up every home" },
+  shopBanner: { title: "Celebrate Diwali", subtitle: "Gift purity, light up every home", image: require("../../assets/diwali-divider.jpg") },
 };
 
 export const FESTIVAL_THEMES = {
@@ -354,21 +356,21 @@ export function getFestivalCountdown(theme, now = new Date()) {
 /**
  * Sections on the Home "All" tab, top to bottom. Delete a key to hide that section, or reorder to move it:
  *  tracker     live order card (only while a signed-in customer has an order in progress)
- *  banner      festival / brand hero with a product spotlight
- *  promos      rewards card + admin hero slides
- *  categories  "Shop by category" grid
- *  bento       festive (or range) collection tiles
+ *  promos      the tall photo hero (one slide per range) + the rewards card
+ *  trust       the four "Why Zeevan" pillars as icons, right under the hero
+ *  categories  "Shop by category" — big photo tiles, one per product type
+ *  festive     the festival theme's wide photo card (only themes that set `banner.image` show it)
  *  bestsellers best-rated products rail
- *  picks       tabbed festive picks rail
  *  lines       one rail per range (ghee, tel, masala, honey, gifting) — delete it for a shorter Home
- *  trust       the four "Why Zeevan" icons
+ *  bento       festive (or range) collection tiles — still supported, not in the default layouts
+ *  picks       tabbed festive picks rail — still supported, not in the default layouts
  *  footer      the Zeevan wordmark sign-off (keep it last)
- * A festival theme can set its own `layout` (Diwali puts its gifting collections first).
+ * A festival theme can set its own `layout` (Diwali adds its `festive` photo card).
  * Long-form storytelling (how it's made, comparison, reviews, certifications) lives on the About page and the
  * website, not on the app Home.
  */
 export const STORE_HOME = {
-  layout: ["tracker", "promos", "categories", "bento", "bestsellers", "picks", "lines", "trust", "footer"],
+  layout: ["tracker", "promos", "trust", "categories", "bestsellers", "lines", "footer"],
 
   /** Live order card. The status ("Out for delivery") comes from the order; its hint is read out to screen readers only. */
   tracker: {
@@ -407,33 +409,18 @@ export const STORE_SECTIONS = {
 };
 
 /**
- * Promo carousel cards. Admin hero slides (Home View in the admin console) take priority;
- * these are the brand defaults when none are configured. The built-in photo banners already carry their own
- * headline, so they show the picture only (`a11y` is what screen readers say).
- * The rewards card shows `signedIn` copy to a signed-in customer ({points} is their balance).
+ * Hero slides, in order — the tall photo carousel at the top of Home. Each range has a portrait photograph (`art`);
+ * the slide shows it with the `title` and a gold call to action, so the pictures do the talking.
+ * `image` is the wide version of the same scene, kept for places that need a landscape banner.
+ * The rewards slide shows `signedIn` copy to a signed-in customer ({points} is their balance); keep it last.
  */
 export const STORE_PROMOS = [
   {
-    key: "rewards",
-    kind: "rewards",
-    eyebrow: "Zeevan Rewards",
-    title: "Earn on every order",
-    cta: "Start now",
-    signedIn: {
-      title: (points) => `${points} points`,
-      cta: "Redeem now",
-    },
-    route: { name: "RedeemRewards" },
-    requiresAuth: true,
-  },
-  {
     key: "ghee",
     kind: "image",
+    art: require("../../assets/slider-phone-ghee.jpg"),
     image: require("../../assets/promo-slider-ghee.jpg"),
-    ratio: 9 / 16,
-    eyebrow: "Festive favourites",
     title: "A2 Desi Cow Ghee",
-    subtitle: "Bilona craft for the Diwali table",
     cta: "Shop ghee",
     a11y: "A2 Desi Cow Ghee — Diwali",
     route: { name: "Shop", params: { pill: "Ghee" } },
@@ -441,11 +428,9 @@ export const STORE_PROMOS = [
   {
     key: "tel",
     kind: "image",
+    art: require("../../assets/slider-phone-tel.jpg"),
     image: require("../../assets/promo-slider-tel.jpg"),
-    ratio: 9 / 16,
-    eyebrow: "Cold pressed",
     title: "Fresh Filtered Tel",
-    subtitle: "Mustard purity, bottle to kitchen",
     cta: "Shop tel",
     a11y: "Fresh Filtered Tel — Diwali",
     route: { name: "Shop", params: { pill: "Tel" } },
@@ -453,11 +438,9 @@ export const STORE_PROMOS = [
   {
     key: "masala",
     kind: "image",
+    art: require("../../assets/slider-phone-masala.jpg"),
     image: require("../../assets/promo-slider-masala.jpg"),
-    ratio: 9 / 16,
-    eyebrow: "Fresh ground",
     title: "Kitchen Masala",
-    subtitle: "Spice that wakes every feast",
     cta: "Shop masala",
     a11y: "Fresh Ground Masala — Diwali",
     route: { name: "Shop", params: { pill: "Masala" } },
@@ -465,14 +448,25 @@ export const STORE_PROMOS = [
   {
     key: "honey",
     kind: "image",
+    art: require("../../assets/slider-phone-honey.jpg"),
     image: require("../../assets/promo-slider-honey.jpg"),
-    ratio: 9 / 16,
-    eyebrow: "Taste of purity",
     title: "Haldar Honey",
-    subtitle: "Golden jars for sweet gifting",
     cta: "Shop honey",
     a11y: "Haldar Honey — Diwali",
     route: { name: "Shop", params: { pill: "Honey" } },
+  },
+  {
+    key: "rewards",
+    kind: "rewards",
+    title: "Earn on every order",
+    cta: "Start now",
+    a11y: "Zeevan Rewards",
+    signedIn: {
+      title: (points) => `${points} points`,
+      cta: "Redeem now",
+    },
+    route: { name: "RedeemRewards" },
+    requiresAuth: true,
   },
 ];
 
@@ -604,12 +598,17 @@ export const STORE_WISHLIST = {
 
 export const STORE_NAV = {
   items: [
-    { key: "Home", label: "Home", route: "Home", icon: { ion: "home-outline" }, iconActive: { ion: "home" } },
-    { key: "Shop", label: "Categories", route: "Shop", icon: { glyph: "all" } },
-    { key: "Orders", label: "Order Again", route: "MyOrders", requiresAuth: true, icon: { mci: "repeat" }, iconActive: { mci: "repeat" } },
-    { key: "Profile", label: "Account", route: "Profile", requiresAuth: true, icon: { ion: "person-outline" }, iconActive: { ion: "person" } },
+    { key: "Home", label: "Home", route: "Home", icon: { image: require("../../assets/nav-icons/home.png") } },
+    { key: "Shop", label: "Categories", route: "Shop", icon: { image: require("../../assets/nav-icons/grid.png") } },
+    { key: "Orders", label: "Order Again", route: "MyOrders", requiresAuth: true, icon: { image: require("../../assets/nav-icons/swap.png") } },
+    { key: "Profile", label: "Account", route: "Profile", requiresAuth: true, icon: { image: require("../../assets/nav-icons/profile.png") } },
   ],
-  cart: { route: "Cart", requiresAuth: true, label: "Cart", icon: { ion: "bag-handle-outline" }, iconActive: { ion: "bag-handle" } },
+  cart: {
+    route: "Cart",
+    requiresAuth: true,
+    label: "Cart",
+    icon: { image: require("../../assets/nav-icons/bag.png") },
+  },
   /** Which routes light up which tab. */
   activeRoutes: {
     Home: ["Home"],

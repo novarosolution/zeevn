@@ -53,7 +53,7 @@ module.exports = {
     splash: {
       image: "./assets/splash-mark.png",
       resizeMode: "contain",
-      backgroundColor: "#FFFFFF",
+      backgroundColor: "#FBF6EC",
       dark: {
         image: "./assets/splash-mark-dark.png",
         backgroundColor: "#1A1714",

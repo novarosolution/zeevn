@@ -55,7 +55,7 @@ function NavItem({ item, active, onPress }) {
       accessibilityLabel={item.label}
       hitSlop={6}
     >
-      <StoreIcon icon={active && item.iconActive ? item.iconActive : item.icon} active={active} size={26} color={color} />
+      <StoreIcon icon={active && item.iconActive ? item.iconActive : item.icon} active={active} size={32} color={color} />
     </Pressable>
   );
 }
@@ -92,7 +92,7 @@ function CartFab({ count: liveCount, onPress }) {
       >
         <View style={[styles.fabClip, { borderColor: withAlpha("#FFFFFF", isDark ? 0.18 : 0.55) }]}>
           <LinearGradient colors={colors} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
-          <StoreIcon icon={STORE_NAV.cart.icon} size={27} color={iconColor} />
+          <StoreIcon icon={STORE_NAV.cart.icon} size={28} color={iconColor} />
         </View>
         {count > 0 ? (
           <Animated.View

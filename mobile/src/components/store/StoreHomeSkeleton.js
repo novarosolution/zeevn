@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { resolveFestivalTheme } from "../../content/storefrontContent";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import FloatingNav from "./FloatingNav";
+import { heroSize } from "./HeroCarousel";
 import { Bone, ProductCardSkeleton, ShimmerProvider } from "./StoreSkeleton";
 
 const GRADIENT_OVERSCROLL = 800;
@@ -71,15 +72,15 @@ export default function StoreHomeSkeleton() {
   const gradTotal = GRADIENT_OVERSCROLL + GRADIENT_HEIGHT;
   const gradLocations = [0, GRADIENT_OVERSCROLL / gradTotal, ...c.headerLocations.slice(1).map((l) => (GRADIENT_OVERSCROLL + l * GRADIENT_HEIGHT) / gradTotal)];
 
+  const { height } = useWindowDimensions();
   const inner = width - gutter * 2;
-  const heroH = Math.round(Math.min(252, Math.max(214, inner * 0.65)));
-  const col = (inner - 20) / 3;
-  const tileH = Math.round(col * 1.04);
-  const spot = Math.round(Math.min(150, Math.max(104, inner * 0.38)));
+  const hero = heroSize({ width, height, topInset: insets.top, bottomInset: insets.bottom });
+  const colW = Math.floor((inner - 12) / 2);
+  const tileH = Math.round(colW * 1.2);
   const bottomPad = STORE_NAV_HEIGHT + Math.max(16, insets.bottom + 6) + 28;
 
   return (
-    <View style={[styles.screen, { backgroundColor: c.page }]} accessibilityRole="progressbar" accessibilityLabel="Loading">
+    <View style={[styles.screen, { backgroundColor: c.canvas }]} accessibilityRole="progressbar" accessibilityLabel="Loading">
       <ShimmerProvider>
         <ScrollView scrollEnabled={false} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: bottomPad }}>
           <LinearGradient
@@ -94,49 +95,35 @@ export default function StoreHomeSkeleton() {
           </View>
 
           <View style={styles.sections}>
-            {/* hero */}
+            {/* hero — a card with the next one peeking in */}
+            <View style={[styles.heroRow, { paddingHorizontal: gutter }]}>
+              <Bone width={hero.cardW} height={hero.cardH} radius={30} />
+              <Bone width={hero.cardW} height={hero.cardH} radius={30} />
+            </View>
+
+            {/* brand pillars */}
             <View style={{ paddingHorizontal: gutter }}>
-              <View style={[styles.hero, shadow.card, { height: heroH, backgroundColor: isDark ? "rgba(255,255,255,0.05)" : "#E9DFC6" }]}>
-                <View style={styles.heroCopy}>
-                  <Bone width="78%" height={28} radius={9} />
-                  <Bone width="56%" height={28} radius={9} />
-                  <Bone width={64} height={6} radius={3} style={styles.heroRule} />
-                  <Bone width={128} height={40} radius={20} />
-                </View>
-                <View style={[styles.heroPhoto, { width: spot, height: spot, top: Math.round(heroH / 2 - spot / 2 + 8) }]}>
-                  <Bone width={spot} height={spot} radius={22} />
-                </View>
+              <View style={[styles.trust, shadow.soft, { backgroundColor: c.card, borderColor: c.goldLine }]}>
+                {[0, 1, 2, 3].map((i) => (
+                  <View key={i} style={styles.trustItem}>
+                    <Bone width={50} height={50} radius={25} />
+                    <Bone width={56} height={8} radius={4} />
+                    <Bone width={40} height={8} radius={4} />
+                  </View>
+                ))}
               </View>
             </View>
 
-            {/* promo card */}
-            <View style={{ paddingHorizontal: gutter }}>
-              <Bone width="100%" height={176} radius={30} />
-              <View style={styles.dots}>
-                <Bone width={22} height={6} radius={3} />
-                <Bone width={6} height={6} radius={3} />
-                <Bone width={6} height={6} radius={3} />
-              </View>
-            </View>
-
-            {/* collection tiles */}
+            {/* range tiles */}
             <View style={{ gap: 14 }}>
               <View style={[styles.sectionHead, { paddingHorizontal: gutter }]}>
                 <Bone width={170} height={22} radius={8} />
                 <Bone width={74} height={30} radius={15} />
               </View>
-              <View style={[styles.bento, { paddingHorizontal: gutter }]}>
-                <Bone width={col} height={tileH * 2 + 10} radius={24} />
-                <View style={styles.bentoGrid}>
-                  <View style={styles.bentoRow}>
-                    <Bone width={col} height={tileH} radius={24} />
-                    <Bone width={col} height={tileH} radius={24} />
-                  </View>
-                  <View style={styles.bentoRow}>
-                    <Bone width={col} height={tileH} radius={24} />
-                    <Bone width={col} height={tileH} radius={24} />
-                  </View>
-                </View>
+              <View style={[styles.tiles, { paddingHorizontal: gutter }]}>
+                {[0, 1, 2, 3].map((i) => (
+                  <Bone key={i} width={colW} height={tileH} radius={24} />
+                ))}
               </View>
             </View>
 
@@ -169,15 +156,11 @@ const styles = StyleSheet.create({
   tabs: { flexDirection: "row", marginTop: 6, paddingHorizontal: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   tab: { flex: 1, alignItems: "center", gap: 6, paddingTop: 10, paddingBottom: 12 },
   tabIcon: { width: 48, height: 32, alignItems: "center", justifyContent: "center" },
-  sections: { gap: 24, paddingTop: 24 },
-  hero: { borderRadius: 28, overflow: "hidden" },
-  heroCopy: { position: "absolute", left: 20, top: 0, bottom: 0, width: "52%", justifyContent: "center", gap: 10, paddingTop: 22 },
-  heroRule: { marginVertical: 2 },
-  heroPhoto: { position: "absolute", right: 20, transform: [{ rotate: "-5deg" }] },
-  dots: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 5, marginTop: 12 },
+  sections: { gap: 28, paddingTop: 16 },
+  heroRow: { flexDirection: "row", gap: 10 },
+  trust: { flexDirection: "row", borderWidth: 1, borderRadius: 24, paddingVertical: 16, paddingHorizontal: 6 },
+  trustItem: { flex: 1, alignItems: "center", gap: 8 },
   sectionHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  bento: { flexDirection: "row", gap: 10 },
-  bentoGrid: { flex: 1, gap: 10 },
-  bentoRow: { flexDirection: "row", gap: 10 },
+  tiles: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
   rail: { flexDirection: "row", gap: 12 },
 });

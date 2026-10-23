@@ -114,9 +114,33 @@ async function main() {
   const favicon = path.join(assetsDir, "favicon.png");
   const fgLight = path.join(assetsDir, "app-icon-foreground-light.png");
 
-  await renderPng("light", SIZE, lightPath, { pad: PAD });
-  await renderPng("dark", SIZE, darkPath, { pad: PAD });
-  await renderPng("light", SIZE, fgLight, { pad: 0.28, transparent: true });
+  const zSource = path.join(assetsDir, "app-icon-z-source.png");
+  if (fs.existsSync(zSource)) {
+    await sharp(zSource).resize(SIZE, SIZE).png({ compressionLevel: 9 }).toFile(lightPath);
+    const lightRaw = await sharp(lightPath).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const darkPx = Buffer.from(lightRaw.data);
+    const fgPx = Buffer.from(lightRaw.data);
+    for (let i = 0; i < darkPx.length; i += 4) {
+      const r = darkPx[i];
+      const g = darkPx[i + 1];
+      const b = darkPx[i + 2];
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      if (min > 200 && max - min < 60) {
+        darkPx[i] = 26;
+        darkPx[i + 1] = 23;
+        darkPx[i + 2] = 20;
+        darkPx[i + 3] = 255;
+        fgPx[i + 3] = 0;
+      }
+    }
+    await sharp(darkPx, { raw: lightRaw.info }).png({ compressionLevel: 9 }).toFile(darkPath);
+    await sharp(fgPx, { raw: lightRaw.info }).png({ compressionLevel: 9 }).toFile(fgLight);
+  } else {
+    await renderPng("light", SIZE, lightPath, { pad: PAD });
+    await renderPng("dark", SIZE, darkPath, { pad: PAD });
+    await renderPng("light", SIZE, fgLight, { pad: 0.28, transparent: true });
+  }
   await sharp(lightPath).png().toFile(splashIcon);
   await sharp(lightPath).png().toFile(adaptive);
   await sharp(lightPath).png().toFile(icon);
@@ -134,13 +158,13 @@ async function main() {
     let colors = fs.readFileSync(colorsPath, "utf8");
     colors = colors.replace(/#FFFCF8|#F7F2E8/g, (hex) => (hex === "#F7F2E8" ? "#FFFFFF" : "#FFFFFF"));
     colors = colors
-      .replace(/<color name="iconBackground">[^<]+<\/color>/, '<color name="iconBackground">#FFFFFF</color>')
-      .replace(/<color name="splashscreen_background">[^<]+<\/color>/, '<color name="splashscreen_background">#FFFFFF</color>');
+      .replace(/<color name="iconBackground">[^<]+<\/color>/, '<color name="iconBackground">#FBF6EC</color>')
+      .replace(/<color name="splashscreen_background">[^<]+<\/color>/, '<color name="splashscreen_background">#FBF6EC</color>');
     fs.writeFileSync(colorsPath, colors);
     console.log("Wrote", path.relative(root, colorsPath));
   }
 
-  console.log("Done — Zeevan sprout icons installed.");
+  console.log("Done — Zeevan launcher icons installed.");
 }
 
 main().catch((e) => {

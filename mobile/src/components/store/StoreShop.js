@@ -1,23 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FlatList, RefreshControl, Share, StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import Svg from "react-native-svg";
+import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDeliveryLocation } from "../../hooks/useDeliveryLocation";
 import { useAuth } from "../../context/AuthContext";
 import { STORE_LINE_PAGES, STORE_SHOP, STORE_TABS, resolveFestivalTheme } from "../../content/storefrontContent";
-import { STORE_NAV_HEIGHT, useStoreTheme } from "../../theme/storefront";
+import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { SHOP_PRICE_PRESETS, pricePresetFromRange } from "../../utils/shopFilters";
 import { productImageUri, productsForLine, visibleTabs } from "../../utils/storefront";
 import FilterChips from "./FilterChips";
 import FilterSheet from "./FilterSheet";
 import FloatingNav from "./FloatingNav";
-import { LotusMandala } from "./Ornaments";
 import ProductCard from "./ProductCard";
 import ShopHeader from "./ShopHeader";
 import ShopSidebar, { SHOP_SIDEBAR_WIDTH } from "./ShopSidebar";
-import StoreIcon from "./StoreIcon";
-import PressableScale from "./PressableScale";
+import { EmptyState } from "./StoreKit";
 import { VariantSheetProvider } from "./VariantSheet";
 import SkeletonBlock from "../ui/SkeletonBlock";
 
@@ -41,25 +38,30 @@ function lineToFilters(key) {
   return { pill: "All", categories: [] };
 }
 
+/**
+ * The strip above the grid: the festival's (or the farm's) photograph with its two-line title floating in the clear
+ * space above the lamps. In dark mode a scrim keeps the ivory photo from glaring.
+ */
 function ShopBanner({ theme }) {
   const { c, isDark, type, gutter } = useStoreTheme();
-  const gradient = isDark ? theme.header.gradientDark : theme.header.gradient;
   const { shopBanner } = theme;
+  const ink = isDark ? c.ink : "#4A2A0C";
+  const sub = isDark ? c.inkSoft : "#6A4A1C";
   return (
     <View style={{ paddingHorizontal: gutter - 4, paddingBottom: 6 }}>
-      <View style={styles.banner}>
-        <LinearGradient colors={[gradient[0], gradient[1], gradient[2]]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      <View style={[styles.banner, { borderColor: withAlpha(c.gold, isDark ? 0.3 : 0.5), backgroundColor: isDark ? c.card : c.goldSoft }]}>
+        {shopBanner.image ? (
+          <Image source={shopBanner.image} style={StyleSheet.absoluteFill} contentFit="cover" contentPosition={{ left: "50%", top: "100%" }} transition={0} cachePolicy="memory-disk" />
+        ) : null}
+        {isDark ? <View style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha("#0F0D0A", 0.74) }]} /> : null}
         <View style={styles.bannerCopy}>
-          <Text style={type.display(20, { color: isDark ? c.ink : "#6B2A0E", ls: -0.3, lh: 24 })} numberOfLines={1}>
+          <Text style={type.display(20, { color: ink, ls: -0.3, lh: 24 })} numberOfLines={1}>
             {shopBanner.title}
           </Text>
-          <Text style={type.ui(12.5, "medium", isDark ? c.inkSoft : "#6A4A1C")} numberOfLines={1}>
+          <Text style={type.ui(12.5, "semibold", sub)} numberOfLines={1}>
             {shopBanner.subtitle}
           </Text>
         </View>
-        <Svg width={84} height={84} viewBox="0 0 84 84" style={styles.bannerArt}>
-          <LotusMandala cx={46} cy={44} radius={38} color={isDark ? "#E8BC84" : "#B9792A"} opacity={0.3} />
-        </Svg>
       </View>
     </View>
   );
@@ -234,18 +236,13 @@ export default function StoreShop({
                 loading ? (
                   <GridSkeleton cardW={cardW} />
                 ) : (
-                  <View style={[styles.empty, { backgroundColor: c.card, borderColor: c.line }]}>
-                    <View style={[styles.emptyIcon, { backgroundColor: c.brandSoft }]}>
-                      <StoreIcon icon={{ ion: "search-outline" }} size={28} color={c.brand} />
-                    </View>
-                    <Text style={type.display(20, { semi: true })}>{STORE_SHOP.empty.title}</Text>
-                    <Text style={[type.ui(13.5, "medium", c.inkMute), styles.emptyBody]}>{STORE_SHOP.empty.body}</Text>
-                    {hasActiveFilters ? (
-                      <PressableScale onPress={onClearAll} style={[styles.emptyBtn, { backgroundColor: c.brand }]} accessibilityRole="button">
-                        <Text style={type.ui(14, "extrabold", c.onBrand)}>{STORE_SHOP.empty.cta}</Text>
-                      </PressableScale>
-                    ) : null}
-                  </View>
+                  <EmptyState
+                    icon="search-outline"
+                    title={STORE_SHOP.empty.title}
+                    body={STORE_SHOP.empty.body}
+                    actionLabel={hasActiveFilters ? STORE_SHOP.empty.cta : undefined}
+                    onAction={onClearAll}
+                  />
                 )
               }
             />
@@ -281,12 +278,7 @@ const styles = StyleSheet.create({
   main: { flex: 1, minWidth: 0 },
   column: { gap: GRID_GAP, paddingHorizontal: GRID_PAD, marginBottom: GRID_GAP + 2 },
   countRow: { paddingHorizontal: GRID_PAD + 2, paddingBottom: 10 },
-  banner: { minHeight: 78, borderRadius: 20, overflow: "hidden", flexDirection: "row", alignItems: "center", paddingHorizontal: 16 },
-  bannerCopy: { flex: 1, gap: 2, paddingVertical: 12 },
-  bannerArt: { position: "absolute", right: -6, top: -2 },
+  banner: { height: 108, borderRadius: 22, overflow: "hidden", borderWidth: 1, alignItems: "center" },
+  bannerCopy: { alignItems: "center", gap: 2, paddingTop: 10 },
   skeletonWrap: { flexDirection: "row", flexWrap: "wrap", gap: GRID_GAP, paddingHorizontal: GRID_PAD, rowGap: 16 },
-  empty: { margin: GRID_PAD, alignItems: "center", gap: 8, padding: 24, borderRadius: 24, borderWidth: StyleSheet.hairlineWidth },
-  emptyIcon: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
-  emptyBody: { textAlign: "center" },
-  emptyBtn: { marginTop: 6, height: 44, paddingHorizontal: 22, borderRadius: 22, alignItems: "center", justifyContent: "center" },
 });

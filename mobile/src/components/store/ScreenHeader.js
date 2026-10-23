@@ -1,29 +1,31 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useStoreTheme } from "../../theme/storefront";
+import Animated, { Extrapolation, interpolate, useAnimatedStyle } from "react-native-reanimated";
+import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import PressableScale from "./PressableScale";
 
+/** Height of the bar below the status bar — screens add it (plus the top inset) to their scroll padding. */
 export const SCREEN_HEADER_PAD = 64;
 
-/** Solid top bar (no BlurView) — shared by bag, checkout, orders, confirmation. */
-export default function ScreenHeader({ title, onBack, backLabel = "Back", right, divider = false }) {
-  const { c, type, gutter } = useStoreTheme();
+/**
+ * Top bar for bag, checkout, orders, confirmation and product: a round back button, a small serif title and an optional
+ * action, on a solid ivory bar that overlays the top of the screen (the screen's scroll view reserves the room).
+ * Pass the scroll view's `scrollY` shared value and a hairline fades in as the page slides under the bar; without it
+ * `divider` pins the hairline on.
+ */
+export default function ScreenHeader({ title, onBack, backLabel = "Back", right, divider = false, scrollY }) {
+  const { c, type, gutter, shadow } = useStoreTheme();
   const insets = useSafeAreaInsets();
 
+  const lineStyle = useAnimatedStyle(() => ({
+    opacity: scrollY ? interpolate(scrollY.value, [2, 26], [0, 1], Extrapolation.CLAMP) : divider ? 1 : 0,
+  }));
+
   return (
-    <View
-      style={[
-        styles.wrap,
-        {
-          paddingTop: insets.top + 6,
-          backgroundColor: c.page,
-          borderBottomColor: c.line,
-          borderBottomWidth: divider ? StyleSheet.hairlineWidth : 0,
-        },
-      ]}
-    >
+    <View style={[styles.wrap, { paddingTop: insets.top + 6, backgroundColor: c.page }]} pointerEvents="box-none">
       <View style={[styles.row, { paddingHorizontal: gutter }]}>
         {onBack ? (
           <PressableScale
@@ -31,24 +33,28 @@ export default function ScreenHeader({ title, onBack, backLabel = "Back", right,
             scaleTo={0.92}
             accessibilityRole="button"
             accessibilityLabel={backLabel}
-            style={[styles.round, { backgroundColor: c.card, borderColor: c.line }]}
+            style={[styles.round, shadow.soft, { backgroundColor: c.card, borderColor: c.line }]}
           >
             <Ionicons name="chevron-back" size={21} color={c.ink} />
           </PressableScale>
         ) : (
           <View style={styles.spacer} />
         )}
-        <Text style={[type.ui(18, "extrabold", c.ink), styles.title]} numberOfLines={1} pointerEvents="none" accessibilityRole="header">
+        <Text style={[type.display(20, { semi: true, ls: -0.3 }), styles.title]} numberOfLines={1} pointerEvents="none" accessibilityRole="header">
           {title}
         </Text>
         <View style={styles.right}>{right || <View style={styles.spacer} />}</View>
       </View>
+      <Animated.View pointerEvents="none" style={[styles.edge, lineStyle]}>
+        <LinearGradient colors={[withAlpha(c.shadow, 0.07), withAlpha(c.shadow, 0)]} style={StyleSheet.absoluteFill} />
+        <View style={[styles.hairline, { backgroundColor: c.line }]} />
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { zIndex: 20 },
+  wrap: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 20, paddingBottom: 6 },
   row: { height: 52, flexDirection: "row", alignItems: "center", gap: 10 },
   title: { flex: 1, textAlign: "center" },
   right: { minWidth: 42, alignItems: "flex-end" },
@@ -61,4 +67,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  edge: { position: "absolute", left: 0, right: 0, top: "100%", height: 12 },
+  hairline: { position: "absolute", left: 0, right: 0, top: 0, height: StyleSheet.hairlineWidth },
 });

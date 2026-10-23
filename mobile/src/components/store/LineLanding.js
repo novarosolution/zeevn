@@ -1,79 +1,84 @@
 import React, { useMemo } from "react";
 import { StyleSheet, Text, View, useWindowDimensions } from "react-native";
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { FadeIn } from "react-native-reanimated";
 import { STORE_LINE_PAGES } from "../../content/storefrontContent";
 import { getProductLineByKey } from "../../content/zeevanCatalogContent";
-import { useStoreTheme, withAlpha } from "../../theme/storefront";
+import { pickRange, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { buildCategoryTiles, productImageUri } from "../../utils/storefront";
 import CategoryGrid, { SeeAllBar } from "./CategoryGrid";
 import PressableScale from "./PressableScale";
 import ProductCard from "./ProductCard";
+import { Jar, Spotlight, canBlend } from "./RangeTiles";
 import { SectionHeader } from "./SectionTitle";
 import StoreIcon from "./StoreIcon";
 
 const GAP = 12;
 const COPY = STORE_LINE_PAGES.landing;
 
+const HERO_H = 196;
+
 /**
  * Landing for a single range tab (Ghee, Tel, Masala, Honey, Gifting):
- * hero panel (badge, title, call to action), sub-category tiles, and the full product grid.
+ * a hero card in the range's colour with the jar in a pool of light (badge, title, call to action),
+ * sub-category tiles, and the full product grid.
  */
 export default function LineLanding({ tab, products, onProductPress, onCategoryPress, onSeeAll }) {
   const { c, r, type, gutter, shadow, isDark } = useStoreTheme();
   const { width } = useWindowDimensions();
   const page = STORE_LINE_PAGES[tab.key] || STORE_LINE_PAGES.empty;
   const line = getProductLineByKey(tab.lineKey);
+  const range = pickRange(c, tab.lineKey);
   const cardW = Math.floor((width - gutter * 2 - GAP) / 2);
+  const heroW = width - gutter * 2;
+  const jar = 224;
+  const blend = canBlend(isDark);
   const tiles = useMemo(() => buildCategoryTiles(products, { max: 8 }), [products]);
-  const cover = useMemo(() => products.map((p) => productImageUri(p, 220)).find(Boolean) || "", [products]);
-  const colors = isDark ? ["#3A2E14", "#241C0B"] : line?.gradient ? [line.gradient[0], "#F6DE9C"] : ["#FFF3D2", "#F6DE9C"];
+  const cover = useMemo(() => products.map((p) => productImageUri(p, 320)).find(Boolean) || "", [products]);
 
   return (
     <Animated.View key={tab.key} entering={FadeIn.duration(280)} style={styles.wrap}>
       <View style={{ paddingHorizontal: gutter }}>
-        <View style={[styles.hero, shadow.card, { borderRadius: r.xxl }]}>
-          <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-          <View style={[StyleSheet.absoluteFill, { borderRadius: r.xxl, borderWidth: 1, borderColor: withAlpha("#FFFFFF", 0.55) }]} pointerEvents="none" />
-          <View style={styles.heroCopy}>
-            <View style={styles.heroTop}>
-              <View style={[styles.heroIcon, { backgroundColor: withAlpha(c.brand, 0.12) }]}>
-                <StoreIcon icon={tab.icon} size={22} color={c.brand} />
+        <View style={[shadow.card, { height: HERO_H, borderRadius: r.xxl, backgroundColor: range.wash[1] }]}>
+          <View style={[styles.hero, { borderRadius: r.xxl }]}>
+            <LinearGradient colors={range.wash} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
+            {blend ? <Spotlight width={heroW} height={HERO_H} cx={heroW - 96} cy={HERO_H / 2} radius={jar * 0.5} /> : null}
+            <Jar uri={cover} size={jar} blend={blend} style={{ position: "absolute", right: 0, top: Math.round((HERO_H - jar) / 2) + 6 }} />
+            <View style={styles.heroCopy}>
+              <View style={styles.heroTop}>
+                <View style={[styles.heroIcon, { backgroundColor: withAlpha(range.ink, 0.1) }]}>
+                  <StoreIcon icon={tab.icon} size={22} color={range.ink} />
+                </View>
+                {line?.hero?.badge ? (
+                  <View style={[styles.heroBadge, { backgroundColor: isDark ? withAlpha(c.gold, 0.9) : c.gold }]}>
+                    <Text style={type.ui(10.5, "extrabold", "#3A2A0C", { letterSpacing: 0.6 })} numberOfLines={1}>
+                      {line.hero.badge}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
-              {line?.hero?.badge ? (
-                <View style={[styles.heroBadge, { backgroundColor: isDark ? withAlpha(c.gold, 0.9) : c.gold }]}>
-                  <Text style={type.ui(10.5, "extrabold", "#3A2A0C", { letterSpacing: 0.6 })} numberOfLines={1}>
-                    {line.hero.badge}
-                  </Text>
+              <Text style={type.display(27, { color: range.ink, ls: -0.5, lh: 31 })} numberOfLines={2}>
+                {page.title}
+              </Text>
+              {products.length && line?.hero?.cta ? (
+                <View style={styles.heroFoot}>
+                  <PressableScale
+                    onPress={onSeeAll}
+                    accessibilityRole="button"
+                    accessibilityLabel={line.hero.cta}
+                    style={[styles.heroCta, { backgroundColor: c.brand }]}
+                  >
+                    <Text style={type.ui(13, "extrabold", c.onBrand, { letterSpacing: 0.2 })} numberOfLines={1}>
+                      {line.hero.cta}
+                    </Text>
+                    <Ionicons name="arrow-forward" size={14} color={c.onBrand} />
+                  </PressableScale>
                 </View>
               ) : null}
             </View>
-            <Text style={type.display(25, { ls: -0.5, lh: 29 })} numberOfLines={2}>
-              {page.title}
-            </Text>
-            {products.length && line?.hero?.cta ? (
-              <View style={styles.heroFoot}>
-                <PressableScale
-                  onPress={onSeeAll}
-                  accessibilityRole="button"
-                  accessibilityLabel={line.hero.cta}
-                  style={[styles.heroCta, { backgroundColor: c.brand }]}
-                >
-                  <Text style={type.ui(13, "extrabold", c.onBrand, { letterSpacing: 0.2 })} numberOfLines={1}>
-                    {line.hero.cta}
-                  </Text>
-                  <Ionicons name="arrow-forward" size={14} color={c.onBrand} />
-                </PressableScale>
-              </View>
-            ) : null}
+            <View style={[StyleSheet.absoluteFill, { borderRadius: r.xxl, borderWidth: 1, borderColor: withAlpha("#FFFFFF", isDark ? 0.1 : 0.7) }]} pointerEvents="none" />
           </View>
-          {cover ? (
-            <View style={[styles.heroPhoto, { borderColor: withAlpha("#FFFFFF", isDark ? 0.16 : 0.85), backgroundColor: c.well }]}>
-              <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="memory-disk" />
-            </View>
-          ) : null}
         </View>
       </View>
 
@@ -110,14 +115,13 @@ export default function LineLanding({ tab, products, onProductPress, onCategoryP
 
 const styles = StyleSheet.create({
   wrap: { gap: 26, paddingTop: 18 },
-  hero: { minHeight: 164, overflow: "hidden", flexDirection: "row" },
-  heroCopy: { flex: 1, padding: 18, gap: 6, justifyContent: "center", maxWidth: "58%" },
-  heroTop: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 },
+  hero: { flex: 1, overflow: "hidden" },
+  heroCopy: { flex: 1, padding: 18, gap: 8, justifyContent: "center", maxWidth: "58%" },
+  heroTop: { flexDirection: "row", alignItems: "center", gap: 8 },
   heroIcon: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   heroBadge: { paddingHorizontal: 9, height: 22, borderRadius: 11, alignItems: "center", justifyContent: "center", flexShrink: 1 },
-  heroFoot: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 6 },
-  heroCta: { flexDirection: "row", alignItems: "center", gap: 6, height: 36, paddingHorizontal: 14, borderRadius: 18 },
-  heroPhoto: { position: "absolute", right: 14, top: 16, bottom: 16, width: "37%", borderRadius: 22, borderWidth: 3, overflow: "hidden" },
+  heroFoot: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 2 },
+  heroCta: { flexDirection: "row", alignItems: "center", gap: 6, height: 38, paddingHorizontal: 16, borderRadius: 19 },
   block: { gap: 14 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: GAP, rowGap: 14 },
   empty: { alignItems: "center", gap: 8, padding: 28, borderWidth: StyleSheet.hairlineWidth },

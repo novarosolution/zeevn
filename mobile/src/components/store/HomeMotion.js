@@ -4,7 +4,7 @@
  */
 import React, { createContext, useContext, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-import Animated, { interpolateColor, useAnimatedStyle } from "react-native-reanimated";
+import Animated, { Easing, FadeInDown, interpolateColor, useAnimatedStyle, useReducedMotion } from "react-native-reanimated";
 import { useStoreTheme } from "../../theme/storefront";
 
 const ScrollContext = createContext(null);
@@ -18,9 +18,22 @@ export function useHomeScroll() {
   return useContext(ScrollContext);
 }
 
-/** Pass-through — previously ran per-section scroll reactions that hitch Home. */
-export function Reveal({ children, style }) {
-  return <View style={style}>{children}</View>;
+/** Blocks within this many places of the top rise into view once when Home appears. */
+const REVEAL_FIRST = 3;
+
+/**
+ * Home's entrance: the blocks on the first screen fade up one after another, once, when the page mounts (a native
+ * layout animation — nothing runs while scrolling). Later blocks are plain views, so there is no per-section
+ * scroll work to hitch the page. Plain too with "reduce motion".
+ */
+export function Reveal({ index = 0, children, style }) {
+  const reduced = useReducedMotion();
+  if (reduced || index >= REVEAL_FIRST) return <View style={style}>{children}</View>;
+  return (
+    <Animated.View entering={FadeInDown.duration(560).delay(140 + index * 120).easing(Easing.out(Easing.cubic))} style={style}>
+      {children}
+    </Animated.View>
+  );
 }
 
 /** Pass-through — tiles render immediately. */

@@ -1,18 +1,20 @@
 import React, { memo, useCallback, useMemo, useRef, useState } from "react";
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
+import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } from "react-native-reanimated";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { STORE_CARD, STORE_SECTIONS } from "../../content/storefrontContent";
-import { useStoreTheme, withAlpha } from "../../theme/storefront";
+import { pickRange, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { formatINRWhole } from "../../utils/currency";
 import { hapticTap } from "../../utils/haptics";
 import { getProductCardFlags } from "../../utils/productAvailability";
 import { productToCartLine } from "../../utils/productCart";
 import {
   getEtaLabel,
+  getProductLine,
   getProductPricing,
   getStockHint,
   getUnitLabel,
@@ -23,6 +25,7 @@ import AddControl from "./AddControl";
 import { FLIGHT_MS, flyToCart, hasCartTarget } from "./flyToCart";
 import { markCartFlight } from "../../utils/cartFeedback";
 import PressableScale from "./PressableScale";
+import { canBlend } from "./RangeTiles";
 import { useVariantSheet } from "./VariantSheet";
 
 const AnimatedView = Animated.View;
@@ -89,8 +92,11 @@ function RatingChip({ rating }) {
   );
 }
 
-/** Image block: single image, or a swipeable gallery with page dots (grid cards only). */
-function CardImage({ uris, size, gallery, dim, c }) {
+/**
+ * Image block: single image, or a swipeable gallery with page dots (grid cards only). With `blend` the photo's white
+ * studio backdrop dissolves into the tinted well behind it (multiply), so the jar looks printed on the card.
+ */
+function CardImage({ uris, size, gallery, dim, c, blend }) {
   const [index, setIndex] = useState(0);
   const onEnd = useCallback(
     (e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / Math.max(size, 1))),
@@ -106,17 +112,20 @@ function CardImage({ uris, size, gallery, dim, c }) {
   }
 
   const imageStyle = [styles.image, dim && { opacity: 0.42 }];
+  const blendStyle = blend ? styles.blend : null;
 
   if (!gallery || uris.length < 2) {
     return (
-      <Image
-        source={{ uri: uris[0] }}
-        style={imageStyle}
-        contentFit="contain"
-        transition={0}
-        cachePolicy="memory-disk"
-        recyclingKey={uris[0]}
-      />
+      <View style={[StyleSheet.absoluteFill, blendStyle]}>
+        <Image
+          source={{ uri: uris[0] }}
+          style={imageStyle}
+          contentFit="contain"
+          transition={0}
+          cachePolicy="memory-disk"
+          recyclingKey={uris[0]}
+        />
+      </View>
     );
   }
 
@@ -132,7 +141,7 @@ function CardImage({ uris, size, gallery, dim, c }) {
         onMomentumScrollEnd={onEnd}
         getItemLayout={(_, i) => ({ length: size, offset: size * i, index: i })}
         renderItem={({ item }) => (
-          <View style={{ width: size, height: size }}>
+          <View style={[{ width: size, height: size }, blendStyle]}>
             <Image source={{ uri: item }} style={imageStyle} contentFit="contain" transition={0} cachePolicy="memory-disk" />
           </View>
         )}
@@ -163,7 +172,7 @@ function CardImage({ uris, size, gallery, dim, c }) {
  *                          promises it in the header), so only exceptions show on a tile
  */
 function ProductCard({ product, width = 172, onPress, gallery = false, rank, hideEta, lite = false, style }) {
-  const { c, r, type, shadow } = useStoreTheme();
+  const { c, r, type, shadow, isDark } = useStoreTheme();
   const { addToCart, removeFromCart, getItemQuantity } = useCart();
   const wishlist = useWishlist();
   const variantSheet = useVariantSheet();
@@ -192,6 +201,10 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
     return null;
   }, [state, pricing.discountPct, product.badgeText]);
 
+  // Light mode: the well takes its range's wash and the photo blends into it; dark mode keeps the cream well.
+  const blend = useMemo(() => canBlend(isDark), [isDark]);
+  const range = useMemo(() => pickRange(c, getProductLine(product)), [c, product]);
+
   const wellRef = useRef(null);
   const handleAdd = useCallback(() => {
     if (hasCartTarget()) markCartFlight(FLIGHT_MS + 500); // the flight replaces the "added to bag" toast
@@ -217,7 +230,7 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
   // Narrow tiles (the Shop grid beside its category rail) put the price on its own line and stretch ADD beneath it.
   const stacked = width < 150;
   const priceText = (
-    <Text style={type.ui(17, "extrabold", c.ink, { letterSpacing: -0.3 })} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+    <Text style={type.display(19, { color: c.ink, ls: -0.3, lh: 23 })} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
       {formatINRWhole(pricing.price)}
     </Text>
   );
@@ -237,8 +250,9 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
       accessibilityLabel={STORE_CARD.a11y.tile(product.name, formatINRWhole(pricing.price))}
     >
       {rank ? <RankBadge rank={rank} /> : null}
-      <View ref={wellRef} collapsable={false} style={[styles.well, { width: imageSize, height: imageSize, backgroundColor: c.well || WELL_FILL, borderRadius: WELL_RADIUS }]}>
-        <CardImage uris={uris} size={imageSize} gallery={gallery && !lite} dim={dim} c={c} />
+      <View ref={wellRef} collapsable={false} style={[styles.well, { width: imageSize, height: imageSize, backgroundColor: blend ? range.wash[1] : c.well || WELL_FILL, borderRadius: WELL_RADIUS }]}>
+        {blend ? <LinearGradient colors={range.wash} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} pointerEvents="none" /> : null}
+        <CardImage uris={uris} size={imageSize} gallery={gallery && !lite} dim={dim} c={c} blend={blend} />
         {!lite ? <View style={[StyleSheet.absoluteFill, styles.wellRim]} pointerEvents="none" /> : null}
         {badge ? (
           <View style={[styles.badge, { backgroundColor: badgeColors.bg }]}>
@@ -331,6 +345,7 @@ const styles = StyleSheet.create({
   },
   well: { overflow: "hidden" },
   image: { width: "100%", height: "100%" },
+  blend: { mixBlendMode: "multiply" },
   wellRim: { borderRadius: WELL_RADIUS, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.55)" },
   placeholder: { flex: 1, alignItems: "center", justifyContent: "center" },
   badge: {

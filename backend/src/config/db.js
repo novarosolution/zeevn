@@ -24,7 +24,11 @@ async function connectDB() {
   let lastErr;
   for (let i = 1; i <= 8; i += 1) {
     try {
-      const connection = await mongoose.connect(mongoUri);
+      const connection = await mongoose.connect(mongoUri, {
+        serverSelectionTimeoutMS: 8000,
+        socketTimeoutMS: 45000,
+        heartbeatFrequencyMS: 10000,
+      });
       console.log(`MongoDB connected: ${connection.connection.host}`);
       return;
     } catch (error) {

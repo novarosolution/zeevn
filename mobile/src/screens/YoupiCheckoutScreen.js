@@ -3,6 +3,7 @@ import { Image, Linking, Platform, Pressable, StyleSheet, Text, View } from "rea
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Clipboard from "expo-clipboard";
+import { verifyOrderPayment } from "../services/paymentService";
 
 function buildUpiUri({ upiUri, vpa, payeeName, amount, orderId }) {
   if (String(upiUri || "").trim()) return String(upiUri).trim();
@@ -27,8 +28,9 @@ export default function YoupiCheckoutScreen({ navigation, route }) {
   const qrUri = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(upiUri)}`;
 
   const finish = useCallback(() => {
+    if (p.orderId) verifyOrderPayment(null, p.orderId, { confirmed: true }).catch(() => {});
     navigation.replace("MyOrders");
-  }, [navigation]);
+  }, [navigation, p.orderId]);
 
   const pay = useCallback(() => {
     Linking.openURL(upiUri).catch(() => {});

@@ -6,9 +6,9 @@
  */
 const { expo } = require("./app.json");
 
-/** Hosted API on Render — https://zeevn-i760.onrender.com */
-const PRODUCTION_API_URL = "https://zeevn-i760.onrender.com";
-const PRODUCTION_SITE_URL = "https://zeevan.shop";
+/** Live API — Vercel /aws proxies EC2. */
+const PRODUCTION_API_URL = "https://www.zeevan.shop/aws";
+const PRODUCTION_SITE_URL = "https://www.zeevan.shop";
 
 const isProductionBundle =
   process.env.NODE_ENV === "production" ||

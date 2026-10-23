@@ -1456,11 +1456,38 @@ async function verifyPayment(req, res, next) {
     }
 
     if (order.paymentMethod === "YouPI") {
-      return res.status(202).json({
-        message: "Waiting for YouPI webhook confirmation.",
-        paymentStatus: order.paymentStatus,
-        order,
+      const utr = String(req.body?.utr || req.body?.UTR || "").trim();
+      const confirmed = req.body?.confirmed === true || Boolean(utr);
+      if (!confirmed) {
+        return res.status(202).json({
+          message: "Waiting for payment confirmation.",
+          paymentStatus: order.paymentStatus,
+          order,
+        });
+      }
+      order.youpi = {
+        ...(order.youpi || {}),
+        utr: utr || order.youpi?.utr || "",
+        status: utr ? "CLAIMED" : "CUSTOMER_CONFIRMED",
+      };
+      order.paymentStatus = "paid";
+      order.status = "confirmed";
+      order.paymentExpiresAt = null;
+      if (order.invoice) {
+        order.invoice.status = "paid";
+        order.invoice.updatedAt = new Date();
+      }
+      setStatusActor(order, {
+        by: req.user._id,
+        byRole: "customer",
+        note: utr ? `UPI paid (UTR ${utr})` : "Customer confirmed UPI payment",
       });
+      await finalizePaidOrder(order);
+      const populated = await Order.findById(order._id)
+        .populate("user", "name email")
+        .populate("products.product", "name price image inStock stockQty");
+      pushOrderLiveUpdate(populated);
+      return res.json(populated);
     }
 
     const {

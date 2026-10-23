@@ -1,0 +1,11 @@
+# Keep the EAS upload small. Native build output and CocoaPods are rebuilt on the worker.
+ios/Pods
+ios/build
+android/build
+android/.gradle
+android/app/build
+android/app/.cxx
+.expo
+dist
+.tmp-web-check
+**/.DS_Store

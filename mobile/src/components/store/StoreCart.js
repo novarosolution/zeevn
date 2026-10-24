@@ -19,7 +19,6 @@ import ScreenHeader, { SCREEN_HEADER_PAD } from "./ScreenHeader";
 import ScrollEdgeFade from "./ScrollEdgeFade";
 import StoreBanner from "./StoreBanner";
 import StoreField from "./StoreField";
-import PickLocationMap from "../location/PickLocationMap";
 import CheckoutPlacingOverlay from "../loading/CheckoutPlacingOverlay";
 
 const PAY_DOCK_HEIGHT = 78;
@@ -316,7 +315,7 @@ function AddressTypeRow({ value, onChange }) {
   );
 }
 
-function AddressCard({ form, onChange, errors, detecting, onUseGps, latitude, longitude, onMapPick, hasSaved, onUseSaved, bill }) {
+function AddressCard({ form, onChange, errors, detecting, onUseGps, onOpenMap, hasSaved, onUseSaved, bill }) {
   const { c, r, type } = useStoreTheme();
   const copy = STORE_CART.checkout.address;
   const zoneHint =
@@ -347,7 +346,16 @@ function AddressCard({ form, onChange, errors, detecting, onUseGps, latitude, lo
         }
       />
 
-      <PickLocationMap latitude={latitude} longitude={longitude} onPick={onMapPick} height={220} />
+      <PressableScale
+        onPress={onOpenMap}
+        accessibilityRole="button"
+        accessibilityLabel={copy.useMap}
+        style={[styles.gps, { backgroundColor: c.goldSoft, borderColor: withAlpha(c.gold, 0.5), borderRadius: r.lg, marginTop: 0 }]}
+      >
+        <Ionicons name="map-outline" size={18} color={c.goldText} />
+        <Text style={[type.ui(14, "bold", c.ink), styles.flex]}>{copy.useMap}</Text>
+        <Ionicons name="chevron-forward" size={16} color={c.inkMute} />
+      </PressableScale>
       <PressableScale
         onPress={onUseGps}
         disabled={detecting}
@@ -549,9 +557,7 @@ export default function StoreCart({
   onDismissError,
   detectingLocation = false,
   onUseGps,
-  latitude,
-  longitude,
-  onMapPick,
+  onOpenMap,
   hasSavedAddress = false,
   onUseSaved,
   paymentMethod = "Razorpay",
@@ -643,9 +649,7 @@ export default function StoreCart({
           errors={fieldErrors}
           detecting={detectingLocation}
           onUseGps={onUseGps}
-          latitude={latitude}
-          longitude={longitude}
-          onMapPick={onMapPick}
+          onOpenMap={onOpenMap}
           hasSaved={hasSavedAddress}
           onUseSaved={onUseSaved}
           bill={bill}

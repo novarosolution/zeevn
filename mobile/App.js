@@ -87,6 +87,7 @@ const CUSTOMER_SCREENS = {
   Notifications: "notifications",
   Settings: "settings",
   ManageAddress: "address",
+  PickLocation: "address/map",
   Support: "support",
   DeliveryDashboard: "delivery/dashboard",
 };

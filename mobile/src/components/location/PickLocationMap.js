@@ -1,25 +1,44 @@
 import React, { useEffect, useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+import MapView, { Marker, Polyline } from "react-native-maps";
 import { validMapCoord } from "../../services/locationService";
 
 const FALLBACK = { latitude: 23.2156, longitude: 72.6369 };
 
 /** Tap the map to move the delivery pin. Native = react-native-maps (already used for live orders). */
-export default function PickLocationMap({ latitude, longitude, onPick, height = 240 }) {
+export default function PickLocationMap({
+  latitude,
+  longitude,
+  storeLatitude,
+  storeLongitude,
+  path,
+  onPick,
+  height = 240,
+  hint = true,
+}) {
   const mapRef = useRef(null);
   const hasPin = validMapCoord(latitude) && validMapCoord(longitude);
+  const hasShop = validMapCoord(storeLatitude) && validMapCoord(storeLongitude);
+  const line = Array.isArray(path) && path.length >= 2 ? path : null;
   const coord = hasPin
     ? { latitude: Number(latitude), longitude: Number(longitude) }
     : FALLBACK;
 
   useEffect(() => {
-    if (!hasPin || !mapRef.current) return;
+    if (!mapRef.current) return;
+    if (line) {
+      mapRef.current.fitToCoordinates(line, {
+        edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
+        animated: true,
+      });
+      return;
+    }
+    if (!hasPin) return;
     mapRef.current.animateToRegion(
       { ...coord, latitudeDelta: 0.012, longitudeDelta: 0.012 },
       220
     );
-  }, [coord.latitude, coord.longitude, hasPin]);
+  }, [coord.latitude, coord.longitude, hasPin, line]);
 
   return (
     <View style={[styles.wrap, { height }]}>
@@ -32,9 +51,17 @@ export default function PickLocationMap({ latitude, longitude, onPick, height = 
           if (next) onPick?.({ latitude: next.latitude, longitude: next.longitude });
         }}
       >
-        {hasPin ? <Marker coordinate={coord} /> : null}
+        {line ? <Polyline coordinates={line} strokeColor="#1F331F" strokeWidth={4} /> : null}
+        {hasShop ? (
+          <Marker
+            coordinate={{ latitude: Number(storeLatitude), longitude: Number(storeLongitude) }}
+            title="Shop"
+            pinColor="#B08A4A"
+          />
+        ) : null}
+        {hasPin ? <Marker coordinate={coord} title="You" /> : null}
       </MapView>
-      <Text style={styles.hint}>Tap the map to drop the pin — we fill the address.</Text>
+      {hint ? <Text style={styles.hint}>Tap the map to drop the pin — we fill the address.</Text> : null}
     </View>
   );
 }

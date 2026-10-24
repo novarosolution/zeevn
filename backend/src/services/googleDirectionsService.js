@@ -39,13 +39,13 @@ function pruneCacheIfNeeded() {
  * @param {number} destLat
  * @param {number} destLng
  * @param {string} apiKey
- * @returns {Promise<string|null>} Encoded polyline or null.
+ * @returns {Promise<{ encodedPolyline: string, distanceKm: number|null }|null>}
  */
 async function fetchDrivingRouteEncodedPolyline(orderId, originLat, originLng, destLat, destLng, apiKey) {
   const key = cacheKey(orderId, originLat, originLng, destLat, destLng);
   const hit = routeCache.get(key);
   if (hit && Date.now() < hit.expiresAt) {
-    return hit.encodedPolyline;
+    return { encodedPolyline: hit.encodedPolyline, distanceKm: hit.distanceKm ?? null };
   }
 
   const params = new URLSearchParams({
@@ -73,13 +73,17 @@ async function fetchDrivingRouteEncodedPolyline(orderId, originLat, originLng, d
     return null;
   }
 
+  const meters = (data.routes[0].legs || []).reduce((sum, leg) => sum + Number(leg?.distance?.value || 0), 0);
+  const distanceKm = meters > 0 ? Math.round((meters / 1000) * 10) / 10 : null;
+
   pruneCacheIfNeeded();
   routeCache.set(key, {
     encodedPolyline: points,
+    distanceKm,
     expiresAt: Date.now() + ROUTE_CACHE_TTL_MS,
   });
 
-  return points;
+  return { encodedPolyline: points, distanceKm };
 }
 
 function getDirectionsApiKey() {

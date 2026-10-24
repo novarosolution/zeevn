@@ -32,10 +32,6 @@ const {
   createYoupiPayment,
   verifyYoupiWebhook,
 } = require("../services/youpiService");
-const {
-  fetchDrivingRouteEncodedPolyline,
-  getDirectionsApiKey,
-} = require("../services/googleDirectionsService");
 const { geocodeAddress } = require("../services/geocodingService");
 const { getShopLocationPayload } = require("../utils/shopLocation");
 const {
@@ -403,12 +399,18 @@ async function createOrder(req, res, next) {
     }
 
     const resolvedShippingAddress = await resolveShippingCoordinates(shippingAddress);
-    const deliveryQuote = await resolveDeliveryQuote({
+    const { enrichQuoteWithRoute } = require("../services/drivingRouteService");
+    let deliveryQuote = await resolveDeliveryQuote({
       postalCode: resolvedShippingAddress?.postalCode,
       city: resolvedShippingAddress?.city,
       itemsTotal,
       latitude: resolvedShippingAddress?.latitude,
       longitude: resolvedShippingAddress?.longitude,
+    });
+    deliveryQuote = await enrichQuoteWithRoute(deliveryQuote, {
+      latitude: resolvedShippingAddress?.latitude,
+      longitude: resolvedShippingAddress?.longitude,
+      minutesPerKm: deliveryQuote.minutesPerKm,
     });
     if (!deliveryQuote.serviceable) {
       return res.status(400).json({
@@ -808,23 +810,14 @@ async function getMyOrderDrivingRoute(req, res, next) {
       return res.json({ encodedPolyline: null, message: "Origin or destination coordinates are missing." });
     }
 
-    const apiKey = getDirectionsApiKey();
-    if (!apiKey) {
-      return res.json({ encodedPolyline: null, message: "Directions are not configured on the server." });
-    }
-
-    const encodedPolyline = await fetchDrivingRouteEncodedPolyline(
-      orderId,
-      Number(oLat),
-      Number(oLng),
-      Number(dLat),
-      Number(dLng),
-      apiKey
-    );
+    const { fetchDrivingRoute } = require("../services/drivingRouteService");
+    const route = await fetchDrivingRoute(Number(oLat), Number(oLng), Number(dLat), Number(dLng), String(orderId));
 
     return res.json({
-      encodedPolyline,
-      provider: encodedPolyline ? "google" : null,
+      encodedPolyline: route?.encodedPolyline || null,
+      path: route?.path || null,
+      distanceKm: route?.distanceKm ?? null,
+      provider: route?.provider || null,
     });
   } catch (error) {
     next(error);

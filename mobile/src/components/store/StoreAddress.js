@@ -1,13 +1,14 @@
 import React, { useEffect, useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useDeliveryLocation } from "../../context/DeliveryLocationContext";
+import { etaFromQuote } from "../../services/deliveryService";
 import { useStoreTheme } from "../../theme/storefront";
 import { formatDeliveryLocationParts, tidyLandmark } from "../../utils/deliveryLocationLabel";
 import { hapticSuccess } from "../../utils/haptics";
 import StoreBanner from "./StoreBanner";
 import StoreField from "./StoreField";
 import StoreScreen from "./StoreScreen";
-import PickLocationMap from "../location/PickLocationMap";
 import { Button, Card, Rise, SectionLabel, Segmented } from "./StoreKit";
 
 const TYPES = [
@@ -18,6 +19,9 @@ const TYPES = [
 
 function AddressPreview({ type, house, line1, landmark, city, postalCode, gps }) {
   const { c, type: font } = useStoreTheme();
+  const { quote } = useDeliveryLocation();
+  const eta = etaFromQuote(quote);
+  const away = [quote?.distanceLabel, eta].filter(Boolean).join(" · ");
   const icon = (TYPES.find((t) => t.key === type) || TYPES[0]).icon;
   const parts = formatDeliveryLocationParts({ houseNumber: house, line1, landmark, city, postalCode });
   const place = [tidyLandmark(landmark), [city, postalCode].filter(Boolean).join(" ")].filter(Boolean).join(" · ");
@@ -39,6 +43,11 @@ function AddressPreview({ type, house, line1, landmark, city, postalCode, gps })
         {place ? (
           <Text style={font.ui(13, "medium", c.inkMute)} numberOfLines={2}>
             {place}
+          </Text>
+        ) : null}
+        {away ? (
+          <Text style={font.ui(12, "semibold", quote?.serviceable === false ? c.danger : c.brand)} numberOfLines={1}>
+            {quote?.serviceable === false ? quote.message : away}
           </Text>
         ) : null}
         {gps ? (
@@ -78,9 +87,7 @@ export default function StoreAddress({
   detecting,
   detectLabel,
   onDetect,
-  latitude,
-  longitude,
-  onMapPick,
+  onOpenMap,
   saving,
   onSave,
 }) {
@@ -104,7 +111,7 @@ export default function StoreAddress({
       ) : null}
 
       <Rise index={1}>
-        <PickLocationMap latitude={latitude} longitude={longitude} onPick={onMapPick} />
+        <Button label="Select on map" icon="map-outline" tone="secondary" onPress={onOpenMap} />
         <View style={styles.mapGap}>
           <Button label={detectLabel} icon="locate" tone="secondary" onPress={onDetect} loading={detecting} />
         </View>

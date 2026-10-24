@@ -20,8 +20,9 @@ import {
   createOrderRequest,
   validateCouponRequest} from "../services/orderService";
 import { checkDeliveryServiceability } from "../services/deliveryService";
-import { addressFromCoords, getCurrentAddressFromGPS } from "../services/locationService";
+import { getCurrentAddressFromGPS } from "../services/locationService";
 import { useDeliveryLocation } from "../context/DeliveryLocationContext";
+import { openPickLocation, usePickedPlace } from "../navigation/pickLocationNav";
 import { useTheme } from "../context/ThemeContext";
 import {
   customerPanel,
@@ -255,6 +256,20 @@ export default function CartScreen({ navigation, route }) {
       clearTimeout(timer);
     };
   }, [postalCode, city, totalAmount, latitude, longitude]);
+
+  usePickedPlace(route, navigation, (place) => {
+    if (place.line1) {
+      setLine1(place.line1);
+      setHouseNumber((prev) => prev.trim() ? prev : String(place.line1).split(",")[0].slice(0, 32));
+    }
+    if (place.city) setCity(place.city);
+    if (place.postalCode) setPostalCode(place.postalCode);
+    if (place.country) setCountry(place.country);
+    if (Number.isFinite(Number(place.latitude))) setLatitude(Number(place.latitude));
+    if (Number.isFinite(Number(place.longitude))) setLongitude(Number(place.longitude));
+    applyPlace(place);
+    toastSuccess("Place set — review the address, then place the order.", { title: "New place" });
+  });
 
   /** Guest can browse the bag; only checkout needs sign-in. */
   if (!isAuthenticated && isCheckoutFlow) {
@@ -541,19 +556,12 @@ export default function CartScreen({ navigation, route }) {
     }
   };
 
-  const handleMapPick = async ({ latitude: lat, longitude: lng }) => {
-    setLatitude(lat);
-    setLongitude(lng);
-    try {
-      setError("");
-      const address = await addressFromCoords(lat, lng);
-      await fillCartFromPlace(address);
-      toastSuccess("Pin moved — review the address, then place the order.", { title: "New place" });
-    } catch (err) {
-      await applyPlace({ latitude: lat, longitude: lng, label: "Selected place" });
-      setError(err.message || "Pin set. Fill the street if it is blank.");
-    }
-  };
+  const openMap = () =>
+    openPickLocation(navigation, {
+      latitude,
+      longitude,
+      returnTo: isCheckoutFlow ? "Checkout" : "Cart",
+    });
 
   if (isNativeApp) {
     const formSetters = {
@@ -600,9 +608,7 @@ export default function CartScreen({ navigation, route }) {
         onDismissError={() => setError("")}
         detectingLocation={isDetectingLocation}
         onUseGps={handleUseCurrentLocation}
-        latitude={latitude}
-        longitude={longitude}
-        onMapPick={handleMapPick}
+        onOpenMap={openMap}
         hasSavedAddress={profileAddress.complete}
         onUseSaved={handleUseSavedAddress}
         paymentMethod={paymentMethod}
@@ -737,9 +743,7 @@ export default function CartScreen({ navigation, route }) {
             fieldErrors={fieldErrors}
             isDetectingLocation={isDetectingLocation}
             onUseGps={handleUseCurrentLocation}
-            latitude={latitude}
-            longitude={longitude}
-            onMapPick={handleMapPick}
+            onOpenMap={openMap}
             onUseSavedAddress={handleUseSavedAddress}
             hasSavedAddress={profileAddress.complete}
             isCompact={isCompact}

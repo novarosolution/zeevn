@@ -781,6 +781,7 @@ export const STORE_CART = {
       subtitle: "Where should we bring it?",
       useSaved: "Use saved",
       useGps: "Use current location",
+      useMap: "Select on map",
       locating: "Locating…",
       contact: "Contact",
       where: "Address",

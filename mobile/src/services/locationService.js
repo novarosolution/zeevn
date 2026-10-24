@@ -19,20 +19,7 @@ async function reverseGeocodeWeb(latitude, longitude) {
   }
 
   const data = await response.json();
-  const address = data.address || {};
-
-  return {
-    line1:
-      data.name ||
-      address.road ||
-      address.neighbourhood ||
-      address.suburb ||
-      "",
-    city: address.city || address.town || address.village || "",
-    state: address.state || "",
-    postalCode: address.postcode || "",
-    country: address.country || "",
-  };
+  return placeFromNominatim(data, latitude, longitude);
 }
 
 function getCurrentPositionWeb() {
@@ -73,6 +60,40 @@ export async function addressFromCoords(latitude, longitude) {
     latitude: lat,
     longitude: lng,
   };
+}
+
+function placeFromNominatim(hit, latitude, longitude) {
+  const address = hit?.address || {};
+  return {
+    line1:
+      hit?.name ||
+      address.road ||
+      address.neighbourhood ||
+      address.suburb ||
+      "",
+    city: address.city || address.town || address.village || "",
+    state: address.state || "",
+    postalCode: address.postcode || "",
+    country: address.country || "India",
+    latitude,
+    longitude,
+    label: hit?.display_name || "",
+  };
+}
+
+/** Search streets and areas in India. Used on the Select location page. */
+export async function searchPlaces(query) {
+  const q = String(query || "").trim();
+  if (q.length < 2) return [];
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=in&q=${encodeURIComponent(q)}`;
+  const response = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!response.ok) {
+    throw new Error("Unable to search places.");
+  }
+  const rows = await response.json();
+  return (Array.isArray(rows) ? rows : [])
+    .map((hit) => placeFromNominatim(hit, Number(hit.lat), Number(hit.lon)))
+    .filter((place) => validMapCoord(place.latitude) && validMapCoord(place.longitude));
 }
 
 export async function getCurrentAddressFromGPS() {

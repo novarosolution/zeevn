@@ -61,6 +61,7 @@ const ProtectedNotifications = withAuthGuard(LazyScreens.NotificationsScreen);
 const ProtectedSettings = withAuthGuard(LazyScreens.SettingsScreen);
 const ProtectedRedeemRewards = withAuthGuard(LazyScreens.RedeemRewardsScreen);
 const ProtectedManageAddress = withAuthGuard(LazyScreens.ManageAddressScreen);
+const ProtectedPickLocation = withAuthGuard(LazyScreens.PickLocationScreen);
 const ProtectedSupport = withAuthGuard(LazyScreens.SupportScreen);
 /** Auth only — role is checked inside the screen after a fresh profile fetch (avoids stale cache + wrong redirect). */
 const ProtectedDeliveryDashboard = withAuthGuard(LazyScreens.DeliveryDashboardScreen);
@@ -143,6 +144,11 @@ export default function AppNavigator() {
         <Stack.Screen name="Settings" component={ProtectedSettings} />
         <Stack.Screen name="RedeemRewards" component={ProtectedRedeemRewards} />
         <Stack.Screen name="ManageAddress" component={ProtectedManageAddress} />
+        <Stack.Screen
+          name="PickLocation"
+          component={ProtectedPickLocation}
+          options={Platform.OS === "web" ? undefined : { animation: "fade_from_bottom" }}
+        />
         <Stack.Screen name="Support" component={ProtectedSupport} />
       </Stack.Group>
 

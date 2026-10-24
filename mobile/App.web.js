@@ -46,6 +46,7 @@ const linking = {
       Notifications: "notifications",
       Settings: "settings",
       ManageAddress: "address",
+      PickLocation: "address/map",
       Support: "support",
       DeliveryDashboard: "delivery/dashboard",
       AdminDashboard: "admin",

@@ -15,10 +15,10 @@ import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPage
 import { MANAGE_ADDRESS_SCREEN_UI } from "../content/appContent";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-import { addressFromCoords, getCurrentAddressFromGPS, validMapCoord } from "../services/locationService";
+import { getCurrentAddressFromGPS, validMapCoord } from "../services/locationService";
 import { fetchUserProfile, updateUserProfile } from "../services/userService";
 import { useDeliveryLocation } from "../context/DeliveryLocationContext";
-import PickLocationMap from "../components/location/PickLocationMap";
+import { openPickLocation, usePickedPlace } from "../navigation/pickLocationNav";
 import { fonts, spacing, typography } from "../theme/tokens";
 import {
   customerPanel,
@@ -35,7 +35,7 @@ import SectionReveal from "../components/motion/SectionReveal";
 import { StoreAddress } from "../components/store/entry";
 import { FIGMA } from "../theme/figmaApp";
 
-export default function ManageAddressScreen({ navigation }) {
+export default function ManageAddressScreen({ navigation, route }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
   const styles = useMemo(() => createManageStyles(c, shadowPremium, isDark), [c, shadowPremium, isDark]);
     const { isAuthenticated, token, updateStoredUser, isAuthLoading } = useAuth();
@@ -118,18 +118,16 @@ export default function ManageAddressScreen({ navigation }) {
     }
   };
 
-  const handleMapPick = async ({ latitude: lat, longitude: lng }) => {
-    setLatitude(lat);
-    setLongitude(lng);
-    try {
-      setError("");
-      const address = await addressFromCoords(lat, lng);
-      await fillFromPlace(address, "Pin moved — review the fields, then save.");
-    } catch (err) {
-      await applyPlace({ latitude: lat, longitude: lng, label: "Selected place" });
-      setError(err.message || "Pin set. Fill the street if it is blank.");
-    }
-  };
+  usePickedPlace(route, navigation, (place) => {
+    fillFromPlace(place, "Place set — review the fields, then save.");
+  });
+
+  const openMap = () =>
+    openPickLocation(navigation, {
+      latitude,
+      longitude,
+      returnTo: "ManageAddress",
+    });
 
   const handleSave = async () => {
     const nextErrors = {
@@ -211,9 +209,7 @@ export default function ManageAddressScreen({ navigation }) {
         detecting={detecting}
         detectLabel={detecting ? MANAGE_ADDRESS_SCREEN_UI.useGpsLoading : MANAGE_ADDRESS_SCREEN_UI.useGps}
         onDetect={handleDetect}
-        latitude={latitude}
-        longitude={longitude}
-        onMapPick={handleMapPick}
+        onOpenMap={openMap}
         saving={saving}
         onSave={handleSave}
       />
@@ -302,7 +298,14 @@ export default function ManageAddressScreen({ navigation }) {
                 ) : null}
 
                 <SectionReveal delay={140}>
-                  <PickLocationMap latitude={latitude} longitude={longitude} onPick={handleMapPick} />
+                  <PremiumButton
+                    label={MANAGE_ADDRESS_SCREEN_UI.useMap}
+                    iconLeft="map-outline"
+                    variant="ghost"
+                    size="md"
+                    onPress={openMap}
+                    style={styles.detectBtnSpacer}
+                  />
                   <PremiumButton
                     label={detecting ? MANAGE_ADDRESS_SCREEN_UI.useGpsLoading : MANAGE_ADDRESS_SCREEN_UI.useGps}
                     iconLeft="locate"

@@ -10,7 +10,6 @@ import { FIGMA, figmaEyebrow, figmaTextPrimary } from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, spacing } from "../../theme/tokens";
 import KankregCheckoutSectionCard from "./KankregCheckoutSectionCard";
-import PickLocationMap from "../location/PickLocationMap";
 
 function FormSection({ eyebrow, children, isDark }) {
   return (
@@ -48,9 +47,7 @@ export default function KankregCheckoutForm({
   fieldErrors = {},
   isDetectingLocation = false,
   onUseGps,
-  latitude,
-  longitude,
-  onMapPick,
+  onOpenMap,
   onUseSavedAddress,
   hasSavedAddress = false,
   isCompact = false,
@@ -69,9 +66,24 @@ export default function KankregCheckoutForm({
         </View>
       ) : null}
 
-      <View style={styles.mapWrap}>
-        <PickLocationMap latitude={latitude} longitude={longitude} onPick={onMapPick} height={220} />
-      </View>
+      <Pressable
+        onPress={onOpenMap}
+        style={({ pressed, hovered }) => [
+          styles.gpsBtn,
+          Platform.OS === "web" && hovered && styles.gpsBtnHover,
+          pressed && { opacity: 0.9 },
+        ]}
+        accessibilityRole="button"
+      >
+        <LinearGradient
+          colors={["rgba(176,141,87,0.12)", "rgba(176,141,87,0.04)"]}
+          style={styles.gpsGrad}
+        >
+          <Ionicons name="map-outline" size={16} color={isDark ? FIGMA.goldBright : FIGMA.goldDeep} />
+          <Text style={[styles.gpsTitle, figmaTextPrimary(isDark)]}>{CART_ADDRESS.useMap}</Text>
+          <Ionicons name="chevron-forward" size={14} color={isDark ? "rgba(245,239,228,0.68)" : FIGMA.inkFaint} />
+        </LinearGradient>
+      </Pressable>
 
       <Pressable
         onPress={onUseGps}
@@ -201,9 +213,6 @@ export default function KankregCheckoutForm({
 const styles = StyleSheet.create({
   banner: {
     marginBottom: spacing.sm,
-  },
-  mapWrap: {
-    marginBottom: spacing.md,
   },
   gpsBtn: {
     borderRadius: 14,

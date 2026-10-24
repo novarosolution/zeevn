@@ -706,7 +706,20 @@ export const CART_ADDRESS = {
   useSaved: "Use saved",
   useGps: "Use current location",
   useGpsLoading: "Locating…",
+  useMap: "Select on map",
   gpsFillSuccess: "Location added.",
+};
+
+/** Full-screen map picker — `PickLocationScreen.js`. */
+export const PICK_LOCATION_UI = {
+  title: "Select location",
+  searchPlaceholder: "Search area, street, or landmark",
+  searching: "Searching…",
+  empty: "No places found.",
+  hint: "Search or tap the map to drop the pin.",
+  useHere: "Use this location",
+  locating: "Locating…",
+  gps: "Use current location",
 };
 
 /** Shop catalog — re-export from `shopPageContent.js`. */
@@ -779,7 +792,7 @@ export const MANAGE_ADDRESS_SCREEN_UI = {
   useGps: "Use current location",
   useGpsLoading: "Locating…",
   useMap: "Select on map",
-  mapHint: "Tap the map to move the pin. We fill city, street, and pin.",
+  mapHint: "Search or tap the map, then use this location.",
   saveCta: COMMON_UI.save,
   saving: "Saving…",
   success: "Address saved.",

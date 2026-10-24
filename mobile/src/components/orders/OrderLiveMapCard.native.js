@@ -16,7 +16,7 @@ import { ORDER_LIVE_TRACKING } from "../../content/appContent";
 import { fetchOrderDrivingRoute } from "../../services/userService";
 import useOrderLiveLocation from "../../hooks/useOrderLiveLocation";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
-import { decodeGooglePolyline } from "../../utils/polylineRoute";
+import { pathFromQuote } from "../../utils/polylineRoute";
 import { formatLiveLocationUpdatedLine } from "../../utils/formatLiveLocationUpdated";
 import { collectOrderMapPoints, computeMapRegionFromPoints } from "../../utils/orderMapBounds";
 import PressableScale from "../store/PressableScale";
@@ -126,13 +126,8 @@ export default function OrderLiveMapCard({ orderId }) {
     fetchOrderDrivingRoute(orderId)
       .then((res) => {
         if (cancelled) return;
-        const enc = res?.encodedPolyline;
-        if (!enc || typeof enc !== "string") {
-          setRouteCoords(null);
-          return;
-        }
-        const decoded = decodeGooglePolyline(enc);
-        setRouteCoords(decoded && decoded.length >= 2 ? decoded : null);
+        const decoded = pathFromQuote(res);
+        setRouteCoords(decoded);
       })
       .catch(() => {
         if (!cancelled) setRouteCoords(null);

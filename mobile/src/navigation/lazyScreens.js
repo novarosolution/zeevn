@@ -34,6 +34,9 @@ export const RedeemRewardsScreen = createLazyScreen(() => import("../screens/Red
 export const ManageAddressScreen = createLazyScreen(() => import("../screens/ManageAddressScreen"), {
   screenName: "ManageAddressScreen",
 });
+export const PickLocationScreen = createLazyScreen(() => import("../screens/PickLocationScreen"), {
+  screenName: "PickLocationScreen",
+});
 export const SupportScreen = createLazyScreen(() => import("../screens/SupportScreen"), {
   screenName: "SupportScreen",
 });

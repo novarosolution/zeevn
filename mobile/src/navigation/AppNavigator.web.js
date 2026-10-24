@@ -7,6 +7,7 @@ import PageTransition from "../components/motion/PageTransition";
 import * as CoreScreens from "./screenRegistryCore";
 import * as LazyScreens from "./lazyScreens";
 import { useAuth } from "../context/AuthContext";
+import { DeliveryLocationProvider } from "../context/DeliveryLocationContext";
 
 const Stack = createNativeStackNavigator();
 
@@ -52,6 +53,7 @@ const ProtectedNotifications = withAuthGuard(LazyScreens.NotificationsScreen);
 const ProtectedSettings = withAuthGuard(LazyScreens.SettingsScreen);
 const ProtectedRedeemRewards = withAuthGuard(LazyScreens.RedeemRewardsScreen);
 const ProtectedManageAddress = withAuthGuard(LazyScreens.ManageAddressScreen);
+const ProtectedPickLocation = withAuthGuard(LazyScreens.PickLocationScreen);
 const ProtectedSupport = withAuthGuard(LazyScreens.SupportScreen);
 const ProtectedDeliveryDashboard = withAuthGuard(LazyScreens.DeliveryDashboardScreen);
 const ProtectedAdminDashboard = withAuthGuard(LazyScreens.AdminDashboardScreen);
@@ -82,6 +84,7 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
     <View style={styles.navRoot}>
       <KankregSiteHeader navigationRef={navigationRef} navReady={navReady} />
       <View style={styles.stackFill}>
+        <DeliveryLocationProvider>
         <Stack.Navigator initialRouteName="Home" screenOptions={screenOptions}>
           <Stack.Group screenOptions={{ presentation: "card" }}>
             <Stack.Screen name="Login" component={WrappedLogin} />
@@ -109,6 +112,7 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
             <Stack.Screen name="Settings" component={ProtectedSettings} />
             <Stack.Screen name="RedeemRewards" component={ProtectedRedeemRewards} />
             <Stack.Screen name="ManageAddress" component={ProtectedManageAddress} />
+            <Stack.Screen name="PickLocation" component={ProtectedPickLocation} />
             <Stack.Screen name="Support" component={ProtectedSupport} />
           </Stack.Group>
 
@@ -133,6 +137,7 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
             <Stack.Screen name="AdminSupport" component={ProtectedAdminSupport} />
           </Stack.Group>
         </Stack.Navigator>
+        </DeliveryLocationProvider>
       </View>
     </View>
   );

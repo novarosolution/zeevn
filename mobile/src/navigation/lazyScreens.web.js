@@ -59,6 +59,11 @@ export const ManageAddressScreen = createLazyScreenDevSafe(
   () => import("../screens/ManageAddressScreen"),
   { screenName: "ManageAddressScreen" }
 );
+export const PickLocationScreen = createLazyScreenDevSafe(
+  () => require("../screens/PickLocationScreen").default,
+  () => import("../screens/PickLocationScreen"),
+  { screenName: "PickLocationScreen" }
+);
 export const SupportScreen = createLazyScreenDevSafe(
   () => require("../screens/SupportScreen").default,
   () => import("../screens/SupportScreen"),

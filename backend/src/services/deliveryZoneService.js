@@ -130,9 +130,17 @@ async function resolveDeliveryQuote({ postalCode, city, itemsTotal = 0, latitude
   const store = picked.store || stores[0];
   const km = picked.km != null ? picked.km : hasPoint && store ? distanceKm({ lat, lng }, store) : null;
 
+  const storePin = {
+    storeId: store?._id ? String(store._id) : null,
+    storeName: store?.label || "",
+    storeLatitude: Number.isFinite(Number(store?.latitude)) ? Number(store.latitude) : null,
+    storeLongitude: Number.isFinite(Number(store?.longitude)) ? Number(store.longitude) : null,
+    minutesPerKm: Number(settings?.minutesPerKm) > 0 ? Number(settings.minutesPerKm) : 3,
+  };
+
   if (zone) {
     return decorateQuote(
-      { ...quoteFromZone(zone, itemsTotal), storeId: store?._id ? String(store._id) : null, storeName: store?.label || "" },
+      { ...quoteFromZone(zone, itemsTotal), ...storePin },
       settings,
       km
     );
@@ -148,8 +156,9 @@ async function resolveDeliveryQuote({ postalCode, city, itemsTotal = 0, latitude
         etaMinutesMax: minutesFromKm(picked.km, settings.minutesPerKm),
         zoneId: null,
         zoneName: picked.store.label || "Store area",
-        storeId: picked.store._id ? String(picked.store._id) : null,
-        storeName: picked.store.label || "",
+        ...storePin,
+        storeId: picked.store._id ? String(picked.store._id) : storePin.storeId,
+        storeName: picked.store.label || storePin.storeName,
         message: "",
       },
       settings,
@@ -158,7 +167,7 @@ async function resolveDeliveryQuote({ postalCode, city, itemsTotal = 0, latitude
   }
 
   return decorateQuote(
-    { ...quoteFromZone(null), storeId: store?._id ? String(store._id) : null, storeName: store?.label || "" },
+    { ...quoteFromZone(null), ...storePin },
     settings,
     km
   );

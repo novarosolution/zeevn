@@ -39,12 +39,18 @@ async function checkDeliveryServiceability(req, res, next) {
     const itemsTotal = Number(req.query.itemsTotal || 0);
     const latitude = req.query.lat || req.query.latitude;
     const longitude = req.query.lng || req.query.longitude;
-    const quote = await resolveDeliveryQuote({
+    let quote = await resolveDeliveryQuote({
       postalCode,
       city,
       itemsTotal,
       latitude,
       longitude,
+    });
+    const { enrichQuoteWithRoute } = require("../services/drivingRouteService");
+    quote = await enrichQuoteWithRoute(quote, {
+      latitude,
+      longitude,
+      minutesPerKm: quote.minutesPerKm,
     });
     res.json({
       ...quote,

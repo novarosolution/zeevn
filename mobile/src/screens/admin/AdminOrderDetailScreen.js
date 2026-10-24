@@ -30,6 +30,7 @@ import PremiumLoader from "../../components/ui/PremiumLoader";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumButton from "../../components/ui/PremiumButton";
 import SectionReveal from "../../components/motion/SectionReveal";
+import { openPickLocation, usePickedPlace } from "../../navigation/pickLocationNav";
 
 function buildEditForm(order) {
   if (!order) return null;
@@ -120,6 +121,23 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
   const updateField = (field, value) => {
     setEditForm((prev) => ({ ...prev, [field]: value }));
   };
+
+  usePickedPlace(route, navigation, (place) => {
+    setEditForm((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        latitude: place.latitude ?? prev.latitude,
+        longitude: place.longitude ?? prev.longitude,
+        line1: place.line1 || prev.line1,
+        city: place.city || prev.city,
+        state: place.state || prev.state,
+        postalCode: place.postalCode || prev.postalCode,
+        country: place.country || prev.country,
+      };
+    });
+    setSuccess("Pin moved — save changes to keep it.");
+  });
 
   const handleStatus = async (id, status) => {
     try {
@@ -341,6 +359,15 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
                       busy={busy}
                       onUpdateField={updateField}
                       onSaveDetails={handleSaveDetails}
+                      onOpenMap={() =>
+                        openPickLocation(navigation, {
+                          latitude: editForm.latitude,
+                          longitude: editForm.longitude,
+                          returnTo: "AdminOrderDetail",
+                          returnParams: { orderId },
+                          applyLive: false,
+                        })
+                      }
                       onAssignDelivery={handleAssignDelivery}
                       onStatus={handleStatus}
                       onCancelOrder={handleCancelOrder}

@@ -2,31 +2,38 @@ import React, { useEffect, useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import L from "leaflet";
 import "../../styles/leafletWeb.css";
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, Polyline, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import { validMapCoord } from "../../services/locationService";
 
 const FALLBACK = [23.2156, 72.6369];
 
-function pinIcon() {
+function pinIcon(bg = "#1F331F") {
   return L.divIcon({
     className: "pick-loc-pin",
-    html: `<div style="width:28px;height:28px;border-radius:14px;background:#1F331F;border:2px solid #E6BE88;box-shadow:0 2px 8px rgba(20,24,16,.28)"></div>`,
+    html: `<div style="width:28px;height:28px;border-radius:14px;background:${bg};border:2px solid #E6BE88;box-shadow:0 2px 8px rgba(20,24,16,.28)"></div>`,
     iconSize: [28, 28],
     iconAnchor: [14, 28],
   });
 }
 
-function MapReady({ center }) {
+function MapReady({ center, path }) {
   const map = useMap();
   useEffect(() => {
     const kick = () => {
       map.invalidateSize({ animate: false });
-      map.setView(center, map.getZoom() || 15, { animate: false });
+      if (path?.length >= 2) {
+        map.fitBounds(
+          path.map((p) => [p.latitude, p.longitude]),
+          { padding: [28, 28], maxZoom: 15, animate: false }
+        );
+      } else {
+        map.setView(center, map.getZoom() || 15, { animate: false });
+      }
     };
     kick();
     const t = setTimeout(kick, 120);
     return () => clearTimeout(t);
-  }, [map, center[0], center[1]]);
+  }, [map, center[0], center[1], path]);
   return null;
 }
 
@@ -40,12 +47,23 @@ function ClickCatch({ onPick }) {
 }
 
 /** Tap the map to move the delivery pin. Web = Leaflet (already in the admin desk). */
-export default function PickLocationMap({ latitude, longitude, onPick, height = 240 }) {
+export default function PickLocationMap({
+  latitude,
+  longitude,
+  storeLatitude,
+  storeLongitude,
+  path,
+  onPick,
+  height = 240,
+  hint = true,
+}) {
   const center = useMemo(() => {
     if (validMapCoord(latitude) && validMapCoord(longitude)) return [Number(latitude), Number(longitude)];
     return FALLBACK;
   }, [latitude, longitude]);
   const hasPin = validMapCoord(latitude) && validMapCoord(longitude);
+  const hasShop = validMapCoord(storeLatitude) && validMapCoord(storeLongitude);
+  const line = Array.isArray(path) && path.length >= 2 ? path : null;
 
   return (
     <View style={[styles.wrap, { height }]}>
@@ -61,11 +79,13 @@ export default function PickLocationMap({ latitude, longitude, onPick, height = 
           attribution='&copy; OpenStreetMap'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MapReady center={center} />
+        <MapReady center={center} path={line} />
         <ClickCatch onPick={onPick} />
+        {line ? <Polyline positions={line.map((p) => [p.latitude, p.longitude])} pathOptions={{ color: "#1F331F", weight: 4 }} /> : null}
+        {hasShop ? <Marker position={[Number(storeLatitude), Number(storeLongitude)]} icon={pinIcon("#B08A4A")} /> : null}
         {hasPin ? <Marker position={center} icon={pinIcon()} /> : null}
       </MapContainer>
-      <Text style={styles.hint}>Tap the map to drop the pin — we fill the address.</Text>
+      {hint ? <Text style={styles.hint}>Tap the map to drop the pin — we fill the address.</Text> : null}
     </View>
   );
 }

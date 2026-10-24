@@ -11,6 +11,7 @@ import { fonts, radius, spacing } from "../../theme/tokens";
 import { useTheme } from "../../context/ThemeContext";
 import { platformShadow } from "../../theme/shadowPlatform";
 import GoldHairline from "../ui/GoldHairline";
+import DeleteAccountAction from "../store/DeleteAccountAction";
 
 const sideShadow = platformShadow({
   web: {
@@ -243,6 +244,16 @@ export default function KankregProfileGrid({
               />
             );
           })}
+          <DeleteAccountAction
+            variant="menu"
+            tone={{
+              ink: isDark ? "#f5f0e8" : KANKREG_PALETTE.ink,
+              mute: isDark ? "#a8a29e" : KANKREG_PALETTE.inkSoft,
+              danger: KANKREG_PALETTE.danger,
+              line: "transparent",
+              paper: "transparent",
+            }}
+          />
           {onSignOut ? (
             <Pressable
               onPress={onSignOut}

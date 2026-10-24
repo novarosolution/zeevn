@@ -1,11 +1,17 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Polyline } from "react-native-maps";
 import { validMapCoord } from "../../services/locationService";
+import { PinGlyph } from "../store/AddressKit";
 
 const FALLBACK = { latitude: 23.2156, longitude: 72.6369 };
 
-/** Tap the map to move the delivery pin. Native = react-native-maps (already used for live orders). */
+/**
+ * Tap the map, or drag the pin, to move the delivery pin. Native = react-native-maps (already used for live orders).
+ * `fill` makes the map fill its parent (the full-screen picker) instead of a fixed-height card; `padding` is the
+ * strip `{ top, bottom }` that floating controls cover, so the pin and the route settle in the part still visible;
+ * `dark` follows the app's dark theme rather than the phone's.
+ */
 export default function PickLocationMap({
   latitude,
   longitude,
@@ -15,8 +21,15 @@ export default function PickLocationMap({
   onPick,
   height = 240,
   hint = true,
+  fill = false,
+  padding,
+  dark = false,
 }) {
   const mapRef = useRef(null);
+  const padTop = padding?.top || 0;
+  const padBottom = padding?.bottom || 0;
+  // A custom marker view is drawn once into a bitmap: let it settle, then stop tracking so the map stays smooth.
+  const [tracking, setTracking] = useState(true);
   const hasPin = validMapCoord(latitude) && validMapCoord(longitude);
   const hasShop = validMapCoord(storeLatitude) && validMapCoord(storeLongitude);
   const line = Array.isArray(path) && path.length >= 2 ? path : null;
@@ -28,7 +41,7 @@ export default function PickLocationMap({
     if (!mapRef.current) return;
     if (line) {
       mapRef.current.fitToCoordinates(line, {
-        edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
+        edgePadding: { top: 40 + padTop, right: 40, bottom: 40 + padBottom, left: 40 },
         animated: true,
       });
       return;
@@ -38,14 +51,23 @@ export default function PickLocationMap({
       { ...coord, latitudeDelta: 0.012, longitudeDelta: 0.012 },
       220
     );
-  }, [coord.latitude, coord.longitude, hasPin, line]);
+  }, [coord.latitude, coord.longitude, hasPin, line, padTop, padBottom]);
+
+  useEffect(() => {
+    setTracking(true);
+    const t = setTimeout(() => setTracking(false), 500);
+    return () => clearTimeout(t);
+  }, [dark, hasPin]);
 
   return (
-    <View style={[styles.wrap, { height }]}>
+    <View style={fill ? styles.fill : [styles.wrap, { height }]}>
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFill}
         initialRegion={{ ...coord, latitudeDelta: 0.02, longitudeDelta: 0.02 }}
+        mapPadding={{ top: padTop, left: 0, right: 0, bottom: padBottom }}
+        userInterfaceStyle={dark ? "dark" : "light"}
+        showsPointsOfInterest={false}
         onPress={(e) => {
           const next = e.nativeEvent?.coordinate;
           if (next) onPick?.({ latitude: next.latitude, longitude: next.longitude });
@@ -59,7 +81,21 @@ export default function PickLocationMap({
             pinColor="#B08A4A"
           />
         ) : null}
-        {hasPin ? <Marker coordinate={coord} title="You" /> : null}
+        {hasPin ? (
+          <Marker
+            coordinate={coord}
+            anchor={{ x: 0.5, y: 1 }}
+            draggable
+            tracksViewChanges={tracking}
+            onDragEnd={(e) => {
+              const next = e.nativeEvent?.coordinate;
+              if (next) onPick?.({ latitude: next.latitude, longitude: next.longitude });
+            }}
+            accessibilityLabel="Delivery pin"
+          >
+            <PinGlyph />
+          </Marker>
+        ) : null}
       </MapView>
       {hint ? <Text style={styles.hint}>Tap the map to drop the pin — we fill the address.</Text> : null}
     </View>
@@ -67,6 +103,7 @@ export default function PickLocationMap({
 }
 
 const styles = StyleSheet.create({
+  fill: { ...StyleSheet.absoluteFillObject, backgroundColor: "#E8E4D8" },
   wrap: {
     width: "100%",
     borderRadius: 16,

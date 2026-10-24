@@ -21,11 +21,24 @@ function uniqueUrls(urls) {
   return out;
 }
 
-/** Candidate API origins — configured URL first, then production fallback. */
+function isLanUrl(url) {
+  try {
+    const h = new URL(String(url)).hostname.toLowerCase();
+    if (h === "localhost" || h === "127.0.0.1" || h === "0.0.0.0" || h === "10.0.2.2") return true;
+    if (/^192\.168\.\d+\.\d+$/.test(h) || /^10\.\d+\.\d+\.\d+$/.test(h)) return true;
+    if (/^172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+$/.test(h)) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+/** Candidate API origins — live/configured first; stale LAN preferred URLs are ignored. */
 export function getApiEndpointCandidates() {
   const configured = getApiBaseUrl();
   const envFallback = String(process.env.EXPO_PUBLIC_API_URL_FALLBACK || "").trim();
-  return uniqueUrls([preferredUrl, configured, envFallback]);
+  const preferred = preferredUrl && !isLanUrl(preferredUrl) ? preferredUrl : null;
+  return uniqueUrls([configured, preferred, envFallback]);
 }
 
 async function ensurePreferredLoaded() {
@@ -78,7 +91,7 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_M
  * Race API origins — first healthy response wins (load balancing / failover).
  * First healthy response wins (load balancing / failover).
  */
-export async function fetchBalanced(path, options = {}, { timeoutMs = REQUEST_TIMEOUT_MS } = {}) {
+export async function fetchBalanced(path, options = {}, { timeoutMs = REQUEST_TIMEOUT_MS, accept5xx = false } = {}) {
   await ensurePreferredLoaded();
   const candidates = getApiEndpointCandidates();
   const relativePath = String(path || "");
@@ -93,7 +106,7 @@ export async function fetchBalanced(path, options = {}, { timeoutMs = REQUEST_TI
         : `${base}${relativePath}`;
     try {
       const response = await fetchWithTimeout(url, options, timeoutMs);
-      if (response.ok || response.status < 500) {
+      if (response.ok || response.status < 500 || (accept5xx && response.status === 503)) {
         await markApiEndpointHealthy(base);
         return response;
       }

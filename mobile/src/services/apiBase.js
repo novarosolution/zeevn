@@ -7,6 +7,14 @@ export const ZEEVAN_API_LOCAL_URL = "http://127.0.0.1:5001";
 /** Live shop API — Vercel /aws proxies EC2. Phone cannot use 127.0.0.1. */
 export const ZEEVAN_API_LIVE_URL = "https://www.zeevan.shop/aws";
 
+/**
+ * Dev only. An iOS Simulator shares the Mac's network, so it can call a loopback API; a phone cannot. Bundling with
+ * `EXPO_PUBLIC_ALLOW_LOOPBACK_API=1` makes native honour a loopback `EXPO_PUBLIC_API_URL` instead of falling back to
+ * the live shop (handy on networks where the Mac has no private LAN address, which iOS App Transport Security needs for
+ * plain HTTP). Release builds never set it, so their behaviour is unchanged.
+ */
+const ALLOW_LOOPBACK_API = process.env.EXPO_PUBLIC_ALLOW_LOOPBACK_API === "1";
+
 function isLoopbackHostname(host) {
   const h = String(host || "").toLowerCase();
   return h === "localhost" || h === "127.0.0.1" || h === "0.0.0.0" || h === "10.0.2.2";
@@ -155,7 +163,7 @@ export function getApiBaseUrl() {
 
   const native = Platform.OS !== "web";
   if (native) {
-    if (configured && !isLoopbackHostname(hostnameOf(configured))) return configured;
+    if (configured && (ALLOW_LOOPBACK_API || !isLoopbackHostname(hostnameOf(configured)))) return configured;
     return ZEEVAN_API_LIVE_URL;
   }
 

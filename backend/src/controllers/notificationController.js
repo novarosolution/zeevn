@@ -1,6 +1,7 @@
 const Notification = require("../models/Notification");
 const User = require("../models/User");
 const { emitNotificationCreated } = require("../realtime/socketHub");
+const { recordAdminAction } = require("../utils/adminLog");
 
 function chunkArray(items, chunkSize) {
   const chunks = [];
@@ -10,9 +11,9 @@ function chunkArray(items, chunkSize) {
   return chunks;
 }
 
-async function sendExpoPushBroadcast({ title, message }) {
+async function sendExpoPushBroadcast({ title, message, userFilter = {}, dataType = "broadcast" }) {
   const users = await User.find(
-    { expoPushTokens: { $exists: true, $not: { $size: 0 } } },
+    { expoPushTokens: { $exists: true, $not: { $size: 0 } }, ...userFilter },
     { expoPushTokens: 1 }
   ).lean();
   
@@ -22,7 +23,7 @@ async function sendExpoPushBroadcast({ title, message }) {
     )
   );
   if (allTokens.length === 0) {
-    return { sent: 0 };
+    return { sent: 0, handed: 0 };
   }
 
   const messages = allTokens.map((to) => ({
@@ -32,11 +33,12 @@ async function sendExpoPushBroadcast({ title, message }) {
     body: message,
     priority: "high",
     channelId: "default",
-    data: { type: "broadcast" },
+    data: { type: dataType },
   }));
 
   const invalidTokens = new Set();
   let sentCount = 0;
+  let handed = 0;
   for (const batch of chunkArray(messages, 100)) {
     const response = await fetch("https://exp.host/--/api/v2/push/send", {
       method: "POST",
@@ -55,6 +57,7 @@ async function sendExpoPushBroadcast({ title, message }) {
       );
       continue;
     }
+    handed += batch.length;
     const tickets = Array.isArray(json?.data) ? json.data : [];
     sentCount += tickets.filter((t) => t?.status === "ok").length;
     for (let i = 0; i < tickets.length; i += 1) {
@@ -71,21 +74,76 @@ async function sendExpoPushBroadcast({ title, message }) {
     await User.updateMany({ expoPushTokens: { $in: toRemove } }, { $pullAll: { expoPushTokens: toRemove } });
   }
 
-  return { sent: sentCount };
+  return { sent: sentCount, handed };
 }
 
 async function createBroadcastNotification(req, res, next) {
   try {
-    const { title, message } = req.body || {};
-
-    if (!String(title || "").trim() || !String(message || "").trim()) {
+    const title = String(req.body?.title || "").trim();
+    const message = String(req.body?.message || "").trim();
+    if (!title || !message) {
       return res.status(400).json({ message: "Title and message are required." });
+    }
+    if (title.length > 120) {
+      return res.status(400).json({ message: "Title must be 120 characters or fewer." });
+    }
+    if (message.length > 1000) {
+      return res.status(400).json({ message: "Message must be 1000 characters or fewer." });
     }
 
     const created = await Notification.create({
-      title: String(title).trim(),
-      message: String(message).trim(),
+      title,
+      message,
       forAllUsers: true,
+      kind: "broadcast",
+      createdBy: req.user._id,
+    });
+
+    let pushResult = { sent: 0, handed: 0 };
+    try {
+      pushResult = await sendExpoPushBroadcast({
+        title: created.title,
+        message: created.message,
+        dataType: "broadcast",
+      });
+    } catch (pushErr) {
+      console.warn("[notifications] Broadcast push failed (notification still saved):", pushErr?.message || pushErr);
+    }
+
+    created.pushSent = pushResult.handed ?? pushResult.sent;
+    await created.save();
+    emitNotificationCreated(created);
+    await recordAdminAction(req, {
+      action: "Sent a broadcast",
+      subject: created.title || "Broadcast",
+      tab: "shop",
+      href: { screen: "AdminNotifications" },
+    });
+    res.status(201).json({ ...created.toObject(), pushSent: created.pushSent });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function createRiderNotification(req, res, next) {
+  try {
+    const title = String(req.body?.title || "").trim();
+    const message = String(req.body?.message || "").trim();
+    if (!title || !message) {
+      return res.status(400).json({ message: "Title and message are required." });
+    }
+    if (title.length > 120) {
+      return res.status(400).json({ message: "Title must be 120 characters or fewer." });
+    }
+    if (message.length > 1000) {
+      return res.status(400).json({ message: "Message must be 1000 characters or fewer." });
+    }
+
+    const created = await Notification.create({
+      title,
+      message,
+      forAllUsers: false,
+      kind: "riders",
       createdBy: req.user._id,
     });
 
@@ -94,13 +152,35 @@ async function createBroadcastNotification(req, res, next) {
       pushResult = await sendExpoPushBroadcast({
         title: created.title,
         message: created.message,
+        userFilter: { isDeliveryPartner: true },
+        dataType: "riders",
       });
     } catch (pushErr) {
-      console.warn("[notifications] Broadcast push failed (notification still saved):", pushErr?.message || pushErr);
+      console.warn("[notifications] Rider push failed (notification still saved):", pushErr?.message || pushErr);
     }
 
+    created.pushSent = pushResult.handed ?? pushResult.sent;
+    await created.save();
     emitNotificationCreated(created);
-    res.status(201).json({ ...created.toObject(), pushSent: pushResult.sent });
+    await recordAdminAction(req, {
+      action: "Sent a rider message",
+      subject: created.title || "Riders",
+      tab: "riders",
+      href: { screen: "AdminRiderMessages" },
+    });
+    res.status(201).json({ ...created.toObject(), pushSent: created.pushSent });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function getAdminRiderNotifications(req, res, next) {
+  try {
+    const notifications = await Notification.find({ kind: "riders" })
+      .populate("createdBy", "name email")
+      .sort({ createdAt: -1 })
+      .limit(50);
+    res.json(notifications);
   } catch (error) {
     next(error);
   }
@@ -108,7 +188,7 @@ async function createBroadcastNotification(req, res, next) {
 
 async function getAdminNotifications(req, res, next) {
   try {
-    const notifications = await Notification.find({ forAllUsers: true })
+    const notifications = await Notification.find({ forAllUsers: true, kind: { $nin: ["riders", "order"] } })
       .populate("createdBy", "name email")
       .sort({ createdAt: -1 })
       .limit(100);
@@ -121,9 +201,9 @@ async function getMyNotifications(req, res, next) {
   try {
     const userId = String(req.user._id);
     const includeArchived = String(req.query.includeArchived || "false") === "true";
-    const notifications = await Notification.find({
-      $or: [{ forAllUsers: true }, { forUser: req.user._id }],
-    })
+    const clauses = [{ forAllUsers: true, kind: { $ne: "riders" } }, { forUser: req.user._id }];
+    if (req.user.isDeliveryPartner) clauses.push({ kind: "riders" });
+    const notifications = await Notification.find({ $or: clauses })
       .sort({ createdAt: -1 })
       .limit(100);
 
@@ -202,6 +282,8 @@ async function unarchiveNotification(req, res, next) {
 
 module.exports = {
   createBroadcastNotification,
+  createRiderNotification,
+  getAdminRiderNotifications,
   getAdminNotifications,
   getMyNotifications,
   markNotificationAsRead,

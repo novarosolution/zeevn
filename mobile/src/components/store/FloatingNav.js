@@ -19,6 +19,7 @@ import { EASE_OUT, motionSettle, motionTiming } from "../../theme/motion";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { hapticTick } from "../../utils/haptics";
 import { flightRemainingMs, setCartTarget } from "./flyToCart";
+import Glass from "./Glass";
 import PressableScale from "./PressableScale";
 import ScrollEdgeFade from "./ScrollEdgeFade";
 import StoreIcon from "./StoreIcon";
@@ -54,7 +55,7 @@ function useLandedCount(count) {
 
 function NavItem({ item, active, onPress }) {
   const { c } = useStoreTheme();
-  const color = active ? c.brand : c.inkSoft;
+  const color = active ? c.brand : withAlpha(c.ink, 0.6);
   return (
     <PressableScale
       onPress={onPress}
@@ -97,7 +98,7 @@ function CartBadge({ count }) {
 }
 
 function CartFab({ count: liveCount, onPress }) {
-  const { shadow, isDark } = useStoreTheme();
+  const { isDark } = useStoreTheme();
   const count = useLandedCount(liveCount);
   const scale = useSharedValue(1);
   const prev = useRef(count);
@@ -124,10 +125,25 @@ function CartFab({ count: liveCount, onPress }) {
         scaleTo={0.92}
         accessibilityRole="button"
         accessibilityLabel={liveCount > 0 ? `Cart, ${liveCount} items` : "Cart"}
-        style={[styles.fabWrap, shadow.float, { backgroundColor: colors[1] }]}
+        style={[
+          styles.fabWrap,
+          {
+            backgroundColor: colors[1],
+            shadowColor: colors[1],
+            shadowOpacity: isDark ? 0.34 : 0.3,
+            shadowRadius: 14,
+            shadowOffset: { width: 0, height: 6 },
+            elevation: 8,
+          },
+        ]}
       >
-        <View style={[styles.fabClip, { borderColor: withAlpha("#FFFFFF", isDark ? 0.18 : 0.55) }]}>
+        <View style={[styles.fabClip, { borderColor: withAlpha("#FFFFFF", isDark ? 0.18 : 0.4) }]}>
           <LinearGradient colors={colors} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
+          <LinearGradient
+            pointerEvents="none"
+            colors={[withAlpha("#FFFFFF", isDark ? 0.36 : 0.24), withAlpha("#FFFFFF", 0)]}
+            style={styles.fabGloss}
+          />
           <StoreIcon icon={STORE_NAV.cart.icon} size={ICON} color={iconColor} />
         </View>
         {count > 0 ? <CartBadge count={count} /> : null}
@@ -137,11 +153,11 @@ function CartFab({ count: liveCount, onPress }) {
 }
 
 /**
- * Floating bottom navigation: a frosted-glass pill (Home · Categories · Order Again · Account)
- * plus a round cart button with a live item badge. Replaces the old full-width tab bar on native.
+ * Floating bottom navigation: a glass pill (Home · Categories · Order Again · Account) whose active tab sits in a lighter
+ * glass "lens" that glides between tabs, plus a round olive cart button with a live item badge.
  */
 export default function FloatingNav() {
-  const { c, shadow, isDark, gutter } = useStoreTheme();
+  const { isDark, gutter } = useStoreTheme();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { isAuthenticated } = useAuth();
@@ -189,44 +205,37 @@ export default function FloatingNav() {
 
   if (Platform.OS === "web") return null;
 
-  const dock = Math.max(16, (insets.bottom || 0) + 6);
-
-  /** Soft glass without live blur — one BlurView on the dock used to hitch scroll. */
-  const glassFill = isDark ? withAlpha("#0F2418", 0.82) : withAlpha("#FFFFFF", 0.62);
-  const glassBorder = isDark ? withAlpha("#FFFFFF", 0.22) : withAlpha("#FFFFFF", 0.95);
+  // Sits just above the home-indicator zone, like the system's own floating tab bar.
+  const dock = Math.max(14, (insets.bottom || 0) - 4);
+  const lensFill = isDark ? withAlpha("#FFFFFF", 0.16) : withAlpha("#FFFFFF", 0.9);
+  const lensEdge = isDark ? withAlpha("#FFFFFF", 0.26) : "#FFFFFF";
 
   return (
     <>
       <ScrollEdgeFade height={dock + STORE_NAV_HEIGHT + 30} />
       <View style={[styles.wrap, { bottom: dock, left: gutter, right: gutter }]} pointerEvents="box-none">
-        <View style={[styles.pillShadow, shadow.float, { borderColor: glassBorder }]}>
-          <View style={styles.pillClip}>
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: glassFill }]} />
-            <LinearGradient
-              colors={[withAlpha("#FFFFFF", isDark ? 0.1 : 0.55), withAlpha("#FFFFFF", 0)]}
-              style={styles.glassSheen}
+        <Glass material="thin" radius={STORE_NAV_HEIGHT / 2} lift style={styles.pill} contentStyle={styles.pillBody}>
+          <View style={styles.items} onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}>
+            <Animated.View
               pointerEvents="none"
+              style={[
+                styles.lens,
+                {
+                  left: ITEMS_PAD + CAPSULE_INSET,
+                  width: Math.max(28, slot - CAPSULE_INSET * 2),
+                  backgroundColor: lensFill,
+                  borderColor: lensEdge,
+                  shadowColor: isDark ? "#000000" : "#3D2A12",
+                  shadowOpacity: isDark ? 0.3 : 0.12,
+                },
+                capsuleStyle,
+              ]}
             />
-            <View style={styles.items} onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}>
-              <Animated.View
-                pointerEvents="none"
-                style={[
-                  styles.capsule,
-                  {
-                    left: ITEMS_PAD + CAPSULE_INSET,
-                    width: Math.max(28, slot - CAPSULE_INSET * 2),
-                    backgroundColor: withAlpha(c.brand, isDark ? 0.2 : 0.1),
-                    borderColor: withAlpha(c.brand, isDark ? 0.16 : 0.08),
-                  },
-                  capsuleStyle,
-                ]}
-              />
-              {STORE_NAV.items.map((item) => (
-                <NavItem key={item.key} item={item} active={isActive(item.key)} onPress={() => go(item.route, item.requiresAuth)} />
-              ))}
-            </View>
+            {STORE_NAV.items.map((item) => (
+              <NavItem key={item.key} item={item} active={isActive(item.key)} onPress={() => go(item.route, item.requiresAuth)} />
+            ))}
           </View>
-        </View>
+        </Glass>
         <CartFab count={totalItems} onPress={() => go(STORE_NAV.cart.route, STORE_NAV.cart.requiresAuth)} />
       </View>
     </>
@@ -241,28 +250,18 @@ const styles = StyleSheet.create({
     gap: FAB_GAP,
     zIndex: 100,
   },
-  pillShadow: {
-    flex: 1,
-    height: STORE_NAV_HEIGHT,
-    borderRadius: STORE_NAV_HEIGHT / 2,
-    borderWidth: StyleSheet.hairlineWidth + 0.5,
-    overflow: "hidden",
-  },
-  pillClip: { flex: 1, borderRadius: STORE_NAV_HEIGHT / 2, overflow: "hidden" },
-  glassSheen: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "48%",
-  },
+  pill: { flex: 1, height: STORE_NAV_HEIGHT },
+  pillBody: { flex: 1 },
   items: { flex: 1, flexDirection: "row", alignItems: "center", paddingHorizontal: ITEMS_PAD },
   item: { flex: 1, height: STORE_NAV_HEIGHT, alignItems: "center", justifyContent: "center" },
-  capsule: {
+  lens: {
     position: "absolute",
     top: CAPSULE_INSET,
     height: STORE_NAV_HEIGHT - CAPSULE_INSET * 2,
     borderRadius: (STORE_NAV_HEIGHT - CAPSULE_INSET * 2) / 2,
+    borderWidth: StyleSheet.hairlineWidth,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 6,
   },
   fabWrap: {
     width: STORE_NAV_HEIGHT,
@@ -278,6 +277,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  fabGloss: { position: "absolute", top: 0, left: 0, right: 0, height: "55%" },
   badge: {
     position: "absolute",
     top: -2,

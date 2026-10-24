@@ -27,7 +27,7 @@ import {
   resolveFestivalTheme,
   storeGreeting,
 } from "../../content/storefrontContent";
-import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
+import { STORE_NAV_HEIGHT, useStoreTheme } from "../../theme/storefront";
 import {
   buildCategoryTiles,
   getFirstName,
@@ -36,6 +36,7 @@ import {
 } from "../../utils/storefront";
 import BackToTop from "./BackToTop";
 import FloatingNav from "./FloatingNav";
+import Glass from "./Glass";
 import HeroCarousel from "./HeroCarousel";
 import { HomeScrollProvider, Reveal } from "./HomeMotion";
 import LineLanding from "./LineLanding";
@@ -417,25 +418,16 @@ export default function StoreHome({
           </Animated.ScrollView>
 
           <Animated.View
-            style={[styles.compact, { paddingTop: insets.top }, compactStyle]}
+            style={[styles.compact, compactStyle]}
             pointerEvents={compactVisible ? "auto" : "none"}
             onLayout={(e) => setCompactH(e.nativeEvent.layout.height)}
           >
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: isDark ? withAlpha("#0F2418", 0.78) : withAlpha("#FBF6EC", 0.72) }]} />
-            <LinearGradient
-              colors={[withAlpha("#FFFFFF", isDark ? 0.08 : 0.42), withAlpha("#FFFFFF", 0)]}
-              style={styles.compactSheen}
-              pointerEvents="none"
-            />
-            <View style={{ paddingHorizontal: gutter, paddingTop: 8, paddingBottom: 6 }}>
-              <StoreSearchBar compact onPress={openSearch} hints={STORE_HEADER.searchHints} prefix={STORE_HEADER.searchPrefix} />
-            </View>
-            <StoreTabs compact tabs={tabs} activeKey={activeTab} onChange={changeTab} badges={festival.tabBadges} />
-            <LinearGradient
-              colors={[withAlpha(c.canvas, 0), withAlpha(c.canvas, isDark ? 0.55 : 0.7)]}
-              style={styles.compactEdge}
-              pointerEvents="none"
-            />
+            <Glass material="regular" edge="bottom" contentStyle={{ paddingTop: insets.top }}>
+              <View style={{ paddingHorizontal: gutter, paddingTop: 8, paddingBottom: 6 }}>
+                <StoreSearchBar compact onPress={openSearch} hints={STORE_HEADER.searchHints} prefix={STORE_HEADER.searchPrefix} />
+              </View>
+              <StoreTabs compact tabs={tabs} activeKey={activeTab} onChange={changeTab} badges={festival.tabBadges} />
+            </Glass>
           </Animated.View>
 
           <BackToTop visible={compactVisible && topVisible} top={compactH + 10} onPress={scrollToTop} label={STORE_HEADER.backToTop} />
@@ -453,9 +445,7 @@ const styles = StyleSheet.create({
   tabs: { marginTop: 8 },
   sections: { gap: 36, paddingTop: 20 },
   block: { gap: 16 },
-  compact: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 30, overflow: "hidden" },
-  compactSheen: { position: "absolute", top: 0, left: 0, right: 0, height: "42%" },
-  compactEdge: { position: "absolute", left: 0, right: 0, bottom: -16, height: 16 },
+  compact: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 30 },
   empty: { alignItems: "center", gap: 10, padding: 28, borderWidth: StyleSheet.hairlineWidth, marginTop: 24 },
   emptyIcon: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center", marginBottom: 4 },
   emptyBody: { textAlign: "center" },

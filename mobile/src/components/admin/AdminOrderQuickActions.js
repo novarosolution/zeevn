@@ -10,22 +10,13 @@ import {
 } from "../../utils/orderStatus";
 import PremiumButton from "../ui/PremiumButton";
 
-const QUICK_PATH = [
-  { status: "confirmed", label: "Confirm", icon: "checkmark-circle-outline" },
-  { status: "preparing", label: "Preparing", icon: "restaurant-outline" },
-  { status: "ready_for_pickup", label: "Ready", icon: "cube-outline" },
-  { status: "out_for_delivery", label: "Out", icon: "bicycle-outline" },
-  { status: "delivered", label: "Delivered", icon: "flag-outline" },
-];
-
 /**
- * One-tap fulfillment controls for the order manage desk.
+ * One-tap fulfillment: next step or cancel. Status moves one step at a time.
  */
 export default function AdminOrderQuickActions({
   status,
   busy = false,
   compact = false,
-  onStatus,
   onCancel,
   onAdvance,
 }) {
@@ -59,25 +50,6 @@ export default function AdminOrderQuickActions({
             style={styles.advanceBtn}
           />
         ) : null}
-
-        {QUICK_PATH.map((step) => {
-          const done =
-            QUICK_PATH.findIndex((s) => s.status === current) >=
-            QUICK_PATH.findIndex((s) => s.status === step.status);
-          const isCurrent = current === step.status;
-          return (
-            <PremiumButton
-              key={step.status}
-              label={step.label}
-              iconLeft={step.icon}
-              variant={isCurrent ? "primary" : done ? "secondary" : "ghost"}
-              size="sm"
-              disabled={busy || terminal || isCurrent}
-              onPress={() => onStatus?.(step.status)}
-              style={styles.chipBtn}
-            />
-          );
-        })}
 
         {!terminal && onCancel ? (
           <PremiumButton

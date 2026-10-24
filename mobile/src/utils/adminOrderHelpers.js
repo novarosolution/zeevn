@@ -1,6 +1,5 @@
 import { Platform, Alert } from "react-native";
 import { formatOrderPublicRef } from "../content/appContent";
-import { formatINR } from "./currency";
 import { getOrderStatusLabel } from "./orderStatus";
 
 export const ADMIN_ORDER_TABS = [
@@ -49,16 +48,41 @@ function paymentLabel(order) {
 }
 
 export function exportOrdersCsv(orders) {
-  const headers = ["Order", "Customer", "Email", "Date", "Qty", "Total", "Payment", "Status"];
+  const headers = [
+    "Order",
+    "Placed",
+    "Customer",
+    "Phone",
+    "Email",
+    "Items",
+    "Qty",
+    "Total",
+    "Payment method",
+    "Payment status",
+    "Status",
+    "City",
+    "Pincode",
+    "Zone",
+    "Rider",
+  ];
   const rows = (orders || []).map((order) => [
     formatOrderPublicRef(order) || String(order._id || ""),
-    order.user?.name || order.userName || order.shippingAddress?.name || "Guest",
-    order.user?.email || "",
     order.createdAt ? new Date(order.createdAt).toISOString() : "",
+    order.user?.name || order.userName || order.shippingAddress?.fullName || "Guest",
+    order.shippingAddress?.phone || order.user?.phone || "",
+    order.user?.email || "",
+    getOrderProductLines(order)
+      .map((line) => `${line.name || line.product?.name || "Item"} x${line.quantity || 1}`)
+      .join("; "),
     getOrderItemQty(order),
     Number(order.totalPrice || 0),
     paymentLabel(order),
+    order.paymentStatus || "",
     getOrderStatusLabel(order.status),
+    order.shippingAddress?.city || "",
+    order.shippingAddress?.postalCode || "",
+    order.deliveryZoneName || "",
+    order.assignedDeliveryUser?.name || "",
   ]);
 
   const csv = [headers, ...rows]
@@ -70,7 +94,7 @@ export function exportOrdersCsv(orders) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `kankreg-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `zeevan-orders-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
     return;

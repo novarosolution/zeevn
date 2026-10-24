@@ -2,7 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useR
 import { Platform } from "react-native";
 import { useAuth } from "./AuthContext";
 import { checkDeliveryServiceability } from "../services/deliveryService";
-import { getCurrentAddressFromGPS } from "../services/locationService";
+import { getCurrentAddressFromGPS, searchPlaces, validDeliveryCoord, validMapCoord } from "../services/locationService";
 import {
   DELIVERY_CONFIRM_TTL_MS,
   isDeliveryLocationConfirmed,
@@ -12,7 +12,6 @@ import {
   saveDeliveryConfirmedAt,
 } from "../services/deliveryLocationCache";
 import { formatDeliveryLocationLabel, formatSavedAddressLabel } from "../utils/deliveryLocationLabel";
-import { validMapCoord } from "../services/locationService";
 
 const DETECT_COOLDOWN_MS = 90 * 1000;
 
@@ -21,9 +20,10 @@ const validCoord = validMapCoord;
 function coordsFrom(snippet, address) {
   const lat = snippet?.latitude ?? snippet?.lat ?? address?.latitude;
   const lng = snippet?.longitude ?? snippet?.lng ?? address?.longitude;
+  const ok = validDeliveryCoord(lat, lng);
   return {
-    latitude: validCoord(lat) ? Number(lat) : undefined,
-    longitude: validCoord(lng) ? Number(lng) : undefined,
+    latitude: ok ? Number(lat) : undefined,
+    longitude: ok ? Number(lng) : undefined,
     postalCode: address?.postalCode || snippet?.postalCode || "",
     city: snippet?.city || address?.city || "",
   };
@@ -105,7 +105,7 @@ export function DeliveryLocationProvider({ children }) {
 
       const now = Date.now();
       const cached = snippetRef.current;
-      if (!force && validCoord(cached?.latitude) && now - lastDetectAtRef.current < DETECT_COOLDOWN_MS) {
+      if (!force && validDeliveryCoord(cached?.latitude, cached?.longitude) && now - lastDetectAtRef.current < DETECT_COOLDOWN_MS) {
         return cached;
       }
 
@@ -113,6 +113,9 @@ export function DeliveryLocationProvider({ children }) {
       setStatus("detecting");
       try {
         const address = await getCurrentAddressFromGPS();
+        if (!validDeliveryCoord(address?.latitude, address?.longitude)) {
+          throw new Error("Location is outside the delivery area.");
+        }
         const label = formatDeliveryLocationLabel(address);
         const next = {
           ...address,
@@ -138,7 +141,7 @@ export function DeliveryLocationProvider({ children }) {
 
   useEffect(() => {
     if (!bootstrapped || Platform.OS === "web") return;
-    if (validCoord(snippetRef.current?.latitude ?? snippetRef.current?.lat)) return;
+    if (validDeliveryCoord(snippetRef.current?.latitude, snippetRef.current?.longitude)) return;
     if (askedDetectRef.current) return;
     askedDetectRef.current = true;
     detect();
@@ -164,6 +167,32 @@ export function DeliveryLocationProvider({ children }) {
     };
   }, [bootstrapped, snippet, user?.defaultAddress]);
 
+  useEffect(() => {
+    if (!bootstrapped || !snippet) return undefined;
+    if (validDeliveryCoord(snippet.latitude, snippet.longitude)) return undefined;
+    const q = [snippet.line1, snippet.city, snippet.postalCode].filter(Boolean).join(" ");
+    if (q.length < 3) return undefined;
+    let cancelled = false;
+    searchPlaces(q)
+      .then((hits) => {
+        const hit = (hits || []).find((p) => validDeliveryCoord(p.latitude, p.longitude));
+        if (cancelled || !hit) return;
+        const next = {
+          ...snippet,
+          latitude: Number(hit.latitude),
+          longitude: Number(hit.longitude),
+          updatedAt: Date.now(),
+        };
+        snippetRef.current = next;
+        setSnippet(next);
+        return saveCachedDeliverySnippet(next);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [bootstrapped, snippet]);
+
   const confirmLocation = useCallback(async (nextSnippet) => {
     const payload = nextSnippet || snippetRef.current;
     const now = Date.now();
@@ -182,8 +211,8 @@ export function DeliveryLocationProvider({ children }) {
     if (!place) return null;
     const next = {
       ...place,
-      latitude: validCoord(place.latitude) ? Number(place.latitude) : undefined,
-      longitude: validCoord(place.longitude) ? Number(place.longitude) : undefined,
+      latitude: validDeliveryCoord(place.latitude, place.longitude) ? Number(place.latitude) : undefined,
+      longitude: validDeliveryCoord(place.latitude, place.longitude) ? Number(place.longitude) : undefined,
       label: formatDeliveryLocationLabel(place) || place.city || place.label || "Selected place",
       updatedAt: Date.now(),
     };

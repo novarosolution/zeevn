@@ -16,7 +16,7 @@ import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPage
 import { useAuth } from "../context/AuthContext";
 import { useLiveSocket } from "../context/LiveSocketContext";
 import { useTheme } from "../context/ThemeContext";
-import { fetchMySupportThread, sendMySupportMessage } from "../services/userService";
+import { fetchHelpFaqs, fetchMySupportThread, sendMySupportMessage } from "../services/userService";
 import {
   customerPanel,
   customerScrollFill} from "../theme/screenLayout";
@@ -70,6 +70,7 @@ export default function SupportScreen({ navigation }) {
   const [message, setMessage] = useState("");
   const [openFaqIndex, setOpenFaqIndex] = useState(0);
   const [toast, setToast] = useState("");
+  const [faqs, setFaqs] = useState(SUPPORT_SCREEN.faqs);
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -101,6 +102,29 @@ export default function SupportScreen({ navigation }) {
     if (isAuthLoading || !isAuthenticated) return;
     loadThread();
   }, [isAuthLoading, isAuthenticated, loadThread]);
+
+  useEffect(() => {
+    let live = true;
+    fetchHelpFaqs()
+      .then((data) => {
+        if (!live) return;
+        const list = Array.isArray(data?.faqs) ? data.faqs : Array.isArray(data) ? data : null;
+        if (!list) return;
+        setFaqs(
+          list
+            .map((item) => ({
+              q: String(item.q || item.question || "").trim(),
+              a: String(item.a || item.answer || "").trim(),
+            }))
+            .filter((item) => item.q && item.a)
+        );
+        setOpenFaqIndex(0);
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
 
   const { on: onLiveEvent } = useLiveSocket();
   useEffect(() => {
@@ -166,7 +190,7 @@ export default function SupportScreen({ navigation }) {
         onSend={handleSend}
         onEmail={() => handleContactPress(buildSupportContactLinks()[1])}
         emailLabel={SUPPORT_EMAIL_DISPLAY}
-        faqs={SUPPORT_SCREEN.faqs}
+        faqs={faqs}
       />
     );
   }
@@ -322,6 +346,7 @@ export default function SupportScreen({ navigation }) {
           </View>
           </SectionReveal>
         )}
+        {faqs.length ? (
         <SectionReveal preset="fade-up" delay={100}>
           <View style={styles.faqWrap}>
             <View style={styles.faqHeader}>
@@ -330,11 +355,11 @@ export default function SupportScreen({ navigation }) {
               ) : null}
               <Text style={styles.faqHeading}>{SUPPORT_SCREEN.faqTitle}</Text>
             </View>
-            {SUPPORT_SCREEN.faqs.map((item, idx) => {
+            {faqs.map((item, idx) => {
               const isOpen = openFaqIndex === idx;
               return (
                 <TouchableOpacity
-                  key={item.q}
+                  key={`${item.q}-${idx}`}
                   activeOpacity={0.85}
                   onPress={() => setOpenFaqIndex(isOpen ? -1 : idx)}
                   style={[styles.faqRow, isOpen ? styles.faqRowOpen : null]}
@@ -352,6 +377,7 @@ export default function SupportScreen({ navigation }) {
             })}
           </View>
         </SectionReveal>
+        ) : null}
 </KankregScrollPage>
       </KeyboardAvoidingView>
       {toast ? (

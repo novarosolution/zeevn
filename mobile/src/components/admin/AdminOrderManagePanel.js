@@ -1,5 +1,7 @@
 import React, { useMemo } from "react";
-import { Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Platform, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { adminTwoColAside, adminTwoColMain, adminTwoColStyle, useAdminCompactLayout } from "../../theme/adminLayout";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
@@ -7,13 +9,14 @@ import { FONT_HEADING } from "../../theme/typographyRoles";
 import { formatINR } from "../../utils/currency";
 import { getOrderItemQty } from "../../utils/adminOrderHelpers";
 import {
-  ALL_ORDER_STATUSES,
   INVOICE_STATUS_VALUES,
   ORDER_ADMIN_NEXT_STATUS,
+  ORDER_STATUSES_ALLOW_ADDRESS_EDIT,
   formatEventClock,
   getOrderStatusLabel,
   getAdminNextStatusLabel,
 } from "../../utils/orderStatus";
+import { isCod } from "../../utils/adminOrderUi";
 import AdminPanel from "./AdminPanel";
 import AdminOrderQuickActions from "./AdminOrderQuickActions";
 import PremiumInput from "../ui/PremiumInput";
@@ -47,6 +50,7 @@ export default function AdminOrderManagePanel({
   onOpenMap,
   onAssignDelivery,
   onStatus,
+  onPayment,
   onDelete,
   onCancelOrder,
 }) {
@@ -54,8 +58,13 @@ export default function AdminOrderManagePanel({
   const compact = useAdminCompactLayout();
   const panelStyles = useMemo(() => createStyles(c), [c]);
   const nextStatus = ORDER_ADMIN_NEXT_STATUS[order.status];
-  const statuses = ALL_ORDER_STATUSES;
+  const canEditAddress = ORDER_STATUSES_ALLOW_ADDRESS_EDIT.includes(order.status);
   const phone = String(order.shippingAddress?.phone || order.user?.phone || "").trim();
+  const acceptState = String(order.deliveryAcceptStatus || "none");
+  const etaMin = order.tracking?.etaMinutesMin;
+  const etaMax = order.tracking?.etaMinutesMax;
+  const quoteEta = etaMin && etaMax ? `${etaMin}–${etaMax} min` : etaMin ? `${etaMin} min` : "";
+  const deliveryFee = Number(order.priceBreakdown?.deliveryFee);
 
   const applyEtaPreset = (preset) => {
     onUpdateField("etaMinutesMin", preset.min);
@@ -109,13 +118,23 @@ export default function AdminOrderManagePanel({
               key={`${order._id}-line-${index}`}
               style={[panelStyles.productRow, { borderColor: c.border, backgroundColor: c.surfaceMuted }]}
             >
-              <Text style={[panelStyles.productName, { color: c.textPrimary }]}>{product.name}</Text>
-              <Text style={[panelStyles.productMeta, { color: c.textSecondary }]}>
-                {formatINR(Number(product.price || 0))} × {Number(product.quantity || 0)}
-              </Text>
-              {product.product?.inStock === false || Number(product.product?.stockQty || 0) <= 0 ? (
-                <Text style={[panelStyles.outOfStockNote, { color: c.danger }]}>Out of stock</Text>
-              ) : null}
+              {product.image || product.product?.image ? (
+                <Image source={{ uri: product.image || product.product.image }} style={panelStyles.thumb} contentFit="cover" />
+              ) : (
+                <View style={[panelStyles.thumb, panelStyles.thumbEmpty, { borderColor: c.border }]}>
+                  <Ionicons name="cube-outline" size={16} color={c.textMuted} />
+                </View>
+              )}
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={[panelStyles.productName, { color: c.textPrimary }]}>{product.name || product.product?.name || "Item"}</Text>
+                <Text style={[panelStyles.productMeta, { color: c.textSecondary }]}>
+                  {product.variantLabel ? `${product.variantLabel} · ` : ""}
+                  {formatINR(Number(product.price || 0))} × {Number(product.quantity || 0)}
+                </Text>
+                {product.product?.inStock === false || Number(product.product?.stockQty || 0) <= 0 ? (
+                  <Text style={[panelStyles.outOfStockNote, { color: c.danger }]}>Out of stock</Text>
+                ) : null}
+              </View>
             </View>
           ))
         ) : (
@@ -142,6 +161,47 @@ export default function AdminOrderManagePanel({
           </Text>
         </View>
         <InfoRow label="Payment method" value={order.paymentMethod || "—"} c={c} />
+        <InfoRow label="Payment status" value={order.paymentStatus || "pending"} c={c} />
+        {onPayment && order.paymentStatus === "pending" ? (
+          <PremiumButton
+            label={isCod(order) ? "Mark cash collected" : "Mark paid"}
+            iconLeft="checkmark-circle-outline"
+            variant="primary"
+            size="sm"
+            disabled={busy}
+            onPress={() => onPayment("paid", isCod(order) ? "Cash collected" : "Payment confirmed by admin")}
+          />
+        ) : null}
+        {onPayment && order.paymentStatus === "pending" && order.status === "pending_payment" ? (
+          <PremiumButton
+            label="Mark failed"
+            iconLeft="close-circle-outline"
+            variant="danger"
+            size="sm"
+            disabled={busy}
+            onPress={() => onPayment("failed")}
+          />
+        ) : null}
+        {onPayment && order.paymentStatus === "paid" ? (
+          <View style={panelStyles.contactActions}>
+            <PremiumButton
+              label="Set unpaid"
+              iconLeft="arrow-undo-outline"
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onPress={() => onPayment("pending")}
+            />
+            <PremiumButton
+              label="Record refund"
+              iconLeft="return-down-back-outline"
+              variant="ghost"
+              size="sm"
+              disabled={busy}
+              onPress={() => onPayment("refunded")}
+            />
+          </View>
+        ) : null}
         {order.razorpay?.orderId ? <InfoRow label="Razorpay order" value={order.razorpay.orderId} c={c} /> : null}
         {order.razorpay?.paymentId ? (
           <InfoRow label="Razorpay payment" value={order.razorpay.paymentId} c={c} />
@@ -153,7 +213,14 @@ export default function AdminOrderManagePanel({
       <AdminPanel title="Shipping address" icon="home-outline" description="Delivery destination and zone.">
         {order.deliveryZoneName ? (
           <InfoRow label="Delivery zone" value={order.deliveryZoneName} c={c} />
-        ) : null}
+        ) : (
+          <InfoRow label="Delivery zone" value="Outside every drawn zone" c={c} />
+        )}
+        <InfoRow
+          label="Delivery quote"
+          value={[Number.isFinite(deliveryFee) ? (deliveryFee ? formatINR(deliveryFee) : "Free") : "", quoteEta].filter(Boolean).join(" · ") || "—"}
+          c={c}
+        />
         <InfoRow label="Name" value={order.shippingAddress?.fullName} c={c} />
         <InfoRow label="Phone" value={order.shippingAddress?.phone} c={c} />
         <InfoRow label="Address" value={order.shippingAddress?.line1} c={c} />
@@ -179,7 +246,6 @@ export default function AdminOrderManagePanel({
         busy={busy}
         compact={compact}
         onAdvance={(status) => onStatus(order._id, status)}
-        onStatus={(status) => onStatus(order._id, status)}
         onCancel={() => (onCancelOrder ? onCancelOrder() : onStatus(order._id, "cancelled"))}
       />
 
@@ -187,7 +253,7 @@ export default function AdminOrderManagePanel({
         title="Fulfillment"
         icon="flash-outline"
         meta={getOrderStatusLabel(order.status)}
-        description="Advance the run, or jump to any status. Notes show on the customer timeline."
+        description="One step at a time. Notes show on the customer timeline."
       >
         {nextStatus ? (
           <PremiumButton
@@ -221,19 +287,6 @@ export default function AdminOrderManagePanel({
           />
         </View>
 
-        <Text style={[panelStyles.fieldLabel, { color: c.textSecondary }]}>Set status</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={panelStyles.statusChips}>
-          {statuses.map((status) => (
-            <PremiumChip
-              key={status}
-              label={getOrderStatusLabel(status)}
-              tone="gold"
-              size="sm"
-              selected={order.status === status}
-              onPress={busy ? undefined : () => onStatus(order._id, status)}
-            />
-          ))}
-        </ScrollView>
       </AdminPanel>
 
       <AdminPanel
@@ -247,13 +300,8 @@ export default function AdminOrderManagePanel({
             : "No partner assigned yet."}
         </Text>
         <Text style={[panelStyles.emptyHint, { color: c.textMuted, marginBottom: spacing.sm }]}>
-          Accept:{" "}
-          {String(order.deliveryAcceptStatus || "none")
-            .replace(/_/g, " ")
-            .replace(/\b\w/g, (ch) => ch.toUpperCase())}
-          {order.deliveryDeclineReason
-            ? ` · Last decline: ${order.deliveryDeclineReason}`
-            : ""}
+          Accept: {acceptState === "accepted" ? "accepted" : acceptState === "declined" ? "declined" : order.assignedDeliveryUser ? "pending" : "—"}
+          {order.deliveryDeclineReason ? ` · ${order.deliveryDeclineReason}` : ""}
         </Text>
         {String(order.deliveryAcceptStatus) === "pending" ? (
           <Text style={[panelStyles.emptyHint, { color: c.warning || c.textSecondary, marginBottom: spacing.sm }]}>
@@ -399,7 +447,11 @@ export default function AdminOrderManagePanel({
         ) : null}
       </AdminPanel>
 
-      <AdminPanel title="Edit order details" icon="create-outline" description="Payment method and shipping fields.">
+      <AdminPanel
+        title="Edit order details"
+        icon="create-outline"
+        description={canEditAddress ? "Payment method and shipping fields." : "Address is locked after packing starts. Payment method can still be saved."}
+      >
         <View style={panelStyles.fieldGap}>
           <PremiumInput
             label="Payment method"
@@ -414,6 +466,7 @@ export default function AdminOrderManagePanel({
             value={editForm.fullName}
             onChangeText={(v) => onUpdateField("fullName", v)}
             iconLeft="person-outline"
+            editable={canEditAddress}
           />
         </View>
         <View style={panelStyles.fieldGap}>
@@ -423,6 +476,7 @@ export default function AdminOrderManagePanel({
             onChangeText={(v) => onUpdateField("phone", v)}
             keyboardType="phone-pad"
             iconLeft="call-outline"
+            editable={canEditAddress}
           />
         </View>
         <View style={panelStyles.fieldGap}>
@@ -431,6 +485,7 @@ export default function AdminOrderManagePanel({
             iconLeft="map-outline"
             variant="ghost"
             size="md"
+            disabled={!canEditAddress}
             onPress={onOpenMap}
           />
         </View>
@@ -440,14 +495,15 @@ export default function AdminOrderManagePanel({
             value={editForm.line1}
             onChangeText={(v) => onUpdateField("line1", v)}
             iconLeft="home-outline"
+            editable={canEditAddress}
           />
         </View>
         <View style={panelStyles.splitRow}>
           <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
-            <PremiumInput label="City" value={editForm.city} onChangeText={(v) => onUpdateField("city", v)} />
+            <PremiumInput label="City" value={editForm.city} onChangeText={(v) => onUpdateField("city", v)} editable={canEditAddress} />
           </View>
           <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
-            <PremiumInput label="State" value={editForm.state} onChangeText={(v) => onUpdateField("state", v)} />
+            <PremiumInput label="State" value={editForm.state} onChangeText={(v) => onUpdateField("state", v)} editable={canEditAddress} />
           </View>
         </View>
         <View style={panelStyles.splitRow}>
@@ -457,10 +513,11 @@ export default function AdminOrderManagePanel({
               value={editForm.postalCode}
               onChangeText={(v) => onUpdateField("postalCode", v)}
               keyboardType="number-pad"
+              editable={canEditAddress}
             />
           </View>
           <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
-            <PremiumInput label="Country" value={editForm.country} onChangeText={(v) => onUpdateField("country", v)} />
+            <PremiumInput label="Country" value={editForm.country} onChangeText={(v) => onUpdateField("country", v)} editable={canEditAddress} />
           </View>
         </View>
         <View style={panelStyles.fieldGap}>
@@ -469,6 +526,7 @@ export default function AdminOrderManagePanel({
             value={editForm.note}
             onChangeText={(v) => onUpdateField("note", v)}
             iconLeft="document-outline"
+            editable={canEditAddress}
           />
         </View>
         <PremiumButton
@@ -585,6 +643,15 @@ function createStyles(c) {
       borderRadius: radius.lg,
       padding: spacing.sm,
       marginBottom: spacing.sm,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: spacing.sm,
+    },
+    thumb: { width: 48, height: 48, borderRadius: 10 },
+    thumbEmpty: {
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: StyleSheet.hairlineWidth,
     },
     productName: {
       fontFamily: fonts.semibold,

@@ -20,7 +20,7 @@ export default function AdminPhonePreview({
           <View style={styles.hero}>
             <Text style={styles.heroEyebrow}>New season</Text>
             <Text style={styles.heroTitle} numberOfLines={2}>
-              {heroTitle || "Made extraordinary"}
+              {heroTitle || "Pure Heritage in Every Drop"}
             </Text>
           </View>
           {showCategories !== false ? (
@@ -35,7 +35,7 @@ export default function AdminPhonePreview({
           ) : null}
           {showPrime !== false ? (
             <>
-              <Text style={styles.sectionLabel}>{primeTitle || "Bestsellers"}</Text>
+              <Text style={styles.sectionLabel}>{primeTitle || "Prime Products"}</Text>
               <View style={styles.grid}>
                 <View style={[styles.gridTile, { backgroundColor: "#f4ecd8" }]} />
                 <View style={[styles.gridTile, { backgroundColor: "#e8e4d0" }]} />

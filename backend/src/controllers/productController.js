@@ -1,6 +1,12 @@
 const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const { getCloudinary, isCloudinaryConfigured } = require("../config/cloudinary");
+const { qtyOf, recordStockChange } = require("../utils/stockHistory");
+const { recordAdminAction, productOpen } = require("../utils/adminLog");
+
+function actorName(user) {
+  return String(user?.name || "Admin").trim().slice(0, 80);
+}
 
 function isProductId(id) {
   return mongoose.Types.ObjectId.isValid(String(id || ""));
@@ -106,6 +112,16 @@ async function getProducts(req, res, next) {
   }
 }
 
+/** Admin catalogue — drafts included. Public shop still uses getProducts. */
+async function getAdminProducts(req, res, next) {
+  try {
+    const products = await Product.find({}).sort({ createdAt: -1 });
+    res.json(products);
+  } catch (error) {
+    next(error);
+  }
+}
+
 async function getProductById(req, res, next) {
   try {
     const { id } = req.params;
@@ -170,8 +186,12 @@ async function createProduct(req, res, next) {
       nutrition,
     } = req.body;
 
-    if (!name || price === undefined) {
+    if (!name || price === undefined || price === "") {
       return res.status(400).json({ message: "Name and price are required." });
+    }
+    const priceNum = toNumber(price, NaN);
+    if (!Number.isFinite(priceNum) || priceNum < 0) {
+      return res.status(400).json({ message: "Price must be at least 0." });
     }
 
     const mrpNum = mrp !== undefined && mrp !== "" ? toNumber(mrp, 0) : undefined;
@@ -183,9 +203,10 @@ async function createProduct(req, res, next) {
       reviewCount !== undefined && reviewCount !== "" ? Math.max(0, Math.floor(toNumber(reviewCount, 0))) : 0;
     const variantRows = sanitizeVariants(variants);
 
+    const createdQty = Math.max(0, toNumber(stockQty, 0));
     const product = await Product.create({
       name,
-      price: toNumber(price, 0),
+      price: priceNum,
       ...(mrpNum !== undefined && mrpNum > 0 ? { mrp: mrpNum } : {}),
       image: image || "",
       images: Array.isArray(images) ? images.filter(Boolean) : [],
@@ -204,7 +225,7 @@ async function createProduct(req, res, next) {
       comingSoon: toBoolean(comingSoon, false),
       comingSoonNote: String(comingSoonNote || "").trim(),
       inStock: toBoolean(inStock, true),
-      stockQty: Math.max(0, toNumber(stockQty, 0)),
+      stockQty: createdQty,
       ratingAverage: ratingNum,
       reviewCount: reviewNum,
       badgeText: String(badgeText || "").trim(),
@@ -229,6 +250,20 @@ async function createProduct(req, res, next) {
       nutrition: sanitizeNutrition(nutrition),
     });
 
+    await recordStockChange({
+      product,
+      before: 0,
+      after: createdQty,
+      why: "manual",
+      who: actorName(req.user),
+    });
+    await recordAdminAction(req, {
+      action: "Created product",
+      subject: product.name || "Product",
+      tab: "catalog",
+      href: productOpen(product.name),
+    });
+
     res.status(201).json(product);
   } catch (error) {
     next(error);
@@ -243,6 +278,7 @@ async function updateProduct(req, res, next) {
     if (!product) {
       return res.status(404).json({ message: "Product not found." });
     }
+    const beforeQty = qtyOf(product.stockQty);
 
     const {
       name,
@@ -290,7 +326,13 @@ async function updateProduct(req, res, next) {
       nutrition,
     } = req.body;
     if (name !== undefined) product.name = name;
-    if (price !== undefined) product.price = toNumber(price, product.price);
+    if (price !== undefined) {
+      const nextPrice = toNumber(price, NaN);
+      if (!Number.isFinite(nextPrice) || nextPrice < 0) {
+        return res.status(400).json({ message: "Price must be at least 0." });
+      }
+      product.price = nextPrice;
+    }
     if (mrp !== undefined) {
       const nextMrp = mrp === "" || mrp === null ? undefined : Math.max(0, toNumber(mrp, 0));
       product.mrp = nextMrp;
@@ -299,7 +341,7 @@ async function updateProduct(req, res, next) {
     if (images !== undefined) product.images = Array.isArray(images) ? images.filter(Boolean) : [];
     if (description !== undefined) product.description = description;
     if (category !== undefined) product.category = category;
-    if (homeSection !== undefined) product.homeSection = homeSection;
+    if (homeSection !== undefined) product.homeSection = String(homeSection || "").trim() || "Prime Products";
     if (productType !== undefined) product.productType = productType;
     if (showOnHome !== undefined) product.showOnHome = toBoolean(showOnHome, product.showOnHome);
     if (isPublished !== undefined) product.isPublished = toBoolean(isPublished, product.isPublished);
@@ -341,6 +383,32 @@ async function updateProduct(req, res, next) {
     if (nutrition !== undefined) product.nutrition = sanitizeNutrition(nutrition);
 
     await product.save();
+    await recordStockChange({
+      product,
+      before: beforeQty,
+      after: product.stockQty,
+      why: "manual",
+      who: actorName(req.user),
+    });
+    const keys = Object.keys(req.body || {}).filter((key) => req.body[key] !== undefined);
+    const stockOnly = keys.length > 0 && keys.every((key) => key === "stockQty" || key === "inStock");
+    const stockMoved = qtyOf(product.stockQty) !== beforeQty;
+    if (!stockOnly) {
+      await recordAdminAction(req, {
+        action: "Edited product",
+        subject: product.name || "Product",
+        tab: "catalog",
+        href: productOpen(product.name),
+      });
+    }
+    if (stockMoved) {
+      await recordAdminAction(req, {
+        action: "Changed stock count",
+        subject: product.name || "Product",
+        tab: "catalog",
+        href: productOpen(product.name),
+      });
+    }
     res.json(product);
   } catch (error) {
     next(error);
@@ -356,7 +424,9 @@ async function deleteProduct(req, res, next) {
       return res.status(404).json({ message: "Product not found." });
     }
 
+    const name = product.name || "Product";
     await product.deleteOne();
+    await recordAdminAction(req, { action: "Deleted product", subject: name, tab: "catalog" });
     res.json({ message: "Product deleted successfully." });
   } catch (error) {
     next(error);
@@ -524,6 +594,7 @@ async function createOrUpdateProductReview(req, res, next) {
 
 module.exports = {
   getProducts,
+  getAdminProducts,
   getProductById,
   createProduct,
   updateProduct,

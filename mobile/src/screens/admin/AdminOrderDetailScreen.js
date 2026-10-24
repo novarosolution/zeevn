@@ -12,20 +12,27 @@ import { useAuth } from "../../context/AuthContext";
 import { useLiveSocket } from "../../context/LiveSocketContext";
 import { useTheme } from "../../context/ThemeContext";
 import {
+  addAdminOrderNote,
   deleteAdminOrder,
+  deleteAdminOrderNote,
   fetchAdminOrder,
   fetchAdminUsers,
   updateAdminOrderDetails,
+  updateAdminOrderPayment,
   updateOrderStatus,
 } from "../../services/adminService";
+import { isCod } from "../../utils/adminOrderUi";
+import { timeAgo } from "../../utils/adminFormat";
+import AdminInput from "../../components/admin/AdminInput";
+import AdminButton from "../../components/admin/AdminButton";
 import { adminShellContent } from "../../theme/adminLayout";
 import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
+import { fonts, spacing, typography } from "../../theme/tokens";
 import { formatOrderPublicRef } from "../../content/appContent";
 import { formatINR } from "../../utils/currency";
 import { getOrderItemQty } from "../../utils/adminOrderHelpers";
-import { ORDER_ADMIN_NEXT_STATUS, getAdminNextStatusLabel } from "../../utils/orderStatus";
+import { ORDER_ADMIN_NEXT_STATUS, ORDER_STATUSES_ALLOW_ADDRESS_EDIT, getAdminNextStatusLabel } from "../../utils/orderStatus";
 import PremiumLoader from "../../components/ui/PremiumLoader";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumButton from "../../components/ui/PremiumButton";
@@ -79,6 +86,8 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [noteText, setNoteText] = useState("");
+  const [noteBusy, setNoteBusy] = useState(false);
 
   const loadOrder = useCallback(async () => {
     if (!orderId) {
@@ -160,21 +169,26 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
       setBusy(true);
       setError("");
       setSuccess("");
+      const canEditAddress = ORDER_STATUSES_ALLOW_ADDRESS_EDIT.includes(order.status);
       await updateAdminOrderDetails(token, order._id, {
         paymentMethod: editForm.paymentMethod,
         assignedDeliveryUser: editForm.assignedDeliveryUserId || null,
-        shippingAddress: {
-          fullName: editForm.fullName,
-          phone: editForm.phone,
-          line1: editForm.line1,
-          city: editForm.city,
-          state: editForm.state,
-          postalCode: editForm.postalCode,
-          country: editForm.country,
-          note: editForm.note,
-          latitude: editForm.latitude,
-          longitude: editForm.longitude,
-        },
+        ...(canEditAddress
+          ? {
+              shippingAddress: {
+                fullName: editForm.fullName,
+                phone: editForm.phone,
+                line1: editForm.line1,
+                city: editForm.city,
+                state: editForm.state,
+                postalCode: editForm.postalCode,
+                country: editForm.country,
+                note: editForm.note,
+                latitude: editForm.latitude,
+                longitude: editForm.longitude,
+              },
+            }
+          : {}),
         invoice: {
           number: editForm.invoiceNumber,
           issueDate: editForm.invoiceIssueDate || null,
@@ -198,6 +212,58 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
       setError(err.message || "Unable to save order details.");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handlePayment = async (paymentStatus, note) => {
+    if (!order) return;
+    try {
+      setBusy(true);
+      setError("");
+      setSuccess("");
+      await updateAdminOrderPayment(token, order._id, paymentStatus, note);
+      setSuccess(
+        paymentStatus === "paid"
+          ? isCod(order)
+            ? "Cash marked collected."
+            : "Payment marked paid."
+          : paymentStatus === "refunded"
+            ? "Refund recorded here — no gateway call."
+            : paymentStatus === "failed"
+              ? "Payment marked failed."
+              : "Payment set back to unpaid."
+      );
+      await loadOrder();
+    } catch (err) {
+      setError(err.message || "Unable to update payment.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleAddNote = async () => {
+    const text = noteText.trim();
+    if (!order || !text) return;
+    try {
+      setNoteBusy(true);
+      setError("");
+      const res = await addAdminOrderNote(token, order._id, text);
+      setNoteText("");
+      setOrder((prev) => (prev ? { ...prev, adminNotes: res.notes } : prev));
+    } catch (err) {
+      setError(err.message || "Unable to add note.");
+    } finally {
+      setNoteBusy(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    if (!order || !noteId) return;
+    try {
+      const res = await deleteAdminOrderNote(token, order._id, noteId);
+      setOrder((prev) => (prev ? { ...prev, adminNotes: res.notes } : prev));
+    } catch (err) {
+      setError(err.message || "Unable to delete note.");
     }
   };
 
@@ -352,6 +418,7 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
                   </SectionReveal>
 
                   {editForm ? (
+                    <>
                     <AdminOrderManagePanel
                       order={order}
                       editForm={editForm}
@@ -370,9 +437,44 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
                       }
                       onAssignDelivery={handleAssignDelivery}
                       onStatus={handleStatus}
+                      onPayment={handlePayment}
                       onCancelOrder={handleCancelOrder}
                       onDelete={handleDelete}
                     />
+                    <AdminPanel title="Admin notes" icon="lock-closed-outline" description="Plain text, team only. Newest last. Cap 100.">
+                      <AdminInput
+                        value={noteText}
+                        onChangeText={setNoteText}
+                        placeholder="Add a note"
+                        multiline
+                        numberOfLines={2}
+                        maxLength={500}
+                        autoCapitalize="sentences"
+                      />
+                      <View style={styles.noteActions}>
+                        <AdminButton
+                          label="Add note"
+                          icon="add"
+                          size="sm"
+                          variant="primary"
+                          loading={noteBusy}
+                          disabled={!noteText.trim()}
+                          onPress={handleAddNote}
+                        />
+                      </View>
+                      {(order.adminNotes || []).map((entry) => (
+                        <View key={entry._id} style={styles.noteRow}>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <Text style={styles.noteText}>{entry.text}</Text>
+                            <Text style={styles.noteMeta}>
+                              {entry.byName || "Admin"} · {timeAgo(entry.at)}
+                            </Text>
+                          </View>
+                          <AdminButton icon="trash-outline" size="xs" variant="ghost" title="Delete note" onPress={() => handleDeleteNote(entry._id)} />
+                        </View>
+                      ))}
+                    </AdminPanel>
+                    </>
                   ) : null}
                 </>
               )}
@@ -451,5 +553,16 @@ function createStyles(c, shadowPremium) {
       gap: spacing.xs,
       alignItems: "center",
     },
+    noteActions: { marginTop: spacing.sm, marginBottom: spacing.sm, alignSelf: "flex-start" },
+    noteRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: spacing.sm,
+      paddingVertical: 8,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    noteText: { fontSize: typography.bodySmall, fontFamily: fonts.regular, color: c.textPrimary },
+    noteMeta: { marginTop: 2, fontSize: typography.caption, fontFamily: fonts.regular, color: c.textMuted },
   });
 }

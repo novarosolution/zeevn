@@ -6,6 +6,7 @@ const Coupon = require("../models/Coupon");
 const CouponRedemption = require("../models/CouponRedemption");
 const {
   normalizeCouponCode,
+  couponCodeQuery,
   getCouponValidationError,
   computeCouponDiscount,
 } = require("../utils/coupon");
@@ -13,6 +14,7 @@ const { buildCouponValidationResponse } = require("./couponController");
 const { resolveProductLineFromRaw } = require("../utils/productLine");
 const {
   ORDER_STATUS_VALUES,
+  ORDER_NEXT_STATUS,
   ORDER_STATUSES_ALLOW_ADDRESS_EDIT,
   ORDER_STATUSES_DELIVERY_DASHBOARD,
   ORDER_STATUSES_MARK_DELIVERABLE_FROM,
@@ -43,12 +45,15 @@ const {
   deductStockForOrderLines,
   restoreStockForOrderLines,
 } = require("../utils/stock");
+const { orderPublicRef } = require("../utils/stockHistory");
+const { logOrderStatus, logOrderPayment, logOrderAssign, logOrderNote } = require("../utils/adminLog");
 const { notifyAdminNewOrder } = require("../services/orderNotificationService");
 const {
   resolveDeliveryQuote,
   findZoneForAddress,
 } = require("../services/deliveryZoneService");
 const DeliveryZone = require("../models/DeliveryZone");
+const { assertCanOrder } = require("../services/storeOpsService");
 
 function pushOrderLiveUpdate(order) {
   try {
@@ -99,6 +104,21 @@ function applyTrackingPatch(order, patch = {}) {
   }
   order.tracking = next;
   return null;
+}
+
+function pushDispatchAttempt(order, { riderId, riderName = "", action, by, reason = "" }) {
+  if (!order.dispatchAttempts) order.dispatchAttempts = [];
+  order.dispatchAttempts.push({
+    at: new Date(),
+    rider: riderId || null,
+    riderName: String(riderName || "").trim().slice(0, 80),
+    action,
+    by,
+    reason: String(reason || "").trim().slice(0, 240),
+  });
+  if (order.dispatchAttempts.length > 30) {
+    order.dispatchAttempts.splice(0, order.dispatchAttempts.length - 30);
+  }
 }
 
 function applyPartnerAssignment(order, partnerId) {
@@ -167,7 +187,14 @@ async function maybeAutoAssignPartner(order) {
   }
   const partnerId = await pickLeastLoadedPartner(zone, order.deliveryDeclinedBy || []);
   if (!partnerId) return order;
+  const partner = await User.findById(partnerId).select("name");
   applyPartnerAssignment(order, partnerId);
+  pushDispatchAttempt(order, {
+    riderId: partnerId,
+    riderName: partner?.name || "",
+    action: "assigned",
+    by: "auto",
+  });
   await order.save();
   return order;
 }
@@ -176,7 +203,10 @@ async function maybeAutoAssignPartner(order) {
 async function finalizePaidOrder(order) {
   if (!order.stockAdjustedAt) {
     try {
-      await deductStockForOrderLines(order.products);
+      await deductStockForOrderLines(order.products, {
+        order: order._id,
+        orderRef: orderPublicRef(order._id),
+      });
       order.stockAdjustedAt = new Date();
     } catch (stockErr) {
       console.error("[orders] stock deduct after payment failed:", stockErr.message);
@@ -368,11 +398,16 @@ async function createOrder(req, res, next) {
 
     const itemsTotal = normalizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+    const opsBlock = await assertCanOrder({ itemsTotal, paymentMethod: normalizedPaymentMethod });
+    if (opsBlock) {
+      return res.status(opsBlock.status).json({ message: opsBlock.message, code: opsBlock.code });
+    }
+
     let resolvedCoupon = null;
     let discountAmount = 0;
     const normalizedCouponCode = normalizeCouponCode(couponCode);
     if (normalizedCouponCode) {
-      resolvedCoupon = await Coupon.findOne({ code: normalizedCouponCode });
+      resolvedCoupon = await Coupon.findOne(couponCodeQuery(normalizedCouponCode));
       const couponError = getCouponValidationError(resolvedCoupon, itemsTotal);
       if (couponError) {
         return res.status(400).json({ message: couponError });
@@ -520,7 +555,10 @@ async function createOrder(req, res, next) {
 
     if (!isOnline) {
       try {
-        await deductStockForOrderLines(order.products);
+        await deductStockForOrderLines(order.products, {
+          order: order._id,
+          orderRef: orderPublicRef(order._id),
+        });
         order.stockAdjustedAt = new Date();
         await order.save();
       } catch (stockErr) {
@@ -584,6 +622,7 @@ async function getAllOrders(req, res, next) {
 async function getAdminOrderById(req, res, next) {
   try {
     const order = await Order.findById(req.params.id)
+      .select("+adminNotes")
       .populate("user", "name email")
       .populate("assignedDeliveryUser", "name email phone")
       .populate("products.product", "name price image inStock stockQty");
@@ -601,10 +640,12 @@ async function getAdminOrderById(req, res, next) {
 async function getMyOrders(req, res, next) {
   try {
     const orders = await Order.find({ user: req.user._id })
+      .select("-dispatchAttempts")
       .sort({ createdAt: -1 })
       .populate("assignedDeliveryUser", "name phone")
       .populate("products.product", "name price image inStock stockQty");
-    res.json(orders);
+    const { decorateMyOrdersWithReturns } = require("./returnController");
+    res.json(await decorateMyOrdersWithReturns(orders));
   } catch (error) {
     next(error);
   }
@@ -837,7 +878,7 @@ async function validateCouponForCart(req, res, next) {
     }
 
     const subtotal = getRequestSubtotal(req) ?? getUserCartSubtotal(user);
-    const coupon = await Coupon.findOne({ code: couponCode });
+    const coupon = await Coupon.findOne(couponCodeQuery(couponCode));
     const issuedForUserId = coupon?.issuedForUser ? String(coupon.issuedForUser) : "";
     const personalOk =
       coupon && issuedForUserId && issuedForUserId === String(req.user._id);
@@ -1114,6 +1155,10 @@ async function updateAdminOrderDetails(req, res, next) {
       return res.status(404).json({ message: "Order not found." });
     }
 
+    const prevStatus = String(order.status);
+    const prevRider = order.assignedDeliveryUser ? String(order.assignedDeliveryUser) : "";
+    let assignName = "";
+
     if (req.body?.status !== undefined) {
       if (!ORDER_STATUS_VALUES.includes(req.body.status)) {
         return res.status(400).json({ message: "Invalid order status." });
@@ -1135,6 +1180,11 @@ async function updateAdminOrderDetails(req, res, next) {
       order.paymentMethod = String(req.body.paymentMethod || "Cash on Delivery").trim();
     }
     if (req.body?.shippingAddress && typeof req.body.shippingAddress === "object") {
+      if (!ORDER_STATUSES_ALLOW_ADDRESS_EDIT.includes(order.status)) {
+        return res.status(400).json({
+          message: "Address can only be edited while the order is still being packed.",
+        });
+      }
       const { cleanMapCoord } = require("../utils/shopLocation");
       const next = { ...order.shippingAddress, ...req.body.shippingAddress };
       next.latitude = cleanMapCoord(next.latitude);
@@ -1144,11 +1194,20 @@ async function updateAdminOrderDetails(req, res, next) {
     if (req.body?.assignedDeliveryUser !== undefined) {
       const raw = req.body.assignedDeliveryUser;
       if (raw === null || raw === "") {
+        const prevId = order.assignedDeliveryUser;
+        const prevName = order.assignedDeliveryUser?.name
+          ? order.assignedDeliveryUser.name
+          : prevId
+            ? (await User.findById(prevId).select("name"))?.name || ""
+            : "";
         clearPartnerAssignment(order);
+        if (prevId) {
+          pushDispatchAttempt(order, { riderId: prevId, riderName: prevName, action: "cleared", by: "admin" });
+        }
       } else if (!mongoose.Types.ObjectId.isValid(String(raw))) {
         return res.status(400).json({ message: "Invalid delivery assignee id." });
       } else {
-        const assignee = await User.findById(raw).select("isDeliveryPartner");
+        const assignee = await User.findById(raw).select("isDeliveryPartner name");
         if (!assignee) {
           return res.status(404).json({ message: "Assignee user not found." });
         }
@@ -1171,11 +1230,18 @@ async function updateAdminOrderDetails(req, res, next) {
           const allowed = zone.partnerIds.map((id) => String(id));
           if (!allowed.includes(String(assignee._id))) {
             return res.status(400).json({
-              message: `This partner is not assigned to zone "${zone.name || "selected"}".`,
+              message: `${assignee.name || "Rider"} doesn't cover ${zone.name || "this zone"}`,
             });
           }
         }
         applyPartnerAssignment(order, assignee._id);
+        assignName = assignee.name || "rider";
+        pushDispatchAttempt(order, {
+          riderId: assignee._id,
+          riderName: assignee.name || "",
+          action: "assigned",
+          by: "admin",
+        });
         // Admin reassign clears prior decline for this partner so they can accept again.
         order.deliveryDeclinedBy = (order.deliveryDeclinedBy || []).filter(
           (id) => String(id) !== String(assignee._id)
@@ -1235,6 +1301,14 @@ async function updateAdminOrderDetails(req, res, next) {
       await maybeAutoAssignPartner(order);
     }
 
+    if (req.body?.status !== undefined && String(order.status) !== prevStatus) {
+      await logOrderStatus(req, order, order.status);
+    }
+    if (req.body?.assignedDeliveryUser !== undefined) {
+      const nextRider = order.assignedDeliveryUser ? String(order.assignedDeliveryUser) : "";
+      if (nextRider !== prevRider) await logOrderAssign(req, order, nextRider ? assignName : "");
+    }
+
     const updated = await Order.findById(order._id)
       .populate("user", "name email")
       .populate("assignedDeliveryUser", "name email phone")
@@ -1287,6 +1361,12 @@ async function acceptMyDeliveryOrder(req, res, next) {
     }
     order.deliveryAcceptStatus = "accepted";
     order.deliveryAcceptedAt = new Date();
+    pushDispatchAttempt(order, {
+      riderId: req.user._id,
+      riderName: req.user.name || "",
+      action: "accepted",
+      by: "rider",
+    });
     await order.save();
     const updated = await Order.findById(order._id)
       .populate("user", "name email phone")
@@ -1327,6 +1407,13 @@ async function declineMyDeliveryOrder(req, res, next) {
     const declined = new Set((order.deliveryDeclinedBy || []).map((x) => String(x)));
     declined.add(String(partnerId));
     order.deliveryDeclinedBy = [...declined];
+    pushDispatchAttempt(order, {
+      riderId: partnerId,
+      riderName: req.user.name || "",
+      action: "declined",
+      by: "rider",
+      reason,
+    });
     clearPartnerAssignment(order);
     order.deliveryAcceptStatus = "declined";
     await order.save();
@@ -1399,13 +1486,29 @@ async function updateOrderStatus(req, res, next) {
       return res.status(404).json({ message: "Order not found." });
     }
 
-    const previousStatus = order.status;
+    const previousStatus = String(order.status);
+    if (status !== previousStatus) {
+      const next = ORDER_NEXT_STATUS[previousStatus];
+      if (status !== "cancelled" && status !== next) {
+        return res.status(400).json({
+          message: next ? `Next step is ${String(next).replace(/_/g, " ")}.` : "This order has no next step.",
+        });
+      }
+    }
+
     order.status = status;
-    setStatusActor(order, { by: req.user?._id || null, byRole: "admin", note: String(note || "").trim() });
+    if (status === "cancelled" && previousStatus === "pending_payment" && order.paymentStatus === "pending") {
+      applyCancelPendingPayment(order);
+    }
+    setStatusActor(order, { by: req.user?._id || null, byRole: "admin", note: String(note || "").trim().slice(0, 300) });
     await order.save();
 
     if (status === "cancelled" && previousStatus !== "cancelled" && order.stockAdjustedAt) {
-      await restoreStockForOrderLines(order.products);
+      await restoreStockForOrderLines(order.products, {
+        why: "cancel",
+        order: order._id,
+        orderRef: orderPublicRef(order._id),
+      });
       order.stockAdjustedAt = null;
       await order.save();
     }
@@ -1418,6 +1521,8 @@ async function updateOrderStatus(req, res, next) {
       .populate("user", "name email")
       .populate("assignedDeliveryUser", "name email phone")
       .populate("products.product", "name price image");
+
+    if (status !== previousStatus) await logOrderStatus(req, order, status);
 
     pushOrderLiveUpdate(updated);
     res.json(updated);
@@ -1845,6 +1950,367 @@ async function deleteOrder(req, res, next) {
   }
 }
 
+/* ---------------------------------------------------------------------------
+ * Admin desk — bulk moves, payment control and private team notes.
+ * ------------------------------------------------------------------------- */
+
+const BULK_LIMIT = 100;
+const PAYMENT_STATUS_VALUES = ["pending", "paid", "failed", "refunded"];
+/** Position on the happy path; the legacy `paid` / `shipped` sit beside their modern twins. */
+const STATUS_RANK = {
+  pending_payment: 0,
+  pending: 1,
+  confirmed: 2,
+  paid: 2,
+  preparing: 3,
+  ready_for_pickup: 4,
+  shipped: 5,
+  out_for_delivery: 5,
+  delivered: 6,
+};
+
+/** Populated copy for responses and live pushes. Never carries `adminNotes` (they are `select: false`). */
+function loadPopulatedOrder(id) {
+  return Order.findById(id)
+    .populate("user", "name email")
+    .populate("assignedDeliveryUser", "name email phone")
+    .populate("products.product", "name price image inStock stockQty");
+}
+
+function parseBulkIds(raw) {
+  const ids = [...new Set((Array.isArray(raw) ? raw : []).map((id) => String(id)))];
+  return ids.filter((id) => mongoose.Types.ObjectId.isValid(id));
+}
+
+/** Cancelling an unpaid online order writes the payment off and voids the invoice. */
+function applyCancelPendingPayment(order) {
+  order.paymentStatus = "failed";
+  order.paymentExpiresAt = null;
+  if (order.invoice) {
+    order.invoice.status = "void";
+    order.invoice.updatedAt = new Date();
+  }
+}
+
+/** Why `order` should not move to `status` in a bulk action — empty when it can go. */
+function bulkStatusSkipReason(order, status) {
+  const from = String(order.status);
+  if (from === status) return "Already there";
+  if (from === "delivered" || from === "cancelled") return `Already ${from}`;
+  if (status === "cancelled") return "";
+  if (from === "pending_payment") return "Waiting for online payment";
+  if (status === "pending_payment") return "Can't go back to awaiting payment";
+  if (STATUS_RANK[status] === STATUS_RANK[from]) return "Already at that stage";
+  if (STATUS_RANK[status] < STATUS_RANK[from]) return "Can't move backwards in bulk";
+  if (status === "delivered" && !ORDER_STATUSES_MARK_DELIVERABLE_FROM.includes(from)) {
+    return "Send it out for delivery first";
+  }
+  return "";
+}
+
+/** Private trail on the order: free-text notes and who changed what. Capped so it can't grow forever. */
+function pushAdminNote(order, user, text) {
+  const clean = String(text || "").trim().slice(0, 500);
+  if (!clean) return;
+  order.adminNotes.push({
+    text: clean,
+    by: user?._id || null,
+    byName: String(user?.name || "Admin").trim().slice(0, 80),
+  });
+  if (order.adminNotes.length > 100) order.adminNotes.splice(0, order.adminNotes.length - 100);
+}
+
+function summarizeBulk(results, extra = {}) {
+  const updated = results.filter((r) => r.ok).length;
+  return { ...extra, updated, skipped: results.length - updated, results };
+}
+
+/** Move many orders to one status; each order is checked on its own and reports why it was skipped. */
+async function bulkUpdateOrderStatus(req, res, next) {
+  try {
+    const status = String(req.body?.status || "");
+    if (!ORDER_STATUS_VALUES.includes(status)) {
+      return res.status(400).json({ message: "Invalid order status." });
+    }
+    const ids = parseBulkIds(req.body?.ids);
+    if (!ids.length) return res.status(400).json({ message: "Pick at least one order." });
+    if (ids.length > BULK_LIMIT) {
+      return res.status(400).json({ message: `Pick at most ${BULK_LIMIT} orders at a time.` });
+    }
+    const note = String(req.body?.note || "").trim().slice(0, 300);
+
+    const results = [];
+    // One at a time: auto-assign balances rider load, so every order must see the one before it.
+    for (const id of ids) {
+      const order = await Order.findById(id);
+      if (!order) {
+        results.push({ id, ok: false, reason: "Order not found" });
+        continue;
+      }
+      const reason = bulkStatusSkipReason(order, status);
+      if (reason) {
+        results.push({ id, ok: false, reason });
+        continue;
+      }
+
+      const previous = String(order.status);
+      order.status = status;
+      if (status === "cancelled" && previous === "pending_payment" && order.paymentStatus === "pending") {
+        applyCancelPendingPayment(order);
+      }
+      setStatusActor(order, { by: req.user?._id || null, byRole: "admin", note });
+      await order.save();
+
+      if (status === "cancelled" && order.stockAdjustedAt) {
+        await restoreStockForOrderLines(order.products, {
+          why: "cancel",
+          order: order._id,
+          orderRef: orderPublicRef(order._id),
+        });
+        order.stockAdjustedAt = null;
+        await order.save();
+      }
+      if (LIVE_ASSIGN_STATUSES.includes(status) && !order.assignedDeliveryUser) {
+        await maybeAutoAssignPartner(order);
+      }
+      pushOrderLiveUpdate(await loadPopulatedOrder(order._id));
+      results.push({ id, ok: true, status });
+      if (status !== previous) await logOrderStatus(req, order, status);
+    }
+
+    res.json(summarizeBulk(results, { status }));
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** Give many orders to one rider (or release them all with a null `riderId`). */
+async function bulkAssignRider(req, res, next) {
+  try {
+    const ids = parseBulkIds(req.body?.ids);
+    if (!ids.length) return res.status(400).json({ message: "Pick at least one order." });
+    if (ids.length > BULK_LIMIT) {
+      return res.status(400).json({ message: `Pick at most ${BULK_LIMIT} orders at a time.` });
+    }
+
+    const rawRider = req.body?.riderId;
+    let rider = null;
+    if (rawRider !== null && rawRider !== undefined && rawRider !== "") {
+      if (!mongoose.Types.ObjectId.isValid(String(rawRider))) {
+        return res.status(400).json({ message: "Invalid rider id." });
+      }
+      rider = await User.findById(rawRider).select("name isDeliveryPartner");
+      if (!rider) return res.status(404).json({ message: "Rider not found." });
+      if (!rider.isDeliveryPartner) {
+        return res.status(400).json({ message: "That user is not enabled as a delivery partner." });
+      }
+    }
+
+    const results = [];
+    for (const id of ids) {
+      const order = await Order.findById(id);
+      if (!order) {
+        results.push({ id, ok: false, reason: "Order not found" });
+        continue;
+      }
+      if (order.status === "delivered" || order.status === "cancelled") {
+        results.push({ id, ok: false, reason: `Already ${order.status}` });
+        continue;
+      }
+
+      if (!rider) {
+        const prevId = order.assignedDeliveryUser;
+        const prevName = prevId ? (await User.findById(prevId).select("name"))?.name || "" : "";
+        clearPartnerAssignment(order);
+        if (prevId) {
+          pushDispatchAttempt(order, { riderId: prevId, riderName: prevName, action: "cleared", by: "admin" });
+        }
+      } else {
+        let zone = null;
+        if (order.deliveryZone) {
+          zone = await DeliveryZone.findById(order.deliveryZone).select("partnerIds name").lean();
+        }
+        if (!zone) {
+          zone = await findZoneForAddress({
+            postalCode: order.shippingAddress?.postalCode,
+            city: order.shippingAddress?.city,
+          });
+        }
+        if (zone?.partnerIds?.length && !zone.partnerIds.some((p) => String(p) === String(rider._id))) {
+          results.push({ id, ok: false, reason: `${rider.name || "Rider"} doesn't cover ${zone.name || "this zone"}` });
+          continue;
+        }
+        applyPartnerAssignment(order, rider._id);
+        pushDispatchAttempt(order, {
+          riderId: rider._id,
+          riderName: rider.name || "",
+          action: "assigned",
+          by: "admin",
+        });
+        // A fresh assignment lets a rider who declined earlier accept again.
+        order.deliveryDeclinedBy = (order.deliveryDeclinedBy || []).filter(
+          (declinedId) => String(declinedId) !== String(rider._id)
+        );
+        order.deliveryDeclineReason = "";
+        order.deliveryDeclinedAt = null;
+      }
+      await order.save();
+      pushOrderLiveUpdate(await loadPopulatedOrder(order._id));
+      results.push({ id, ok: true });
+      await logOrderAssign(req, order, rider ? rider.name || "rider" : "");
+    }
+
+    res.json(summarizeBulk(results, { riderId: rider ? String(rider._id) : null }));
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** Payment moves an admin may make by hand. Anything not listed (failed, refunded) is final. */
+const PAYMENT_MOVES = {
+  pending: ["paid", "failed"],
+  paid: ["pending", "refunded"],
+  failed: [],
+  refunded: [],
+};
+
+/** Mark cash collected, undo a mistake, record a refund, or write off an unpaid online order. */
+async function updateOrderPayment(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(String(id))) {
+      return res.status(400).json({ message: "Invalid order id." });
+    }
+    const nextStatus = String(req.body?.paymentStatus || "").trim().toLowerCase();
+    if (!PAYMENT_STATUS_VALUES.includes(nextStatus)) {
+      return res.status(400).json({ message: "Invalid payment status." });
+    }
+    const order = await Order.findById(id).select("+adminNotes");
+    if (!order) return res.status(404).json({ message: "Order not found." });
+
+    const current = order.paymentStatus || "pending";
+    if (current === nextStatus) return res.json(await loadPopulatedOrder(order._id));
+    if (!PAYMENT_MOVES[current].includes(nextStatus)) {
+      return res.status(400).json({ message: `A ${current} payment can't be changed to ${nextStatus}.` });
+    }
+    if (nextStatus === "failed" && order.status !== "pending_payment") {
+      return res.status(400).json({ message: "Only an order still waiting for payment can be marked failed." });
+    }
+
+    const note = String(req.body?.note || "").trim().slice(0, 300);
+    const actor = { by: req.user?._id || null, byRole: "admin" };
+    const trail = {
+      paid: "Payment marked paid",
+      pending: "Payment marked unpaid again",
+      failed: "Payment marked failed",
+      refunded: "Payment marked refunded",
+    }[nextStatus];
+    pushAdminNote(order, req.user, note ? `${trail} — ${note}` : trail);
+    order.paymentStatus = nextStatus;
+
+    if (nextStatus === "paid") {
+      order.paymentExpiresAt = null;
+      if (order.invoice) {
+        order.invoice.status = "paid";
+        order.invoice.updatedAt = new Date();
+      }
+      if (order.status === "pending_payment") {
+        // Same outcome as a verified online payment: accept the order, take stock, alert the team.
+        order.status = "confirmed";
+        setStatusActor(order, { ...actor, note: note || "Payment confirmed by admin" });
+        await finalizePaidOrder(order);
+      } else {
+        await order.save();
+      }
+    } else if (nextStatus === "pending") {
+      if (order.invoice?.status === "paid") {
+        order.invoice.status = "final";
+        order.invoice.updatedAt = new Date();
+      }
+      await order.save();
+    } else if (nextStatus === "failed") {
+      // Online order that never got paid: close it exactly like the customer cancelling it (no stock was taken yet).
+      order.status = "cancelled";
+      order.paymentExpiresAt = null;
+      if (order.invoice) {
+        order.invoice.status = "void";
+        order.invoice.updatedAt = new Date();
+      }
+      setStatusActor(order, { ...actor, note: note || "Payment failed (marked by admin)" });
+      await order.save();
+    } else {
+      if (order.invoice) {
+        order.invoice.status = "void";
+        order.invoice.updatedAt = new Date();
+      }
+      await order.save();
+    }
+
+    await logOrderPayment(req, order, nextStatus);
+
+    const updated = await loadPopulatedOrder(order._id);
+    pushOrderLiveUpdate(updated);
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** The order with its private notes — for the admin detail screen only. */
+async function getAdminOrderNotes(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(String(id))) {
+      return res.status(400).json({ message: "Invalid order id." });
+    }
+    const order = await Order.findById(id).select("adminNotes");
+    if (!order) return res.status(404).json({ message: "Order not found." });
+    res.json({ orderId: String(order._id), notes: order.adminNotes || [] });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function addOrderNote(req, res, next) {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(String(id))) {
+      return res.status(400).json({ message: "Invalid order id." });
+    }
+    const text = String(req.body?.text || "").trim();
+    if (!text) return res.status(400).json({ message: "Write a note first." });
+    if (text.length > 500) return res.status(400).json({ message: "Notes can be at most 500 characters." });
+
+    const order = await Order.findById(id).select("+adminNotes");
+    if (!order) return res.status(404).json({ message: "Order not found." });
+    pushAdminNote(order, req.user, text);
+    await order.save();
+    await logOrderNote(req, order);
+    res.status(201).json({ orderId: String(order._id), notes: order.adminNotes });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function deleteOrderNote(req, res, next) {
+  try {
+    const { id, noteId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(String(id)) || !mongoose.Types.ObjectId.isValid(String(noteId))) {
+      return res.status(400).json({ message: "Invalid id." });
+    }
+    const order = await Order.findById(id).select("+adminNotes");
+    if (!order) return res.status(404).json({ message: "Order not found." });
+    if (!order.adminNotes.some((n) => String(n._id) === String(noteId))) {
+      return res.status(404).json({ message: "Note not found." });
+    }
+    order.adminNotes.pull({ _id: noteId });
+    await order.save();
+    res.json({ orderId: String(order._id), notes: order.adminNotes });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   createOrder,
   getAllOrders,
@@ -1870,4 +2336,10 @@ module.exports = {
   cancelPendingOrder,
   claimMyOrderReward,
   sweepExpiredPendingPayments,
+  bulkUpdateOrderStatus,
+  bulkAssignRider,
+  updateOrderPayment,
+  getAdminOrderNotes,
+  addOrderNote,
+  deleteOrderNote,
 };

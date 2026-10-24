@@ -6,19 +6,22 @@ import { getAdminChrome } from "../../theme/adminLayout";
 import { fonts } from "../../theme/tokens";
 
 /** Compact − / qty / + for inventory desks. */
-export default function AdminQtyStepper({ value, busy, onMinus, onPlus, onChange, onCommit }) {
+export default function AdminQtyStepper({ value, busy, onMinus, onPlus, onChange, onCommit, min = 0 }) {
   const { colors: c, isDark } = useTheme();
   const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
   const styles = useMemo(() => createStyles(chrome), [chrome]);
+  const floor = Math.max(0, Number(min) || 0);
+  const qty = Math.max(0, Number.parseInt(String(value ?? ""), 10) || 0);
+  const minusOff = Boolean(busy) || qty <= floor;
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, busy && styles.busy]}>
       <Pressable
         onPress={onMinus}
-        disabled={busy}
+        disabled={minusOff}
         hitSlop={6}
         accessibilityLabel="Decrease stock"
-        style={({ pressed }) => [styles.btn, pressed && styles.pressed]}
+        style={({ pressed }) => [styles.btn, minusOff && styles.disabled, pressed && !minusOff && styles.pressed]}
       >
         <Ionicons name="remove" size={14} color={chrome.ink} />
       </Pressable>
@@ -64,6 +67,8 @@ function createStyles(chrome) {
       ...Platform.select({ web: { cursor: "pointer", transition: "transform 100ms ease-out" }, default: {} }),
     },
     pressed: { transform: [{ scale: 0.97 }] },
+    busy: { opacity: 0.55 },
+    disabled: { opacity: 0.4 },
     field: {
       width: 44,
       height: 32,

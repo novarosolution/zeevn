@@ -9,6 +9,7 @@ const {
   sanitizeZoneBody,
   normalizePostalCode,
 } = require("../services/deliveryZoneService");
+const { recordAdminAction } = require("../utils/adminLog");
 
 function sanitizeStores(rows) {
   return (Array.isArray(rows) ? rows : [])
@@ -74,15 +75,21 @@ async function listDeliveryZones(req, res, next) {
   }
 }
 
+async function onlyRiderIds(ids) {
+  const unique = [...new Set((ids || []).map(String).filter((id) => mongoose.isValidObjectId(id)))];
+  if (!unique.length) return [];
+  const rows = await User.find({ _id: { $in: unique }, isDeliveryPartner: true }).select("_id").lean();
+  const ok = new Set(rows.map((row) => String(row._id)));
+  return unique.filter((id) => ok.has(id));
+}
+
 async function createDeliveryZone(req, res, next) {
   try {
     const data = sanitizeZoneBody(req.body);
     if (!data.name) {
       return res.status(400).json({ message: "Zone name is required." });
     }
-    if (!data.postalCodes.length && !data.cities.length && data.polygon.length < 3) {
-      return res.status(400).json({ message: "Add a pincode, a city, or draw the area on the map." });
-    }
+    data.partnerIds = await onlyRiderIds(data.partnerIds);
     const conflict = await findPostalCodeConflict(data.postalCodes);
     if (conflict) {
       return res.status(400).json({ message: conflict });
@@ -90,6 +97,12 @@ async function createDeliveryZone(req, res, next) {
     const zone = await DeliveryZone.create(data);
     const populated = await DeliveryZone.findById(zone._id)
       .populate("partnerIds", "name email phone isDeliveryPartner");
+    await recordAdminAction(req, {
+      action: "Created zone",
+      subject: zone.name || "Zone",
+      tab: "shop",
+      href: { screen: "AdminDelivery", params: { zoneId: String(zone._id) } },
+    });
     res.status(201).json(populated);
   } catch (error) {
     next(error);
@@ -106,6 +119,7 @@ async function updateDeliveryZone(req, res, next) {
     if (!data.name) {
       return res.status(400).json({ message: "Zone name is required." });
     }
+    data.partnerIds = await onlyRiderIds(data.partnerIds);
     const conflict = await findPostalCodeConflict(data.postalCodes, zone._id);
     if (conflict) {
       return res.status(400).json({ message: conflict });
@@ -114,6 +128,12 @@ async function updateDeliveryZone(req, res, next) {
     await zone.save();
     const populated = await DeliveryZone.findById(zone._id)
       .populate("partnerIds", "name email phone isDeliveryPartner");
+    await recordAdminAction(req, {
+      action: "Edited zone",
+      subject: zone.name || "Zone",
+      tab: "shop",
+      href: { screen: "AdminDelivery", params: { zoneId: String(zone._id) } },
+    });
     res.json(populated);
   } catch (error) {
     next(error);
@@ -126,6 +146,7 @@ async function deleteDeliveryZone(req, res, next) {
     if (!zone) {
       return res.status(404).json({ message: "Delivery zone not found." });
     }
+    await recordAdminAction(req, { action: "Deleted zone", subject: zone.name || "Zone", tab: "shop" });
     res.json({ ok: true, id: String(zone._id) });
   } catch (error) {
     next(error);
@@ -193,7 +214,7 @@ async function updateStoreSettings(req, res, next) {
     if (Number.isFinite(rate) && rate > 0) doc.minutesPerKm = rate;
 
     if (Array.isArray(req.body.stores)) {
-      const stores = sanitizeStores(req.body.stores);
+      const stores = sanitizeStores(req.body.stores).slice(0, 1);
       if (!stores.length) {
         return res.status(400).json({ message: "Add at least one shop pin." });
       }

@@ -4,7 +4,55 @@ const Reward = require("../models/Reward");
 const RewardRedemption = require("../models/RewardRedemption");
 const Coupon = require("../models/Coupon");
 const User = require("../models/User");
-const { normalizeCouponCode, computeCouponDiscount, getCouponValidationError } = require("../utils/coupon");
+const { recordAdminAction } = require("../utils/adminLog");
+const {
+  normalizeCouponCode,
+  parseCouponExpiry,
+  computeCouponDiscount,
+  getCouponValidationError,
+} = require("../utils/coupon");
+
+function present(doc) {
+  return {
+    _id: String(doc._id),
+    title: doc.title || "Reward",
+    description: doc.description || "",
+    pointsCost: Math.max(1, Math.floor(Number(doc.pointsCost) || 1)),
+    discountType: doc.discountType === "flat" ? "flat" : "percent",
+    discountValue: Number(doc.discountValue || 0),
+    minOrderAmount: Number(doc.minOrderAmount || 0),
+    maxDiscountAmount: Number(doc.maxDiscountAmount || 0) || null,
+    totalRedemptionLimit:
+      Number.isFinite(Number(doc.totalRedemptionLimit)) && Number(doc.totalRedemptionLimit) >= 1
+        ? Number(doc.totalRedemptionLimit)
+        : null,
+    redemptionCount: Number(doc.redemptionCount || 0),
+    perUserLimit: Math.max(1, Math.floor(Number(doc.perUserLimit) || 1)),
+    issuedCouponValidDays: Math.max(1, Math.floor(Number(doc.issuedCouponValidDays) || 90)),
+    isActive: doc.isActive !== false,
+    isVisibleToUsers: doc.isVisibleToUsers !== false,
+    expiresAt: doc.expiresAt || null,
+    createdAt: doc.createdAt,
+  };
+}
+
+function optionalLimit(value, label) {
+  if (value === "" || value == null) return { ok: true, value: null };
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n) || n < 1) {
+    return { ok: false, message: `${label} must be a whole number of at least 1.` };
+  }
+  return { ok: true, value: n };
+}
+
+function optionalCap(value) {
+  if (value === "" || value == null) return { ok: true, value: null };
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) {
+    return { ok: false, message: "Max discount must be greater than 0, or empty for no cap." };
+  }
+  return { ok: true, value: n };
+}
 
 function generateRewardCouponCode() {
   return `RW-${crypto.randomBytes(5).toString("hex")}`.toUpperCase();
@@ -21,8 +69,8 @@ async function ensureUniqueCouponCode() {
 
 async function getAdminRewards(req, res, next) {
   try {
-    const list = await Reward.find().sort({ createdAt: -1 });
-    res.json(list);
+    const list = await Reward.find().sort({ createdAt: -1 }).lean();
+    res.json(list.map(present));
   } catch (error) {
     next(error);
   }
@@ -32,20 +80,29 @@ async function createAdminReward(req, res, next) {
   try {
     const discountType = String(req.body?.discountType || "percent").toLowerCase();
     const discountValue = Number(req.body?.discountValue);
-    const pointsCost = Number(req.body?.pointsCost);
+    const pointsCost = Math.floor(Number(req.body?.pointsCost));
 
     if (!["percent", "flat"].includes(discountType)) {
-      return res.status(400).json({ message: "discountType must be percent or flat." });
+      return res.status(400).json({ message: "Discount type must be percent or flat." });
     }
     if (!Number.isFinite(discountValue) || discountValue <= 0) {
-      return res.status(400).json({ message: "discountValue must be greater than 0." });
+      return res.status(400).json({ message: "Discount value must be greater than 0." });
     }
     if (discountType === "percent" && discountValue > 100) {
-      return res.status(400).json({ message: "Percent discount cannot exceed 100." });
+      return res.status(400).json({ message: "Percent discount cannot be over 100." });
     }
     if (!Number.isFinite(pointsCost) || pointsCost < 1) {
-      return res.status(400).json({ message: "pointsCost must be at least 1." });
+      return res.status(400).json({ message: "Points cost must be a whole number of at least 1." });
     }
+
+    const total = optionalLimit(req.body?.totalRedemptionLimit, "Total redemption limit");
+    if (!total.ok) return res.status(400).json({ message: total.message });
+    const perUser = optionalLimit(req.body?.perUserLimit ?? 1, "Per customer limit");
+    if (!perUser.ok) return res.status(400).json({ message: perUser.message });
+    const days = optionalLimit(req.body?.issuedCouponValidDays ?? 90, "Issued code days");
+    if (!days.ok) return res.status(400).json({ message: days.message });
+    const cap = optionalCap(req.body?.maxDiscountAmount);
+    if (!cap.ok) return res.status(400).json({ message: cap.message });
 
     const reward = await Reward.create({
       title: String(req.body?.title || "").trim() || "Reward",
@@ -53,23 +110,23 @@ async function createAdminReward(req, res, next) {
       pointsCost,
       discountType,
       discountValue,
-      minOrderAmount: Number(req.body?.minOrderAmount || 0),
-      maxDiscountAmount:
-        req.body?.maxDiscountAmount === "" || req.body?.maxDiscountAmount === null
-          ? null
-          : Number(req.body?.maxDiscountAmount),
-      totalRedemptionLimit:
-        req.body?.totalRedemptionLimit === "" || req.body?.totalRedemptionLimit === null
-          ? null
-          : Number(req.body?.totalRedemptionLimit),
-      perUserLimit: Math.max(1, Number(req.body?.perUserLimit || 1)),
-      issuedCouponValidDays: Math.max(1, Number(req.body?.issuedCouponValidDays || 90)),
+      minOrderAmount: Math.max(0, Number(req.body?.minOrderAmount || 0) || 0),
+      maxDiscountAmount: cap.value,
+      totalRedemptionLimit: total.value,
+      perUserLimit: perUser.value || 1,
+      issuedCouponValidDays: days.value || 90,
       isActive: req.body?.isActive !== false,
       isVisibleToUsers: req.body?.isVisibleToUsers !== false,
-      expiresAt: req.body?.expiresAt ? new Date(req.body.expiresAt) : null,
+      expiresAt: parseCouponExpiry(req.body?.expiresAt),
     });
 
-    res.status(201).json(reward);
+    await recordAdminAction(req, {
+      action: "Created reward",
+      subject: reward.title || "Reward",
+      tab: "catalog",
+      href: { screen: "AdminRewards" },
+    });
+    res.status(201).json(present(reward));
   } catch (error) {
     next(error);
   }
@@ -82,14 +139,14 @@ async function updateAdminReward(req, res, next) {
       return res.status(404).json({ message: "Reward not found." });
     }
 
-    if (req.body?.title !== undefined) reward.title = String(req.body.title || "").trim() || reward.title;
+    if (req.body?.title !== undefined) reward.title = String(req.body.title || "").trim() || "Reward";
     if (req.body?.description !== undefined) {
       reward.description = String(req.body.description || "").trim();
     }
     if (req.body?.pointsCost !== undefined) {
-      const pc = Number(req.body.pointsCost);
+      const pc = Math.floor(Number(req.body.pointsCost));
       if (!Number.isFinite(pc) || pc < 1) {
-        return res.status(400).json({ message: "pointsCost must be at least 1." });
+        return res.status(400).json({ message: "Points cost must be a whole number of at least 1." });
       }
       reward.pointsCost = pc;
     }
@@ -97,48 +154,56 @@ async function updateAdminReward(req, res, next) {
       const discountType = String(req.body?.discountType || reward.discountType).toLowerCase();
       const discountValue = Number(req.body?.discountValue ?? reward.discountValue);
       if (!["percent", "flat"].includes(discountType)) {
-        return res.status(400).json({ message: "discountType must be percent or flat." });
+        return res.status(400).json({ message: "Discount type must be percent or flat." });
       }
       if (!Number.isFinite(discountValue) || discountValue <= 0) {
-        return res.status(400).json({ message: "discountValue must be greater than 0." });
+        return res.status(400).json({ message: "Discount value must be greater than 0." });
       }
       if (discountType === "percent" && discountValue > 100) {
-        return res.status(400).json({ message: "Percent discount cannot exceed 100." });
+        return res.status(400).json({ message: "Percent discount cannot be over 100." });
       }
       reward.discountType = discountType;
       reward.discountValue = discountValue;
     }
     if (req.body?.minOrderAmount !== undefined) {
-      reward.minOrderAmount = Number(req.body.minOrderAmount || 0);
+      reward.minOrderAmount = Math.max(0, Number(req.body.minOrderAmount || 0) || 0);
     }
     if (req.body?.maxDiscountAmount !== undefined) {
-      reward.maxDiscountAmount =
-        req.body.maxDiscountAmount === "" || req.body.maxDiscountAmount === null
-          ? null
-          : Number(req.body.maxDiscountAmount);
+      const cap = optionalCap(req.body.maxDiscountAmount);
+      if (!cap.ok) return res.status(400).json({ message: cap.message });
+      reward.maxDiscountAmount = cap.value;
     }
     if (req.body?.totalRedemptionLimit !== undefined) {
-      reward.totalRedemptionLimit =
-        req.body.totalRedemptionLimit === "" || req.body.totalRedemptionLimit === null
-          ? null
-          : Number(req.body.totalRedemptionLimit);
+      const total = optionalLimit(req.body.totalRedemptionLimit, "Total redemption limit");
+      if (!total.ok) return res.status(400).json({ message: total.message });
+      reward.totalRedemptionLimit = total.value;
     }
     if (req.body?.perUserLimit !== undefined) {
-      reward.perUserLimit = Math.max(1, Number(req.body.perUserLimit || 1));
+      const perUser = optionalLimit(req.body.perUserLimit, "Per customer limit");
+      if (!perUser.ok) return res.status(400).json({ message: perUser.message });
+      reward.perUserLimit = perUser.value || 1;
     }
     if (req.body?.issuedCouponValidDays !== undefined) {
-      reward.issuedCouponValidDays = Math.max(1, Number(req.body.issuedCouponValidDays || 90));
+      const days = optionalLimit(req.body.issuedCouponValidDays, "Issued code days");
+      if (!days.ok) return res.status(400).json({ message: days.message });
+      reward.issuedCouponValidDays = days.value || 90;
     }
     if (req.body?.isActive !== undefined) reward.isActive = Boolean(req.body.isActive);
     if (req.body?.isVisibleToUsers !== undefined) {
       reward.isVisibleToUsers = Boolean(req.body.isVisibleToUsers);
     }
     if (req.body?.expiresAt !== undefined) {
-      reward.expiresAt = req.body.expiresAt ? new Date(req.body.expiresAt) : null;
+      reward.expiresAt = parseCouponExpiry(req.body.expiresAt);
     }
 
     await reward.save();
-    res.json(reward);
+    await recordAdminAction(req, {
+      action: "Edited reward",
+      subject: reward.title || "Reward",
+      tab: "catalog",
+      href: { screen: "AdminRewards" },
+    });
+    res.json(present(reward));
   } catch (error) {
     next(error);
   }

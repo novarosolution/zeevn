@@ -8,6 +8,7 @@ const {
   normalizeHeroSlides,
 } = require("../utils/homeViewMedia");
 const { parseFestivalKey, normalizeFestivalKey } = require("../utils/festivalKey");
+const { recordAdminAction } = require("../utils/adminLog");
 
 /** In-memory defaults when the config document cannot be created (e.g. DB name case mismatch). */
 function buildDefaultHomeViewConfig() {
@@ -106,16 +107,11 @@ async function updateAdminHomeViewConfig(req, res, next) {
       primeSectionTitle,
       productTypeTitle,
       showPrimeSection,
-      showHomeSections,
       showProductTypeSections,
       productCardStyle,
       festivalKey,
       shopLocation,
       heroSlides,
-      aboutSection,
-      communitySection,
-      compareSection,
-      processSection,
     } = req.body || {};
 
     let nextFestivalKey;
@@ -135,9 +131,6 @@ async function updateAdminHomeViewConfig(req, res, next) {
     if (showPrimeSection !== undefined) {
       config.showPrimeSection = normalizeBoolean(showPrimeSection, config.showPrimeSection);
     }
-    if (showHomeSections !== undefined) {
-      config.showHomeSections = normalizeBoolean(showHomeSections, config.showHomeSections);
-    }
     if (showProductTypeSections !== undefined) {
       config.showProductTypeSections = normalizeBoolean(
         showProductTypeSections,
@@ -156,31 +149,19 @@ async function updateAdminHomeViewConfig(req, res, next) {
     }
 
     if (heroSlides !== undefined) {
-      config.heroSlides = normalizeHeroSlides(heroSlides);
+      config.heroSlides = normalizeHeroSlides(heroSlides)
+        .map((slide) => ({ ...slide, mediaType: "image" }))
+        .slice(0, 4);
       config.markModified("heroSlides");
     }
 
-    if (aboutSection !== undefined && aboutSection && typeof aboutSection === "object") {
-      config.aboutSection = normalizeAboutSection(aboutSection);
-      config.markModified("aboutSection");
-    }
-
-    if (communitySection !== undefined && communitySection && typeof communitySection === "object") {
-      config.communitySection = normalizeCommunitySection(communitySection);
-      config.markModified("communitySection");
-    }
-
-    if (compareSection !== undefined && compareSection && typeof compareSection === "object") {
-      config.compareSection = normalizeCompareSection(compareSection);
-      config.markModified("compareSection");
-    }
-
-    if (processSection !== undefined && processSection && typeof processSection === "object") {
-      config.processSection = normalizeProcessSection(processSection);
-      config.markModified("processSection");
-    }
-
     await config.save();
+    await recordAdminAction(req, {
+      action: "Saved home content",
+      subject: "Store",
+      tab: "shop",
+      href: { screen: "AdminHomeView" },
+    });
     res.json(serializeHomeViewConfig(config));
   } catch (error) {
     next(error);

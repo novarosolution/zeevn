@@ -13,6 +13,7 @@ import { STORE_PROFILE } from "../../content/storefrontContent";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { hapticTick } from "../../utils/haptics";
 import { formatPhone } from "../../utils/storefront";
+import DeleteAccountAction from "./DeleteAccountAction";
 import FloatingNav from "./FloatingNav";
 import { CoinArt } from "./PromoCarousel";
 import PressableScale from "./PressableScale";
@@ -310,6 +311,7 @@ export default function StoreProfile({
         </View>
 
         <View style={{ paddingHorizontal: gutter, marginTop: 26, gap: 14 }}>
+          <DeleteAccountAction tone={{ ink: c.ink, mute: c.inkMute, danger: c.danger, line: withAlpha(c.danger, 0.4), paper: c.card }} />
           <PressableScale
             onPress={onSignOut}
             disabled={signingOut}

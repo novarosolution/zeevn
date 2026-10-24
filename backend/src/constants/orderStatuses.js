@@ -35,7 +35,6 @@ exports.ORDER_STATUSES_ALLOW_ADDRESS_EDIT = [
   "pending",
   "confirmed",
   "preparing",
-  "paid",
 ];
 
 exports.ORDER_STATUSES_DELIVERY_DASHBOARD = [

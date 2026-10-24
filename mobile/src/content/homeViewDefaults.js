@@ -3,10 +3,11 @@
  * Do not import from customer screens.
  */
 export const HOME_VIEW_DEFAULTS = {
-  heroTitle: "Ghee · Tel · Masala · Honey",
-  heroSubtitle: "Small batches, honest labels, live delivery tracking.",
-  primeSectionTitle: "Bestsellers",
-  productTypeTitle: "Categories",
+  heroTitle: "Pure Heritage in Every Drop",
+  heroSubtitle:
+    "Slow-churned from the milk of grass-fed cows — golden clarity and aroma rooted in tradition.",
+  primeSectionTitle: "Prime Products",
+  productTypeTitle: "Shop by category",
   showPrimeSection: true,
   showProductTypeSections: true,
   productCardStyle: "compact",

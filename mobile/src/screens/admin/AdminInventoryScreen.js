@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FlatList,
   Platform,
+  Pressable,
   StyleSheet,
-  Switch,
   Text,
   View} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,13 +15,17 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminProducts, patchAdminProductStock } from "../../services/adminService";
 import { useAdminCompactLayout } from "../../theme/adminLayout";
-import AdminKpiCard, { AdminKpiGrid } from "../../components/admin/AdminKpiCard";
+import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import AdminPanel from "../../components/admin/AdminPanel";
 import AdminToolbar, { AdminToolbarSlot } from "../../components/admin/AdminToolbar";
+import AdminBadge from "../../components/admin/AdminBadge";
+import AdminProductCell from "../../components/admin/AdminProductCell";
 import AdminQtyStepper from "../../components/admin/AdminQtyStepper";
+import AdminSwitch from "../../components/admin/AdminSwitch";
 import { buildInventoryTableColumns } from "../../components/admin/adminTableColumns";
+import { productCoverUri } from "../../utils/adminProductHelpers";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import { customerScrollFill } from "../../theme/screenLayout";
@@ -31,11 +35,11 @@ import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumCard from "../../components/ui/PremiumCard";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { staggerDelay } from "../../theme/motion";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
+import { formatRupees } from "../../utils/adminFormat";
 
 /** Counts as “low stock” when qty is 1..LOW_STOCK_MAX and still sellable. */
 const LOW_STOCK_MAX = 5;
@@ -55,17 +59,46 @@ function stockState(p) {
   return { q, out, available, low };
 }
 
+function categoryName(p) {
+  return String(p.category || "").trim() || "General";
+}
+
+function hasPicture(p) {
+  if (typeof p.hasCatalogPhoto === "boolean") return p.hasCatalogPhoto;
+  if (String(p.image || "").trim()) return true;
+  return (Array.isArray(p.images) ? p.images : []).some((img) => String(img || "").trim());
+}
+
+function parseQty(value) {
+  const n = Number.parseInt(String(value ?? "").trim(), 10);
+  return Number.isFinite(n) ? Math.max(0, n) : 0;
+}
+
+function unitLabel(p) {
+  return String(p.unit || "").trim() || "—";
+}
+
+function stockPill(p) {
+  const s = stockState(p);
+  if (s.out) return { label: "Out", tone: "red" };
+  if (s.low) return { label: "Low", tone: "gold" };
+  return { label: "In stock", tone: "green" };
+}
+
 export default function AdminInventoryScreen({ navigation, route }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const { user, token } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState(typeof route?.params?.search === "string" ? route.params.search : "");
+  const [filter, setFilter] = useState(
+    ["all", "in_stock", "low", "out"].includes(route?.params?.filter) ? route.params.filter : "all"
+  );
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState("");
   const [draftQty, setDraftQty] = useState({});
+  const busyRef = useRef("");
 
   const styles = useMemo(() => createStyles(c, shadowPremium, isDark), [c, shadowPremium, isDark]);
   const compact = useAdminCompactLayout();
@@ -85,6 +118,15 @@ export default function AdminInventoryScreen({ navigation, route }) {
   }, [token]);
 
   useEffect(() => {
+    const next = route?.params?.filter;
+    if (["all", "in_stock", "low", "out"].includes(next)) setFilter(next);
+  }, [route?.params?.filter]);
+
+  useEffect(() => {
+    if (typeof route?.params?.search === "string") setSearch(route.params.search);
+  }, [route?.params?.search]);
+
+  useEffect(() => {
     if (!user) {
       setLoading(false);
       return;
@@ -97,15 +139,40 @@ export default function AdminInventoryScreen({ navigation, route }) {
   }, [user, load]);
 
   const stats = useMemo(() => {
-    const total = products.length;
+    let inStock = 0;
     let out = 0;
     let low = 0;
+    let value = 0;
+    let missingPicture = 0;
+    const byCat = new Map();
     for (const p of products) {
       const s = stockState(p);
       if (s.out) out += 1;
-      if (s.low) low += 1;
+      else {
+        inStock += 1;
+        value += s.q * (Number(p.price) || 0);
+        if (s.low) low += 1;
+        if (!hasPicture(p)) missingPicture += 1;
+      }
+      const name = categoryName(p);
+      const row = byCat.get(name) || { name, total: 0, inStock: 0, low: 0, out: 0 };
+      row.total += 1;
+      if (s.out) row.out += 1;
+      else {
+        row.inStock += 1;
+        if (s.low) row.low += 1;
+      }
+      byCat.set(name, row);
     }
-    return { total, out, low };
+    return {
+      total: products.length,
+      inStock,
+      out,
+      low,
+      value,
+      missingPicture,
+      categories: [...byCat.values()].sort((a, b) => a.name.localeCompare(b.name)),
+    };
   }, [products]);
 
   const visible = useMemo(() => {
@@ -118,49 +185,64 @@ export default function AdminInventoryScreen({ navigation, route }) {
       if (!q) return true;
       const name = String(p.name || "").toLowerCase();
       const sku = String(p.sku || "").toLowerCase();
-      return name.includes(q) || sku.includes(q);
+      const cat = categoryName(p).toLowerCase();
+      return name.includes(q) || sku.includes(q) || cat.includes(q);
     });
   }, [products, search, filter]);
 
   const applyPatch = useCallback(
     async (id, body) => {
+      if (!id || busyRef.current) return;
+      const stockQty = parseQty(body.stockQty);
+      const inStock = body.inStock === true;
+      busyRef.current = id;
       setBusyId(id);
       setError("");
       try {
-        await patchAdminProductStock(token, id, body);
+        const row = await patchAdminProductStock(token, id, { stockQty, inStock });
+        setProducts((prev) => prev.map((p) => (String(p._id) === String(id) ? row : p)));
         setDraftQty((prev) => {
           const next = { ...prev };
           delete next[id];
           return next;
         });
-        await load({ silent: true });
       } catch (e) {
         setError(e.message || "Update failed.");
       } finally {
+        busyRef.current = "";
         setBusyId("");
       }
     },
-    [token, load]
+    [token]
   );
 
   const onDelta = (p, delta) => {
     const { q } = stockState(p);
     const next = Math.max(0, q + delta);
+    if (next === q && (next > 0) === (p.inStock !== false)) return;
     applyPatch(p._id, { stockQty: next, inStock: next > 0 });
   };
 
   const onToggle = (p, value) => {
-    const q = Math.max(0, Number(p.stockQty) || 0);
+    const q = parseQty(p.stockQty);
     if (value) {
-      applyPatch(p._id, { inStock: true, stockQty: q < 1 ? 1 : q });
+      applyPatch(p._id, { stockQty: q < 1 ? 1 : q, inStock: true });
     } else {
-      applyPatch(p._id, { inStock: false });
+      applyPatch(p._id, { stockQty: q, inStock: false });
     }
   };
 
   const onApplyQty = (p) => {
-    const raw = String(draftQty[p._id] !== undefined ? draftQty[p._id] : p.stockQty ?? 0);
-    const next = Math.max(0, parseInt(raw, 10) || 0);
+    const raw = draftQty[p._id] !== undefined ? draftQty[p._id] : p.stockQty;
+    const next = parseQty(raw);
+    if (next === parseQty(p.stockQty) && (next > 0) === (p.inStock !== false)) {
+      setDraftQty((prev) => {
+        const copy = { ...prev };
+        delete copy[p._id];
+        return copy;
+      });
+      return;
+    }
     applyPatch(p._id, { stockQty: next, inStock: next > 0 });
   };
 
@@ -216,28 +298,90 @@ export default function AdminInventoryScreen({ navigation, route }) {
         ]}
         ListHeaderComponent={
           <View style={styles.headerBlock}>
-            <AdminPanel
-              title="Stock pulse"
-              icon="layers-outline"
-              meta="Tap to filter"
-              description="Adjust qty inline or mark items out of stock."
-            >
-              <AdminKpiGrid compact={compact}>
-                <AdminKpiCard label="SKUs" value={String(stats.total)} onPress={() => setFilter("all")} />
-                <AdminKpiCard
-                  label="Low stock"
-                  value={String(stats.low)}
-                  tone={stats.low > 0 ? "warn" : "default"}
-                  onPress={() => setFilter("low")}
-                />
-                <AdminKpiCard
-                  label="Out of stock"
-                  value={String(stats.out)}
-                  tone={stats.out > 0 ? "hot" : "default"}
-                  onPress={() => setFilter("out")}
-                />
-              </AdminKpiGrid>
-            </AdminPanel>
+            <AdminStatGrid min={compact ? 132 : 150}>
+              <AdminStatTile
+                icon="cube-outline"
+                label="Products"
+                value={String(stats.total)}
+                selected={filter === "all"}
+                onPress={() => setFilter("all")}
+                style={compact ? styles.tilePhone : undefined}
+              />
+              <AdminStatTile
+                icon="checkmark-circle-outline"
+                label="In stock"
+                value={String(stats.inStock)}
+                tone="green"
+                selected={filter === "in_stock"}
+                onPress={() => setFilter("in_stock")}
+                style={compact ? styles.tilePhone : undefined}
+              />
+              <AdminStatTile
+                icon="alert-circle-outline"
+                label="Low"
+                value={String(stats.low)}
+                tone={stats.low > 0 ? "gold" : "neutral"}
+                selected={filter === "low"}
+                onPress={() => setFilter("low")}
+                style={compact ? styles.tilePhone : undefined}
+              />
+              <AdminStatTile
+                icon="close-circle-outline"
+                label="Out"
+                value={String(stats.out)}
+                tone={stats.out > 0 ? "red" : "neutral"}
+                selected={filter === "out"}
+                onPress={() => setFilter("out")}
+                style={compact ? styles.tilePhone : undefined}
+              />
+              <AdminStatTile
+                icon="cash-outline"
+                label="Stock value"
+                value={formatRupees(stats.value)}
+                style={compact ? styles.tilePhone : undefined}
+              />
+            </AdminStatGrid>
+
+            {stats.categories.length ? (
+              <AdminPanel title="By category" icon="pricetags-outline" meta={`${stats.categories.length}`}>
+                {stats.categories.map((row, index) => (
+                  <Pressable
+                    key={row.name}
+                    onPress={() => setSearch(row.name)}
+                    accessibilityRole="button"
+                    style={({ pressed }) => [
+                      styles.catRow,
+                      compact && styles.catRowStack,
+                      index === stats.categories.length - 1 && styles.catRowLast,
+                      pressed && styles.catRowPressed,
+                    ]}
+                  >
+                    <Text style={styles.catName} numberOfLines={1}>
+                      {row.name}
+                    </Text>
+                    <Text style={styles.catMeta} numberOfLines={1}>
+                      {row.total} · {row.inStock} in · {row.low} low · {row.out} out
+                    </Text>
+                  </Pressable>
+                ))}
+              </AdminPanel>
+            ) : null}
+
+            {stats.missingPicture > 0 ? (
+              <AdminPanel title="Needs a picture" icon="image-outline">
+                <Pressable
+                  onPress={() => navigation.navigate("AdminProducts")}
+                  accessibilityRole="button"
+                  style={({ pressed }) => [styles.catRow, styles.catRowLast, pressed && styles.catRowPressed]}
+                >
+                  <Text style={styles.catName}>Needs a picture</Text>
+                  <Text style={styles.catMeta}>
+                    {stats.missingPicture} in-stock {stats.missingPicture === 1 ? "product has" : "products have"} no photo
+                  </Text>
+                </Pressable>
+              </AdminPanel>
+            ) : null}
+
             <AdminPanel title="Find stock" icon="search-outline" meta={`${visible.length} of ${products.length}`}>
               <AdminFilterTabs
                 value={filter}
@@ -280,16 +424,16 @@ export default function AdminInventoryScreen({ navigation, route }) {
                 style={{ marginBottom: spacing.md }}
               >
                 <AdminDataTable
-                  rows={visible.slice(0, 80)}
+                  rows={visible}
                   keyExtractor={(row) => row._id}
                   columns={buildInventoryTableColumns({
-                    onEdit: (row) => navigation.navigate("AdminAddProduct", { product: row }),
                     onDelta,
                     onApplyQty,
                     onToggle,
                     onDraft: (row, t) => setDraftQty((o) => ({ ...o, [row._id]: t })),
                     draftQty,
                     busyId,
+                    stockPill,
                   })}
                 />
               </AdminPanel>
@@ -301,8 +445,10 @@ export default function AdminInventoryScreen({ navigation, route }) {
             <View style={styles.emptyWrap}>
               <PremiumEmptyState
                 iconName="file-tray-outline"
-                title={ADMIN_SCREEN_COPY.inventory.empty}
-                description="Try another filter or clear your search."
+                title={products.length === 0 ? ADMIN_SCREEN_COPY.inventory.empty : ADMIN_SCREEN_COPY.inventory.emptySearch}
+                ctaLabel={products.length === 0 ? "Add product" : undefined}
+                ctaIconLeft={products.length === 0 ? "add-outline" : undefined}
+                onCtaPress={products.length === 0 ? () => navigation.navigate("AdminAddProduct") : undefined}
                 compact
               />
             </View>
@@ -311,6 +457,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
         renderItem={({ item: p, index: rowIndex }) => {
           const s = stockState(p);
           const busy = busyId === p._id;
+          const pill = stockPill(p);
           const dval =
             draftQty[p._id] !== undefined
               ? draftQty[p._id]
@@ -326,13 +473,12 @@ export default function AdminInventoryScreen({ navigation, route }) {
             >
               <View style={styles.rowTop}>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={styles.pName} numberOfLines={2}>
-                    {p.name}
+                  <AdminProductCell name={p.name} imageUri={productCoverUri(p)} />
+                  <Text style={styles.pSku}>
+                    {p.sku ? `SKU: ${p.sku}` : "No SKU"} · {categoryName(p)} · {unitLabel(p)}
                   </Text>
-                  <Text style={styles.pSku}>{p.sku ? `SKU: ${p.sku}` : "No SKU"}</Text>
                 </View>
-                {s.low ? <PremiumChip label="Low" tone="gold" size="xs" /> : null}
-                {s.out ? <PremiumChip label="Out" tone="red" size="xs" /> : null}
+                <AdminBadge label={pill.label} tone={pill.tone} size="sm" />
               </View>
 
               <View style={styles.qtyRow}>
@@ -346,38 +492,21 @@ export default function AdminInventoryScreen({ navigation, route }) {
                 />
 
                 <View style={styles.switchBlock}>
-                  <Text style={styles.switchLab}>Available</Text>
-                  <Switch
+                  <Text style={styles.switchLab}>On/Off</Text>
+                  <AdminSwitch
                     value={p.inStock !== false}
-                    onValueChange={(v) => onToggle(p, v)}
                     disabled={busy}
-                    trackColor={{ false: c.border, true: c.primarySoft }}
-                    thumbColor={c.surface}
-                    ios_backgroundColor={c.border}
+                    accessibilityLabel="On/Off"
+                    onChange={(v) => onToggle(p, v)}
                   />
                 </View>
-              </View>
-
-              <View style={styles.rowFoot}>
-                {busy ? (
-                  <View style={styles.busyInline}>
-                    <PremiumLoader size="sm" inline />
-                  </View>
-                ) : null}
-                <PremiumButton
-                  label="Edit full product"
-                  iconLeft="create-outline"
-                  variant="ghost"
-                  size="sm"
-                  onPress={() => navigation.navigate("AdminAddProduct", { product: p })}
-                />
               </View>
             </View>
             </SectionReveal>
           );
         }}
         ListFooterComponent={
-          <View>
+          products.length > 0 ? (
             <PremiumCard
               padding="lg"
               interactive
@@ -388,12 +517,12 @@ export default function AdminInventoryScreen({ navigation, route }) {
               <View style={styles.footCtaInner}>
                 <Ionicons name="add-circle-outline" size={24} color={c.primary} />
                 <View style={styles.footCtaTextCol}>
-                  <Text style={[styles.footCtaT, { color: c.textPrimary }]}>Add new product</Text>
+                  <Text style={[styles.footCtaT, { color: c.textPrimary }]}>Add product</Text>
                   <Text style={[styles.footCtaD, { color: c.textSecondary }]}>Set initial stock in the form.</Text>
                 </View>
               </View>
             </PremiumCard>
-</View>
+          ) : null
         }
         showsVerticalScrollIndicator={false}
       />
@@ -411,7 +540,22 @@ function createStyles(c, shadowPremium, isDark) {
       maxWidth: "100%"},
     listContent: {
       paddingHorizontal: Platform.select({ web: spacing.xl, default: spacing.lg })},
-    headerBlock: { marginBottom: spacing.sm },
+    headerBlock: { marginBottom: spacing.sm, gap: spacing.sm },
+    tilePhone: { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
+    catRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: spacing.sm,
+      paddingVertical: 10,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border,
+    },
+    catRowStack: { flexDirection: "column", alignItems: "flex-start", gap: 2 },
+    catRowLast: { borderBottomWidth: 0, paddingBottom: 2 },
+    catRowPressed: { opacity: 0.72 },
+    catName: { flex: 1, minWidth: 0, fontFamily: fonts.semibold, color: c.textPrimary, fontSize: typography.bodySmall },
+    catMeta: { flexShrink: 0, fontFamily: fonts.medium, color: c.textMuted, fontSize: typography.caption },
     topHead: { marginBottom: spacing.xs },
     titleBlock: { marginBottom: spacing.md },
     titleRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },

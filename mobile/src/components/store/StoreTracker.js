@@ -92,7 +92,6 @@ export default function StoreTracker({ orders, onPress }) {
   const step = getActiveProgressStep(order.status);
   const label = getOrderStatusLabel(order.status);
   const hint = formatDeliveryEta(order.tracking, order.status) || getOrderStatusHint(order.status);
-  const shortId = String(order._id || "").slice(-6).toUpperCase();
   const accent = isDark ? c.gold : c.brand;
   const more = orders.length - 1;
 
@@ -122,17 +121,12 @@ export default function StoreTracker({ orders, onPress }) {
               <View style={styles.topRow}>
                 <View style={[styles.liveDot, { backgroundColor: accent }]} />
                 <Text style={type.eyebrow(c.inkMute, 9.5)} numberOfLines={1}>
-                  {`${copy.live} · #${shortId}`}
+                  {counts ? `${copy.live} · ${copy.items(counts)}` : copy.live}
                 </Text>
               </View>
-              <Text style={type.display(22, { ls: -0.4, lh: 26 })} numberOfLines={1}>
+              <Text style={type.display(21, { ls: -0.4, lh: 25 })} numberOfLines={1}>
                 {label}
               </Text>
-              {counts ? (
-                <Text style={type.ui(12.5, "medium", c.inkMute)} numberOfLines={1}>
-                  {copy.items(counts)}
-                </Text>
-              ) : null}
               {hint ? (
                 <Text style={type.ui(12, "medium", c.inkMute)} numberOfLines={1}>
                   {hint}
@@ -164,10 +158,10 @@ export default function StoreTracker({ orders, onPress }) {
 }
 
 const styles = StyleSheet.create({
-  card: { overflow: "hidden", borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 14, paddingTop: 14, paddingBottom: 14, gap: 12 },
+  card: { overflow: "hidden", borderWidth: StyleSheet.hairlineWidth, paddingHorizontal: 14, paddingTop: 13, paddingBottom: 13, gap: 11 },
   row: { flexDirection: "row", alignItems: "center", gap: 12 },
-  discWrap: { width: 48, height: 48 },
-  disc: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  discWrap: { width: 44, height: 44 },
+  disc: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   moreBadge: {
     position: "absolute",
     top: -5,
@@ -183,7 +177,7 @@ const styles = StyleSheet.create({
   main: { flex: 1, minWidth: 0, gap: 1 },
   topRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   liveDot: { width: 8, height: 8, borderRadius: 4 },
-  cta: { flexDirection: "row", alignItems: "center", gap: 6, height: 38, paddingHorizontal: 14, borderRadius: 19 },
+  cta: { flexDirection: "row", alignItems: "center", gap: 6, height: 36, paddingHorizontal: 14, borderRadius: 18 },
   segments: { flexDirection: "row", gap: 5 },
-  segment: { flex: 1, height: 5, borderRadius: 2.5, overflow: "hidden" },
+  segment: { flex: 1, height: 4, borderRadius: 2, overflow: "hidden" },
 });

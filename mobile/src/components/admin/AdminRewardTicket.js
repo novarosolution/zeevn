@@ -1,106 +1,70 @@
 import React, { useMemo } from "react";
-import { Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { getAdminChrome } from "../../theme/adminLayout";
-import { FONT_HEADING } from "../../theme/typographyRoles";
 import { fonts } from "../../theme/tokens";
-import AdminStatusPill from "./AdminStatusPill";
+import { FONT_HEADING } from "../../theme/typographyRoles";
+import { formatRupees } from "../../utils/adminFormat";
+import AdminBadge from "./AdminBadge";
 
-export default function AdminRewardTicket({
-  title,
-  description,
-  pointsCost,
-  usageText,
-  status,
-  active,
-  onToggle,
-  onPress,
-}) {
+function discountLabel(reward) {
+  if (reward.discountType === "flat") return `${formatRupees(reward.discountValue)} off`;
+  return `${Number(reward.discountValue || 0)}% off`;
+}
+
+function redeemedLabel(reward) {
+  const used = Number(reward.redemptionCount || 0);
+  const limit = Number(reward.totalRedemptionLimit);
+  if (Number.isFinite(limit) && limit >= 1) return `${used} / ${limit} redeemed`;
+  return `${used} / unlimited`;
+}
+
+export default function AdminRewardTicket({ reward, onPress }) {
   const { colors: c, isDark } = useTheme();
   const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
-  const styles = useMemo(() => createStyles(chrome), [chrome]);
-  const tone = status === "Active" ? "ok" : status === "Expired" ? "cancel" : "pend";
-  const Wrap = onPress ? Pressable : View;
-  const wrapProps = onPress ? { onPress, accessibilityRole: "button" } : {};
+  const styles = useMemo(() => createStyles(chrome, Boolean(onPress)), [chrome, onPress]);
 
   return (
-    <Wrap style={styles.ticket} {...wrapProps}>
-      <View style={styles.top}>
-        <Text style={styles.title}>{title}</Text>
-        <Switch
-          value={active}
-          onValueChange={onToggle}
-          trackColor={{ false: chrome.paper, true: chrome.gold }}
-          thumbColor={c.surface}
-        />
+    <Pressable
+      onPress={onPress}
+      style={styles.ticket}
+      accessibilityRole="button"
+      accessibilityLabel={`Edit ${reward.title || "reward"}`}
+    >
+      <Text style={styles.title}>{reward.title || "Reward"}</Text>
+      <Text style={styles.points}>{Number(reward.pointsCost || 0)} points</Text>
+      <Text style={styles.meta}>{discountLabel(reward)}</Text>
+      <Text style={styles.meta}>{redeemedLabel(reward)}</Text>
+      <Text style={styles.meta}>{Number(reward.perUserLimit || 1)} per customer</Text>
+      <View style={styles.pills}>
+        <AdminBadge label={reward.isActive === false ? "Off" : "Active"} tone={reward.isActive === false ? "neutral" : "green"} size="sm" />
+        {reward.isVisibleToUsers === false ? <AdminBadge label="Hidden" tone="gold" size="sm" /> : null}
       </View>
-      <Text style={styles.points}>{pointsCost} pts</Text>
-      <Text style={styles.desc}>{description}</Text>
-      <View style={styles.foot}>
-        <Text style={styles.usage}>{usageText}</Text>
-        <AdminStatusPill label={status} tone={tone} />
-      </View>
-    </Wrap>
+    </Pressable>
   );
 }
 
-function createStyles(chrome) {
+function createStyles(chrome, clickable) {
   return StyleSheet.create({
     ticket: {
       backgroundColor: chrome.card,
       borderWidth: 1,
       borderColor: chrome.line,
       borderRadius: 16,
-      padding: 18,
+      padding: 16,
+      gap: 4,
       ...Platform.select({
-        web: {
-          boxShadow: "0 1px 2px rgba(25,20,15,.04), 0 12px 28px -18px rgba(25,20,15,.14)",
-          transition: "transform 0.15s ease, box-shadow 0.15s ease",
-        },
+        web: clickable ? { cursor: "pointer" } : {},
         default: {},
       }),
     },
-    top: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: 8,
-    },
     title: {
-      flex: 1,
       fontFamily: FONT_HEADING,
-      fontSize: 16,
-      fontWeight: "600",
+      fontSize: 17,
       color: chrome.ink,
     },
-    points: {
-      fontFamily: fonts.bold,
-      fontSize: 11,
-      color: chrome.goldDeep,
-      letterSpacing: 0.6,
-      marginTop: 6,
-      textTransform: "uppercase",
-    },
-    desc: {
-      fontSize: 12.5,
-      color: chrome.inkSoft,
-      marginVertical: 8,
-      lineHeight: 18,
-    },
-    foot: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      borderTopWidth: 1,
-      borderStyle: "dashed",
-      borderTopColor: chrome.line,
-      paddingTop: 10,
-    },
-    usage: {
-      fontSize: 11,
-      color: chrome.inkFaint,
-      flex: 1,
-      marginRight: 8,
-    },
+    points: { fontSize: 13.5, color: chrome.ink, fontFamily: fonts.semibold },
+    meta: { fontSize: 12.5, color: chrome.inkSoft, fontFamily: fonts.regular },
+    pills: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
   });
 }

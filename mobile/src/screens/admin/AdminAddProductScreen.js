@@ -10,6 +10,7 @@ import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
 import {
   createAdminProduct,
+  deleteAdminProduct,
   updateAdminProduct,
   uploadAdminProductImage} from "../../services/adminService";
 import { useTheme } from "../../context/ThemeContext";
@@ -22,7 +23,9 @@ import AdminFormSection from "../../components/admin/AdminFormSection";
 import AdminProductFormProgress from "../../components/admin/AdminProductFormProgress";
 import AdminProductPageForm from "../../components/admin/AdminProductPageForm";
 import AdminProductPreviewCard from "../../components/admin/AdminProductPreviewCard";
+import AdminSwitch from "../../components/admin/AdminSwitch";
 import AdminToggleRow from "../../components/admin/AdminToggleRow";
+import { useAdminConfirm } from "../../components/admin/AdminDialog";
 import {
   PRODUCT_FORM_TABS,
   buildFormProgressItems,
@@ -65,7 +68,8 @@ export default function AdminAddProductScreen({ navigation, route }) {
   const compact = useAdminCompactLayout();
   const styles = useMemo(() => createAdminAddProductStyles(c, shadowPremium), [c, shadowPremium]);
     const { token, user } = useAuth();
-  const editingProduct = route?.params?.product;
+  const editingProduct = route?.params?.product || null;
+  const { confirm, dialog } = useAdminConfirm();
 
   const initialPhotos = useMemo(() => {
     return dedupeUrls([...(editingProduct?.images || []), editingProduct?.image || ""]);
@@ -82,7 +86,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
   const [primaryImage, setPrimaryImage] = useState(editingProduct?.image || initialPhotos[0] || "");
   const [manualPhotoUrl, setManualPhotoUrl] = useState("");
   const [description, setDescription] = useState(editingProduct?.description || "");
-  const [category, setCategory] = useState(editingProduct?.category || "");
+  const [category, setCategory] = useState(editingProduct?.category || "General");
   const [homeSection, setHomeSection] = useState(editingProduct?.homeSection || "Prime Products");
   const [productType, setProductType] = useState(editingProduct?.productType || editingProduct?.category || "");
   const [showOnHome, setShowOnHome] = useState(editingProduct?.showOnHome !== false);
@@ -92,14 +96,14 @@ export default function AdminAddProductScreen({ navigation, route }) {
   );
   const [brand, setBrand] = useState(editingProduct?.brand || "");
   const [sku, setSku] = useState(editingProduct?.sku || "");
-  const [unit, setUnit] = useState(editingProduct?.unit || "");
-  const [eta, setEta] = useState(editingProduct?.eta || "");
+  const [unit, setUnit] = useState(editingProduct?.unit || "1 pc");
+  const [eta, setEta] = useState(editingProduct?.eta || "10 MINS");
   const [isSpecial, setIsSpecial] = useState(Boolean(editingProduct?.isSpecial));
   const [comingSoon, setComingSoon] = useState(Boolean(editingProduct?.comingSoon));
   const [comingSoonNote, setComingSoonNote] = useState(editingProduct?.comingSoonNote || "");
-  const [inStock, setInStock] = useState(editingProduct?.inStock !== false);
+  const [inStock, setInStock] = useState(editingProduct ? editingProduct.inStock !== false : false);
   const [stockQty, setStockQty] = useState(
-    editingProduct?.stockQty !== undefined ? String(editingProduct.stockQty) : ""
+    editingProduct?.stockQty !== undefined ? String(editingProduct.stockQty) : "0"
   );
   const [ratingAverage, setRatingAverage] = useState(
     editingProduct?.ratingAverage !== undefined ? String(editingProduct.ratingAverage) : ""
@@ -397,16 +401,60 @@ export default function AdminAddProductScreen({ navigation, route }) {
     });
   };
 
+  const onStockQtyChange = (text) => {
+    setStockQty(text);
+    const n = Number.parseInt(String(text).trim(), 10);
+    if (!Number.isFinite(n)) return;
+    setInStock(n > 0);
+  };
+
+  const onStockSwitch = (on) => {
+    if (on) {
+      setInStock(true);
+      const n = Number.parseInt(String(stockQty).trim(), 10);
+      if (!Number.isFinite(n) || n < 1) setStockQty("1");
+      return;
+    }
+    setInStock(false);
+  };
+
+  const handleDelete = async () => {
+    if (!editingProduct?._id && !editingProduct?.id) return;
+    const label = String(name || editingProduct.name || "this jar").trim() || "this jar";
+    const ok = await confirm({ title: `Delete ${label}?`, tone: "danger", confirmLabel: "Delete" });
+    if (!ok) return;
+    try {
+      setError("");
+      await deleteAdminProduct(token, editingProduct._id || editingProduct.id);
+      navigation.navigate("AdminProducts");
+    } catch (err) {
+      setError(err.message || "Unable to delete product.");
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!name.trim() || !price.trim()) {
-      setError("Product name and price are required.");
+    if (!name.trim()) {
+      setError("Name is required.");
+      return;
+    }
+    const parsedPrice = Number(price);
+    if (price.trim() === "" || !Number.isFinite(parsedPrice) || parsedPrice < 0) {
+      setError("Price is required and must be at least 0.");
       return;
     }
 
     const parsedStockQty = stockQty.trim() === "" ? 0 : Number(stockQty);
     if (!Number.isFinite(parsedStockQty) || parsedStockQty < 0) {
-      setError("Stock quantity must be a valid number (0 or more).");
+      setError("Stock count must be 0 or more.");
       return;
+    }
+
+    if (mrp.trim() !== "") {
+      const m = Number(mrp);
+      if (!Number.isFinite(m) || m < 0) {
+        setError("MRP must be 0 or more, or leave blank.");
+        return;
+      }
     }
 
     try {
@@ -417,11 +465,11 @@ export default function AdminAddProductScreen({ navigation, route }) {
       const parsedHomeOrder = homeOrder.trim() === "" ? 0 : Number(homeOrder);
       const payload = {
         name: name.trim(),
-        price: Number(price),
+        price: parsedPrice,
         image: primaryImage || images[0] || "",
         images,
         description: description.trim(),
-        category: category.trim(),
+        category: category.trim() || "General",
         homeSection: homeSection.trim() || "Prime Products",
         productType: productType.trim() || category.trim() || "General",
         showOnHome,
@@ -429,22 +477,16 @@ export default function AdminAddProductScreen({ navigation, route }) {
         homeOrder: Number.isFinite(parsedHomeOrder) ? parsedHomeOrder : 0,
         brand: brand.trim(),
         sku: sku.trim(),
-        unit: unit.trim(),
-        eta: eta.trim(),
+        unit: unit.trim() || "1 pc",
+        eta: eta.trim() || "10 MINS",
         isSpecial,
         comingSoon,
         comingSoonNote: comingSoonNote.trim(),
         inStock,
-        stockQty: Math.max(0, parsedStockQty)};
+        stockQty: Math.max(0, Math.floor(parsedStockQty))};
 
       if (mrp.trim() !== "") {
-        const m = Number(mrp);
-        if (!Number.isFinite(m) || m <= 0) {
-          setError("MRP must be a positive number, or leave blank.");
-          setIsSaving(false);
-          return;
-        }
-        payload.mrp = m;
+        payload.mrp = Number(mrp);
       } else if (editingProduct) {
         payload.mrp = null;
       }
@@ -583,14 +625,6 @@ export default function AdminAddProductScreen({ navigation, route }) {
 
   return (
     <AdminScreenShell style={styles.screen}>
-    <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
-    <KankregScrollPage
-        scrollVariant="admin"
-        showFooter={false}
-      style={customerScrollFill}
-      showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
-    >
       <KankregAdminShell
         navigation={navigation}
         route={route}
@@ -598,13 +632,16 @@ export default function AdminAddProductScreen({ navigation, route }) {
         subtitle={
           editingProduct
             ? `Updating ${editingProduct.name || "catalog item"}`
-            : "Basics first — listing & page content are optional tabs"
+            : "Name, price, stock, then listing"
         }
         headerRight={
           <>
+            {editingProduct ? (
+              <PremiumButton label="Delete" variant="danger" size="sm" onPress={handleDelete} />
+            ) : null}
             <PremiumButton label="Cancel" variant="ghost" size="sm" onPress={() => navigation.goBack()} />
             <PremiumButton
-              label={isSaving ? "Saving…" : editingProduct ? "Update" : "Publish"}
+              label={isSaving ? "Saving…" : "Save"}
               variant="primary"
               size="sm"
               loading={isSaving}
@@ -614,33 +651,34 @@ export default function AdminAddProductScreen({ navigation, route }) {
           </>
         }
       >
-      <View style={[adminTwoColStyle(compact), styles.panel]}>
-        <View style={adminTwoColMain(compact)}>
-        <AdminAlerts error={error} onCloseError={() => setError("")} />
-        <AdminBackLink navigation={navigation} label="All products" target="AdminProducts" style={styles.backLink} />
-        <AdminProductFormProgress
-          items={progressItems}
-          activeKey={activeTab}
-          onSelect={setActiveTab}
-        />
         {compact ? (
-          <AdminPanel title="Preview" style={styles.compactPreviewPanel}>
-            <AdminProductPreviewCard
-              compact
-              name={name}
-              price={price}
-              mrp={mrp}
-              category={category}
-              primaryImage={primaryImage}
-              ImageComponent={RetryImage}
-              isPublished={isPublished}
-              comingSoon={comingSoon}
-              comingSoonNote={comingSoonNote}
-              showOnHome={showOnHome}
-            />
-          </AdminPanel>
+          <View style={styles.stickyTabs}>
+            <AdminAlerts error={error} onCloseError={() => setError("")} />
+            <AdminFilterTabs style={styles.formTabsSticky} value={activeTab} onChange={setActiveTab} items={PRODUCT_FORM_TABS} />
+          </View>
         ) : null}
-        <AdminFilterTabs style={styles.formTabs} value={activeTab} onChange={setActiveTab} items={PRODUCT_FORM_TABS} />
+    <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+    <KankregScrollPage
+        scrollVariant="admin"
+        showFooter={false}
+      style={customerScrollFill}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View style={[adminTwoColStyle(compact), styles.panel, compact && styles.panelPhonePad]}>
+        <View style={adminTwoColMain(compact)}>
+        {compact ? null : <AdminAlerts error={error} onCloseError={() => setError("")} />}
+        <AdminBackLink navigation={navigation} label="All products" target="AdminProducts" style={styles.backLink} />
+        {compact ? null : (
+          <AdminProductFormProgress
+            items={progressItems}
+            activeKey={activeTab}
+            onSelect={setActiveTab}
+          />
+        )}
+        {compact ? null : (
+          <AdminFilterTabs style={styles.formTabs} value={activeTab} onChange={setActiveTab} items={PRODUCT_FORM_TABS} />
+        )}
 
         {activeTab === "basics" ? (
         <AdminPanel title="Basics" meta="Required to publish">
@@ -668,8 +706,19 @@ export default function AdminAddProductScreen({ navigation, route }) {
             value={mrp}
             onChangeText={setMrp}
             keyboardType="decimal-pad"
-            helperText="For strike price and % off display"
+            helperText="Shop shows a strike-through MRP only when it is greater than price"
             iconLeft="trending-up-outline"
+          />
+        </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Description"
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            numberOfLines={4}
+            placeholder="Short paragraph for the shop"
+            iconLeft="document-text-outline"
           />
         </View>
 
@@ -785,26 +834,22 @@ export default function AdminAddProductScreen({ navigation, route }) {
             <PremiumInput label="SKU" value={sku} onChangeText={setSku} placeholder="e.g. MLK-1L-001" autoCapitalize="none" />
           </View>
         </View>
-        <View style={styles.row}>
-          <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Unit / pack size" value={unit} onChangeText={setUnit} placeholder="e.g. 1 kg" />
-          </View>
-          <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Optional note" value={eta} onChangeText={setEta} placeholder="e.g. batch" />
-          </View>
+        <View style={styles.fieldGap}>
+          <PremiumInput label="Unit" value={unit} onChangeText={setUnit} placeholder="1 pc" />
         </View>
         <View style={styles.row}>
           <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Stock quantity" value={stockQty} onChangeText={setStockQty} keyboardType="number-pad" />
+            <PremiumInput
+              label="Stock count"
+              value={stockQty}
+              onChangeText={onStockQtyChange}
+              keyboardType="number-pad"
+            />
           </View>
-          <PremiumChip
-            label={inStock ? "In stock: ON" : "In stock: OFF"}
-            tone="gold"
-            size="sm"
-            selected={inStock}
-            onPress={() => setInStock((current) => !current)}
-            style={styles.halfInputChip}
-          />
+          <View style={[styles.halfInput, styles.stockSwitch]}>
+            <Text style={styles.stockSwitchLabel}>{inStock ? "In stock" : "Out of stock"}</Text>
+            <AdminSwitch value={inStock} onChange={onStockSwitch} accessibilityLabel="In stock" />
+          </View>
         </View>
         </AdminFormSection>
         </AdminPanel>
@@ -901,19 +946,26 @@ export default function AdminAddProductScreen({ navigation, route }) {
             />
           </View>
         ) : null}
-        {comingSoon ? (
-          <View style={styles.fieldGap}>
-            <PremiumInput
-              label="Launch note (optional)"
-              value={comingSoonNote}
-              onChangeText={setComingSoonNote}
-              placeholder="e.g. Festive launch · November"
-              helperText="Shown on the red Coming soon overlay, cards, and product page"
-              iconLeft="sparkles-outline"
-            />
-          </View>
-        ) : null}
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="Launch note (optional)"
+            value={comingSoonNote}
+            onChangeText={setComingSoonNote}
+            placeholder="Festive launch · November"
+            helperText="A coming-soon jar can stay visible and cannot be purchased"
+            iconLeft="sparkles-outline"
+          />
+        </View>
         </AdminFormSection>
+        <View style={styles.fieldGap}>
+          <PremiumInput
+            label="ETA"
+            value={eta}
+            onChangeText={setEta}
+            placeholder="10 MINS"
+            helperText="Shown on the shop card. Default 10 MINS"
+          />
+        </View>
         </AdminPanel>
         ) : null}
 
@@ -923,8 +975,9 @@ export default function AdminAddProductScreen({ navigation, route }) {
         </AdminPanel>
         ) : null}
 
+        {compact ? null : (
         <PremiumButton
-          label={isSaving ? "Saving…" : editingProduct ? "Save changes" : "Publish product"}
+          label={isSaving ? "Saving…" : "Save"}
           iconLeft="save-outline"
           variant="primary"
           size="lg"
@@ -932,8 +985,9 @@ export default function AdminAddProductScreen({ navigation, route }) {
           disabled={isSaving}
           onPress={handleSubmit}
           fullWidth
-          style={[styles.saveProductBtn, compact && styles.saveProductBtnCompact]}
+          style={styles.saveProductBtn}
         />
+        )}
         </View>
         {!compact ? (
           <View style={adminTwoColAside(compact)}>
@@ -954,10 +1008,12 @@ export default function AdminAddProductScreen({ navigation, route }) {
           </View>
         ) : null}
       </View>
+</KankregScrollPage>
+    </KeyboardAvoidingView>
       {compact ? (
         <View style={styles.stickySave}>
           <PremiumButton
-            label={isSaving ? "Saving…" : editingProduct ? "Save changes" : "Publish product"}
+            label={isSaving ? "Saving…" : "Save"}
             iconLeft="save-outline"
             variant="primary"
             size="md"
@@ -968,9 +1024,8 @@ export default function AdminAddProductScreen({ navigation, route }) {
           />
         </View>
       ) : null}
+      {dialog}
       </KankregAdminShell>
-</KankregScrollPage>
-    </KeyboardAvoidingView>
     </AdminScreenShell>
   );
 }
@@ -1016,12 +1071,36 @@ function createAdminAddProductStyles(c, shadowPremium) {
   screen: {
     flex: 1},
     panel: adminShellContent(),
+    panelPhonePad: { paddingBottom: 88 },
     gatePanel: adminGatePanel(c, shadowPremium),
   gateCta: {
     marginTop: spacing.md,
     alignSelf: "flex-start"},
   backLink: { marginBottom: spacing.sm },
   formTabs: { marginBottom: spacing.md },
+  formTabsSticky: { marginBottom: 0 },
+  stickyTabs: {
+    paddingBottom: spacing.xs,
+    backgroundColor: c.surface,
+    ...Platform.select({
+      web: { position: "sticky", top: 0, zIndex: 12 },
+      default: {},
+    }),
+  },
+  stockSwitch: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+    paddingTop: 18,
+  },
+  stockSwitchLabel: {
+    color: c.textSecondary,
+    fontSize: 12,
+    fontWeight: "700",
+    flex: 1,
+  },
   compactPreviewPanel: { marginBottom: spacing.md },
   toggleGroup: {
     borderWidth: 1,

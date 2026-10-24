@@ -170,5 +170,4 @@ export const ORDER_STATUSES_ALLOW_ADDRESS_EDIT = [
   "pending",
   "confirmed",
   "preparing",
-  "paid",
 ];

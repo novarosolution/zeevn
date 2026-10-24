@@ -56,6 +56,16 @@ const statusEventSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const adminNoteSchema = new mongoose.Schema(
+  {
+    text: { type: String, required: true, trim: true, maxlength: 500 },
+    by: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    byName: { type: String, default: "", trim: true, maxlength: 80 },
+    at: { type: Date, default: Date.now },
+  },
+  { _id: true }
+);
+
 const orderSchema = new mongoose.Schema(
   {
     user: {
@@ -89,6 +99,31 @@ const orderSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    /**
+     * Who was asked to take this run, and what they did. Written only from assign / accept /
+     * decline / clear — not a second assignment system. Capped in the controller (30).
+     */
+    dispatchAttempts: {
+      type: [
+        {
+          at: { type: Date, default: Date.now },
+          rider: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+          riderName: { type: String, default: "", trim: true, maxlength: 80 },
+          action: {
+            type: String,
+            enum: ["assigned", "accepted", "declined", "cleared"],
+            required: true,
+          },
+          by: {
+            type: String,
+            enum: ["auto", "admin", "rider"],
+            required: true,
+          },
+          reason: { type: String, default: "", trim: true, maxlength: 240 },
+        },
+      ],
+      default: [],
+    },
     /** Snapshot of serviceable zone at place-order. */
     deliveryZone: {
       type: mongoose.Schema.Types.ObjectId,
@@ -232,6 +267,15 @@ const orderSchema = new mongoose.Schema(
       type: [statusEventSchema],
       default: [],
     },
+    /**
+     * Private notes the team leaves on an order. `select: false` keeps them out of every default read, so a
+     * customer's order payload or a socket push can never carry them; admin code asks for them with `+adminNotes`.
+     */
+    adminNotes: {
+      type: [adminNoteSchema],
+      default: [],
+      select: false,
+    },
   },
   { timestamps: true }
 );
@@ -239,6 +283,7 @@ const orderSchema = new mongoose.Schema(
 orderSchema.index({ createdAt: 1 });
 orderSchema.index({ assignedDeliveryUser: 1, status: 1 });
 orderSchema.index({ deliveryZone: 1 });
+orderSchema.index({ "dispatchAttempts.at": -1 });
 
 /**
  * Record every status transition. Controllers may describe the actor via

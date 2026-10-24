@@ -12,6 +12,7 @@ const {
   getMyCart,
   replaceMyCart,
 } = require("../controllers/userController");
+const { createMyDeletion, getMyDeletion } = require("../controllers/deletionController");
 const { getMyOrders, getMyOrderLiveLocation, getMyOrderDrivingRoute } = require("../controllers/orderController");
 const {
   getMyNotifications,
@@ -35,6 +36,8 @@ router.post("/auth/apple", authApple);
 router.post("/refresh", refreshAccessToken);
 router.get("/profile", protect, getProfile);
 router.put("/profile", protect, updateProfile);
+router.get("/account-deletion", protect, getMyDeletion);
+router.post("/account-deletion", protect, createMyDeletion);
 router.post("/profile/avatar", protect, uploadUserAvatar);
 router.post("/push-token", protect, upsertPushToken);
 router.get("/cart", protect, getMyCart);

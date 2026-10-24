@@ -36,8 +36,10 @@ export function checkDeliveryServiceability({
   if (itemsTotal != null) q.set("itemsTotal", String(Number(itemsTotal) || 0));
   const lat = Number(latitude);
   const lng = Number(longitude);
-  if (Number.isFinite(lat) && Math.abs(lat) > 0.2) q.set("lat", String(lat));
-  if (Number.isFinite(lng) && Math.abs(lng) > 0.2) q.set("lng", String(lng));
+  if (lat >= 6 && lat <= 38 && lng >= 68 && lng <= 98) {
+    q.set("lat", String(lat));
+    q.set("lng", String(lng));
+  }
   const qs = q.toString();
   return apiGet(`/delivery/check${qs ? `?${qs}` : ""}`, { auth: false });
 }

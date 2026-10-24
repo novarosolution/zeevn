@@ -12,6 +12,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import FloatingNav from "./FloatingNav";
+import Glass from "./Glass";
 import PressableScale from "./PressableScale";
 
 /** Height of the header bar below the status bar. */
@@ -30,7 +31,9 @@ export function useScreenOrigin() {
 /**
  * Scaffold for the app's inner screens: ivory page with a soft gold wash behind a big serif title (optionally with a
  * small eyebrow above it and a line of subtitle below) that hands over to a small centred one as you scroll — the
- * frosted header fades in under it — plus pull-to-refresh, keyboard-aware scrolling and the floating nav.
+ * frosted glass header fades in under it — plus pull-to-refresh, keyboard-aware scrolling and the floating nav.
+ * Pass `dock` (usually a `GlassDock`) to pin a primary action to the bottom instead of the nav; the content then scrolls
+ * clear of it.
  */
 export default function StoreScreen({
   title,
@@ -40,6 +43,7 @@ export default function StoreScreen({
   onBack,
   right,
   hideNav = false,
+  dock,
   refreshing = false,
   onRefresh,
   children,
@@ -51,6 +55,7 @@ export default function StoreScreen({
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
   const [origin, setOrigin] = useState(0);
+  const [dockH, setDockH] = useState(0);
 
   const onScroll = useAnimatedScrollHandler((event) => {
     scrollY.value = event.contentOffset.y;
@@ -94,7 +99,7 @@ export default function StoreScreen({
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets
-        contentContainerStyle={[{ paddingTop: insets.top + BAR - 6, paddingBottom: navPad }, contentStyle]}
+        contentContainerStyle={[{ paddingTop: insets.top + BAR - 6, paddingBottom: dock ? dockH + 24 : navPad }, contentStyle]}
         refreshControl={
           onRefresh ? (
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brand} progressViewOffset={insets.top + BAR} />
@@ -124,8 +129,7 @@ export default function StoreScreen({
 
       <View pointerEvents="box-none" style={[styles.header, { paddingTop: insets.top + 6 }]}>
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, frostStyle]}>
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glassStrong }]} />
-          <View style={[styles.hairline, { backgroundColor: c.line }]} />
+          <Glass material="regular" edge="bottom" style={StyleSheet.absoluteFill} />
         </Animated.View>
         <View style={[styles.row, { paddingHorizontal: gutter }]}>
           <PressableScale
@@ -150,7 +154,12 @@ export default function StoreScreen({
         </View>
       </View>
 
-      {hideNav ? null : <FloatingNav />}
+      {dock ? (
+        <View style={styles.dock} onLayout={(e) => setDockH(e.nativeEvent.layout.height)} pointerEvents="box-none">
+          {dock}
+        </View>
+      ) : null}
+      {hideNav || dock ? null : <FloatingNav />}
     </View>
   );
 }
@@ -162,7 +171,7 @@ const styles = StyleSheet.create({
   eyebrow: { marginBottom: 2 },
   subtitle: { marginTop: 2 },
   header: { position: "absolute", top: 0, left: 0, right: 0, paddingBottom: 10, zIndex: 20 },
-  hairline: { position: "absolute", left: 0, right: 0, bottom: 0, height: StyleSheet.hairlineWidth },
+  dock: { position: "absolute", left: 0, right: 0, bottom: 0 },
   row: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", height: 46 },
   round: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", borderWidth: StyleSheet.hairlineWidth },
   smallTitle: { position: "absolute", left: 72, right: 72, textAlign: "center" },

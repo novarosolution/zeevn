@@ -4,6 +4,7 @@ const { resolveProductLineFromRaw } = require("../utils/productLine");
 const { getCloudinary, isCloudinaryConfigured } = require("../config/cloudinary");
 const Product = require("../models/Product");
 const User = require("../models/User");
+const Order = require("../models/Order");
 const generateTokenModule = require("../utils/generateToken");
 
 const generateToken = generateTokenModule;
@@ -11,6 +12,8 @@ const generateRefreshToken =
   generateTokenModule.generateRefreshToken || generateTokenModule;
 const verifyRefreshToken = generateTokenModule.verifyRefreshToken;
 const { verifyGoogleIdToken, verifyAppleIdentityToken } = require("../services/oauthService");
+const { latestForUser, deletionPublic } = require("./deletionController");
+const { recordAdminAction } = require("../utils/adminLog");
 
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
@@ -245,7 +248,9 @@ async function getProfile(req, res, next) {
       return res.status(404).json({ message: "User not found." });
     }
     await applyBootstrapAdmin(user);
-    res.json(serializePublicUser(user));
+    const payload = serializePublicUser(user);
+    payload.deletion = deletionPublic(await latestForUser(user._id));
+    res.json(payload);
   } catch (error) {
     next(error);
   }
@@ -426,10 +431,51 @@ async function replaceMyCart(req, res, next) {
   }
 }
 
+const USER_LIST_SELECT = "name email phone isAdmin isDeliveryPartner createdAt defaultAddress";
+
+async function attachOrderStats(users) {
+  if (!users.length) return new Map();
+  const rows = await Order.aggregate([
+    { $match: { user: { $in: users.map((user) => user._id) } } },
+    {
+      $group: {
+        _id: "$user",
+        orderCount: {
+          $sum: { $cond: [{ $in: ["$status", ["cancelled", "pending_payment"]] }, 0, 1] },
+        },
+        spent: { $sum: { $cond: [{ $eq: ["$status", "delivered"] }, "$totalPrice", 0] } },
+      },
+    },
+  ]);
+  return new Map(rows.map((row) => [String(row._id), row]));
+}
+
+function presentAdminUser(user, stats) {
+  const row = {
+    _id: user._id,
+    name: user.name || "",
+    email: user.email || "",
+    phone: user.phone || "",
+    isAdmin: Boolean(user.isAdmin),
+    isDeliveryPartner: Boolean(user.isDeliveryPartner),
+    createdAt: user.createdAt,
+    defaultAddress: user.defaultAddress || null,
+  };
+  if (!row.isAdmin) {
+    row.orderCount = stats?.orderCount || 0;
+    row.spent = Math.round(Number(stats?.spent) || 0);
+  }
+  return row;
+}
+
 async function getAllUsers(req, res, next) {
   try {
-    const users = await User.find().select("-password").sort({ createdAt: -1 });
-    res.json(users);
+    const filter = {};
+    if (String(req.query.isAdmin) === "false") filter.isAdmin = false;
+    else if (String(req.query.isAdmin) === "true") filter.isAdmin = true;
+    const users = await User.find(filter).select(USER_LIST_SELECT).sort({ createdAt: -1 }).lean();
+    const statsById = await attachOrderStats(users.filter((row) => !row.isAdmin));
+    res.json(users.map((row) => presentAdminUser(row, statsById.get(String(row._id)))));
   } catch (error) {
     next(error);
   }
@@ -440,13 +486,27 @@ async function updateUserAdminStatus(req, res, next) {
     const { id } = req.params;
     const { isAdmin } = req.body;
 
+    if (String(req.user?._id) === String(id) && !Boolean(isAdmin)) {
+      return res.status(400).json({ message: "You can’t remove your own admin access." });
+    }
+
     const user = await User.findById(id);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    user.isAdmin = Boolean(isAdmin);
+    const on = Boolean(isAdmin);
+    const changed = user.isAdmin !== on;
+    user.isAdmin = on;
     await user.save();
+    if (changed) {
+      await recordAdminAction(req, {
+        action: on ? "Turned admin on" : "Turned admin off",
+        subject: user.name || "User",
+        tab: "people",
+        href: { screen: "AdminUsers" },
+      });
+    }
 
     res.json({
       message: "User role updated successfully.",
@@ -473,8 +533,18 @@ async function updateUserDeliveryPartnerStatus(req, res, next) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    user.isDeliveryPartner = Boolean(isDeliveryPartner);
+    const on = Boolean(isDeliveryPartner);
+    const changed = user.isDeliveryPartner !== on;
+    user.isDeliveryPartner = on;
     await user.save();
+    if (changed) {
+      await recordAdminAction(req, {
+        action: on ? "Turned rider on" : "Turned rider off",
+        subject: user.name || "User",
+        tab: "riders",
+        href: { screen: "AdminUsers" },
+      });
+    }
 
     res.json({
       message: "Delivery partner flag updated successfully.",

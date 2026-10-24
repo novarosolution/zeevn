@@ -13,8 +13,10 @@ import {
   getOrderStatusLabel,
 } from "../../utils/orderStatus";
 import AdminStatusPill, { orderStatusTone } from "./AdminStatusPill";
+import AdminBadge from "./AdminBadge";
 import AdminProductCell from "./AdminProductCell";
 import AdminQtyStepper from "./AdminQtyStepper";
+import AdminSwitch from "./AdminSwitch";
 
 function AdminTableAction({ label, onPress, decorative = false }) {
   const { colors: c, isDark } = useTheme();
@@ -140,27 +142,23 @@ export function buildProductTableColumns({ onEdit, rowPressable = false }) {
       flex: 1.6,
       render: (row) => <AdminProductCell name={row.name} imageUri={productCoverUri(row)} />,
     },
-    { key: "category", label: "Category", flex: 1, render: (row) => row.category || "—" },
+    { key: "sku", label: "SKU", flex: 0.8, render: (row) => row.sku || "—" },
+    { key: "category", label: "Category", flex: 0.9, render: (row) => row.category || "General" },
     {
       key: "price",
       label: "Price",
-      flex: 0.8,
+      flex: 0.7,
       strong: true,
       render: (row) => formatINR(row.price || 0),
     },
-    {
-      key: "stock",
-      label: "Stock",
-      flex: 0.7,
-      render: (row) => `${Math.max(0, Number(row.stockQty) || 0)}`,
-    },
+    { key: "unit", label: "Unit", flex: 0.6, render: (row) => row.unit || "1 pc" },
     {
       key: "status",
       label: "Status",
       flex: 0.9,
       render: (row) => {
         const meta = productStockMeta(row);
-        return <AdminStatusPill label={meta.label} tone={meta.pill} />;
+        return <AdminBadge label={meta.label} tone={meta.badge || "neutral"} size="sm" />;
       },
     },
     {
@@ -177,23 +175,24 @@ export function buildProductTableColumns({ onEdit, rowPressable = false }) {
 }
 
 export function buildInventoryTableColumns({
-  onEdit,
   onDelta,
   onApplyQty,
   onToggle,
   onDraft,
   draftQty = {},
   busyId,
-  rowPressable = false,
+  stockPill,
 }) {
   return [
     {
       key: "name",
       label: "Product",
       flex: 1.5,
-      render: (row) => <AdminProductCell name={row.name} imageUri={row.image} />,
+      render: (row) => <AdminProductCell name={row.name} imageUri={productCoverUri(row)} />,
     },
     { key: "sku", label: "SKU", flex: 0.7, render: (row) => row.sku || "—" },
+    { key: "category", label: "Category", flex: 0.8, render: (row) => String(row.category || "").trim() || "General" },
+    { key: "unit", label: "Unit", flex: 0.6, render: (row) => String(row.unit || "").trim() || "—" },
     {
       key: "qty",
       label: "Qty",
@@ -217,41 +216,25 @@ export function buildInventoryTableColumns({
     },
     {
       key: "avail",
-      label: "Sell",
-      width: 64,
+      label: "On/Off",
+      width: 72,
       render: (row) => (
-        <AdminTableAction
-          label={row.inStock === false ? "Off" : "On"}
-          onPress={() => onToggle?.(row, row.inStock === false)}
+        <AdminSwitch
+          value={row.inStock !== false}
+          disabled={busyId === row._id}
+          accessibilityLabel="On/Off"
+          onChange={(next) => onToggle?.(row, next)}
         />
       ),
     },
     {
       key: "status",
-      label: "Status",
-      flex: 0.7,
+      label: "Stock",
+      flex: 0.8,
       render: (row) => {
-        if (row.isPublished === false) {
-          return <AdminStatusPill label="Draft" tone="low" />;
-        }
-        if (row.comingSoon === true) {
-          return <AdminStatusPill label="Soon" tone="soon" />;
-        }
-        const q = Math.max(0, Number(row.stockQty) || 0);
-        const out = row.inStock === false || q < 1;
-        const low = !out && q <= 5;
-        return <AdminStatusPill label={out ? "Out" : low ? "Low" : "In"} tone={out ? "low" : low ? "pend" : "ok"} />;
+        const pill = stockPill?.(row) || { label: "In stock", tone: "green" };
+        return <AdminBadge label={pill.label} tone={pill.tone} size="sm" />;
       },
-    },
-    {
-      key: "edit",
-      label: "",
-      width: 52,
-      align: "right",
-      render: (row) =>
-        onEdit ? (
-          <AdminTableAction label="Edit" onPress={() => onEdit(row)} decorative={rowPressable} />
-        ) : null,
     },
   ];
 }

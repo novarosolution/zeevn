@@ -14,6 +14,8 @@ export { default as StoreSettings } from "./StoreSettings";
 export { default as StoreSupport } from "./StoreSupport";
 export { default as StoreEditProfile } from "./StoreEditProfile";
 export { default as StoreAddress } from "./StoreAddress";
+export { default as StorePickLocation } from "./StorePickLocation";
+export { default as StoreFindLocation } from "./StoreFindLocation";
 export { default as StoreRewards } from "./StoreRewards";
 export { FlyToCartLayer } from "./flyToCart";
 export { default as StoreLegal } from "./StoreLegal";

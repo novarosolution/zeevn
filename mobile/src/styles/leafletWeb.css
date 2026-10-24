@@ -82,8 +82,9 @@
 .admin-delivery-map,
 .admin-delivery-map .leaflet-container {
 	width: 100% !important;
-	height: 460px !important;
-	min-height: 460px;
+	/* The Zones desk sets --admin-map-h inline so the map can fill the screen; 460px is the old fixed size. */
+	height: var(--admin-map-h, 460px) !important;
+	min-height: var(--admin-map-h, 460px);
 	border-radius: 20px;
 	background: #efe8dc;
 }

@@ -5,8 +5,7 @@ const { distanceKm, pointInPolygon, minutesFromKm, formatMinutes, formatKm } = r
 
 function normalizePostalCode(raw) {
   const digits = String(raw || "").replace(/\D/g, "");
-  if (digits.length >= 6) return digits.slice(0, 6);
-  return digits;
+  return digits.length === 6 ? digits : "";
 }
 
 function normalizeCity(raw) {
@@ -134,7 +133,8 @@ async function resolveDeliveryQuote({ postalCode, city, itemsTotal = 0, latitude
   const stores = StoreSettings.listStores(settings);
   const lat = cleanMapCoord(latitude);
   const lng = cleanMapCoord(longitude);
-  const hasPoint = lat != null && lng != null;
+  const inIndia = lat != null && lng != null && lat >= 6 && lat <= 38 && lng >= 68 && lng <= 98;
+  const hasPoint = inIndia;
 
   if (hasPoint) {
     const zone = await findZoneForPoint(lat, lng);
@@ -213,12 +213,10 @@ function sanitizeZoneBody(body = {}) {
     name: String(body.name || "").trim(),
     postalCodes,
     cities,
-    polygon,
+    polygon: polygon.length >= 3 ? polygon : [],
     isActive: body.isActive === undefined ? true : Boolean(body.isActive),
     deliveryFee: Math.max(0, Number(body.deliveryFee ?? 0)),
     freeAbove: Math.max(0, Number(body.freeAbove ?? 1499)),
-    etaMinutesMin: 0,
-    etaMinutesMax: 0,
     partnerIds,
   };
 }

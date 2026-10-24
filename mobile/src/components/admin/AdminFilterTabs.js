@@ -2,8 +2,13 @@ import React, { useMemo } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { getAdminChrome } from "../../theme/adminLayout";
+import { getAdminTone } from "../../theme/adminTones";
 import { fonts } from "../../theme/tokens";
 
+/**
+ * Segmented tabs. Items: `{ key, label, count?, tone? }`. A `count` renders as a small number chip; give `tone`
+ * (e.g. "red", "gold") to make the chip stand out when the number needs attention.
+ */
 export default function AdminFilterTabs({ items, value, onChange, style }) {
   const { colors: c, isDark } = useTheme();
   const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
@@ -11,27 +16,37 @@ export default function AdminFilterTabs({ items, value, onChange, style }) {
 
   return (
     <View style={[styles.track, style]}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.row}
-      >
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         {items.map((item) => {
           const key = item.key ?? item.value ?? item.label;
           const on = value === key;
+          const hasCount = item.count !== undefined && item.count !== null;
+          const chip = item.tone && item.count > 0 ? getAdminTone(item.tone, isDark) : null;
           return (
             <Pressable
               key={key}
               onPress={() => onChange(key)}
-              style={({ pressed }) => [
+              style={({ pressed, hovered }) => [
                 styles.tab,
                 on && styles.tabOn,
+                hovered && !on && styles.tabHover,
                 pressed && styles.tabPressed,
               ]}
               accessibilityRole="button"
               accessibilityState={{ selected: on }}
             >
               <Text style={[styles.tabText, on && styles.tabTextOn]}>{item.label}</Text>
+              {hasCount ? (
+                <View
+                  style={[
+                    styles.count,
+                    on && styles.countOn,
+                    chip && !on && { backgroundColor: chip.bg, borderColor: chip.border },
+                  ]}
+                >
+                  <Text style={[styles.countText, on && styles.countTextOn, chip && !on && { color: chip.fg }]}>{item.count}</Text>
+                </View>
+              ) : null}
             </Pressable>
           );
         })}
@@ -59,8 +74,11 @@ function createStyles(chrome) {
       paddingVertical: Platform.select({ web: 0, default: 2 }),
     },
     tab: {
-      paddingHorizontal: Platform.select({ web: 14, default: 13 }),
-      paddingVertical: Platform.select({ web: 8, default: 7 }),
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 7,
+      paddingHorizontal: Platform.select({ web: 13, default: 13 }),
+      paddingVertical: Platform.select({ web: 7, default: 7 }),
       borderRadius: Platform.select({ web: 9, default: 999 }),
       borderWidth: Platform.select({ web: 0, default: 1 }),
       borderColor: chrome.line,
@@ -70,25 +88,28 @@ function createStyles(chrome) {
         default: {},
       }),
     },
+    tabHover: { backgroundColor: chrome.rowHover },
     tabPressed: { transform: [{ scale: 0.97 }] },
     tabOn: {
       backgroundColor: chrome.tabOnBg,
       borderColor: chrome.tabOnBorder,
-      ...Platform.select({
-        web: {
-          boxShadow: "0 1px 3px rgba(25,20,15,0.12)",
-        },
-        default: {},
-      }),
+      ...Platform.select({ web: { boxShadow: "0 1px 3px rgba(25,20,15,0.12)" }, default: {} }),
     },
-    tabText: {
-      fontSize: 12,
-      color: chrome.inkSoft,
-      fontFamily: fonts.medium,
+    tabText: { fontSize: 12.5, color: chrome.inkSoft, fontFamily: fonts.medium },
+    tabTextOn: { color: chrome.tabOnText, fontFamily: fonts.semibold },
+    count: {
+      minWidth: 20,
+      height: 18,
+      paddingHorizontal: 6,
+      borderRadius: 9,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: chrome.chipOnBg,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: "transparent",
     },
-    tabTextOn: {
-      color: chrome.tabOnText,
-      fontFamily: fonts.semibold,
-    },
+    countOn: { backgroundColor: "rgba(246, 241, 230, 0.2)" },
+    countText: { fontSize: 11, color: chrome.inkSoft, fontFamily: fonts.semibold },
+    countTextOn: { color: chrome.tabOnText },
   });
 }

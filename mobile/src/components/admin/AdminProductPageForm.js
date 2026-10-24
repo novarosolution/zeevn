@@ -241,8 +241,8 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
           </AdminFormSection>
 
           <AdminFormSection
-            title="Size / price variants"
-            subtitle="Leave empty for a single price. Tag shows on the selected size card."
+            title="Size options"
+            subtitle="Label and price only. Stock stays on the jar, not on a size."
             icon="resize-outline"
             complete={variantRows?.some((r) => r?.label?.trim()) ? true : false}
           >

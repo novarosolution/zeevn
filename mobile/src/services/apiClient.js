@@ -208,6 +208,21 @@ export function apiDelete(path, options = {}) {
   return apiRequest(path, { ...options, method: "DELETE" });
 }
 
+/** GET /api/health. A 503 body is a failed check (db down), not an unreachable API. */
+export async function fetchApiHealth() {
+  const response = await fetchBalanced("/api/health", { method: "GET" }, { accept5xx: true });
+  const data = await readJson(response);
+  if (data?.db !== "connected" && data?.db !== "disconnected") {
+    throw new Error("Can't reach the API");
+  }
+  return {
+    ok: Boolean(data.ok),
+    db: data.db,
+    socket: data.socket === "ready" ? "ready" : "not_ready",
+    ts: data.ts || new Date().toISOString(),
+  };
+}
+
 /** Lightweight connectivity probe — GET / on server root (no auth). */
 export async function checkApiHealth() {
   const attempts = 3;

@@ -26,7 +26,7 @@ const HINT_IN = FadeInDown.duration(260).easing(EASE_OUT);
 const HINT_OUT = FadeOutUp.duration(180).easing(EASE_OUT);
 
 /**
- * Search pill with a gold hairline. The suggestion ("A2 desi cow ghee", "kachi ghani mustard oil", …) slides
+ * Search pill: white with a gold hairline on the page header, a soft inset field once it is pinned on glass. The suggestion ("A2 desi cow ghee", "kachi ghani mustard oil", …) slides
  * to the next one every few seconds — still while the screen is covered or with "reduce motion".
  */
 function StoreSearchBar({ onPress, hints = [], prefix = "Search", compact = false, style }) {
@@ -34,7 +34,7 @@ function StoreSearchBar({ onPress, hints = [], prefix = "Search", compact = fals
   const focused = useIsFocused();
   const reduced = useReducedMotion();
   const hint = useRotatingHint(hints, !compact && focused && !reduced);
-  const height = compact ? 44 : 52;
+  const height = compact ? 42 : 50;
   const radius = height / 2;
   const size = compact ? 14.5 : 15.5;
 
@@ -51,16 +51,14 @@ function StoreSearchBar({ onPress, hints = [], prefix = "Search", compact = fals
         {
           height,
           borderRadius: radius,
-          backgroundColor: compact ? c.soft : c.card,
-          borderColor: compact ? "transparent" : withAlpha(c.gold, isDark ? 0.5 : 0.6),
-          borderWidth: compact ? 0 : 1,
+          backgroundColor: compact ? (isDark ? withAlpha("#FFFFFF", 0.1) : withAlpha("#3D2A12", 0.07)) : c.card,
+          borderColor: withAlpha(c.gold, isDark ? 0.45 : 0.5),
+          borderWidth: compact ? 0 : StyleSheet.hairlineWidth * 2,
         },
         style,
       ]}
     >
-      <View style={[styles.searchGlyph, { backgroundColor: compact ? c.brandSoft : c.goldSoft }]}>
-        <Ionicons name="search" size={compact ? 15 : 17} color={compact ? c.brand : c.goldText} />
-      </View>
+      <Ionicons name="search" size={compact ? 17 : 19} color={compact ? c.inkMute : c.brand} style={styles.glyph} />
       <View style={styles.textWrap}>
         <Text style={type.ui(size, "medium", c.inkMute)} numberOfLines={1}>
           {prefix}
@@ -84,14 +82,8 @@ function StoreSearchBar({ onPress, hints = [], prefix = "Search", compact = fals
 export default memo(StoreSearchBar);
 
 const styles = StyleSheet.create({
-  bar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 10, gap: 10 },
-  searchGlyph: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  bar: { flexDirection: "row", alignItems: "center", paddingHorizontal: 16, gap: 10 },
+  glyph: { marginTop: 1 },
   textWrap: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 5 },
   hint: { flexShrink: 1 },
 });

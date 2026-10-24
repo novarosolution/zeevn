@@ -6,6 +6,13 @@ export function validMapCoord(n) {
   return Number.isFinite(v) && Math.abs(v) > 0.2;
 }
 
+/** India only — drops iOS Simulator default (San Francisco) and other junk GPS. */
+export function validDeliveryCoord(lat, lng) {
+  const a = Number(lat);
+  const b = Number(lng);
+  return Number.isFinite(a) && Number.isFinite(b) && a >= 6 && a <= 38 && b >= 68 && b <= 98;
+}
+
 async function reverseGeocodeWeb(latitude, longitude) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
   const response = await fetch(url, {

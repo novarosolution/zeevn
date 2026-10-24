@@ -1,201 +1,389 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Platform, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
+import SectionReveal from "../../components/motion/SectionReveal";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import AdminScreenShell from "../../components/admin/AdminScreenShell";
-import AdminPanel from "../../components/admin/AdminPanel";
-import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
-import AdminKpiCard, { AdminKpiGrid } from "../../components/admin/AdminKpiCard";
-import PremiumLoader from "../../components/ui/PremiumLoader";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumChip from "../../components/ui/PremiumChip";
-import PremiumInput from "../../components/ui/PremiumInput";
-import { useAuth } from "../../context/AuthContext";
-import { useToast } from "../../context/ToastContext";
-import { useTheme } from "../../context/ThemeContext";
+import AdminAlerts from "../../components/admin/AdminAlerts";
+import AdminButton from "../../components/admin/AdminButton";
 import AdminDeliveryMap from "../../components/admin/AdminDeliveryMap";
+import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
+import AdminInput from "../../components/admin/AdminInput";
+import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
+import { useAdminConfirm } from "../../components/admin/AdminDialog";
+import ZoneCard from "../../components/admin/zones/ZoneCard";
+import ZoneEditor from "../../components/admin/zones/ZoneEditor";
+import ZoneRiders from "../../components/admin/zones/ZoneRiders";
+import ZoneShops from "../../components/admin/zones/ZoneShops";
+import { mapOrdersFrom, polygonPoints } from "../../components/admin/zones/zoneHelpers";
+import PremiumButton from "../../components/ui/PremiumButton";
+import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
+import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import SkeletonBlock from "../../components/ui/SkeletonBlock";
+import { useAuth } from "../../context/AuthContext";
+import { useLiveSocket } from "../../context/LiveSocketContext";
+import { useTheme } from "../../context/ThemeContext";
+import { useToast } from "../../context/ToastContext";
 import {
+  checkAdminDeliveryCoverage,
   createAdminDeliveryZone,
   deleteAdminDeliveryZone,
-  fetchAdminDeliveryPartners,
   fetchAdminDeliveryZones,
+  fetchAdminRiders,
   fetchAdminStoreSettings,
+  fetchAdminZoneStats,
+  searchAdminOrders,
   updateAdminDeliveryZone,
   updateAdminStoreSettings,
 } from "../../services/adminService";
-import { adminShellContent, useAdminCompactLayout } from "../../theme/adminLayout";
+import { adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
+import { getAdminTone } from "../../theme/adminTones";
+import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, spacing } from "../../theme/tokens";
-import { formatINR } from "../../utils/currency";
+import { adminStatusMeta, customerOf, orderRef } from "../../utils/adminOrderUi";
+import { formatRupees } from "../../utils/adminFormat";
 
-function ZoneCreateFields({ name, setName, pins, setPins, cities, setCities, fee, setFee, draftLen, busy, onSave, editing }) {
-  return (
-    <View style={styles.formGap}>
-      <PremiumInput label="Zone name" value={name} onChangeText={setName} placeholder="e.g. Gandhinagar" tone="warm" />
-      <PremiumInput
-        label="Pincodes (optional)"
-        value={pins}
-        onChangeText={setPins}
-        placeholder="382421, 382007"
-        tone="warm"
-      />
-      <PremiumInput
-        label="Cities (optional)"
-        value={cities}
-        onChangeText={setCities}
-        placeholder="Only if you cannot draw — e.g. Gandhinagar"
-        tone="warm"
-      />
-      <PremiumInput
-        label="Delivery fee (₹)"
-        value={fee}
-        onChangeText={setFee}
-        keyboardType="number-pad"
-        tone="warm"
-      />
-      <PremiumButton
-        label={
-          busy
-            ? "Saving…"
-            : editing
-              ? draftLen >= 3
-                ? `Update zone · ${draftLen} points`
-                : "Update zone"
-              : draftLen >= 3
-                ? `Save zone · ${draftLen} points`
-                : "Save zone"
-        }
-        iconLeft="save-outline"
-        loading={busy}
-        disabled={busy}
-        onPress={onSave}
-      />
-    </View>
-  );
+const DEFAULT_SHOP = { _id: "local", latitude: 23.2156, longitude: 72.6369, maxRadiusKm: 25, label: "Zeevan farm shop", isActive: true };
+const LAYER_LABELS = [
+  { key: "zones", label: "Zones" },
+  { key: "riders", label: "Riders" },
+  { key: "orders", label: "Live orders" },
+];
+
+/** Shops as the form edits them (strings for number inputs), from the API document. */
+function shopsFromSettings(settings) {
+  const rows =
+    Array.isArray(settings?.stores) && settings.stores.length
+      ? settings.stores.map((s) => ({ ...s }))
+      : settings
+        ? [
+            {
+              _id: settings._id || "primary",
+              latitude: Number(settings.latitude) || DEFAULT_SHOP.latitude,
+              longitude: Number(settings.longitude) || DEFAULT_SHOP.longitude,
+              maxRadiusKm: Number(settings.maxRadiusKm) || DEFAULT_SHOP.maxRadiusKm,
+              label: settings.label || DEFAULT_SHOP.label,
+              isActive: true,
+            },
+          ]
+        : [{ ...DEFAULT_SHOP }];
+  return rows.slice(0, 1);
 }
 
+const isLocalId = (id) => String(id).startsWith("new-") || id === "local" || id === "primary";
+
 export default function AdminDeliveryScreen({ navigation, route }) {
+  const { user } = useAuth();
+  const toast = useToast();
+  const { colors: c, shadowPremium, isDark } = useTheme();
+  const chrome = useAdminChrome();
   const compact = useAdminCompactLayout();
-  const { user, token } = useAuth();
-  const { toastSuccess } = useToast();
-  const { colors: c } = useTheme();
+  const { width: winW, height: winH } = useWindowDimensions();
+  const { useSidebarLayout } = useKankregLayout();
+  const { confirm, dialog } = useAdminConfirm();
+  const { on: onLiveEvent } = useLiveSocket();
+  const isAdmin = Boolean(user?.isAdmin);
+  const stacked = compact || winW < (useSidebarLayout ? 1180 : 1000);
+  const webMap = Platform.OS === "web";
+  const styles = useMemo(() => createStyles(chrome, c, shadowPremium), [chrome, c, shadowPremium]);
+
+  /* ------------------------------- data state ------------------------------- */
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [zones, setZones] = useState([]);
-  const [partners, setPartners] = useState([]);
-  const [name, setName] = useState("");
-  const [pins, setPins] = useState("");
-  const [cities, setCities] = useState("");
-  const [fee, setFee] = useState("49");
-  const [editingId, setEditingId] = useState(null);
-  const [busy, setBusy] = useState(false);
-  const [stores, setStores] = useState([
-    { _id: "local", latitude: 23.2156, longitude: 72.6369, maxRadiusKm: 25, label: "Zeevan farm shop" },
-  ]);
-  const [storeId, setStoreId] = useState("local");
-  const [minutesPerKm, setMinutesPerKm] = useState(3);
-  const [mode, setMode] = useState("store");
-  const [draft, setDraft] = useState([]);
-  const [desk, setDesk] = useState("map");
-  const store = stores.find((s) => String(s._id) === String(storeId)) || stores[0];
+  const [riders, setRiders] = useState([]);
+  const [stats, setStats] = useState({ zones: {}, uncovered: { orders: 0, revenue: 0 } });
+  const [liveOrders, setLiveOrders] = useState([]);
+  const [stores, setStores] = useState([{ ...DEFAULT_SHOP }]);
+  const [savedShops, setSavedShops] = useState("");
+  const [minutesPerKm, setMinutesPerKm] = useState("3");
+  const [storeId, setStoreId] = useState(DEFAULT_SHOP._id);
 
-  const load = useCallback(
-    async ({ isPullRefresh = false } = {}) => {
-      if (isPullRefresh) setRefreshing(true);
-      else setLoading(true);
-      setError("");
-      try {
-        const [z, p, s] = await Promise.all([
-          fetchAdminDeliveryZones(token),
-          fetchAdminDeliveryPartners(token),
-          fetchAdminStoreSettings(token),
-        ]);
-        setZones(Array.isArray(z) ? z : []);
-        setPartners(Array.isArray(p) ? p : []);
-        if (s) {
-          const rows = Array.isArray(s.stores) && s.stores.length
-            ? s.stores
-            : [
-                {
-                  _id: s._id || "primary",
-                  latitude: Number(s.latitude) || 23.2156,
-                  longitude: Number(s.longitude) || 72.6369,
-                  maxRadiusKm: Number(s.maxRadiusKm) || 25,
-                  label: s.label || "Zeevan farm shop",
-                  isActive: true,
-                },
-              ];
-          setStores(rows);
-          setStoreId(String(rows[0]._id || "primary"));
-          setMinutesPerKm(Number(s.minutesPerKm) || 3);
-        }
-      } catch (err) {
-        setError(err.message || "Unable to load delivery ops.");
-      } finally {
-        if (isPullRefresh) setRefreshing(false);
-        else setLoading(false);
-      }
-    },
-    [token]
+  /* -------------------------------- ui state -------------------------------- */
+  const [panel, setPanel] = useState(["zones", "riders", "shops"].includes(route?.params?.panel) ? route.params.panel : "zones");
+  const [editing, setEditing] = useState(null); // null | "new" | zone id
+  const [mode, setMode] = useState("select"); // select | draw | pin | test
+  const [selectedZoneId, setSelectedZoneId] = useState(
+    route?.params?.zoneId || route?.params?.zone ? String(route.params.zoneId || route.params.zone) : null
   );
+  const [selectedRiderId, setSelectedRiderId] = useState(null);
+  const [areaDraft, setAreaDraft] = useState([]);
+  const [layers, setLayers] = useState({ zones: true, riders: true, orders: true });
+  const [fitKey, setFitKey] = useState(0);
+  const [focus, setFocus] = useState({ point: null, key: 0 });
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [busyZoneId, setBusyZoneId] = useState("");
+  const [shopsBusy, setShopsBusy] = useState(false);
+  const [testPoint, setTestPoint] = useState(null);
+  const [testResult, setTestResult] = useState(null);
+  const [testBusy, setTestBusy] = useState(false);
+  const [testPin, setTestPin] = useState("");
+
+  const store = stores.find((s) => String(s._id) === String(storeId)) || stores[0];
+  const editingZone = editing && editing !== "new" ? zones.find((z) => String(z._id) === editing) : null;
+
+  /* --------------------------------- loading -------------------------------- */
+
+  const applySettings = useCallback((settings, { keepSelection = false } = {}) => {
+    const rows = shopsFromSettings(settings);
+    setStores(rows);
+    setMinutesPerKm(String(Number(settings?.minutesPerKm) || 3));
+    setSavedShops(JSON.stringify({ stores: rows, minutes: String(Number(settings?.minutesPerKm) || 3) }));
+    setStoreId((prev) => (keepSelection && rows.some((s) => String(s._id) === String(prev)) ? prev : String(rows[0]._id)));
+  }, []);
+
+  const loadZonesAndStats = useCallback(async () => {
+    const [z, st] = await Promise.all([fetchAdminDeliveryZones(), fetchAdminZoneStats(null, 30).catch(() => null)]);
+    setZones(Array.isArray(z) ? z : []);
+    if (st) setStats(st);
+  }, []);
+
+  const loadLiveOrders = useCallback(async () => {
+    try {
+      const res = await searchAdminOrders(null, { status: "active", pageSize: 100 });
+      setLiveOrders(
+        mapOrdersFrom(res.items || [], orderRef, (o) => customerOf(o).name, (s) => adminStatusMeta(s).label)
+      );
+    } catch {
+      // The orders layer is a bonus — the desk still works without it.
+    }
+  }, []);
 
   useEffect(() => {
-    if (!user?.isAdmin) return;
-    load();
-  }, [user?.isAdmin, load]);
+    if (!isAdmin) return;
+    let alive = true;
+    (async () => {
+      try {
+        const [z, r, s, st] = await Promise.all([
+          fetchAdminDeliveryZones(),
+          fetchAdminRiders(),
+          fetchAdminStoreSettings(),
+          fetchAdminZoneStats(null, 30).catch(() => null),
+        ]);
+        if (!alive) return;
+        setZones(Array.isArray(z) ? z : []);
+        setRiders(Array.isArray(r) ? r : []);
+        applySettings(s);
+        if (st) setStats(st);
+        setFitKey((k) => k + 1);
+      } catch (err) {
+        if (alive) setError(err?.message || "Unable to load delivery ops.");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    loadLiveOrders();
+    return () => {
+      alive = false;
+    };
+  }, [isAdmin, applySettings, loadLiveOrders]);
 
-  const kpis = useMemo(() => {
-    const activeZones = zones.filter((z) => z.isActive !== false).length;
-    const online = partners.filter((p) => p.lastLocationAgeSeconds != null && p.lastLocationAgeSeconds < 900)
-      .length;
-    const activeRuns = partners.reduce((s, p) => s + Number(p.activeOrderCount || 0), 0);
-    return { activeZones, partners: partners.length, online, activeRuns };
-  }, [zones, partners]);
+  useEffect(() => {
+    const z = route?.params?.zoneId || route?.params?.zone;
+    if (!z) return;
+    setSelectedZoneId(String(z));
+    setPanel("zones");
+  }, [route?.params?.zoneId, route?.params?.zone]);
 
-  const patchStore = (id, patch) => {
-    setStores((list) => list.map((s) => (String(s._id) === String(id) ? { ...s, ...patch } : s)));
+  // Riders move — refresh their pins every 20 s. Orders change — refresh on live events.
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+    const ridersTimer = setInterval(() => fetchAdminRiders().then(setRiders).catch(() => {}), 20 * 1000);
+    const ordersTimer = setInterval(loadLiveOrders, 60 * 1000);
+    let eventTimer = null;
+    const off = onLiveEvent("orders:updated", () => {
+      if (eventTimer) clearTimeout(eventTimer);
+      eventTimer = setTimeout(() => {
+        loadLiveOrders();
+        fetchAdminRiders().then(setRiders).catch(() => {});
+      }, 900);
+    });
+    return () => {
+      clearInterval(ridersTimer);
+      clearInterval(ordersTimer);
+      if (eventTimer) clearTimeout(eventTimer);
+      off?.();
+    };
+  }, [isAdmin, onLiveEvent, loadLiveOrders]);
+
+  /* ------------------------------ derived values ----------------------------- */
+
+  const kpis = useMemo(
+    () => ({
+      live: zones.filter((z) => z.isActive !== false).length,
+      total: zones.length,
+      online: riders.filter((r) => r.online).length,
+      riders: riders.length,
+      onRoad: riders.reduce((sum, r) => sum + (r.active || 0), 0),
+      outside: stats.uncovered?.orders || 0,
+    }),
+    [zones, riders, stats]
+  );
+
+  // While a zone is being edited the map shows the working draft instead of its saved outline.
+  const zonesForMap = useMemo(
+    () => (editing ? zones.map((z) => (String(z._id) === editing ? { ...z, polygon: [] } : z)) : zones),
+    [zones, editing]
+  );
+
+  const shopsDirty = useMemo(() => JSON.stringify({ stores, minutes: String(minutesPerKm) }) !== savedShops, [stores, minutesPerKm, savedShops]);
+
+  /* ---------------------------------- zones --------------------------------- */
+
+  /** One place for changing the map tool, so the test pin and its result never outlive the Test mode. */
+  const switchMode = (next) => {
+    setMode(next);
+    if (next !== "test") {
+      setTestPoint(null);
+      setTestResult(null);
+    }
+  };
+
+  const startEdit = (zone) => {
+    setPanel("zones");
+    setEditing(String(zone._id));
+    setSelectedZoneId(String(zone._id));
+    setAreaDraft(polygonPoints(zone));
+    switchMode("select");
+    setEditError("");
+    setFitKey((k) => k + 1);
+  };
+  const startNew = () => {
+    setPanel("zones");
+    setEditing("new");
+    setSelectedZoneId(null);
+    setAreaDraft([]);
+    switchMode(Platform.OS === "web" ? "draw" : "select");
+    setEditError("");
+  };
+  const cancelEdit = () => {
+    setEditing(null);
+    setAreaDraft([]);
+    setMode("select");
+    setEditError("");
+  };
+
+  const saveZone = async (payload) => {
+    setSaving(true);
+    setEditError("");
+    try {
+      const saved = editingZone ? await updateAdminDeliveryZone(null, editingZone._id, payload) : await createAdminDeliveryZone(null, payload);
+      toast.toastSuccess(editingZone ? `${payload.name} saved.` : `${payload.name} created.`, { title: editingZone ? "Zone updated" : "Zone created" });
+      cancelEdit();
+      await loadZonesAndStats();
+      if (saved?._id) setSelectedZoneId(String(saved._id));
+      setFitKey((k) => k + 1);
+    } catch (err) {
+      setEditError(err?.message || "Couldn't save this zone.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteZone = async () => {
+    if (!editingZone) return;
+    const live = stats.zones?.[String(editingZone._id)]?.active || 0;
+    const ok = await confirm({
+      title: `Delete “${editingZone.name}”?`,
+      message: live
+        ? `${live} live order${live === 1 ? " is" : "s are"} still in this zone — they keep their zone name, but new customers here may no longer be deliverable.`
+        : "Customers in this area will no longer be deliverable unless a shop radius covers them.",
+      tone: "danger",
+      confirmLabel: "Delete zone",
+    });
+    if (!ok) return;
+    setSaving(true);
+    try {
+      await deleteAdminDeliveryZone(null, editingZone._id);
+      toast.toastSuccess(`${editingZone.name} deleted.`);
+      cancelEdit();
+      setSelectedZoneId(null);
+      await loadZonesAndStats();
+    } catch (err) {
+      setEditError(err?.message || "Couldn't delete this zone.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleZone = async (zone) => {
+    const next = zone.isActive === false;
+    setBusyZoneId(String(zone._id));
+    setZones((list) => list.map((z) => (String(z._id) === String(zone._id) ? { ...z, isActive: next } : z)));
+    try {
+      await updateAdminDeliveryZone(null, zone._id, { isActive: next });
+      toast.toastSuccess(next ? `${zone.name} is live again.` : `${zone.name} paused — customers there can't order.`);
+    } catch (err) {
+      setZones((list) => list.map((z) => (String(z._id) === String(zone._id) ? { ...z, isActive: !next } : z)));
+      toast.toastError(err?.message || "Couldn't change that zone.");
+    } finally {
+      setBusyZoneId("");
+    }
+  };
+
+  /* ----------------------------------- map ---------------------------------- */
+
+  const runCoverageTest = async ({ lat, lng, postalCode }) => {
+    setTestBusy(true);
+    try {
+      const quote = await checkAdminDeliveryCoverage(null, { lat, lng, postalCode, itemsTotal: 0 });
+      setTestResult(quote);
+      if (lat != null) setTestPoint({ lat, lng, covered: Boolean(quote.serviceable) });
+      else setTestPoint(null);
+    } catch (err) {
+      toast.toastError(err?.message || "Couldn't check that address.");
+    } finally {
+      setTestBusy(false);
+    }
   };
 
   const handleMapClick = (pt) => {
-    if (mode === "store") {
-      if (store) patchStore(store._id, { latitude: pt.lat, longitude: pt.lng });
+    if (mode === "draw") {
+      setAreaDraft((d) => [...d, pt]);
+    } else if (mode === "pin") {
+      if (store) setStores((list) => list.map((s) => (String(s._id) === String(store._id) ? { ...s, latitude: pt.lat, longitude: pt.lng } : s)));
+      setMode("select");
+    } else if (mode === "test") {
+      setTestPoint({ ...pt, covered: null });
+      runCoverageTest({ lat: pt.lat, lng: pt.lng });
+    } else if (!editing) {
+      setSelectedZoneId(null);
+      setSelectedRiderId(null);
+    }
+  };
+
+  const selectZone = (zoneId) => {
+    if (editing) return;
+    setSelectedZoneId(String(zoneId));
+    setPanel("zones");
+  };
+
+  const pickRider = (rider) => {
+    const id = String(rider._id);
+    setSelectedRiderId(id);
+    setPanel("riders");
+    if (rider.location) setFocus((f) => ({ point: { lat: rider.location.latitude, lng: rider.location.longitude }, key: f.key + 1 }));
+  };
+
+  /* ---------------------------------- shops --------------------------------- */
+
+  const patchStore = (id, changes) => setStores((list) => list.map((s) => (String(s._id) === String(id) ? { ...s, ...changes } : s)));
+  const saveShops = async () => {
+    const minutes = Number(minutesPerKm);
+    if (!Number.isFinite(minutes) || minutes <= 0) {
+      toast.toastError("Minutes per km must be above 0.");
       return;
     }
-    setDraft((d) => [...d, pt]);
-  };
-
-  const handleAddStore = () => {
-    const next = {
-      _id: `new-${Date.now()}`,
-      label: `Shop ${stores.length + 1}`,
-      latitude: Number(store?.latitude) || 23.2156,
-      longitude: Number(store?.longitude) || 72.6369,
-      maxRadiusKm: Number(store?.maxRadiusKm) || 25,
-      isActive: true,
-    };
-    setStores((list) => [...list, next]);
-    setStoreId(next._id);
-    setMode("store");
-  };
-
-  const handleDeleteStore = () => {
-    if (stores.length < 2 || !store) return;
-    const rest = stores.filter((s) => String(s._id) !== String(store._id));
-    setStores(rest);
-    setStoreId(String(rest[0]._id));
-  };
-
-  const handleSaveStore = async () => {
+    setShopsBusy(true);
     try {
-      setBusy(true);
-      setError("");
-      const saved = await updateAdminStoreSettings(token, {
-        minutesPerKm: Number(minutesPerKm) || 3,
-        stores: stores.map((s) => ({
-          _id: String(s._id).startsWith("new-") || s._id === "local" || s._id === "primary" ? undefined : s._id,
+      const saved = await updateAdminStoreSettings(null, {
+        minutesPerKm: minutes,
+        stores: stores.slice(0, 1).map((s) => ({
+          _id: isLocalId(s._id) ? undefined : s._id,
           label: s.label,
           latitude: Number(s.latitude),
           longitude: Number(s.longitude),
@@ -203,527 +391,385 @@ export default function AdminDeliveryScreen({ navigation, route }) {
           isActive: s.isActive !== false,
         })),
       });
-      if (saved?.stores?.length) {
-        const keep =
-          saved.stores.find((s) => s.label === store?.label && Number(s.latitude) === Number(store?.latitude)) ||
-          saved.stores[0];
-        setStores(saved.stores);
-        setStoreId(String(keep._id));
-        setMinutesPerKm(Number(saved.minutesPerKm) || 3);
-      }
+      const keep = saved?.stores?.find((s) => s.label === store?.label && Number(s.latitude) === Number(store?.latitude));
+      applySettings(saved);
+      if (keep) setStoreId(String(keep._id));
+      toast.toastSuccess("Shops saved.");
     } catch (err) {
-      setError(err.message || "Could not save shops.");
+      toast.toastError(err?.message || "Couldn't save the shops.");
     } finally {
-      setBusy(false);
+      setShopsBusy(false);
     }
   };
-
-  const resetZoneForm = () => {
-    setName("");
-    setPins("");
-    setCities("");
-    setDraft([]);
-    setEditingId(null);
-  };
-
-  const startEditZone = (zone) => {
-    setEditingId(zone._id);
-    setName(zone.name || "");
-    setPins((zone.postalCodes || []).join(", "));
-    setCities((zone.cities || []).join(", "));
-    setFee(String(zone.deliveryFee ?? 49));
-    setDraft(
-      (zone.polygon || [])
-        .map((p) => ({ lat: Number(p.lat ?? p.latitude), lng: Number(p.lng ?? p.longitude) }))
-        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
-    );
-    setMode("draw");
-    setDesk("map");
-  };
-
-  const handleSaveZone = async () => {
-    const postalCodes = String(pins || "")
-      .split(/[,\s]+/)
-      .map((x) => x.trim())
-      .filter(Boolean);
-    const cityList = String(cities || "")
-      .split(/[,]+/)
-      .map((x) => x.trim())
-      .filter(Boolean);
-    const zoneName = name.trim() || (editingId ? "Zone" : `Zone ${zones.length + 1}`);
-    if (draft.length < 3 && !postalCodes.length && !cityList.length) {
-      setError("Draw 3+ points on the map, or add a pincode.");
-      return;
-    }
-    const payload = {
-      name: zoneName,
-      postalCodes,
-      cities: cityList,
-      polygon: draft,
-      deliveryFee: Number(fee) || 0,
-      freeAbove: 1499,
-      isActive: true,
-    };
+  const resetShops = () => {
     try {
-      setBusy(true);
-      setError("");
-      if (editingId) {
-        await updateAdminDeliveryZone(token, editingId, payload);
-        toastSuccess(`${zoneName} updated.`, { title: "Zone saved" });
-      } else {
-        await createAdminDeliveryZone(token, payload);
-        toastSuccess(`${zoneName} saved.`, { title: "Zone created" });
-      }
-      resetZoneForm();
-      const z = await fetchAdminDeliveryZones(token);
-      setZones(Array.isArray(z) ? z : []);
-      setDesk("zones");
-    } catch (err) {
-      setError(err.message || "Could not save zone.");
-    } finally {
-      setBusy(false);
+      const snapshot = JSON.parse(savedShops);
+      setStores(snapshot.stores);
+      setMinutesPerKm(snapshot.minutes);
+    } catch {
+      // nothing saved yet
     }
   };
 
-  const mapHint =
-    mode === "store"
-      ? ADMIN_SCREEN_COPY.delivery.stepPin
-      : draft.length >= 3
-        ? ADMIN_SCREEN_COPY.delivery.stepSave
-        : ADMIN_SCREEN_COPY.delivery.stepDraw;
-
-  const handleToggleZone = async (zone) => {
-    try {
-      setBusy(true);
-      setError("");
-      await updateAdminDeliveryZone(token, zone._id, { isActive: zone.isActive === false });
-      const z = await fetchAdminDeliveryZones(token);
-      setZones(Array.isArray(z) ? z : []);
-    } catch (err) {
-      setError(err.message || "Could not update zone.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleDeleteZone = async (zoneId) => {
-    try {
-      setBusy(true);
-      setError("");
-      await deleteAdminDeliveryZone(token, zoneId);
-      const z = await fetchAdminDeliveryZones(token);
-      setZones(Array.isArray(z) ? z : []);
-    } catch (err) {
-      setError(err.message || "Could not delete zone.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleAttachArea = async (zoneId) => {
-    if (draft.length < 3) {
-      setError("Draw the area first — tap 3+ points on the map.");
-      return;
-    }
-    try {
-      setBusy(true);
-      setError("");
-      await updateAdminDeliveryZone(token, zoneId, { polygon: draft });
-      setDraft([]);
-      const z = await fetchAdminDeliveryZones(token);
-      setZones(Array.isArray(z) ? z : []);
-    } catch (err) {
-      setError(err.message || "Could not save area.");
-    } finally {
-      setBusy(false);
-    }
-  };
+  /* ----------------------------------- gate --------------------------------- */
 
   if (user && !user.isAdmin) {
     return (
       <AdminScreenShell style={styles.screen}>
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
-          <View style={styles.denied}>
-            <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-            <PremiumButton label={ADMIN_GATE.backHome} onPress={() => navigation.navigate("Home")} />
-          </View>
+          <SectionReveal delay={40} preset="fade-up">
+            <View style={styles.gatePanel}>
+              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <PremiumButton label={ADMIN_GATE.backHome} iconLeft="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
+            </View>
+          </SectionReveal>
         </KankregScrollPage>
       </AdminScreenShell>
     );
   }
 
+  const mapHeight = stacked ? 400 : Math.max(520, Math.min(760, winH - 250));
+  const hint =
+    mode === "draw"
+      ? areaDraft.length >= 3
+        ? "Looks good — drag points to fine-tune, then save the zone."
+        : "Click the map to add corners — you need at least 3."
+      : mode === "pin"
+        ? `Click where “${store?.label || "the shop"}” should be.`
+        : mode === "test"
+          ? "Click anywhere to check if delivery works there."
+          : "";
+  const toolTabs = [
+    { key: "select", label: "Browse" },
+    { key: "test", label: "Test an address" },
+  ];
+  const sideTabs = [
+    { key: "zones", label: "Zones", count: zones.length },
+    { key: "riders", label: "Riders", count: riders.length },
+    { key: "shops", label: "Shops", count: stores.length },
+  ];
+
+  const sideContent = editing ? (
+    <ZoneEditor
+      key={editing}
+      zone={editingZone}
+      riders={riders}
+      points={areaDraft}
+      drawing={mode === "draw"}
+      saving={saving}
+      error={editError}
+      canDraw={webMap}
+      onToggleDraw={() => setMode((m) => (m === "draw" ? "select" : "draw"))}
+      onUndo={() => setAreaDraft((d) => d.slice(0, -1))}
+      onClearArea={() => setAreaDraft([])}
+      onSave={saveZone}
+      onCancel={cancelEdit}
+      onDelete={deleteZone}
+    />
+  ) : (
+    <View style={styles.sideStack}>
+      <AdminFilterTabs items={sideTabs} value={panel} onChange={setPanel} />
+      {panel === "zones" ? (
+        zones.length ? (
+          <View style={styles.cardList}>
+            {zones.map((zone) => (
+              <ZoneCard
+                key={String(zone._id)}
+                zone={zone}
+                stats={stats.zones?.[String(zone._id)]}
+                riders={riders}
+                selected={String(zone._id) === String(selectedZoneId)}
+                busy={busyZoneId === String(zone._id)}
+                onSelect={(z) => {
+                  if (!webMap) {
+                    startEdit(z);
+                    return;
+                  }
+                  setSelectedZoneId(String(z._id));
+                  setFitKey((k) => k + 1);
+                }}
+                onEdit={startEdit}
+                onToggle={toggleZone}
+              />
+            ))}
+            {kpis.outside > 0 ? (
+              <View style={[styles.notice, { backgroundColor: getAdminTone("gold", isDark).bg, borderColor: getAdminTone("gold", isDark).border }]}>
+                <Ionicons name="information-circle-outline" size={16} color={getAdminTone("gold", isDark).fg} />
+                <Text style={[styles.noticeText, { color: getAdminTone("gold", isDark).fg }]}>
+                  {kpis.outside} order{kpis.outside === 1 ? "" : "s"} in the last 30 days were served outside every drawn zone (shop radius).
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : (
+          <PremiumEmptyState
+            iconName="map-outline"
+            title={ADMIN_SCREEN_COPY.delivery.emptyZones}
+            ctaLabel="Create zone"
+            onCtaPress={startNew}
+            compact
+          />
+        )
+      ) : null}
+      {panel === "riders" ? (
+        <ZoneRiders
+          riders={riders}
+          selectedId={selectedRiderId}
+          onSelect={pickRider}
+          onShowOrders={(rider) => navigation.navigate("AdminOrders", { rider: String(rider._id) })}
+          onManage={() => navigation.navigate("AdminUsers")}
+        />
+      ) : null}
+      {panel === "shops" ? (
+        <ZoneShops
+          stores={stores}
+          storeId={storeId}
+          minutesPerKm={minutesPerKm}
+          dirty={shopsDirty}
+          busy={shopsBusy}
+          pinMode={mode === "pin"}
+          canPin={webMap}
+          onSelect={(shop) => {
+            setStoreId(String(shop._id));
+            setFocus((f) => ({ point: { lat: Number(shop.latitude), lng: Number(shop.longitude) }, key: f.key + 1 }));
+          }}
+          onChangeStore={patchStore}
+          onChangeMinutes={setMinutesPerKm}
+          onPinMode={() => setMode((m) => (m === "pin" ? "select" : "pin"))}
+          onSave={saveShops}
+          onReset={resetShops}
+        />
+      ) : null}
+    </View>
+  );
+
+  const mapColumn = (
+    <View style={[styles.mapCol, stacked && styles.mapColStacked]}>
+      <View style={styles.mapBar}>
+        <AdminFilterTabs items={toolTabs} value={mode === "test" ? "test" : mode === "select" ? "select" : ""} onChange={switchMode} style={styles.toolTabs} />
+        <View style={styles.layerRow}>
+          {LAYER_LABELS.map((layer) => (
+            <AdminButton
+              key={layer.key}
+              label={layer.label}
+              icon={layers[layer.key] ? "eye-outline" : "eye-off-outline"}
+              size="xs"
+              variant={layers[layer.key] ? "tint" : "ghost"}
+              tone="olive"
+              onPress={() => setLayers((l) => ({ ...l, [layer.key]: !l[layer.key] }))}
+            />
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.mapFrame}>
+        <AdminDeliveryMap
+          store={store}
+          stores={stores}
+          radiusKm={Number(store?.maxRadiusKm) || 0}
+          zones={zonesForMap}
+          draft={areaDraft}
+          hint={hint}
+          mode={mode}
+          editingId={editing && editing !== "new" ? editing : undefined}
+          selectedZoneId={selectedZoneId}
+          riders={riders}
+          selectedRiderId={selectedRiderId}
+          orders={liveOrders}
+          testPoint={testPoint}
+          layers={layers}
+          fitKey={fitKey}
+          focusPoint={focus.point}
+          focusKey={focus.key}
+          height={mapHeight}
+          onMapClick={handleMapClick}
+          onRemovePoint={(i) => setAreaDraft((d) => d.filter((_, idx) => idx !== i))}
+          onMovePoint={(i, pt) => setAreaDraft((d) => d.map((p, idx) => (idx === i ? pt : p)))}
+          onSelectZone={selectZone}
+          onSelectRider={(id) => pickRider(riders.find((r) => String(r._id) === String(id)) || { _id: id })}
+          onSelectOrder={(order) => navigation.navigate("AdminOrders", { query: order.label.split(" · ")[0] })}
+        />
+        {mode === "test" || testResult ? (
+          <CoverageCard
+            chrome={chrome}
+            isDark={isDark}
+            result={testResult}
+            busy={testBusy}
+            pin={testPin}
+            onPin={setTestPin}
+            onCheckPin={() => runCoverageTest({ postalCode: testPin })}
+            onClose={() => switchMode("select")}
+            hasPoint={Boolean(testPoint)}
+          />
+        ) : null}
+      </View>
+
+      <View style={styles.legend}>
+        <LegendDot color="#244424" label="Live zone" styles={styles} />
+        <LegendDot color="#8A8478" label="Paused" styles={styles} />
+        <LegendDot color="#2FA36B" label="Rider online" styles={styles} round />
+        <LegendDot color="#C9A227" label="New order" styles={styles} round />
+        <LegendDot color="#3D6B8C" label="On the way" styles={styles} round />
+        <LegendDot color="#B8442F" label="Needs attention" styles={styles} round />
+      </View>
+    </View>
+  );
+
   return (
     <AdminScreenShell style={styles.screen}>
-      <KankregScrollPage
-        scrollVariant="admin"
-        showFooter={false}
-        style={customerScrollFill}
-        refreshControl={
-          Platform.OS === "web" ? undefined : (
-            <RefreshControl refreshing={refreshing} onRefresh={() => load({ isPullRefresh: true })} />
-          )
-        }
-      >
+      <KankregScrollPage scrollVariant="admin" showFooter={false} style={customerScrollFill} keyboardShouldPersistTaps="handled">
         <KankregAdminShell
           navigation={navigation}
           route={route || { name: "AdminDelivery" }}
           title={ADMIN_SCREEN_COPY.delivery.title}
           subtitle={ADMIN_SCREEN_COPY.delivery.subtitle}
+            headerRight={<AdminButton label="Create zone" icon="add" variant="primary" size="sm" onPress={startNew} />}
         >
-          {error ? <PremiumErrorBanner severity="error" message={error} compact style={styles.banner} /> : null}
+          <View style={styles.desk}>
+            <AdminAlerts error={error} onCloseError={() => setError("")} />
 
-          {loading ? (
-            <PremiumLoader caption="Loading zones & riders…" />
-          ) : (
-            <View style={styles.desk}>
-              <AdminKpiGrid compact={compact} columns={4}>
-                <AdminKpiCard
-                  label="Active zones"
-                  value={String(kpis.activeZones)}
-                  onPress={() => setDesk("zones")}
-                />
-                <AdminKpiCard
-                  label="Partners"
-                  value={String(kpis.partners)}
-                  onPress={() => setDesk("riders")}
-                />
-                <AdminKpiCard
-                  label="GPS recent"
-                  value={String(kpis.online)}
-                  tone={Number(kpis.online) > 0 ? "default" : "warn"}
-                  onPress={() => setDesk("riders")}
-                />
-                <AdminKpiCard
-                  label="Active runs"
-                  value={String(kpis.activeRuns)}
-                  tone={Number(kpis.activeRuns) > 0 ? "hot" : "default"}
-                  onPress={() => setDesk("riders")}
-                />
-              </AdminKpiGrid>
+            <AdminStatGrid min={compact ? 140 : 170}>
+              <AdminStatTile icon="map-outline" label="Zones live" value={`${kpis.live}/${kpis.total}`} hint={kpis.total - kpis.live ? `${kpis.total - kpis.live} paused` : "All delivering"} tone="olive" onPress={() => setPanel("zones")} selected={panel === "zones" && !editing} />
+              <AdminStatTile icon="bicycle-outline" label="Riders online" value={`${kpis.online}/${kpis.riders}`} hint="Sharing location now" tone="green" onPress={() => setPanel("riders")} selected={panel === "riders" && !editing} />
+              <AdminStatTile icon="navigate-outline" label="On the road" value={String(kpis.onRoad)} hint="Orders with riders" tone="blue" />
+              <AdminStatTile icon="alert-circle-outline" label="Outside zones" value={String(kpis.outside)} hint="Orders, last 30 days" tone={kpis.outside ? "gold" : "neutral"} />
+            </AdminStatGrid>
 
-              <AdminFilterTabs
-                value={desk}
-                onChange={setDesk}
-                items={[
-                  { key: "map", label: "Map" },
-                  { key: "zones", label: zones.length ? `Zones · ${zones.length}` : "Zones" },
-                  { key: "riders", label: partners.length ? `Riders · ${partners.length}` : "Riders" },
-                ]}
-              />
-
-              {desk === "map" ? (
-                <View style={styles.formGap}>
-                  <AdminPanel
-                    title="Coverage map"
-                    icon="navigate-outline"
-                    meta={mode === "draw" ? `${draft.length} points${editingId ? " · editing" : ""}` : `${minutesPerKm} min / km`}
-                    description={mapHint}
-                  >
-                    <View style={styles.formGap}>
-                      <View style={styles.modeRow}>
-                        <PremiumChip
-                          label="Move shop pin"
-                          selected={mode === "store"}
-                          onPress={() => setMode("store")}
-                          size="sm"
-                        />
-                        <PremiumChip
-                          label={editingId ? "Edit points" : "Create zone"}
-                          selected={mode === "draw"}
-                          onPress={() => setMode("draw")}
-                          size="sm"
-                        />
-                        {editingId ? (
-                          <PremiumChip
-                            label="New zone"
-                            size="sm"
-                            onPress={() => {
-                              resetZoneForm();
-                              setMode("draw");
-                            }}
-                          />
-                        ) : null}
-                        <PremiumChip label="Add shop" size="sm" onPress={handleAddStore} />
-                        {draft.length ? (
-                          <PremiumChip label="Undo" onPress={() => setDraft((d) => d.slice(0, -1))} size="sm" />
-                        ) : null}
-                        {draft.length ? (
-                          <PremiumChip label="Clear" onPress={() => setDraft([])} size="sm" />
-                        ) : null}
-                      </View>
-                      <AdminDeliveryMap
-                        store={store}
-                        stores={stores}
-                        radiusKm={Number(store?.maxRadiusKm) || 0}
-                        zones={zones}
-                        draft={draft}
-                        hint={mapHint}
-                        mode={mode}
-                        editingId={editingId}
-                        onMapClick={handleMapClick}
-                        onRemovePoint={(i) => setDraft((d) => d.filter((_, idx) => idx !== i))}
-                      />
-                      {draft.length >= 3 ? (
-                        <PremiumButton
-                          label={
-                            busy
-                              ? "Saving…"
-                              : editingId
-                                ? `Update zone · ${draft.length} points`
-                                : `Save zone · ${draft.length} points`
-                          }
-                          iconLeft="save-outline"
-                          loading={busy}
-                          disabled={busy}
-                          onPress={handleSaveZone}
-                        />
-                      ) : null}
-                    </View>
-                  </AdminPanel>
-
-                  <AdminPanel
-                    title="Create zone"
-                    icon="add-circle-outline"
-                    meta={
-                      editingId
-                        ? "Editing an existing zone"
-                        : draft.length >= 3
-                          ? `${draft.length} points ready`
-                          : "Draw 3+ points, then save"
-                    }
-                    description="Coverage is the drawn shape (or a shop radius). Time is always km × minutes per km."
-                  >
-                    <ZoneCreateFields
-                      name={name}
-                      setName={setName}
-                      pins={pins}
-                      setPins={setPins}
-                      cities={cities}
-                      setCities={setCities}
-                      fee={fee}
-                      setFee={setFee}
-                      draftLen={draft.length}
-                      busy={busy}
-                      editing={Boolean(editingId)}
-                      onSave={handleSaveZone}
-                    />
-                  </AdminPanel>
-
-                  <AdminPanel title="Shops" icon="storefront-outline" meta={`${stores.length} · time = km × minutes`}>
-                        <View style={styles.formGap}>
-                          <View style={styles.modeRow}>
-                            {stores.map((s, i) => (
-                              <PremiumChip
-                                key={String(s._id || i)}
-                                label={s.label || `Shop ${i + 1}`}
-                                selected={String(s._id) === String(store?._id)}
-                                onPress={() => {
-                                  setStoreId(String(s._id));
-                                  setMode("store");
-                                }}
-                                size="sm"
-                              />
-                            ))}
-                          </View>
-                          <PremiumInput
-                            label="Shop name"
-                            value={store?.label || ""}
-                            onChangeText={(v) => store && patchStore(store._id, { label: v })}
-                            tone="warm"
-                          />
-                          <View style={styles.storeGrid}>
-                            <PremiumInput
-                              label="Minutes per km"
-                              value={String(minutesPerKm)}
-                              onChangeText={setMinutesPerKm}
-                              keyboardType="decimal-pad"
-                              tone="warm"
-                            />
-                            <PremiumInput
-                              label="Max radius (km)"
-                              value={String(store?.maxRadiusKm ?? "")}
-                              onChangeText={(v) => store && patchStore(store._id, { maxRadiusKm: v })}
-                              keyboardType="decimal-pad"
-                              tone="warm"
-                            />
-                          </View>
-                          <PremiumButton
-                            label={busy ? "Saving…" : "Save shops"}
-                            iconLeft="save-outline"
-                            loading={busy}
-                            disabled={busy}
-                            onPress={handleSaveStore}
-                          />
-                          {stores.length > 1 ? (
-                            <PremiumButton
-                              label="Remove this shop"
-                              variant="ghost"
-                              disabled={busy}
-                              onPress={handleDeleteStore}
-                            />
-                          ) : null}
-                        </View>
-                  </AdminPanel>
+            {loading ? (
+              <View style={[styles.split, stacked && styles.splitStacked]}>
+                <View style={[styles.side, stacked && styles.sideStacked]}>
+                  <SkeletonBlock width="100%" height={150} rounded="lg" />
+                  <SkeletonBlock width="100%" height={150} rounded="lg" />
                 </View>
-              ) : null}
-
-              {desk === "zones" ? (
-                <View style={styles.formGap}>
-                <AdminPanel
-                  title="Create zone"
-                  icon="add-circle-outline"
-                  meta={draft.length >= 3 ? `${draft.length} points ready` : "Draw on Map first"}
-                  description="Name the zone and save. Need a shape? Open Map, tap Create zone, add 3+ points."
-                  action="Draw on map"
-                  onAction={() => {
-                    setMode("draw");
-                    setDesk("map");
-                  }}
-                >
-                  <ZoneCreateFields
-                    name={name}
-                    setName={setName}
-                    pins={pins}
-                    setPins={setPins}
-                    cities={cities}
-                    setCities={setCities}
-                    fee={fee}
-                    setFee={setFee}
-                    draftLen={draft.length}
-                    busy={busy}
-                    editing={Boolean(editingId)}
-                    onSave={handleSaveZone}
-                  />
-                </AdminPanel>
-                <AdminPanel
-                  title="Zones"
-                  icon="location-outline"
-                  meta={`${zones.length} total`}
-                  description="Turn a zone off, attach a drawn area, or delete it."
-                >
-                  {!zones.length ? (
-                    <Text style={[styles.muted, { color: c.textMuted }]}>
-                      {ADMIN_SCREEN_COPY.delivery.emptyZones}
-                    </Text>
-                  ) : (
-                    zones.map((z) => (
-                      <View key={String(z._id)} style={[styles.row, { borderColor: c.border }]}>
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <Text style={[styles.rowTitle, { color: c.textPrimary }]} numberOfLines={1}>
-                            {z.name}
-                          </Text>
-                          <Text style={[styles.rowMeta, { color: c.textMuted }]} numberOfLines={2}>
-                            {(z.polygon || []).length >= 3
-                              ? `${z.polygon.length} points`
-                              : "No shape"}
-                            {(z.postalCodes || []).length ? ` · ${(z.postalCodes || []).slice(0, 4).join(", ")}` : ""}
-                          </Text>
-                        </View>
-                        <View style={styles.rowRight}>
-                          <PremiumChip
-                            label={z.isActive === false ? "Off" : "Active"}
-                            tone={z.isActive === false ? "neutral" : "green"}
-                            size="sm"
-                            selected={z.isActive !== false}
-                            onPress={() => handleToggleZone(z)}
-                          />
-                          <PremiumChip label="Edit points" size="sm" onPress={() => startEditZone(z)} />
-                          {(z.polygon || []).length >= 3 ? (
-                            <PremiumChip label="Mapped" tone="green" size="sm" selected />
-                          ) : (
-                            <PremiumChip
-                              label="Use drawn area"
-                              size="sm"
-                              onPress={() => handleAttachArea(z._id)}
-                            />
-                          )}
-                          <PremiumChip label="Delete" size="sm" onPress={() => handleDeleteZone(z._id)} />
-                          <Text style={[styles.fee, { color: c.textPrimary }]}>
-                            {formatINR(Number(z.deliveryFee || 0))}
-                          </Text>
-                        </View>
-                      </View>
-                    ))
-                  )}
-                </AdminPanel>
+                {webMap ? (
+                  <View style={[styles.mapCol, stacked && styles.mapColStacked]}>
+                    <SkeletonBlock width="100%" height={mapHeight} rounded="lg" />
+                  </View>
+                ) : null}
+              </View>
+            ) : (
+              <View style={[styles.split, stacked && styles.splitStacked]}>
+                {webMap && stacked ? mapColumn : null}
+                <View style={[styles.side, stacked && styles.sideStacked]}>
+                  {!webMap && !editing ? <Text style={styles.phoneHint}>The outline is drawn on the web admin.</Text> : null}
+                  {sideContent}
                 </View>
-              ) : null}
-
-              {desk === "riders" ? (
-                <AdminPanel
-                  title="Riders"
-                  icon="bicycle-outline"
-                  meta="Enable partners in Users"
-                  description="Live GPS and active run counts."
-                  action="Users"
-                  onAction={() => navigation.navigate("AdminUsers")}
-                >
-                  {!partners.length ? (
-                    <Text style={[styles.muted, { color: c.textMuted }]}>
-                      {ADMIN_SCREEN_COPY.delivery.emptyPartners}
-                    </Text>
-                  ) : (
-                    partners.map((p) => (
-                      <View key={String(p._id)} style={[styles.row, { borderColor: c.border }]}>
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <Text style={[styles.rowTitle, { color: c.textPrimary }]} numberOfLines={1}>
-                            {p.name || "Partner"}
-                          </Text>
-                          <Text style={[styles.rowMeta, { color: c.textMuted }]} numberOfLines={1}>
-                            {p.phone || p.email || "—"} · {p.activeOrderCount || 0} active
-                          </Text>
-                        </View>
-                        <PremiumChip
-                          label={
-                            p.lastLocationAgeSeconds != null && p.lastLocationAgeSeconds < 900
-                              ? "Live GPS"
-                              : "Offline"
-                          }
-                          tone={
-                            p.lastLocationAgeSeconds != null && p.lastLocationAgeSeconds < 900
-                              ? "green"
-                              : "neutral"
-                          }
-                          size="sm"
-                          selected
-                        />
-                      </View>
-                    ))
-                  )}
-                </AdminPanel>
-              ) : null}
-            </View>
-          )}
+                {webMap && !stacked ? mapColumn : null}
+              </View>
+            )}
+          </View>
         </KankregAdminShell>
       </KankregScrollPage>
+      {dialog}
     </AdminScreenShell>
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    width: "100%",
-    alignSelf: "center",
-    maxWidth: "100%",
+function LegendDot({ color, label, styles, round }) {
+  return (
+    <View style={styles.legendItem}>
+      <View style={[styles.legendSwatch, { backgroundColor: color }, round && styles.legendRound]} />
+      <Text style={styles.legendText}>{label}</Text>
+    </View>
+  );
+}
+
+/** Floating result card on the map for "Test an address". */
+function CoverageCard({ chrome, isDark, result, busy, pin, onPin, onCheckPin, onClose, hasPoint }) {
+  const ok = result?.serviceable;
+  const tone = getAdminTone(result ? (ok ? "green" : "red") : "neutral", isDark);
+  return (
+    <View style={[coverageStyles.card, { backgroundColor: chrome.card, borderColor: chrome.line }]}>
+      <View style={coverageStyles.head}>
+        <Text style={[coverageStyles.title, { color: chrome.ink }]}>Test an address</Text>
+        <AdminButton icon="close" size="xs" variant="ghost" title="Close" onPress={onClose} />
+      </View>
+      {!result && !busy ? (
+        <Text style={[coverageStyles.muted, { color: chrome.inkFaint }]}>Click the map — or type a pincode below — to see what a customer there would be told.</Text>
+      ) : null}
+      {busy ? <Text style={[coverageStyles.muted, { color: chrome.inkFaint }]}>Checking…</Text> : null}
+      {result && !busy ? (
+        <View style={[coverageStyles.result, { backgroundColor: tone.bg, borderColor: tone.border }]}>
+          <View style={coverageStyles.resultTop}>
+            <Ionicons name={ok ? "checkmark-circle" : "close-circle"} size={18} color={tone.solid} />
+            <Text style={[coverageStyles.resultTitle, { color: tone.fg }]}>{ok ? `Delivers here${result.zoneName ? ` · ${result.zoneName}` : ""}` : "Not deliverable here"}</Text>
+          </View>
+          {ok ? (
+            <Text style={[coverageStyles.resultText, { color: chrome.ink }]}>
+              {Number(result.fee) ? `${formatRupees(result.fee)} delivery` : "Free delivery"}
+              {result.freeAbove && Number(result.fee) ? ` (free above ${formatRupees(result.freeAbove)})` : ""}
+              {result.etaLabel ? ` · about ${result.etaLabel}` : ""}
+              {result.distanceLabel ? ` · ${result.distanceLabel} from ${result.storeName || "the shop"}` : ""}
+            </Text>
+          ) : (
+            <Text style={[coverageStyles.resultText, { color: chrome.ink }]}>{result.message || "No zone or shop radius covers this spot."}</Text>
+          )}
+        </View>
+      ) : null}
+      <View style={coverageStyles.pinRow}>
+        <AdminInput value={pin} onChangeText={(t) => onPin(t.replace(/\D/g, "").slice(0, 6))} placeholder="Pincode" integer maxLength={6} style={{ flex: 1 }} />
+        <AdminButton label="Check" size="md" variant="soft" disabled={pin.length !== 6 || busy} onPress={onCheckPin} />
+      </View>
+      {!hasPoint && result ? <Text style={[coverageStyles.muted, { color: chrome.inkFaint }]}>{"Pincode checks can't know the exact pin, so they use pincode and city lists only."}</Text> : null}
+    </View>
+  );
+}
+
+const coverageStyles = StyleSheet.create({
+  card: {
+    position: "absolute",
+    left: 12,
+    bottom: 12,
+    width: 340,
+    maxWidth: "88%",
+    padding: 14,
+    gap: 10,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    ...Platform.select({ web: { boxShadow: "0 18px 44px -12px rgba(20,24,16,0.4), 0 2px 8px rgba(20,24,16,0.08)", zIndex: 1000 }, default: {} }),
   },
-  desk: adminShellContent(),
-  denied: { padding: spacing.lg, gap: spacing.md },
-  banner: { marginBottom: spacing.md },
-  deskCols: { gap: spacing.md },
-  formGap: { gap: spacing.sm },
-  modeRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
-  storeGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, flex: 1 },
-  muted: { fontSize: 13, paddingVertical: spacing.sm, fontFamily: fonts.regular },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  rowTitle: { fontFamily: fonts.semibold, fontSize: 14 },
-  rowMeta: { fontFamily: fonts.regular, fontSize: 12, marginTop: 2 },
-  rowRight: { alignItems: "flex-end", gap: 4 },
-  fee: { fontFamily: fonts.semibold, fontSize: 13 },
+  head: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  title: { fontSize: 14, fontFamily: fonts.bold },
+  muted: { fontSize: 12, lineHeight: 17, fontFamily: fonts.regular },
+  result: { padding: 10, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, gap: 4 },
+  resultTop: { flexDirection: "row", alignItems: "center", gap: 6 },
+  resultTitle: { flex: 1, fontSize: 13.5, fontFamily: fonts.bold },
+  resultText: { fontSize: 12.5, lineHeight: 18, fontFamily: fonts.regular },
+  pinRow: { flexDirection: "row", alignItems: "center", gap: 8 },
 });
+
+function createStyles(chrome, c, shadowPremium) {
+  return StyleSheet.create({
+    screen: { flex: 1, width: "100%", alignSelf: "center", maxWidth: "100%" },
+    desk: { ...adminShellContent(), gap: spacing.sm + 4 },
+    gatePanel: adminGatePanel(c, shadowPremium),
+    gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
+    split: { flexDirection: "row", alignItems: "flex-start", gap: 18 },
+    splitStacked: { flexDirection: "column", alignItems: "stretch", gap: 14 },
+    side: { width: 420, flexShrink: 0, gap: 12 },
+    sideStacked: { width: "100%" },
+    sideStack: { gap: 12 },
+    cardList: { gap: 10 },
+    mapCol: { flex: 1, minWidth: 0, gap: 10, ...Platform.select({ web: { position: "sticky", top: 84, alignSelf: "flex-start" }, default: {} }) },
+    mapColStacked: { width: "100%", ...Platform.select({ web: { position: "relative", top: 0 }, default: {} }) },
+    mapBar: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 10 },
+    toolTabs: { alignSelf: "flex-start" },
+    layerRow: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 },
+    mapFrame: {
+      position: "relative",
+      borderRadius: 18,
+      overflow: "hidden",
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: chrome.line,
+      ...Platform.select({ web: { boxShadow: "0 1px 1px rgba(31,51,31,0.03), 0 14px 34px -22px rgba(31,51,31,0.3)" }, default: {} }),
+    },
+    legend: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 14, paddingHorizontal: 4 },
+    legendItem: { flexDirection: "row", alignItems: "center", gap: 6 },
+    legendSwatch: { width: 12, height: 8, borderRadius: 2 },
+    legendRound: { width: 10, height: 10, borderRadius: 5 },
+    legendText: { fontSize: 11.5, color: chrome.inkSoft, fontFamily: fonts.regular },
+    notice: { flexDirection: "row", alignItems: "flex-start", gap: 8, padding: 12, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth },
+    noticeText: { flex: 1, fontSize: 12.5, lineHeight: 18, fontFamily: fonts.medium },
+    phoneHint: { fontSize: 13, lineHeight: 18, color: chrome.inkSoft, fontFamily: fonts.medium },
+  });
+}

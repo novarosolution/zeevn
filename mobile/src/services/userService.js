@@ -2,6 +2,11 @@ import { apiGet, apiPatch, apiPost, apiPut, apiRequest } from "./apiClient";
 
 export const fetchUserProfile = () => apiRequest("/users/profile");
 
+export const fetchMyDeletion = () => apiGet("/users/account-deletion");
+
+export const requestAccountDeletion = (reason) =>
+  apiPost("/users/account-deletion", { reason: reason || undefined });
+
 /** @param {string} [_token] */
 export const updateUserProfile = (_token, payload) => apiPut("/users/profile", payload);
 
@@ -42,6 +47,10 @@ export const registerMyPushToken = (_token, pushToken) =>
   apiPost("/users/push-token", { pushToken });
 
 /** @param {string} [_token] */
+export const fetchHelpFaqs = () => apiGet("/faqs", { auth: false });
+
+export const fetchStoreInfo = () => apiGet("/store-info", { auth: false });
+
 export const fetchMySupportThread = (_token) => apiGet("/users/support-thread");
 
 /** @param {string} [_token] */

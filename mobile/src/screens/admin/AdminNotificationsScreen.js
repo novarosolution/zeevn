@@ -1,84 +1,83 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { KeyboardAvoidingView, Platform, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
-import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
+import SectionReveal from "../../components/motion/SectionReveal";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
-import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
-import { useAuth } from "../../context/AuthContext";
-import { useTheme } from "../../context/ThemeContext";
-import {
-  fetchAdminNotifications,
-  sendAdminBroadcastNotification} from "../../services/adminService";
-import {
-  adminGatePanel,
-  adminShellContent,
-  adminTwoColAside,
-  adminTwoColMain,
-  adminTwoColStyle,
-  useAdminCompactLayout,
-} from "../../theme/adminLayout";
-import AdminPanel from "../../components/admin/AdminPanel";
+import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import AdminAlerts from "../../components/admin/AdminAlerts";
-import AdminDataTable from "../../components/admin/AdminDataTable";
-import { customerScrollFill } from "../../theme/screenLayout";
-import { spacing, typography } from "../../theme/tokens";
-import PremiumLoader from "../../components/ui/PremiumLoader";
+import AdminButton from "../../components/admin/AdminButton";
+import AdminInput from "../../components/admin/AdminInput";
+import { useAdminConfirm } from "../../components/admin/AdminDialog";
+import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumInput from "../../components/ui/PremiumInput";
-import PremiumButton from "../../components/ui/PremiumButton";
-import SectionReveal from "../../components/motion/SectionReveal";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { fetchAdminNotifications, sendAdminBroadcastNotification } from "../../services/adminService";
+import { adminGatePanel, adminShellContent, useAdminChrome } from "../../theme/adminLayout";
+import { customerScrollFill } from "../../theme/screenLayout";
+import { fonts, radius, spacing } from "../../theme/tokens";
+import { formatShortDateTime } from "../../utils/adminFormat";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
+const COPY = ADMIN_SCREEN_COPY.notifications;
+
 export default function AdminNotificationsScreen({ navigation, route }) {
+  const { user } = useAuth();
   const { colors: c, shadowPremium } = useTheme();
-  const compact = useAdminCompactLayout();
-  const styles = useMemo(() => createAdminNotificationsStyles(c, shadowPremium), [c, shadowPremium]);
-    const { user, token } = useAuth();
+  const chrome = useAdminChrome();
+  const isAdmin = Boolean(user?.isAdmin);
+  const styles = useMemo(() => createStyles(chrome, c, shadowPremium), [chrome, c, shadowPremium]);
+  const { confirm, dialog } = useAdminConfirm();
+
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
-  const loadNotifications = useCallback(async () => {
+  const load = useCallback(async () => {
     try {
-      setLoading(true);
       setError("");
-      const data = await fetchAdminNotifications(token);
-      setItems(data);
+      const list = await fetchAdminNotifications();
+      setItems(Array.isArray(list) ? list.filter((row) => row.kind !== "riders") : []);
     } catch (err) {
-      setError(err.message || "Unable to load notifications.");
+      setError(err.message || "Couldn't load broadcasts.");
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, []);
 
   useEffect(() => {
-    if (!user?.isAdmin) return;
-    loadNotifications();
-  }, [user, loadNotifications]);
+    if (!isAdmin) return;
+    load();
+  }, [isAdmin, load]);
 
-  const handleSend = async () => {
-    if (!title.trim() || !message.trim()) {
-      setError("Title and message are required.");
-      return;
-    }
+  const onPull = async () => {
+    setRefreshing(true);
     try {
-      setSending(true);
-      setError("");
-      setSuccess("");
-      await sendAdminBroadcastNotification(token, {
-        title: title.trim(),
-        message: message.trim()});
+      await load();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const canSend = Boolean(title.trim() && message.trim()) && !sending;
+  const handleSend = async () => {
+    if (!canSend) return;
+    const ok = await confirm({ title: COPY.confirm, confirmLabel: "Send" });
+    if (!ok) return;
+    setSending(true);
+    try {
+      await sendAdminBroadcastNotification(null, { title: title.trim(), message: message.trim() });
       setTitle("");
       setMessage("");
-      setSuccess("Notification sent to all users.");
-      await loadNotifications();
+      await load();
     } catch (err) {
-      setError(err.message || "Unable to send notification.");
+      setError(err.message || "Couldn't send this broadcast.");
     } finally {
       setSending(false);
     }
@@ -87,24 +86,13 @@ export default function AdminNotificationsScreen({ navigation, route }) {
   if (user && !user.isAdmin) {
     return (
       <AdminScreenShell style={styles.screen}>
-        <KankregScrollPage
-        scrollVariant="inner"
-        showFooter={false}
-          style={customerScrollFill}
-          showsVerticalScrollIndicator={false}
-        >
+        <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner
-                severity="warning"
-                title={ADMIN_GATE.title}
-                message="This account does not have admin privileges."
-              />
+              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <PremiumButton
                 label={ADMIN_GATE.backHome}
-                iconLeft="home-outline"
                 variant="primary"
-                size="md"
                 onPress={() => navigateCustomerRoute(navigation, "Home")}
                 style={styles.gateCta}
               />
@@ -119,156 +107,105 @@ export default function AdminNotificationsScreen({ navigation, route }) {
     <AdminScreenShell style={styles.screen}>
       <KeyboardAvoidingView style={customerScrollFill} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <KankregScrollPage
-        scrollVariant="admin"
-        showFooter={false}
+          scrollVariant="admin"
+          showFooter={false}
           style={customerScrollFill}
-          showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          refreshControl={
+            Platform.OS === "web" ? undefined : (
+              <RefreshControl refreshing={refreshing} onRefresh={onPull} tintColor={c.primary} colors={[c.primary]} />
+            )
+          }
         >
           <KankregAdminShell
             navigation={navigation}
             route={route}
-            title={ADMIN_SCREEN_COPY.notifications.title}
-            subtitle={ADMIN_SCREEN_COPY.notifications.subtitle}
-            headerRight={
-              <PremiumButton
-                label="Refresh"
-                variant="secondary"
-                size="sm"
-                iconLeft="refresh-outline"
-                onPress={loadNotifications}
-                disabled={loading}
-                loading={loading}
-              />
-            }
+            title={COPY.title}
+            subtitle={COPY.subtitle}
+            headerRight={<AdminButton label="Refresh" icon="refresh-outline" variant="ghost" size="sm" onPress={load} />}
           >
-          <View style={styles.panel}>
-          <AdminAlerts error={error} success={success} onCloseError={() => setError("")} onCloseSuccess={() => setSuccess("")} />
+            <View style={styles.panel}>
+              <AdminAlerts error={error} onCloseError={() => setError("")} />
 
-          <View style={adminTwoColStyle(compact)}>
-            <View style={adminTwoColMain(compact, 1.1)}>
-            <AdminPanel
-              title="Compose broadcast"
-              icon="megaphone-outline"
-              meta="Push to all customers"
-              description="Title + message go to every signed-in customer."
-            >
-              <View style={styles.fieldGap}>
-                <PremiumInput
-                  label="Notification title"
+              <View style={styles.form}>
+                <AdminInput
+                  label="Title"
                   value={title}
                   onChangeText={setTitle}
-                  iconLeft="megaphone-outline"
+                  placeholder="What customers should see first"
+                  maxLength={120}
+                  icon="megaphone-outline"
                 />
-              </View>
-              <View style={styles.fieldGap}>
-                <PremiumInput
+                <AdminInput
                   label="Message"
                   value={message}
                   onChangeText={setMessage}
-                  placeholder="Write message for all users…"
+                  placeholder="One note for every customer"
+                  maxLength={1000}
                   multiline
-                  numberOfLines={4}
-                  iconLeft="document-text-outline"
+                  numberOfLines={5}
+                  icon="document-text-outline"
+                />
+                <AdminButton
+                  label={sending ? "Sending…" : "Send to all customers"}
+                  icon="send-outline"
+                  variant="primary"
+                  disabled={!canSend}
+                  onPress={handleSend}
                 />
               </View>
 
-              <PremiumButton
-                label={sending ? "Sending…" : "Send to all users"}
-                iconLeft="megaphone-outline"
-                variant="primary"
-                size="md"
-                loading={sending}
-                disabled={sending}
-                onPress={handleSend}
-                fullWidth
-              />
-            </AdminPanel>
-            </View>
-            <View style={adminTwoColAside(compact)}>
-          <AdminPanel
-            title="Sent notifications"
-            icon="time-outline"
-            meta={`${items.length} broadcasts`}
-            description="History of broadcasts sent from this desk."
-            noPadding
-          >
-            {loading ? (
-              <View style={styles.loaderWrap}>
-                <PremiumLoader size="sm" caption="Loading sent notifications…" />
+              <View style={styles.list}>
+                {loading ? <Text style={styles.muted}>Loading…</Text> : null}
+                {!loading && items.length === 0 ? (
+                  <PremiumEmptyState iconName="megaphone-outline" title={COPY.empty} compact />
+                ) : null}
+                {items.map((row) => (
+                  <View key={row._id} style={styles.card}>
+                    <Text style={styles.title}>{row.title}</Text>
+                    <Text style={styles.body}>{row.message}</Text>
+                    <Text style={styles.muted}>
+                      {row.createdBy?.name || "Admin"}
+                      {row.createdAt ? ` · ${formatShortDateTime(row.createdAt)}` : ""}
+                      {` · ${row.pushSent || 0} push${row.pushSent === 1 ? "" : "es"}`}
+                    </Text>
+                  </View>
+                ))}
               </View>
-            ) : items.length === 0 ? (
-              <PremiumEmptyState
-                iconName="notifications-outline"
-                title={ADMIN_SCREEN_COPY.notifications.empty}
-                description="Compose a message above to reach everyone."
-                compact
-              />
-            ) : (
-              <AdminDataTable
-                rows={items}
-                keyExtractor={(row) => row._id}
-                columns={[
-                  { key: "title", label: "Title", flex: 1.2, strong: true, render: (r) => r.title },
-                  { key: "message", label: "Message", flex: 1.6, render: (r) => r.message },
-                  {
-                    key: "sent",
-                    label: "Sent",
-                    flex: 0.9,
-                    render: (r) => (r.createdAt ? new Date(r.createdAt).toLocaleString() : "—"),
-                  },
-                ]}
-              />
-            )}
-          </AdminPanel>
             </View>
-          </View>
-          </View>
           </KankregAdminShell>
-</KankregScrollPage>
+        </KankregScrollPage>
       </KeyboardAvoidingView>
+      {dialog}
     </AdminScreenShell>
   );
 }
 
-function createAdminNotificationsStyles(c, shadowPremium) {
+function createStyles(chrome, c, shadowPremium) {
   return StyleSheet.create({
-    screen: {
-      flex: 1},
-    panel: adminShellContent(),
+    screen: { flex: 1, width: "100%" },
+    panel: { ...adminShellContent(), gap: spacing.md },
     gatePanel: adminGatePanel(c, shadowPremium),
-    gateCta: {
-      marginTop: spacing.md,
-      alignSelf: "flex-start"},
-    composeCard: {
-      marginTop: spacing.xs},
-    composeLabel: {
-      fontSize: typography.bodySmall,
-      fontWeight: "800",
-      marginBottom: spacing.sm,
-      letterSpacing: 0.2},
-    sectionTitle: {
-      fontSize: typography.h3,
-      fontWeight: "700",
-      marginBottom: spacing.sm},
-    bannerSpacer: {
-      marginBottom: spacing.sm},
-    fieldGap: {
-      marginBottom: spacing.sm},
-    refreshBelowSend: {
-      marginTop: spacing.sm},
-    sentCard: {
-      marginBottom: spacing.sm},
-    itemTitle: {
-      fontSize: typography.body,
-      fontWeight: "700"},
-    itemMessage: {
-      marginTop: 4,
-      fontSize: typography.bodySmall,
-      lineHeight: 18},
-    itemMeta: {
-      marginTop: spacing.xs,
-      fontSize: typography.caption},
-    loaderWrap: {
-      paddingVertical: spacing.md}});
+    gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
+    form: {
+      gap: spacing.sm,
+      padding: spacing.md,
+      borderRadius: radius.lg,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: chrome.line,
+      backgroundColor: chrome.card,
+    },
+    list: { gap: spacing.sm },
+    card: {
+      gap: 4,
+      padding: spacing.md,
+      borderRadius: radius.lg,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: chrome.line,
+      backgroundColor: chrome.card,
+    },
+    title: { color: chrome.ink, fontFamily: fonts.semibold, fontSize: 15 },
+    body: { color: chrome.inkSoft, fontFamily: fonts.regular, fontSize: 13, lineHeight: 19 },
+    muted: { color: chrome.inkFaint, fontFamily: fonts.medium, fontSize: 12 },
+  });
 }

@@ -1,97 +1,83 @@
 import React, { useMemo } from "react";
-import { Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { getAdminChrome } from "../../theme/adminLayout";
+import { fonts } from "../../theme/tokens";
 import { FONT_HEADING } from "../../theme/typographyRoles";
-import AdminStatusPill from "./AdminStatusPill";
+import { formatRupees } from "../../utils/adminFormat";
+import AdminBadge from "./AdminBadge";
 
-export default function AdminCouponTicket({
-  code,
-  description,
-  usageText,
-  status,
-  active,
-  onToggle,
-  onPress,
-}) {
+function valueLabel(coupon) {
+  if (coupon.type === "flat") return `${formatRupees(coupon.value)} off`;
+  return `${Number(coupon.value || 0)}% off`;
+}
+
+function expiryLabel(value) {
+  if (!value) return "No expiry";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "No expiry";
+  return d.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", year: "numeric" });
+}
+
+function usageLabel(coupon) {
+  const used = Number(coupon.usedCount || 0);
+  const limit = Number(coupon.usageLimit);
+  if (Number.isFinite(limit) && limit >= 1) return `${used} / ${limit} used`;
+  return `${used} / unlimited`;
+}
+
+export default function AdminCouponTicket({ coupon, onPress }) {
   const { colors: c, isDark } = useTheme();
   const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
-  const styles = useMemo(() => createStyles(chrome), [chrome]);
-  const tone = status === "Active" ? "ok" : status === "Expired" ? "cancel" : "pend";
-  const Wrap = onPress ? Pressable : View;
-  const wrapProps = onPress ? { onPress, accessibilityRole: "button" } : {};
+  const issued = Boolean(coupon.issuedForUser);
+  const styles = useMemo(() => createStyles(chrome, Boolean(onPress) && !issued), [chrome, onPress, issued]);
+  const customer = coupon.issuedForName || coupon.issuedForEmail || "Customer";
+  const Wrap = issued || !onPress ? View : Pressable;
+  const wrapProps = issued || !onPress ? {} : { onPress, accessibilityRole: "button", accessibilityLabel: `Edit ${coupon.code}` };
 
   return (
     <Wrap style={styles.ticket} {...wrapProps}>
-      <View style={styles.top}>
-        <Text style={styles.code}>{code}</Text>
-        <Switch
-          value={active}
-          onValueChange={onToggle}
-          trackColor={{ false: chrome.paper, true: chrome.gold }}
-          thumbColor={c.surface}
-        />
-      </View>
-      <Text style={styles.desc}>{description}</Text>
-      <View style={styles.foot}>
-        <Text style={styles.usage}>{usageText}</Text>
-        <AdminStatusPill label={status} tone={tone} />
+      <Text style={styles.code}>{coupon.code}</Text>
+      {coupon.title ? <Text style={styles.title}>{coupon.title}</Text> : null}
+      <Text style={styles.meta}>
+        {coupon.type === "flat" ? "Flat" : "Percent"} · {valueLabel(coupon)}
+      </Text>
+      <Text style={styles.meta}>Minimum {formatRupees(coupon.minOrderAmount || 0)}</Text>
+      <Text style={styles.meta}>{usageLabel(coupon)}</Text>
+      <Text style={styles.meta}>{expiryLabel(coupon.expiresAt)}</Text>
+      {issued ? <Text style={styles.issued}>Issued for {customer}</Text> : null}
+      <View style={styles.pills}>
+        <AdminBadge label={coupon.isActive === false ? "Off" : "Active"} tone={coupon.isActive === false ? "neutral" : "green"} size="sm" />
+        {coupon.isVisibleToUsers === false ? <AdminBadge label="Hidden" tone="gold" size="sm" /> : null}
+        {coupon.isOneTimePerUser ? <AdminBadge label="One-time" tone="purple" size="sm" /> : null}
       </View>
     </Wrap>
   );
 }
 
-function createStyles(chrome) {
+function createStyles(chrome, clickable) {
   return StyleSheet.create({
     ticket: {
       backgroundColor: chrome.card,
       borderWidth: 1,
       borderColor: chrome.line,
       borderRadius: 16,
-      padding: 18,
-      overflow: "hidden",
-      position: "relative",
+      padding: 16,
+      gap: 4,
       ...Platform.select({
-        web: {
-          boxShadow: "0 1px 2px rgba(25,20,15,.04), 0 12px 28px -18px rgba(25,20,15,.14)",
-          transition: "transform 0.15s ease, box-shadow 0.15s ease",
-        },
+        web: clickable ? { cursor: "pointer" } : {},
         default: {},
       }),
-    },
-    top: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
     },
     code: {
       fontFamily: FONT_HEADING,
       fontSize: 18,
-      fontWeight: "600",
       letterSpacing: 0.4,
       color: chrome.ink,
     },
-    desc: {
-      fontSize: 12.5,
-      color: chrome.inkSoft,
-      marginVertical: 8,
-      lineHeight: 18,
-    },
-    foot: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      borderTopWidth: 1,
-      borderStyle: "dashed",
-      borderTopColor: chrome.line,
-      paddingTop: 10,
-      marginTop: 4,
-    },
-    usage: {
-      fontSize: 11,
-      color: chrome.inkFaint,
-      flex: 1,
-      marginRight: 8,
-    },
+    title: { fontSize: 13.5, color: chrome.ink, fontFamily: fonts.semibold },
+    meta: { fontSize: 12.5, color: chrome.inkSoft, fontFamily: fonts.regular },
+    issued: { marginTop: 4, fontSize: 12.5, color: chrome.ink, fontFamily: fonts.semibold },
+    pills: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 8 },
   });
 }

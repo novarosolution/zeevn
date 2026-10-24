@@ -1354,7 +1354,7 @@ export const ADMIN_HOME_VIEW_COPY = {
     "Theme for the app Home: greeting, banner and festive picks. Auto follows the festival calendar built into the app. Customers see a change when they next refresh Home.",
   // Keys must match the backend allow-list (backend/src/utils/festivalKey.js) and FESTIVAL_THEMES in storefrontContent.js.
   festivalOptions: [
-    { key: "", label: "Auto (follow calendar)" },
+    { key: "", label: "Auto (follow the calendar)" },
     { key: "everyday", label: "Everyday" },
     { key: "diwali", label: "Diwali" },
   ],

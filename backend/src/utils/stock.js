@@ -1,4 +1,5 @@
 const Product = require("../models/Product");
+const { qtyOf, recordStockChange } = require("./stockHistory");
 
 function availableQty(product) {
   if (!product) return 0;
@@ -33,8 +34,9 @@ function validateOrderStockLines(normalizedItems, productMap) {
 }
 
 /** Atomically deduct stock for order lines with MongoDB product ids. */
-async function deductStockForOrderLines(orderLines = []) {
+async function deductStockForOrderLines(orderLines = [], ctx = {}) {
   const adjusted = [];
+  const changes = [];
   for (const line of orderLines) {
     const productId = line.product;
     if (!productId) continue;
@@ -54,18 +56,31 @@ async function deductStockForOrderLines(orderLines = []) {
       throw err;
     }
 
-    if (Number(updated.stockQty) <= 0) {
+    const after = qtyOf(updated.stockQty);
+    if (after <= 0) {
       updated.inStock = false;
       await updated.save();
     }
 
     adjusted.push({ product: productId, quantity: qty, name: line.name });
+    changes.push({ product: updated, before: after + qty, after });
+  }
+
+  for (const row of changes) {
+    await recordStockChange({
+      product: row.product,
+      before: row.before,
+      after: row.after,
+      why: "sale",
+      order: ctx.order,
+      orderRef: ctx.orderRef,
+    });
   }
   return adjusted;
 }
 
-/** Restore stock when an order is cancelled after deduction. */
-async function restoreStockForOrderLines(orderLines = []) {
+/** Restore stock when an order is cancelled after deduction. Pass why to log; omit on deduct rollback. */
+async function restoreStockForOrderLines(orderLines = [], ctx = {}) {
   for (const line of orderLines) {
     const productId = line.product;
     if (!productId) continue;
@@ -76,9 +91,24 @@ async function restoreStockForOrderLines(orderLines = []) {
       { $inc: { stockQty: qty }, $set: { inStock: true } },
       { new: true }
     );
-    if (updated && Number(updated.stockQty) < 1) {
+    if (!updated) continue;
+    const after = qtyOf(updated.stockQty);
+    if (after < 1) {
       updated.inStock = false;
       await updated.save();
+    }
+    if (ctx.why) {
+      await recordStockChange({
+        product: updated,
+        before: Math.max(0, after - qty),
+        after,
+        why: ctx.why,
+        who: ctx.who,
+        order: ctx.order,
+        orderRef: ctx.orderRef,
+        receipt: ctx.receipt,
+        receiptNote: ctx.receiptNote,
+      });
     }
   }
 }

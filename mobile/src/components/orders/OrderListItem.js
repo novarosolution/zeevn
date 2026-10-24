@@ -6,6 +6,7 @@ import OrderLiveMapCard from "./OrderLiveMapCard";
 import OrdersPremiumCard from "./OrdersPremiumCard";
 import OrderDetailPanel from "./OrderDetailPanel";
 import OrderCardActions from "./OrderCardActions";
+import OrderReturnRequest from "./OrderReturnRequest";
 import PremiumInput from "../ui/PremiumInput";
 import PremiumButton from "../ui/PremiumButton";
 import { isDeliveredOrder } from "../../utils/orderStatus";
@@ -70,6 +71,8 @@ function OrderListItem({
       />
 
       {expanded ? <OrderDetailPanel order={order} /> : null}
+
+      <OrderReturnRequest order={order} token={token} onChanged={onRefreshOrders} />
 
       {editing ? (
         <View style={styles.editBox}>

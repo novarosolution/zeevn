@@ -27,6 +27,7 @@ import { formatCompactShippingLine } from "../../utils/shippingAddressFormat";
 import { productImageUri } from "../../utils/storefront";
 import OrderLiveMapCard from "../orders/OrderLiveMapCard";
 import PaymentStatusBanner from "../payments/PaymentStatusBanner";
+import OrderReturnRequest from "../orders/OrderReturnRequest";
 import SkeletonBlock from "../ui/SkeletonBlock";
 import FloatingNav from "./FloatingNav";
 import PressableScale from "./PressableScale";
@@ -410,6 +411,7 @@ function OrderCardBase({
         </View>
 
         {expanded ? <Breakdown order={order} /> : null}
+        <OrderReturnRequest order={order} token={token} onChanged={handlers.onReload} />
         {editing ? (
           <EditAddress
             form={addressForm}

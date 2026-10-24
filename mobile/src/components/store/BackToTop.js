@@ -4,10 +4,12 @@ import { Ionicons } from "@expo/vector-icons";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useStoreTheme } from "../../theme/storefront";
 import { hapticTick } from "../../utils/haptics";
+import Glass from "./Glass";
 import PressableScale from "./PressableScale";
-/** “↑ Back to top” solid pill. */
+
+/** “↑ Back to top” — a small glass pill that floats under the pinned header. */
 export default function BackToTop({ visible, onPress, top, label = "Back to top" }) {
-  const { c, type, shadow } = useStoreTheme();
+  const { c, type } = useStoreTheme();
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -28,28 +30,20 @@ export default function BackToTop({ visible, onPress, top, label = "Back to top"
         }}
         accessibilityRole="button"
         accessibilityLabel={label}
-        style={[
-          styles.pill,
-          shadow.lift,
-          { backgroundColor: c.card, borderColor: c.line },
-        ]}
       >
-        <Ionicons name="arrow-up-circle-outline" size={20} color={c.ink} />
-        <Text style={type.ui(14, "bold", c.ink)}>{label}</Text>
+        <Glass material="thin" radius={PILL_H / 2} lift style={styles.pill} contentStyle={styles.pillBody}>
+          <Ionicons name="arrow-up" size={15} color={c.ink} />
+          <Text style={type.ui(13.5, "bold", c.ink)}>{label}</Text>
+        </Glass>
       </PressableScale>
     </Animated.View>
   );
 }
 
+const PILL_H = 38;
+
 const styles = StyleSheet.create({
   wrap: { position: "absolute", left: 0, right: 0, alignItems: "center", zIndex: 40 },
-  pill: {
-    height: 44,
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    paddingHorizontal: 16,
-  },
+  pill: { height: PILL_H },
+  pillBody: { height: PILL_H, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 15 },
 });

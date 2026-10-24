@@ -1,14 +1,55 @@
 const Coupon = require("../models/Coupon");
 const {
   normalizeCouponCode,
+  couponCodeQuery,
+  parseCouponExpiry,
   getCouponValidationError,
   computeCouponDiscount,
 } = require("../utils/coupon");
+const { recordAdminAction } = require("../utils/adminLog");
+
+function present(doc) {
+  const user = doc.issuedForUser && typeof doc.issuedForUser === "object" ? doc.issuedForUser : null;
+  return {
+    _id: String(doc._id),
+    code: doc.code,
+    title: doc.title || "",
+    type: doc.type === "flat" ? "flat" : "percent",
+    value: Number(doc.value || 0),
+    minOrderAmount: Number(doc.minOrderAmount || 0),
+    maxDiscountAmount: Number(doc.maxDiscountAmount || 0) || null,
+    usageLimit: Number.isFinite(Number(doc.usageLimit)) && Number(doc.usageLimit) >= 1 ? Number(doc.usageLimit) : null,
+    usedCount: Number(doc.usedCount || 0),
+    isActive: doc.isActive !== false,
+    isVisibleToUsers: doc.isVisibleToUsers !== false,
+    isOneTimePerUser: Boolean(doc.isOneTimePerUser),
+    expiresAt: doc.expiresAt || null,
+    issuedForUser: user?._id ? String(user._id) : doc.issuedForUser ? String(doc.issuedForUser) : null,
+    issuedForName: user?.name || "",
+    issuedForEmail: user?.email || "",
+    createdAt: doc.createdAt,
+  };
+}
+
+function optionalAmount(value, fallback = null) {
+  if (value === "" || value == null) return fallback;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function optionalUsageLimit(value) {
+  if (value === "" || value == null) return { ok: true, value: null };
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n) || n < 1) {
+    return { ok: false, message: "Usage limit must be a whole number of at least 1." };
+  }
+  return { ok: true, value: n };
+}
 
 async function getAdminCoupons(req, res, next) {
   try {
-    const coupons = await Coupon.find().sort({ createdAt: -1 });
-    res.json(coupons);
+    const coupons = await Coupon.find().sort({ createdAt: -1 }).populate("issuedForUser", "name email").lean();
+    res.json(coupons.map(present));
   } catch (error) {
     next(error);
   }
@@ -33,7 +74,10 @@ async function createAdminCoupon(req, res, next) {
       return res.status(400).json({ message: "Percent coupon cannot be more than 100." });
     }
 
-    const existing = await Coupon.findOne({ code });
+    const usage = optionalUsageLimit(req.body?.usageLimit);
+    if (!usage.ok) return res.status(400).json({ message: usage.message });
+
+    const existing = await Coupon.findOne(couponCodeQuery(code));
     if (existing) {
       return res.status(400).json({ message: "Coupon code already exists." });
     }
@@ -43,23 +87,26 @@ async function createAdminCoupon(req, res, next) {
       title: String(req.body?.title || "").trim(),
       type,
       value,
-      minOrderAmount: Number(req.body?.minOrderAmount || 0),
-      maxDiscountAmount:
-        req.body?.maxDiscountAmount === "" || req.body?.maxDiscountAmount === null
-          ? null
-          : Number(req.body?.maxDiscountAmount),
-      usageLimit:
-        req.body?.usageLimit === "" || req.body?.usageLimit === null
-          ? null
-          : Number(req.body?.usageLimit),
+      minOrderAmount: Math.max(0, optionalAmount(req.body?.minOrderAmount, 0) || 0),
+      maxDiscountAmount: optionalAmount(req.body?.maxDiscountAmount, null),
+      usageLimit: usage.value,
       isActive: req.body?.isActive !== false,
       isVisibleToUsers: req.body?.isVisibleToUsers !== false,
       isOneTimePerUser: Boolean(req.body?.isOneTimePerUser),
-      expiresAt: req.body?.expiresAt ? new Date(req.body.expiresAt) : null,
+      expiresAt: parseCouponExpiry(req.body?.expiresAt),
     });
 
-    res.status(201).json(coupon);
+    await recordAdminAction(req, {
+      action: "Created coupon",
+      subject: coupon.code || "Coupon",
+      tab: "catalog",
+      href: { screen: "AdminCoupons" },
+    });
+    res.status(201).json(present(coupon));
   } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(400).json({ message: "Coupon code already exists." });
+    }
     next(error);
   }
 }
@@ -70,11 +117,14 @@ async function updateAdminCoupon(req, res, next) {
     if (!coupon) {
       return res.status(404).json({ message: "Coupon not found." });
     }
+    if (coupon.issuedForUser) {
+      return res.status(400).json({ message: "This code was issued to a customer and is not edited here." });
+    }
 
     if (req.body?.code !== undefined) {
       const code = normalizeCouponCode(req.body.code);
       if (!code) return res.status(400).json({ message: "Coupon code cannot be empty." });
-      const duplicate = await Coupon.findOne({ code, _id: { $ne: coupon._id } });
+      const duplicate = await Coupon.findOne({ ...couponCodeQuery(code), _id: { $ne: coupon._id } });
       if (duplicate) return res.status(400).json({ message: "Coupon code already exists." });
       coupon.code = code;
     }
@@ -98,19 +148,15 @@ async function updateAdminCoupon(req, res, next) {
       return res.status(400).json({ message: "Percent coupon cannot be more than 100." });
     }
     if (req.body?.minOrderAmount !== undefined) {
-      coupon.minOrderAmount = Number(req.body.minOrderAmount || 0);
+      coupon.minOrderAmount = Math.max(0, optionalAmount(req.body.minOrderAmount, 0) || 0);
     }
     if (req.body?.maxDiscountAmount !== undefined) {
-      coupon.maxDiscountAmount =
-        req.body.maxDiscountAmount === "" || req.body.maxDiscountAmount === null
-          ? null
-          : Number(req.body.maxDiscountAmount);
+      coupon.maxDiscountAmount = optionalAmount(req.body.maxDiscountAmount, null);
     }
     if (req.body?.usageLimit !== undefined) {
-      coupon.usageLimit =
-        req.body.usageLimit === "" || req.body.usageLimit === null
-          ? null
-          : Number(req.body.usageLimit);
+      const usage = optionalUsageLimit(req.body.usageLimit);
+      if (!usage.ok) return res.status(400).json({ message: usage.message });
+      coupon.usageLimit = usage.value;
     }
     if (req.body?.isActive !== undefined) coupon.isActive = Boolean(req.body.isActive);
     if (req.body?.isVisibleToUsers !== undefined) {
@@ -120,12 +166,22 @@ async function updateAdminCoupon(req, res, next) {
       coupon.isOneTimePerUser = Boolean(req.body.isOneTimePerUser);
     }
     if (req.body?.expiresAt !== undefined) {
-      coupon.expiresAt = req.body.expiresAt ? new Date(req.body.expiresAt) : null;
+      coupon.expiresAt = parseCouponExpiry(req.body.expiresAt);
     }
 
     await coupon.save();
-    res.json(coupon);
+    const saved = await coupon.populate("issuedForUser", "name email");
+    await recordAdminAction(req, {
+      action: "Edited coupon",
+      subject: coupon.code || "Coupon",
+      tab: "catalog",
+      href: { screen: "AdminCoupons" },
+    });
+    res.json(present(saved));
   } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(400).json({ message: "Coupon code already exists." });
+    }
     next(error);
   }
 }

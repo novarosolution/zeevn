@@ -1,5 +1,24 @@
 function normalizeCouponCode(rawCode = "") {
-  return String(rawCode || "").trim().toUpperCase();
+  return String(rawCode || "").replace(/\s+/g, "").toUpperCase();
+}
+
+/** Match a stored code even if older rows still contain spaces. */
+function couponCodeQuery(raw) {
+  const code = normalizeCouponCode(raw);
+  if (!code) return null;
+  const escaped = code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return { $or: [{ code }, { code: new RegExp(`^${[...escaped].join("\\s*")}$`, "i") }] };
+}
+
+/** Start of that calendar day in Asia/Kolkata. Empty is no expiry. */
+function parseCouponExpiry(value) {
+  if (value === "" || value == null) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const day = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+  if (day) return new Date(`${day[1]}-${day[2]}-${day[3]}T00:00:00+05:30`);
+  const when = new Date(raw);
+  return Number.isNaN(when.getTime()) ? null : when;
 }
 
 function getCouponValidationError(coupon, subtotal) {
@@ -16,7 +35,7 @@ function getCouponValidationError(coupon, subtotal) {
     return "Coupon usage limit reached.";
   }
   if (Number(subtotal || 0) < Number(coupon.minOrderAmount || 0)) {
-    return `Minimum order for this coupon is ${Number(coupon.minOrderAmount || 0).toFixed(2)}.`;
+    return `Minimum order for this coupon is ₹${Math.max(0, Math.round(Number(coupon.minOrderAmount || 0)))}.`;
   }
   return "";
 }
@@ -42,6 +61,8 @@ function computeCouponDiscount(coupon, subtotal) {
 
 module.exports = {
   normalizeCouponCode,
+  couponCodeQuery,
+  parseCouponExpiry,
   getCouponValidationError,
   computeCouponDiscount,
 };

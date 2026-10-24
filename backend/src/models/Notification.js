@@ -25,11 +25,17 @@ const notificationSchema = new mongoose.Schema(
       default: null,
       index: true,
     },
-    /** broadcast | order */
+    /** broadcast | order | riders */
     kind: {
       type: String,
       default: "broadcast",
       trim: true,
+    },
+    /** How many Expo pushes were handed over when this row was sent. */
+    pushSent: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
     order: {
       type: mongoose.Schema.Types.ObjectId,

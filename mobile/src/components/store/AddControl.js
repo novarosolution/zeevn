@@ -42,8 +42,31 @@ function Pill({ height, minWidth, children, style }) {
 }
 
 /**
+ * The quiet ADD for dense grids: a tinted outline with no shadow, so the photos lead and only what is already in the
+ * bag turns solid green.
+ */
+function SoftPill({ height, children }) {
+  const { c, isDark } = useStoreTheme();
+  return (
+    <View
+      style={[
+        styles.soft,
+        {
+          height,
+          borderRadius: height / 2,
+          backgroundColor: isDark ? withAlpha(c.brand, 0.14) : c.brandSoft,
+          borderColor: withAlpha(c.brand, isDark ? 0.5 : 0.3),
+        },
+      ]}
+    >
+      {children}
+    </View>
+  );
+}
+
+/**
  * Cart control used on every product tile.
- *  - `ready`  → green ADD pill, morphing into a [− qty +] stepper
+ *  - `ready`  → green ADD pill, morphing into a [− qty +] stepper (tinted outline on `block` grid tiles until added)
  *  - `options`→ ADD opens the size picker; shows “n added” once something is in the bag
  *  - `sold` / `soon` → inert status pill
  * `block` stretches the control across its container (narrow tiles stack it under the price).
@@ -64,6 +87,8 @@ export default function AddControl({
   const minWidth = compact ? 68 : 78;
   const textColor = c.onBrand;
   const fill = block ? styles.block : null;
+  const EmptyPill = block ? SoftPill : Pill;
+  const addColor = block ? c.brand : textColor;
 
   if (state === "sold") {
     return (
@@ -83,8 +108,8 @@ export default function AddControl({
 
   const addLabel = (
     <>
-      <Ionicons name="add" size={compact ? 15 : 16} color={textColor} />
-      <Text style={type.ui(compact ? 12.5 : 13.5, "extrabold", textColor, { letterSpacing: 0.8 })}>{STORE_CARD.add}</Text>
+      <Ionicons name="add" size={compact ? 15 : 16} color={addColor} />
+      <Text style={type.ui(compact ? 12.5 : 13.5, "extrabold", addColor, { letterSpacing: 0.8 })}>{STORE_CARD.add}</Text>
     </>
   );
 
@@ -117,9 +142,9 @@ export default function AddControl({
     return (
       <Animated.View entering={stateIn} style={fill}>
         <PressableScale onPress={open} style={fill} accessibilityRole="button" accessibilityLabel={STORE_CARD.a11y.chooseSize(label)}>
-          <Pill height={height} minWidth={minWidth}>
+          <EmptyPill height={height} minWidth={minWidth}>
             <View style={styles.row}>{addLabel}</View>
-          </Pill>
+          </EmptyPill>
         </PressableScale>
       </Animated.View>
     );
@@ -172,9 +197,9 @@ export default function AddControl({
         accessibilityRole="button"
         accessibilityLabel={STORE_CARD.a11y.addToBag(label)}
       >
-        <Pill height={height} minWidth={minWidth}>
+        <EmptyPill height={height} minWidth={minWidth}>
           <View style={styles.row}>{addLabel}</View>
-        </Pill>
+        </EmptyPill>
       </PressableScale>
     </Animated.View>
   );
@@ -187,6 +212,7 @@ const styles = StyleSheet.create({
     shadowRadius: 9,
     elevation: 3,
   },
+  soft: { alignItems: "center", justifyContent: "center", paddingHorizontal: 12, borderWidth: StyleSheet.hairlineWidth * 2 },
   inner: { flex: 1, overflow: "hidden", alignItems: "center", justifyContent: "center", paddingHorizontal: 12 },
   sheen: { position: "absolute", top: 0, left: 0, right: 0, height: "64%" },
   row: { flexDirection: "row", alignItems: "center", gap: 3 },

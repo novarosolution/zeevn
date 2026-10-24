@@ -1,15 +1,15 @@
 import React, { useEffect, useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { MANAGE_ADDRESS_SCREEN_UI } from "../../content/appContent";
 import { useDeliveryLocation } from "../../context/DeliveryLocationContext";
-import { etaFromQuote } from "../../services/deliveryService";
 import { useStoreTheme } from "../../theme/storefront";
-import { formatDeliveryLocationParts, tidyLandmark } from "../../utils/deliveryLocationLabel";
 import { hapticSuccess } from "../../utils/haptics";
+import { DeliveryChip, FormField, FormGroup, FormPair, GlassPill, MapThumb, StatusChip, placeLines } from "./AddressKit";
+import Glass, { GlassDock } from "./Glass";
 import StoreBanner from "./StoreBanner";
-import StoreField from "./StoreField";
 import StoreScreen from "./StoreScreen";
-import { Button, Card, Rise, SectionLabel, Segmented } from "./StoreKit";
+import { Button, Rise, SectionLabel, Segmented } from "./StoreKit";
 
 const TYPES = [
   { key: "Home", label: "Home", icon: "home-outline" },
@@ -17,51 +17,67 @@ const TYPES = [
   { key: "Other", label: "Other", icon: "location-outline" },
 ];
 
-function AddressPreview({ type, house, line1, landmark, city, postalCode, gps }) {
-  const { c, type: font } = useStoreTheme();
+/**
+ * The saved address as one card: a map with the pin (tap it to move the pin), glass controls over the map, then the
+ * street, the area and how far / how fast we deliver there.
+ */
+function PlaceCard({ kind, house, line1, landmark, city, postalCode, latitude, longitude, gps, detecting, detectLabel, onOpenMap, onDetect }) {
+  const { c, r, type, shadow } = useStoreTheme();
   const { quote } = useDeliveryLocation();
-  const eta = etaFromQuote(quote);
-  const away = [quote?.distanceLabel, eta].filter(Boolean).join(" · ");
-  const icon = (TYPES.find((t) => t.key === type) || TYPES[0]).icon;
-  const parts = formatDeliveryLocationParts({ houseNumber: house, line1, landmark, city, postalCode });
-  const place = [tidyLandmark(landmark), [city, postalCode].filter(Boolean).join(" ")].filter(Boolean).join(" · ");
+  const hasAddress = Boolean(line1 || city);
+  const { title, detail } = placeLines({ houseNumber: house, line1, landmark, city, postalCode });
+  const icon = (TYPES.find((t) => t.key === kind) || TYPES[0]).icon;
+  const mapLabel = MANAGE_ADDRESS_SCREEN_UI.useMap;
+
   return (
-    <Card style={styles.preview}>
-      <View style={[styles.pin, { backgroundColor: c.brandSoft }]}>
-        <Ionicons name={icon} size={22} color={c.brand} />
-      </View>
-      <View style={styles.previewText}>
-        <View style={styles.previewHead}>
-          <Text style={font.eyebrow(c.brandAlt, 10.5)}>{type || "Home"}</Text>
-          <View style={[styles.tag, { backgroundColor: c.goldSoft }]}>
-            <Text style={font.ui(10, "bold", c.goldText, { letterSpacing: 0.4 })}>DEFAULT</Text>
+    <View style={[shadow.card, { backgroundColor: c.card, borderRadius: r.xl }]}>
+      <View style={[styles.clip, { borderRadius: r.xl, borderColor: c.line }]}>
+        <MapThumb latitude={latitude} longitude={longitude} height={168} inset={54} onPress={onOpenMap} accessibilityLabel={mapLabel}>
+          {hasAddress ? (
+            <View style={styles.mapTop} pointerEvents="none">
+              <Glass material="thin" radius={15} style={styles.kindChip} contentStyle={styles.kindChipBody}>
+                <Ionicons name={icon} size={15} color={c.brand} />
+                <Text style={type.ui(12.5, "bold", c.ink)}>{`${kind || "Home"} · Default`}</Text>
+              </Glass>
+            </View>
+          ) : null}
+          <View style={styles.mapControls} pointerEvents="box-none">
+            <GlassPill icon="map-outline" label={mapLabel} onPress={onOpenMap} />
+            <GlassPill icon="locate" onPress={onDetect} loading={detecting} accessibilityLabel={detectLabel} />
           </View>
+        </MapThumb>
+
+        <View style={styles.body}>
+          {hasAddress ? (
+            <>
+              <Text style={type.ui(17, "bold", c.ink, { letterSpacing: -0.2 })} numberOfLines={2}>
+                {title}
+              </Text>
+              {detail ? (
+                <Text style={type.ui(13.5, "medium", c.inkMute)} numberOfLines={2}>
+                  {detail}
+                </Text>
+              ) : null}
+              {quote || gps ? (
+                <View style={styles.chips}>
+                  <DeliveryChip quote={quote} />
+                  {gps ? <StatusChip icon="checkmark-circle" label="GPS verified" /> : null}
+                </View>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <Text style={type.ui(17, "bold", c.ink, { letterSpacing: -0.2 })}>Add your address</Text>
+              <Text style={type.ui(13.5, "medium", c.inkMute)}>{MANAGE_ADDRESS_SCREEN_UI.mapHint}</Text>
+            </>
+          )}
         </View>
-        <Text style={font.ui(16, "semibold", c.ink, { letterSpacing: -0.2 })} numberOfLines={2}>
-          {parts.street}
-        </Text>
-        {place ? (
-          <Text style={font.ui(13, "medium", c.inkMute)} numberOfLines={2}>
-            {place}
-          </Text>
-        ) : null}
-        {away ? (
-          <Text style={font.ui(12, "semibold", quote?.serviceable === false ? c.danger : c.brand)} numberOfLines={1}>
-            {quote?.serviceable === false ? quote.message : away}
-          </Text>
-        ) : null}
-        {gps ? (
-          <View style={styles.gps}>
-            <Ionicons name="checkmark-circle" size={14} color={c.brand} />
-            <Text style={font.ui(12, "semibold", c.brand)}>GPS verified</Text>
-          </View>
-        ) : null}
       </View>
-    </Card>
+    </View>
   );
 }
 
-/** Native address editor: saved-address preview, GPS detect, type switch and the fields. */
+/** Native address editor: the saved place on a map, then a grouped form, with Save always in reach. */
 export default function StoreAddress({
   navigation,
   error,
@@ -80,8 +96,8 @@ export default function StoreAddress({
   onCity,
   postalCode,
   onPostalCode,
-  country,
-  onCountry,
+  latitude,
+  longitude,
   gps,
   fieldErrors,
   detecting,
@@ -91,66 +107,129 @@ export default function StoreAddress({
   saving,
   onSave,
 }) {
-  const hasAddress = Boolean(line1 || city);
+  const scrollRef = useRef(null);
   const lastSuccess = useRef("");
+  const fields = useRef([]);
+  const focusNext = (index) => () => fields.current[index + 1]?.focus?.();
+  const attach = (index) => (node) => {
+    fields.current[index] = node;
+  };
 
   useEffect(() => {
     if (success && success !== lastSuccess.current) hapticSuccess();
     lastSuccess.current = success;
   }, [success]);
 
+  // Messages sit at the top of the page, so bring them into view.
+  useEffect(() => {
+    if (error || success) scrollRef.current?.scrollTo?.({ y: 0, animated: true });
+  }, [error, success]);
+
   return (
-    <StoreScreen title="Delivery address" navigation={navigation}>
+    <StoreScreen
+      title="Delivery address"
+      navigation={navigation}
+      scrollRef={scrollRef}
+      dock={
+        <GlassDock>
+          <Button label={saving ? "Saving…" : "Save address"} onPress={onSave} loading={saving} />
+        </GlassDock>
+      }
+    >
       {error ? <StoreBanner message={error} onClose={onDismissError} /> : null}
       {success ? <StoreBanner tone="success" message={success} onClose={onDismissSuccess} /> : null}
 
-      {hasAddress ? (
-        <Rise index={0}>
-          <AddressPreview type={addressType} house={houseNumber} line1={line1} landmark={landmark} city={city} postalCode={postalCode} gps={gps} />
-        </Rise>
-      ) : null}
-
-      <Rise index={1}>
-        <Button label="Select on map" icon="map-outline" tone="secondary" onPress={onOpenMap} />
-        <View style={styles.mapGap}>
-          <Button label={detectLabel} icon="locate" tone="secondary" onPress={onDetect} loading={detecting} />
-        </View>
+      <Rise index={0}>
+        <PlaceCard
+          kind={addressType}
+          house={houseNumber}
+          line1={line1}
+          landmark={landmark}
+          city={city}
+          postalCode={postalCode}
+          latitude={latitude}
+          longitude={longitude}
+          gps={gps}
+          detecting={detecting}
+          detectLabel={detectLabel}
+          onOpenMap={onOpenMap}
+          onDetect={onDetect}
+        />
       </Rise>
 
-      <Rise index={2}>
+      <Rise index={1}>
         <SectionLabel>Save as</SectionLabel>
         <Segmented options={TYPES} value={addressType || "Home"} onChange={onAddressType} />
       </Rise>
 
-      <Rise index={3}>
-        <Card style={styles.fields}>
-          <StoreField label="House / Flat / Building no." icon="business-outline" value={houseNumber} onChangeText={onHouseNumber} error={fieldErrors.houseNumber} />
-          <StoreField label="Street / Area / Colony" icon="map-outline" value={line1} onChangeText={onLine1} error={fieldErrors.line1} />
-          <StoreField label="Landmark (optional)" icon="navigate-outline" value={landmark} onChangeText={onLandmark} placeholder="e.g. Near city mall" />
-          <View style={styles.pair}>
-            <StoreField style={styles.half} label="City" value={city} onChangeText={onCity} error={fieldErrors.city} />
-            <StoreField style={styles.half} label="Pincode" value={postalCode} onChangeText={onPostalCode} error={fieldErrors.postalCode} keyboardType="number-pad" />
-          </View>
-          <StoreField label="Country" icon="flag-outline" value={country} onChangeText={onCountry} placeholder="India" />
-        </Card>
-      </Rise>
-
-      <Rise index={4}>
-        <Button label="Save address" icon="save-outline" onPress={onSave} loading={saving} />
+      <Rise index={2}>
+        <FormGroup>
+          <FormField
+            label="House / Flat / Building no."
+            value={houseNumber}
+            onChangeText={onHouseNumber}
+            error={fieldErrors.houseNumber}
+            inputRef={attach(0)}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={focusNext(0)}
+          />
+          <FormField
+            label="Street / Area / Colony"
+            value={line1}
+            onChangeText={onLine1}
+            error={fieldErrors.line1}
+            inputRef={attach(1)}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={focusNext(1)}
+          />
+          <FormField
+            label="Landmark (optional)"
+            value={landmark}
+            onChangeText={onLandmark}
+            placeholder="e.g. Near city mall"
+            inputRef={attach(2)}
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={focusNext(2)}
+          />
+          <FormPair>
+            <FormField
+              style={styles.half}
+              label="City"
+              value={city}
+              onChangeText={onCity}
+              error={fieldErrors.city}
+              inputRef={attach(3)}
+              returnKeyType="next"
+              blurOnSubmit={false}
+              onSubmitEditing={focusNext(3)}
+            />
+            <FormField
+              style={styles.half}
+              label="Pincode"
+              value={postalCode}
+              onChangeText={onPostalCode}
+              error={fieldErrors.postalCode}
+              keyboardType="number-pad"
+              inputRef={attach(4)}
+              returnKeyType="done"
+            />
+          </FormPair>
+        </FormGroup>
       </Rise>
     </StoreScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  preview: { flexDirection: "row", gap: 14, alignItems: "flex-start" },
-  pin: { width: 52, height: 52, borderRadius: 18, alignItems: "center", justifyContent: "center" },
-  previewText: { flex: 1, minWidth: 0, gap: 3 },
-  previewHead: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 },
-  tag: { height: 22, paddingHorizontal: 8, borderRadius: 11, alignItems: "center", justifyContent: "center" },
-  gps: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 },
-  mapGap: { marginTop: 12 },
-  fields: { gap: 12 },
-  pair: { flexDirection: "row", gap: 12 },
+  clip: { overflow: "hidden", borderWidth: StyleSheet.hairlineWidth },
+  mapTop: { position: "absolute", top: 12, left: 12 },
+  kindChip: { height: 30 },
+  kindChipBody: { height: 30, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 11 },
+  mapControls: { position: "absolute", left: 12, right: 12, bottom: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  body: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 16, gap: 3 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 9 },
   half: { flex: 1 },
 });

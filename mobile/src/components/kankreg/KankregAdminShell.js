@@ -12,7 +12,9 @@ import { adminShellMainPadding, getAdminChrome } from "../../theme/adminLayout";
 import AdminBackLink from "../admin/AdminBackLink";
 import AdminMobileNav from "../admin/AdminMobileNav";
 import AdminNavIcon from "../admin/AdminNavIcon";
+import AdminStoreStatusChip from "../admin/AdminStoreStatusChip";
 import AdminTopBar from "../admin/AdminTopBar";
+import { useAdminDesk } from "../../services/adminDeskStore";
 
 /** Re-export for screens that import groups from the shell. */
 export { ADMIN_NAV_GROUPS };
@@ -55,10 +57,38 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
     [chrome]
   );
 
+  const { summary } = useAdminDesk();
+  /** Counters on nav links: what is waiting on the team right now. */
+  const badges = useMemo(() => {
+    const map = {};
+    if (!summary) return map;
+    if (summary.orders?.new > 0) map.AdminOrders = { count: summary.orders.new, tone: "gold", dot: summary.orders.attention > 0 };
+    else if (summary.orders?.attention > 0) map.AdminOrders = { count: summary.orders.attention, tone: "red" };
+    if (summary.returns?.pending > 0) map.AdminReturns = { count: summary.returns.pending, tone: "gold" };
+    if (summary.support?.awaitingReply > 0) map.AdminSupport = { count: summary.support.awaitingReply, tone: "gold" };
+    const lowStock = (summary.catalog?.lowStock || 0) + (summary.catalog?.outOfStock || 0);
+    if (lowStock > 0) map.AdminInventory = { count: lowStock, tone: summary.catalog?.outOfStock > 0 ? "red" : "gold" };
+    return map;
+  }, [summary]);
+
   const adminInitial = String(user?.name || user?.email || "A")
     .trim()
     .charAt(0)
     .toUpperCase();
+
+  function renderBadge(link) {
+    const badge = badges[link.key];
+    if (!badge) return null;
+    const red = badge.tone === "red";
+    return (
+      <View style={styles.badgeWrap}>
+        {badge.dot ? <View style={styles.attentionDot} /> : null}
+        <View style={[styles.navBadge, red ? styles.navBadgeRed : styles.navBadgeGold]}>
+          <Text style={[styles.navBadgeText, red && styles.navBadgeTextRed]}>{badge.count > 99 ? "99+" : badge.count}</Text>
+        </View>
+      </View>
+    );
+  }
 
   function renderLink(link, row = false) {
     const on = current === link.key;
@@ -93,6 +123,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
             </Text>
           ) : null}
         </View>
+        {renderBadge(link)}
       </Pressable>
     );
   }
@@ -186,7 +217,12 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
           <AdminTopBar
             title={title}
             subtitle={subtitle}
-            headerRight={headerRight}
+            headerRight={
+              <>
+                <AdminStoreStatusChip compact={isPhone} onPress={() => stackNav.navigate("AdminShopDesk")} />
+                {headerRight}
+              </>
+            }
             compact={isPhone}
             onNotifications={() => stackNav.navigate("AdminNotifications")}
           />
@@ -227,7 +263,8 @@ const styles = StyleSheet.create({
     minHeight: Platform.OS === "web" ? "100vh" : undefined,
     flex: 1,
     borderRadius: 0,
-    overflow: "hidden",
+    // `hidden` made the shell its own scroll container, so the sticky sidebar, top bar and map columns never stuck.
+    overflow: Platform.select({ web: "visible", default: "hidden" }),
     borderWidth: 0,
     marginHorizontal: 0,
     marginBottom: 0,
@@ -383,6 +420,13 @@ const styles = StyleSheet.create({
     color: KANKREG_PALETTE.goldBright,
     fontFamily: fonts.semibold,
   },
+  badgeWrap: { flexDirection: "row", alignItems: "center", gap: 5 },
+  attentionDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#E5604A" },
+  navBadge: { minWidth: 20, height: 20, paddingHorizontal: 6, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  navBadgeGold: { backgroundColor: KANKREG_PALETTE.goldBright },
+  navBadgeRed: { backgroundColor: "#E5604A" },
+  navBadgeText: { fontSize: 11, color: "#1B1608", fontFamily: fonts.bold },
+  navBadgeTextRed: { color: "#FFFFFF" },
   sideLinkHint: {
     marginTop: 1,
     fontSize: 10,

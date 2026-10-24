@@ -3,16 +3,15 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import PremiumButton from "../ui/PremiumButton";
-import PremiumInput from "../ui/PremiumInput";
+import AdminButton from "./AdminButton";
+import AdminInput from "./AdminInput";
 import AdminToggleRow from "./AdminToggleRow";
 import { useTheme } from "../../context/ThemeContext";
 import { uploadAdminProductImage } from "../../services/adminService";
-import { HOME_SCREEN_UI } from "../../content/appContent";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
 import { newHeroSlideId } from "../../utils/homeViewMedia";
 
-const MAX_SLIDES = HOME_SCREEN_UI.heroSlider?.maxProductSlides ?? 4;
+const MAX_SLIDES = 4;
 
 function SlidePreview({ slide, styles }) {
   if (!slide?.url) {
@@ -58,36 +57,24 @@ export default function AdminHomeHeroEditor({ token, heroSlides, onHeroSlidesCha
   };
 
   const updateSlide = (id, patch) => {
-    onHeroSlidesChange(
-      heroSlides.map((slide) => (slide.id === id ? { ...slide, ...patch } : slide))
-    );
+    onHeroSlidesChange(heroSlides.map((slide) => (slide.id === id ? { ...slide, ...patch } : slide)));
   };
 
   const removeSlide = (id) => {
     onHeroSlidesChange(heroSlides.filter((slide) => slide.id !== id));
   };
 
-  const moveSlide = (id, direction) => {
-    const idx = heroSlides.findIndex((slide) => slide.id === id);
-    if (idx < 0) return;
-    const nextIdx = idx + direction;
-    if (nextIdx < 0 || nextIdx >= heroSlides.length) return;
-    const next = [...heroSlides];
-    const [item] = next.splice(idx, 1);
-    next.splice(nextIdx, 0, item);
-    onHeroSlidesChange(next.map((slide, order) => ({ ...slide, order })));
-  };
-
   const addSlide = () => {
     if (heroSlides.length >= MAX_SLIDES) {
-      onError?.(`Maximum ${MAX_SLIDES} slides. Remove one to add another.`);
+      onError?.(`Maximum ${MAX_SLIDES} slides.`);
       return;
     }
+    const nextOrder = heroSlides.reduce((max, slide) => Math.max(max, Number(slide.order) || 0), -1) + 1;
     onHeroSlidesChange([
       ...heroSlides,
       {
         id: newHeroSlideId(),
-        order: heroSlides.length,
+        order: nextOrder,
         mediaType: "image",
         url: "",
         title: "",
@@ -111,10 +98,7 @@ export default function AdminHomeHeroEditor({ token, heroSlides, onHeroSlidesCha
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.blockHint}>
-        Up to {MAX_SLIDES} images for the home carousel (web + app). Empty slides are skipped on the
-        storefront; product photos are used as fallback.
-      </Text>
+      <Text style={styles.blockHint}>Up to {MAX_SLIDES} images. A slide with no URL is dropped on save. Disabled slides stay saved and stay off Home.</Text>
 
       {heroSlides.map((slide, index) => (
         <View key={slide.id} style={[styles.card, { borderColor: c.border }]}>
@@ -122,41 +106,45 @@ export default function AdminHomeHeroEditor({ token, heroSlides, onHeroSlidesCha
             <SlidePreview slide={slide} styles={styles} />
             <View style={styles.cardMeta}>
               <Text style={[styles.cardLabel, { color: c.textPrimary }]}>Slide {index + 1}</Text>
-              <PremiumButton
+              <AdminButton
                 label={slide.url ? "Replace image" : "Upload image"}
                 size="sm"
-                variant="secondary"
-                iconLeft="image-outline"
+                variant="soft"
+                icon="image-outline"
                 loading={uploadingKey === slide.id}
                 disabled={Boolean(uploadingKey)}
                 onPress={() => uploadForSlide(slide)}
               />
-              <View style={styles.row}>
-                <Pressable onPress={() => moveSlide(slide.id, -1)} style={styles.iconBtn}>
-                  <Ionicons name="arrow-up" size={18} color={c.textSecondary} />
-                </Pressable>
-                <Pressable onPress={() => moveSlide(slide.id, 1)} style={styles.iconBtn}>
-                  <Ionicons name="arrow-down" size={18} color={c.textSecondary} />
-                </Pressable>
-                <Pressable onPress={() => removeSlide(slide.id)} style={styles.iconBtn}>
-                  <Ionicons name="trash-outline" size={18} color="#b45309" />
-                </Pressable>
-              </View>
+              <Pressable onPress={() => removeSlide(slide.id)} style={styles.remove} accessibilityRole="button" accessibilityLabel="Remove slide">
+                <Ionicons name="trash-outline" size={16} color="#b45309" />
+                <Text style={styles.removeText}>Remove</Text>
+              </Pressable>
             </View>
           </View>
-          <PremiumInput
-            label="Slide title"
-            value={slide.title}
-            onChangeText={(value) => updateSlide(slide.id, { title: value })}
+          <AdminInput
+            label="Order"
+            value={String(slide.order ?? index)}
+            onChangeText={(value) => updateSlide(slide.id, { order: Number.parseInt(value, 10) || 0 })}
+            integer
           />
-          <PremiumInput
-            label="Slide subtitle"
+          <AdminInput
+            label="Image URL"
+            value={slide.url}
+            onChangeText={(value) => updateSlide(slide.id, { url: value, mediaType: "image" })}
+            placeholder="https://…"
+            autoCapitalize="none"
+          />
+          <AdminInput label="Title (optional)" value={slide.title} onChangeText={(value) => updateSlide(slide.id, { title: value })} />
+          <AdminInput
+            label="Subtitle (optional)"
             value={slide.subtitle}
             onChangeText={(value) => updateSlide(slide.id, { subtitle: value })}
+            multiline
+            numberOfLines={2}
           />
           <AdminToggleRow
-            title="Show on home"
-            subtitle="Disabled slides are hidden from the carousel"
+            title="Enabled"
+            subtitle="Off stays saved and does not show on Home"
             value={slide.enabled !== false}
             onValueChange={(enabled) => updateSlide(slide.id, { enabled })}
             isLast
@@ -164,10 +152,10 @@ export default function AdminHomeHeroEditor({ token, heroSlides, onHeroSlidesCha
         </View>
       ))}
 
-      <PremiumButton
-        label="Add hero slide"
-        variant="outline"
-        iconLeft="add"
+      <AdminButton
+        label="Add slide"
+        variant="soft"
+        icon="add-outline"
         onPress={addSlide}
         disabled={heroSlides.length >= MAX_SLIDES}
       />
@@ -177,9 +165,7 @@ export default function AdminHomeHeroEditor({ token, heroSlides, onHeroSlidesCha
 
 function createStyles(c) {
   return StyleSheet.create({
-    wrap: {
-      gap: spacing.sm,
-    },
+    wrap: { gap: spacing.sm },
     blockHint: {
       fontFamily: fonts.medium,
       fontSize: typography.caption,
@@ -194,34 +180,11 @@ function createStyles(c) {
       gap: spacing.sm,
       backgroundColor: c.surface,
     },
-    cardTop: {
-      flexDirection: "row",
-      gap: spacing.md,
-    },
-    cardMeta: {
-      flex: 1,
-      minWidth: 0,
-      gap: spacing.xs,
-    },
-    cardLabel: {
-      fontFamily: fonts.bold,
-      fontSize: typography.bodySmall,
-    },
-    row: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: spacing.xs,
-      alignItems: "center",
-    },
-    iconBtn: {
-      width: 34,
-      height: 34,
-      borderRadius: 10,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: c.surfaceMuted,
-      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
-    },
+    cardTop: { flexDirection: "row", gap: spacing.md },
+    cardMeta: { flex: 1, minWidth: 0, gap: spacing.xs },
+    cardLabel: { fontFamily: fonts.bold, fontSize: typography.bodySmall },
+    remove: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6 },
+    removeText: { fontFamily: fonts.medium, fontSize: 12.5, color: "#b45309" },
     previewEmpty: {
       width: 88,
       height: 110,
@@ -230,10 +193,6 @@ function createStyles(c) {
       alignItems: "center",
       justifyContent: "center",
     },
-    previewImage: {
-      width: 88,
-      height: 110,
-      borderRadius: radius.md,
-    },
+    previewImage: { width: 88, height: 110, borderRadius: radius.md },
   });
 }

@@ -24,53 +24,45 @@ export function productCoverUri(p) {
 
 export function productStockMeta(p) {
   if (p?.isPublished === false) {
-    return { label: "Draft", tone: "pend", pill: "soon" };
+    return { label: "Draft", tone: "pend", pill: "soon", badge: "gold" };
   }
   if (parseCatalogBoolean(p?.comingSoon, false)) {
-    return { label: "Coming soon", tone: "soon", pill: "soon" };
+    return { label: "Coming soon", tone: "soon", pill: "soon", badge: "purple" };
   }
   const q = Math.max(0, Number(p?.stockQty) || 0);
   if (p?.inStock === false || q < 1) {
-    return { label: "Out of stock", tone: "low", pill: "low" };
+    return { label: "Out of stock", tone: "low", pill: "low", badge: "red" };
   }
   if (q <= LOW_STOCK_MAX) {
-    return { label: "Low stock", tone: "pend", pill: "pend" };
+    return { label: "Low stock", tone: "pend", pill: "pend", badge: "gold" };
   }
-  return { label: "In stock", tone: "ok", pill: "ok" };
-}
-
-export function catalogSummary(products) {
-  let inStock = 0;
-  let low = 0;
-  let out = 0;
-  let draft = 0;
-  let soon = 0;
-  for (const p of products) {
-    if (p.isPublished === false) {
-      draft += 1;
-      continue;
-    }
-    if (parseCatalogBoolean(p.comingSoon, false)) {
-      soon += 1;
-      continue;
-    }
-    const meta = productStockMeta(p);
-    if (meta.pill === "low") out += 1;
-    else if (meta.pill === "pend") low += 1;
-    else inStock += 1;
-  }
-  return { total: products.length, inStock, low, out, draft, soon };
+  return { label: "In stock", tone: "ok", pill: "ok", badge: "green" };
 }
 
 export function matchesProductFilter(p, filterKey) {
   if (filterKey === "all") return true;
-  const meta = productStockMeta(p);
-  if (filterKey === "published") return p.isPublished !== false && !p.comingSoon;
-  if (filterKey === "draft") return p.isPublished === false;
-  if (filterKey === "soon") return parseCatalogBoolean(p.comingSoon, false);
-  if (filterKey === "low") return meta.pill === "pend" && p.isPublished !== false && !p.comingSoon;
-  if (filterKey === "out") return meta.pill === "low";
+  const soon = parseCatalogBoolean(p?.comingSoon, false);
+  const published = p?.isPublished !== false && !soon;
+  const q = Math.max(0, Number(p?.stockQty) || 0);
+  if (filterKey === "published") return published;
+  if (filterKey === "draft") return p?.isPublished === false;
+  if (filterKey === "soon") return soon;
+  if (filterKey === "low") return published && p?.inStock === true && q >= 1 && q <= LOW_STOCK_MAX;
+  if (filterKey === "out") return p?.inStock === false || q < 1;
   return true;
+}
+
+export function catalogSummary(products) {
+  const list = Array.isArray(products) ? products : [];
+  const count = (key) => list.filter((p) => matchesProductFilter(p, key)).length;
+  return {
+    total: list.length,
+    published: count("published"),
+    draft: count("draft"),
+    soon: count("soon"),
+    low: count("low"),
+    out: count("out"),
+  };
 }
 
 export const PRODUCT_FORM_TABS = [

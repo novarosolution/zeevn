@@ -617,6 +617,12 @@ export const STORE_PROFILE = {
   deliveryRow: { key: "delivery", label: "Delivery dashboard", icon: { ion: "bicycle-outline" }, route: { name: "DeliveryDashboard" } },
   signOut: "Sign out",
   signingOut: "Signing out…",
+  deleteAccount: "Delete my account",
+  deletionRequested: "Deletion requested",
+  deleteReason: "Why are you leaving? (optional)",
+  deleteSubmit: "Ask to close this account",
+  deleteHint: "The shop will review this. Your orders stay.",
+  rejectedNote: "The shop said",
   version: (v) => `Zeevan app · v${v}`,
 };
 

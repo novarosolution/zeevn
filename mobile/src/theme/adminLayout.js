@@ -57,6 +57,12 @@ export function useAdminChrome() {
   return useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
 }
 
+/**
+ * The app's global `*:focus-visible` ring would draw a box inside our own field wrappers (which show their own focus
+ * state). Applied as an inline style (not through StyleSheet.create) so it beats the global stylesheet rule.
+ */
+export const WEB_NO_FOCUS_RING = Platform.OS === "web" ? { outlineStyle: "none", outlineWidth: 0 } : null;
+
 /** Phone native + narrow web — stack dense admin rows instead of squeezing text. */
 export function useAdminCompactLayout() {
   const { isXs, width } = useKankregLayout();

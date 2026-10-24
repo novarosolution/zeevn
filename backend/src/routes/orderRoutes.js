@@ -11,6 +11,7 @@ const {
   cancelPendingOrder,
   claimMyOrderReward,
 } = require("../controllers/orderController");
+const { createMyReturn } = require("../controllers/returnController");
 const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -47,5 +48,6 @@ router.patch("/:id/address", protect, updateMyOrderAddress);
 router.post("/:id/claim-reward", protect, claimMyOrderReward);
 router.post("/:id/verify-payment", protect, verifyPayment);
 router.post("/:id/cancel-pending", protect, cancelPendingOrder);
+router.post("/:id/return", protect, createMyReturn);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -12,6 +12,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import PickLocationMap from "../components/location/PickLocationMap";
+import { StorePickLocation } from "../components/store/entry";
 import { useDeliveryLocation } from "../context/DeliveryLocationContext";
 import { useTheme } from "../context/ThemeContext";
 import { PICK_LOCATION_UI } from "../content/appContent";
@@ -118,6 +119,22 @@ export default function PickLocationScreen({ navigation, route }) {
     };
   }, [hasPin, latitude, longitude]);
 
+  // Opened on a saved pin: name the place right away instead of waiting for a tap on the map.
+  const namedStart = useRef(false);
+  useEffect(() => {
+    if (namedStart.current || !hasPin || draft) return undefined;
+    namedStart.current = true;
+    let cancelled = false;
+    addressFromCoords(latitude, longitude)
+      .then((place) => {
+        if (!cancelled) setDraft((current) => current || place);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [hasPin, draft, latitude, longitude]);
+
   const goBack = () => {
     if (returnTo) {
       navigation.navigate({ name: returnTo, params: returnParams, merge: true });
@@ -198,6 +215,34 @@ export default function PickLocationScreen({ navigation, route }) {
   };
 
   const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
+
+  if (Platform.OS !== "web") {
+    return (
+      <StorePickLocation
+        onBack={goBack}
+        query={query}
+        onQuery={(text) => {
+          setQuery(text);
+          setShowHits(true);
+        }}
+        hits={hits}
+        searching={searching}
+        showHits={showHits}
+        onHit={handleHit}
+        latitude={latitude}
+        longitude={longitude}
+        quote={quote}
+        routePath={routePath}
+        onMapPick={handleMapPick}
+        draft={draft}
+        hasPin={hasPin}
+        busy={busy}
+        error={error}
+        onGps={handleGps}
+        onConfirm={handleConfirm}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>

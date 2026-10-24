@@ -1,7 +1,7 @@
 import React from "react";
 import { Text } from "react-native";
 
-/** Map draw is web admin only. */
+/** Map draw is web admin only — no second map library on the phone. */
 export default function AdminDeliveryMap() {
-  return <Text>Open this page on the web admin to drop the shop pin and draw the delivery area.</Text>;
+  return <Text>The outline is drawn on the web admin.</Text>;
 }

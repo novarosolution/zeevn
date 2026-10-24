@@ -170,7 +170,7 @@ function ChatSkeleton() {
   );
 }
 
-function SupportBody({ scrollRef, error, onDismissError, toast, loading, thread, message, onMessage, sending, onSend, onEmail, emailLabel, faqs }) {
+function SupportBody({ scrollRef, error, onDismissError, toast, loading, thread, message, onMessage, sending, onSend, onEmail, emailLabel, faqs = [] }) {
   const { c, type } = useStoreTheme();
   const origin = useScreenOrigin();
   const chatY = useRef(0);
@@ -222,14 +222,16 @@ function SupportBody({ scrollRef, error, onDismissError, toast, loading, thread,
         </Card>
       </Rise>
 
+      {faqs.length ? (
       <Rise index={2}>
         <SectionLabel>Common questions</SectionLabel>
         <Group>
           {faqs.map((item, index) => (
-            <FaqItem key={item.q} q={item.q} a={item.a} open={openFaq === index} onToggle={() => setOpenFaq(openFaq === index ? -1 : index)} />
+            <FaqItem key={`${item.q}-${index}`} q={item.q} a={item.a} open={openFaq === index} onToggle={() => setOpenFaq(openFaq === index ? -1 : index)} />
           ))}
         </Group>
       </Rise>
+      ) : null}
     </>
   );
 }

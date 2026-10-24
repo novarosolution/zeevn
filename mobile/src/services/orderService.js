@@ -28,3 +28,6 @@ export const updateMyOrderAddressRequest = (_token, orderId, shippingAddress) =>
 /** @param {string} [_token] */
 export const claimMyOrderRewardRequest = (_token, orderId) =>
   apiPost(`/orders/${orderId}/claim-reward`, {});
+
+export const createMyOrderReturnRequest = (_token, orderId, payload) =>
+  apiPost(`/orders/${orderId}/return`, payload);

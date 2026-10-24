@@ -202,8 +202,8 @@ export default function ManageAddressScreen({ navigation, route }) {
         onCity={setCity}
         postalCode={postalCode}
         onPostalCode={setPostalCode}
-        country={country}
-        onCountry={setCountry}
+        latitude={latitude}
+        longitude={longitude}
         gps={latitude != null && longitude != null}
         fieldErrors={fieldErrors}
         detecting={detecting}

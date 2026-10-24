@@ -144,6 +144,10 @@ async function emitDeliveryPartnerLocation(partnerUser, location) {
 function emitNotificationCreated(notification) {
   if (!io || !notification) return;
   const payload = { notification: toPlain(notification) };
+  if (notification.kind === "riders") {
+    io.to("role:delivery").emit("notifications:new", payload);
+    return;
+  }
   const target = notification.forUser?._id || notification.forUser;
   if (!notification.forAllUsers && target) {
     io.to(`user:${String(target)}`).emit("notifications:new", payload);

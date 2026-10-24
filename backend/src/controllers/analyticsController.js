@@ -2,322 +2,198 @@ const Order = require("../models/Order");
 const Product = require("../models/Product");
 const User = require("../models/User");
 const { ORDER_STATUS_VALUES } = require("../constants/orderStatuses");
+const { getStoreOps, localParts, zonedInstant } = require("../services/storeOpsService");
 
 const DAY_MS = 86400000;
+const CUSTOM_REQUIRED = "Both from and to are required for a custom date range (YYYY-MM-DD).";
 
-function startOfDayLocal(d) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
+function addDateKey(dateKey, days) {
+  const [y, m, d] = String(dateKey).split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + days)).toISOString().slice(0, 10);
 }
 
-/** UTC midnight for calendar day (date-only inputs). */
-function utcDayStart(y, m0, d) {
-  return new Date(Date.UTC(y, m0, d, 0, 0, 0, 0));
+function dayLabel(key) {
+  const [y, m, d] = String(key).split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-IN", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  });
 }
 
-/** End of UTC calendar day (23:59:59.999). */
-function utcDayEnd(y, m0, d) {
-  return new Date(Date.UTC(y, m0, d, 23, 59, 59, 999));
+function monthLabel(key) {
+  const [y, m] = String(key).split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-IN", { month: "short", year: "numeric" });
 }
 
-function parseDateInput(str, endOfDay) {
-  const s = String(str || "").trim();
-  if (!s) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-    const [y, m, d] = s.split("-").map(Number);
-    return endOfDay ? utcDayEnd(y, m - 1, d) : utcDayStart(y, m - 1, d);
-  }
-  const dt = new Date(s);
-  return Number.isNaN(dt.getTime()) ? null : dt;
-}
-
-function utcTodayBounds() {
-  const now = new Date();
-  const y = now.getUTCFullYear();
-  const m = now.getUTCMonth();
-  const d = now.getUTCDate();
-  return {
-    dayStart: utcDayStart(y, m, d),
-    dayEnd: utcDayEnd(y, m, d),
-  };
-}
-
-function resolvePreset(presetKey) {
-  const key = String(presetKey || "").toLowerCase();
-  const { dayStart: todayStart, dayEnd: todayEnd } = utcTodayBounds();
-
-  switch (key) {
-    case "today":
-      return { from: todayStart, to: todayEnd };
-    case "7d": {
-      const from = new Date(todayStart);
-      from.setUTCDate(from.getUTCDate() - 6);
-      return { from, to: todayEnd };
-    }
-    case "30d": {
-      const from = new Date(todayStart);
-      from.setUTCDate(from.getUTCDate() - 29);
-      return { from, to: todayEnd };
-    }
-    case "90d": {
-      const from = new Date(todayStart);
-      from.setUTCDate(from.getUTCDate() - 89);
-      return { from, to: todayEnd };
-    }
-    case "1y": {
-      const from = new Date(todayStart);
-      from.setUTCDate(from.getUTCDate() - 364);
-      return { from, to: todayEnd };
-    }
-    case "mtd": {
-      const now = new Date();
-      const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-      return { from, to: todayEnd };
-    }
-    case "ytd": {
-      const now = new Date();
-      const from = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
-      return { from, to: todayEnd };
-    }
-    case "all":
-      return { from: null, to: null };
-    default:
-      return null;
-  }
-}
-
-/**
- * Parse range query. Returns { legacy: true } or { legacy: false, rangeStart, rangeEnd, resolvedPreset, bucket }
- * or { error: string }.
- */
-function parseAnalyticsRange(req) {
+function parseAnalyticsQuery(req) {
   const presetRaw = req.query.preset != null ? String(req.query.preset).trim().toLowerCase() : "";
-  const qFrom = req.query.from;
-  const qTo = req.query.to;
+  const qFrom = String(req.query.from || "").trim();
+  const qTo = String(req.query.to || "").trim();
   const bucketParam = req.query.bucket === "month" ? "month" : req.query.bucket === "day" ? "day" : null;
-
   const hasExplicitRange = Boolean(qFrom || qTo);
+
   if (hasExplicitRange && (!qFrom || !qTo)) {
-    return { error: "Both from and to are required for a custom date range (YYYY-MM-DD)." };
+    return { error: CUSTOM_REQUIRED };
   }
-
+  if (presetRaw === "custom" && !hasExplicitRange) {
+    return { error: CUSTOM_REQUIRED };
+  }
   if (!presetRaw && !hasExplicitRange) {
-    return { legacy: true };
+    return { kind: "full", bucketParam };
+  }
+  if (hasExplicitRange) {
+    return { kind: "custom", from: qFrom, to: qTo, bucketParam };
+  }
+  if (presetRaw === "all") return { kind: "all", bucketParam };
+  if (presetRaw === "full" || presetRaw === "legacy") return { kind: "full", bucketParam };
+  return { kind: "preset", preset: presetRaw, bucketParam };
+}
+
+async function resolveAnalyticsRange(parsed) {
+  const ops = await getStoreOps();
+  const tz = ops.timezone || "Asia/Kolkata";
+  const todayKey = localParts(new Date(), tz).dateKey;
+  const startOf = (key) => zonedInstant(key, "00:00", tz);
+  const endOf = (key) => new Date(zonedInstant(addDateKey(key, 1), "00:00", tz).getTime() - 1);
+
+  if (parsed.kind === "full" || parsed.kind === "all") {
+    return {
+      tz,
+      rangeStart: null,
+      rangeEnd: null,
+      resolvedPreset: parsed.kind === "all" ? "all" : "full",
+      fromKey: null,
+      toKey: null,
+      bucketParam: parsed.bucketParam,
+    };
   }
 
-  let rangeStart;
-  let rangeEnd;
-  let resolvedPreset = presetRaw || "custom";
-
-  if (hasExplicitRange) {
-    rangeStart = parseDateInput(qFrom, false);
-    rangeEnd = parseDateInput(qTo, true);
-    if (!rangeStart || !rangeEnd) {
-      return { error: "Invalid from or to date. Use YYYY-MM-DD or ISO 8601." };
+  if (parsed.kind === "custom") {
+    const fromKey = parsed.from;
+    const toKey = parsed.to;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(fromKey) || !/^\d{4}-\d{2}-\d{2}$/.test(toKey)) {
+      return { error: "Invalid from or to date. Use YYYY-MM-DD." };
     }
-    if (rangeStart.getTime() > rangeEnd.getTime()) {
+    if (fromKey > toKey) {
       return { error: "from must be before or equal to to." };
     }
-  } else if (presetRaw === "all") {
-    rangeStart = null;
-    rangeEnd = null;
-  } else {
-    const resolved = resolvePreset(presetRaw);
-    if (!resolved) {
-      return { error: `Unknown preset "${presetRaw}". Use today, 7d, 30d, 90d, 1y, mtd, ytd, all, or custom from/to.` };
-    }
-    rangeStart = resolved.from;
-    rangeEnd = resolved.to;
+    return {
+      tz,
+      rangeStart: startOf(fromKey),
+      rangeEnd: endOf(toKey),
+      resolvedPreset: "custom",
+      fromKey,
+      toKey,
+      bucketParam: parsed.bucketParam,
+    };
   }
 
+  const keys = {
+    today: () => ({ fromKey: todayKey, toKey: todayKey }),
+    "7d": () => ({ fromKey: addDateKey(todayKey, -6), toKey: todayKey }),
+    "30d": () => ({ fromKey: addDateKey(todayKey, -29), toKey: todayKey }),
+    "90d": () => ({ fromKey: addDateKey(todayKey, -89), toKey: todayKey }),
+    "1y": () => ({ fromKey: addDateKey(todayKey, -364), toKey: todayKey }),
+    mtd: () => ({ fromKey: `${todayKey.slice(0, 7)}-01`, toKey: todayKey }),
+    ytd: () => ({ fromKey: `${todayKey.slice(0, 4)}-01-01`, toKey: todayKey }),
+  };
+  const pick = keys[parsed.preset];
+  if (!pick) {
+    return {
+      error: `Unknown preset "${parsed.preset}". Use today, 7d, 30d, 90d, 1y, mtd, ytd, all, or custom from/to.`,
+    };
+  }
+  const { fromKey, toKey } = pick();
   return {
-    legacy: false,
-    rangeStart,
-    rangeEnd,
-    resolvedPreset,
-    bucketParam,
+    tz,
+    rangeStart: startOf(fromKey),
+    rangeEnd: endOf(toKey),
+    resolvedPreset: parsed.preset,
+    fromKey,
+    toKey,
+    bucketParam: parsed.bucketParam,
   };
 }
 
-function buildLastNDaysSeries(n, orders) {
-  const now = new Date();
-  const labels = [];
-  const orderCounts = [];
-  const revenues = [];
-  for (let i = n - 1; i >= 0; i--) {
-    const d = startOfDayLocal(new Date(now));
-    d.setDate(d.getDate() - i);
-    const next = new Date(d);
-    next.setDate(next.getDate() + 1);
-    const dayOrders = orders.filter((o) => {
-      const t = new Date(o.createdAt || 0);
-      return t >= d && t < next;
-    });
-    labels.push(d.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" }));
-    orderCounts.push(dayOrders.length);
-    revenues.push(dayOrders.reduce((sum, o) => sum + Number(o.totalPrice || 0), 0));
-  }
-  return { labels, orderCounts, revenues };
+function emptySeries() {
+  return { labels: [], orderCounts: [], revenues: [] };
 }
 
-/** Effective UTC bounds for trend buckets when preset=all. */
-function orderDateBounds(orders) {
-  let minT = Infinity;
-  let maxT = -Infinity;
-  for (const o of orders) {
-    const t = new Date(o.createdAt || 0).getTime();
-    if (!Number.isFinite(t)) continue;
-    if (t < minT) minT = t;
-    if (t > maxT) maxT = t;
+function orderDateKeys(orders, tz) {
+  let minKey = "";
+  let maxKey = "";
+  for (const order of orders) {
+    const t = new Date(order.createdAt || 0);
+    if (Number.isNaN(t.getTime())) continue;
+    const key = localParts(t, tz).dateKey;
+    if (!minKey || key < minKey) minKey = key;
+    if (!maxKey || key > maxKey) maxKey = key;
   }
-  if (minT === Infinity) {
-    const now = Date.now();
-    return { start: new Date(now), end: new Date(now) };
-  }
-  return { start: new Date(minT), end: new Date(maxT) };
+  return { minKey, maxKey };
 }
 
-function buildSeriesInRange(orders, rangeStart, rangeEnd, bucket) {
-  let effStart = rangeStart;
-  let effEnd = rangeEnd;
-  if (effStart == null || effEnd == null) {
-    const b = orderDateBounds(orders);
-    effStart = utcDayStart(b.start.getUTCFullYear(), b.start.getUTCMonth(), b.start.getUTCDate());
-    effEnd = utcDayEnd(b.end.getUTCFullYear(), b.end.getUTCMonth(), b.end.getUTCDate());
-  }
-
-  const isMonth = bucket === "month";
-  const labels = [];
-  const orderCounts = [];
-  const revenues = [];
-
-  if (isMonth) {
-    let cursor = new Date(Date.UTC(effStart.getUTCFullYear(), effStart.getUTCMonth(), 1));
-    const endCap = effEnd.getTime();
-    while (cursor.getTime() <= endCap) {
-      const ms = cursor.getUTCMonth();
-      const ys = cursor.getUTCFullYear();
-      const monthStart = new Date(Date.UTC(ys, ms, 1));
-      const monthEnd = new Date(Date.UTC(ys, ms + 1, 0, 23, 59, 59, 999));
-      const sliceStart = monthStart < effStart ? effStart : monthStart;
-      const sliceEnd = monthEnd > effEnd ? effEnd : monthEnd;
-      let count = 0;
-      let rev = 0;
-      for (const o of orders) {
-        const t = new Date(o.createdAt || 0).getTime();
-        if (t >= sliceStart.getTime() && t <= sliceEnd.getTime()) {
-          count += 1;
-          rev += Number(o.totalPrice || 0);
-        }
-      }
-      labels.push(monthStart.toLocaleDateString("en-IN", { month: "short", year: "numeric" }));
-      orderCounts.push(count);
-      revenues.push(rev);
-      cursor = new Date(Date.UTC(ys, ms + 1, 1));
+function eachKey(fromKey, toKey, bucket) {
+  const keys = [];
+  if (!fromKey || !toKey) return keys;
+  if (bucket === "month") {
+    let cursor = `${fromKey.slice(0, 7)}-01`;
+    const last = `${toKey.slice(0, 7)}-01`;
+    while (cursor <= last) {
+      keys.push(cursor.slice(0, 7));
+      const [y, m] = cursor.split("-").map(Number);
+      cursor = new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 10);
     }
-  } else {
-    let dayCursor = new Date(
-      Date.UTC(effStart.getUTCFullYear(), effStart.getUTCMonth(), effStart.getUTCDate())
-    );
-    const lastDay = new Date(
-      Date.UTC(effEnd.getUTCFullYear(), effEnd.getUTCMonth(), effEnd.getUTCDate())
-    );
-    while (dayCursor.getTime() <= lastDay.getTime()) {
-      const ys = dayCursor.getUTCFullYear();
-      const ms = dayCursor.getUTCMonth();
-      const ds = dayCursor.getUTCDate();
-      const sliceStart = utcDayStart(ys, ms, ds);
-      const sliceEnd = utcDayEnd(ys, ms, ds);
-      let count = 0;
-      let rev = 0;
-      for (const o of orders) {
-        const t = new Date(o.createdAt || 0).getTime();
-        if (t >= sliceStart.getTime() && t <= sliceEnd.getTime()) {
-          count += 1;
-          rev += Number(o.totalPrice || 0);
-        }
-      }
-      labels.push(
-        dayCursor.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })
-      );
-      orderCounts.push(count);
-      revenues.push(rev);
-      dayCursor.setUTCDate(dayCursor.getUTCDate() + 1);
-    }
+    return keys;
   }
-
-  return { labels, orderCounts, revenues };
+  let cursor = fromKey;
+  while (cursor <= toKey) {
+    keys.push(cursor);
+    cursor = addDateKey(cursor, 1);
+  }
+  return keys;
 }
 
-/**
- * Trend buckets via Mongo aggregate ($match + $group). Matches {@link buildSeriesInRange}
- * label/order when range bounds are set (same effective windows after $match).
- */
-async function buildRangeSeriesFromAggregate(rangeStart, rangeEnd, bucket) {
+async function buildRangeSeries({ rangeStart, rangeEnd, fromKey, toKey, bucket, tz, orders }) {
+  if (!orders.length) return emptySeries();
+
+  let startKey = fromKey;
+  let endKey = toKey;
+  if (!startKey || !endKey) {
+    const bounds = orderDateKeys(orders, tz);
+    startKey = bounds.minKey;
+    endKey = bounds.maxKey;
+  }
+  if (!startKey || !endKey) return emptySeries();
+
   const format = bucket === "month" ? "%Y-%m" : "%Y-%m-%d";
+  const match = {};
+  if (rangeStart != null && rangeEnd != null) {
+    match.createdAt = { $gte: rangeStart, $lte: rangeEnd };
+  }
   const bucketRows = await Order.aggregate([
-    { $match: { createdAt: { $gte: rangeStart, $lte: rangeEnd } } },
+    ...(Object.keys(match).length ? [{ $match: match }] : []),
     {
       $group: {
-        _id: { $dateToString: { format, date: "$createdAt", timezone: "UTC" } },
+        _id: { $dateToString: { format, date: "$createdAt", timezone: tz } },
         count: { $sum: 1 },
         revenue: { $sum: { $ifNull: ["$totalPrice", 0] } },
       },
     },
   ]);
-
   const bucketMap = new Map(
-    bucketRows.map((row) => [
-      row._id,
-      { count: row.count, revenue: Number(row.revenue) || 0 },
-    ])
+    bucketRows.map((row) => [row._id, { count: row.count, revenue: Number(row.revenue) || 0 }])
   );
 
-  let effStart = rangeStart;
-  let effEnd = rangeEnd;
-
-  const isMonth = bucket === "month";
   const labels = [];
   const orderCounts = [];
   const revenues = [];
-
-  if (isMonth) {
-    let cursor = new Date(Date.UTC(effStart.getUTCFullYear(), effStart.getUTCMonth(), 1));
-    const endCap = effEnd.getTime();
-    while (cursor.getTime() <= endCap) {
-      const ms = cursor.getUTCMonth();
-      const ys = cursor.getUTCFullYear();
-      const monthStart = new Date(Date.UTC(ys, ms, 1));
-      const key = `${ys}-${String(ms + 1).padStart(2, "0")}`;
-      const hit = bucketMap.get(key) || { count: 0, revenue: 0 };
-      labels.push(monthStart.toLocaleDateString("en-IN", { month: "short", year: "numeric" }));
-      orderCounts.push(hit.count);
-      revenues.push(hit.revenue);
-      cursor = new Date(Date.UTC(ys, ms + 1, 1));
-    }
-  } else {
-    let dayCursor = new Date(
-      Date.UTC(effStart.getUTCFullYear(), effStart.getUTCMonth(), effStart.getUTCDate())
-    );
-    const lastDay = new Date(
-      Date.UTC(effEnd.getUTCFullYear(), effEnd.getUTCMonth(), effEnd.getUTCDate())
-    );
-    while (dayCursor.getTime() <= lastDay.getTime()) {
-      const ys = dayCursor.getUTCFullYear();
-      const ms = dayCursor.getUTCMonth();
-      const ds = dayCursor.getUTCDate();
-      const key = `${ys}-${String(ms + 1).padStart(2, "0")}-${String(ds).padStart(2, "0")}`;
-      const hit = bucketMap.get(key) || { count: 0, revenue: 0 };
-      labels.push(
-        dayCursor.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })
-      );
-      orderCounts.push(hit.count);
-      revenues.push(hit.revenue);
-      dayCursor.setUTCDate(dayCursor.getUTCDate() + 1);
-    }
+  for (const key of eachKey(startKey, endKey, bucket)) {
+    const hit = bucketMap.get(key) || { count: 0, revenue: 0 };
+    labels.push(bucket === "month" ? monthLabel(key) : dayLabel(key));
+    orderCounts.push(hit.count);
+    revenues.push(hit.revenue);
   }
-
   return { labels, orderCounts, revenues };
 }
 
@@ -328,17 +204,20 @@ function computeMetricsFromOrders(orders) {
     .reduce((sum, order) => sum + Number(order.totalPrice || 0), 0);
 
   const revenueByStatus = ORDER_STATUS_VALUES.reduce((acc, status) => {
-    acc[status] = orders
-      .filter((o) => (o.status || "") === status)
-      .reduce((sum, o) => sum + Number(o.totalPrice || 0), 0);
+    acc[status] = 0;
     return acc;
   }, {});
-
-  const statusBreakdown = orders.reduce((acc, order) => {
-    const status = order.status || "unknown";
-    acc[status] = (acc[status] || 0) + 1;
+  const statusBreakdown = ORDER_STATUS_VALUES.reduce((acc, status) => {
+    acc[status] = 0;
     return acc;
   }, {});
+  for (const order of orders) {
+    const status = ORDER_STATUS_VALUES.includes(order.status) ? order.status : "unknown";
+    statusBreakdown[status] = (statusBreakdown[status] || 0) + 1;
+    if (revenueByStatus[status] != null) {
+      revenueByStatus[status] += Number(order.totalPrice || 0);
+    }
+  }
 
   const topProductsMap = new Map();
   for (const order of orders) {
@@ -383,9 +262,6 @@ function computeMetricsFromOrders(orders) {
 
   const deliveredCount = statusBreakdown.delivered || 0;
   const cancelledCount = statusBreakdown.cancelled || 0;
-  const revenueExCancelled = orders
-    .filter((o) => (o.status || "") !== "cancelled")
-    .reduce((sum, o) => sum + Number(o.totalPrice || 0), 0);
 
   return {
     totalRevenue,
@@ -398,279 +274,122 @@ function computeMetricsFromOrders(orders) {
     topCoupons,
     deliveredCount,
     cancelledCount,
-    revenueExCancelled,
   };
 }
 
-function buildLegacyPayload(orders, products, users) {
-  const m = computeMetricsFromOrders(orders);
+function stockSnapshot(products) {
+  let lowStockProducts = 0;
+  let outOfStockProducts = 0;
+  let inStockProducts = 0;
+  let inventoryRetailValue = 0;
+  for (const product of products) {
+    const qty = Number(product.stockQty || 0);
+    if (qty > 0) inventoryRetailValue += Number(product.price || 0) * qty;
+    const isOut = product.inStock === false || qty < 1;
+    if (isOut) outOfStockProducts += 1;
+    else if (qty <= 5) lowStockProducts += 1;
+    else inStockProducts += 1;
+  }
+  return { lowStockProducts, outOfStockProducts, inStockProducts, inventoryRetailValue };
+}
 
-  const lowStockProducts = products
-    .filter((product) => Number(product.stockQty || 0) > 0 && Number(product.stockQty || 0) <= 5)
-    .length;
-  const outOfStockProducts = products.filter(
-    (product) => product.inStock === false || Number(product.stockQty || 0) <= 0
-  ).length;
-
+function cartSnapshot(users) {
   const cartUsers = users.filter((user) => Array.isArray(user.cartItems) && user.cartItems.length > 0);
-  const totalCartItems = cartUsers.reduce(
-    (sum, user) =>
-      sum +
-      (user.cartItems || []).reduce((inner, item) => inner + Number(item.quantity || 0), 0),
-    0
-  );
-
+  let totalCartItems = 0;
   let estimatedCartValue = 0;
-  for (const u of users) {
-    for (const line of u.cartItems || []) {
-      estimatedCartValue += Number(line.price || 0) * Number(line.quantity || 0);
+  for (const user of cartUsers) {
+    for (const line of user.cartItems || []) {
+      const qty = Number(line.quantity || 0);
+      totalCartItems += qty;
+      estimatedCartValue += Number(line.price || 0) * qty;
     }
   }
-
-  const now = Date.now();
-  const dayMs = DAY_MS;
-  const cutoff7 = new Date(now - 7 * dayMs);
-  const cutoff30 = new Date(now - 30 * dayMs);
-
-  const ordersLast7Days = orders.filter((o) => new Date(o.createdAt || 0) >= cutoff7).length;
-  const ordersLast30Days = orders.filter((o) => new Date(o.createdAt || 0) >= cutoff30).length;
-  const revenueLast7Days = orders
-    .filter((o) => new Date(o.createdAt || 0) >= cutoff7)
-    .reduce((sum, o) => sum + Number(o.totalPrice || 0), 0);
-  const revenueLast30Days = orders
-    .filter((o) => new Date(o.createdAt || 0) >= cutoff30)
-    .reduce((sum, o) => sum + Number(o.totalPrice || 0), 0);
-
-  const newUsersLast7Days = users.filter((u) => new Date(u.createdAt || 0) >= cutoff7).length;
-  const newUsersLast30Days = users.filter((u) => new Date(u.createdAt || 0) >= cutoff30).length;
-
-  const inStockProducts = products.filter(
-    (p) => p.inStock !== false && Number(p.stockQty || 0) > 0
-  ).length;
-  const inventoryRetailValue = products.reduce((sum, p) => {
-    const qty = Number(p.stockQty || 0);
-    if (qty <= 0) return sum;
-    return sum + Number(p.price || 0) * qty;
-  }, 0);
-
-  const categoryMap = {};
-  for (const p of products) {
-    const cat = String(p.category || "General").trim() || "General";
-    categoryMap[cat] = (categoryMap[cat] || 0) + 1;
-  }
-  const topCategories = Object.entries(categoryMap)
-    .map(([name, count]) => ({ name, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 10);
-
-  const trend7 = buildLastNDaysSeries(7, orders);
-  const trend14 = buildLastNDaysSeries(14, orders);
-
   return {
-    range: null,
-    totals: {
-      orders: orders.length,
-      products: products.length,
-      users: users.length,
-      admins: users.filter((user) => user.isAdmin).length,
-    },
-    activity: {
-      ordersLast7Days,
-      ordersLast30Days,
-      revenueLast7Days,
-      revenueLast30Days,
-      newUsersLast7Days,
-      newUsersLast30Days,
-    },
-    revenue: {
-      total: m.totalRevenue,
-      delivered: m.deliveredRevenue,
-      averageOrderValue: orders.length ? m.totalRevenue / orders.length : 0,
-      byStatus: m.revenueByStatus,
-      excludingCancelled: m.revenueExCancelled,
-    },
-    funnel: {
-      deliveredOrders: m.deliveredCount,
-      cancelledOrders: m.cancelledCount,
-      deliveryRatePercent: orders.length ? Math.round((m.deliveredCount / orders.length) * 1000) / 10 : 0,
-      couponPenetrationPercent: orders.length ? Math.round((m.couponOrders / orders.length) * 1000) / 10 : 0,
-    },
-    trends: {
-      last7Days: trend7,
-      last14Days: trend14,
-      rangeSeries: null,
-    },
-    inventory: {
-      lowStockProducts,
-      outOfStockProducts,
-      inStockProducts,
-      inventoryRetailValue,
-      topCategories,
-    },
-    carts: {
-      usersWithActiveCart: cartUsers.length,
-      totalCartItems,
-      estimatedCartValue,
-    },
-    coupons: {
-      couponOrders: m.couponOrders,
-      totalDiscount: m.totalDiscount,
-      averageDiscountPerCouponOrder: m.couponOrders ? m.totalDiscount / m.couponOrders : 0,
-      topCoupons: m.topCoupons,
-    },
-    statusBreakdown: m.statusBreakdown,
-    topProducts: m.topProducts,
+    usersWithActiveCart: cartUsers.length,
+    totalCartItems,
+    estimatedCartValue,
   };
 }
 
 async function getAdminAnalytics(req, res, next) {
   try {
-    const parsed = parseAnalyticsRange(req);
+    const parsed = parseAnalyticsQuery(req);
     if (parsed.error) {
       return res.status(400).json({ message: parsed.error });
     }
-
-    const products = await Product.find().lean();
-    const allUsers = await User.find().select("isAdmin cartItems createdAt").lean();
-
-    if (parsed.legacy) {
-      const orders = await Order.find().lean();
-      return res.json(buildLegacyPayload(orders, products, allUsers));
+    const range = await resolveAnalyticsRange(parsed);
+    if (range.error) {
+      return res.status(400).json({ message: range.error });
     }
 
-    const { rangeStart, rangeEnd, resolvedPreset, bucketParam } = parsed;
+    const { rangeStart, rangeEnd, resolvedPreset, fromKey, toKey, bucketParam, tz } = range;
+    const orderQuery =
+      rangeStart != null && rangeEnd != null ? { createdAt: { $gte: rangeStart, $lte: rangeEnd } } : {};
 
-    let orderQuery = {};
-    if (rangeStart != null && rangeEnd != null) {
-      orderQuery = { createdAt: { $gte: rangeStart, $lte: rangeEnd } };
-    }
-
-    const orders = await Order.find(orderQuery).lean();
+    const [orders, products, allUsers] = await Promise.all([
+      Order.find(orderQuery).lean(),
+      Product.find().lean(),
+      User.find().select("isAdmin cartItems createdAt").lean(),
+    ]);
 
     let spanMs = 0;
     if (rangeStart != null && rangeEnd != null) {
       spanMs = rangeEnd.getTime() - rangeStart.getTime();
     } else if (orders.length > 0) {
-      const b = orderDateBounds(orders);
-      spanMs = b.end.getTime() - b.start.getTime();
-    }
-
-    let bucket = bucketParam || (spanMs > 120 * DAY_MS ? "month" : "day");
-
-    const usersInRange =
-      rangeStart != null && rangeEnd != null
-        ? allUsers.filter((u) => {
-            const t = new Date(u.createdAt || 0).getTime();
-            return t >= rangeStart.getTime() && t <= rangeEnd.getTime();
-          })
-        : allUsers;
-
-    const m = computeMetricsFromOrders(orders);
-
-    const lowStockProducts = products
-      .filter((product) => Number(product.stockQty || 0) > 0 && Number(product.stockQty || 0) <= 5)
-      .length;
-    const outOfStockProducts = products.filter(
-      (product) => product.inStock === false || Number(product.stockQty || 0) <= 0
-    ).length;
-
-    const cartUsers = allUsers.filter((user) => Array.isArray(user.cartItems) && user.cartItems.length > 0);
-    const totalCartItems = cartUsers.reduce(
-      (sum, user) =>
-        sum +
-        (user.cartItems || []).reduce((inner, item) => inner + Number(item.quantity || 0), 0),
-      0
-    );
-
-    let estimatedCartValue = 0;
-    for (const u of allUsers) {
-      for (const line of u.cartItems || []) {
-        estimatedCartValue += Number(line.price || 0) * Number(line.quantity || 0);
+      const bounds = orderDateKeys(orders, tz);
+      if (bounds.minKey && bounds.maxKey) {
+        spanMs = (eachKey(bounds.minKey, bounds.maxKey, "day").length - 1) * DAY_MS;
       }
     }
+    const bucket = bucketParam || (spanMs > 120 * DAY_MS ? "month" : "day");
 
-    const inStockProducts = products.filter(
-      (p) => p.inStock !== false && Number(p.stockQty || 0) > 0
-    ).length;
-    const inventoryRetailValue = products.reduce((sum, p) => {
-      const qty = Number(p.stockQty || 0);
-      if (qty <= 0) return sum;
-      return sum + Number(p.price || 0) * qty;
-    }, 0);
-
-    const categoryMap = {};
-    for (const p of products) {
-      const cat = String(p.category || "General").trim() || "General";
-      categoryMap[cat] = (categoryMap[cat] || 0) + 1;
-    }
-    const topCategories = Object.entries(categoryMap)
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-
-    const rangeSeries =
-      rangeStart != null && rangeEnd != null
-        ? await buildRangeSeriesFromAggregate(rangeStart, rangeEnd, bucket)
-        : buildSeriesInRange(orders, rangeStart, rangeEnd, bucket);
-
-    const fromIso = rangeStart ? rangeStart.toISOString() : null;
-    const toIso = rangeEnd ? rangeEnd.toISOString() : null;
+    const m = computeMetricsFromOrders(orders);
+    const inventory = stockSnapshot(products);
+    const carts = cartSnapshot(allUsers);
+    const rangeSeries = await buildRangeSeries({
+      rangeStart,
+      rangeEnd,
+      fromKey,
+      toKey,
+      bucket,
+      tz,
+      orders,
+    });
 
     res.json({
       range: {
         filtered: true,
         preset: resolvedPreset,
-        from: fromIso,
-        to: toIso,
+        from: rangeStart ? rangeStart.toISOString() : null,
+        to: rangeEnd ? rangeEnd.toISOString() : null,
         bucket,
       },
       totals: {
         orders: orders.length,
         products: products.length,
-        users: usersInRange.length,
-        admins: usersInRange.filter((u) => u.isAdmin).length,
+        users: allUsers.length,
+        admins: allUsers.filter((user) => user.isAdmin).length,
       },
       activity: {
-        ordersLast7Days: null,
-        ordersLast30Days: null,
-        revenueLast7Days: null,
-        revenueLast30Days: null,
-        newUsersLast7Days: null,
-        newUsersLast30Days: null,
         ordersInPeriod: orders.length,
         revenueInPeriod: m.totalRevenue,
-        newUsersInPeriod: usersInRange.length,
       },
       revenue: {
         total: m.totalRevenue,
         delivered: m.deliveredRevenue,
         averageOrderValue: orders.length ? m.totalRevenue / orders.length : 0,
         byStatus: m.revenueByStatus,
-        excludingCancelled: m.revenueExCancelled,
       },
       funnel: {
         deliveredOrders: m.deliveredCount,
         cancelledOrders: m.cancelledCount,
         deliveryRatePercent: orders.length ? Math.round((m.deliveredCount / orders.length) * 1000) / 10 : 0,
-        couponPenetrationPercent: orders.length ? Math.round((m.couponOrders / orders.length) * 1000) / 10 : 0,
       },
       trends: {
-        last7Days: { labels: [], orderCounts: [], revenues: [] },
-        last14Days: { labels: [], orderCounts: [], revenues: [] },
         rangeSeries,
       },
-      inventory: {
-        lowStockProducts,
-        outOfStockProducts,
-        inStockProducts,
-        inventoryRetailValue,
-        topCategories,
-      },
-      carts: {
-        usersWithActiveCart: cartUsers.length,
-        totalCartItems,
-        estimatedCartValue,
-      },
+      inventory,
+      carts,
       coupons: {
         couponOrders: m.couponOrders,
         totalDiscount: m.totalDiscount,
@@ -685,9 +404,7 @@ async function getAdminAnalytics(req, res, next) {
   }
 }
 
-/**
- * Live ops command-center summary — open runs, accept queue, low stock.
- */
+/** Live ops command-center summary — open runs, accept queue, low stock. */
 async function getAdminOpsSummary(req, res, next) {
   try {
     const LOW_STOCK_MAX = 5;

@@ -1,5 +1,10 @@
+const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const { getCloudinary, isCloudinaryConfigured } = require("../config/cloudinary");
+
+function isProductId(id) {
+  return mongoose.Types.ObjectId.isValid(String(id || ""));
+}
 
 function sanitizeVariants(raw) {
   if (!Array.isArray(raw)) return [];
@@ -104,6 +109,9 @@ async function getProducts(req, res, next) {
 async function getProductById(req, res, next) {
   try {
     const { id } = req.params;
+    if (!isProductId(id)) {
+      return res.status(404).json({ message: "Product not found." });
+    }
     const product = await Product.findOne({ _id: id, isPublished: { $ne: false } });
     if (!product) {
       return res.status(404).json({ message: "Product not found." });
@@ -441,6 +449,9 @@ async function uploadMarketingVideo(req, res, next) {
 async function getProductReviews(req, res, next) {
   try {
     const { id } = req.params;
+    if (!isProductId(id)) {
+      return res.status(404).json({ message: "Product not found." });
+    }
     const product = await Product.findById(id).select("name ratingAverage reviewCount reviews");
     if (!product) {
       return res.status(404).json({ message: "Product not found." });
@@ -467,6 +478,9 @@ async function createOrUpdateProductReview(req, res, next) {
     const comment = String(req.body?.comment || "").trim();
     if (!Number.isFinite(ratingNum) || ratingNum < 1 || ratingNum > 5) {
       return res.status(400).json({ message: "Rating must be between 1 and 5." });
+    }
+    if (!isProductId(id)) {
+      return res.status(404).json({ message: "Product not found." });
     }
 
     const product = await Product.findById(id);

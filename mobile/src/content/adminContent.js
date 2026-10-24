@@ -19,9 +19,9 @@ export const ADMIN_SCREEN_COPY = {
     subtitle: "Pin the shop, draw the area, save the zone",
     emptyZones: "No zones yet — draw on the map, then save",
     emptyPartners: "No delivery partners enabled yet",
-    stepPin: "Tap the map to drop the shop pin",
-    stepDraw: "Tap the map to draw the delivery line",
-    stepSave: "Name the zone and save it",
+    stepPin: "Tap the map to move the shop pin",
+    stepDraw: "Tap the map to add points. 3+ points draw the area.",
+    stepSave: "Area ready — name it and create the zone",
   },
   products: {
     title: "Products",

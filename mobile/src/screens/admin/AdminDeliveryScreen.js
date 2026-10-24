@@ -270,101 +270,108 @@ export default function AdminDeliveryScreen({ navigation, route }) {
               />
 
               {desk === "map" ? (
-                <View style={[adminTwoColStyle(compact), styles.deskCols]}>
-                  <View style={adminTwoColMain(compact)}>
-                    <AdminPanel
-                      title="Coverage map"
-                      icon="navigate-outline"
-                      meta={`${store.minutesPerKm} min / km`}
-                      description={mapHint}
-                    >
-                      <View style={styles.formGap}>
-                        <View style={styles.modeRow}>
-                          <PremiumChip
-                            label="1 · Shop pin"
-                            selected={mode === "store"}
-                            onPress={() => setMode("store")}
-                            size="sm"
-                          />
-                          <PremiumChip
-                            label="2 · Draw area"
-                            selected={mode === "draw"}
-                            onPress={() => setMode("draw")}
-                            size="sm"
-                          />
-                          {draft.length ? (
-                            <PremiumChip label="Undo" onPress={() => setDraft((d) => d.slice(0, -1))} size="sm" />
-                          ) : null}
-                          {draft.length ? (
-                            <PremiumChip label="Clear" onPress={() => setDraft([])} size="sm" />
-                          ) : null}
-                        </View>
-                        <AdminDeliveryMap
-                          store={store}
-                          radiusKm={store.maxRadiusKm}
-                          zones={zones}
-                          draft={draft}
-                          hint={mapHint}
-                          onMapClick={handleMapClick}
+                <View style={styles.formGap}>
+                  <AdminPanel
+                    title="Coverage map"
+                    icon="navigate-outline"
+                    meta={mode === "draw" ? `${draft.length} points` : `${store.minutesPerKm} min / km`}
+                    description={mapHint}
+                  >
+                    <View style={styles.formGap}>
+                      <View style={styles.modeRow}>
+                        <PremiumChip
+                          label="Move shop pin"
+                          selected={mode === "store"}
+                          onPress={() => setMode("store")}
+                          size="sm"
                         />
-                        <View style={styles.storeGrid}>
+                        <PremiumChip
+                          label="Draw area"
+                          selected={mode === "draw"}
+                          onPress={() => setMode("draw")}
+                          size="sm"
+                        />
+                        {draft.length ? (
+                          <PremiumChip label="Undo" onPress={() => setDraft((d) => d.slice(0, -1))} size="sm" />
+                        ) : null}
+                        {draft.length ? (
+                          <PremiumChip label="Clear" onPress={() => setDraft([])} size="sm" />
+                        ) : null}
+                      </View>
+                      <AdminDeliveryMap
+                        store={store}
+                        radiusKm={store.maxRadiusKm}
+                        zones={zones}
+                        draft={draft}
+                        hint={mapHint}
+                        mode={mode}
+                        onMapClick={handleMapClick}
+                      />
+                    </View>
+                  </AdminPanel>
+
+                  <View style={[adminTwoColStyle(compact), styles.deskCols]}>
+                    <View style={adminTwoColMain(compact)}>
+                      <AdminPanel title="Shop settings" icon="storefront-outline" meta="Time = km × minutes">
+                        <View style={styles.formGap}>
+                          <View style={styles.storeGrid}>
+                            <PremiumInput
+                              label="Minutes per km"
+                              value={String(store.minutesPerKm)}
+                              onChangeText={(v) => setStore((s) => ({ ...s, minutesPerKm: v }))}
+                              keyboardType="decimal-pad"
+                              tone="warm"
+                            />
+                            <PremiumInput
+                              label="Max radius (km)"
+                              value={String(store.maxRadiusKm)}
+                              onChangeText={(v) => setStore((s) => ({ ...s, maxRadiusKm: v }))}
+                              keyboardType="decimal-pad"
+                              tone="warm"
+                            />
+                          </View>
+                          <PremiumButton
+                            label={busy ? "Saving…" : "Save shop pin"}
+                            iconLeft="save-outline"
+                            loading={busy}
+                            disabled={busy}
+                            onPress={handleSaveStore}
+                          />
+                        </View>
+                      </AdminPanel>
+                    </View>
+                    <View style={adminTwoColAside(compact)}>
+                      <AdminPanel
+                        title="Save zone"
+                        icon="add-circle-outline"
+                        meta={draft.length >= 3 ? `${draft.length} points ready` : "Draw 3+ points or add pincodes"}
+                      >
+                        <View style={styles.formGap}>
+                          <PremiumInput label="Zone name" value={name} onChangeText={setName} tone="warm" />
                           <PremiumInput
-                            label="Minutes per km"
-                            value={String(store.minutesPerKm)}
-                            onChangeText={(v) => setStore((s) => ({ ...s, minutesPerKm: v }))}
-                            keyboardType="decimal-pad"
+                            label="Pincodes"
+                            value={pins}
+                            onChangeText={setPins}
+                            placeholder="380001, 380015"
                             tone="warm"
                           />
                           <PremiumInput
-                            label="Max radius (km)"
-                            value={String(store.maxRadiusKm)}
-                            onChangeText={(v) => setStore((s) => ({ ...s, maxRadiusKm: v }))}
-                            keyboardType="decimal-pad"
+                            label="Delivery fee (₹)"
+                            value={fee}
+                            onChangeText={setFee}
+                            keyboardType="number-pad"
                             tone="warm"
                           />
+                          <PremiumButton
+                            label={busy ? "Saving…" : "Create zone"}
+                            iconLeft="add-outline"
+                            loading={busy}
+                            disabled={busy}
+                            onPress={handleCreateZone}
+                          />
                         </View>
-                        <PremiumButton
-                          label={busy ? "Saving…" : "Save shop pin"}
-                          iconLeft="save-outline"
-                          loading={busy}
-                          disabled={busy}
-                          onPress={handleSaveStore}
-                        />
-                      </View>
-                    </AdminPanel>
-                  </View>
-                  <View style={adminTwoColAside(compact)}>
-                    <AdminPanel
-                      title="3 · Save zone"
-                      icon="add-circle-outline"
-                      meta={draft.length >= 3 ? `${draft.length} points` : "Name + pin or line"}
-                      description="After you draw, name it here. Pincodes are optional."
-                    >
-                      <View style={styles.formGap}>
-                        <PremiumInput label="Zone name" value={name} onChangeText={setName} tone="warm" />
-                        <PremiumInput
-                          label="Pincodes"
-                          value={pins}
-                          onChangeText={setPins}
-                          placeholder="380001, 380015"
-                          tone="warm"
-                        />
-                        <PremiumInput
-                          label="Delivery fee (₹)"
-                          value={fee}
-                          onChangeText={setFee}
-                          keyboardType="number-pad"
-                          tone="warm"
-                        />
-                        <PremiumButton
-                          label={busy ? "Saving…" : "Create zone"}
-                          iconLeft="add-outline"
-                          loading={busy}
-                          disabled={busy}
-                          onPress={handleCreateZone}
-                        />
-                      </View>
-                    </AdminPanel>
+                      </AdminPanel>
+                    </View>
                   </View>
                 </View>
               ) : null}
@@ -483,7 +490,7 @@ const styles = StyleSheet.create({
   deskCols: { gap: spacing.md },
   formGap: { gap: spacing.sm },
   modeRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
-  storeGrid: { flexDirection: "row", gap: spacing.sm },
+  storeGrid: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, flex: 1 },
   muted: { fontSize: 13, paddingVertical: spacing.sm, fontFamily: fonts.regular },
   row: {
     flexDirection: "row",

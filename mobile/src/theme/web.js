@@ -142,6 +142,18 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
         max-width: 100%;
         height: auto;
       }
+      .leaflet-container img,
+      .leaflet-pane img,
+      img.leaflet-tile,
+      img.leaflet-marker-icon {
+        max-width: none !important;
+        max-height: none !important;
+        mix-blend-mode: normal !important;
+      }
+      .leaflet-container,
+      .leaflet-container * {
+        touch-action: pan-x pan-y;
+      }
       video {
         max-width: 100%;
       }

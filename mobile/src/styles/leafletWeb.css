@@ -61,8 +61,22 @@
 	}
 
 .leaflet-container img.leaflet-tile {
-	/* See: https://bugs.chromium.org/p/chromium/issues/detail?id=600120 */
-	mix-blend-mode: plus-lighter;
+	mix-blend-mode: normal;
+}
+
+.admin-delivery-map,
+.admin-delivery-map .leaflet-container {
+	width: 100% !important;
+	height: 460px !important;
+	min-height: 460px;
+	border-radius: 20px;
+	background: #efe8dc;
+}
+.admin-delivery-map .leaflet-tile,
+.admin-delivery-map img.leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	mix-blend-mode: normal !important;
 }
 
 .leaflet-container.leaflet-touch-zoom {

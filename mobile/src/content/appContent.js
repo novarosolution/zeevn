@@ -778,6 +778,8 @@ export const MANAGE_ADDRESS_SCREEN_UI = {
   sectionDefault: "Default address",
   useGps: "Use current location",
   useGpsLoading: "Locating…",
+  useMap: "Select on map",
+  mapHint: "Tap the map to move the pin. We fill city, street, and pin.",
   saveCta: COMMON_UI.save,
   saving: "Saving…",
   success: "Address saved.",

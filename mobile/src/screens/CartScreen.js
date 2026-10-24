@@ -20,7 +20,8 @@ import {
   createOrderRequest,
   validateCouponRequest} from "../services/orderService";
 import { checkDeliveryServiceability } from "../services/deliveryService";
-import { getCurrentAddressFromGPS } from "../services/locationService";
+import { addressFromCoords, getCurrentAddressFromGPS } from "../services/locationService";
+import { useDeliveryLocation } from "../context/DeliveryLocationContext";
 import { useTheme } from "../context/ThemeContext";
 import {
   customerPanel,
@@ -86,6 +87,7 @@ function getProfileAddressCompletion(defaultAddress) {
 export default function CartScreen({ navigation, route }) {
   const { cartItems, totalAmount, totalItems, addToCart, removeFromCart, removeLineFromCart, clearCart } = useCart();
   const { isAuthenticated, token, user } = useAuth();
+  const { applyPlace } = useDeliveryLocation();
   const { showOrderConfirmed } = useOrderCelebration();
   const { toastSuccess } = useToast();
   const isCheckoutFlow = route?.name === "Checkout" || route?.params?.flow === "checkout";
@@ -512,22 +514,44 @@ export default function CartScreen({ navigation, route }) {
     ? `−${formatINR(appliedCoupon.discountAmount || 0)}`
     : "";
 
+  const fillCartFromPlace = async (address) => {
+    if (address.line1) setLine1(address.line1);
+    if (address.city) setCity(address.city);
+    if (address.postalCode) setPostalCode(address.postalCode);
+    if (address.country) setCountry(address.country);
+    if (!houseNumber.trim() && address.line1) {
+      setHouseNumber(String(address.line1).split(",")[0].slice(0, 32));
+    }
+    if (Number.isFinite(Number(address.latitude))) setLatitude(Number(address.latitude));
+    if (Number.isFinite(Number(address.longitude))) setLongitude(Number(address.longitude));
+    await applyPlace(address);
+  };
+
   const handleUseCurrentLocation = async () => {
     try {
       setIsDetectingLocation(true);
       setError("");
       const address = await getCurrentAddressFromGPS();
-      if (address.line1) setLine1(address.line1);
-      if (address.city) setCity(address.city);
-      if (address.postalCode) setPostalCode(address.postalCode);
-      if (address.country) setCountry(address.country);
-      if (Number.isFinite(Number(address.latitude))) setLatitude(Number(address.latitude));
-      if (Number.isFinite(Number(address.longitude))) setLongitude(Number(address.longitude));
+      await fillCartFromPlace(address);
       toastSuccess(CART_ADDRESS.gpsFillSuccess, { title: "Location added" });
     } catch (err) {
       setError(err.message || "Unable to get current location.");
     } finally {
       setIsDetectingLocation(false);
+    }
+  };
+
+  const handleMapPick = async ({ latitude: lat, longitude: lng }) => {
+    setLatitude(lat);
+    setLongitude(lng);
+    try {
+      setError("");
+      const address = await addressFromCoords(lat, lng);
+      await fillCartFromPlace(address);
+      toastSuccess("Pin moved — review the address, then place the order.", { title: "New place" });
+    } catch (err) {
+      await applyPlace({ latitude: lat, longitude: lng, label: "Selected place" });
+      setError(err.message || "Pin set. Fill the street if it is blank.");
     }
   };
 
@@ -576,6 +600,9 @@ export default function CartScreen({ navigation, route }) {
         onDismissError={() => setError("")}
         detectingLocation={isDetectingLocation}
         onUseGps={handleUseCurrentLocation}
+        latitude={latitude}
+        longitude={longitude}
+        onMapPick={handleMapPick}
         hasSavedAddress={profileAddress.complete}
         onUseSaved={handleUseSavedAddress}
         paymentMethod={paymentMethod}
@@ -710,6 +737,9 @@ export default function CartScreen({ navigation, route }) {
             fieldErrors={fieldErrors}
             isDetectingLocation={isDetectingLocation}
             onUseGps={handleUseCurrentLocation}
+            latitude={latitude}
+            longitude={longitude}
+            onMapPick={handleMapPick}
             onUseSavedAddress={handleUseSavedAddress}
             hasSavedAddress={profileAddress.complete}
             isCompact={isCompact}

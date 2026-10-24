@@ -19,6 +19,7 @@ import ScreenHeader, { SCREEN_HEADER_PAD } from "./ScreenHeader";
 import ScrollEdgeFade from "./ScrollEdgeFade";
 import StoreBanner from "./StoreBanner";
 import StoreField from "./StoreField";
+import PickLocationMap from "../location/PickLocationMap";
 import CheckoutPlacingOverlay from "../loading/CheckoutPlacingOverlay";
 
 const PAY_DOCK_HEIGHT = 78;
@@ -315,7 +316,7 @@ function AddressTypeRow({ value, onChange }) {
   );
 }
 
-function AddressCard({ form, onChange, errors, detecting, onUseGps, hasSaved, onUseSaved, bill }) {
+function AddressCard({ form, onChange, errors, detecting, onUseGps, latitude, longitude, onMapPick, hasSaved, onUseSaved, bill }) {
   const { c, r, type } = useStoreTheme();
   const copy = STORE_CART.checkout.address;
   const zoneHint =
@@ -346,6 +347,7 @@ function AddressCard({ form, onChange, errors, detecting, onUseGps, hasSaved, on
         }
       />
 
+      <PickLocationMap latitude={latitude} longitude={longitude} onPick={onMapPick} height={220} />
       <PressableScale
         onPress={onUseGps}
         disabled={detecting}
@@ -547,6 +549,9 @@ export default function StoreCart({
   onDismissError,
   detectingLocation = false,
   onUseGps,
+  latitude,
+  longitude,
+  onMapPick,
   hasSavedAddress = false,
   onUseSaved,
   paymentMethod = "Razorpay",
@@ -638,6 +643,9 @@ export default function StoreCart({
           errors={fieldErrors}
           detecting={detectingLocation}
           onUseGps={onUseGps}
+          latitude={latitude}
+          longitude={longitude}
+          onMapPick={onMapPick}
           hasSaved={hasSavedAddress}
           onUseSaved={onUseSaved}
           bill={bill}
@@ -744,7 +752,7 @@ const styles = StyleSheet.create({
   stepLine: { flex: 1, height: 2, borderRadius: 1, marginHorizontal: 8, marginBottom: 20 },
   formCard: { gap: 12 },
   savedBtn: { height: 30, paddingHorizontal: 12, borderRadius: 15, alignItems: "center", justifyContent: "center" },
-  gps: { flexDirection: "row", alignItems: "center", gap: 11, height: 50, paddingHorizontal: 14, borderWidth: 1 },
+  gps: { flexDirection: "row", alignItems: "center", gap: 11, height: 50, paddingHorizontal: 14, borderWidth: 1, marginTop: 12 },
   groupLabel: { marginTop: 6 },
   fields: { gap: 12 },
   typeRow: { flexDirection: "row", gap: 10 },

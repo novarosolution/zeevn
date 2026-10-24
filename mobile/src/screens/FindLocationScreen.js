@@ -7,6 +7,8 @@ import * as Haptics from "expo-haptics";
 import { useAuth } from "../context/AuthContext";
 import { useDeliveryLocation } from "../context/DeliveryLocationContext";
 import NativeFindLocationScene from "../components/native/NativeFindLocationScene";
+import PickLocationMap from "../components/location/PickLocationMap";
+import { addressFromCoords } from "../services/locationService";
 import { useTheme } from "../context/ThemeContext";
 import { FIGMA, figmaPageBg, figmaSurfaceBg, figmaTextPrimary, figmaTextSecondary } from "../theme/figmaApp";
 import { fonts, spacing } from "../theme/tokens";
@@ -28,9 +30,11 @@ export default function FindLocationScreen({ navigation, route }) {
     snippet,
     detect,
     confirmLocation,
+    applyPlace,
     savedLabel,
   } = useDeliveryLocation();
   const [phase, setPhase] = useState("searching");
+  const [showMap, setShowMap] = useState(false);
 
   useEffect(() => {
     if (Platform.OS === "web") {
@@ -82,6 +86,17 @@ export default function FindLocationScreen({ navigation, route }) {
     : savedLabel
       ? { label: savedLabel }
       : null;
+
+  const handleMapPick = async ({ latitude, longitude }) => {
+    try {
+      const address = await addressFromCoords(latitude, longitude);
+      await applyPlace(address);
+      setPhase("found");
+    } catch {
+      await applyPlace({ latitude, longitude, label: "Selected place" });
+      setPhase("found");
+    }
+  };
 
   const handleConfirm = async () => {
     try {
@@ -135,10 +150,19 @@ export default function FindLocationScreen({ navigation, route }) {
       </View>
 
       <View style={styles.body}>
-        <NativeFindLocationScene
-          phase={phase}
-          snippet={displaySnippet}
-        />
+        {showMap ? (
+          <PickLocationMap
+            latitude={displaySnippet?.latitude ?? displaySnippet?.lat}
+            longitude={displaySnippet?.longitude ?? displaySnippet?.lng}
+            onPick={handleMapPick}
+            height={280}
+          />
+        ) : (
+          <NativeFindLocationScene
+            phase={phase}
+            snippet={displaySnippet}
+          />
+        )}
       </View>
 
       <View style={styles.footer}>
@@ -179,6 +203,22 @@ export default function FindLocationScreen({ navigation, route }) {
             <Text style={[styles.searchingText, figmaTextSecondary(isDark)]}>Locating you…</Text>
           </View>
         )}
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.secondaryBtn,
+            {
+              borderColor: isDark ? c.border : FIGMA.line,
+              backgroundColor: figmaSurfaceBg(isDark),
+            },
+            pressed && styles.btnPressed,
+          ]}
+          onPress={() => setShowMap((v) => !v)}
+        >
+          <Text style={[styles.secondaryText, figmaTextPrimary(isDark)]}>
+            {showMap ? "Hide map" : "Select on map"}
+          </Text>
+        </Pressable>
 
         <Pressable
           style={({ pressed }) => [

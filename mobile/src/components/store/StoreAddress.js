@@ -7,6 +7,7 @@ import { hapticSuccess } from "../../utils/haptics";
 import StoreBanner from "./StoreBanner";
 import StoreField from "./StoreField";
 import StoreScreen from "./StoreScreen";
+import PickLocationMap from "../location/PickLocationMap";
 import { Button, Card, Rise, SectionLabel, Segmented } from "./StoreKit";
 
 const TYPES = [
@@ -77,6 +78,9 @@ export default function StoreAddress({
   detecting,
   detectLabel,
   onDetect,
+  latitude,
+  longitude,
+  onMapPick,
   saving,
   onSave,
 }) {
@@ -100,7 +104,10 @@ export default function StoreAddress({
       ) : null}
 
       <Rise index={1}>
-        <Button label={detectLabel} icon="locate" tone="secondary" onPress={onDetect} loading={detecting} />
+        <PickLocationMap latitude={latitude} longitude={longitude} onPick={onMapPick} />
+        <View style={styles.mapGap}>
+          <Button label={detectLabel} icon="locate" tone="secondary" onPress={onDetect} loading={detecting} />
+        </View>
       </Rise>
 
       <Rise index={2}>
@@ -135,6 +142,7 @@ const styles = StyleSheet.create({
   previewHead: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 2 },
   tag: { height: 22, paddingHorizontal: 8, borderRadius: 11, alignItems: "center", justifyContent: "center" },
   gps: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 },
+  mapGap: { marginTop: 12 },
   fields: { gap: 12 },
   pair: { flexDirection: "row", gap: 12 },
   half: { flex: 1 },

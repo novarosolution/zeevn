@@ -46,6 +46,8 @@ function buildEditForm(order) {
     postalCode: order.shippingAddress?.postalCode || "",
     country: order.shippingAddress?.country || "",
     note: order.shippingAddress?.note || "",
+    latitude: order.shippingAddress?.latitude ?? null,
+    longitude: order.shippingAddress?.longitude ?? null,
     assignedDeliveryUserId,
     invoiceNumber: order.invoice?.number || "",
     invoiceIssueDate: order.invoice?.issueDate ? String(order.invoice.issueDate).slice(0, 10) : "",
@@ -152,6 +154,8 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
           postalCode: editForm.postalCode,
           country: editForm.country,
           note: editForm.note,
+          latitude: editForm.latitude,
+          longitude: editForm.longitude,
         },
         invoice: {
           number: editForm.invoiceNumber,

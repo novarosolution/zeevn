@@ -211,22 +211,23 @@ function liveLocationDestinationSummary(shippingAddress) {
 }
 
 async function resolveShippingCoordinates(shippingAddress) {
+  const { cleanMapCoord } = require("../utils/shopLocation");
   const base = shippingAddress && typeof shippingAddress === "object" ? { ...shippingAddress } : {};
-  let lat = Number(base.latitude);
-  let lng = Number(base.longitude);
+  let lat = cleanMapCoord(base.latitude);
+  let lng = cleanMapCoord(base.longitude);
 
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+  if (lat == null || lng == null) {
     const geo = await geocodeAddress(base);
     if (geo) {
-      lat = geo.latitude;
-      lng = geo.longitude;
+      lat = cleanMapCoord(geo.latitude);
+      lng = cleanMapCoord(geo.longitude);
     }
   }
 
   return {
     ...base,
-    latitude: Number.isFinite(lat) ? lat : null,
-    longitude: Number.isFinite(lng) ? lng : null,
+    latitude: lat,
+    longitude: lng,
   };
 }
 const INVOICE_STATUS_VALUES = ["draft", "final", "paid", "void"];
@@ -1141,10 +1142,11 @@ async function updateAdminOrderDetails(req, res, next) {
       order.paymentMethod = String(req.body.paymentMethod || "Cash on Delivery").trim();
     }
     if (req.body?.shippingAddress && typeof req.body.shippingAddress === "object") {
-      order.shippingAddress = {
-        ...order.shippingAddress,
-        ...req.body.shippingAddress,
-      };
+      const { cleanMapCoord } = require("../utils/shopLocation");
+      const next = { ...order.shippingAddress, ...req.body.shippingAddress };
+      next.latitude = cleanMapCoord(next.latitude);
+      next.longitude = cleanMapCoord(next.longitude);
+      order.shippingAddress = next;
     }
     if (req.body?.assignedDeliveryUser !== undefined) {
       const raw = req.body.assignedDeliveryUser;

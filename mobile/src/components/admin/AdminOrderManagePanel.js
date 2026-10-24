@@ -15,6 +15,8 @@ import {
   getAdminNextStatusLabel,
 } from "../../utils/orderStatus";
 import AdminPanel from "./AdminPanel";
+import PickLocationMap from "../location/PickLocationMap";
+import { addressFromCoords } from "../../services/locationService";
 import AdminOrderQuickActions from "./AdminOrderQuickActions";
 import PremiumInput from "../ui/PremiumInput";
 import PremiumButton from "../ui/PremiumButton";
@@ -422,6 +424,27 @@ export default function AdminOrderManagePanel({
             onChangeText={(v) => onUpdateField("phone", v)}
             keyboardType="phone-pad"
             iconLeft="call-outline"
+          />
+        </View>
+        <View style={panelStyles.fieldGap}>
+          <PickLocationMap
+            latitude={editForm.latitude}
+            longitude={editForm.longitude}
+            height={220}
+            onPick={async ({ latitude, longitude }) => {
+              onUpdateField("latitude", latitude);
+              onUpdateField("longitude", longitude);
+              try {
+                const place = await addressFromCoords(latitude, longitude);
+                if (place.line1) onUpdateField("line1", place.line1);
+                if (place.city) onUpdateField("city", place.city);
+                if (place.state) onUpdateField("state", place.state);
+                if (place.postalCode) onUpdateField("postalCode", place.postalCode);
+                if (place.country) onUpdateField("country", place.country);
+              } catch {
+                /* pin still saved; admin can type the street */
+              }
+            }}
           />
         </View>
         <View style={panelStyles.fieldGap}>

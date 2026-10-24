@@ -1,17 +1,21 @@
 const HomeViewConfig = require("../models/HomeViewConfig");
 
+/** Drop 0,0 / junk GPS so quotes and maps do not pin the Atlantic. */
+function cleanMapCoord(n) {
+  const v = Number(n);
+  return Number.isFinite(v) && Math.abs(v) > 0.2 ? v : null;
+}
+
 function normalizeShopLocation(raw) {
   const shop = raw && typeof raw === "object" ? raw : {};
-  const lat = Number(shop.latitude);
-  const lng = Number(shop.longitude);
   return {
     name: String(shop.name || "Zeevan Shop").trim() || "Zeevan Shop",
     line1: String(shop.line1 || "").trim(),
     city: String(shop.city || "").trim(),
     state: String(shop.state || "").trim(),
     postalCode: String(shop.postalCode || "").trim(),
-    latitude: Number.isFinite(lat) ? lat : null,
-    longitude: Number.isFinite(lng) ? lng : null,
+    latitude: cleanMapCoord(shop.latitude),
+    longitude: cleanMapCoord(shop.longitude),
   };
 }
 
@@ -21,4 +25,4 @@ async function getShopLocationPayload() {
   return normalizeShopLocation(config?.shopLocation);
 }
 
-module.exports = { getShopLocationPayload, normalizeShopLocation };
+module.exports = { getShopLocationPayload, normalizeShopLocation, cleanMapCoord };

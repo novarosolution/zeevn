@@ -10,6 +10,7 @@ import { FIGMA, figmaEyebrow, figmaTextPrimary } from "../../theme/figmaApp";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, spacing } from "../../theme/tokens";
 import KankregCheckoutSectionCard from "./KankregCheckoutSectionCard";
+import PickLocationMap from "../location/PickLocationMap";
 
 function FormSection({ eyebrow, children, isDark }) {
   return (
@@ -47,6 +48,9 @@ export default function KankregCheckoutForm({
   fieldErrors = {},
   isDetectingLocation = false,
   onUseGps,
+  latitude,
+  longitude,
+  onMapPick,
   onUseSavedAddress,
   hasSavedAddress = false,
   isCompact = false,
@@ -64,6 +68,10 @@ export default function KankregCheckoutForm({
           <PremiumErrorBanner severity="error" message={error} onClose={onDismissError} compact />
         </View>
       ) : null}
+
+      <View style={styles.mapWrap}>
+        <PickLocationMap latitude={latitude} longitude={longitude} onPick={onMapPick} height={220} />
+      </View>
 
       <Pressable
         onPress={onUseGps}
@@ -193,6 +201,9 @@ export default function KankregCheckoutForm({
 const styles = StyleSheet.create({
   banner: {
     marginBottom: spacing.sm,
+  },
+  mapWrap: {
+    marginBottom: spacing.md,
   },
   gpsBtn: {
     borderRadius: 14,

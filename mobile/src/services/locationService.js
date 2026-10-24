@@ -1,6 +1,11 @@
 import { Platform } from "react-native";
 import * as Location from "expo-location";
 
+export function validMapCoord(n) {
+  const v = Number(n);
+  return Number.isFinite(v) && Math.abs(v) > 0.2;
+}
+
 async function reverseGeocodeWeb(latitude, longitude) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
   const response = await fetch(url, {
@@ -45,13 +50,35 @@ function getCurrentPositionWeb() {
   });
 }
 
+/** Reverse-geocode a pin the user dropped on the map. */
+export async function addressFromCoords(latitude, longitude) {
+  if (!validMapCoord(latitude) || !validMapCoord(longitude)) {
+    throw new Error("Drop the pin on a real place.");
+  }
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+
+  if (Platform.OS === "web") {
+    const resolved = await reverseGeocodeWeb(lat, lng);
+    return { ...resolved, latitude: lat, longitude: lng };
+  }
+
+  const [resolved] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+  return {
+    line1: resolved?.name || resolved?.street || "",
+    city: resolved?.city || resolved?.subregion || "",
+    state: resolved?.region || "",
+    postalCode: resolved?.postalCode || "",
+    country: resolved?.country || "",
+    latitude: lat,
+    longitude: lng,
+  };
+}
+
 export async function getCurrentAddressFromGPS() {
   if (Platform.OS === "web") {
     const position = await getCurrentPositionWeb();
-    const latitude = position.coords.latitude;
-    const longitude = position.coords.longitude;
-    const resolved = await reverseGeocodeWeb(latitude, longitude);
-    return { ...resolved, latitude, longitude };
+    return addressFromCoords(position.coords.latitude, position.coords.longitude);
   }
 
   const permission = await Location.requestForegroundPermissionsAsync();
@@ -63,18 +90,5 @@ export async function getCurrentAddressFromGPS() {
     accuracy: Location.Accuracy.Balanced,
   });
 
-  const [resolved] = await Location.reverseGeocodeAsync({
-    latitude: location.coords.latitude,
-    longitude: location.coords.longitude,
-  });
-
-  return {
-    line1: resolved?.name || resolved?.street || "",
-    city: resolved?.city || resolved?.subregion || "",
-    state: resolved?.region || "",
-    postalCode: resolved?.postalCode || "",
-    country: resolved?.country || "",
-    latitude: location.coords.latitude,
-    longitude: location.coords.longitude,
-  };
+  return addressFromCoords(location.coords.latitude, location.coords.longitude);
 }

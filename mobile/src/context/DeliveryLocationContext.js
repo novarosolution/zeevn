@@ -12,13 +12,11 @@ import {
   saveDeliveryConfirmedAt,
 } from "../services/deliveryLocationCache";
 import { formatDeliveryLocationLabel, formatSavedAddressLabel } from "../utils/deliveryLocationLabel";
+import { validMapCoord } from "../services/locationService";
 
 const DETECT_COOLDOWN_MS = 90 * 1000;
 
-function validCoord(n) {
-  const v = Number(n);
-  return Number.isFinite(v) && Math.abs(v) > 0.2;
-}
+const validCoord = validMapCoord;
 
 function coordsFrom(snippet, address) {
   const lat = snippet?.latitude ?? snippet?.lat ?? address?.latitude;
@@ -38,6 +36,7 @@ const defaultDeliveryLocationValue = {
   quote: null,
   detect: async () => null,
   confirmLocation: async () => {},
+  applyPlace: async () => {},
   clearConfirmation: async () => {},
   needsFindScreen: false,
   isFinding: false,
@@ -178,6 +177,20 @@ export function DeliveryLocationProvider({ children }) {
     setStatus("ready");
   }, []);
 
+  /** Drop a map pin (or saved address) as the live delivery place. */
+  const applyPlace = useCallback(async (place) => {
+    if (!place) return null;
+    const next = {
+      ...place,
+      latitude: validCoord(place.latitude) ? Number(place.latitude) : undefined,
+      longitude: validCoord(place.longitude) ? Number(place.longitude) : undefined,
+      label: formatDeliveryLocationLabel(place) || place.city || place.label || "Selected place",
+      updatedAt: Date.now(),
+    };
+    await confirmLocation(next);
+    return next;
+  }, [confirmLocation]);
+
   const clearConfirmation = useCallback(async () => {
     setConfirmedAt(null);
     await saveDeliveryConfirmedAt(0);
@@ -199,6 +212,7 @@ export function DeliveryLocationProvider({ children }) {
       quote,
       detect,
       confirmLocation,
+      applyPlace,
       clearConfirmation,
       needsFindScreen,
       isFinding,
@@ -214,6 +228,7 @@ export function DeliveryLocationProvider({ children }) {
       quote,
       detect,
       confirmLocation,
+      applyPlace,
       clearConfirmation,
       needsFindScreen,
       isFinding,

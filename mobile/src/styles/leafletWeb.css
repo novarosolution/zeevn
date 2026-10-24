@@ -64,6 +64,21 @@
 	mix-blend-mode: normal;
 }
 
+.pick-location-map,
+.pick-location-map .leaflet-container {
+	width: 100% !important;
+	height: 100% !important;
+	min-height: 180px;
+	border-radius: 16px;
+	background: #efe8dc;
+}
+.pick-location-map .leaflet-tile,
+.pick-location-map img.leaflet-tile {
+	max-width: none !important;
+	max-height: none !important;
+	mix-blend-mode: normal !important;
+}
+
 .admin-delivery-map,
 .admin-delivery-map .leaflet-container {
 	width: 100% !important;

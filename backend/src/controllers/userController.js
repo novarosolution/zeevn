@@ -265,9 +265,12 @@ async function updateProfile(req, res, next) {
       user.avatar = typeof avatar === "string" ? avatar.trim() : "";
     }
     if (defaultAddress && typeof defaultAddress === "object") {
+      const { cleanMapCoord } = require("../utils/shopLocation");
       user.defaultAddress = {
         ...user.defaultAddress,
         ...defaultAddress,
+        latitude: cleanMapCoord(defaultAddress.latitude ?? user.defaultAddress?.latitude),
+        longitude: cleanMapCoord(defaultAddress.longitude ?? user.defaultAddress?.longitude),
       };
     }
 

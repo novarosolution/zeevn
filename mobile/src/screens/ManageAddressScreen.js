@@ -15,8 +15,10 @@ import KankregCustomerPageHeader from "../components/kankreg/KankregCustomerPage
 import { MANAGE_ADDRESS_SCREEN_UI } from "../content/appContent";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-import { getCurrentAddressFromGPS } from "../services/locationService";
+import { addressFromCoords, getCurrentAddressFromGPS, validMapCoord } from "../services/locationService";
 import { fetchUserProfile, updateUserProfile } from "../services/userService";
+import { useDeliveryLocation } from "../context/DeliveryLocationContext";
+import PickLocationMap from "../components/location/PickLocationMap";
 import { fonts, spacing, typography } from "../theme/tokens";
 import {
   customerPanel,
@@ -37,6 +39,7 @@ export default function ManageAddressScreen({ navigation }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
   const styles = useMemo(() => createManageStyles(c, shadowPremium, isDark), [c, shadowPremium, isDark]);
     const { isAuthenticated, token, updateStoredUser, isAuthLoading } = useAuth();
+  const { applyPlace } = useDeliveryLocation();
   const { isXs, useSplitLayout } = useKankregLayout();
   const isCompact = isXs;
   const isWide = useSplitLayout;
@@ -67,8 +70,8 @@ export default function ManageAddressScreen({ navigation }) {
       setCity(profile.defaultAddress?.city || "");
       setPostalCode(profile.defaultAddress?.postalCode || "");
       setCountry(profile.defaultAddress?.country || "");
-      setLatitude(Number.isFinite(Number(profile.defaultAddress?.latitude)) ? Number(profile.defaultAddress?.latitude) : null);
-      setLongitude(Number.isFinite(Number(profile.defaultAddress?.longitude)) ? Number(profile.defaultAddress?.longitude) : null);
+      setLatitude(validMapCoord(profile.defaultAddress?.latitude) ? Number(profile.defaultAddress?.latitude) : null);
+      setLongitude(validMapCoord(profile.defaultAddress?.longitude) ? Number(profile.defaultAddress?.longitude) : null);
     } catch {
       // User can still enter address manually.
     }
@@ -87,23 +90,44 @@ export default function ManageAddressScreen({ navigation }) {
     }, [isAuthLoading, isAuthenticated, token, loadAddress, navigation])
   );
 
+  const fillFromPlace = async (address, okMessage) => {
+    if (address.line1) setLine1(address.line1);
+    if (address.city) setCity(address.city);
+    if (address.postalCode) setPostalCode(address.postalCode);
+    if (address.country) setCountry(address.country);
+    if (!houseNumber.trim() && address.line1) {
+      setHouseNumber(String(address.line1).split(",")[0].slice(0, 32));
+    }
+    if (Number.isFinite(Number(address.latitude))) setLatitude(Number(address.latitude));
+    if (Number.isFinite(Number(address.longitude))) setLongitude(Number(address.longitude));
+    await applyPlace(address);
+    setSuccess(okMessage);
+  };
+
   const handleDetect = async () => {
     try {
       setDetecting(true);
       setError("");
       setSuccess("");
       const address = await getCurrentAddressFromGPS();
-      if (address.line1) setLine1(address.line1);
-      if (address.city) setCity(address.city);
-      if (address.postalCode) setPostalCode(address.postalCode);
-      if (address.country) setCountry(address.country);
-      if (Number.isFinite(Number(address.latitude))) setLatitude(Number(address.latitude));
-      if (Number.isFinite(Number(address.longitude))) setLongitude(Number(address.longitude));
-      setSuccess("Address detected from current location.");
+      await fillFromPlace(address, "Address detected from current location.");
     } catch (err) {
       setError(err.message || "Unable to detect location.");
     } finally {
       setDetecting(false);
+    }
+  };
+
+  const handleMapPick = async ({ latitude: lat, longitude: lng }) => {
+    setLatitude(lat);
+    setLongitude(lng);
+    try {
+      setError("");
+      const address = await addressFromCoords(lat, lng);
+      await fillFromPlace(address, "Pin moved — review the fields, then save.");
+    } catch (err) {
+      await applyPlace({ latitude: lat, longitude: lng, label: "Selected place" });
+      setError(err.message || "Pin set. Fill the street if it is blank.");
     }
   };
 
@@ -135,6 +159,16 @@ export default function ManageAddressScreen({ navigation }) {
           latitude,
           longitude}});
       await updateStoredUser(updated);
+      await applyPlace(updated?.defaultAddress || {
+        houseNumber: houseNumber.trim(),
+        line1: line1.trim(),
+        landmark: landmark.trim(),
+        city: city.trim(),
+        postalCode: postalCode.trim(),
+        country: country.trim() || "India",
+        latitude,
+        longitude,
+      });
       setSuccess("Address saved successfully.");
     } catch (err) {
       setError(err.message || "Unable to save address.");
@@ -177,6 +211,9 @@ export default function ManageAddressScreen({ navigation }) {
         detecting={detecting}
         detectLabel={detecting ? MANAGE_ADDRESS_SCREEN_UI.useGpsLoading : MANAGE_ADDRESS_SCREEN_UI.useGps}
         onDetect={handleDetect}
+        latitude={latitude}
+        longitude={longitude}
+        onMapPick={handleMapPick}
         saving={saving}
         onSave={handleSave}
       />
@@ -265,6 +302,7 @@ export default function ManageAddressScreen({ navigation }) {
                 ) : null}
 
                 <SectionReveal delay={140}>
+                  <PickLocationMap latitude={latitude} longitude={longitude} onPick={handleMapPick} />
                   <PremiumButton
                     label={detecting ? MANAGE_ADDRESS_SCREEN_UI.useGpsLoading : MANAGE_ADDRESS_SCREEN_UI.useGps}
                     iconLeft="locate"
@@ -407,6 +445,7 @@ function createManageStyles(c, shadowPremium, isDark) {
     bannerWrap: {
       marginBottom: spacing.sm},
     detectBtnSpacer: {
+      marginTop: spacing.sm,
       marginBottom: spacing.md},
     fieldStack: {
       gap: spacing.sm},

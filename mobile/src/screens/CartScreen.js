@@ -38,6 +38,7 @@ import GoldHairline from "../components/ui/GoldHairline";
 import SectionReveal from "../components/motion/SectionReveal";
 import { staggerDelay } from "../theme/motion";
 import { CART_ADDRESS, CART_UI } from "../content/appContent";
+import { DELIVERY_NOT_POSSIBLE } from "../content/storefrontContent";
 import CheckoutPlacingOverlay from "../components/loading/CheckoutPlacingOverlay";
 import Animated, {
   Easing,
@@ -239,6 +240,7 @@ export default function CartScreen({ navigation, route }) {
             etaMinutesMax: res?.etaMinutesMax,
             etaLabel: res?.etaLabel || "",
             distanceLabel: res?.distanceLabel || "",
+            message: res?.message || "",
           });
         })
         .catch(() => {
@@ -360,7 +362,7 @@ export default function CartScreen({ navigation, route }) {
     }
 
     if (deliveryBlocked) {
-      setError("We do not deliver to this pincode yet. Please choose another address.");
+      setError(deliveryQuote.message || DELIVERY_NOT_POSSIBLE);
       return;
     }
 
@@ -465,7 +467,7 @@ export default function CartScreen({ navigation, route }) {
   const deliveryFee = deliveryQuote.checked && deliveryQuote.serviceable ? Number(deliveryQuote.fee || 0) : 0;
   const deliveryBlocked = deliveryQuote.checked && !deliveryQuote.serviceable;
   const deliveryHint = deliveryBlocked
-    ? "We do not deliver to this area yet."
+    ? deliveryQuote.message || DELIVERY_NOT_POSSIBLE
     : deliveryQuote.checked
       ? [
           deliveryQuote.etaLabel,

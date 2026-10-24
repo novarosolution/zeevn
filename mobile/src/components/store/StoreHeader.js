@@ -122,6 +122,7 @@ export default function StoreHeader({
   locationKind = "",
   locationMeta = "",
   nearbyLabel = "",
+  outOfArea = false,
   locationLabel = STORE_HEADER.locationLabel,
   chips = [],
   accent,
@@ -142,26 +143,38 @@ export default function StoreHeader({
   const name = String(firstName || "").trim();
   const street = locationStreet || locationText || STORE_HEADER.locationFallback;
   const eta = locationMeta || STORE_HEADER.etaFallback;
-  const spoken = `${STORE_HEADER.etaIn(STORE_BRAND.name)} ${eta}`;
+  const spoken = outOfArea ? STORE_HEADER.etaOutside : `${STORE_HEADER.etaIn(STORE_BRAND.name)} ${eta}`;
 
   return (
     <View style={{ paddingHorizontal: gutter, gap: 8 }}>
       <View style={styles.hero}>
         <View style={styles.etaBlock}>
-          <Text style={type.ui(13, "medium", c.inkMute, { letterSpacing: 0.15 })} numberOfLines={1}>
-            {STORE_HEADER.etaIn(STORE_BRAND.name)}
-          </Text>
-          <View style={styles.etaRow}>
+          {outOfArea ? (
             <Text
-              style={[type.display(34, { ls: -1, lh: 38 }), styles.etaTime]}
-              numberOfLines={1}
+              style={type.ui(16, "bold", c.danger, { letterSpacing: -0.2 })}
               accessibilityRole="header"
               accessibilityLabel={spoken}
             >
-              {eta}
+              {STORE_HEADER.etaOutside}
             </Text>
-            {!locationEmpty ? <NearbyPill label={nearbyLabel} /> : null}
-          </View>
+          ) : (
+            <>
+              <Text style={type.ui(13, "medium", c.inkMute, { letterSpacing: 0.15 })} numberOfLines={1}>
+                {STORE_HEADER.etaIn(STORE_BRAND.name)}
+              </Text>
+              <View style={styles.etaRow}>
+                <Text
+                  style={[type.display(34, { ls: -1, lh: 38 }), styles.etaTime]}
+                  numberOfLines={1}
+                  accessibilityRole="header"
+                  accessibilityLabel={spoken}
+                >
+                  {eta}
+                </Text>
+                {!locationEmpty ? <NearbyPill label={nearbyLabel} /> : null}
+              </View>
+            </>
+          )}
         </View>
         <View style={styles.actions}>
           {signedIn ? (

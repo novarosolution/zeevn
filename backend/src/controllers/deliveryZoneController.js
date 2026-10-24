@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const DeliveryZone = require("../models/DeliveryZone");
 const StoreSettings = require("../models/StoreSettings");
 const User = require("../models/User");
@@ -8,6 +9,25 @@ const {
   sanitizeZoneBody,
   normalizePostalCode,
 } = require("../services/deliveryZoneService");
+
+function sanitizeStores(rows) {
+  return (Array.isArray(rows) ? rows : [])
+    .map((s) => {
+      const lat = Number(s.latitude);
+      const lng = Number(s.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      const row = {
+        label: String(s.label || "Shop").trim() || "Shop",
+        latitude: lat,
+        longitude: lng,
+        maxRadiusKm: Math.max(0, Number(s.maxRadiusKm ?? 25)),
+        isActive: s.isActive === undefined ? true : Boolean(s.isActive),
+      };
+      if (s._id && mongoose.isValidObjectId(s._id)) row._id = s._id;
+      return row;
+    })
+    .filter(Boolean);
+}
 
 const LIVE_ASSIGN_STATUSES = ["ready_for_pickup", "shipped", "out_for_delivery"];
 
@@ -163,15 +183,45 @@ async function getStoreSettings(req, res, next) {
 async function updateStoreSettings(req, res, next) {
   try {
     const doc = await StoreSettings.get();
+    const rate = Number(req.body.minutesPerKm);
+    if (Number.isFinite(rate) && rate > 0) doc.minutesPerKm = rate;
+
+    if (Array.isArray(req.body.stores)) {
+      const stores = sanitizeStores(req.body.stores);
+      if (!stores.length) {
+        return res.status(400).json({ message: "Add at least one shop pin." });
+      }
+      doc.stores = stores;
+      StoreSettings.syncPrimary(doc);
+      await doc.save();
+      return res.json(doc);
+    }
+
     const lat = Number(req.body.latitude);
     const lng = Number(req.body.longitude);
     if (Number.isFinite(lat)) doc.latitude = lat;
     if (Number.isFinite(lng)) doc.longitude = lng;
     if (req.body.label != null) doc.label = String(req.body.label).trim() || doc.label;
-    const rate = Number(req.body.minutesPerKm);
-    if (Number.isFinite(rate) && rate > 0) doc.minutesPerKm = rate;
     const radius = Number(req.body.maxRadiusKm);
     if (Number.isFinite(radius) && radius >= 0) doc.maxRadiusKm = radius;
+    if (!doc.stores?.length) {
+      doc.stores = [
+        {
+          label: doc.label,
+          latitude: doc.latitude,
+          longitude: doc.longitude,
+          maxRadiusKm: doc.maxRadiusKm,
+          isActive: true,
+        },
+      ];
+    } else {
+      const first = doc.stores[0];
+      if (Number.isFinite(lat)) first.latitude = lat;
+      if (Number.isFinite(lng)) first.longitude = lng;
+      if (req.body.label != null) first.label = doc.label;
+      if (Number.isFinite(radius) && radius >= 0) first.maxRadiusKm = radius;
+    }
+    StoreSettings.syncPrimary(doc);
     await doc.save();
     res.json(doc);
   } catch (error) {

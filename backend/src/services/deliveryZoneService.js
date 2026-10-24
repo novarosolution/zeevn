@@ -23,12 +23,14 @@ function feeForZone(zone, itemsTotal) {
   return Number.isFinite(fee) ? Math.max(0, fee) : 0;
 }
 
-function decorateQuote(quote, store, km) {
+const DELIVERY_NOT_POSSIBLE = "Delivery is not possible to this area";
+
+function decorateQuote(quote, settings, km) {
   const next = { ...quote, distanceKm: null, distanceLabel: "", etaLabel: "" };
   if (Number.isFinite(km)) {
     next.distanceKm = Math.round(km * 10) / 10;
     next.distanceLabel = formatKm(km);
-    const minutes = minutesFromKm(km, store?.minutesPerKm);
+    const minutes = minutesFromKm(km, settings?.minutesPerKm);
     if (minutes != null) {
       next.etaMinutesMin = minutes;
       next.etaMinutesMax = minutes;
@@ -50,6 +52,7 @@ function quoteFromZone(zone, itemsTotal = 0) {
       etaMinutesMax: null,
       zoneId: null,
       zoneName: "",
+      message: DELIVERY_NOT_POSSIBLE,
     };
   }
   return {
@@ -60,7 +63,27 @@ function quoteFromZone(zone, itemsTotal = 0) {
     etaMinutesMax: Number(zone.etaMinutesMax || 0),
     zoneId: String(zone._id),
     zoneName: zone.name || "",
+    message: "",
   };
+}
+
+/** Nearest store that covers this point (own radius, or any drawn zone). */
+function pickCoveringStore(stores, lat, lng, inAnyZone) {
+  let store = null;
+  let km = Infinity;
+  for (const row of stores || []) {
+    if (row?.isActive === false) continue;
+    const d = distanceKm({ lat, lng }, row);
+    if (d == null) continue;
+    const inRadius = Number(row.maxRadiusKm) > 0 && d <= Number(row.maxRadiusKm);
+    if (inAnyZone || inRadius) {
+      if (d < km) {
+        km = d;
+        store = row;
+      }
+    }
+  }
+  return { store, km: store ? km : null };
 }
 
 /**
@@ -94,32 +117,51 @@ async function findZoneForPoint(lat, lng) {
 }
 
 async function resolveDeliveryQuote({ postalCode, city, itemsTotal = 0, latitude, longitude } = {}) {
-  const store = await StoreSettings.get();
+  const settings = await StoreSettings.get();
+  const stores = StoreSettings.listStores(settings);
   const lat = Number(latitude);
   const lng = Number(longitude);
   const hasPoint = Number.isFinite(lat) && Number.isFinite(lng);
-  const km = hasPoint ? distanceKm({ lat, lng }, { lat: store.latitude, lng: store.longitude }) : null;
 
   let zone = hasPoint ? await findZoneForPoint(lat, lng) : null;
   if (!zone) zone = await findZoneForAddress({ postalCode, city });
 
-  if (!zone && hasPoint && Number(store.maxRadiusKm) > 0 && Number.isFinite(km) && km <= store.maxRadiusKm) {
+  const picked = hasPoint ? pickCoveringStore(stores, lat, lng, Boolean(zone)) : { store: null, km: null };
+  const store = picked.store || stores[0];
+  const km = picked.km != null ? picked.km : hasPoint && store ? distanceKm({ lat, lng }, store) : null;
+
+  if (zone) {
+    return decorateQuote(
+      { ...quoteFromZone(zone, itemsTotal), storeId: store?._id ? String(store._id) : null, storeName: store?.label || "" },
+      settings,
+      km
+    );
+  }
+
+  if (picked.store) {
     return decorateQuote(
       {
         serviceable: true,
         fee: 0,
         freeAbove: 0,
-        etaMinutesMin: minutesFromKm(km, store.minutesPerKm),
-        etaMinutesMax: minutesFromKm(km, store.minutesPerKm),
+        etaMinutesMin: minutesFromKm(picked.km, settings.minutesPerKm),
+        etaMinutesMax: minutesFromKm(picked.km, settings.minutesPerKm),
         zoneId: null,
-        zoneName: store.label || "Store area",
+        zoneName: picked.store.label || "Store area",
+        storeId: picked.store._id ? String(picked.store._id) : null,
+        storeName: picked.store.label || "",
+        message: "",
       },
-      store,
-      km
+      settings,
+      picked.km
     );
   }
 
-  return decorateQuote(quoteFromZone(zone, itemsTotal), store, km);
+  return decorateQuote(
+    { ...quoteFromZone(null), storeId: store?._id ? String(store._id) : null, storeName: store?.label || "" },
+    settings,
+    km
+  );
 }
 
 /**
@@ -177,12 +219,26 @@ function sanitizeZoneBody(body = {}) {
 }
 
 module.exports = {
+  DELIVERY_NOT_POSSIBLE,
   normalizePostalCode,
   normalizeCity,
   feeForZone,
   quoteFromZone,
+  pickCoveringStore,
   findZoneForAddress,
   resolveDeliveryQuote,
   findPostalCodeConflict,
   sanitizeZoneBody,
 };
+
+if (require.main === module) {
+  const a = { label: "A", latitude: 23.22, longitude: 72.64, maxRadiusKm: 5, isActive: true };
+  const b = { label: "B", latitude: 21.17, longitude: 72.83, maxRadiusKm: 8, isActive: true };
+  const nearA = pickCoveringStore([a, b], 23.23, 72.64, false);
+  console.assert(nearA.store?.label === "A", nearA);
+  const far = pickCoveringStore([a, b], 19.07, 72.87, false);
+  console.assert(!far.store, far);
+  const inZoneFarFromBoth = pickCoveringStore([a, b], 19.07, 72.87, true);
+  console.assert(inZoneFarFromBoth.store, inZoneFarFromBoth);
+  console.log("deliveryZoneService ok");
+}

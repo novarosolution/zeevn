@@ -411,8 +411,7 @@ async function createOrder(req, res, next) {
     });
     if (!deliveryQuote.serviceable) {
       return res.status(400).json({
-        message:
-          "We do not deliver to this area yet. Please choose a serviceable address or contact support.",
+        message: deliveryQuote.message || "Delivery is not possible to this area",
         code: "DELIVERY_NOT_SERVICEABLE",
       });
     }

@@ -39,17 +39,22 @@ function ClickCatch({ onClick, draw }) {
   return null;
 }
 
-const shopIcon = L.divIcon({
-  className: "admin-store-pin",
-  html: `<div style="width:36px;height:36px;border-radius:18px;background:#fff;border:2px solid #C9A227;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.18);font-size:16px;line-height:1;">🏪</div>`,
-  iconSize: [36, 36],
-  iconAnchor: [18, 36],
-});
+function shopIcon(selected) {
+  const border = selected ? "#C9A227" : "#8A8478";
+  const size = selected ? 36 : 28;
+  return L.divIcon({
+    className: "admin-store-pin",
+    html: `<div style="width:${size}px;height:${size}px;border-radius:${size / 2}px;background:#fff;border:2px solid ${border};display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.18);font-size:${selected ? 16 : 13}px;line-height:1;">🏪</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size],
+  });
+}
 
 const mute = { interactive: false };
 
 export default function AdminDeliveryMap({
   store,
+  stores = [],
   radiusKm = 25,
   zones = [],
   draft = [],
@@ -57,10 +62,10 @@ export default function AdminDeliveryMap({
   mode = "store",
   onMapClick,
 }) {
+  const pins = stores.length ? stores : store ? [store] : [];
   const lat = Number(store?.latitude);
   const lng = Number(store?.longitude);
   const center = Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : FALLBACK;
-  const hasStore = Number.isFinite(lat) && Number.isFinite(lng);
   const draftPos = draft.map((p) => [p.lat, p.lng]);
 
   return (
@@ -79,19 +84,32 @@ export default function AdminDeliveryMap({
         />
         <MapReady />
         <ClickCatch onClick={onMapClick} draw={mode === "draw"} />
-        {hasStore ? (
-          <>
-            <Marker position={center} icon={shopIcon} />
-            {Number(radiusKm) > 0 ? (
-              <Circle
-                center={center}
-                radius={Number(radiusKm) * 1000}
-                pathOptions={{ color: "#A06C24", weight: 2, fillColor: "#DCAC74", fillOpacity: 0.1, ...mute }}
-                interactive={false}
-              />
-            ) : null}
-          </>
-        ) : null}
+        {pins.map((s) => {
+          const slat = Number(s.latitude);
+          const slng = Number(s.longitude);
+          if (!Number.isFinite(slat) || !Number.isFinite(slng)) return null;
+          const selected = store && String(s._id || "") === String(store._id || "");
+          const r = Number(selected ? radiusKm : s.maxRadiusKm);
+          return (
+            <React.Fragment key={String(s._id || `${slat},${slng}`)}>
+              <Marker position={[slat, slng]} icon={shopIcon(selected || pins.length === 1)} />
+              {r > 0 ? (
+                <Circle
+                  center={[slat, slng]}
+                  radius={r * 1000}
+                  pathOptions={{
+                    color: selected || pins.length === 1 ? "#A06C24" : "#8A8478",
+                    weight: selected || pins.length === 1 ? 2 : 1,
+                    fillColor: "#DCAC74",
+                    fillOpacity: selected || pins.length === 1 ? 0.1 : 0.04,
+                    ...mute,
+                  }}
+                  interactive={false}
+                />
+              ) : null}
+            </React.Fragment>
+          );
+        })}
         {zones.map((z) => {
           const ring = (z.polygon || []).map((p) => [p.lat, p.lng]);
           if (ring.length < 3) return null;

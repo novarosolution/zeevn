@@ -37,6 +37,7 @@ export const STORE_BRAND = {
 
 /** Free-delivery threshold copy — shared by the header chip and the promo card. */
 export const STORE_FREE_DELIVERY = "Free delivery over ₹1,499";
+export const DELIVERY_NOT_POSSIBLE = "Delivery is not possible to this area";
 
 /** Top block of Home. */
 export const STORE_HEADER = {
@@ -57,7 +58,7 @@ export const STORE_HEADER = {
   /** “Zeevan in” above the big delivery time. */
   etaIn: (brand) => `${brand} in`,
   etaFallback: "1–2 days",
-  etaOutside: "Not in range",
+  etaOutside: DELIVERY_NOT_POSSIBLE,
   nearby: "nearby",
   deliveryChip: STORE_FREE_DELIVERY,
   distanceSuffix: "from our farm shop",
@@ -790,7 +791,7 @@ export const STORE_CART = {
         { key: "Work", label: "Work", icon: "briefcase" },
         { key: "Other", label: "Other", icon: "location" },
       ],
-      blocked: "We do not deliver to this pincode yet.",
+      blocked: DELIVERY_NOT_POSSIBLE,
       fields: {
         fullName: "Full name",
         phone: "Mobile number",

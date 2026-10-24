@@ -195,11 +195,12 @@ export default function StoreHome({
     if (STORE_HEADER.deliveryChip) next.push({ key: "delivery", kind: "perk", icon: "bicycle-outline", label: STORE_HEADER.deliveryChip });
     return next;
   }, [festival]);
+  const outOfArea = deliveryQuote?.serviceable === false;
   const locationMeta =
     deliveryQuote?.serviceable && deliveryQuote.etaLabel
       ? deliveryQuote.etaLabel
-      : deliveryQuote && deliveryQuote.serviceable === false
-        ? STORE_HEADER.etaOutside
+      : outOfArea
+        ? deliveryQuote.message || STORE_HEADER.etaOutside
         : etaLabel
           ? STORE_HEADER.etaShort(etaLabel)
           : "";
@@ -380,6 +381,7 @@ export default function StoreHome({
                 locationKind={locationKind}
                 locationMeta={locationMeta}
                 nearbyLabel={nearbyLabel}
+                outOfArea={outOfArea}
                 locationStreet={locationParts.street}
                 locationDetail={locationParts.detail}
                 locationEmpty={locationParts.empty}

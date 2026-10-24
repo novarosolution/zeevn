@@ -23,11 +23,19 @@ export const updateDeliveryLocation = (_token, payload) =>
  * Public serviceability check for checkout.
  * @param {{ postalCode?: string, city?: string, itemsTotal?: number }} params
  */
-export function checkDeliveryServiceability({ postalCode = "", city = "", itemsTotal = 0 } = {}) {
+export function checkDeliveryServiceability({
+  postalCode = "",
+  city = "",
+  itemsTotal = 0,
+  latitude,
+  longitude,
+} = {}) {
   const q = new URLSearchParams();
   if (postalCode) q.set("postalCode", String(postalCode).trim());
   if (city) q.set("city", String(city).trim());
   if (itemsTotal != null) q.set("itemsTotal", String(Number(itemsTotal) || 0));
+  if (Number.isFinite(Number(latitude))) q.set("lat", String(latitude));
+  if (Number.isFinite(Number(longitude))) q.set("lng", String(longitude));
   const qs = q.toString();
   return apiGet(`/delivery/check${qs ? `?${qs}` : ""}`, { auth: false });
 }

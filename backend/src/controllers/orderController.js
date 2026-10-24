@@ -401,15 +401,18 @@ async function createOrder(req, res, next) {
       discountAmount = computeCouponDiscount(resolvedCoupon, itemsTotal);
     }
 
+    const resolvedShippingAddress = await resolveShippingCoordinates(shippingAddress);
     const deliveryQuote = await resolveDeliveryQuote({
-      postalCode: shippingAddress?.postalCode,
-      city: shippingAddress?.city,
+      postalCode: resolvedShippingAddress?.postalCode,
+      city: resolvedShippingAddress?.city,
       itemsTotal,
+      latitude: resolvedShippingAddress?.latitude,
+      longitude: resolvedShippingAddress?.longitude,
     });
     if (!deliveryQuote.serviceable) {
       return res.status(400).json({
         message:
-          "We do not deliver to this pincode yet. Please choose a serviceable address or contact support.",
+          "We do not deliver to this area yet. Please choose a serviceable address or contact support.",
         code: "DELIVERY_NOT_SERVICEABLE",
       });
     }
@@ -419,8 +422,6 @@ async function createOrder(req, res, next) {
     const isOnline = isOnlinePaymentMethod(normalizedPaymentMethod);
     const initialStatus = isOnline ? "pending_payment" : "pending";
     const paymentExpiresAt = isOnline ? new Date(Date.now() + RAZORPAY_PAYMENT_WINDOW_MS) : null;
-
-    const resolvedShippingAddress = await resolveShippingCoordinates(shippingAddress);
 
     const order = await Order.create({
       user: req.user._id,

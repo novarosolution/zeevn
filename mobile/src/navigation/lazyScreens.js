@@ -1,32 +1,58 @@
-/** Native: customer screens eager; heavy routes (maps, charts) lazy-loaded. */
+/** Native: customer routes load on first visit. Admin is web-only. */
 import { createLazyScreen } from "./createLazyScreen";
 
-export {
-  ShopScreen,
-  CheckoutScreen,
-  ProductScreen,
-  CartScreen,
-  ProfileScreen,
-  EditProfileScreen,
-  OrderConfirmedScreen,
-  NotificationsScreen,
-  SettingsScreen,
-  RedeemRewardsScreen,
-  ManageAddressScreen,
-  SupportScreen,
-  AboutScreen,
-  LegalDocumentScreen,
-} from "./screenRegistryCustomer";
-
+export const ShopScreen = createLazyScreen(() => import("../screens/ShopScreen"), {
+  screenName: "ShopScreen",
+});
+export const CheckoutScreen = createLazyScreen(() => import("../screens/CheckoutScreen"), {
+  screenName: "CheckoutScreen",
+});
+export const ProductScreen = createLazyScreen(() => import("../screens/ProductScreen"), {
+  screenName: "ProductScreen",
+});
+export const CartScreen = createLazyScreen(() => import("../screens/CartScreen"), {
+  screenName: "CartScreen",
+});
+export const ProfileScreen = createLazyScreen(() => import("../screens/ProfileScreen"), {
+  screenName: "ProfileScreen",
+});
+export const EditProfileScreen = createLazyScreen(() => import("../screens/EditProfileScreen"), {
+  screenName: "EditProfileScreen",
+});
+export const OrderConfirmedScreen = createLazyScreen(() => import("../screens/OrderConfirmedScreen"), {
+  screenName: "OrderConfirmedScreen",
+});
+export const NotificationsScreen = createLazyScreen(() => import("../screens/NotificationsScreen"), {
+  screenName: "NotificationsScreen",
+});
+export const SettingsScreen = createLazyScreen(() => import("../screens/SettingsScreen"), {
+  screenName: "SettingsScreen",
+});
+export const RedeemRewardsScreen = createLazyScreen(() => import("../screens/RedeemRewardsScreen"), {
+  screenName: "RedeemRewardsScreen",
+});
+export const ManageAddressScreen = createLazyScreen(() => import("../screens/ManageAddressScreen"), {
+  screenName: "ManageAddressScreen",
+});
+export const SupportScreen = createLazyScreen(() => import("../screens/SupportScreen"), {
+  screenName: "SupportScreen",
+});
+export const AboutScreen = createLazyScreen(() => import("../screens/AboutScreen"), {
+  screenName: "AboutScreen",
+});
+export const LegalDocumentScreen = createLazyScreen(() => import("../screens/LegalDocumentScreen"), {
+  screenName: "LegalDocumentScreen",
+});
 export const MyOrdersScreen = createLazyScreen(() => import("../screens/MyOrdersScreen"), {
   screenName: "MyOrdersScreen",
+});
+export const WishlistScreen = createLazyScreen(() => import("../screens/WishlistScreen"), {
+  screenName: "WishlistScreen",
 });
 export const DeliveryDashboardScreen = createLazyScreen(
   () => import("../screens/DeliveryDashboardScreen"),
   { screenName: "DeliveryDashboardScreen" }
 );
-export * from "./adminLazyScreens";
-export const YoupiCheckoutScreen = createLazyScreen(
-  () => import("../screens/YoupiCheckoutScreen"),
-  { screenName: "YoupiCheckoutScreen" }
-);
+export const YoupiCheckoutScreen = createLazyScreen(() => import("../screens/YoupiCheckoutScreen"), {
+  screenName: "YoupiCheckoutScreen",
+});

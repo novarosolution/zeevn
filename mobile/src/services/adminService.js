@@ -102,6 +102,10 @@ export const deleteAdminDeliveryZone = (_token, zoneId) =>
 
 export const fetchAdminDeliveryPartners = (_token) => apiGet("/admin/delivery-partners");
 
+export const fetchAdminStoreSettings = (_token) => apiGet("/admin/store-settings");
+
+export const updateAdminStoreSettings = (_token, payload) => apiPut("/admin/store-settings", payload);
+
 export const fetchAdminHomeView = (_token) => apiGet("/admin/home-view");
 
 export const updateAdminHomeView = (_token, payload) => apiPut("/admin/home-view", payload);

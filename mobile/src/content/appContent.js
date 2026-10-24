@@ -24,6 +24,9 @@ export const ZEEVAN_BRAND_ASSETS = {
   wordmarkLight: require("../../assets/zeevan-brand-light.png"),
   mark: require("../../assets/zeevan-logo.png"),
   markLight: require("../../assets/zeevan-brand-light.png"),
+  zMark: require("../../assets/app-icon-z-mark.png"),
+  zIconLight: require("../../assets/app-icon-light.png"),
+  zIconDark: require("../../assets/app-icon-dark.png"),
 };
 
 /**

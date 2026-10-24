@@ -1,71 +1,37 @@
 import React from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { STORE_HEADER } from "../../content/storefrontContent";
+import { STORE_BRAND, STORE_HEADER } from "../../content/storefrontContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { useCountUp } from "./HomeMotion";
 import PressableScale from "./PressableScale";
 
-function InfoChip({ chip, accent }) {
-  const { c, type, isDark } = useStoreTheme();
-  const festival = chip.kind === "festival";
-  const tint = isDark ? c.gold : c.brandAlt;
-  return (
-    <View
-      accessible
-      accessibilityLabel={chip.label}
-      style={[
-        styles.chip,
-        festival && styles.chipFestival,
-        {
-          backgroundColor: withAlpha(c.card, isDark ? 0.85 : 0.92),
-          borderColor: festival
-            ? withAlpha(accent, isDark ? 0.42 : 0.34)
-            : withAlpha(isDark ? c.gold : c.brand, isDark ? 0.24 : 0.14),
-        },
-      ]}
-    >
-      {festival ? (
-        <Ionicons name="sparkles" size={14} color={accent} />
-      ) : (
-        <MaterialCommunityIcons name={chip.icon} size={14} color={tint} />
-      )}
-      <Text
-        style={type.ui(12, festival ? "extrabold" : "bold", festival ? accent : c.inkSoft, festival ? { letterSpacing: 0.2 } : null)}
-        numberOfLines={1}
-      >
-        {chip.label}
-      </Text>
-    </View>
-  );
-}
-
 function Avatar({ name, avatarUrl, onPress, signedIn, hasUnread }) {
-  const { c, type, shadow } = useStoreTheme();
+  const { c, type } = useStoreTheme();
   const initial = String(name || "").trim().charAt(0).toUpperCase();
   return (
     <PressableScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={hasUnread ? STORE_HEADER.a11y.accountUnread : STORE_HEADER.a11y.account}
-      style={[shadow.soft, styles.avatarWrap]}
+      style={styles.avatarWrap}
     >
       <View
         style={[
           styles.avatar,
-          { backgroundColor: c.card, borderColor: signedIn ? c.gold : withAlpha(c.brand, 0.14), borderWidth: signedIn ? 1.8 : 1 },
+          { backgroundColor: c.card, borderColor: signedIn ? c.gold : withAlpha(c.brand, 0.14) },
         ]}
       >
         {avatarUrl ? (
           <Image source={{ uri: avatarUrl }} style={StyleSheet.absoluteFill} contentFit="cover" />
         ) : signedIn && initial ? (
           <LinearGradient colors={[c.brandAlt, c.brand]} style={[StyleSheet.absoluteFill, styles.avatarFill]}>
-            <Text style={type.display(19, { color: c.onBrand, ls: 0 })}>{initial}</Text>
+            <Text style={type.display(15, { color: c.onBrand, ls: 0 })}>{initial}</Text>
           </LinearGradient>
         ) : (
-          <Ionicons name="person-outline" size={21} color={c.ink} />
+          <Ionicons name="person-outline" size={17} color={c.ink} />
         )}
       </View>
       {hasUnread ? <View style={[styles.unreadDot, { backgroundColor: c.danger, borderColor: c.card }]} /> : null}
@@ -74,23 +40,69 @@ function Avatar({ name, avatarUrl, onPress, signedIn, hasUnread }) {
 }
 
 function RewardsPill({ points, onPress }) {
-  const { c, type, shadow, isDark } = useStoreTheme();
+  const { c, type, isDark } = useStoreTheme();
   const shown = useCountUp(points);
   return (
     <PressableScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={STORE_HEADER.a11y.rewards(Number(points).toLocaleString("en-IN"))}
-      style={[styles.rewards, shadow.soft, { borderColor: isDark ? withAlpha(c.gold, 0.5) : "#E9B04A" }]}
+      style={[
+        styles.rewards,
+        {
+          backgroundColor: isDark ? withAlpha("#0F2418", 0.55) : withAlpha("#FFFFFF", 0.82),
+          borderColor: isDark ? withAlpha(c.gold, 0.4) : c.goldLine,
+        },
+      ]}
     >
-      <LinearGradient
-        colors={isDark ? ["rgba(232,188,132,0.28)", "rgba(232,188,132,0.12)"] : ["#FFF1C9", "#F8D178"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-      <MaterialCommunityIcons name="star-circle" size={22} color={isDark ? c.gold : "#B9770E"} />
-      <Text style={type.ui(14.5, "extrabold", isDark ? c.ink : "#4A2B05")}>{shown.toLocaleString("en-IN")}</Text>
+      <MaterialCommunityIcons name="star-circle" size={15} color={isDark ? c.gold : c.goldText} />
+      <Text style={type.ui(12.5, "bold", isDark ? c.ink : c.goldText, { letterSpacing: -0.2 })}>
+        {shown.toLocaleString("en-IN")}
+      </Text>
+    </PressableScale>
+  );
+}
+
+function NearbyPill({ label }) {
+  const { c, type, isDark } = useStoreTheme();
+  const text = label || STORE_HEADER.nearby;
+  return (
+    <View
+      style={[
+        styles.nearby,
+        {
+          backgroundColor: isDark ? withAlpha("#FFFFFF", 0.1) : withAlpha("#FFFFFF", 0.72),
+          borderColor: isDark ? withAlpha("#FFFFFF", 0.14) : withAlpha("#FFFFFF", 0.95),
+        },
+      ]}
+      accessible
+      accessibilityLabel={text}
+    >
+      <Ionicons name="bicycle" size={15} color={isDark ? c.gold : c.brand} />
+      <Text style={type.ui(12.5, "semibold", c.inkSoft)}>{text}</Text>
+    </View>
+  );
+}
+
+function AddressRow({ kind, street, empty, onPress }) {
+  const { c, type } = useStoreTheme();
+  const place = (kind || STORE_HEADER.locationLabel).toUpperCase();
+  const line = empty ? STORE_HEADER.locationFallback : street;
+  return (
+    <PressableScale
+      scaleTo={0.98}
+      lite
+      onPress={onPress}
+      style={styles.address}
+      accessibilityRole="button"
+      accessibilityLabel={STORE_HEADER.a11y.location(`${place} ${line}`)}
+    >
+      <Ionicons name="location" size={15} color={c.ink} />
+      <Text style={[type.ui(13.5, "semibold", c.ink, { letterSpacing: -0.1 }), styles.addressText]} numberOfLines={1}>
+        <Text style={type.ui(13.5, "bold", c.ink)}>{place}</Text>
+        {` · ${line}`}
+      </Text>
+      <Ionicons name="chevron-down" size={16} color={c.inkMute} />
     </PressableScale>
   );
 }
@@ -98,13 +110,19 @@ function RewardsPill({ points, onPress }) {
 export default function StoreHeader({
   signedIn,
   firstName,
+  greeting,
   avatarUrl,
   hasUnread = false,
   points = 0,
   ornament = "none",
   locationText,
+  locationStreet,
+  locationDetail = "",
+  locationEmpty = false,
   locationKind = "",
-  locationLabel = STORE_HEADER.deliveringTo,
+  locationMeta = "",
+  nearbyLabel = "",
+  locationLabel = STORE_HEADER.locationLabel,
   chips = [],
   accent,
   extendTop = 0,
@@ -113,121 +131,110 @@ export default function StoreHeader({
   onPressProfile,
   onPressSignIn,
 }) {
-  const { c, type, shadow, gutter, isDark } = useStoreTheme();
-  const chipAccent = accent || c.goldText;
+  const { c, type, gutter } = useStoreTheme();
+  void greeting;
   void ornament;
   void extendTop;
+  void locationLabel;
+  void locationDetail;
+  void chips;
+  void accent;
+  const name = String(firstName || "").trim();
+  const street = locationStreet || locationText || STORE_HEADER.locationFallback;
+  const eta = locationMeta || STORE_HEADER.etaFallback;
+  const spoken = `${STORE_HEADER.etaIn(STORE_BRAND.name)} ${eta}`;
 
   return (
-    <View>
-      <View style={{ paddingHorizontal: gutter }}>
-        <View style={styles.topBar}>
-          <PressableScale scaleTo={0.96} lite
-            onPress={onPressLocation}
-            style={styles.location}
-            accessibilityRole="button"
-            accessibilityLabel={STORE_HEADER.a11y.location(locationText)}
-          >
-            <View
-              style={[
-                styles.pin,
-                { backgroundColor: withAlpha(c.card, isDark ? 0.16 : 0.78), borderColor: withAlpha(isDark ? c.gold : c.brand, isDark ? 0.26 : 0.14) },
-              ]}
+    <View style={{ paddingHorizontal: gutter, gap: 8 }}>
+      <View style={styles.hero}>
+        <View style={styles.etaBlock}>
+          <Text style={type.ui(13, "medium", c.inkMute, { letterSpacing: 0.15 })} numberOfLines={1}>
+            {STORE_HEADER.etaIn(STORE_BRAND.name)}
+          </Text>
+          <View style={styles.etaRow}>
+            <Text
+              style={[type.display(34, { ls: -1, lh: 38 }), styles.etaTime]}
+              numberOfLines={1}
+              accessibilityRole="header"
+              accessibilityLabel={spoken}
             >
-              <Ionicons name="location" size={17} color={isDark ? c.gold : c.brand} />
-            </View>
-            <View style={styles.locationText}>
-              <View style={styles.locationLabelRow}>
-                <Text style={type.eyebrow(c.inkSoft, 9.5)} numberOfLines={1}>
-                  {locationKind ? `${locationLabel} · ${locationKind}` : locationLabel}
-                </Text>
-                <Ionicons name="chevron-down" size={12} color={c.inkSoft} />
-              </View>
-              <Text style={type.ui(16.5, "extrabold", c.ink)} numberOfLines={1}>
-                {locationText}
-              </Text>
-            </View>
-          </PressableScale>
-
-          <View style={styles.actions}>
-            {signedIn ? (
-              <RewardsPill points={points} onPress={onPressRewards} />
-            ) : (
-              <PressableScale
-                onPress={onPressSignIn}
-                style={[styles.signIn, shadow.soft, { backgroundColor: c.brand }]}
-                accessibilityRole="button"
-                accessibilityLabel={STORE_HEADER.signIn}
-              >
-                <Text style={type.ui(13.5, "extrabold", c.onBrand)}>{STORE_HEADER.signIn}</Text>
-              </PressableScale>
-            )}
-            <Avatar
-              name={firstName}
-              avatarUrl={avatarUrl}
-              signedIn={signedIn}
-              hasUnread={hasUnread}
-              onPress={signedIn ? onPressProfile : onPressSignIn}
-            />
+              {eta}
+            </Text>
+            {!locationEmpty ? <NearbyPill label={nearbyLabel} /> : null}
           </View>
+        </View>
+        <View style={styles.actions}>
+          {signedIn ? (
+            <RewardsPill points={points} onPress={onPressRewards} />
+          ) : (
+            <PressableScale
+              onPress={onPressSignIn}
+              style={[styles.signIn, { backgroundColor: c.brand }]}
+              accessibilityRole="button"
+              accessibilityLabel={STORE_HEADER.signIn}
+            >
+              <Text style={type.ui(13, "bold", c.onBrand)}>{STORE_HEADER.signIn}</Text>
+            </PressableScale>
+          )}
+          <Avatar
+            name={name}
+            avatarUrl={avatarUrl}
+            signedIn={signedIn}
+            hasUnread={hasUnread}
+            onPress={signedIn ? onPressProfile : onPressSignIn}
+          />
         </View>
       </View>
 
-      {chips.length ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={[styles.chips, { paddingHorizontal: gutter }]}
-          style={styles.chipScroll}
-        >
-          {chips.map((chip) => (
-            <InfoChip key={chip.key} chip={chip} accent={chipAccent} />
-          ))}
-        </ScrollView>
-      ) : null}
+      <AddressRow kind={locationKind} street={street} empty={locationEmpty} onPress={onPressLocation} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  topBar: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 46 },
-  location: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 10 },
-  pin: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center", borderWidth: StyleSheet.hairlineWidth },
-  locationText: { flex: 1, minWidth: 0, gap: 1 },
-  locationLabelRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  actions: { flexDirection: "row", alignItems: "center", gap: 8 },
-  chipScroll: { marginTop: 12, flexGrow: 0 },
-  chips: { flexDirection: "row", alignItems: "center", gap: 8 },
-  chip: {
+  hero: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", gap: 12 },
+  etaBlock: { flex: 1, minWidth: 0, gap: 2 },
+  etaRow: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 38 },
+  etaTime: { flexShrink: 1 },
+  nearby: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    height: 28,
-    paddingHorizontal: 11,
-    borderRadius: 14,
+    height: 30,
+    paddingHorizontal: 10,
+    borderRadius: 15,
     borderWidth: StyleSheet.hairlineWidth,
+    flexShrink: 0,
   },
-  chipFestival: { height: 30, paddingLeft: 8, paddingRight: 12, borderRadius: 15 },
-  rewards: {
-    height: 42,
-    paddingHorizontal: 13,
-    borderRadius: 21,
-    borderWidth: 1.2,
+  actions: { flexDirection: "row", alignItems: "center", gap: 8, paddingTop: 2 },
+  address: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    overflow: "hidden",
+    gap: 6,
+    minHeight: 32,
+    paddingRight: 2,
   },
-  signIn: { height: 42, paddingHorizontal: 16, borderRadius: 21, alignItems: "center", justifyContent: "center" },
-  avatarWrap: { width: 42, height: 42, borderRadius: 21 },
+  addressText: { flex: 1, minWidth: 0 },
+  rewards: {
+    height: 32,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth + 0.5,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  signIn: { height: 32, paddingHorizontal: 14, borderRadius: 16, alignItems: "center", justifyContent: "center" },
+  avatarWrap: { width: 36, height: 36, borderRadius: 18 },
   avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
   },
   avatarFill: { alignItems: "center", justifyContent: "center" },
-  unreadDot: { position: "absolute", top: 0, right: 0, width: 12, height: 12, borderRadius: 6, borderWidth: 2 },
+  unreadDot: { position: "absolute", top: 0, right: 0, width: 10, height: 10, borderRadius: 5, borderWidth: 2 },
 });

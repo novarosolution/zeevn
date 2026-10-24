@@ -122,7 +122,8 @@ if (fs.existsSync(indexHtml)) {
   const headInject = [
     '<meta name="description" content="Zeevan — premium A2 bilona ghee, cold-pressed oils, masala &amp; Haldar honey. Shop artisan pantry staples with live delivery tracking." />',
     '<meta name="robots" content="index, follow, max-image-preview:large" />',
-    '<meta name="theme-color" content="#FFFFFF" />',
+    '<meta name="theme-color" content="#FBF6EC" media="(prefers-color-scheme: light)" />',
+    '<meta name="theme-color" content="#0F3D24" media="(prefers-color-scheme: dark)" />',
     '<meta name="color-scheme" content="light dark" />',
     '<meta property="og:site_name" content="Zeevan" />',
     '<meta property="og:type" content="website" />',

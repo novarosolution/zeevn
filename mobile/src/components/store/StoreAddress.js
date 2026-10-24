@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useStoreTheme } from "../../theme/storefront";
+import { formatDeliveryLocationParts, tidyLandmark } from "../../utils/deliveryLocationLabel";
 import { hapticSuccess } from "../../utils/haptics";
 import StoreBanner from "./StoreBanner";
 import StoreField from "./StoreField";
@@ -14,39 +15,35 @@ const TYPES = [
   { key: "Other", label: "Other", icon: "location-outline" },
 ];
 
-/** A landmark that already starts with a position word reads fine as is; anything else gets "Near". */
-const LOCATIONAL = /^(near|nr\.?|opposite|opp\.?|behind|beside|next to|adjacent|above|below|in front of|front of|off|at|inside|within)\b/i;
-
 function AddressPreview({ type, house, line1, landmark, city, postalCode, gps }) {
   const { c, type: font } = useStoreTheme();
   const icon = (TYPES.find((t) => t.key === type) || TYPES[0]).icon;
-  const street = [house, line1].filter(Boolean).join(", ");
-  const place = [city, postalCode].filter(Boolean).join(" · ");
+  const parts = formatDeliveryLocationParts({ houseNumber: house, line1, landmark, city, postalCode });
+  const place = [tidyLandmark(landmark), [city, postalCode].filter(Boolean).join(" ")].filter(Boolean).join(" · ");
   return (
     <Card style={styles.preview}>
       <View style={[styles.pin, { backgroundColor: c.brandSoft }]}>
-        <Ionicons name={icon} size={24} color={c.brand} />
+        <Ionicons name={icon} size={22} color={c.brand} />
       </View>
       <View style={styles.previewText}>
         <View style={styles.previewHead}>
-          <Text style={font.ui(16, "extrabold", c.ink)}>{type || "Home"}</Text>
+          <Text style={font.eyebrow(c.brandAlt, 10.5)}>{type || "Home"}</Text>
           <View style={[styles.tag, { backgroundColor: c.goldSoft }]}>
-            <Text style={font.ui(11, "extrabold", c.goldText, { letterSpacing: 0.4 })}>DEFAULT</Text>
+            <Text style={font.ui(10, "bold", c.goldText, { letterSpacing: 0.4 })}>DEFAULT</Text>
           </View>
         </View>
-        <Text style={font.ui(14.5, "medium", c.inkSoft, { lineHeight: 20 })} numberOfLines={2}>
-          {street}
+        <Text style={font.ui(16, "semibold", c.ink, { letterSpacing: -0.2 })} numberOfLines={2}>
+          {parts.street}
         </Text>
-        {landmark ? (
-          <Text style={font.ui(13, "medium", c.inkMute)} numberOfLines={1}>
-            {LOCATIONAL.test(String(landmark).trim()) ? landmark : `Near ${landmark}`}
+        {place ? (
+          <Text style={font.ui(13, "medium", c.inkMute)} numberOfLines={2}>
+            {place}
           </Text>
         ) : null}
-        <Text style={font.ui(14.5, "semibold", c.ink)}>{place}</Text>
         {gps ? (
           <View style={styles.gps}>
-            <Ionicons name="checkmark-circle" size={15} color={c.brand} />
-            <Text style={font.ui(12.5, "bold", c.brand)}>GPS verified</Text>
+            <Ionicons name="checkmark-circle" size={14} color={c.brand} />
+            <Text style={font.ui(12, "semibold", c.brand)}>GPS verified</Text>
           </View>
         ) : null}
       </View>

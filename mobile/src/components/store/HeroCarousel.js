@@ -75,35 +75,19 @@ function Cta({ label }) {
 }
 
 /** Portrait photograph with a slow push-in on the slide that is showing, a scrim, the headline and the button. */
-function PhotoSlide({ item, width, height, active, motion }) {
+function PhotoSlide({ item, width, height }) {
   const { type } = useStoreTheme();
-  const zoom = useSharedValue(1);
-
-  useEffect(() => {
-    cancelAnimation(zoom);
-    if (active && motion) {
-      zoom.value = 1;
-      zoom.value = withTiming(1.09, { duration: DWELL_MS + 1800, easing: Easing.out(Easing.quad) });
-    } else {
-      zoom.value = withTiming(1, { duration: 450 });
-    }
-    return () => cancelAnimation(zoom);
-  }, [active, motion, zoom]);
-
-  const zoomStyle = useAnimatedStyle(() => ({ transform: [{ scale: zoom.value }], transformOrigin: "50% 28%" }));
 
   return (
     <View style={[styles.clip, { width, height }]}>
-      <Animated.View style={[StyleSheet.absoluteFill, zoomStyle]}>
-        <Image
-          source={item.art || item.image}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          contentPosition={{ left: "50%", top: "0%" }}
-          transition={0}
-          cachePolicy="memory-disk"
-        />
-      </Animated.View>
+      <Image
+        source={item.art || item.image}
+        style={StyleSheet.absoluteFill}
+        contentFit="cover"
+        contentPosition={{ left: "50%", top: "0%" }}
+        transition={0}
+        cachePolicy="memory-disk"
+      />
       <LinearGradient colors={PHOTO_SCRIM} locations={[0, 0.45, 1]} style={styles.scrim} pointerEvents="none" />
       <View style={styles.copy} pointerEvents="none">
         <Text style={type.display(29, { color: "#FFF6E2", ls: -0.6, lh: 33 })} numberOfLines={2}>
@@ -151,7 +135,7 @@ function RewardsSlide({ item, width, height, signedIn, points }) {
   );
 }
 
-const Slide = memo(function Slide({ item, width, height, active, motion, signedIn, points, onPress }) {
+const Slide = memo(function Slide({ item, width, height, signedIn, points, onPress }) {
   const { shadow } = useStoreTheme();
   return (
     <PressableScale
@@ -164,7 +148,7 @@ const Slide = memo(function Slide({ item, width, height, active, motion, signedI
       {item.kind === "rewards" ? (
         <RewardsSlide item={item} width={width} height={height} signedIn={signedIn} points={points} />
       ) : (
-        <PhotoSlide item={item} width={width} height={height} active={active} motion={motion} />
+        <PhotoSlide item={item} width={width} height={height} />
       )}
     </PressableScale>
   );
@@ -251,19 +235,17 @@ export default function HeroCarousel({ items, onPressItem, signedIn = false, poi
   );
 
   const renderItem = useCallback(
-    ({ item, index }) => (
+    ({ item }) => (
       <Slide
         item={item}
         width={cardW}
         height={cardH}
-        active={index === active}
-        motion={moving}
         signedIn={signedIn}
         points={points}
         onPress={() => onPressItem?.(item)}
       />
     ),
-    [active, cardH, cardW, moving, onPressItem, points, signedIn]
+    [cardH, cardW, onPressItem, points, signedIn]
   );
 
   if (!count) return null;
@@ -276,7 +258,6 @@ export default function HeroCarousel({ items, onPressItem, signedIn = false, poi
         horizontal
         keyExtractor={(item) => item.key}
         renderItem={renderItem}
-        extraData={active}
         showsHorizontalScrollIndicator={false}
         snapToInterval={step}
         snapToAlignment="start"

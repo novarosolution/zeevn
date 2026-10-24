@@ -50,6 +50,8 @@ const {
   updateDeliveryZone,
   deleteDeliveryZone,
   listDeliveryPartners,
+  getStoreSettings,
+  updateStoreSettings,
 } = require("../controllers/deliveryZoneController");
 const { protect, adminOnly } = require("../middleware/authMiddleware");
 
@@ -96,5 +98,7 @@ router.post("/delivery-zones", createDeliveryZone);
 router.patch("/delivery-zones/:id", updateDeliveryZone);
 router.delete("/delivery-zones/:id", deleteDeliveryZone);
 router.get("/delivery-partners", listDeliveryPartners);
+router.get("/store-settings", getStoreSettings);
+router.put("/store-settings", updateStoreSettings);
 
 module.exports = router;

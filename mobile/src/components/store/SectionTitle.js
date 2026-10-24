@@ -25,39 +25,36 @@ export function SectionHeader({ eyebrow, title, caption, action, onAction, icon,
             >
               <StoreIcon icon={icon} size={22} color={c.brand} active />
             </View>
-          ) : (
-            <LinearGradient
-              colors={[c.goldBright, c.gold]}
-              style={[styles.accent, eyebrow ? styles.accentTall : null]}
-            />
-          )}
+          ) : null}
           <View style={styles.titleCol}>
             {eyebrow ? (
-              <Text style={type.eyebrow(c.goldText, 9.5)} numberOfLines={1}>
+              <Text style={type.eyebrow(c.goldText, 10)} numberOfLines={1}>
                 {eyebrow}
               </Text>
             ) : null}
-            <Text style={type.display(23, { ls: -0.5, lh: 27 })} numberOfLines={2} accessibilityRole="header">
+            <Text style={type.display(26, { ls: -0.6, lh: 28 })} numberOfLines={2} accessibilityRole="header">
               {title}
             </Text>
           </View>
         </View>
         {caption ? (
-          <Text style={[type.ui(12.5, "medium", c.inkMute), styles.caption]} numberOfLines={2}>
+          <Text style={[type.ui(13, "medium", c.inkMute, { letterSpacing: 0.1 }), styles.caption]} numberOfLines={2}>
             {caption}
           </Text>
         ) : null}
       </View>
       {action && onAction ? (
-        <PressableScale scaleTo={0.96} lite
+        <PressableScale
+          scaleTo={0.96}
+          lite
           onPress={onAction}
-          hitSlop={10}
-          style={[styles.action, { backgroundColor: withAlpha(c.brand, 0.08) }]}
+          hitSlop={12}
+          style={styles.action}
           accessibilityRole="button"
           accessibilityLabel={action}
         >
-          <Text style={type.ui(12.5, "extrabold", c.brand)}>{action}</Text>
-          <Ionicons name="chevron-forward" size={13} color={c.brand} />
+          <Text style={type.ui(15, "semibold", c.brand)}>{action}</Text>
+          <Ionicons name="chevron-forward" size={15} color={c.brand} />
         </PressableScale>
       ) : null}
     </View>
@@ -90,19 +87,16 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   headerText: { flex: 1, minWidth: 0 },
-  titleRow: { flexDirection: "row", alignItems: "center", gap: 9 },
-  titleCol: { flexShrink: 1, gap: 1 },
-  accent: { width: 3.5, height: 20, borderRadius: 2 },
-  accentTall: { height: 40 },
+  titleRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  titleCol: { flexShrink: 1, gap: 3 },
   iconDisc: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  caption: { marginTop: 3, marginLeft: 12.5 },
+  caption: { marginTop: 4 },
   action: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 2,
-    height: 30,
-    paddingHorizontal: 10,
-    borderRadius: 15,
+    gap: 1,
+    minHeight: 44,
+    paddingLeft: 8,
   },
   ornament: { flexDirection: "row", alignItems: "center", gap: 8 },
   rule: { flex: 1, height: 1.5, borderRadius: 1 },

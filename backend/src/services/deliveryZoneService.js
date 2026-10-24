@@ -1,4 +1,6 @@
 const DeliveryZone = require("../models/DeliveryZone");
+const StoreSettings = require("../models/StoreSettings");
+const { distanceKm, pointInPolygon, minutesFromKm, formatMinutes, formatKm } = require("./deliveryGeo");
 
 function normalizePostalCode(raw) {
   const digits = String(raw || "").replace(/\D/g, "");
@@ -19,6 +21,23 @@ function feeForZone(zone, itemsTotal) {
   const total = Number(itemsTotal || 0);
   if (freeAbove > 0 && total >= freeAbove) return 0;
   return Number.isFinite(fee) ? Math.max(0, fee) : 0;
+}
+
+function decorateQuote(quote, store, km) {
+  const next = { ...quote, distanceKm: null, distanceLabel: "", etaLabel: "" };
+  if (Number.isFinite(km)) {
+    next.distanceKm = Math.round(km * 10) / 10;
+    next.distanceLabel = formatKm(km);
+    const minutes = minutesFromKm(km, store?.minutesPerKm);
+    if (minutes != null) {
+      next.etaMinutesMin = minutes;
+      next.etaMinutesMax = minutes;
+      next.etaLabel = formatMinutes(minutes);
+    }
+  } else if (quote.etaMinutesMin != null) {
+    next.etaLabel = formatMinutes(quote.etaMinutesMin);
+  }
+  return next;
 }
 
 function quoteFromZone(zone, itemsTotal = 0) {
@@ -69,9 +88,38 @@ async function findZoneForAddress({ postalCode, city } = {}) {
   return null;
 }
 
-async function resolveDeliveryQuote({ postalCode, city, itemsTotal = 0 } = {}) {
-  const zone = await findZoneForAddress({ postalCode, city });
-  return quoteFromZone(zone, itemsTotal);
+async function findZoneForPoint(lat, lng) {
+  const zones = await DeliveryZone.find({ isActive: true, "polygon.2": { $exists: true } }).lean();
+  return zones.find((z) => pointInPolygon(lat, lng, z.polygon)) || null;
+}
+
+async function resolveDeliveryQuote({ postalCode, city, itemsTotal = 0, latitude, longitude } = {}) {
+  const store = await StoreSettings.get();
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+  const hasPoint = Number.isFinite(lat) && Number.isFinite(lng);
+  const km = hasPoint ? distanceKm({ lat, lng }, { lat: store.latitude, lng: store.longitude }) : null;
+
+  let zone = hasPoint ? await findZoneForPoint(lat, lng) : null;
+  if (!zone) zone = await findZoneForAddress({ postalCode, city });
+
+  if (!zone && hasPoint && Number(store.maxRadiusKm) > 0 && Number.isFinite(km) && km <= store.maxRadiusKm) {
+    return decorateQuote(
+      {
+        serviceable: true,
+        fee: 0,
+        freeAbove: 0,
+        etaMinutesMin: minutesFromKm(km, store.minutesPerKm),
+        etaMinutesMax: minutesFromKm(km, store.minutesPerKm),
+        zoneId: null,
+        zoneName: store.label || "Store area",
+      },
+      store,
+      km
+    );
+  }
+
+  return decorateQuote(quoteFromZone(zone, itemsTotal), store, km);
 }
 
 /**
@@ -107,11 +155,18 @@ function sanitizeZoneBody(body = {}) {
   const partnerIds = Array.isArray(body.partnerIds)
     ? body.partnerIds.map((id) => String(id)).filter(Boolean)
     : [];
+  const polygon = (Array.isArray(body.polygon) ? body.polygon : [])
+    .map((p) => ({
+      lat: Number(p.lat ?? p.latitude),
+      lng: Number(p.lng ?? p.longitude),
+    }))
+    .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
 
   return {
     name: String(body.name || "").trim(),
     postalCodes,
     cities,
+    polygon,
     isActive: body.isActive === undefined ? true : Boolean(body.isActive),
     deliveryFee: Math.max(0, Number(body.deliveryFee ?? 0)),
     freeAbove: Math.max(0, Number(body.freeAbove ?? 1499)),

@@ -16,7 +16,7 @@ export const ADMIN_SCREEN_COPY = {
   },
   delivery: {
     title: "Zones & riders",
-    subtitle: "Set areas, fees, and check partner GPS",
+    subtitle: "Shop pin, drawn areas, and 1 km = minutes you set",
     emptyZones: "No delivery zones yet — create one to start",
     emptyPartners: "No delivery partners enabled yet",
   },

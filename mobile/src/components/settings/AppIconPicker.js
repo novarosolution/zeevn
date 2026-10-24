@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   previewDark: {
-    backgroundColor: "#1A1714",
+    backgroundColor: "#0F3D24",
   },
   preview: {
     width: "100%",

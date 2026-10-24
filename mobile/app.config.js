@@ -42,6 +42,7 @@ module.exports = {
       usesAppleSignIn: true,
       infoPlist: {
         ...expo.ios?.infoPlist,
+        CADisableMinimumFrameDurationOnPhone: true,
         NSLocationWhenInUseUsageDescription:
           "Zeevan uses your location for delivery addresses and optional live location sharing while you deliver orders.",
       },
@@ -56,10 +57,10 @@ module.exports = {
       backgroundColor: "#FBF6EC",
       dark: {
         image: "./assets/splash-mark-dark.png",
-        backgroundColor: "#1A1714",
+        backgroundColor: "#0F3D24",
       },
     },
-    icon: "./assets/app-icon-light.png",
+    icon: "./assets/app-icon-dark.png",
     plugins: [
       ...(expo.plugins || []),
       "expo-dev-client",
@@ -69,10 +70,10 @@ module.exports = {
         {
           image: "./assets/splash-mark.png",
           resizeMode: "contain",
-          backgroundColor: "#FFFFFF",
+          backgroundColor: "#FBF6EC",
           dark: {
             image: "./assets/splash-mark-dark.png",
-            backgroundColor: "#1A1714",
+            backgroundColor: "#0F3D24",
           },
           ios: { imageWidth: 240 },
           android: { imageWidth: 288 },
@@ -85,14 +86,14 @@ module.exports = {
             ios: "./assets/app-icon-light.png",
             android: {
               foregroundImage: "./assets/app-icon-light.png",
-              backgroundColor: "#FFFFFF",
+              backgroundColor: "#FBF6EC",
             },
           },
           dark: {
             ios: "./assets/app-icon-dark.png",
             android: {
               foregroundImage: "./assets/app-icon-dark.png",
-              backgroundColor: "#1A1714",
+              backgroundColor: "#0F3D24",
             },
           },
         },

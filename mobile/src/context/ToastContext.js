@@ -10,74 +10,32 @@ import React, {
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { Gesture, GestureDetector, GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, {
-  FadeInDown,
-  FadeOutUp,
+  FadeInUp,
+  FadeOutDown,
   LinearTransition,
-  SlideInRight,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
-  withTiming,
-  Easing,
+  withSpring,
 } from "react-native-reanimated";
-import { useTheme } from "./ThemeContext";
+import { EASE_OUT, motionSettle, motionTiming, rubberband } from "../theme/motion";
+import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../theme/storefront";
 import useReducedMotion from "../hooks/useReducedMotion";
-import { ALCHEMY } from "../theme/customerAlchemy";
-import { KANKREG_PALETTE } from "../theme/kankregWeb";
-import { fonts, icon, radius, spacing, typography } from "../theme/tokens";
-import { platformShadow } from "../theme/shadowPlatform";
-import { getKankregChromeTop } from "../theme/kankregChrome";
 
 const ToastContext = createContext(undefined);
 
-const TOAST_TOKENS = {
-  success: {
-    iconName: "checkmark-circle",
-    accent: KANKREG_PALETTE.greenDeep,
-    accentBright: KANKREG_PALETTE.greenBright,
-    iconGradient: [ALCHEMY.goldBright, ALCHEMY.gold, ALCHEMY.goldDeep],
-    iconColor: "#FFFCF8",
-    progress: KANKREG_PALETTE.greenBright,
-  },
-  cart: {
-    iconName: "bag-check",
-    accent: KANKREG_PALETTE.greenDeep,
-    accentBright: ALCHEMY.goldBright,
-    iconGradient: [KANKREG_PALETTE.greenBright, KANKREG_PALETTE.green, KANKREG_PALETTE.greenDeep],
-    iconColor: "#FFFCF8",
-    borderTop: ALCHEMY.gold,
-    progress: ALCHEMY.gold,
-  },
-  error: {
-    iconName: "alert-circle",
-    accent: KANKREG_PALETTE.danger,
-    accentBright: "#E85D4A",
-    iconGradient: ["#E85D4A", KANKREG_PALETTE.danger, "#8B2E1F"],
-    iconColor: "#FFFCF8",
-    progress: KANKREG_PALETTE.danger,
-  },
-  warning: {
-    iconName: "warning",
-    accent: ALCHEMY.goldDeep,
-    accentBright: ALCHEMY.goldBright,
-    iconGradient: [ALCHEMY.goldBright, ALCHEMY.gold, ALCHEMY.brown],
-    iconColor: ALCHEMY.brownInk,
-    progress: ALCHEMY.gold,
-  },
-  info: {
-    iconName: "information-circle",
-    accent: KANKREG_PALETTE.greenDeep,
-    accentBright: KANKREG_PALETTE.greenBright,
-    iconGradient: [KANKREG_PALETTE.greenBright, KANKREG_PALETTE.green, KANKREG_PALETTE.greenDeep],
-    iconColor: "#FFFCF8",
-    progress: KANKREG_PALETTE.green,
-  },
+const ICONS = {
+  success: "checkmark",
+  cart: "bag-handle",
+  error: "close",
+  warning: "warning",
+  info: "information-circle",
 };
 
-const DEFAULT_DURATION = 2600;
-const CART_DURATION = 1900;
-const MAX_VISIBLE = 3;
+const DEFAULT_DURATION = 2800;
+const MAX_VISIBLE = 2;
 let toastSeq = 0;
 
 export function ToastProvider({ children }) {
@@ -97,26 +55,21 @@ export function ToastProvider({ children }) {
     (input) => {
       const opts = typeof input === "string" ? { message: input } : input || {};
       const id = ++toastSeq;
-      const intent = opts.intent === "cart" ? "cart" : "default";
-      const duration = opts.duration ?? (intent === "cart" ? CART_DURATION : DEFAULT_DURATION);
-      const type = intent === "cart" ? "cart" : TOAST_TOKENS[opts.type] ? opts.type : "info";
+      const type = ICONS[opts.type] ? opts.type : "info";
+      const duration = opts.duration ?? DEFAULT_DURATION;
       const toast = {
         id,
         message: String(opts.message ?? ""),
         title: opts.title ? String(opts.title) : "",
         type,
-        intent,
-        compact: opts.compact !== false,
         duration,
-        createdAt: Date.now(),
       };
       setToasts((current) => {
         const next = [...current, toast];
         return next.length > MAX_VISIBLE ? next.slice(next.length - MAX_VISIBLE) : next;
       });
       if (duration > 0) {
-        const timer = setTimeout(() => dismiss(id), duration);
-        timersRef.current.set(id, timer);
+        timersRef.current.set(id, setTimeout(() => dismiss(id), duration));
       }
       return id;
     },
@@ -139,8 +92,7 @@ export function ToastProvider({ children }) {
       toastError: (message, opts) => showToast({ ...opts, message, type: "error" }),
       toastInfo: (message, opts) => showToast({ ...opts, message, type: "info" }),
       toastWarning: (message, opts) => showToast({ ...opts, message, type: "warning" }),
-      toastCart: (message, opts) =>
-        showToast({ ...opts, message, type: "cart", intent: "cart", compact: true }),
+      toastCart: () => 0,
     }),
     [showToast, dismiss]
   );
@@ -156,268 +108,166 @@ export function ToastProvider({ children }) {
 function ToastHost({ toasts, onDismiss }) {
   const insets = useSafeAreaInsets();
   if (toasts.length === 0) return null;
-  const topOffset =
-    Platform.OS === "web"
-      ? getKankregChromeTop(insets) + 10
-      : Math.max(insets.top, spacing.sm) + spacing.xs;
+
+  const dock = Math.max(16, (insets.bottom || 0) + 6);
+  const bottom = Platform.OS === "web" ? Math.max(24, insets.bottom + 20) : dock + STORE_NAV_HEIGHT + 10;
 
   return (
-    <View style={[styles.host, { paddingTop: topOffset }]} pointerEvents="box-none">
-      {toasts.map((toast, idx) => (
-        <ToastItem key={toast.id} toast={toast} stackIndex={idx} onDismiss={onDismiss} />
-      ))}
+    <View style={[styles.host, { paddingBottom: bottom }]} pointerEvents="box-none">
+      <GestureHandlerRootView style={styles.stack} pointerEvents="box-none">
+        {toasts.map((toast, idx) => (
+          <ToastItem key={toast.id} toast={toast} stackIndex={idx} onDismiss={onDismiss} />
+        ))}
+      </GestureHandlerRootView>
     </View>
   );
 }
 
-function ToastProgressBar({ duration, color, reducedMotion }) {
-  const [trackWidth, setTrackWidth] = useState(0);
-  const progress = useSharedValue(1);
-
-  useEffect(() => {
-    if (reducedMotion || duration <= 0 || trackWidth <= 0) return;
-    progress.value = 1;
-    progress.value = withTiming(0, {
-      duration,
-      easing: Easing.linear,
-    });
-  }, [duration, progress, reducedMotion, trackWidth]);
-
-  const barStyle = useAnimatedStyle(() => ({
-    width: Math.max(trackWidth * progress.value, 0),
-  }));
-
-  if (reducedMotion || duration <= 0) return null;
-
-  return (
-    <View
-      style={styles.progressTrack}
-      onLayout={(e) => setTrackWidth(e.nativeEvent.layout.width)}
-    >
-      <Animated.View style={[styles.progressFill, { backgroundColor: color }, barStyle]} />
-    </View>
-  );
+function toastAccent(c, type) {
+  if (type === "error") return { bg: c.danger, fg: "#FFFCF8" };
+  if (type === "warning") return { bg: c.gold, fg: c.ink };
+  if (type === "cart") return { bg: c.goldSoft, fg: c.goldText };
+  return { bg: c.brand, fg: c.onBrand };
 }
 
 function ToastItem({ toast, stackIndex, onDismiss }) {
-  const { colors: c, isDark } = useTheme();
+  const { c, isDark, type: typo, shadow } = useStoreTheme();
   const reducedMotion = useReducedMotion();
-  const tok = TOAST_TOKENS[toast.type] || TOAST_TOKENS.info;
-  const isCart = toast.intent === "cart";
-  const styles2 = useMemo(() => createToastStyles(c, isDark, tok, isCart), [c, isDark, tok, isCart]);
+  const accent = toastAccent(c, toast.type);
+  const dragY = useSharedValue(0);
 
-  const label = isCart
-    ? toast.message
-    : toast.title && toast.message
-      ? `${toast.title} — ${toast.message}`
-      : toast.title || toast.message;
+  const title = toast.title || toast.message;
+  const detail = toast.title ? toast.message : "";
+  const label = detail ? `${title}. ${detail}` : title;
+
+  const dismissThis = useCallback(() => onDismiss(toast.id), [onDismiss, toast.id]);
+
+  const pan = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetY(8)
+        .onUpdate((e) => {
+          const y = e.translationY;
+          dragY.value = y > 0 ? y : rubberband(y, 72, 0.55);
+        })
+        .onEnd((e) => {
+          if (e.translationY > 36 || e.velocityY > 700) {
+            runOnJS(dismissThis)();
+            return;
+          }
+          dragY.value = withSpring(0, motionSettle.settle);
+        }),
+    [dismissThis, dragY]
+  );
+
+  const dragStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: dragY.value }],
+    opacity: 1 - Math.min(dragY.value, 80) / 140,
+  }));
 
   const entering = reducedMotion
     ? undefined
-    : isCart
-      ? SlideInRight.delay(stackIndex * 40)
-          .springify()
-          .damping(22)
-          .stiffness(320)
-          .mass(0.65)
-      : FadeInDown.delay(stackIndex * 45)
-          .springify()
-          .damping(22)
-          .stiffness(300)
-          .mass(0.65);
+    : FadeInUp.delay(stackIndex * 40)
+        .duration(motionTiming.enter)
+        .easing(EASE_OUT)
+        .withInitialValues({ opacity: 0, transform: [{ translateY: 14 }, { scale: 0.96 }] });
+
+  const exiting = reducedMotion ? undefined : FadeOutDown.duration(motionTiming.exit).easing(EASE_OUT);
 
   return (
-    <Animated.View
-      entering={entering}
-      exiting={reducedMotion ? undefined : FadeOutUp.duration(180)}
-      layout={reducedMotion ? undefined : LinearTransition.springify().damping(22)}
-      style={styles2.wrap}
-      pointerEvents="auto"
-      accessibilityLiveRegion="polite"
-      accessibilityRole={toast.type === "error" ? "alert" : undefined}
-    >
-      <LinearGradient
-        colors={[tok.borderTop || tok.accentBright, tok.accentBright, tok.borderTop || tok.accent]}
-        start={{ x: 0, y: 0.5 }}
-        end={{ x: 1, y: 0.5 }}
-        style={styles2.topAccent}
-        pointerEvents="none"
-      />
-
-      <View style={styles2.row}>
+    <GestureDetector gesture={pan}>
+      <Animated.View
+        entering={entering}
+        exiting={exiting}
+        layout={reducedMotion ? undefined : LinearTransition.duration(motionTiming.toggle).easing(EASE_OUT)}
+        style={[
+          styles.card,
+          shadow.float,
+          {
+            backgroundColor: isDark ? withAlpha("#122016", 0.94) : withAlpha("#FFFCF6", 0.96),
+            borderColor: isDark ? withAlpha("#FFFFFF", 0.12) : c.goldLine,
+          },
+          dragStyle,
+        ]}
+        pointerEvents="auto"
+        accessibilityLiveRegion="polite"
+        accessibilityRole={toast.type === "error" ? "alert" : undefined}
+      >
         <Pressable
-          onPress={() => onDismiss(toast.id)}
-          style={({ pressed, hovered }) => [
-            styles2.mainTap,
-            pressed ? styles2.mainTapPressed : null,
-            hovered && Platform.OS === "web" ? styles2.mainTapHover : null,
-          ]}
+          onPress={dismissThis}
+          style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}
           accessibilityRole="button"
           accessibilityLabel={`Dismiss: ${label}`}
         >
-          <LinearGradient
-            colors={tok.iconGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles2.iconRing}
-          >
-            <Ionicons name={tok.iconName} size={isCart ? 13 : 14} color={tok.iconColor} />
-          </LinearGradient>
-
-          <Text style={styles2.label} numberOfLines={2}>
-            {label}
-          </Text>
+          <View style={[styles.icon, { backgroundColor: accent.bg }]}>
+            <Ionicons name={ICONS[toast.type] || ICONS.info} size={15} color={accent.fg} />
+          </View>
+          <View style={styles.copy}>
+            <Text style={typo.ui(14, "semibold", c.ink, { letterSpacing: -0.15 })} numberOfLines={1}>
+              {title}
+            </Text>
+            {detail ? (
+              <Text style={typo.ui(12.5, "medium", c.inkMute, { marginTop: 1, letterSpacing: 0.05 })} numberOfLines={2}>
+                {detail}
+              </Text>
+            ) : null}
+          </View>
         </Pressable>
-
-        <Pressable
-          onPress={() => onDismiss(toast.id)}
-          hitSlop={8}
-          style={({ pressed, hovered }) => [
-            styles2.closeBtn,
-            pressed ? styles2.closeBtnPressed : null,
-            hovered && Platform.OS === "web" ? styles2.closeBtnHover : null,
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel="Dismiss notification"
-        >
-          <Ionicons name="close" size={12} color={c.textMuted} />
-        </Pressable>
-      </View>
-
-      <ToastProgressBar duration={toast.duration} color={tok.progress} reducedMotion={reducedMotion} />
-    </Animated.View>
+      </Animated.View>
+    </GestureDetector>
   );
-}
-
-function createToastStyles(c, isDark, tok, isCart) {
-  const wrapShadow = platformShadow({
-    web: {
-      boxShadow: isDark
-        ? "0 10px 28px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.05)"
-        : "0 10px 26px rgba(22, 69, 51, 0.12), inset 0 1px 0 rgba(255,255,255,0.96)",
-      backdropFilter: "blur(10px)",
-      WebkitBackdropFilter: "blur(10px)",
-    },
-    ios: {
-      shadowColor: isDark ? "#000000" : "#3D2A12",
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: isDark ? 0.34 : 0.12,
-      shadowRadius: 14,
-    },
-    android: { elevation: 5 },
-  });
-
-  return StyleSheet.create({
-    wrap: {
-      width: "auto",
-      maxWidth: isCart ? 300 : 340,
-      minWidth: 0,
-      alignSelf: Platform.OS === "web" ? "flex-end" : "center",
-      marginBottom: spacing.xs + 2,
-      borderRadius: radius.pill,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(22, 69, 51, 0.1)",
-      backgroundColor: isDark ? "rgba(24, 22, 20, 0.94)" : "rgba(255, 253, 249, 0.97)",
-      overflow: "hidden",
-      ...wrapShadow,
-    },
-    topAccent: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 1.5,
-      opacity: 0.9,
-      zIndex: 2,
-    },
-    row: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingRight: 2,
-      minHeight: isCart ? 36 : 40,
-    },
-    mainTap: {
-      flex: 1,
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing.xs + 2,
-      paddingVertical: spacing.xs + 3,
-      paddingLeft: spacing.sm + 2,
-      paddingRight: spacing.xs,
-      minWidth: 0,
-      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
-    },
-    mainTapPressed: {
-      opacity: 0.92,
-    },
-    mainTapHover: {
-      ...Platform.select({
-        web: { opacity: 0.9 },
-        default: {},
-      }),
-    },
-    iconRing: {
-      width: isCart ? 24 : 26,
-      height: isCart ? 24 : 26,
-      borderRadius: isCart ? 12 : 13,
-      alignItems: "center",
-      justifyContent: "center",
-      flexShrink: 0,
-    },
-    label: {
-      flex: 1,
-      minWidth: 0,
-      fontFamily: fonts.semibold,
-      fontSize: isCart ? typography.caption : typography.caption + 0.5,
-      lineHeight: isCart ? 16 : 17,
-      color: c.textPrimary,
-      letterSpacing: 0.05,
-    },
-    closeBtn: {
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      alignItems: "center",
-      justifyContent: "center",
-      marginRight: spacing.xs,
-      flexShrink: 0,
-      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
-    },
-    closeBtnPressed: {
-      opacity: 0.6,
-    },
-    closeBtnHover: {
-      ...Platform.select({
-        web: {
-          backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(22, 69, 51, 0.06)",
-        },
-        default: {},
-      }),
-    },
-  });
 }
 
 const styles = StyleSheet.create({
   host: {
     ...StyleSheet.absoluteFillObject,
-    paddingHorizontal: spacing.sm + 4,
-    alignItems: Platform.OS === "web" ? "flex-end" : "stretch",
-    justifyContent: "flex-start",
+    paddingHorizontal: 20,
+    alignItems: "center",
+    justifyContent: "flex-end",
     zIndex: 9999,
     ...Platform.select({
       web: { position: "fixed", pointerEvents: "none" },
       default: {},
     }),
   },
-  progressTrack: {
-    height: 2,
-    backgroundColor: "rgba(127, 127, 127, 0.1)",
+  stack: {
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "flex-end",
+  },
+  card: {
+    width: "100%",
+    maxWidth: 360,
+    marginTop: 8,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth + 0.5,
     overflow: "hidden",
+    ...Platform.select({
+      web: {
+        backdropFilter: "blur(20px) saturate(160%)",
+        WebkitBackdropFilter: "blur(20px) saturate(160%)",
+      },
+      default: {},
+    }),
   },
-  progressFill: {
-    height: "100%",
-    borderRadius: 2,
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    minHeight: 52,
   },
+  pressed: { opacity: 0.88, transform: [{ scale: 0.97 }] },
+  icon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0,
+  },
+  copy: { flex: 1, minWidth: 0 },
 });
 
 export function useToast() {

@@ -142,7 +142,11 @@ export const motionTiming = {
  * carried momentum (a flick) or for a short, rare delight.
  */
 export const motionSettle = {
+  /** Apple default UI — critically damped, no overshoot (response ~0.3–0.4s). */
   settle: { duration: 400, dampingRatio: 1 },
+  /** Finger-down / finger-up. Starts from the live value so a quick tap reverses cleanly. */
+  press: { duration: 280, dampingRatio: 1 },
+  pressLite: { duration: 220, dampingRatio: 1 },
   snapBack: { duration: 400, dampingRatio: 0.8 },
   sheet: { duration: 300, dampingRatio: 0.8 },
   /** A small confirming bump (an item landing in the bag). */

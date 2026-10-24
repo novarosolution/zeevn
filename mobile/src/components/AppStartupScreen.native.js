@@ -33,14 +33,14 @@ import useReducedMotion from "../hooks/useReducedMotion";
 import { withAlpha } from "../theme/storefront";
 import mark from "../theme/zeevanMark.json";
 import { fonts } from "../theme/tokens";
-import { Emblem, EmblemBloom, EmblemComet, RING_OUTER, markUnit } from "./startup/ZeevanEmblem";
+import { EmblemBloom } from "./startup/ZeevanEmblem";
 
 /** Same canvas as the native splash image (iOS 240 pt, Android 288 dp), so the emblem lands exactly on the OS splash. */
 const CANVAS = Platform.OS === "android" ? 288 : 240;
-const U = markUnit(CANVAS);
+const U = CANVAS / 160;
 const BLOOM = Math.round(CANVAS * 1.9);
 const LIFT = 36;
-const RING_BOTTOM = RING_OUTER * U;
+const MARK_BOTTOM = CANVAS * 0.42;
 const LOCKUP_GAP = 26;
 
 /** The "Zeevan" band of the brand PNG (the tagline under it is set as centred text instead of the PNG's left-aligned one). */
@@ -64,7 +64,7 @@ function paletteFor(dark) {
   return dark
     ? {
         bg: mark.background.dark,
-        gold: "#E6BE88",
+        gold: "#E8C27A",
         muted: "rgba(250, 248, 244, 0.5)",
         wash: ["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.42)"],
         wordmark: ZEEVAN_BRAND_ASSETS.wordmarkLight || ZEEVAN_BRAND_ASSETS.wordmark,
@@ -175,9 +175,9 @@ export default function AppStartupScreen({
     opacity: bloom.value,
     transform: [{ scale: 0.8 + 0.2 * bloom.value }],
   }));
-  const cometStyle = useAnimatedStyle(() => ({
-    opacity: glint.value,
-    transform: [{ rotate: `${orbit.value}deg` }],
+  const markStyle = useAnimatedStyle(() => ({
+    opacity: 0.88 + 0.12 * Math.max(glint.value, bloom.value),
+    transform: [{ scale: 0.96 + 0.04 * bloom.value }],
   }));
   const wordStyle = useAnimatedStyle(() => ({
     opacity: word.value,
@@ -206,16 +206,20 @@ export default function AppStartupScreen({
         <Animated.View style={[styles.bloom, bloomStyle]}>
           <EmblemBloom size={BLOOM} dark={dark} />
         </Animated.View>
-        <Emblem size={CANVAS} dark={dark} />
-        <Animated.View style={[StyleSheet.absoluteFill, cometStyle]}>
-          <EmblemComet size={CANVAS} dark={dark} />
+        <Animated.View style={[styles.zMark, markStyle]}>
+          <Image
+            source={ZEEVAN_BRAND_ASSETS.zMark}
+            style={{ width: CANVAS, height: CANVAS }}
+            resizeMode="contain"
+            fadeDuration={0}
+          />
         </Animated.View>
         {DUST.map((d, i) => (
           <Mote key={i} {...d} color={p.dust} enabled={!reduced && play} />
         ))}
       </Animated.View>
 
-      <View pointerEvents="none" style={[styles.lockup, { marginTop: RING_BOTTOM - LIFT + LOCKUP_GAP }]}>
+      <View pointerEvents="none" style={[styles.lockup, { marginTop: MARK_BOTTOM - LIFT + LOCKUP_GAP }]}>
         <Animated.View style={wordStyle}>
           <View style={{ width: WORD_W, height: WORD_H, overflow: "hidden" }}>
             <Image
@@ -255,6 +259,11 @@ const styles = StyleSheet.create({
     top: (CANVAS - BLOOM) / 2,
     width: BLOOM,
     height: BLOOM,
+  },
+  zMark: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
   },
   mote: { position: "absolute" },
   lockup: { position: "absolute", left: 0, right: 0, top: "50%", alignItems: "center" },

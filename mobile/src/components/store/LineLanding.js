@@ -9,12 +9,11 @@ import { pickRange, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { buildCategoryTiles, productImageUri } from "../../utils/storefront";
 import CategoryGrid, { SeeAllBar } from "./CategoryGrid";
 import PressableScale from "./PressableScale";
-import ProductCard from "./ProductCard";
+import ProductGrid from "./ProductGrid";
 import { Jar, Spotlight, canBlend } from "./RangeTiles";
 import { SectionHeader } from "./SectionTitle";
 import StoreIcon from "./StoreIcon";
 
-const GAP = 12;
 const COPY = STORE_LINE_PAGES.landing;
 
 const HERO_H = 196;
@@ -30,7 +29,6 @@ export default function LineLanding({ tab, products, onProductPress, onCategoryP
   const page = STORE_LINE_PAGES[tab.key] || STORE_LINE_PAGES.empty;
   const line = getProductLineByKey(tab.lineKey);
   const range = pickRange(c, tab.lineKey);
-  const cardW = Math.floor((width - gutter * 2 - GAP) / 2);
   const heroW = width - gutter * 2;
   const jar = 224;
   const blend = canBlend(isDark);
@@ -93,11 +91,7 @@ export default function LineLanding({ tab, products, onProductPress, onCategoryP
 
           <View style={styles.block}>
             <SectionHeader title={COPY.all(tab.label)} />
-            <View style={[styles.grid, { paddingHorizontal: gutter }]}>
-              {products.map((product) => (
-                <ProductCard key={product.id} product={product} width={cardW} gallery onPress={() => onProductPress?.(product)} />
-              ))}
-            </View>
+            <ProductGrid products={products} onProductPress={onProductPress} />
           </View>
 
           <SeeAllBar images={tiles.map((t) => t.image)} label={STORE_LINE_PAGES.seeAll} onPress={onSeeAll} />
@@ -123,7 +117,6 @@ const styles = StyleSheet.create({
   heroFoot: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10, marginTop: 2 },
   heroCta: { flexDirection: "row", alignItems: "center", gap: 6, height: 38, paddingHorizontal: 16, borderRadius: 19 },
   block: { gap: 14 },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: GAP, rowGap: 14 },
   empty: { alignItems: "center", gap: 8, padding: 28, borderWidth: StyleSheet.hairlineWidth },
   emptyText: { textAlign: "center" },
 });

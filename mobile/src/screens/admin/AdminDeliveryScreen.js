@@ -14,10 +14,14 @@ import PremiumInput from "../../components/ui/PremiumInput";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
+import AdminDeliveryMap from "../../components/admin/AdminDeliveryMap";
 import {
   createAdminDeliveryZone,
   fetchAdminDeliveryPartners,
   fetchAdminDeliveryZones,
+  fetchAdminStoreSettings,
+  updateAdminDeliveryZone,
+  updateAdminStoreSettings,
 } from "../../services/adminService";
 import {
   adminShellContent,
@@ -43,6 +47,9 @@ export default function AdminDeliveryScreen({ navigation, route }) {
   const [pins, setPins] = useState("");
   const [fee, setFee] = useState("49");
   const [busy, setBusy] = useState(false);
+  const [store, setStore] = useState({ latitude: 23.2156, longitude: 72.6369, minutesPerKm: 3, maxRadiusKm: 25, label: "Zeevan farm shop" });
+  const [mode, setMode] = useState("store");
+  const [draft, setDraft] = useState([]);
 
   const load = useCallback(
     async ({ isPullRefresh = false } = {}) => {
@@ -50,12 +57,22 @@ export default function AdminDeliveryScreen({ navigation, route }) {
       else setLoading(true);
       setError("");
       try {
-        const [z, p] = await Promise.all([
+        const [z, p, s] = await Promise.all([
           fetchAdminDeliveryZones(token),
           fetchAdminDeliveryPartners(token),
+          fetchAdminStoreSettings(token),
         ]);
         setZones(Array.isArray(z) ? z : []);
         setPartners(Array.isArray(p) ? p : []);
+        if (s) {
+          setStore({
+            latitude: Number(s.latitude) || 23.2156,
+            longitude: Number(s.longitude) || 72.6369,
+            minutesPerKm: Number(s.minutesPerKm) || 3,
+            maxRadiusKm: Number(s.maxRadiusKm) || 25,
+            label: s.label || "Zeevan farm shop",
+          });
+        }
       } catch (err) {
         setError(err.message || "Unable to load delivery ops.");
       } finally {
@@ -79,13 +96,44 @@ export default function AdminDeliveryScreen({ navigation, route }) {
     return { activeZones, partners: partners.length, online, activeRuns };
   }, [zones, partners]);
 
+  const handleMapClick = (pt) => {
+    if (mode === "store") {
+      setStore((s) => ({ ...s, latitude: pt.lat, longitude: pt.lng }));
+      return;
+    }
+    setDraft((d) => [...d, pt]);
+  };
+
+  const handleSaveStore = async () => {
+    try {
+      setBusy(true);
+      setError("");
+      const saved = await updateAdminStoreSettings(token, {
+        latitude: Number(store.latitude),
+        longitude: Number(store.longitude),
+        minutesPerKm: Number(store.minutesPerKm),
+        maxRadiusKm: Number(store.maxRadiusKm),
+        label: store.label,
+      });
+      if (saved) setStore((s) => ({ ...s, ...saved }));
+    } catch (err) {
+      setError(err.message || "Could not save shop pin.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const handleCreateZone = async () => {
     const postalCodes = String(pins || "")
       .split(/[,\s]+/)
       .map((x) => x.trim())
       .filter(Boolean);
-    if (!name.trim() || !postalCodes.length) {
-      setError("Zone name and at least one pincode are required.");
+    if (!name.trim()) {
+      setError("Zone name is required.");
+      return;
+    }
+    if (!postalCodes.length && draft.length < 3) {
+      setError("Add pincodes or draw the area (3+ taps) on the map.");
       return;
     }
     try {
@@ -94,15 +142,35 @@ export default function AdminDeliveryScreen({ navigation, route }) {
       await createAdminDeliveryZone(token, {
         name: name.trim(),
         postalCodes,
+        polygon: draft,
         deliveryFee: Number(fee) || 0,
         freeAbove: 1499,
         isActive: true,
       });
       setName("");
       setPins("");
+      setDraft([]);
       await load();
     } catch (err) {
       setError(err.message || "Could not create zone.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleAttachArea = async (zoneId) => {
+    if (draft.length < 3) {
+      setError("Draw the area first — tap 3+ points on the map.");
+      return;
+    }
+    try {
+      setBusy(true);
+      setError("");
+      await updateAdminDeliveryZone(token, zoneId, { polygon: draft });
+      setDraft([]);
+      await load();
+    } catch (err) {
+      setError(err.message || "Could not save area.");
     } finally {
       setBusy(false);
     }
@@ -169,14 +237,76 @@ export default function AdminDeliveryScreen({ navigation, route }) {
                 </AdminPanel>
               </SectionReveal>
 
+              <SectionReveal preset="fade-up" delay={20}>
+                <AdminPanel
+                  title="Shop pin & coverage"
+                  icon="navigate-outline"
+                  meta={`${store.minutesPerKm} min / km`}
+                  description="Tap the map to drop the shop. Draw mode traces the delivery line. Time = distance × minutes per km."
+                >
+                  <View style={styles.formGap}>
+                    <View style={styles.modeRow}>
+                      <PremiumChip
+                        label="Set shop pin"
+                        selected={mode === "store"}
+                        onPress={() => setMode("store")}
+                        size="sm"
+                      />
+                      <PremiumChip
+                        label="Draw area"
+                        selected={mode === "draw"}
+                        onPress={() => setMode("draw")}
+                        size="sm"
+                      />
+                      {draft.length ? (
+                        <PremiumChip label="Undo point" onPress={() => setDraft((d) => d.slice(0, -1))} size="sm" />
+                      ) : null}
+                      {draft.length ? (
+                        <PremiumChip label="Clear line" onPress={() => setDraft([])} size="sm" />
+                      ) : null}
+                    </View>
+                    <AdminDeliveryMap
+                      store={store}
+                      radiusKm={store.maxRadiusKm}
+                      zones={zones}
+                      draft={draft}
+                      onMapClick={handleMapClick}
+                    />
+                    <View style={styles.storeGrid}>
+                      <PremiumInput
+                        label="Minutes per km"
+                        value={String(store.minutesPerKm)}
+                        onChangeText={(v) => setStore((s) => ({ ...s, minutesPerKm: v }))}
+                        keyboardType="decimal-pad"
+                        tone="warm"
+                      />
+                      <PremiumInput
+                        label="Max radius (km)"
+                        value={String(store.maxRadiusKm)}
+                        onChangeText={(v) => setStore((s) => ({ ...s, maxRadiusKm: v }))}
+                        keyboardType="decimal-pad"
+                        tone="warm"
+                      />
+                    </View>
+                    <PremiumButton
+                      label={busy ? "Saving…" : "Save shop pin"}
+                      iconLeft="save-outline"
+                      loading={busy}
+                      disabled={busy}
+                      onPress={handleSaveStore}
+                    />
+                  </View>
+                </AdminPanel>
+              </SectionReveal>
+
               <View style={[adminTwoColStyle(compact), styles.deskCols]}>
                 <View style={adminTwoColMain(compact)}>
                   <SectionReveal preset="fade-up" delay={40}>
                     <AdminPanel
                       title="Add zone"
                       icon="add-circle-outline"
-                      meta="Pincodes, comma-separated"
-                      description="Name the area, list pincodes, set the delivery fee."
+                      meta={draft.length >= 3 ? `${draft.length} map points` : "Pincodes or drawn area"}
+                      description="Name the area. Use pincodes and/or the red line on the map."
                     >
                       <View style={styles.formGap}>
                         <PremiumInput label="Zone name" value={name} onChangeText={setName} tone="warm" />
@@ -235,6 +365,15 @@ export default function AdminDeliveryScreen({ navigation, route }) {
                                 size="sm"
                                 selected
                               />
+                              {(z.polygon || []).length >= 3 ? (
+                                <PremiumChip label="Mapped" tone="green" size="sm" selected />
+                              ) : (
+                                <PremiumChip
+                                  label="Use drawn area"
+                                  size="sm"
+                                  onPress={() => handleAttachArea(z._id)}
+                                />
+                              )}
                               <Text style={[styles.fee, { color: c.textPrimary }]}>
                                 {formatINR(Number(z.deliveryFee || 0))}
                               </Text>
@@ -312,6 +451,8 @@ const styles = StyleSheet.create({
   banner: { marginBottom: spacing.md },
   deskCols: { gap: spacing.md },
   formGap: { gap: spacing.sm },
+  modeRow: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs },
+  storeGrid: { flexDirection: "row", gap: spacing.sm },
   muted: { fontSize: 13, paddingVertical: spacing.sm, fontFamily: fonts.regular },
   row: {
     flexDirection: "row",

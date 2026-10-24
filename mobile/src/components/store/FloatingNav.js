@@ -15,7 +15,7 @@ import Animated, {
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { STORE_NAV } from "../../content/storefrontContent";
-import { EASE_IN_OUT, EASE_OUT, motionSettle, motionTiming } from "../../theme/motion";
+import { EASE_OUT, motionSettle, motionTiming } from "../../theme/motion";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { hapticTick } from "../../utils/haptics";
 import { flightRemainingMs, setCartTarget } from "./flyToCart";
@@ -23,11 +23,11 @@ import PressableScale from "./PressableScale";
 import ScrollEdgeFade from "./ScrollEdgeFade";
 import StoreIcon from "./StoreIcon";
 
-const FAB_GAP = 10;
-const ITEMS_PAD = 6;
+const FAB_GAP = 8;
+const ITEMS_PAD = 4;
+const ICON = 22;
+const CAPSULE_INSET = 6;
 
-/** The active-tab capsule moves across the bar: ease-in-out, quick, no overshoot (this bar is touched all day). */
-const CAPSULE_GLIDE = { duration: motionTiming.toggle + 60, easing: EASE_IN_OUT };
 /** Layout-animation builders live at module scope: rebuilding them in render costs every re-render. */
 const BADGE_IN = FadeIn.duration(motionTiming.press + 30).easing(EASE_OUT);
 const BADGE_OUT = FadeOut.duration(motionTiming.press);
@@ -58,15 +58,15 @@ function NavItem({ item, active, onPress }) {
   return (
     <PressableScale
       onPress={onPress}
-      scaleTo={0.88}
+      scaleTo={0.97}
       lite
       style={styles.item}
       accessibilityRole="tab"
       accessibilityState={{ selected: active }}
       accessibilityLabel={item.label}
-      hitSlop={6}
+      hitSlop={10}
     >
-      <StoreIcon icon={active && item.iconActive ? item.iconActive : item.icon} active={active} size={32} color={color} />
+      <StoreIcon icon={active && item.iconActive ? item.iconActive : item.icon} active={active} size={ICON} color={color} />
     </PressableScale>
   );
 }
@@ -91,7 +91,7 @@ function CartBadge({ count }) {
       exiting={BADGE_OUT}
       style={[styles.badge, { backgroundColor: c.gold, borderColor: c.page }, popStyle]}
     >
-      <Text style={type.ui(11.5, "extrabold", "#2A1E08")}>{count > 99 ? "99+" : count}</Text>
+      <Text style={type.ui(10, "extrabold", "#2A1E08")}>{count > 99 ? "99+" : count}</Text>
     </Animated.View>
   );
 }
@@ -128,7 +128,7 @@ function CartFab({ count: liveCount, onPress }) {
       >
         <View style={[styles.fabClip, { borderColor: withAlpha("#FFFFFF", isDark ? 0.18 : 0.55) }]}>
           <LinearGradient colors={colors} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
-          <StoreIcon icon={STORE_NAV.cart.icon} size={30} color={iconColor} />
+          <StoreIcon icon={STORE_NAV.cart.icon} size={ICON} color={iconColor} />
         </View>
         {count > 0 ? <CartBadge count={count} /> : null}
       </PressableScale>
@@ -177,8 +177,8 @@ export default function FloatingNav() {
       capsuleOpacity.value = withTiming(0, { duration: motionTiming.press + 30, easing: EASE_OUT });
       return;
     }
-    capsuleX.value = withTiming(activeIndex * slot, CAPSULE_GLIDE);
-    capsuleOpacity.value = withTiming(1, { duration: motionTiming.toggle, easing: EASE_OUT });
+    capsuleX.value = withSpring(activeIndex * slot, motionSettle.settle);
+    capsuleOpacity.value = withSpring(1, motionSettle.press);
     lastActiveIndex = activeIndex;
   }, [activeIndex, slot, capsuleOpacity, capsuleX]);
 
@@ -192,8 +192,8 @@ export default function FloatingNav() {
   const dock = Math.max(16, (insets.bottom || 0) + 6);
 
   /** Soft glass without live blur — one BlurView on the dock used to hitch scroll. */
-  const glassFill = isDark ? withAlpha("#1A1712", 0.88) : withAlpha("#FFFFFF", 0.9);
-  const glassBorder = isDark ? withAlpha("#FFFFFF", 0.14) : withAlpha("#FFFFFF", 0.85);
+  const glassFill = isDark ? withAlpha("#0F2418", 0.82) : withAlpha("#FFFFFF", 0.62);
+  const glassBorder = isDark ? withAlpha("#FFFFFF", 0.22) : withAlpha("#FFFFFF", 0.95);
 
   return (
     <>
@@ -213,10 +213,10 @@ export default function FloatingNav() {
                 style={[
                   styles.capsule,
                   {
-                    left: ITEMS_PAD + 2,
-                    width: slot - 4,
-                    backgroundColor: withAlpha(c.brand, isDark ? 0.22 : 0.14),
-                    borderColor: withAlpha(c.brand, 0.18),
+                    left: ITEMS_PAD + CAPSULE_INSET,
+                    width: Math.max(28, slot - CAPSULE_INSET * 2),
+                    backgroundColor: withAlpha(c.brand, isDark ? 0.2 : 0.1),
+                    borderColor: withAlpha(c.brand, isDark ? 0.16 : 0.08),
                   },
                   capsuleStyle,
                 ]}
@@ -257,13 +257,12 @@ const styles = StyleSheet.create({
     height: "48%",
   },
   items: { flex: 1, flexDirection: "row", alignItems: "center", paddingHorizontal: ITEMS_PAD },
-  item: { flex: 1, height: STORE_NAV_HEIGHT - 8, alignItems: "center", justifyContent: "center" },
+  item: { flex: 1, height: STORE_NAV_HEIGHT, alignItems: "center", justifyContent: "center" },
   capsule: {
     position: "absolute",
-    top: 5,
-    height: STORE_NAV_HEIGHT - 10,
-    borderRadius: (STORE_NAV_HEIGHT - 10) / 2,
-    borderWidth: StyleSheet.hairlineWidth,
+    top: CAPSULE_INSET,
+    height: STORE_NAV_HEIGHT - CAPSULE_INSET * 2,
+    borderRadius: (STORE_NAV_HEIGHT - CAPSULE_INSET * 2) / 2,
   },
   fabWrap: {
     width: STORE_NAV_HEIGHT,
@@ -273,20 +272,21 @@ const styles = StyleSheet.create({
   fabClip: {
     flex: 1,
     borderRadius: STORE_NAV_HEIGHT / 2,
-    borderWidth: 2.5,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(255,255,255,0.45)",
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
   },
   badge: {
     position: "absolute",
-    top: -3,
-    right: -3,
-    minWidth: 24,
-    height: 24,
-    paddingHorizontal: 5,
-    borderRadius: 12,
-    borderWidth: 2.5,
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    borderWidth: 2,
     alignItems: "center",
     justifyContent: "center",
   },

@@ -5,13 +5,12 @@ import { useToastSafe } from "./ToastContext";
 import { fetchMyCart, replaceMyCart } from "../services/userService";
 import { cartLineKey } from "../utils/productCart";
 import { deferAfterFirstPaint } from "../utils/deferAfterFirstPaint";
-import { isCartFlightActive } from "../utils/cartFeedback";
 
 const CartContext = createContext(undefined);
 
 export function CartProvider({ children }) {
   const { isAuthenticated, token } = useAuth();
-  const { toastCart, toastInfo } = useToastSafe();
+  const { toastInfo } = useToastSafe();
   const [cartItems, setCartItems] = useState([]);
   const [isCartSyncing, setIsCartSyncing] = useState(false);
   const isHydratingRef = useRef(false);
@@ -44,11 +43,8 @@ export function CartProvider({ children }) {
 
         return [...currentItems, { ...product, quantity: 1 }];
       });
-      const name = String(product?.name || "Item").trim();
-      const short = name.length > 28 ? `${name.slice(0, 27)}…` : name;
-      if (!isCartFlightActive()) toastCart(`${short} added to bag`);
     },
-    [toastCart, toastInfo]
+    [toastInfo]
   );
 
   /**

@@ -42,7 +42,7 @@ export default function PressableScale({
       disabled={disabled}
       pressRetentionOffset={pressRetentionOffset}
       onPressIn={(e) => {
-        pressed.value = withTiming(1, { duration: lite ? 80 : motionTiming.press, easing: EASE_OUT });
+        pressed.value = withTiming(1, { duration: lite ? 90 : motionTiming.press, easing: EASE_OUT });
         onPressIn?.(e);
       }}
       onPressOut={(e) => {

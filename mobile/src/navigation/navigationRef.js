@@ -1,4 +1,9 @@
 import { createNavigationContainerRef } from "@react-navigation/native";
+import { Platform } from "react-native";
+
+function isNativeAdminRoute(name) {
+  return Platform.OS !== "web" && typeof name === "string" && name.startsWith("Admin");
+}
 
 export const navigationRef = createNavigationContainerRef();
 
@@ -15,6 +20,7 @@ function runOrQueue(action) {
 
 /** Navigate when the container is ready; queue until `flushPendingNavigationActions`. */
 export function safeNavigate(name, params) {
+  if (isNativeAdminRoute(name)) return false;
   return runOrQueue(() => {
     navigationRef.navigate(name, params);
   });

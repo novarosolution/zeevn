@@ -13,7 +13,8 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { fonts, spacing } from "../theme/tokens";
-import { APP_WORDMARK_SUBLINE, BRAND_LOGO_SIZE } from "../constants/brand";
+import { Image } from "expo-image";
+import { APP_WORDMARK_SUBLINE, BRAND_LOGO_SIZE, ZEEVAN_BRAND_ASSETS } from "../constants/brand";
 import { KANKREG_PALETTE, ZEEVAN_GOLD, ZEEVAN_GREEN } from "../theme/kankregWeb";
 import { LOADING_THEME } from "../theme/loadingTheme";
 import BrandLogo from "./BrandLogo";
@@ -111,12 +112,17 @@ export default function AppStartupScreen({
 
         <Animated.View entering={FadeIn.duration(560)} style={styles.center}>
           <BreathLogo reduced={reduceMotion}>
-            <BrandLogo
-              height={BRAND_LOGO_SIZE.startup}
-              variant={isDark ? "onDark" : "onLight"}
-              glow={false}
+            <Image
+              source={isDark ? ZEEVAN_BRAND_ASSETS.zIconDark : ZEEVAN_BRAND_ASSETS.zIconLight}
+              style={styles.zIcon}
+              contentFit="contain"
             />
           </BreathLogo>
+          <BrandLogo
+            height={BRAND_LOGO_SIZE.startup}
+            variant={isDark ? "onDark" : "onLight"}
+            glow={false}
+          />
 
           <View style={[styles.rule, { backgroundColor: gold }]} />
 
@@ -147,7 +153,7 @@ const styles = StyleSheet.create({
         inset: 0,
         zIndex: 100000,
         width: "100vw",
-        height: "100vh",
+        height: "100dvh",
       },
       default: {},
     }),
@@ -195,6 +201,12 @@ const styles = StyleSheet.create({
   },
   glowSecondaryDark: {
     backgroundColor: "rgba(122, 143, 68, 0.12)",
+  },
+  zIcon: {
+    width: 112,
+    height: 112,
+    borderRadius: 28,
+    marginBottom: 22,
   },
   center: {
     flex: 1,

@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { apiGet, apiPost } from "./apiClient";
 import { parseCatalogBoolean } from "../utils/catalogBoolean";
 import { normalizeHeroSubtitle, normalizeHeroTitle } from "../utils/homeMarketingCopy";
@@ -276,6 +277,9 @@ export async function hydrateCatalogFromDisk() {
 }
 
 export function prefetchCatalogData() {
+  if (Platform.OS !== "web") {
+    return getProducts({ preferCache: true }).catch(() => []);
+  }
   return Promise.all([getProducts().catch(() => []), getHomeViewConfig().catch(() => null)]);
 }
 

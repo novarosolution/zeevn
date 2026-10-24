@@ -16,20 +16,21 @@ function HeaderBones({ gutter }) {
   const { c, shadow, isDark } = useStoreTheme();
   return (
     <>
-      <View style={[styles.topBar, { paddingHorizontal: gutter }]}>
-        <Bone width={38} height={38} radius={19} />
-        <View style={styles.locationBones}>
-          <Bone width={70} height={9} radius={4.5} />
-          <Bone width={140} height={14} radius={7} />
+      <View style={{ paddingHorizontal: gutter, gap: 8 }}>
+        <View style={styles.topBar}>
+          <View style={{ gap: 6, flex: 1 }}>
+            <Bone width={88} height={11} radius={5} />
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <Bone width={118} height={28} radius={8} />
+              <Bone width={78} height={30} radius={15} />
+            </View>
+          </View>
+          <View style={styles.actions}>
+            <Bone width={64} height={32} radius={16} />
+            <Bone width={36} height={36} radius={18} />
+          </View>
         </View>
-        <Bone width={88} height={42} radius={21} />
-        <Bone width={42} height={42} radius={21} />
-      </View>
-
-      <View style={[styles.chips, { paddingHorizontal: gutter }]}>
-        <Bone width={150} height={30} radius={15} />
-        <Bone width={152} height={28} radius={14} />
-        <Bone width={120} height={28} radius={14} />
+        <Bone width={220} height={14} radius={7} />
       </View>
 
       <View style={{ paddingHorizontal: gutter, marginTop: 12 }}>
@@ -149,9 +150,8 @@ export default function StoreHomeSkeleton() {
 const styles = StyleSheet.create({
   screen: { flex: 1, overflow: "hidden" },
   backdrop: { position: "absolute", left: 0, right: 0 },
-  topBar: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 46 },
-  locationBones: { flex: 1, gap: 6 },
-  chips: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 },
+  topBar: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", minHeight: 34 },
+  actions: { flexDirection: "row", alignItems: "center", gap: 8 },
   search: { height: 54, borderRadius: 27, borderWidth: StyleSheet.hairlineWidth, flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 10 },
   tabs: { flexDirection: "row", marginTop: 6, paddingHorizontal: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   tab: { flex: 1, alignItems: "center", gap: 6, paddingTop: 10, paddingBottom: 12 },

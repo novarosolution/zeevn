@@ -1,4 +1,5 @@
 const DeliveryZone = require("../models/DeliveryZone");
+const StoreSettings = require("../models/StoreSettings");
 const User = require("../models/User");
 const Order = require("../models/Order");
 const {
@@ -16,7 +17,15 @@ async function checkDeliveryServiceability(req, res, next) {
     const postalCode = req.query.postalCode || req.query.pin || "";
     const city = req.query.city || "";
     const itemsTotal = Number(req.query.itemsTotal || 0);
-    const quote = await resolveDeliveryQuote({ postalCode, city, itemsTotal });
+    const latitude = req.query.lat || req.query.latitude;
+    const longitude = req.query.lng || req.query.longitude;
+    const quote = await resolveDeliveryQuote({
+      postalCode,
+      city,
+      itemsTotal,
+      latitude,
+      longitude,
+    });
     res.json({
       ...quote,
       postalCode: normalizePostalCode(postalCode) || "",
@@ -45,8 +54,8 @@ async function createDeliveryZone(req, res, next) {
     if (!data.name) {
       return res.status(400).json({ message: "Zone name is required." });
     }
-    if (!data.postalCodes.length && !data.cities.length) {
-      return res.status(400).json({ message: "Add at least one pincode or city." });
+    if (!data.postalCodes.length && !data.cities.length && data.polygon.length < 3) {
+      return res.status(400).json({ message: "Add a pincode, a city, or draw the area on the map." });
     }
     const conflict = await findPostalCodeConflict(data.postalCodes);
     if (conflict) {
@@ -142,6 +151,34 @@ async function listDeliveryPartners(req, res, next) {
   }
 }
 
+async function getStoreSettings(req, res, next) {
+  try {
+    const doc = await StoreSettings.get();
+    res.json(doc);
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function updateStoreSettings(req, res, next) {
+  try {
+    const doc = await StoreSettings.get();
+    const lat = Number(req.body.latitude);
+    const lng = Number(req.body.longitude);
+    if (Number.isFinite(lat)) doc.latitude = lat;
+    if (Number.isFinite(lng)) doc.longitude = lng;
+    if (req.body.label != null) doc.label = String(req.body.label).trim() || doc.label;
+    const rate = Number(req.body.minutesPerKm);
+    if (Number.isFinite(rate) && rate > 0) doc.minutesPerKm = rate;
+    const radius = Number(req.body.maxRadiusKm);
+    if (Number.isFinite(radius) && radius >= 0) doc.maxRadiusKm = radius;
+    await doc.save();
+    res.json(doc);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   checkDeliveryServiceability,
   listDeliveryZones,
@@ -149,4 +186,6 @@ module.exports = {
   updateDeliveryZone,
   deleteDeliveryZone,
   listDeliveryPartners,
+  getStoreSettings,
+  updateStoreSettings,
 };

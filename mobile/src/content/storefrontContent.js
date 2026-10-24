@@ -40,6 +40,10 @@ export const STORE_FREE_DELIVERY = "Free delivery over ₹1,499";
 
 /** Top block of Home. */
 export const STORE_HEADER = {
+  greetingMorning: "Good morning",
+  greetingAfternoon: "Good afternoon",
+  greetingEvening: "Good evening",
+  greetingNamed: (hello, name) => `${hello}, ${name}`,
   /**
    * Chips under the location bar, left to right: the festival countdown (festival themes), “Delivers in 1–2 days”
    * (the most common `eta` set on your products), the free-delivery threshold, and — when the farm-shop pin and
@@ -48,11 +52,20 @@ export const STORE_HEADER = {
   showDeliveryPromise: true,
   /** “Delivers in 10 mins” — a time that does not start with a number (“Same day”) is shown as it is. */
   etaChip: (eta) => (/^\d/.test(eta) ? `Delivers in ${eta}` : eta),
+  /** Short form for the location row (“1–2 days”), so the address can keep the title. */
+  etaShort: (eta) => String(eta || "").replace(/^delivers in\s+/i, ""),
+  /** “Zeevan in” above the big delivery time. */
+  etaIn: (brand) => `${brand} in`,
+  etaFallback: "1–2 days",
+  etaOutside: "Not in range",
+  nearby: "nearby",
   deliveryChip: STORE_FREE_DELIVERY,
   distanceSuffix: "from our farm shop",
   /** Small label above the delivery address in the top bar. */
   locationLabel: "Deliver to",
   locationFallback: "Set delivery location",
+  locationAdd: "Add address",
+  locationChange: "Change",
   signIn: "Sign in",
   /** Spoken labels (screen readers). */
   a11y: {
@@ -72,6 +85,14 @@ export const STORE_HEADER = {
   ],
   backToTop: "Back to top",
 };
+
+export function storeGreeting(name, now = new Date()) {
+  const hour = now.getHours();
+  const hello =
+    hour < 12 ? STORE_HEADER.greetingMorning : hour < 17 ? STORE_HEADER.greetingAfternoon : STORE_HEADER.greetingEvening;
+  const first = String(name || "").trim();
+  return first ? STORE_HEADER.greetingNamed(hello, first) : hello;
+}
 
 /** Category tabs under the search bar. `lineKey` links a tab to a product line (see `zeevanCatalogContent`). */
 export const STORE_TABS = [
@@ -386,14 +407,28 @@ export const STORE_HOME = {
 
 export const STORE_SECTIONS = {
   categories: {
-    title: "Shop by category",
-    action: "See all",
+    eyebrow: "The pantry",
+    title: "Shop the range",
+    action: "Shop",
     moreSuffix: "more",
     allTile: "See all",
     tileA11y: (label, n) => `${label}, ${n} ${n === 1 ? "product" : "products"}`,
+    count: (n) => (n === 1 ? "1 product" : `${n} products`),
   },
   /** `rankTop` products get a gold #1 / #2 / #3 badge. */
-  bestsellers: { title: "Bestsellers", action: "See all", rankTop: 3, rankA11y: (n) => `Bestseller number ${n}` },
+  bestsellers: {
+    eyebrow: "Loved this week",
+    title: "Bestsellers",
+    action: "Shop",
+    rankTop: 3,
+    rankA11y: (n) => `Bestseller number ${n}`,
+  },
+  catalog: {
+    eyebrow: "In stock now",
+    title: "All products",
+    action: "Shop",
+    count: (n) => (n === 1 ? "1 product" : `${n} products`),
+  },
   picks: { action: "See all" },
   newArrivals: { title: "New arrivals", action: "See all" },
   lineRail: { action: "See all" },

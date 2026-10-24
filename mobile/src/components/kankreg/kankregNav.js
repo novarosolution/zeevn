@@ -1,5 +1,6 @@
 /** Shared nav keys / route matching for KankregSiteHeader + KankregMobileNav */
 
+import { Platform } from "react-native";
 import {
   KANKREG_NAV_ITEMS,
   KANKREG_ROLE_NAV_ITEMS,
@@ -90,7 +91,7 @@ export function buildKankregMobileNavItems({ go, goProduct, user }) {
 function buildRoleNavItems(ctx) {
   const roleItems = [];
   const { user } = ctx;
-  if (user?.isAdmin) {
+  if (Platform.OS === "web" && user?.isAdmin) {
     const { key, label } = KANKREG_ROLE_NAV_ITEMS.admin;
     roleItems.push({
       key,

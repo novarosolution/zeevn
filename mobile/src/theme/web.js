@@ -76,9 +76,9 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
   html.style.minHeight = "100%";
 
   if (isDark) {
-    body.style.background = backgroundSolid || "#050403";
+    body.style.background = backgroundSolid || "#0C1610";
     body.style.backgroundAttachment = "scroll";
-    html.style.background = backgroundSolid || "#050403";
+    html.style.background = backgroundSolid || "#0C1610";
     html.style.colorScheme = "dark";
   } else {
     body.style.background = SITE_BG_FALLBACK;
@@ -129,7 +129,7 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
         overscroll-behavior-y: none;
         -webkit-tap-highlight-color: transparent;
         font-family: ${WEB_FONT_STACK_BODY};
-        font-size: 15px;
+        font-size: 16px;
         line-height: 1.5;
       }
       #root, [data-expo-root] {
@@ -157,7 +157,18 @@ export function applyWebPremiumChrome(isDark, backgroundSolid) {
         height: 10px;
       }
       a, button, [role="button"], [role="tab"] {
-        transition: opacity 140ms ease, background-color 140ms ease, border-color 140ms ease;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+        touch-action: manipulation;
+        user-select: none;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        a, button, [role="button"], [role="tab"] {
+          transition: opacity 140ms ease, background-color 140ms ease, border-color 140ms ease;
+        }
+      }
+      input, textarea, select {
+        font-size: 16px;
       }
       @media (max-width: 760px) {
         ::-webkit-scrollbar {

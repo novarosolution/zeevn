@@ -86,10 +86,22 @@ export function getWebSiteUrl() {
 
 function upsertMeta(attr, key, content) {
   if (!content || typeof document === "undefined") return;
-  let el = document.querySelector(`meta[${attr}="${key}"]`);
+  let el = document.querySelector(`meta[${attr}="${key}"]:not([media])`);
   if (!el) {
     el = document.createElement("meta");
     el.setAttribute(attr, key);
+    document.head.appendChild(el);
+  }
+  el.setAttribute("content", content);
+}
+
+function upsertThemeColor(content, media) {
+  if (!content || typeof document === "undefined") return;
+  let el = document.querySelector(`meta[name="theme-color"][media="${media}"]`);
+  if (!el) {
+    el = document.createElement("meta");
+    el.setAttribute("name", "theme-color");
+    el.setAttribute("media", media);
     document.head.appendChild(el);
   }
   el.setAttribute("content", content);
@@ -128,7 +140,8 @@ export function injectWebSeoBootstrap() {
   upsertMeta("name", "description", DEFAULT_DESCRIPTION);
   upsertMeta("name", "robots", "index, follow, max-image-preview:large");
   upsertMeta("name", "application-name", APP_DISPLAY_NAME);
-  upsertMeta("name", "theme-color", "#FFFFFF");
+  upsertThemeColor("#FBF6EC", "(prefers-color-scheme: light)");
+  upsertThemeColor("#0F3D24", "(prefers-color-scheme: dark)");
   upsertMeta("name", "color-scheme", "light dark");
 
   upsertMeta("property", "og:site_name", APP_DISPLAY_NAME);

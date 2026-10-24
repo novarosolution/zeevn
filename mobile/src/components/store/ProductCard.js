@@ -67,15 +67,20 @@ function Heart({ active, onPress, lite }) {
 }
 
 /** Gold "1 / 2 / 3" medal pinned to a card's top-left corner (Bestsellers). */
-function RankBadge({ rank }) {
+function RankBadge({ rank, compact, end }) {
   const { c, type } = useStoreTheme();
+  const size = compact ? 22 : 28;
   return (
     <View
-      style={[styles.rank, { borderColor: c.card, backgroundColor: c.gold }]}
+      style={[
+        styles.rank,
+        end ? { right: 6 } : { left: 6 },
+        { width: size, height: size, borderRadius: size / 2, borderColor: c.card, backgroundColor: c.gold },
+      ]}
       accessible
       accessibilityLabel={STORE_SECTIONS.bestsellers.rankA11y(rank)}
     >
-      <Text style={type.display(14, { color: "#3A2A0C", ls: 0, lh: 17 })} allowFontScaling={false}>
+      <Text style={type.display(compact ? 12 : 14, { color: "#3A2A0C", ls: 0, lh: compact ? 14 : 17 })} allowFontScaling={false}>
         {rank}
       </Text>
     </View>
@@ -210,7 +215,7 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
 
   const wellRef = useRef(null);
   const handleAdd = useCallback(() => {
-    if (hasCartTarget()) markCartFlight(FLIGHT_MS + 500); // the flight replaces the "added to bag" toast
+    if (hasCartTarget()) markCartFlight(FLIGHT_MS + 500);
     addToCart(productToCartLine(product));
     // Let the product photo hop into the cart button.
     wellRef.current?.measureInWindow?.((x, y, w, h) => flyToCart({ uri: uris[0], from: { x, y, width: w, height: h } }));
@@ -230,10 +235,13 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
         : { bg: c.brand, fg: c.onBrand };
 
   const dim = state === "sold";
-  // Narrow tiles (the Shop grid beside its category rail) put the price on its own line and stretch ADD beneath it.
   const stacked = width < 150;
+  const compact = stacked || lite;
+  const priceSize = stacked ? 16 : 19;
+  const wellSize = stacked ? width : imageSize;
+  const wellRadius = stacked ? r.lg : WELL_RADIUS;
   const priceText = (
-    <Text style={type.display(19, { color: c.ink, ls: -0.3, lh: 23 })} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+    <Text style={type.display(priceSize, { color: c.ink, ls: -0.35, lh: stacked ? 19 : 23 })} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
       {formatINRWhole(pricing.price)}
     </Text>
   );
@@ -245,30 +253,58 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
       lite={lite}
       style={[
         styles.card,
-        lite ? shadow.soft : shadow.card,
-        { width, backgroundColor: c.card, borderColor: c.line, borderRadius: r.xl },
+        compact ? shadow.soft : shadow.card,
+        {
+          width,
+          backgroundColor: c.card,
+          borderColor: compact ? withAlpha(c.gold, isDark ? 0.16 : 0.18) : c.goldLine,
+          borderRadius: stacked ? r.lg : r.xl,
+          paddingTop: stacked ? 0 : 8,
+          paddingHorizontal: stacked ? 0 : 8,
+        },
         style,
       ]}
       accessibilityRole="button"
       accessibilityLabel={STORE_CARD.a11y.tile(product.name, formatINRWhole(pricing.price))}
     >
-      {rank ? <RankBadge rank={rank} /> : null}
-      <View ref={wellRef} collapsable={false} style={[styles.well, { width: imageSize, height: imageSize, backgroundColor: blend ? range.wash[1] : c.well || WELL_FILL, borderRadius: WELL_RADIUS }]}>
+      {rank ? <RankBadge rank={rank} compact={compact} end={compact && Boolean(badge)} /> : null}
+      <View
+        ref={wellRef}
+        collapsable={false}
+        style={[
+          styles.well,
+          {
+            width: wellSize,
+            height: wellSize,
+            backgroundColor: blend ? range.wash[1] : c.well || WELL_FILL,
+            borderRadius: stacked ? 0 : wellRadius,
+            borderTopLeftRadius: wellRadius,
+            borderTopRightRadius: wellRadius,
+          },
+        ]}
+      >
         {blend ? <LinearGradient colors={range.wash} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} pointerEvents="none" /> : null}
-        <CardImage uris={uris} source={coverSource} size={imageSize} gallery={gallery && !lite} dim={dim} c={c} blend={blend} />
-        {!lite ? <View style={[StyleSheet.absoluteFill, styles.wellRim]} pointerEvents="none" /> : null}
+        <CardImage uris={uris} source={coverSource} size={wellSize} gallery={gallery && !lite} dim={dim} c={c} blend={blend} />
+        <View
+          style={[
+            StyleSheet.absoluteFill,
+            styles.wellRim,
+            { borderRadius: stacked ? 0 : wellRadius, borderTopLeftRadius: wellRadius, borderTopRightRadius: wellRadius },
+          ]}
+          pointerEvents="none"
+        />
         {badge ? (
-          <View style={[styles.badge, { backgroundColor: badgeColors.bg }]}>
+          <View style={[styles.badge, compact && styles.badgeCompact, { backgroundColor: badgeColors.bg }]}>
             <Text
-              style={type.ui(badge.text.length > 9 ? 8.5 : 9.5, "extrabold", badgeColors.fg, { letterSpacing: badge.text.length > 9 ? 0.3 : 0.5 })}
+              style={type.ui(compact || badge.text.length > 9 ? 8 : 9.5, "extrabold", badgeColors.fg, { letterSpacing: 0.3 })}
               numberOfLines={1}
             >
               {badge.text}
             </Text>
           </View>
         ) : null}
-        <Heart active={wished} onPress={handleWish} lite={lite} />
-        {showRating && !lite ? <RatingChip rating={rating} /> : null}
+        {!compact ? <Heart active={wished} onPress={handleWish} lite={lite} /> : null}
+        {showRating && !compact ? <RatingChip rating={rating} /> : null}
         {state === "sold" ? (
           <View style={styles.soldWrap} pointerEvents="none">
             <View style={[styles.soldTag, { backgroundColor: c.glassStrong, borderColor: c.line }]}>
@@ -278,36 +314,40 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
         ) : null}
       </View>
 
-      <View style={styles.info}>
-        <Text style={[type.ui(14, "bold", c.ink), styles.name]} numberOfLines={2}>
+      <View style={[styles.info, stacked && styles.infoStacked]}>
+        <Text style={[type.ui(stacked ? 12.5 : 14, "bold", c.ink, { letterSpacing: stacked ? 0.05 : 0 }), stacked ? styles.nameCompact : styles.name]} numberOfLines={2}>
           {product.name}
         </Text>
 
-        <View style={styles.unitRow}>
-          <Text style={[type.ui(12.5, "semibold", c.inkMute), styles.unit]} numberOfLines={1}>
-            {unit}
-          </Text>
-          {stockHint ? (
-            <View style={[styles.stock, { backgroundColor: c.dangerSoft }]}>
-              <Text style={type.ui(10.5, "bold", c.danger)}>{stockHint}</Text>
-            </View>
-          ) : eta ? (
-            <View style={styles.meta}>
-              <Ionicons name="time-outline" size={12} color={c.inkMute} />
-              <Text style={type.ui(11.5, "semibold", c.inkMute)} numberOfLines={1}>
-                {eta}
+        {unit || stockHint || eta ? (
+          <View style={styles.unitRow}>
+            {unit ? (
+              <Text style={[type.ui(stacked ? 11 : 12.5, "semibold", c.inkMute), styles.unit]} numberOfLines={1}>
+                {unit}
               </Text>
-            </View>
-          ) : null}
-        </View>
+            ) : null}
+            {stockHint ? (
+              <View style={[styles.stock, { backgroundColor: c.dangerSoft }]}>
+                <Text style={type.ui(10, "bold", c.danger)}>{stockHint}</Text>
+              </View>
+            ) : eta && !stacked ? (
+              <View style={styles.meta}>
+                <Ionicons name="time-outline" size={12} color={c.inkMute} />
+                <Text style={type.ui(11.5, "semibold", c.inkMute)} numberOfLines={1}>
+                  {eta}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
 
         <View style={[styles.buyRow, stacked && styles.buyRowStacked]}>
           {stacked ? (
             <View style={styles.priceRow}>
-              {pricing.from ? <Text style={type.ui(11, "semibold", c.inkMute)}>{STORE_CARD.from}</Text> : null}
+              {pricing.from ? <Text style={type.ui(10, "semibold", c.inkMute)}>{STORE_CARD.from}</Text> : null}
               {priceText}
               {!pricing.from && pricing.mrp ? (
-                <Text style={[type.ui(12, "regular", c.inkMute), styles.strike]}>{formatINRWhole(pricing.mrp)}</Text>
+                <Text style={[type.ui(10.5, "regular", c.inkMute), styles.strike]}>{formatINRWhole(pricing.mrp)}</Text>
               ) : null}
             </View>
           ) : (
@@ -322,7 +362,7 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
           )}
           <AddControl
             block={stacked}
-            compact={width < 160}
+            compact
             state={state}
             mode={pricing.hasOptions ? "options" : "stepper"}
             quantity={quantity}
@@ -342,11 +382,10 @@ export default memo(ProductCard);
 const styles = StyleSheet.create({
   card: {
     borderWidth: StyleSheet.hairlineWidth,
-    paddingTop: 8,
-    paddingHorizontal: 8,
-    paddingBottom: 12,
+    paddingBottom: 10,
+    overflow: "hidden",
   },
-  well: { overflow: "hidden" },
+  well: { overflow: "hidden", alignSelf: "center" },
   image: { width: "100%", height: "100%" },
   blend: { mixBlendMode: "multiply" },
   wellRim: { borderRadius: WELL_RADIUS, borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.55)" },
@@ -360,16 +399,13 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 9,
   },
+  badgeCompact: { top: 6, left: 6, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 7, maxWidth: "80%" },
   heartHit: { position: "absolute", top: 6, right: 6 },
   rank: {
     position: "absolute",
-    top: -8,
-    left: -6,
+    top: 6,
     zIndex: 6,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2.5,
+    borderWidth: 2,
     overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
@@ -403,7 +439,9 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
   },
   info: { paddingHorizontal: 4, paddingTop: 10, gap: 3 },
+  infoStacked: { paddingHorizontal: 8, paddingTop: 8, gap: 2 },
   name: { lineHeight: 18, minHeight: 36 },
+  nameCompact: { lineHeight: 16, minHeight: 32 },
   unitRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 6, minHeight: 18 },
   unit: { flexShrink: 1 },
   meta: { flexDirection: "row", alignItems: "center", gap: 3 },

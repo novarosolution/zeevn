@@ -11,21 +11,22 @@
       "web"
     ],
     "userInterfaceStyle": "automatic",
-    "icon": "./assets/app-icon-light.png",
+    "icon": "./assets/app-icon-dark.png",
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
     "ios": {
       "infoPlist": {
+        "CADisableMinimumFrameDurationOnPhone": true,
         "NSLocationWhenInUseUsageDescription": "Allow Zeevan to access your location to auto-fill delivery address.",
         "NSUserNotificationUsageDescription": "Allow Zeevan to send order updates and important announcements."
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/app-icon-light.png",
-        "backgroundColor": "#FFFFFF"
+        "foregroundImage": "./assets/app-icon-z-mark.png",
+        "backgroundColor": "#0F3D24"
       },
       "softwareKeyboardLayoutMode": "resize",
       "permissions": [
@@ -51,7 +52,7 @@
           "backgroundColor": "#FBF6EC",
           "dark": {
             "image": "./assets/splash-mark-dark.png",
-            "backgroundColor": "#1A1714"
+            "backgroundColor": "#0F3D24"
           },
           "ios": { "imageWidth": 240 },
           "android": { "imageWidth": 288 }

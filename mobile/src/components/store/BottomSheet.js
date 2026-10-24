@@ -14,9 +14,10 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { EASE_OUT, EASE_SHEET, motionSettle, motionTiming, projectVelocity, rubberband } from "../../theme/motion";
+import { motionSettle, motionTiming, projectVelocity, rubberband } from "../../theme/motion";
 import { useStoreTheme } from "../../theme/storefront";
 import { hapticTap } from "../../utils/haptics";
+import PressableScale from "./PressableScale";
 
 /** Extra surface under the sheet so an upward over-drag never shows a gap at the bottom edge. */
 const BLEED = 160;
@@ -74,7 +75,7 @@ export default function BottomSheet({ visible, onClose, title, subtitle, childre
         if (reduced) {
           appear.value = withTiming(1, { duration: motionTiming.toggle, reduceMotion: ReduceMotion.Never });
         } else {
-          translateY.value = withTiming(0, { duration: motionTiming.sheetIn, easing: EASE_SHEET });
+          translateY.value = withSpring(0, motionSettle.sheet);
         }
       });
       return () => cancelAnimationFrame(id);
@@ -91,9 +92,13 @@ export default function BottomSheet({ visible, onClose, title, subtitle, childre
         if (finished) runOnJS(unmount)();
       });
     } else {
-      translateY.value = withTiming(screenH, { duration: motionTiming.sheetOut, easing: EASE_OUT }, (finished) => {
-        if (finished) runOnJS(unmount)();
-      });
+      translateY.value = withSpring(
+        screenH,
+        { ...motionSettle.settle, overshootClamping: true },
+        (finished) => {
+          if (finished) runOnJS(unmount)();
+        }
+      );
     }
     return undefined;
     // `screenH`, `reduced` and the shared values are stable for one open/close; only `visible` starts a transition.
@@ -195,15 +200,17 @@ export default function BottomSheet({ visible, onClose, title, subtitle, childre
                         </Text>
                       ) : null}
                     </View>
-                    <Pressable
+                    <PressableScale
                       onPress={onClose}
                       hitSlop={10}
+                      scaleTo={0.92}
+                      lite
                       style={[styles.close, { backgroundColor: c.soft }]}
                       accessibilityRole="button"
                       accessibilityLabel="Close"
                     >
                       <Ionicons name="close" size={18} color={c.inkSoft} />
-                    </Pressable>
+                    </PressableScale>
                   </View>
                 ) : null}
               </View>

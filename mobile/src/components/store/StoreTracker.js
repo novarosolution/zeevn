@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { useIsFocused } from "@react-navigation/native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "../../context/AuthContext";
 import { useLiveSocket } from "../../context/LiveSocketContext";
@@ -28,7 +27,6 @@ const newestFirst = (a, b) =>
  */
 export function useActiveOrders() {
   const { isAuthenticated, token } = useAuth();
-  const focused = useIsFocused();
   const { on: onLiveEvent } = useLiveSocket();
   const [orders, setOrders] = useState([]);
 
@@ -46,8 +44,8 @@ export function useActiveOrders() {
       setOrders([]);
       return;
     }
-    if (focused) load();
-  }, [isAuthenticated, focused, load]);
+    load();
+  }, [isAuthenticated, load]);
 
   useEffect(() => {
     if (!isAuthenticated) return undefined;

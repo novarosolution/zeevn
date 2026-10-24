@@ -94,6 +94,11 @@ function RangeTile({ tile, width, height, wide, blend, onPress }) {
           <Text style={type.display(wide ? 25 : 22, { color: range.ink, ls: -0.5, lh: wide ? 29 : 25 })} numberOfLines={2}>
             {tile.label}
           </Text>
+          {tile.count ? (
+            <Text style={type.ui(12, "semibold", withAlpha(range.ink, 0.72), { letterSpacing: 0.15, marginTop: 3 })}>
+              {STORE_SECTIONS.categories.count(tile.count)}
+            </Text>
+          ) : null}
         </View>
         <View style={[styles.arrow, wide && styles.arrowWide, { backgroundColor: range.ink }]} pointerEvents="none">
           <StoreIcon icon={{ ion: "arrow-forward" }} size={15} color={range.wash[0]} />

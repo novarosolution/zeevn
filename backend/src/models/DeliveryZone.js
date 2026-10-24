@@ -42,6 +42,11 @@ const deliveryZoneSchema = new mongoose.Schema(
       default: 180,
       min: 0,
     },
+    /** Drawn coverage on the admin map. Empty = pincode/city only. */
+    polygon: {
+      type: [{ lat: { type: Number }, lng: { type: Number }, _id: false }],
+      default: [],
+    },
     /** Optional partners allowed to deliver this zone. Empty = any partner. */
     partnerIds: [
       {

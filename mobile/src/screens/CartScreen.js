@@ -214,7 +214,8 @@ export default function CartScreen({ navigation, route }) {
   useEffect(() => {
     const pin = String(postalCode || "").replace(/\D/g, "");
     const cityName = String(city || "").trim();
-    if (pin.length < 6 && !cityName) {
+    const hasPoint = Number.isFinite(Number(latitude)) && Number.isFinite(Number(longitude));
+    if (pin.length < 6 && !cityName && !hasPoint) {
       setDeliveryQuote({ serviceable: true, fee: 0, zoneName: "", checked: false });
       return undefined;
     }
@@ -224,6 +225,8 @@ export default function CartScreen({ navigation, route }) {
         postalCode: pin,
         city: cityName,
         itemsTotal: totalAmount,
+        latitude,
+        longitude,
       })
         .then((res) => {
           if (cancelled) return;
@@ -234,6 +237,8 @@ export default function CartScreen({ navigation, route }) {
             checked: true,
             etaMinutesMin: res?.etaMinutesMin,
             etaMinutesMax: res?.etaMinutesMax,
+            etaLabel: res?.etaLabel || "",
+            distanceLabel: res?.distanceLabel || "",
           });
         })
         .catch(() => {
@@ -245,7 +250,7 @@ export default function CartScreen({ navigation, route }) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [postalCode, city, totalAmount]);
+  }, [postalCode, city, totalAmount, latitude, longitude]);
 
   /** Guest can browse the bag; only checkout needs sign-in. */
   if (!isAuthenticated && isCheckoutFlow) {
@@ -460,11 +465,17 @@ export default function CartScreen({ navigation, route }) {
   const deliveryFee = deliveryQuote.checked && deliveryQuote.serviceable ? Number(deliveryQuote.fee || 0) : 0;
   const deliveryBlocked = deliveryQuote.checked && !deliveryQuote.serviceable;
   const deliveryHint = deliveryBlocked
-    ? "We do not deliver to this pincode yet."
-    : deliveryQuote.zoneName && deliveryQuote.checked
-      ? deliveryQuote.fee === 0
-        ? `${deliveryQuote.zoneName} · Free delivery`
-        : `${deliveryQuote.zoneName}`
+    ? "We do not deliver to this area yet."
+    : deliveryQuote.checked
+      ? [
+          deliveryQuote.etaLabel,
+          deliveryQuote.distanceLabel,
+          deliveryQuote.fee === 0 && deliveryQuote.zoneName
+            ? `${deliveryQuote.zoneName} · Free delivery`
+            : deliveryQuote.zoneName,
+        ]
+          .filter(Boolean)
+          .join(" · ")
       : "";
   const platformFee = 1.2;
   const discountAmount = Number(appliedCoupon?.discountAmount || 0);

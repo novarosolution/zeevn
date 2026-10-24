@@ -9,7 +9,7 @@ import {
  * isn't confirmed yet; otherwise land on Home. Web always goes Home.
  */
 export async function resetNavigationAfterAuth(navigation, user) {
-  if (user?.isAdmin) {
+  if (Platform.OS === "web" && user?.isAdmin) {
     navigation.reset({ index: 0, routes: [{ name: "AdminDashboard" }] });
     return;
   }

@@ -13,7 +13,7 @@ export const LOADING_THEME = {
   goldDeep: KANKREG_PALETTE.goldDeep,
   /** Cream atelier splash — keep loaders calm; AppStartupScreen uses paper/ink. */
   splashRadialLight: [KANKREG_PALETTE.paper, KANKREG_PALETTE.paper2, "#FFFFFF"],
-  splashRadialDark: ["#1a2018", "#121810", "#050403"],
+  splashRadialDark: ["#14522F", "#0F3D24", "#0A2A19"],
   shimmerDurationMs: 1500,
   ringDurationMs: 1000,
   dotsDurationMs: 1200,

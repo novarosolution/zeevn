@@ -14,8 +14,8 @@ import { fonts } from "./tokens";
 /** Page gutter used by every storefront section. */
 export const STORE_GUTTER = 16;
 
-/** Floating nav pill / cart FAB height — matches `CUSTOMER_BOTTOM_NAV_BAR_HEIGHT` so scroll padding stays valid. */
-export const STORE_NAV_HEIGHT = 66;
+/** Floating nav pill / cart FAB — compact enough that 22pt icons sit in air, not a fat disc. */
+export const STORE_NAV_HEIGHT = 52;
 
 export const STORE_RADIUS = {
   xs: 8,
@@ -103,10 +103,10 @@ const LIGHT = {
 };
 
 const DARK = {
-  page: "#0F0D0A",
-  pageDeep: "#16120D",
-  canvas: "#0F0D0A",
-  canvasDeep: "#16120D",
+  page: "#0C1610",
+  pageDeep: "#122016",
+  canvas: "#0C1610",
+  canvasDeep: "#122016",
   goldLine: "rgba(232, 188, 132, 0.22)",
   card: "#1B1712",
   cardSoft: "#211C15",
@@ -132,13 +132,13 @@ const DARK = {
   danger: "#F28B76",
   dangerSoft: "rgba(242, 139, 118, 0.14)",
   shadow: "#000000",
-  glass: "rgba(27, 23, 18, 0.88)",
-  glassStrong: "rgba(27, 23, 18, 0.94)",
+  glass: "rgba(15, 36, 24, 0.88)",
+  glassStrong: "rgba(15, 36, 24, 0.94)",
   glassBorder: "rgba(255, 255, 255, 0.14)",
-  scrim: "rgba(0, 0, 0, 0.62)",
-  headerGradient: ["#3C2D12", "#2B2110", "#1B150C", "#0F0D0A"],
+  scrim: "rgba(6, 14, 10, 0.62)",
+  headerGradient: ["#1A3D24", "#14301C", "#0F2418", "#0C1610"],
   headerLocations: [0, 0.34, 0.7, 1],
-  washGradient: ["#33260F", "#231A0C", "#17120B", "#0F0D0A"],
+  washGradient: ["#1A3320", "#142818", "#0F1E14", "#0C1610"],
   washLocations: [0, 0.38, 0.74, 1],
   tiles: [
     ["#232B17", "#1A2111"],
@@ -235,11 +235,11 @@ function buildType(c, fontsReady) {
   const displaySemiFamily = fontsReady ? FONT_DISPLAY_SEMI : fonts.bold;
   return {
     /** Serif display text — hero greeting, section titles, prices on banners. */
-    display: (size, { color = c.ink, semi = false, ls = -0.4, lh } = {}) => ({
+    display: (size, { color = c.ink, semi = false, ls, lh } = {}) => ({
       fontFamily: semi ? displaySemiFamily : displayFamily,
       fontSize: size,
-      lineHeight: lh ?? Math.round(size * 1.14),
-      letterSpacing: ls,
+      lineHeight: lh ?? Math.round(size * (size >= 28 ? 1.05 : 1.14)),
+      letterSpacing: ls ?? (size >= 28 ? -0.6 : size >= 20 ? -0.4 : -0.2),
       color,
     }),
     /** Sans UI text. weight: regular | medium | semibold | bold | extrabold */

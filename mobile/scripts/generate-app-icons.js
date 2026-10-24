@@ -114,51 +114,40 @@ async function main() {
   const favicon = path.join(assetsDir, "favicon.png");
   const fgLight = path.join(assetsDir, "app-icon-foreground-light.png");
 
-  const zSource = path.join(assetsDir, "app-icon-z-source.png");
-  if (fs.existsSync(zSource)) {
-    await sharp(zSource).resize(SIZE, SIZE).png({ compressionLevel: 9 }).toFile(lightPath);
-    const lightRaw = await sharp(lightPath).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-    const darkPx = Buffer.from(lightRaw.data);
-    const fgPx = Buffer.from(lightRaw.data);
-    for (let i = 0; i < darkPx.length; i += 4) {
-      const r = darkPx[i];
-      const g = darkPx[i + 1];
-      const b = darkPx[i + 2];
-      const max = Math.max(r, g, b);
-      const min = Math.min(r, g, b);
-      if (min > 200 && max - min < 60) {
-        darkPx[i] = 26;
-        darkPx[i + 1] = 23;
-        darkPx[i + 2] = 20;
-        darkPx[i + 3] = 255;
-        fgPx[i + 3] = 0;
-      }
+  const zLight4k = path.join(assetsDir, "app-icon-z-4k-light.png");
+  const zDark4k = path.join(assetsDir, "app-icon-z-4k-dark.png");
+  const zMark = path.join(assetsDir, "app-icon-z-mark.png");
+  if (fs.existsSync(zLight4k) && fs.existsSync(zDark4k)) {
+    await sharp(zLight4k).resize(SIZE, SIZE).png({ compressionLevel: 9 }).toFile(lightPath);
+    await sharp(zDark4k).resize(SIZE, SIZE).png({ compressionLevel: 9 }).toFile(darkPath);
+    if (fs.existsSync(zMark)) {
+      await sharp(zMark).resize(SIZE, SIZE).png({ compressionLevel: 9 }).toFile(fgLight);
+    } else {
+      await sharp(darkPath).ensureAlpha().png().toFile(fgLight);
     }
-    await sharp(darkPx, { raw: lightRaw.info }).png({ compressionLevel: 9 }).toFile(darkPath);
-    await sharp(fgPx, { raw: lightRaw.info }).png({ compressionLevel: 9 }).toFile(fgLight);
   } else {
     await renderPng("light", SIZE, lightPath, { pad: PAD });
     await renderPng("dark", SIZE, darkPath, { pad: PAD });
     await renderPng("light", SIZE, fgLight, { pad: 0.28, transparent: true });
   }
-  await sharp(lightPath).png().toFile(splashIcon);
-  await sharp(lightPath).png().toFile(adaptive);
-  await sharp(lightPath).png().toFile(icon);
-  await sharp(lightPath).resize(192, 192).png().toFile(favicon);
+  await sharp(darkPath).png().toFile(splashIcon);
+  await sharp(darkPath).png().toFile(adaptive);
+  await sharp(darkPath).png().toFile(icon);
+  await sharp(darkPath).resize(192, 192).png().toFile(favicon);
   console.log("Wrote splash-icon.png, adaptive-icon.png, icon.png, favicon.png");
 
-  await writeIosIcon("AppIcon.appiconset", "App-Icon-1024x1024@1x.png", lightPath);
+  await writeIosIcon("AppIcon.appiconset", "App-Icon-1024x1024@1x.png", darkPath);
   await writeIosIcon("AppIcon-light.appiconset", "AppIcon-light-light-1024x1024@1x.png", lightPath);
   await writeIosIcon("AppIcon-dark.appiconset", "AppIcon-dark-light-1024x1024@1x.png", darkPath);
 
-  await writeAndroidLaunchers(lightPath, fgLight);
+  await writeAndroidLaunchers(darkPath, fgLight);
 
   const colorsPath = path.join(androidRes, "values/colors.xml");
   if (fs.existsSync(colorsPath)) {
     let colors = fs.readFileSync(colorsPath, "utf8");
     colors = colors.replace(/#FFFCF8|#F7F2E8/g, (hex) => (hex === "#F7F2E8" ? "#FFFFFF" : "#FFFFFF"));
     colors = colors
-      .replace(/<color name="iconBackground">[^<]+<\/color>/, '<color name="iconBackground">#FBF6EC</color>')
+      .replace(/<color name="iconBackground">[^<]+<\/color>/, '<color name="iconBackground">#0F3D24</color>')
       .replace(/<color name="splashscreen_background">[^<]+<\/color>/, '<color name="splashscreen_background">#FBF6EC</color>');
     fs.writeFileSync(colorsPath, colors);
     console.log("Wrote", path.relative(root, colorsPath));

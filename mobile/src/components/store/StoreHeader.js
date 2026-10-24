@@ -142,8 +142,14 @@ export default function StoreHeader({
   void accent;
   const name = String(firstName || "").trim();
   const street = locationStreet || locationText || STORE_HEADER.locationFallback;
-  const eta = locationMeta || STORE_HEADER.etaFallback;
-  const spoken = outOfArea ? STORE_HEADER.etaOutside : `${STORE_HEADER.etaIn(STORE_BRAND.name)} ${eta}`;
+  const eta = locationMeta;
+  const spoken = outOfArea
+    ? STORE_HEADER.etaOutside
+    : eta
+      ? `${STORE_HEADER.etaIn(STORE_BRAND.name)} ${eta}`
+      : locationEmpty
+        ? STORE_HEADER.locationFallback
+        : "Getting your delivery time";
 
   return (
     <View style={{ paddingHorizontal: gutter, gap: 8 }}>
@@ -157,7 +163,7 @@ export default function StoreHeader({
             >
               {STORE_HEADER.etaOutside}
             </Text>
-          ) : (
+          ) : eta ? (
             <>
               <Text style={type.ui(13, "medium", c.inkMute, { letterSpacing: 0.15 })} numberOfLines={1}>
                 {STORE_HEADER.etaIn(STORE_BRAND.name)}
@@ -174,6 +180,10 @@ export default function StoreHeader({
                 {!locationEmpty ? <NearbyPill label={nearbyLabel} /> : null}
               </View>
             </>
+          ) : (
+            <Text style={type.ui(16, "bold", c.ink, { letterSpacing: -0.2 })} accessibilityLabel={spoken}>
+              {spoken}
+            </Text>
           )}
         </View>
         <View style={styles.actions}>

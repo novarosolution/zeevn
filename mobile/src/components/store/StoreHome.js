@@ -30,7 +30,6 @@ import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefro
 import {
   buildCategoryTiles,
   getFirstName,
-  mostCommonEta,
   productsForLine,
   visibleTabs,
 } from "../../utils/storefront";
@@ -50,7 +49,6 @@ import StoreTracker, { useActiveOrders } from "./StoreTracker";
 import { BrandFooter, TrustStrip } from "./TrustFooter";
 import PressableScale from "./PressableScale";
 import { VariantSheetProvider } from "./VariantSheet";
-import { checkDeliveryServiceability } from "../../services/deliveryService";
 
 /** App Home only — website extras (line rails, festive picks, bento) stay on the site. */
 const APP_HOME_LAYOUT = ["tracker", "promos", "categories", "catalog", "trust", "footer"];
@@ -100,8 +98,7 @@ export default function StoreHome({
   const insets = useSafeAreaInsets();
   const { height: windowH } = useWindowDimensions();
   const { user, isAuthenticated } = useAuth();
-  const { displayLabel, snippet } = useDeliveryLocation();
-  const [deliveryQuote, setDeliveryQuote] = useState(null);
+  const { displayLabel, snippet, quote: deliveryQuote } = useDeliveryLocation();
 
   const festival = useMemo(() => resolveFestivalTheme({ remoteKey: homeView?.festivalKey }), [homeView?.festivalKey]);
   const tabs = useMemo(() => visibleTabs(STORE_TABS, products), [products]);
@@ -185,7 +182,6 @@ export default function StoreHome({
 
   /* ---- header content ---- */
   const firstName = getFirstName(user);
-  const etaLabel = useMemo(() => (STORE_HEADER.showDeliveryPromise ? mostCommonEta(products) : ""), [products]);
   const points = Math.max(0, Number(user?.rewardPoints) || 0);
 
   const chips = useMemo(() => {
@@ -201,9 +197,7 @@ export default function StoreHome({
       ? deliveryQuote.etaLabel
       : outOfArea
         ? deliveryQuote.message || STORE_HEADER.etaOutside
-        : etaLabel
-          ? STORE_HEADER.etaShort(etaLabel)
-          : "";
+        : "";
   const nearbyLabel = deliveryQuote?.distanceLabel || "";
   const locationParts = useMemo(
     () =>
@@ -215,28 +209,6 @@ export default function StoreHome({
   );
   const locationKind = user?.defaultAddress?.addressType || "";
   const onLocationPress = () => navigation.navigate(isAuthenticated ? "ManageAddress" : "Login");
-
-  useEffect(() => {
-    const lat = Number(snippet?.latitude ?? snippet?.lat ?? user?.defaultAddress?.latitude);
-    const lng = Number(snippet?.longitude ?? snippet?.lng ?? user?.defaultAddress?.longitude);
-    const pin = user?.defaultAddress?.postalCode || snippet?.postalCode || "";
-    const city = snippet?.city || user?.defaultAddress?.city || "";
-    if (!Number.isFinite(lat) && !pin && !city) return undefined;
-    let cancelled = false;
-    checkDeliveryServiceability({
-      latitude: Number.isFinite(lat) ? lat : undefined,
-      longitude: Number.isFinite(lng) ? lng : undefined,
-      postalCode: pin,
-      city,
-    })
-      .then((res) => {
-        if (!cancelled) setDeliveryQuote(res);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, [snippet, user?.defaultAddress]);
 
   /* ---- section data ---- */
   const hasProducts = products.length > 0;
@@ -309,7 +281,7 @@ export default function StoreHome({
                 <ProductGrid
                   products={catalog}
                   rankTop={STORE_SECTIONS.bestsellers.rankTop}
-                  hideEta={etaLabel}
+                  hideEta
                   onProductPress={openProduct}
                 />
               </View>
@@ -337,7 +309,6 @@ export default function StoreHome({
     categoryTiles,
     openShop,
     catalog,
-    etaLabel,
     openProduct,
   ]);
 

@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Platform } from "react-native";
 import { useAuth } from "./AuthContext";
+import { checkDeliveryServiceability } from "../services/deliveryService";
 import { getCurrentAddressFromGPS } from "../services/locationService";
 import {
   DELIVERY_CONFIRM_TTL_MS,
@@ -14,10 +15,22 @@ import { formatDeliveryLocationLabel, formatSavedAddressLabel } from "../utils/d
 
 const DETECT_COOLDOWN_MS = 90 * 1000;
 
+function coordsFrom(snippet, address) {
+  const lat = Number(snippet?.latitude ?? snippet?.lat ?? address?.latitude);
+  const lng = Number(snippet?.longitude ?? snippet?.lng ?? address?.longitude);
+  return {
+    latitude: Number.isFinite(lat) ? lat : undefined,
+    longitude: Number.isFinite(lng) ? lng : undefined,
+    postalCode: address?.postalCode || snippet?.postalCode || "",
+    city: snippet?.city || address?.city || "",
+  };
+}
+
 const defaultDeliveryLocationValue = {
   bootstrapped: Platform.OS === "web",
   status: "idle",
   snippet: null,
+  quote: null,
   detect: async () => null,
   confirmLocation: async () => {},
   clearConfirmation: async () => {},
@@ -33,13 +46,15 @@ const DeliveryLocationContext = createContext(defaultDeliveryLocationValue);
 
 export function DeliveryLocationProvider({ children }) {
   const { user } = useAuth();
-  const [bootstrapped, setBootstrapped] = useState(Platform.OS === "web");
+  const [bootstrapped, setBootstrapped] = useState(false);
   const [status, setStatus] = useState("idle");
   const [snippet, setSnippet] = useState(null);
+  const [quote, setQuote] = useState(null);
   const [confirmedAt, setConfirmedAt] = useState(null);
   const snippetRef = useRef(null);
   const lastDetectAtRef = useRef(0);
   const detectInFlightRef = useRef(false);
+  const askedDetectRef = useRef(false);
 
   const savedLabel = useMemo(
     () => formatSavedAddressLabel(user?.defaultAddress || user?.addresses?.[0]),
@@ -47,7 +62,6 @@ export function DeliveryLocationProvider({ children }) {
   );
 
   useEffect(() => {
-    if (Platform.OS === "web") return;
     let cancelled = false;
     (async () => {
       const [cached, confirmed] = await Promise.all([
@@ -55,7 +69,7 @@ export function DeliveryLocationProvider({ children }) {
         loadDeliveryConfirmedAt(),
       ]);
       if (cancelled) return;
-      if (cached?.label) {
+      if (cached && (cached.label || Number.isFinite(Number(cached.latitude)))) {
         snippetRef.current = cached;
         setSnippet(cached);
       }
@@ -67,13 +81,29 @@ export function DeliveryLocationProvider({ children }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!bootstrapped || snippetRef.current) return;
+    const addr = user?.defaultAddress;
+    if (!addr) return;
+    const lat = Number(addr.latitude);
+    const lng = Number(addr.longitude);
+    if (!Number.isFinite(lat) && !addr.city && !addr.postalCode) return;
+    const next = {
+      ...addr,
+      label: formatSavedAddressLabel(addr) || addr.city || "Saved address",
+      updatedAt: Date.now(),
+    };
+    snippetRef.current = next;
+    setSnippet(next);
+  }, [bootstrapped, user?.defaultAddress]);
+
   const detect = useCallback(
     async ({ force = false } = {}) => {
-      if (Platform.OS === "web" || detectInFlightRef.current) return snippetRef.current;
+      if (detectInFlightRef.current) return snippetRef.current;
 
       const now = Date.now();
       const cached = snippetRef.current;
-      if (!force && cached?.label && now - lastDetectAtRef.current < DETECT_COOLDOWN_MS) {
+      if (!force && Number.isFinite(Number(cached?.latitude)) && now - lastDetectAtRef.current < DETECT_COOLDOWN_MS) {
         return cached;
       }
 
@@ -95,7 +125,7 @@ export function DeliveryLocationProvider({ children }) {
         return next;
       } catch {
         const fallback = snippetRef.current;
-        setStatus(fallback?.label ? "ready" : savedLabel ? "ready" : "error");
+        setStatus(fallback?.label || savedLabel ? "ready" : "error");
         return fallback;
       } finally {
         detectInFlightRef.current = false;
@@ -104,10 +134,36 @@ export function DeliveryLocationProvider({ children }) {
     [savedLabel]
   );
 
+  useEffect(() => {
+    if (!bootstrapped || askedDetectRef.current || Platform.OS === "web") return;
+    if (Number.isFinite(Number(snippetRef.current?.latitude ?? snippetRef.current?.lat))) return;
+    askedDetectRef.current = true;
+    detect();
+  }, [bootstrapped, detect, snippet, user?.defaultAddress]);
+
+  useEffect(() => {
+    const point = coordsFrom(snippet, user?.defaultAddress);
+    if (point.latitude == null && !point.postalCode && !point.city) {
+      setQuote(null);
+      return undefined;
+    }
+    let cancelled = false;
+    checkDeliveryServiceability(point)
+      .then((res) => {
+        if (!cancelled) setQuote(res);
+      })
+      .catch(() => {
+        if (!cancelled) setQuote(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [snippet, user?.defaultAddress]);
+
   const confirmLocation = useCallback(async (nextSnippet) => {
     const payload = nextSnippet || snippetRef.current;
     const now = Date.now();
-    if (payload?.label) {
+    if (payload?.label || Number.isFinite(Number(payload?.latitude))) {
       snippetRef.current = payload;
       setSnippet(payload);
       await saveCachedDeliverySnippet(payload);
@@ -135,6 +191,7 @@ export function DeliveryLocationProvider({ children }) {
       bootstrapped,
       status,
       snippet,
+      quote,
       detect,
       confirmLocation,
       clearConfirmation,
@@ -149,6 +206,7 @@ export function DeliveryLocationProvider({ children }) {
       bootstrapped,
       status,
       snippet,
+      quote,
       detect,
       confirmLocation,
       clearConfirmation,

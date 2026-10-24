@@ -7,8 +7,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { EASE_OUT, motionTiming, panelIn } from "../../theme/motion";
 import { useCart } from "../../context/CartContext";
+import { useDeliveryLocation } from "../../hooks/useDeliveryLocation";
 import { useWishlist } from "../../context/WishlistContext";
-import { STORE_FREE_DELIVERY, STORE_PRODUCT } from "../../content/storefrontContent";
+import { DELIVERY_NOT_POSSIBLE, STORE_FREE_DELIVERY, STORE_PRODUCT } from "../../content/storefrontContent";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { fonts } from "../../theme/tokens";
 import { formatINRWhole } from "../../utils/currency";
@@ -583,6 +584,7 @@ export default function StoreProduct({
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { totalItems } = useCart();
+  const { quote } = useDeliveryLocation();
   const wishlist = useWishlist();
 
   const pageContent = useMemo(() => resolveProductPageContent(product, { shelfMatch }), [product, shelfMatch]);
@@ -609,7 +611,12 @@ export default function StoreProduct({
   /** MRP and % off are per product, so they only make sense when there is no size picker. */
   const discountPct = !hasVariants && showMrp && mrp && offPct != null && offPct > 0 ? offPct : null;
   const unit = String((hasVariants && selectedVariantLabel) || product?.unit || "").trim();
-  const eta = String(product?.eta || "").trim();
+  const eta =
+    quote?.serviceable && quote.etaLabel
+      ? quote.etaLabel
+      : quote?.serviceable === false
+        ? quote.message || DELIVERY_NOT_POSSIBLE
+        : "";
   const lead = String(pageContent.lead || "").trim();
   const longLead = lead.length > 190;
 
@@ -1034,7 +1041,7 @@ export default function StoreProduct({
               <SectionHeader title={STORE_PRODUCT.related.title} />
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.relatedRail, { paddingHorizontal: gutter }]}>
                 {relatedProducts.map((p) => (
-                  <ProductCard key={p.id} product={p} width={158} onPress={() => onRelatedPress?.(p)} />
+                  <ProductCard key={p.id} product={p} width={158} hideEta onPress={() => onRelatedPress?.(p)} />
                 ))}
               </ScrollView>
             </View>

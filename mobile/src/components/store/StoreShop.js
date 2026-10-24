@@ -234,7 +234,7 @@ export default function StoreShop({
               contentContainerStyle={{ paddingBottom: navPad }}
               refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brand} />}
               renderItem={({ item }) => (
-                <ProductCard product={item} width={cardW} gallery onPress={() => navigation.navigate("Product", { productId: item.id })} />
+                <ProductCard product={item} width={cardW} gallery hideEta onPress={() => navigation.navigate("Product", { productId: item.id })} />
               )}
               ListEmptyComponent={
                 loading ? (

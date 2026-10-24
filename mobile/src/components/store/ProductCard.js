@@ -197,7 +197,7 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
   const wished = wishlist.has(product.id);
   const unit = getUnitLabel(product);
   const rawEta = getEtaLabel(product);
-  const eta = hideEta && rawEta === hideEta ? "" : rawEta;
+  const eta = hideEta ? "" : rawEta;
   const stockHint = getStockHint(product);
   const rating = Number(product.ratingAverage) || 0;
   const showRating = rating >= 3.5 && (Number(product.reviewCount) || 0) > 0 && state === "ready";

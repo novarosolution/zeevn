@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { SHOP_SCREEN_UI } from "../../content/shopPageContent";
 import { STORE_SHOP } from "../../content/storefrontContent";
@@ -22,7 +22,7 @@ function Block({ title, children }) {
 function Row({ label, selected, multi, onPress }) {
   const { c, type } = useStoreTheme();
   return (
-    <Pressable
+    <PressableScale scaleTo={0.96} lite
       onPress={() => {
         hapticTick();
         onPress?.();
@@ -41,14 +41,14 @@ function Row({ label, selected, multi, onPress }) {
       >
         {selected ? multi ? <Ionicons name="checkmark" size={14} color={c.onBrand} /> : <View style={[styles.dot, { backgroundColor: c.brand }]} /> : null}
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
 function Pill({ label, selected, onPress }) {
   const { c, type } = useStoreTheme();
   return (
-    <Pressable
+    <PressableScale scaleTo={0.97} lite
       onPress={() => {
         hapticTick();
         onPress?.();
@@ -58,7 +58,7 @@ function Pill({ label, selected, onPress }) {
       style={[styles.pill, { borderColor: selected ? c.brandAlt : c.line, backgroundColor: selected ? c.brand : c.cardSoft }]}
     >
       <Text style={type.ui(14, selected ? "extrabold" : "semibold", selected ? c.onBrand : c.ink)}>{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 

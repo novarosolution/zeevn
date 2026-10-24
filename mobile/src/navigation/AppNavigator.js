@@ -13,6 +13,13 @@ import WishlistScreen from "../screens/WishlistScreen";
 
 const Stack = createNativeStackNavigator();
 
+/**
+ * The four bottom-bar destinations are peers, not a hierarchy, and are switched dozens of times a session. A cross-fade
+ * there shows two full screens ghosted over each other for ~300 ms, so they swap instantly; the nav capsule glides and the
+ * arriving content rises, which is all the motion the moment needs.
+ */
+const TAB_ROOT_OPTIONS = { animation: "none" };
+
 function withPageTransition(Component) {
   return function PageTransitionedScreen(props) {
     return (
@@ -109,8 +116,8 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
             options={{ animation: "fade", gestureEnabled: false }}
           />
         )}
-        <Stack.Screen name="Home" component={WrappedHome} />
-        <Stack.Screen name="Shop" component={WrappedShop} />
+        <Stack.Screen name="Home" component={WrappedHome} options={TAB_ROOT_OPTIONS} />
+        <Stack.Screen name="Shop" component={WrappedShop} options={TAB_ROOT_OPTIONS} />
         <Stack.Screen name="Wishlist" component={WrappedWishlist} />
         <Stack.Screen name="About" component={WrappedAbout} />
         <Stack.Screen name="Privacy" component={WrappedLegal} />
@@ -138,9 +145,9 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
           component={ProtectedYoupiCheckout}
           options={Platform.OS === "web" ? undefined : { animation: "fade_from_bottom", gestureEnabled: false }}
         />
-        <Stack.Screen name="Profile" component={ProtectedProfile} />
+        <Stack.Screen name="Profile" component={ProtectedProfile} options={TAB_ROOT_OPTIONS} />
         <Stack.Screen name="EditProfile" component={ProtectedEditProfile} />
-        <Stack.Screen name="MyOrders" component={ProtectedMyOrders} />
+        <Stack.Screen name="MyOrders" component={ProtectedMyOrders} options={TAB_ROOT_OPTIONS} />
         <Stack.Screen
           name="OrderConfirmed"
           component={ProtectedOrderConfirmed}

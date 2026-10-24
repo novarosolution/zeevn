@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from "react-native-reanimated";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { hapticTick } from "../../utils/haptics";
 import StoreIcon from "./StoreIcon";
+import PressableScale from "./PressableScale";
 
 /** When tabs overflow, show this many at once (the fraction lets the next one peek in). */
 const VISIBLE_WHEN_SCROLLING = 5.4;
@@ -93,7 +94,7 @@ export default function StoreTabs({ tabs, activeKey, onChange, compact = false, 
     const active = tab.key === activeKey;
     const color = active ? c.brand : c.inkSoft;
     return (
-      <Pressable
+      <PressableScale scaleTo={0.97} lite
         key={tab.key}
         onLayout={(e) => onTabLayout(tab.key, e)}
         onPress={() => {
@@ -115,7 +116,7 @@ export default function StoreTabs({ tabs, activeKey, onChange, compact = false, 
         <Text style={type.ui(compact ? 12.5 : 13.5, active ? "extrabold" : "semibold", color)} numberOfLines={1}>
           {tab.label}
         </Text>
-      </Pressable>
+      </PressableScale>
     );
   });
 

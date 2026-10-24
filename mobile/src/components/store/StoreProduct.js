@@ -1,10 +1,11 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
-import { FlatList, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FlatList, ScrollView, Share, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { FadeIn, FadeInDown, FadeOut, LinearTransition } from "react-native-reanimated";
+import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { EASE_OUT, motionTiming, panelIn } from "../../theme/motion";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { STORE_FREE_DELIVERY, STORE_PRODUCT } from "../../content/storefrontContent";
@@ -19,6 +20,7 @@ import SkeletonBlock from "../ui/SkeletonBlock";
 import PressableScale from "./PressableScale";
 import ProductCard from "./ProductCard";
 import ScreenHeader from "./ScreenHeader";
+import ScrollEdgeFade from "./ScrollEdgeFade";
 import { SectionHeader } from "./SectionTitle";
 import { VariantSheetProvider } from "./VariantSheet";
 
@@ -181,9 +183,11 @@ function Gallery({ uris, thumbs, size, index, onIndex, badge, soldTag, dim }) {
           {thumbs.map((uri, i) => {
             const active = i === index;
             return (
-              <Pressable
+              <PressableScale
                 key={`${i}-${uri}`}
                 onPress={() => jump(i)}
+                scaleTo={0.92}
+                lite
                 accessibilityRole="button"
                 accessibilityLabel={`Photo ${i + 1}`}
                 accessibilityState={{ selected: active }}
@@ -193,7 +197,7 @@ function Gallery({ uris, thumbs, size, index, onIndex, badge, soldTag, dim }) {
                 ]}
               >
                 <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="contain" transition={120} />
-              </Pressable>
+              </PressableScale>
             );
           })}
         </ScrollView>
@@ -258,13 +262,20 @@ function VariantPicker({ variants, selected, onSelect }) {
 
 function Accordion({ icon, title, open, onToggle, last, children }) {
   const { c, type } = useStoreTheme();
+  // The chevron turns (a state change on screen) instead of swapping between two glyphs.
+  const turn = useSharedValue(open ? 1 : 0);
+  useEffect(() => {
+    turn.value = withTiming(open ? 1 : 0, { duration: motionTiming.toggle + 20, easing: EASE_OUT });
+  }, [open, turn]);
+  const chevron = useAnimatedStyle(() => ({ transform: [{ rotate: `${turn.value * 180}deg` }] }));
   return (
     <View style={!last ? { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.line } : null}>
-      <Pressable
+      <PressableScale
         onPress={() => {
           hapticTick();
           onToggle();
         }}
+        scaleTo={0.99}
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
         accessibilityLabel={title}
@@ -274,10 +285,12 @@ function Accordion({ icon, title, open, onToggle, last, children }) {
           <Ionicons name={icon} size={18} color={c.brand} />
         </View>
         <Text style={[type.ui(15.5, "bold", c.ink), styles.accTitle]}>{title}</Text>
-        <Ionicons name={open ? "chevron-up" : "chevron-down"} size={18} color={c.inkMute} />
-      </Pressable>
+        <Animated.View style={chevron}>
+          <Ionicons name="chevron-down" size={18} color={open ? c.brand : c.inkMute} />
+        </Animated.View>
+      </PressableScale>
       {open ? (
-        <Animated.View entering={FadeInDown.duration(180)} style={styles.accBody}>
+        <Animated.View entering={panelIn} style={styles.accBody}>
           {children}
         </Animated.View>
       ) : null}
@@ -332,18 +345,20 @@ function ReviewComposer({ rating, onRating, comment, onComment, busy, success, e
       <Text style={type.ui(15, "extrabold", c.ink)}>{STORE_PRODUCT.reviews.composerTitle}</Text>
       <View style={styles.pickStars}>
         {[1, 2, 3, 4, 5].map((n) => (
-          <Pressable
+          <PressableScale
             key={n}
             onPress={() => {
               hapticTick();
               onRating?.(n);
             }}
+            scaleTo={0.8}
+            lite
             hitSlop={6}
             accessibilityRole="button"
             accessibilityLabel={`${n} star${n === 1 ? "" : "s"}`}
           >
             <Ionicons name={n <= rating ? "star" : "star-outline"} size={30} color={n <= rating ? c.gold : c.lineStrong} />
-          </Pressable>
+          </PressableScale>
         ))}
       </View>
       <TextInput
@@ -409,31 +424,35 @@ function BuyDock({ bottom, price, quantity, unavailable, onAdd, onRemove, onBuyN
               <>
                 {inBag ? (
                   <View style={[styles.dockStepper, { backgroundColor: c.brand }]}>
-                    <Pressable
+                    <PressableScale
                       onPress={() => {
                         hapticTap();
                         onRemove?.();
                       }}
+                      scaleTo={0.82}
+                      lite
                       hitSlop={6}
                       style={styles.dockStepBtn}
                       accessibilityRole="button"
                       accessibilityLabel={STORE_PRODUCT.dock.lessA11y}
                     >
                       <Ionicons name="remove" size={20} color={c.onBrand} />
-                    </Pressable>
+                    </PressableScale>
                     <Text style={[type.ui(16, "extrabold", c.onBrand), styles.dockQty]}>{quantity}</Text>
-                    <Pressable
+                    <PressableScale
                       onPress={() => {
                         hapticTap();
                         onAdd?.();
                       }}
+                      scaleTo={0.82}
+                      lite
                       hitSlop={6}
                       style={styles.dockStepBtn}
                       accessibilityRole="button"
                       accessibilityLabel={STORE_PRODUCT.dock.moreA11y}
                     >
                       <Ionicons name="add" size={20} color={c.onBrand} />
-                    </Pressable>
+                    </PressableScale>
                   </View>
                 ) : (
                   <PressableScale
@@ -634,6 +653,9 @@ export default function StoreProduct({
   const deliveryBody = delivery?.body || STORE_PRODUCT.delivery.fallbackBody;
   const trustChips = Array.isArray(pageContent.trustChips) ? pageContent.trustChips : [];
   const highlights = Array.isArray(pageContent.highlights) ? pageContent.highlights : [];
+  const sameText = (a, b) => String(a || "").replace(/\s+/g, " ").trim().toLowerCase() === String(b || "").replace(/\s+/g, " ").trim().toLowerCase();
+  // A bullet that repeats the description word for word adds nothing.
+  const shownHighlights = highlights.filter((line) => !lead || !sameText(line, lead));
 
   /** Expandable sections — only the ones this product actually has content for. */
   const sections = useMemo(() => {
@@ -893,7 +915,7 @@ export default function StoreProduct({
               </ScrollView>
             ) : null}
 
-            {lead || highlights.length ? (
+            {lead || shownHighlights.length ? (
               <Surface style={styles.about}>
                 <Text style={type.display(19, { semi: true, ls: -0.3, lh: 24 })}>{STORE_PRODUCT.about.title}</Text>
                 {lead ? (
@@ -902,22 +924,24 @@ export default function StoreProduct({
                       {lead}
                     </Text>
                     {longLead ? (
-                      <Pressable
+                      <PressableScale
                         onPress={() => {
                           hapticTick();
                           setAboutOpen((v) => !v);
                         }}
+                        scaleTo={0.96}
+                        lite
                         hitSlop={8}
                         accessibilityRole="button"
                       >
                         <Text style={type.ui(13.5, "extrabold", c.brand)}>{aboutOpen ? STORE_PRODUCT.about.less : STORE_PRODUCT.about.more}</Text>
-                      </Pressable>
+                      </PressableScale>
                     ) : null}
                   </View>
                 ) : null}
-                {highlights.length ? (
+                {shownHighlights.length ? (
                   <View style={styles.stack}>
-                    {highlights.map((line) => (
+                    {shownHighlights.map((line) => (
                       <View key={line} style={styles.iconRow}>
                         <View style={[styles.check, { backgroundColor: c.brandSoft }]}>
                           <Ionicons name="checkmark" size={13} color={c.brand} />
@@ -1020,7 +1044,7 @@ export default function StoreProduct({
         <View style={[styles.topBar, { paddingTop: insets.top + 6 }]} pointerEvents="box-none">
           {solid ? (
             <Animated.View entering={FadeIn.duration(160)} exiting={FadeOut.duration(120)} style={StyleSheet.absoluteFill} pointerEvents="none">
-              <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glassStrong, borderBottomColor: c.line, borderBottomWidth: StyleSheet.hairlineWidth }]} />
+              <View style={[StyleSheet.absoluteFill, { backgroundColor: c.page, borderBottomColor: c.line, borderBottomWidth: StyleSheet.hairlineWidth }]} />
             </Animated.View>
           ) : null}
           <View style={[styles.topRow, { paddingHorizontal: gutter }]} pointerEvents="box-none">
@@ -1053,6 +1077,7 @@ export default function StoreProduct({
           </View>
         </View>
 
+        <ScrollEdgeFade height={dockBottom + STORE_NAV_HEIGHT + 30} />
         <BuyDock
           bottom={dockBottom}
           price={Number(displayPrice) || 0}

@@ -4,7 +4,8 @@
  */
 import React, { createContext, useContext, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
-import Animated, { Easing, FadeInDown, interpolateColor, useAnimatedStyle, useReducedMotion } from "react-native-reanimated";
+import Animated, { interpolateColor, useAnimatedStyle, useReducedMotion } from "react-native-reanimated";
+import { riseIn } from "../../theme/motion";
 import { useStoreTheme } from "../../theme/storefront";
 
 const ScrollContext = createContext(null);
@@ -22,15 +23,20 @@ export function useHomeScroll() {
 const REVEAL_FIRST = 3;
 
 /**
- * Home's entrance: the blocks on the first screen fade up one after another, once, when the page mounts (a native
- * layout animation — nothing runs while scrolling). Later blocks are plain views, so there is no per-section
- * scroll work to hitch the page. Plain too with "reduce motion".
+ * Home's entrance: the blocks on the first screen rise into place one after another, once, when the page mounts (a native
+ * layout animation — nothing runs while scrolling): 260 ms, strong ease-out, a 50 ms stagger so the whole page has landed
+ * in ~360 ms. Later blocks are plain views, so there is no per-section scroll work to hitch the page. Plain too with
+ * "reduce motion".
  */
 export function Reveal({ index = 0, children, style }) {
   const reduced = useReducedMotion();
-  if (reduced || index >= REVEAL_FIRST) return <View style={style}>{children}</View>;
+  const entering = useMemo(
+    () => (reduced || index >= REVEAL_FIRST ? undefined : riseIn(index, { step: 50, distance: 12 })),
+    [index, reduced]
+  );
+  if (!entering) return <View style={style}>{children}</View>;
   return (
-    <Animated.View entering={FadeInDown.duration(560).delay(140 + index * 120).easing(Easing.out(Easing.cubic))} style={style}>
+    <Animated.View entering={entering} style={style}>
       {children}
     </Animated.View>
   );

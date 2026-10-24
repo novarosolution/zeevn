@@ -1,9 +1,10 @@
 import React from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { hapticTick } from "../../utils/haptics";
 import StoreIcon from "./StoreIcon";
+import PressableScale from "./PressableScale";
 
 export const SHOP_SIDEBAR_WIDTH = 86;
 
@@ -19,7 +20,7 @@ export default function ShopSidebar({ items, activeKey, onSelect, bottomPad = 0 
         {items.map((item) => {
           const active = item.key === activeKey;
           return (
-            <Pressable
+            <PressableScale scaleTo={0.96} lite
               key={item.key}
               onPress={() => {
                 if (!active) hapticTick();
@@ -48,7 +49,7 @@ export default function ShopSidebar({ items, activeKey, onSelect, bottomPad = 0 
               <Text style={[type.ui(12.5, active ? "extrabold" : "medium", active ? c.brand : c.inkSoft), styles.label]} numberOfLines={2}>
                 {item.label}
               </Text>
-            </Pressable>
+            </PressableScale>
           );
         })}
       </ScrollView>

@@ -17,3 +17,4 @@ export { default as StoreAddress } from "./StoreAddress";
 export { default as StoreRewards } from "./StoreRewards";
 export { FlyToCartLayer } from "./flyToCart";
 export { default as StoreLegal } from "./StoreLegal";
+export { default as StoreAbout } from "./StoreAbout";

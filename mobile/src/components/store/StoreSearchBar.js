@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useIsFocused } from "@react-navigation/native";
 import Animated, { FadeInDown, FadeOutUp, useReducedMotion } from "react-native-reanimated";
 import { STORE_HEADER } from "../../content/storefrontContent";
+import { EASE_OUT } from "../../theme/motion";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import PressableScale from "./PressableScale";
 
@@ -19,6 +20,10 @@ function useRotatingHint(hints, enabled) {
   }, [enabled, hints.length]);
   return hints.length ? hints[index % hints.length] : "";
 }
+
+/** The rotating hint rolls upward like a ticker: in from below, out through the top, both on a strong ease-out. */
+const HINT_IN = FadeInDown.duration(260).easing(EASE_OUT);
+const HINT_OUT = FadeOutUp.duration(180).easing(EASE_OUT);
 
 /**
  * Search pill with a gold hairline. The suggestion ("A2 desi cow ghee", "kachi ghani mustard oil", …) slides
@@ -63,8 +68,8 @@ function StoreSearchBar({ onPress, hints = [], prefix = "Search", compact = fals
         {hint ? (
           <Animated.Text
             key={hint}
-            entering={FadeInDown.duration(260)}
-            exiting={FadeOutUp.duration(180)}
+            entering={HINT_IN}
+            exiting={HINT_OUT}
             style={[type.ui(size, "semibold", c.ink), styles.hint]}
             numberOfLines={1}
           >

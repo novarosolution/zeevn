@@ -1,9 +1,10 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import StoreIcon from "./StoreIcon";
+import PressableScale from "./PressableScale";
 
 /**
  * Section heading: gold rule (or a round range icon), optional eyebrow, serif title, optional caption and an
@@ -48,7 +49,7 @@ export function SectionHeader({ eyebrow, title, caption, action, onAction, icon,
         ) : null}
       </View>
       {action && onAction ? (
-        <Pressable
+        <PressableScale scaleTo={0.96} lite
           onPress={onAction}
           hitSlop={10}
           style={[styles.action, { backgroundColor: withAlpha(c.brand, 0.08) }]}
@@ -57,7 +58,7 @@ export function SectionHeader({ eyebrow, title, caption, action, onAction, icon,
         >
           <Text style={type.ui(12.5, "extrabold", c.brand)}>{action}</Text>
           <Ionicons name="chevron-forward" size={13} color={c.brand} />
-        </Pressable>
+        </PressableScale>
       ) : null}
     </View>
   );

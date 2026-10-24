@@ -1,10 +1,11 @@
 import React, { useCallback, useMemo } from "react";
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { FadeIn, LinearTransition } from "react-native-reanimated";
+import Animated, { LinearTransition, useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
+import { stateIn } from "../../theme/motion";
 import { STORE_CART } from "../../content/storefrontContent";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { formatINR, formatINRWhole } from "../../utils/currency";
@@ -15,6 +16,7 @@ import AddControl from "./AddControl";
 import FloatingNav from "./FloatingNav";
 import PressableScale from "./PressableScale";
 import ScreenHeader, { SCREEN_HEADER_PAD } from "./ScreenHeader";
+import ScrollEdgeFade from "./ScrollEdgeFade";
 import StoreBanner from "./StoreBanner";
 import StoreField from "./StoreField";
 import CheckoutPlacingOverlay from "../loading/CheckoutPlacingOverlay";
@@ -119,7 +121,7 @@ function CartLine({ item, onIncrease, onDecrease, onRemove, compact = false }) {
             {name}
           </Text>
           {onRemove ? (
-            <Pressable
+            <PressableScale scaleTo={0.88} lite
               onPress={() => {
                 hapticTick();
                 onRemove(item);
@@ -130,7 +132,7 @@ function CartLine({ item, onIncrease, onDecrease, onRemove, compact = false }) {
               style={styles.removeBtn}
             >
               <Ionicons name="trash-outline" size={17} color={c.inkMute} />
-            </Pressable>
+            </PressableScale>
           ) : null}
         </View>
         <View style={styles.lineMeta}>
@@ -189,7 +191,7 @@ function CouponCard({ coupon }) {
         </PressableScale>
       </View>
       {applied ? (
-        <Animated.View entering={FadeIn.duration(160)} style={styles.couponApplied}>
+        <Animated.View entering={stateIn} style={styles.couponApplied}>
           <Ionicons name="checkmark-circle" size={17} color={c.brandBright} />
           <Text style={type.ui(13, "bold", c.brandAlt)} numberOfLines={1}>
             {STORE_CART.coupon.applied} · {coupon.appliedText}
@@ -337,9 +339,9 @@ function AddressCard({ form, onChange, errors, detecting, onUseGps, hasSaved, on
         caption={copy.subtitle}
         right={
           hasSaved ? (
-            <Pressable onPress={onUseSaved} hitSlop={8} accessibilityRole="button" style={[styles.savedBtn, { backgroundColor: c.brandSoft }]}>
+            <PressableScale scaleTo={0.97} lite onPress={onUseSaved} hitSlop={8} accessibilityRole="button" style={[styles.savedBtn, { backgroundColor: c.brandSoft }]}>
               <Text style={type.ui(12.5, "extrabold", c.brand)}>{copy.useSaved}</Text>
-            </Pressable>
+            </PressableScale>
           ) : null
         }
       />
@@ -374,7 +376,7 @@ function AddressCard({ form, onChange, errors, detecting, onUseGps, hasSaved, on
         </View>
         {zoneHint ? (
           <Animated.View
-            entering={FadeIn.duration(160)}
+            entering={stateIn}
             style={[
               styles.serviceable,
               { backgroundColor: bill.deliveryBlocked ? c.dangerSoft : c.brandSoft, borderColor: bill.deliveryBlocked ? withAlpha(c.danger, 0.3) : withAlpha(c.brand, 0.2), borderRadius: r.md },
@@ -508,9 +510,9 @@ function CenterCard({ icon, title, body, primary, onPrimary, secondary, onSecond
         <Text style={type.ui(15, "extrabold", c.onBrand)}>{primary}</Text>
       </PressableScale>
       {secondary ? (
-        <Pressable onPress={onSecondary} hitSlop={8} accessibilityRole="button" accessibilityLabel={secondary}>
+        <PressableScale scaleTo={0.97} lite onPress={onSecondary} hitSlop={8} accessibilityRole="button" accessibilityLabel={secondary}>
           <Text style={type.ui(14, "bold", c.brandAlt)}>{secondary}</Text>
-        </Pressable>
+        </PressableScale>
       ) : null}
     </Card>
   );
@@ -555,6 +557,10 @@ export default function StoreCart({
 }) {
   const { c, type, gutter } = useStoreTheme();
   const insets = useSafeAreaInsets();
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
   const navDock = Math.max(16, insets.bottom + 6);
   const payBottom = navDock + STORE_NAV_HEIGHT + 10;
   const isCheckout = mode === "checkout";
@@ -643,9 +649,9 @@ export default function StoreCart({
             title={STORE_CART.checkout.summaryTitle}
             caption={STORE_CART.bag.count(totalItems)}
             right={
-              <Pressable onPress={() => navigation.navigate("Cart")} hitSlop={8} accessibilityRole="button">
+              <PressableScale scaleTo={0.97} lite onPress={() => navigation.navigate("Cart")} hitSlop={8} accessibilityRole="button">
                 <Text style={type.ui(13.5, "extrabold", c.brand)}>{STORE_CART.checkout.editBag}</Text>
-              </Pressable>
+              </PressableScale>
             }
           />
           <View style={styles.summaryList}>{renderItems(true)}</View>
@@ -670,7 +676,9 @@ export default function StoreCart({
 
   return (
     <View style={[styles.screen, { backgroundColor: c.page }]}>
-      <ScrollView
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
@@ -678,10 +686,16 @@ export default function StoreCart({
         contentContainerStyle={{ paddingTop: insets.top + SCREEN_HEADER_PAD, paddingBottom: scrollPad }}
       >
         {body}
-      </ScrollView>
+      </Animated.ScrollView>
 
-      <ScreenHeader title={isCheckout || mode === "gate" ? STORE_CART.checkout.title : STORE_CART.bag.navTitle} onBack={goBack} backLabel={STORE_CART.back} />
+      <ScreenHeader
+        title={isCheckout || mode === "gate" ? STORE_CART.checkout.title : STORE_CART.bag.navTitle}
+        onBack={goBack}
+        backLabel={STORE_CART.back}
+        scrollY={scrollY}
+      />
 
+      {showDock && bill ? <ScrollEdgeFade height={payBottom + PAY_DOCK_HEIGHT + 22} /> : null}
       {showDock && bill ? (
         <PayDock bottom={payBottom} total={bill.total} meta={meta} label={ctaLabel} disabled={ctaDisabled} loading={placing} onPress={onPrimary} />
       ) : null}

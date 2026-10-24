@@ -1,5 +1,5 @@
 import React from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -122,7 +122,7 @@ export default function StoreHeader({
     <View>
       <View style={{ paddingHorizontal: gutter }}>
         <View style={styles.topBar}>
-          <Pressable
+          <PressableScale scaleTo={0.96} lite
             onPress={onPressLocation}
             style={styles.location}
             accessibilityRole="button"
@@ -147,7 +147,7 @@ export default function StoreHeader({
                 {locationText}
               </Text>
             </View>
-          </Pressable>
+          </PressableScale>
 
           <View style={styles.actions}>
             {signedIn ? (

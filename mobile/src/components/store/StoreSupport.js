@@ -1,17 +1,15 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeOut,
   LinearTransition,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { EASE_OUT, motionTiming, panelIn, panelOut, riseIn } from "../../theme/motion";
 import { useStoreTheme } from "../../theme/storefront";
 import { hapticTap } from "../../utils/haptics";
 import PressableScale from "./PressableScale";
@@ -51,9 +49,11 @@ function ContactTile({ icon, title, sub, tone, onPress }) {
 function Bubble({ item, index }) {
   const { c, type } = useStoreTheme();
   const mine = item.senderRole !== "admin";
+  // Only the first few bubbles stagger; a message sent later must not wait behind a delay.
+  const entering = useMemo(() => riseIn(index < 6 ? index : 0, { step: 50 }), [index]);
   return (
     <Animated.View
-      entering={FadeInDown.delay(Math.min(index, 6) * 50).duration(320)}
+      entering={entering}
       style={[styles.bubbleRow, mine ? styles.mineRow : styles.theirRow]}
     >
       <View
@@ -125,7 +125,7 @@ function FaqItem({ q, a, open, onToggle }) {
   const { c, type } = useStoreTheme();
   const turn = useSharedValue(open ? 1 : 0);
   useEffect(() => {
-    turn.value = withTiming(open ? 1 : 0, { duration: 240 });
+    turn.value = withTiming(open ? 1 : 0, { duration: motionTiming.toggle + 20, easing: EASE_OUT });
   }, [open, turn]);
   const chevron = useAnimatedStyle(() => ({ transform: [{ rotate: `${interpolate(turn.value, [0, 1], [0, 180])}deg` }] }));
   return (
@@ -146,8 +146,8 @@ function FaqItem({ q, a, open, onToggle }) {
         </View>
         {open ? (
           <Animated.Text
-            entering={FadeIn.duration(220)}
-            exiting={FadeOut.duration(120)}
+            entering={panelIn}
+            exiting={panelOut}
             style={[type.ui(14.5, "medium", c.inkSoft, { lineHeight: 21 }), styles.faqA]}
           >
             {a}

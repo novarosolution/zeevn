@@ -14,6 +14,9 @@ const TYPES = [
   { key: "Other", label: "Other", icon: "location-outline" },
 ];
 
+/** A landmark that already starts with a position word reads fine as is; anything else gets "Near". */
+const LOCATIONAL = /^(near|nr\.?|opposite|opp\.?|behind|beside|next to|adjacent|above|below|in front of|front of|off|at|inside|within)\b/i;
+
 function AddressPreview({ type, house, line1, landmark, city, postalCode, gps }) {
   const { c, type: font } = useStoreTheme();
   const icon = (TYPES.find((t) => t.key === type) || TYPES[0]).icon;
@@ -36,7 +39,7 @@ function AddressPreview({ type, house, line1, landmark, city, postalCode, gps })
         </Text>
         {landmark ? (
           <Text style={font.ui(13, "medium", c.inkMute)} numberOfLines={1}>
-            Near {landmark}
+            {LOCATIONAL.test(String(landmark).trim()) ? landmark : `Near ${landmark}`}
           </Text>
         ) : null}
         <Text style={font.ui(14.5, "semibold", c.ink)}>{place}</Text>

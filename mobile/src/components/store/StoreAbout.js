@@ -41,7 +41,7 @@ function Stat({ stat }) {
   const text = match ? `${match[1]}${counted.toLocaleString("en-IN")}${match[3]}` : stat.value;
   return (
     <View style={[styles.stat, shadow.soft, { backgroundColor: c.card, borderColor: c.line, borderRadius: r.xl }]}>
-      <Text style={type.display(26, { color: c.brand, ls: -0.5, lh: 30 })} numberOfLines={1} adjustsFontSizeToFit>
+      <Text style={type.display(26, { color: c.brand, ls: -0.5, lh: 30 })} numberOfLines={1}>
         {text}
       </Text>
       <Text style={type.ui(12.5, "semibold", c.inkMute)} numberOfLines={2}>
@@ -92,7 +92,7 @@ export default function StoreAbout({ navigation, about, onShop, onContact }) {
           <Animated.View style={[StyleSheet.absoluteFill, heroStyle]}>
             {hero ? <Photo photo={hero} style={StyleSheet.absoluteFill} /> : <View style={[StyleSheet.absoluteFill, { backgroundColor: c.brand }]} />}
           </Animated.View>
-          <LinearGradient colors={["rgba(12,16,8,0.45)", "rgba(12,16,8,0)", "rgba(12,16,8,0.78)"]} locations={[0, 0.35, 1]} style={StyleSheet.absoluteFill} />
+          <LinearGradient colors={["rgba(12,16,8,0.5)", "rgba(12,16,8,0.1)", "rgba(12,16,8,0.62)", "rgba(12,16,8,0.88)"]} locations={[0, 0.26, 0.62, 1]} style={StyleSheet.absoluteFill} />
           <Animated.View style={[styles.heroText, { paddingHorizontal: gutter }, heroTextStyle]}>
             <Text style={type.ui(12, "bold", "#F2D9A5", { letterSpacing: 1.6 })}>{String(about?.eyebrow || "Our story").toUpperCase()}</Text>
             <Text style={type.display(36, { color: "#FFFFFF", ls: -0.8, lh: 41 })}>{about?.title || "About Zeevan"}</Text>
@@ -216,7 +216,7 @@ export default function StoreAbout({ navigation, about, onShop, onContact }) {
         </View>
       </Animated.ScrollView>
 
-      <Animated.View pointerEvents="none" style={[styles.bar, { paddingTop: insets.top, backgroundColor: c.glassStrong, borderBottomColor: c.line }, barStyle]}>
+      <Animated.View pointerEvents="none" style={[styles.bar, { height: insets.top + 58, backgroundColor: c.glassStrong, borderBottomColor: c.line }, barStyle]}>
         <Text style={[type.ui(18, "extrabold", c.ink), styles.barTitle]} numberOfLines={1}>
           {about?.title || "About Zeevan"}
         </Text>
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   ctaRow: { flexDirection: "row", alignItems: "center", gap: 14 },
   ctaBtn: { flexShrink: 0 },
   ctaLink: { paddingVertical: 8, paddingHorizontal: 6 },
-  bar: { position: "absolute", top: 0, left: 0, right: 0, height: 100, borderBottomWidth: StyleSheet.hairlineWidth, alignItems: "center", justifyContent: "flex-end", paddingBottom: 14 },
+  bar: { position: "absolute", top: 0, left: 0, right: 0, borderBottomWidth: StyleSheet.hairlineWidth, alignItems: "center", justifyContent: "flex-end", paddingBottom: 17 },
   barTitle: { maxWidth: "62%" },
   backWrap: { position: "absolute" },
   back: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },

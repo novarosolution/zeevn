@@ -1,4 +1,4 @@
-import React, { useMemo, useRef } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, { FadeOut, LinearTransition } from "react-native-reanimated";
@@ -40,16 +40,33 @@ function timeAgo(value) {
   return new Date(ts).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
 }
 
+/** Icon + tone per order status. The keys are the backend's `ORDER_STATUS_VALUES`, which is what `orderStatus` carries. */
+const ORDER_VISUALS = {
+  pending_payment: { icon: "card-outline", tone: "gold" },
+  pending: { icon: "receipt-outline", tone: "brand" },
+  paid: { icon: "checkmark-circle-outline", tone: "brand" },
+  confirmed: { icon: "checkmark-circle-outline", tone: "brand" },
+  preparing: { icon: "cube-outline", tone: "brand" },
+  ready_for_pickup: { icon: "bag-check-outline", tone: "brand" },
+  shipped: { icon: "bicycle-outline", tone: "brand" },
+  out_for_delivery: { icon: "bicycle-outline", tone: "brand" },
+  delivered: { icon: "checkmark-done-circle-outline", tone: "brand" },
+  cancelled: { icon: "close-circle-outline", tone: "danger" },
+};
+
 /** Icon + tone for a notification, from its kind and the order status it was sent at. */
 function visualFor(item) {
-  const status = String(item?.orderStatus || "").toLowerCase();
   if (item?.kind === "order") {
-    if (status.includes("cancel")) return { icon: "close-circle-outline", tone: "danger" };
-    if (status.includes("out for")) return { icon: "bicycle-outline", tone: "brand" };
-    if (status.includes("deliver")) return { icon: "checkmark-done-circle-outline", tone: "brand" };
-    if (status.includes("pack")) return { icon: "cube-outline", tone: "brand" };
-    if (status.includes("confirm")) return { icon: "checkmark-circle-outline", tone: "brand" };
-    return { icon: "receipt-outline", tone: "brand" };
+    const status = String(item?.orderStatus || "").toLowerCase().trim().replace(/[\s-]+/g, "_");
+    if (ORDER_VISUALS[status]) return ORDER_VISUALS[status];
+    // Older notifications may carry a human label instead of the enum value.
+    const loose = status.replace(/_/g, " ");
+    if (loose.includes("cancel")) return ORDER_VISUALS.cancelled;
+    if (loose.includes("out for")) return ORDER_VISUALS.out_for_delivery;
+    if (loose.includes("deliver")) return ORDER_VISUALS.delivered;
+    if (loose.includes("pack") || loose.includes("prepar")) return ORDER_VISUALS.preparing;
+    if (loose.includes("confirm")) return ORDER_VISUALS.confirmed;
+    return ORDER_VISUALS.pending;
   }
   return { icon: "sparkles-outline", tone: "gold" };
 }
@@ -57,6 +74,9 @@ function visualFor(item) {
 function NotificationRow({ item, onOpen, onArchiveToggle }) {
   const { c, type } = useStoreTheme();
   const swipeRef = useRef(null);
+  // Only order updates lead somewhere when tapped; an announcement opens in place so the whole text can be read.
+  const expandable = item.kind !== "order";
+  const [expanded, setExpanded] = useState(false);
   const unread = !item.isRead;
   const { icon, tone } = visualFor(item);
   const tint = tone === "danger" ? c.dangerSoft : tone === "gold" ? c.goldSoft : c.brandSoft;
@@ -86,7 +106,10 @@ function NotificationRow({ item, onOpen, onArchiveToggle }) {
       }}
     >
       <PressableScale
-        onPress={() => onOpen(item)}
+        onPress={() => {
+          if (expandable) setExpanded((open) => !open);
+          onOpen(item);
+        }}
         scaleTo={0.985}
         accessibilityRole="button"
         accessibilityLabel={`${item.title}. ${item.message}`}
@@ -97,10 +120,10 @@ function NotificationRow({ item, onOpen, onArchiveToggle }) {
           {unread ? <View style={[styles.dot, { backgroundColor: c.gold, borderColor: c.cardSoft }]} /> : null}
         </View>
         <View style={styles.text}>
-          <Text style={type.ui(15.5, unread ? "extrabold" : "semibold", c.ink)} numberOfLines={1}>
+          <Text style={type.ui(15.5, unread ? "extrabold" : "semibold", c.ink)} numberOfLines={expanded ? 4 : 1}>
             {item.title}
           </Text>
-          <Text style={type.ui(13.5, "medium", c.inkMute, { lineHeight: 19 })} numberOfLines={2}>
+          <Text style={type.ui(13.5, "medium", c.inkMute, { lineHeight: 19 })} numberOfLines={expanded ? undefined : 2}>
             {item.message}
           </Text>
         </View>

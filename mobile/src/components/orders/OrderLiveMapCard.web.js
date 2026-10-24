@@ -206,10 +206,6 @@ export default function OrderLiveMapCard({ orderId }) {
         </Text>
       ) : null}
 
-      {!hasShop ? (
-        <Text style={[cardStyles.shopHint, { color: c.textMuted }]}>{ORDER_LIVE_TRACKING.shopNotConfigured}</Text>
-      ) : null}
-
       {showMap ? (
         <LeafletMapComponent
           plat={plat}

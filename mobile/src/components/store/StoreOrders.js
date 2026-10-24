@@ -1,10 +1,11 @@
 import React, { memo, useCallback } from "react";
-import { Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { FadeInDown, LinearTransition } from "react-native-reanimated";
+import Animated, { LinearTransition, useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
+import { contentIn, panelIn } from "../../theme/motion";
 import { MY_ORDERS_UI } from "../../content/appContent";
 import { STORE_ORDERS } from "../../content/storefrontContent";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
@@ -165,7 +166,7 @@ function Breakdown({ order }) {
   const good = isDark ? c.brandBright : GOOD_INK;
 
   return (
-    <Animated.View entering={FadeInDown.duration(180)} style={[styles.breakdown, { backgroundColor: c.cardSoft, borderColor: c.line, borderRadius: r.xl }]}>
+    <Animated.View entering={panelIn} style={[styles.breakdown, { backgroundColor: c.cardSoft, borderColor: c.line, borderRadius: r.xl }]}>
       <Text style={type.display(17, { semi: true, ls: -0.2, lh: 22 })}>{d.title}</Text>
 
       <View style={styles.lineItems}>
@@ -225,7 +226,7 @@ function EditAddress({ form, onChange, onSave, onCancel, saving }) {
   const { c, r, type } = useStoreTheme();
   const { addressFields, addressFieldRows } = MY_ORDERS_UI;
   return (
-    <Animated.View entering={FadeInDown.duration(180)} style={[styles.edit, { backgroundColor: c.cardSoft, borderColor: c.line, borderRadius: r.xl }]}>
+    <Animated.View entering={panelIn} style={[styles.edit, { backgroundColor: c.cardSoft, borderColor: c.line, borderRadius: r.xl }]}>
       <View>
         <Text style={type.display(17, { semi: true, ls: -0.2, lh: 22 })}>{STORE_ORDERS.edit.title}</Text>
         <Text style={type.ui(12.5, "medium", c.inkMute)}>{STORE_ORDERS.edit.subtitle}</Text>
@@ -260,9 +261,9 @@ function EditAddress({ form, onChange, onSave, onCancel, saving }) {
         >
           <Text style={type.ui(14, "extrabold", saving ? c.inkMute : c.onBrand)}>{saving ? STORE_ORDERS.edit.saving : STORE_ORDERS.edit.save}</Text>
         </PressableScale>
-        <Pressable onPress={onCancel} hitSlop={8} accessibilityRole="button" style={styles.editCancel}>
+        <PressableScale scaleTo={0.97} lite onPress={onCancel} hitSlop={8} accessibilityRole="button" style={styles.editCancel}>
           <Text style={type.ui(14, "bold", c.inkSoft)}>{STORE_ORDERS.edit.cancel}</Text>
-        </Pressable>
+        </PressableScale>
       </View>
     </Animated.View>
   );
@@ -367,14 +368,14 @@ function OrderCardBase({
               <Text style={type.ui(12, "medium", c.inkMute)}>{STORE_ORDERS.card.partnerOnWay}</Text>
             </View>
             {partner.phone ? (
-              <Pressable
+              <PressableScale scaleTo={0.88} lite
                 onPress={call}
                 accessibilityRole="button"
                 accessibilityLabel={STORE_ORDERS.card.callPartner}
                 style={[styles.callBtn, { backgroundColor: c.brand }]}
               >
                 <Ionicons name="call" size={16} color={c.onBrand} />
-              </Pressable>
+              </PressableScale>
             ) : null}
           </View>
         ) : null}
@@ -473,7 +474,7 @@ function FilterPills({ filter, counts, onChange }) {
       {STORE_ORDERS.filters.map((f) => {
         const active = filter === f.key;
         return (
-          <Pressable
+          <PressableScale scaleTo={0.97} lite
             key={f.key}
             onPress={() => {
               hapticTick();
@@ -487,7 +488,7 @@ function FilterPills({ filter, counts, onChange }) {
             <View style={[styles.pillCount, { backgroundColor: active ? withAlpha(c.onBrand, 0.2) : c.soft }]}>
               <Text style={type.ui(11, "extrabold", active ? c.onBrand : c.inkSoft)}>{counts[f.key] ?? 0}</Text>
             </View>
-          </Pressable>
+          </PressableScale>
         );
       })}
     </ScrollView>
@@ -593,6 +594,10 @@ export default function StoreOrders({
 }) {
   const { c, type, gutter } = useStoreTheme();
   const insets = useSafeAreaInsets();
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
   const navPad = STORE_NAV_HEIGHT + Math.max(16, insets.bottom + 6) + 28;
 
   const handlers = {
@@ -689,7 +694,9 @@ export default function StoreOrders({
 
   return (
     <View style={[styles.screen, { backgroundColor: c.page }]}>
-      <ScrollView
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
@@ -707,14 +714,17 @@ export default function StoreOrders({
           </View>
           {error ? <StoreBanner message={error} onClose={onDismissError} /> : null}
           {success ? <StoreBanner tone="success" message={success} onClose={onDismissSuccess} /> : null}
-          {content}
+          <Animated.View key={loading ? "loading" : "ready"} entering={loading ? undefined : contentIn} style={styles.contentGap}>
+            {content}
+          </Animated.View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       <ScreenHeader
         title={STORE_ORDERS.navTitle}
         onBack={goBack}
         backLabel={STORE_ORDERS.back}
+        scrollY={scrollY}
         right={
           <PressableScale
             onPress={() => {
@@ -737,6 +747,7 @@ export default function StoreOrders({
 }
 
 const styles = StyleSheet.create({
+  contentGap: { gap: 16 },
   screen: { flex: 1 },
   flex: { flex: 1, minWidth: 0 },
   centerText: { textAlign: "center" },

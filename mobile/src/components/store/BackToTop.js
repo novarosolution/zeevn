@@ -1,9 +1,10 @@
 import React, { useEffect } from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
 import { useStoreTheme } from "../../theme/storefront";
 import { hapticTick } from "../../utils/haptics";
+import PressableScale from "./PressableScale";
 /** “↑ Back to top” solid pill. */
 export default function BackToTop({ visible, onPress, top, label = "Back to top" }) {
   const { c, type, shadow } = useStoreTheme();
@@ -20,7 +21,7 @@ export default function BackToTop({ visible, onPress, top, label = "Back to top"
 
   return (
     <Animated.View style={[styles.wrap, { top }, animatedStyle]} pointerEvents={visible ? "box-none" : "none"}>
-      <Pressable
+      <PressableScale scaleTo={0.96} lite
         onPress={() => {
           hapticTick();
           onPress?.();
@@ -35,7 +36,7 @@ export default function BackToTop({ visible, onPress, top, label = "Back to top"
       >
         <Ionicons name="arrow-up-circle-outline" size={20} color={c.ink} />
         <Text style={type.ui(14, "bold", c.ink)}>{label}</Text>
-      </Pressable>
+      </PressableScale>
     </Animated.View>
   );
 }

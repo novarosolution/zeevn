@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,12 +11,12 @@ import Animated, {
   useSharedValue,
   withDelay,
   withRepeat,
-  withSequence,
   withSpring,
   withTiming,
 } from "react-native-reanimated";
 import useReducedMotion from "../../hooks/useReducedMotion";
 import { STORE_ORDERS } from "../../content/storefrontContent";
+import { EASE_OUT, motionTiming } from "../../theme/motion";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { formatINR } from "../../utils/currency";
 import { formatOrderShortId } from "../../utils/orderDisplay";
@@ -24,6 +24,21 @@ import { formatCompactShippingLine } from "../../utils/shippingAddressFormat";
 import { productImageUri } from "../../utils/storefront";
 import FloatingNav from "./FloatingNav";
 import PressableScale from "./PressableScale";
+
+/**
+ * The success moment is rare, so it may take a beat longer than everyday motion: four blocks rise 14 px on a strong
+ * ease-out, one after another. Built once at module scope.
+ */
+const rise = (delay) =>
+  FadeInDown.delay(delay)
+    .duration(motionTiming.enter + 60)
+    .easing(EASE_OUT)
+    .withInitialValues({ opacity: 0, transform: [{ translateY: 14 }] });
+const PLACED_IN = [120, 220, 300, 360].map(rise);
+/** The heading block settles after the check has landed: eyebrow, title, lead, reference, 70 ms apart. */
+const HERO_IN = [180, 250, 320, 390].map(rise);
+/** In the post-checkout popup the summary and the actions follow the hero. */
+const POPUP_IN = [470, 540].map(rise);
 
 const COPY = STORE_ORDERS.confirmed;
 
@@ -43,14 +58,15 @@ function Ring({ delay, color }) {
 export function ConfirmBadge({ size = 112 }) {
   const { c, isDark } = useStoreTheme();
   const reduced = useReducedMotion();
-  const pop = useSharedValue(reduced ? 1 : 0.6);
+  const pop = useSharedValue(reduced ? 1 : 0.7);
 
   useEffect(() => {
     if (reduced) return;
-    pop.value = withSequence(withSpring(1.14, { damping: 7, stiffness: 220 }), withSpring(1, { damping: 12, stiffness: 180 }));
+    // One spring: it overshoots a little (a rare moment may), then settles — no second bounce.
+    pop.value = withSpring(1, { duration: 560, dampingRatio: 0.55 });
   }, [pop, reduced]);
 
-  const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
+  const popStyle = useAnimatedStyle(() => ({ opacity: reduced ? 1 : Math.min(1, pop.value * 2.4 - 0.7), transform: [{ scale: pop.value }] }));
   const colors = isDark ? ["#C9DA8C", "#9DB45B"] : ["#3F6231", "#244424"];
 
   return (
@@ -81,17 +97,21 @@ function Hero({ order }) {
   return (
     <View style={styles.hero}>
       <ConfirmBadge />
-      <Text style={type.eyebrow(c.goldText, 11.5)}>{COPY.eyebrow}</Text>
-      <Text style={[type.display(36, { ls: -0.9, lh: 42 }), styles.centerText]} accessibilityRole="header">
+      <Animated.Text entering={HERO_IN[0]} style={type.eyebrow(c.goldText, 11.5)}>
+        {COPY.eyebrow}
+      </Animated.Text>
+      <Animated.Text entering={HERO_IN[1]} style={[type.display(36, { ls: -0.9, lh: 42 }), styles.centerText]} accessibilityRole="header">
         {COPY.title}
-      </Text>
-      <Text style={[type.ui(15, "medium", c.inkSoft, { lineHeight: 22 }), styles.centerText, styles.lead]}>{COPY.lead}</Text>
+      </Animated.Text>
+      <Animated.Text entering={HERO_IN[2]} style={[type.ui(15, "medium", c.inkSoft, { lineHeight: 22 }), styles.centerText, styles.lead]}>
+        {COPY.lead}
+      </Animated.Text>
       {shortId ? (
-        <View style={[styles.refPill, { backgroundColor: c.card, borderColor: withAlpha(c.gold, isDark ? 0.4 : 0.55) }]}>
+        <Animated.View entering={HERO_IN[3]} style={[styles.refPill, { backgroundColor: c.card, borderColor: withAlpha(c.gold, isDark ? 0.4 : 0.55) }]}>
           <Ionicons name="receipt-outline" size={16} color={c.goldText} />
           <Text style={type.ui(12, "bold", c.inkMute, { letterSpacing: 0.6, textTransform: "uppercase" })}>{COPY.ref}</Text>
           <Text style={type.ui(14, "extrabold", c.ink, { letterSpacing: 0.6 })}>#{shortId}</Text>
-        </View>
+        </Animated.View>
       ) : null}
     </View>
   );
@@ -266,14 +286,16 @@ export function StoreOrderPlaced({ order, onTrack, onContinue }) {
       <View style={[styles.placed, { paddingTop: insets.top + 20, paddingBottom: Math.max(insets.bottom, 16) + 16, paddingHorizontal: gutter }]}>
         <View style={styles.placedCenter}>
           <Hero order={order} />
-          <MiniSummary order={order} />
+          <Animated.View entering={POPUP_IN[0]} style={styles.popupBlock}>
+            <MiniSummary order={order} />
+          </Animated.View>
         </View>
-        <View style={styles.actions}>
+        <Animated.View entering={POPUP_IN[1]} style={styles.actions}>
           <PrimaryButton label={COPY.primary} icon="arrow-forward" onPress={onTrack} />
-          <Pressable onPress={onContinue} hitSlop={8} accessibilityRole="button" accessibilityLabel={COPY.secondary} style={styles.link}>
+          <PressableScale scaleTo={0.97} lite onPress={onContinue} hitSlop={8} accessibilityRole="button" accessibilityLabel={COPY.secondary} style={styles.link}>
             <Text style={type.ui(15, "bold", c.inkSoft)}>{COPY.secondary}</Text>
-          </Pressable>
-        </View>
+          </PressableScale>
+        </Animated.View>
       </View>
     </View>
   );
@@ -297,16 +319,16 @@ export default function StoreOrderConfirmed({ navigation, order }) {
           {hasOrder ? (
             <>
               <Hero order={order} />
-              <Animated.View entering={FadeInDown.delay(120).duration(320)}>
+              <Animated.View entering={PLACED_IN[0]}>
                 <Timeline />
               </Animated.View>
-              <Animated.View entering={FadeInDown.delay(220).duration(320)}>
+              <Animated.View entering={PLACED_IN[1]}>
                 <Summary order={order} />
               </Animated.View>
-              <Animated.View entering={FadeInDown.delay(300).duration(320)}>
+              <Animated.View entering={PLACED_IN[2]}>
                 <TrustRow />
               </Animated.View>
-              <Animated.View entering={FadeInDown.delay(360).duration(320)} style={styles.actions}>
+              <Animated.View entering={PLACED_IN[3]} style={styles.actions}>
                 <PrimaryButton label={COPY.primary} icon="navigate-outline" onPress={() => navigation.replace("MyOrders")} />
                 <OutlineButton label={COPY.secondary} icon="bag-handle-outline" onPress={() => navigation.replace("Shop")} />
                 <PressableScale onPress={() => navigation.replace("Home")} accessibilityRole="button" accessibilityLabel={COPY.tertiary} style={styles.link}>
@@ -342,6 +364,7 @@ export default function StoreOrderConfirmed({ navigation, order }) {
 }
 
 const styles = StyleSheet.create({
+  popupBlock: { alignSelf: "stretch" },
   scrim: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 20, overflow: "hidden" },
   screen: { flex: 1 },
   wash: { position: "absolute", top: 0, left: 0, right: 0 },

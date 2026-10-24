@@ -1,5 +1,5 @@
 import React, { memo, useCallback, useMemo, useRef, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { FlatList, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -52,7 +52,7 @@ function Heart({ active, onPress, lite }) {
   };
 
   return (
-    <Pressable
+    <PressableScale scaleTo={0.88} lite
       onPress={handlePress}
       hitSlop={8}
       accessibilityRole="button"
@@ -62,7 +62,7 @@ function Heart({ active, onPress, lite }) {
       <AnimatedView style={[styles.heart, shadow.soft, { backgroundColor: withAlpha(c.card, 0.94) }, lite ? null : popStyle]}>
         <Ionicons name={active ? "heart" : "heart-outline"} size={16} color={active ? c.danger : c.inkSoft} />
       </AnimatedView>
-    </Pressable>
+    </PressableScale>
   );
 }
 

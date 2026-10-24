@@ -1,8 +1,9 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import Animated, { FadeIn } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
+import { stateIn } from "../../theme/motion";
 import { STORE_CARD } from "../../content/storefrontContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import PressableScale from "./PressableScale";
@@ -94,7 +95,7 @@ export default function AddControl({
     };
     if (quantity > 0) {
       return (
-        <Animated.View entering={FadeIn.duration(140)} style={fill}>
+        <Animated.View entering={stateIn} style={fill}>
           <PressableScale
             onPress={open}
             style={fill}
@@ -114,7 +115,7 @@ export default function AddControl({
       );
     }
     return (
-      <Animated.View entering={FadeIn.duration(140)} style={fill}>
+      <Animated.View entering={stateIn} style={fill}>
         <PressableScale onPress={open} style={fill} accessibilityRole="button" accessibilityLabel={STORE_CARD.a11y.chooseSize(label)}>
           <Pill height={height} minWidth={minWidth}>
             <View style={styles.row}>{addLabel}</View>
@@ -126,10 +127,10 @@ export default function AddControl({
 
   if (quantity > 0) {
     return (
-      <Animated.View entering={FadeIn.duration(140)} style={fill}>
+      <Animated.View entering={stateIn} style={fill}>
         <Pill height={height} minWidth={compact ? 84 : 96}>
           <View style={styles.stepper}>
-            <Pressable
+            <PressableScale scaleTo={0.88} lite
               onPress={() => {
                 hapticTap();
                 onRemove?.();
@@ -140,9 +141,9 @@ export default function AddControl({
               accessibilityLabel={STORE_CARD.a11y.removeOne(label)}
             >
               <Ionicons name="remove" size={17} color={textColor} />
-            </Pressable>
+            </PressableScale>
             <Text style={[type.ui(compact ? 13.5 : 14.5, "extrabold", textColor), styles.qty]}>{quantity}</Text>
-            <Pressable
+            <PressableScale scaleTo={0.88} lite
               onPress={() => {
                 hapticTap();
                 onAdd?.();
@@ -153,7 +154,7 @@ export default function AddControl({
               accessibilityLabel={STORE_CARD.a11y.addOne(label)}
             >
               <Ionicons name="add" size={17} color={textColor} />
-            </Pressable>
+            </PressableScale>
           </View>
         </Pill>
       </Animated.View>
@@ -161,7 +162,7 @@ export default function AddControl({
   }
 
   return (
-    <Animated.View entering={FadeIn.duration(140)} style={fill}>
+    <Animated.View entering={stateIn} style={fill}>
       <PressableScale
         onPress={() => {
           hapticTap();

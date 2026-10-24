@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
+import { contentIn } from "../theme/motion";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
 
 import CustomerScreenShell from "../components/CustomerScreenShell";
@@ -303,6 +304,8 @@ export default function ProductScreen({ route, navigation }) {
 
   if (Platform.OS !== "web") {
     return (
+      // The skeleton is replaced by the product with a short fade instead of a hard swap.
+      <Animated.View entering={contentIn} style={{ flex: 1 }}>
       <StoreProduct
         product={product}
         navigation={navigation}
@@ -339,6 +342,7 @@ export default function ProductScreen({ route, navigation }) {
         isAuthenticated={isAuthenticated}
         shelfMatch={shelfMatch}
       />
+      </Animated.View>
     );
   }
 

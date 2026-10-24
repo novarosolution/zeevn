@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { RefreshControl, StyleSheet, Text, View } from "react-native";
 import Constants from "expo-constants";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Animated, { FadeInDown, FadeOutUp, LinearTransition } from "react-native-reanimated";
+import Animated, { LinearTransition, useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
+import { panelIn, panelOut } from "../../theme/motion";
 import { useTheme } from "../../context/ThemeContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { STORE_PROFILE } from "../../content/storefrontContent";
@@ -15,6 +16,7 @@ import { formatPhone } from "../../utils/storefront";
 import FloatingNav from "./FloatingNav";
 import { CoinArt } from "./PromoCarousel";
 import PressableScale from "./PressableScale";
+import ScreenHeader, { SCREEN_HEADER_PAD } from "./ScreenHeader";
 import StoreIcon from "./StoreIcon";
 
 function SectionLabel({ children }) {
@@ -89,7 +91,7 @@ function AppearanceRow() {
 
   return (
     <Animated.View layout={LinearTransition.duration(220)} style={[styles.card, shadow.soft, { backgroundColor: c.card, borderColor: c.line, borderRadius: r.xl }]}>
-      <Pressable
+      <PressableScale scaleTo={0.96} lite
         onPress={() => {
           hapticTick();
           setOpen((v) => !v);
@@ -107,13 +109,13 @@ function AppearanceRow() {
           <Text style={type.ui(13.5, "semibold", c.inkSoft)}>{current.label}</Text>
         </View>
         <Ionicons name={open ? "chevron-up" : "chevron-down"} size={20} color={c.ink} />
-      </Pressable>
+      </PressableScale>
       {open ? (
-        <Animated.View entering={FadeInDown.duration(180)} exiting={FadeOutUp.duration(120)} style={[styles.segment, { backgroundColor: c.soft }]}>
+        <Animated.View entering={panelIn} exiting={panelOut} style={[styles.segment, { backgroundColor: c.soft }]}>
           {options.map((option) => {
             const active = option.key === mode;
             return (
-              <Pressable
+              <PressableScale scaleTo={0.96} lite
                 key={option.key}
                 onPress={() => {
                   hapticTick();
@@ -125,7 +127,7 @@ function AppearanceRow() {
               >
                 <StoreIcon icon={option.icon} size={17} color={active ? c.brand : c.inkSoft} />
                 <Text style={type.ui(13.5, active ? "extrabold" : "semibold", active ? c.brand : c.inkSoft)}>{option.label}</Text>
-              </Pressable>
+              </PressableScale>
             );
           })}
         </Animated.View>
@@ -175,15 +177,7 @@ function InfoRow({ row, trailing, tone, onPress }) {
   const { c, type } = useStoreTheme();
   const color = tone === "danger" ? c.danger : c.ink;
   return (
-    <Pressable
-      onPress={() => {
-        hapticTick();
-        onPress?.();
-      }}
-      accessibilityRole="button"
-      accessibilityLabel={row.label}
-      style={({ pressed }) => [styles.infoRow, pressed && { opacity: 0.6 }]}
-    >
+    <PressableScale onPress={onPress} scaleTo={0.985} accessibilityRole="button" accessibilityLabel={row.label} style={styles.infoRow}>
       <View style={[styles.rowIcon, { backgroundColor: tone === "danger" ? c.dangerSoft : c.soft }]}>
         <StoreIcon icon={row.icon} size={21} color={color} />
       </View>
@@ -194,7 +188,7 @@ function InfoRow({ row, trailing, tone, onPress }) {
         </View>
       ) : null}
       <Ionicons name="chevron-forward" size={17} color={c.inkMute} />
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -220,6 +214,10 @@ export default function StoreProfile({
 }) {
   const { c, r, type, isDark, gutter } = useStoreTheme();
   const insets = useSafeAreaInsets();
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler((event) => {
+    scrollY.value = event.contentOffset.y;
+  });
   const wishlist = useWishlist();
   const go = (route) => route && navigation.navigate(route.name, route.params);
   const navPad = STORE_NAV_HEIGHT + Math.max(16, insets.bottom + 6) + 28;
@@ -235,9 +233,11 @@ export default function StoreProfile({
 
   return (
     <View style={[styles.screen, { backgroundColor: c.page }]}>
-      <ScrollView
+      <Animated.ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: insets.top + 64, paddingBottom: navPad }}
+        contentContainerStyle={{ paddingTop: insets.top + SCREEN_HEADER_PAD, paddingBottom: navPad }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={c.brand} progressViewOffset={insets.top + 60} />}
       >
         <View style={{ paddingHorizontal: gutter, gap: 18 }}>
@@ -246,12 +246,18 @@ export default function StoreProfile({
               <Text style={type.display(34, { ls: -0.8, lh: 40 })} numberOfLines={1} accessibilityRole="header">
                 {STORE_PROFILE.heading}
               </Text>
-              <View style={styles.contactRow}>
-                <Ionicons name={phone ? "call-outline" : "mail-outline"} size={17} color={c.inkSoft} />
-                <Text style={type.ui(15.5, "medium", c.inkSoft)} numberOfLines={1}>
-                  {contact || displayName}
-                </Text>
-              </View>
+              <Text style={type.ui(17.5, "extrabold", c.ink)} numberOfLines={1}>
+                {displayName}
+              </Text>
+              {contact ? (
+                <View style={styles.contactRow}>
+                  <Ionicons name={phone ? "call-outline" : "mail-outline"} size={16} color={c.inkMute} />
+                  {/* An email's start and end both identify it, so it is shortened in the middle. */}
+                  <Text style={[type.ui(14.5, "medium", c.inkSoft), styles.contactText]} numberOfLines={1} ellipsizeMode="middle">
+                    {contact}
+                  </Text>
+                </View>
+              ) : null}
             </View>
             <PressableScale
               onPress={() => navigation.navigate("EditProfile")}
@@ -316,26 +322,13 @@ export default function StoreProfile({
           </PressableScale>
           <Text style={[type.ui(12, "medium", c.inkMute), styles.version]}>{STORE_PROFILE.version(version)}</Text>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
-      <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
-        <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glassStrong }]} />
-        <View style={[styles.headerRow, { paddingHorizontal: gutter }]}>
-          <PressableScale
-            onPress={() => (navigation.canGoBack?.() ? navigation.goBack() : navigation.navigate("Home"))}
-            scaleTo={0.92}
-            accessibilityRole="button"
-            accessibilityLabel="Back"
-            style={[styles.round, { backgroundColor: c.card, borderColor: c.line }]}
-          >
-            <Ionicons name="chevron-back" size={21} color={c.ink} />
-          </PressableScale>
-          <Text style={[type.ui(18, "extrabold", c.ink), styles.headerTitle]} pointerEvents="none">
-            {STORE_PROFILE.navTitle}
-          </Text>
-          <View style={styles.roundSpacer} />
-        </View>
-      </View>
+      <ScreenHeader
+        title={STORE_PROFILE.navTitle}
+        onBack={() => (navigation.canGoBack?.() ? navigation.goBack() : navigation.navigate("Home"))}
+        scrollY={scrollY}
+      />
 
       <FloatingNav />
     </View>
@@ -344,14 +337,10 @@ export default function StoreProfile({
 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
-  header: { position: "absolute", top: 0, left: 0, right: 0, paddingBottom: 10, zIndex: 20, overflow: "hidden" },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", height: 46 },
-  headerTitle: { position: "absolute", left: 0, right: 0, textAlign: "center" },
-  round: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center", borderWidth: StyleSheet.hairlineWidth },
-  roundSpacer: { width: 44, height: 44 },
   heading: { flexDirection: "row", alignItems: "center", gap: 14, marginTop: 6 },
   headingText: { flex: 1, minWidth: 0, gap: 6 },
   contactRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  contactText: { flexShrink: 1 },
   avatar: { width: 62, height: 62, borderRadius: 31, borderWidth: 1.5, overflow: "hidden", alignItems: "center", justifyContent: "center" },
   avatarFill: { alignItems: "center", justifyContent: "center" },
   error: { flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderWidth: 1 },

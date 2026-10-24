@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
@@ -106,13 +106,13 @@ export default function ShopHeader({
               style={[type.ui(15.5, "medium", c.ink), styles.input]}
             />
             {text ? (
-              <Pressable onPress={handleClear} hitSlop={10} accessibilityRole="button" accessibilityLabel="Clear search">
+              <PressableScale scaleTo={0.88} lite onPress={handleClear} hitSlop={10} accessibilityRole="button" accessibilityLabel="Clear search">
                 <Ionicons name="close-circle" size={18} color={c.inkMute} />
-              </Pressable>
+              </PressableScale>
             ) : null}
           </Animated.View>
         ) : (
-          <Pressable onPress={onLocationPress} style={styles.titleBox} accessibilityRole="button" accessibilityLabel={`${title}. ${deliveringLabel}`}>
+          <PressableScale scaleTo={0.96} lite onPress={onLocationPress} style={styles.titleBox} accessibilityRole="button" accessibilityLabel={`${title}. ${deliveringLabel}`}>
             <Text style={type.display(21, { ls: -0.3, lh: 25 })} numberOfLines={1} accessibilityRole="header">
               {title}
             </Text>
@@ -123,13 +123,13 @@ export default function ShopHeader({
               </Text>
               <Ionicons name="chevron-down" size={12} color={c.inkSoft} />
             </View>
-          </Pressable>
+          </PressableScale>
         )}
 
         {searching ? (
-          <Pressable onPress={onToggleSearch} hitSlop={8} accessibilityRole="button" accessibilityLabel="Cancel search">
+          <PressableScale scaleTo={0.97} lite onPress={onToggleSearch} hitSlop={8} accessibilityRole="button" accessibilityLabel="Cancel search">
             <Text style={type.ui(14.5, "bold", c.brand)}>Cancel</Text>
-          </Pressable>
+          </PressableScale>
         ) : (
           <>
             <RoundButton icon="share-outline" onPress={onShare} label="Share" />

@@ -7,6 +7,7 @@ import { KankregGrainOverlay, KankregPageWrap } from "../components/kankreg/Kank
 import AboutPremiumHero from "../components/about/AboutPremiumHero";
 import AboutPageLayout from "../components/about/AboutPageLayout";
 import AboutPageStory from "../components/about/AboutPageStory";
+import { StoreAbout } from "../components/store/entry";
 import { DEFAULT_HOME_VIEW_CONFIG, getHomeViewConfig } from "../services/productService";
 import { resolveAboutPageDisplay } from "../utils/homeViewMedia";
 import { ABOUT_PAGE_HEADER } from "../content/aboutPageContent";
@@ -34,6 +35,18 @@ export default function AboutScreen({ navigation }) {
   }, []);
 
   const about = resolveAboutPageDisplay(aboutSection);
+
+  // The app has its own About page (parallax photo hero, stats, gallery, values, the craft timeline and a closing call to action).
+  if (Platform.OS !== "web") {
+    return (
+      <StoreAbout
+        navigation={navigation}
+        about={about}
+        onShop={() => navigation.navigate("Shop")}
+        onContact={() => navigation.navigate("Support")}
+      />
+    );
+  }
 
   return (
     <CustomerScreenShell>

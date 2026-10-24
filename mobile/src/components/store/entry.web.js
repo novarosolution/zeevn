@@ -22,3 +22,4 @@ export const StoreAddress = Inert;
 export const StoreRewards = Inert;
 export const FlyToCartLayer = Inert;
 export const StoreLegal = Inert;
+export const StoreAbout = Inert;

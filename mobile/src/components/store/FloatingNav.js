@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useNavigation, useNavigationState } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
-  ZoomIn,
+  FadeIn,
+  FadeOut,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
@@ -14,14 +15,22 @@ import Animated, {
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { STORE_NAV } from "../../content/storefrontContent";
+import { EASE_IN_OUT, EASE_OUT, motionSettle, motionTiming } from "../../theme/motion";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { hapticTick } from "../../utils/haptics";
 import { flightRemainingMs, setCartTarget } from "./flyToCart";
 import PressableScale from "./PressableScale";
+import ScrollEdgeFade from "./ScrollEdgeFade";
 import StoreIcon from "./StoreIcon";
 
 const FAB_GAP = 10;
 const ITEMS_PAD = 6;
+
+/** The active-tab capsule moves across the bar: ease-in-out, quick, no overshoot (this bar is touched all day). */
+const CAPSULE_GLIDE = { duration: motionTiming.toggle + 60, easing: EASE_IN_OUT };
+/** Layout-animation builders live at module scope: rebuilding them in render costs every re-render. */
+const BADGE_IN = FadeIn.duration(motionTiming.press + 30).easing(EASE_OUT);
+const BADGE_OUT = FadeOut.duration(motionTiming.press);
 
 /** The active tab on the previous screen, so the highlight can glide from there instead of popping in. */
 let lastActiveIndex = -1;
@@ -47,8 +56,10 @@ function NavItem({ item, active, onPress }) {
   const { c } = useStoreTheme();
   const color = active ? c.brand : c.inkSoft;
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
+      scaleTo={0.88}
+      lite
       style={styles.item}
       accessibilityRole="tab"
       accessibilityState={{ selected: active }}
@@ -56,12 +67,37 @@ function NavItem({ item, active, onPress }) {
       hitSlop={6}
     >
       <StoreIcon icon={active && item.iconActive ? item.iconActive : item.icon} active={active} size={32} color={color} />
-    </Pressable>
+    </PressableScale>
+  );
+}
+
+/** The count on the cart button. It stays mounted while the count changes and pops once, instead of re-entering every time. */
+function CartBadge({ count }) {
+  const { c, type } = useStoreTheme();
+  const pop = useSharedValue(1);
+  const prev = useRef(count);
+
+  useEffect(() => {
+    if (count !== prev.current && prev.current > 0) {
+      pop.value = withSequence(withTiming(1.16, { duration: 90, easing: EASE_OUT }), withSpring(1, motionSettle.bump));
+    }
+    prev.current = count;
+  }, [count, pop]);
+
+  const popStyle = useAnimatedStyle(() => ({ transform: [{ scale: pop.value }] }));
+  return (
+    <Animated.View
+      entering={BADGE_IN}
+      exiting={BADGE_OUT}
+      style={[styles.badge, { backgroundColor: c.gold, borderColor: c.page }, popStyle]}
+    >
+      <Text style={type.ui(11.5, "extrabold", "#2A1E08")}>{count > 99 ? "99+" : count}</Text>
+    </Animated.View>
   );
 }
 
 function CartFab({ count: liveCount, onPress }) {
-  const { c, type, shadow, isDark } = useStoreTheme();
+  const { shadow, isDark } = useStoreTheme();
   const count = useLandedCount(liveCount);
   const scale = useSharedValue(1);
   const prev = useRef(count);
@@ -72,7 +108,7 @@ function CartFab({ count: liveCount, onPress }) {
 
   useEffect(() => {
     if (count > prev.current) {
-      scale.value = withSequence(withTiming(1.18, { duration: 130 }), withSpring(1, { damping: 7, stiffness: 260 }));
+      scale.value = withSequence(withTiming(1.1, { duration: 100, easing: EASE_OUT }), withSpring(1, motionSettle.bump));
     }
     prev.current = count;
   }, [count, scale]);
@@ -94,15 +130,7 @@ function CartFab({ count: liveCount, onPress }) {
           <LinearGradient colors={colors} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
           <StoreIcon icon={STORE_NAV.cart.icon} size={30} color={iconColor} />
         </View>
-        {count > 0 ? (
-          <Animated.View
-            key={count}
-            entering={ZoomIn.duration(220)}
-            style={[styles.badge, { backgroundColor: c.gold, borderColor: c.page }]}
-          >
-            <Text style={type.ui(11.5, "extrabold", "#2A1E08")}>{count > 99 ? "99+" : count}</Text>
-          </Animated.View>
-        ) : null}
+        {count > 0 ? <CartBadge count={count} /> : null}
       </PressableScale>
     </Animated.View>
   );
@@ -118,7 +146,9 @@ export default function FloatingNav() {
   const insets = useSafeAreaInsets();
   const { isAuthenticated } = useAuth();
   const { totalItems } = useCart();
-  const routeName = useNavigationState((state) => state.routes[state.index]?.name);
+  // This screen's own route, not the navigator's focused one: while the next (lazily loaded) screen is still mounting, the
+  // navigator already points at it, which would move this bar's highlight early and leave the new bar nothing to glide from.
+  const routeName = useRoute().name;
 
   const go = useCallback(
     (route, requiresAuth = false) => {
@@ -132,28 +162,23 @@ export default function FloatingNav() {
 
   const isActive = (key) => (STORE_NAV.activeRoutes[key] || [key]).includes(routeName);
   const activeIndex = STORE_NAV.items.findIndex((item) => isActive(item.key));
-  const [rowWidth, setRowWidth] = useState(0);
-  const slot = rowWidth ? (rowWidth - ITEMS_PAD * 2) / STORE_NAV.items.length : 0;
-  const capsuleX = useSharedValue(0);
+  const { width: windowW } = useWindowDimensions();
+  // The slot width is known from the geometry before any layout pass. That lets the capsule render on the very first frame
+  // of a screen change, already sitting on the previous tab, and glide across (waiting for onLayout hid the glide entirely).
+  const estimatedRow = windowW - gutter * 2 - FAB_GAP - STORE_NAV_HEIGHT - 2 * (StyleSheet.hairlineWidth + 0.5);
+  const [rowWidth, setRowWidth] = useState(estimatedRow);
+  const slot = (rowWidth - ITEMS_PAD * 2) / STORE_NAV.items.length;
+  const startIndex = lastActiveIndex >= 0 ? lastActiveIndex : Math.max(activeIndex, 0);
+  const capsuleX = useSharedValue(startIndex * slot);
   const capsuleOpacity = useSharedValue(activeIndex >= 0 ? 1 : 0);
-  const placed = useRef(false);
 
   useEffect(() => {
-    if (!slot) return;
     if (activeIndex < 0) {
-      capsuleOpacity.value = withTiming(0, { duration: 140 });
+      capsuleOpacity.value = withTiming(0, { duration: motionTiming.press + 30, easing: EASE_OUT });
       return;
     }
-    const glide = { damping: 17, stiffness: 190, mass: 0.9 };
-    if (!placed.current) {
-      placed.current = true;
-      const from = lastActiveIndex >= 0 ? lastActiveIndex : activeIndex;
-      capsuleX.value = from * slot;
-      if (from !== activeIndex) capsuleX.value = withSpring(activeIndex * slot, glide);
-    } else {
-      capsuleX.value = withSpring(activeIndex * slot, glide);
-    }
-    capsuleOpacity.value = withTiming(1, { duration: 160 });
+    capsuleX.value = withTiming(activeIndex * slot, CAPSULE_GLIDE);
+    capsuleOpacity.value = withTiming(1, { duration: motionTiming.toggle, easing: EASE_OUT });
     lastActiveIndex = activeIndex;
   }, [activeIndex, slot, capsuleOpacity, capsuleX]);
 
@@ -171,17 +196,18 @@ export default function FloatingNav() {
   const glassBorder = isDark ? withAlpha("#FFFFFF", 0.14) : withAlpha("#FFFFFF", 0.85);
 
   return (
-    <View style={[styles.wrap, { bottom: dock, left: gutter, right: gutter }]} pointerEvents="box-none">
-      <View style={[styles.pillShadow, shadow.float, { borderColor: glassBorder }]}>
-        <View style={styles.pillClip}>
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: glassFill }]} />
-          <LinearGradient
-            colors={[withAlpha("#FFFFFF", isDark ? 0.1 : 0.55), withAlpha("#FFFFFF", 0)]}
-            style={styles.glassSheen}
-            pointerEvents="none"
-          />
-          <View style={styles.items} onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}>
-            {slot ? (
+    <>
+      <ScrollEdgeFade height={dock + STORE_NAV_HEIGHT + 30} />
+      <View style={[styles.wrap, { bottom: dock, left: gutter, right: gutter }]} pointerEvents="box-none">
+        <View style={[styles.pillShadow, shadow.float, { borderColor: glassBorder }]}>
+          <View style={styles.pillClip}>
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: glassFill }]} />
+            <LinearGradient
+              colors={[withAlpha("#FFFFFF", isDark ? 0.1 : 0.55), withAlpha("#FFFFFF", 0)]}
+              style={styles.glassSheen}
+              pointerEvents="none"
+            />
+            <View style={styles.items} onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}>
               <Animated.View
                 pointerEvents="none"
                 style={[
@@ -195,15 +221,15 @@ export default function FloatingNav() {
                   capsuleStyle,
                 ]}
               />
-            ) : null}
-            {STORE_NAV.items.map((item) => (
-              <NavItem key={item.key} item={item} active={isActive(item.key)} onPress={() => go(item.route, item.requiresAuth)} />
-            ))}
+              {STORE_NAV.items.map((item) => (
+                <NavItem key={item.key} item={item} active={isActive(item.key)} onPress={() => go(item.route, item.requiresAuth)} />
+              ))}
+            </View>
           </View>
         </View>
+        <CartFab count={totalItems} onPress={() => go(STORE_NAV.cart.route, STORE_NAV.cart.requiresAuth)} />
       </View>
-      <CartFab count={totalItems} onPress={() => go(STORE_NAV.cart.route, STORE_NAV.cart.requiresAuth)} />
-    </View>
+    </>
   );
 }
 

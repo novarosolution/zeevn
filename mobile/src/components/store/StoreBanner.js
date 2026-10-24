@@ -1,8 +1,10 @@
 import React from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import Animated, { FadeInDown, FadeOut } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
+import { panelIn, panelOut } from "../../theme/motion";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
+import PressableScale from "./PressableScale";
 
 /** Inline status banner — `tone` is "error" (red) or "success" (olive). Dismissible when `onClose` is given. */
 export default function StoreBanner({ message, tone = "error", onClose, style }) {
@@ -11,8 +13,8 @@ export default function StoreBanner({ message, tone = "error", onClose, style })
   const color = isError ? c.danger : c.brand;
   return (
     <Animated.View
-      entering={FadeInDown.duration(180)}
-      exiting={FadeOut.duration(120)}
+      entering={panelIn}
+      exiting={panelOut}
       accessibilityRole="alert"
       style={[
         styles.banner,
@@ -27,9 +29,9 @@ export default function StoreBanner({ message, tone = "error", onClose, style })
       <Ionicons name={isError ? "alert-circle-outline" : "checkmark-circle-outline"} size={19} color={color} />
       <Text style={[type.ui(13.5, "medium", color), styles.text]}>{message}</Text>
       {onClose ? (
-        <Pressable onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="Dismiss">
+        <PressableScale scaleTo={0.88} lite onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="Dismiss">
           <Ionicons name="close" size={18} color={color} />
-        </Pressable>
+        </PressableScale>
       ) : null}
     </Animated.View>
   );

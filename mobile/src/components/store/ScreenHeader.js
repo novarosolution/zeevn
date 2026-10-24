@@ -1,5 +1,5 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,8 +13,9 @@ export const SCREEN_HEADER_PAD = 64;
 /**
  * Top bar for bag, checkout, orders, confirmation and product: a round back button, a small serif title and an optional
  * action, on a solid ivory bar that overlays the top of the screen (the screen's scroll view reserves the room).
- * Pass the scroll view's `scrollY` shared value and a hairline fades in as the page slides under the bar; without it
- * `divider` pins the hairline on.
+ * Pass the scroll view's `scrollY` shared value and two things follow the scroll: a hairline fades in as the page slides
+ * under the bar, and the small title appears only once the page's own big heading has scrolled away (no "Cart" above
+ * "Your bag"). Without `scrollY` the title is always shown and `divider` pins the hairline on.
  */
 export default function ScreenHeader({ title, onBack, backLabel = "Back", right, divider = false, scrollY }) {
   const { c, type, gutter, shadow } = useStoreTheme();
@@ -23,6 +24,13 @@ export default function ScreenHeader({ title, onBack, backLabel = "Back", right,
   const lineStyle = useAnimatedStyle(() => ({
     opacity: scrollY ? interpolate(scrollY.value, [2, 26], [0, 1], Extrapolation.CLAMP) : divider ? 1 : 0,
   }));
+  const titleStyle = useAnimatedStyle(() => {
+    if (!scrollY) return { opacity: 1 };
+    return {
+      opacity: interpolate(scrollY.value, [30, 66], [0, 1], Extrapolation.CLAMP),
+      transform: [{ translateY: interpolate(scrollY.value, [30, 66], [6, 0], Extrapolation.CLAMP) }],
+    };
+  });
 
   return (
     <View style={[styles.wrap, { paddingTop: insets.top + 6, backgroundColor: c.page }]} pointerEvents="box-none">
@@ -40,9 +48,14 @@ export default function ScreenHeader({ title, onBack, backLabel = "Back", right,
         ) : (
           <View style={styles.spacer} />
         )}
-        <Text style={[type.display(20, { semi: true, ls: -0.3 }), styles.title]} numberOfLines={1} pointerEvents="none" accessibilityRole="header">
+        <Animated.Text
+          style={[type.display(20, { semi: true, ls: -0.3 }), styles.title, titleStyle]}
+          numberOfLines={1}
+          pointerEvents="none"
+          accessibilityRole="header"
+        >
           {title}
-        </Text>
+        </Animated.Text>
         <View style={styles.right}>{right || <View style={styles.spacer} />}</View>
       </View>
       <Animated.View pointerEvents="none" style={[styles.edge, lineStyle]}>

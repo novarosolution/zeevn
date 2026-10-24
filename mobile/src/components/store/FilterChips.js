@@ -1,14 +1,15 @@
 import React from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useStoreTheme } from "../../theme/storefront";
 import { hapticTick } from "../../utils/haptics";
+import PressableScale from "./PressableScale";
 
 function Chip({ label, icon, caret = true, active, badge, onPress }) {
   const { c, type } = useStoreTheme();
   const color = active ? c.brand : c.ink;
   return (
-    <Pressable
+    <PressableScale scaleTo={0.96} lite
       onPress={() => {
         hapticTick();
         onPress?.();
@@ -28,7 +29,7 @@ function Chip({ label, icon, caret = true, active, badge, onPress }) {
         </View>
       ) : null}
       {caret ? <Ionicons name="chevron-down" size={13} color={color} /> : null}
-    </Pressable>
+    </PressableScale>
   );
 }
 

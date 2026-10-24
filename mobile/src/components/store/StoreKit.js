@@ -3,23 +3,24 @@
  * Small, themed building blocks with the same look and motion as Home / Shop / Account: soft white cards, olive and
  * ghee-gold accents, springy presses with a haptic tick, and entrances that honour "Reduce Motion".
  */
-import React, { Children, Fragment, useEffect, useRef, useState } from "react";
+import React, { Children, Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
   Easing,
-  FadeInDown,
+  FadeIn,
+  ReduceMotion,
   interpolateColor,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
   withRepeat,
   withSequence,
-  withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { EASE_IN_OUT, EASE_OUT, motionTiming, riseIn } from "../../theme/motion";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { hapticTap, hapticTick } from "../../utils/haptics";
 import PressableScale from "./PressableScale";
@@ -29,22 +30,18 @@ const toIcon = (icon) => (typeof icon === "string" ? { ion: icon } : icon);
 
 /* ---------------------------------------------------------------------------------------------- motion */
 
-/** Fades and rises into place on mount. `index` staggers siblings (capped so long lists do not drag). */
-export function Rise({ index = 0, step = 55, children, style, ...rest }) {
+/**
+ * Rises and fades into place on mount (a 10 px rise, strong ease-out, 260 ms; see `riseIn`). `index` staggers siblings by
+ * 40 ms, capped. With Reduce Motion on it keeps only a short fade: gentler, not zero.
+ */
+export function Rise({ index = 0, children, style, ...rest }) {
   const reduced = useReducedMotion();
-  if (reduced) {
-    return (
-      <View style={style} {...rest}>
-        {children}
-      </View>
-    );
-  }
+  const entering = useMemo(
+    () => (reduced ? FadeIn.duration(motionTiming.exit).reduceMotion(ReduceMotion.Never) : riseIn(index)),
+    [index, reduced]
+  );
   return (
-    <Animated.View
-      entering={FadeInDown.delay(Math.min(index, 9) * step).duration(440).easing(Easing.out(Easing.cubic))}
-      style={style}
-      {...rest}
-    >
+    <Animated.View entering={entering} style={style} {...rest}>
       {children}
     </Animated.View>
   );
@@ -172,10 +169,7 @@ export function Row({ icon, title, subtitle, trailing, onPress, tone = "default"
   if (!onPress) return <View style={styles.row}>{content}</View>;
   return (
     <PressableScale
-      onPress={() => {
-        hapticTick();
-        onPress();
-      }}
+      onPress={onPress}
       scaleTo={0.985}
       disabled={disabled}
       accessibilityRole="button"
@@ -205,7 +199,7 @@ export function Segmented({ options, value, onChange }) {
       x.value = index * seg;
       return;
     }
-    x.value = withSpring(index * seg, { damping: 20, stiffness: 280, mass: 0.7 });
+    x.value = withTiming(index * seg, { duration: motionTiming.toggle + 40, easing: EASE_IN_OUT });
   }, [index, seg, x]);
 
   const thumb = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
@@ -244,7 +238,7 @@ export function Toggle({ value, onValueChange, disabled, label }) {
   const { c } = useStoreTheme();
   const progress = useSharedValue(value ? 1 : 0);
   useEffect(() => {
-    progress.value = withSpring(value ? 1 : 0, { damping: 16, stiffness: 300, mass: 0.7 });
+    progress.value = withTiming(value ? 1 : 0, { duration: motionTiming.toggle, easing: EASE_OUT });
   }, [value, progress]);
   const track = useAnimatedStyle(() => ({ backgroundColor: interpolateColor(progress.value, [0, 1], [c.softStrong, c.brand]) }));
   const thumb = useAnimatedStyle(() => ({ transform: [{ translateX: progress.value * 20 }] }));

@@ -125,6 +125,9 @@ function Progress({ value }) {
   );
 }
 
+/** Points with Indian digit grouping (12,500), like the balance in the hero. */
+const fmtPoints = (n) => Number(n || 0).toLocaleString("en-IN");
+
 function OfferCard({ item, balance, busy, cartAware, onRedeem }) {
   const { c, type } = useStoreTheme();
   const short = Math.max(0, Number(item.pointsCost || 0) - Number(balance || 0));
@@ -146,14 +149,14 @@ function OfferCard({ item, balance, busy, cartAware, onRedeem }) {
         </View>
         <View style={[styles.cost, { backgroundColor: c.goldSoft }]}>
           <Ionicons name="star" size={12} color={c.goldText} />
-          <Text style={type.ui(13.5, "extrabold", c.goldText)}>{item.pointsCost}</Text>
+          <Text style={type.ui(13.5, "extrabold", c.goldText)}>{fmtPoints(item.pointsCost)}</Text>
         </View>
       </View>
       {saves ? <Text style={type.ui(12.5, "bold", c.brand)}>≈ Save {formatINR(saves)} on your cart</Text> : null}
       {short > 0 ? (
         <View style={styles.progress}>
           <Progress value={Number(balance || 0) / Math.max(1, Number(item.pointsCost || 1))} />
-          <Text style={type.ui(12, "semibold", c.inkMute)}>{short} more points to unlock</Text>
+          <Text style={type.ui(12, "semibold", c.inkMute)}>{fmtPoints(short)} more {short === 1 ? "point" : "points"} to unlock</Text>
         </View>
       ) : null}
       <Button

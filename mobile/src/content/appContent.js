@@ -1292,7 +1292,7 @@ export const ORDER_LIVE_TRACKING = {
   loadFailed: "Unable to load live tracking.",
   partnerFallback: "Delivery partner",
   staleBanner: "Partner location paused—weak signal or sharing off.",
-  waitingDefault: "Waiting for partner location.",
+  waitingDefault: "Live location appears here as soon as your delivery partner sets off.",
   webFallback: "For turn-by-turn, open in Maps.",
   /** Shown under the embedded OSM map on web (tiles © OpenStreetMap). */
   osmAttrib: "Map data © OpenStreetMap contributors",
@@ -1302,9 +1302,9 @@ export const ORDER_LIVE_TRACKING = {
   markerPartner: "Delivery partner",
   markerShop: "Shop",
   markerDestination: "Delivery address",
-  shopNotConfigured: "Set shop location in Admin → Storefront.",
   deliverToEyebrow: "Deliver to",
   deliverPhoneA11y: "Call delivery phone",
+  callPartnerA11y: "Call delivery partner",
   updatedJustNow: "Updated just now",
   /** Use `{minutes}` placeholder for whole minutes since update. */
   updatedMinutesAgo: "Updated {minutes} min ago",

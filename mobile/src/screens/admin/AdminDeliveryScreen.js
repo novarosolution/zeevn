@@ -30,7 +30,7 @@ import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, spacing } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";
 
-function ZoneCreateFields({ name, setName, pins, setPins, fee, setFee, draftLen, busy, onSave }) {
+function ZoneCreateFields({ name, setName, pins, setPins, cities, setCities, fee, setFee, draftLen, busy, onSave, editing }) {
   return (
     <View style={styles.formGap}>
       <PremiumInput label="Zone name" value={name} onChangeText={setName} placeholder="e.g. Gandhinagar" tone="warm" />
@@ -38,7 +38,14 @@ function ZoneCreateFields({ name, setName, pins, setPins, fee, setFee, draftLen,
         label="Pincodes (optional)"
         value={pins}
         onChangeText={setPins}
-        placeholder="380001, 380015"
+        placeholder="382421, 382007"
+        tone="warm"
+      />
+      <PremiumInput
+        label="Cities (optional)"
+        value={cities}
+        onChangeText={setCities}
+        placeholder="Only if you cannot draw — e.g. Gandhinagar"
         tone="warm"
       />
       <PremiumInput
@@ -49,7 +56,17 @@ function ZoneCreateFields({ name, setName, pins, setPins, fee, setFee, draftLen,
         tone="warm"
       />
       <PremiumButton
-        label={busy ? "Saving…" : draftLen >= 3 ? `Save zone · ${draftLen} points` : "Save zone"}
+        label={
+          busy
+            ? "Saving…"
+            : editing
+              ? draftLen >= 3
+                ? `Update zone · ${draftLen} points`
+                : "Update zone"
+              : draftLen >= 3
+                ? `Save zone · ${draftLen} points`
+                : "Save zone"
+        }
         iconLeft="save-outline"
         loading={busy}
         disabled={busy}
@@ -71,7 +88,9 @@ export default function AdminDeliveryScreen({ navigation, route }) {
   const [partners, setPartners] = useState([]);
   const [name, setName] = useState("");
   const [pins, setPins] = useState("");
+  const [cities, setCities] = useState("");
   const [fee, setFee] = useState("49");
+  const [editingId, setEditingId] = useState(null);
   const [busy, setBusy] = useState(false);
   const [stores, setStores] = useState([
     { _id: "local", latitude: 23.2156, longitude: 72.6369, maxRadiusKm: 25, label: "Zeevan farm shop" },
@@ -199,38 +218,68 @@ export default function AdminDeliveryScreen({ navigation, route }) {
     }
   };
 
-  const handleCreateZone = async () => {
+  const resetZoneForm = () => {
+    setName("");
+    setPins("");
+    setCities("");
+    setDraft([]);
+    setEditingId(null);
+  };
+
+  const startEditZone = (zone) => {
+    setEditingId(zone._id);
+    setName(zone.name || "");
+    setPins((zone.postalCodes || []).join(", "));
+    setCities((zone.cities || []).join(", "));
+    setFee(String(zone.deliveryFee ?? 49));
+    setDraft(
+      (zone.polygon || [])
+        .map((p) => ({ lat: Number(p.lat ?? p.latitude), lng: Number(p.lng ?? p.longitude) }))
+        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+    );
+    setMode("draw");
+    setDesk("map");
+  };
+
+  const handleSaveZone = async () => {
     const postalCodes = String(pins || "")
       .split(/[,\s]+/)
       .map((x) => x.trim())
       .filter(Boolean);
-    const typedName = name.trim();
-    const zoneName = typedName || `Zone ${zones.length + 1}`;
-    if (!postalCodes.length && draft.length < 3 && !typedName) {
-      setError("Name the zone, add a pincode, or tap Create zone and draw 3+ points.");
+    const cityList = String(cities || "")
+      .split(/[,]+/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+    const zoneName = name.trim() || (editingId ? "Zone" : `Zone ${zones.length + 1}`);
+    if (draft.length < 3 && !postalCodes.length && !cityList.length) {
+      setError("Draw 3+ points on the map, or add a pincode.");
       return;
     }
+    const payload = {
+      name: zoneName,
+      postalCodes,
+      cities: cityList,
+      polygon: draft,
+      deliveryFee: Number(fee) || 0,
+      freeAbove: 1499,
+      isActive: true,
+    };
     try {
       setBusy(true);
       setError("");
-      await createAdminDeliveryZone(token, {
-        name: zoneName,
-        postalCodes,
-        cities: !postalCodes.length && draft.length < 3 ? [typedName] : [],
-        polygon: draft,
-        deliveryFee: Number(fee) || 0,
-        freeAbove: 1499,
-        isActive: true,
-      });
-      setName("");
-      setPins("");
-      setDraft([]);
+      if (editingId) {
+        await updateAdminDeliveryZone(token, editingId, payload);
+        toastSuccess(`${zoneName} updated.`, { title: "Zone saved" });
+      } else {
+        await createAdminDeliveryZone(token, payload);
+        toastSuccess(`${zoneName} saved.`, { title: "Zone created" });
+      }
+      resetZoneForm();
       const z = await fetchAdminDeliveryZones(token);
       setZones(Array.isArray(z) ? z : []);
       setDesk("zones");
-      toastSuccess(`${zoneName} saved.`, { title: "Zone created" });
     } catch (err) {
-      setError(err.message || "Could not create zone.");
+      setError(err.message || "Could not save zone.");
     } finally {
       setBusy(false);
     }
@@ -367,7 +416,7 @@ export default function AdminDeliveryScreen({ navigation, route }) {
                   <AdminPanel
                     title="Coverage map"
                     icon="navigate-outline"
-                    meta={mode === "draw" ? `${draft.length} points` : `${minutesPerKm} min / km`}
+                    meta={mode === "draw" ? `${draft.length} points${editingId ? " · editing" : ""}` : `${minutesPerKm} min / km`}
                     description={mapHint}
                   >
                     <View style={styles.formGap}>
@@ -379,11 +428,21 @@ export default function AdminDeliveryScreen({ navigation, route }) {
                           size="sm"
                         />
                         <PremiumChip
-                          label="Create zone"
+                          label={editingId ? "Edit points" : "Create zone"}
                           selected={mode === "draw"}
                           onPress={() => setMode("draw")}
                           size="sm"
                         />
+                        {editingId ? (
+                          <PremiumChip
+                            label="New zone"
+                            size="sm"
+                            onPress={() => {
+                              resetZoneForm();
+                              setMode("draw");
+                            }}
+                          />
+                        ) : null}
                         <PremiumChip label="Add shop" size="sm" onPress={handleAddStore} />
                         {draft.length ? (
                           <PremiumChip label="Undo" onPress={() => setDraft((d) => d.slice(0, -1))} size="sm" />
@@ -400,15 +459,23 @@ export default function AdminDeliveryScreen({ navigation, route }) {
                         draft={draft}
                         hint={mapHint}
                         mode={mode}
+                        editingId={editingId}
                         onMapClick={handleMapClick}
+                        onRemovePoint={(i) => setDraft((d) => d.filter((_, idx) => idx !== i))}
                       />
                       {draft.length >= 3 ? (
                         <PremiumButton
-                          label={busy ? "Saving…" : `Save zone · ${draft.length} points`}
+                          label={
+                            busy
+                              ? "Saving…"
+                              : editingId
+                                ? `Update zone · ${draft.length} points`
+                                : `Save zone · ${draft.length} points`
+                          }
                           iconLeft="save-outline"
                           loading={busy}
                           disabled={busy}
-                          onPress={handleCreateZone}
+                          onPress={handleSaveZone}
                         />
                       ) : null}
                     </View>
@@ -417,19 +484,28 @@ export default function AdminDeliveryScreen({ navigation, route }) {
                   <AdminPanel
                     title="Create zone"
                     icon="add-circle-outline"
-                    meta={draft.length >= 3 ? `${draft.length} points ready` : "Name it, or just save after 3 taps"}
-                    description="Tap Create zone, draw the area, then save. Pincodes are optional."
+                    meta={
+                      editingId
+                        ? "Editing an existing zone"
+                        : draft.length >= 3
+                          ? `${draft.length} points ready`
+                          : "Draw 3+ points, then save"
+                    }
+                    description="Coverage is the drawn shape (or a shop radius). Time is always km × minutes per km."
                   >
                     <ZoneCreateFields
                       name={name}
                       setName={setName}
                       pins={pins}
                       setPins={setPins}
+                      cities={cities}
+                      setCities={setCities}
                       fee={fee}
                       setFee={setFee}
                       draftLen={draft.length}
                       busy={busy}
-                      onSave={handleCreateZone}
+                      editing={Boolean(editingId)}
+                      onSave={handleSaveZone}
                     />
                   </AdminPanel>
 
@@ -496,8 +572,8 @@ export default function AdminDeliveryScreen({ navigation, route }) {
                 <AdminPanel
                   title="Create zone"
                   icon="add-circle-outline"
-                  meta={draft.length >= 3 ? `${draft.length} points ready` : "Save now, or draw on Map first"}
-                  description="Name the zone and save. Need a shape? Open Map, tap Create zone, draw 3+ points."
+                  meta={draft.length >= 3 ? `${draft.length} points ready` : "Draw on Map first"}
+                  description="Name the zone and save. Need a shape? Open Map, tap Create zone, add 3+ points."
                   action="Draw on map"
                   onAction={() => {
                     setMode("draw");
@@ -509,11 +585,14 @@ export default function AdminDeliveryScreen({ navigation, route }) {
                     setName={setName}
                     pins={pins}
                     setPins={setPins}
+                    cities={cities}
+                    setCities={setCities}
                     fee={fee}
                     setFee={setFee}
                     draftLen={draft.length}
                     busy={busy}
-                    onSave={handleCreateZone}
+                    editing={Boolean(editingId)}
+                    onSave={handleSaveZone}
                   />
                 </AdminPanel>
                 <AdminPanel
@@ -534,8 +613,10 @@ export default function AdminDeliveryScreen({ navigation, route }) {
                             {z.name}
                           </Text>
                           <Text style={[styles.rowMeta, { color: c.textMuted }]} numberOfLines={2}>
-                            {(z.postalCodes || []).slice(0, 6).join(", ")}
-                            {(z.postalCodes || []).length > 6 ? "…" : ""}
+                            {(z.polygon || []).length >= 3
+                              ? `${z.polygon.length} points`
+                              : "No shape"}
+                            {(z.postalCodes || []).length ? ` · ${(z.postalCodes || []).slice(0, 4).join(", ")}` : ""}
                           </Text>
                         </View>
                         <View style={styles.rowRight}>
@@ -546,6 +627,7 @@ export default function AdminDeliveryScreen({ navigation, route }) {
                             selected={z.isActive !== false}
                             onPress={() => handleToggleZone(z)}
                           />
+                          <PremiumChip label="Edit points" size="sm" onPress={() => startEditZone(z)} />
                           {(z.polygon || []).length >= 3 ? (
                             <PremiumChip label="Mapped" tone="green" size="sm" selected />
                           ) : (

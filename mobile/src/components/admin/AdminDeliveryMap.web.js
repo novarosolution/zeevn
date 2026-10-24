@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import L from "leaflet";
 import "../../styles/leafletWeb.css";
-import { Circle, CircleMarker, MapContainer, Marker, Polygon, Polyline, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { Circle, MapContainer, Marker, Polygon, Polyline, TileLayer, useMap, useMapEvents } from "react-leaflet";
 
 const FALLBACK = [23.2156, 72.6369];
 const MAP_H = 460;
@@ -39,6 +39,15 @@ function ClickCatch({ onClick, draw }) {
   return null;
 }
 
+function pointIcon(n) {
+  return L.divIcon({
+    className: "admin-zone-pt",
+    html: `<div style="width:22px;height:22px;border-radius:11px;background:#B8442F;color:#fff;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font:700 11px/1 system-ui,sans-serif">${n}</div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+  });
+}
+
 function shopIcon(selected) {
   const border = selected ? "#C9A227" : "#8A8478";
   const size = selected ? 36 : 28;
@@ -60,7 +69,9 @@ export default function AdminDeliveryMap({
   draft = [],
   hint = "",
   mode = "store",
+  editingId,
   onMapClick,
+  onRemovePoint,
 }) {
   const pins = stores.length ? stores : store ? [store] : [];
   const lat = Number(store?.latitude);
@@ -111,13 +122,20 @@ export default function AdminDeliveryMap({
           );
         })}
         {zones.map((z) => {
-          const ring = (z.polygon || []).map((p) => [p.lat, p.lng]);
+          const ring = (z.polygon || []).map((p) => [p.lat ?? p.latitude, p.lng ?? p.longitude]);
           if (ring.length < 3) return null;
+          const editing = editingId && String(z._id) === String(editingId);
           return (
             <Polygon
               key={String(z._id || z.name)}
               positions={ring}
-              pathOptions={{ color: "#244424", weight: 2, fillColor: "#5C6834", fillOpacity: 0.16, ...mute }}
+              pathOptions={{
+                color: editing ? "#B8442F" : "#244424",
+                weight: editing ? 3 : 2,
+                fillColor: editing ? "#B8442F" : "#5C6834",
+                fillOpacity: editing ? 0.08 : 0.16,
+                ...mute,
+              }}
               interactive={false}
             />
           );
@@ -133,12 +151,16 @@ export default function AdminDeliveryMap({
           />
         ) : null}
         {draftPos.map((pos, i) => (
-          <CircleMarker
+          <Marker
             key={`v-${i}`}
-            center={pos}
-            radius={7}
-            pathOptions={{ color: "#fff", weight: 2, fillColor: "#B8442F", fillOpacity: 1 }}
-            interactive={false}
+            position={pos}
+            icon={pointIcon(i + 1)}
+            eventHandlers={{
+              click: (e) => {
+                L.DomEvent.stopPropagation(e.originalEvent);
+                onRemovePoint?.(i);
+              },
+            }}
           />
         ))}
       </MapContainer>

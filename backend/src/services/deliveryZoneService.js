@@ -1,5 +1,6 @@
 const DeliveryZone = require("../models/DeliveryZone");
 const StoreSettings = require("../models/StoreSettings");
+const { cleanMapCoord } = require("../utils/shopLocation");
 const { distanceKm, pointInPolygon, minutesFromKm, formatMinutes, formatKm } = require("./deliveryGeo");
 
 function normalizePostalCode(raw) {
@@ -26,7 +27,7 @@ function feeForZone(zone, itemsTotal) {
 const DELIVERY_NOT_POSSIBLE = "Delivery is not possible to this area";
 
 function decorateQuote(quote, settings, km) {
-  const next = { ...quote, distanceKm: null, distanceLabel: "", etaLabel: "" };
+  const next = { ...quote, distanceKm: null, distanceLabel: "", etaLabel: "", etaMinutesMin: null, etaMinutesMax: null };
   if (Number.isFinite(km)) {
     next.distanceKm = Math.round(km * 10) / 10;
     next.distanceLabel = formatKm(km);
@@ -36,8 +37,6 @@ function decorateQuote(quote, settings, km) {
       next.etaMinutesMax = minutes;
       next.etaLabel = formatMinutes(minutes);
     }
-  } else if (quote.etaMinutesMin != null) {
-    next.etaLabel = formatMinutes(quote.etaMinutesMin);
   }
   return next;
 }
@@ -59,8 +58,8 @@ function quoteFromZone(zone, itemsTotal = 0) {
     serviceable: true,
     fee: feeForZone(zone, itemsTotal),
     freeAbove: Number(zone.freeAbove || 0),
-    etaMinutesMin: Number(zone.etaMinutesMin || 0),
-    etaMinutesMax: Number(zone.etaMinutesMax || 0),
+    etaMinutesMin: null,
+    etaMinutesMax: null,
     zoneId: String(zone._id),
     zoneName: zone.name || "",
     message: "",
@@ -116,61 +115,58 @@ async function findZoneForPoint(lat, lng) {
   return zones.find((z) => pointInPolygon(lat, lng, z.polygon)) || null;
 }
 
+function storePinFrom(store, settings) {
+  return {
+    storeId: store?._id ? String(store._id) : null,
+    storeName: store?.label || "",
+    storeLatitude: cleanMapCoord(store?.latitude),
+    storeLongitude: cleanMapCoord(store?.longitude),
+    minutesPerKm: Number(settings?.minutesPerKm) > 0 ? Number(settings.minutesPerKm) : 3,
+  };
+}
+
+/**
+ * With a real pin: covered = drawn polygon OR shop radius. City/pincode never override the map.
+ * Time is always km × minutesPerKm. Without a pin: pincode/city can still say yes/no, but no fake ETA.
+ */
 async function resolveDeliveryQuote({ postalCode, city, itemsTotal = 0, latitude, longitude } = {}) {
   const settings = await StoreSettings.get();
   const stores = StoreSettings.listStores(settings);
-  const lat = Number(latitude);
-  const lng = Number(longitude);
-  const hasPoint = Number.isFinite(lat) && Number.isFinite(lng);
+  const lat = cleanMapCoord(latitude);
+  const lng = cleanMapCoord(longitude);
+  const hasPoint = lat != null && lng != null;
 
-  let zone = hasPoint ? await findZoneForPoint(lat, lng) : null;
-  if (!zone) zone = await findZoneForAddress({ postalCode, city });
+  if (hasPoint) {
+    const zone = await findZoneForPoint(lat, lng);
+    let picked = pickCoveringStore(stores, lat, lng, false);
+    if (zone && !picked.store) picked = pickCoveringStore(stores, lat, lng, true);
+    const store = picked.store || stores[0];
+    const km = store ? distanceKm({ lat, lng }, store) : null;
+    const pin = storePinFrom(store, settings);
 
-  const picked = hasPoint ? pickCoveringStore(stores, lat, lng, Boolean(zone)) : { store: null, km: null };
-  const store = picked.store || stores[0];
-  const km = picked.km != null ? picked.km : hasPoint && store ? distanceKm({ lat, lng }, store) : null;
-
-  const storePin = {
-    storeId: store?._id ? String(store._id) : null,
-    storeName: store?.label || "",
-    storeLatitude: Number.isFinite(Number(store?.latitude)) ? Number(store.latitude) : null,
-    storeLongitude: Number.isFinite(Number(store?.longitude)) ? Number(store.longitude) : null,
-    minutesPerKm: Number(settings?.minutesPerKm) > 0 ? Number(settings.minutesPerKm) : 3,
-  };
-
-  if (zone) {
-    return decorateQuote(
-      { ...quoteFromZone(zone, itemsTotal), ...storePin },
-      settings,
-      km
-    );
+    if (zone) {
+      return decorateQuote({ ...quoteFromZone(zone, itemsTotal), ...pin }, settings, km);
+    }
+    if (picked.store) {
+      return decorateQuote(
+        {
+          serviceable: true,
+          fee: 0,
+          freeAbove: 0,
+          zoneId: null,
+          zoneName: picked.store.label || "Store area",
+          message: "",
+          ...pin,
+        },
+        settings,
+        picked.km
+      );
+    }
+    return decorateQuote({ ...quoteFromZone(null), ...pin }, settings, km);
   }
 
-  if (picked.store) {
-    return decorateQuote(
-      {
-        serviceable: true,
-        fee: 0,
-        freeAbove: 0,
-        etaMinutesMin: minutesFromKm(picked.km, settings.minutesPerKm),
-        etaMinutesMax: minutesFromKm(picked.km, settings.minutesPerKm),
-        zoneId: null,
-        zoneName: picked.store.label || "Store area",
-        ...storePin,
-        storeId: picked.store._id ? String(picked.store._id) : storePin.storeId,
-        storeName: picked.store.label || storePin.storeName,
-        message: "",
-      },
-      settings,
-      picked.km
-    );
-  }
-
-  return decorateQuote(
-    { ...quoteFromZone(null), ...storePin },
-    settings,
-    km
-  );
+  const zone = await findZoneForAddress({ postalCode, city });
+  return decorateQuote({ ...quoteFromZone(zone, itemsTotal), ...storePinFrom(stores[0], settings) }, settings, null);
 }
 
 /**
@@ -221,8 +217,8 @@ function sanitizeZoneBody(body = {}) {
     isActive: body.isActive === undefined ? true : Boolean(body.isActive),
     deliveryFee: Math.max(0, Number(body.deliveryFee ?? 0)),
     freeAbove: Math.max(0, Number(body.freeAbove ?? 1499)),
-    etaMinutesMin: Math.max(0, Number(body.etaMinutesMin ?? 60)),
-    etaMinutesMax: Math.max(0, Number(body.etaMinutesMax ?? 180)),
+    etaMinutesMin: 0,
+    etaMinutesMax: 0,
     partnerIds,
   };
 }

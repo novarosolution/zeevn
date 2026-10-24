@@ -70,22 +70,17 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
         style={({ pressed }) => [
           styles.sideLink,
           row && styles.sideLinkRow,
-          on && {
-            backgroundColor: palette.linkOnBg,
-            borderWidth: 1,
-            borderColor: palette.linkOnBorder,
-          },
+          on && { backgroundColor: palette.linkOnBg },
           pressed && styles.sideLinkPressed,
         ]}
         accessibilityRole="button"
         accessibilityState={{ selected: on }}
       >
         <AdminNavIcon
-          imageKey={link.image}
           icon={link.icon}
-          tone={link.tone}
-          size={row ? 32 : 38}
-          compact={row}
+          size={row ? 28 : 32}
+          compact
+          onInk
           active={on}
         />
         <View style={styles.sideLinkCopy}>
@@ -105,10 +100,14 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
   const sidebarContent = showSidebar ? (
     <View style={[styles.side, { backgroundColor: palette.sideBg }]}>
       <View style={styles.brandRow}>
-        <View style={styles.brandDot} />
-        <Text style={[styles.brand, { color: palette.brand }]}>Zeevan</Text>
+        <View style={styles.brandMark}>
+          <Text style={styles.brandMarkText}>Z</Text>
+        </View>
+        <View style={styles.brandCopy}>
+          <Text style={[styles.brand, { color: palette.brand }]}>Zeevan</Text>
+          <Text style={styles.badge}>Admin</Text>
+        </View>
       </View>
-      <Text style={styles.badge}>ADMIN CONSOLE</Text>
       <ScrollView
         style={styles.sideScroll}
         contentContainerStyle={styles.sideScrollInner}
@@ -244,9 +243,9 @@ const styles = StyleSheet.create({
   },
   shellStack: { flexDirection: "column" },
   side: {
-    width: Platform.select({ web: 268, default: 224 }),
-    paddingVertical: 22,
-    paddingHorizontal: 14,
+    width: Platform.select({ web: 248, default: 224 }),
+    paddingVertical: 20,
+    paddingHorizontal: 12,
     flexDirection: "column",
     minHeight: Platform.OS === "web" ? "100vh" : undefined,
     ...Platform.select({
@@ -265,15 +264,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    paddingVertical: 11,
+    paddingVertical: 10,
     paddingHorizontal: 12,
-    marginBottom: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(232,200,90,0.32)",
-    backgroundColor: "rgba(232,200,90,0.1)",
+    marginBottom: 8,
+    borderRadius: 10,
     ...Platform.select({
-      web: { cursor: "pointer", transition: "background-color 0.12s ease" },
+      web: { cursor: "pointer", transition: "background-color 100ms ease-out" },
       default: {},
     }),
   },
@@ -312,41 +308,47 @@ const styles = StyleSheet.create({
   brandRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 9,
-    paddingHorizontal: 10,
-    marginBottom: 4,
+    gap: 10,
+    paddingHorizontal: 8,
+    marginBottom: 18,
   },
-  brandDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: KANKREG_PALETTE.goldBright,
-    ...Platform.select({
-      web: { boxShadow: "0 0 0 3px rgba(232,200,90,0.18)" },
-      default: {},
-    }),
+  brandMark: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: KANKREG_PALETTE.gold,
+    alignItems: "center",
+    justifyContent: "center",
   },
+  brandMarkText: {
+    fontFamily: FONT_HEADING,
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#141810",
+    letterSpacing: -0.4,
+  },
+  brandCopy: { minWidth: 0 },
   brand: {
     fontFamily: FONT_HEADING,
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "600",
-    letterSpacing: -0.3,
+    letterSpacing: -0.35,
+    lineHeight: 20,
   },
   badge: {
-    fontSize: 9,
-    letterSpacing: 2.4,
-    color: KANKREG_PALETTE.goldBright,
-    paddingHorizontal: 10,
-    marginBottom: 20,
-    fontFamily: fonts.bold,
+    fontSize: 11,
+    letterSpacing: 0.2,
+    color: "rgba(246, 241, 228, 0.42)",
+    fontFamily: fonts.medium,
+    marginTop: 1,
   },
   grp: {
-    fontSize: 9,
-    letterSpacing: 1.7,
+    fontSize: 10,
+    letterSpacing: 0.8,
     textTransform: "uppercase",
     paddingHorizontal: 12,
-    paddingTop: 16,
-    paddingBottom: 7,
+    paddingTop: 14,
+    paddingBottom: 6,
     fontFamily: fonts.semibold,
   },
   brandRowLabel: {
@@ -360,11 +362,11 @@ const styles = StyleSheet.create({
   sideLink: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 11,
-    paddingVertical: 8,
+    gap: 10,
+    paddingVertical: 7,
     paddingHorizontal: 10,
-    borderRadius: 14,
-    marginVertical: 2,
+    borderRadius: 11,
+    marginVertical: 1,
     ...Platform.select({
       web: { cursor: "pointer", transition: "transform 100ms ease-out, background-color 100ms ease-out" },
       default: {},
@@ -384,7 +386,7 @@ const styles = StyleSheet.create({
   sideLinkHint: {
     marginTop: 1,
     fontSize: 10,
-    color: "#8a8074",
+    color: "rgba(246, 241, 228, 0.34)",
     fontFamily: fonts.regular,
   },
   me: {
@@ -425,7 +427,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: adminShellMainPadding(),
     paddingTop: spacing.md + 2,
     paddingBottom: spacing.xl + 8,
-    maxWidth: 1320,
     width: "100%",
     alignSelf: "stretch",
   },

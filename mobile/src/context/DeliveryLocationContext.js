@@ -15,12 +15,17 @@ import { formatDeliveryLocationLabel, formatSavedAddressLabel } from "../utils/d
 
 const DETECT_COOLDOWN_MS = 90 * 1000;
 
+function validCoord(n) {
+  const v = Number(n);
+  return Number.isFinite(v) && Math.abs(v) > 0.2;
+}
+
 function coordsFrom(snippet, address) {
-  const lat = Number(snippet?.latitude ?? snippet?.lat ?? address?.latitude);
-  const lng = Number(snippet?.longitude ?? snippet?.lng ?? address?.longitude);
+  const lat = snippet?.latitude ?? snippet?.lat ?? address?.latitude;
+  const lng = snippet?.longitude ?? snippet?.lng ?? address?.longitude;
   return {
-    latitude: Number.isFinite(lat) ? lat : undefined,
-    longitude: Number.isFinite(lng) ? lng : undefined,
+    latitude: validCoord(lat) ? Number(lat) : undefined,
+    longitude: validCoord(lng) ? Number(lng) : undefined,
     postalCode: address?.postalCode || snippet?.postalCode || "",
     city: snippet?.city || address?.city || "",
   };
@@ -69,7 +74,7 @@ export function DeliveryLocationProvider({ children }) {
         loadDeliveryConfirmedAt(),
       ]);
       if (cancelled) return;
-      if (cached && (cached.label || Number.isFinite(Number(cached.latitude)))) {
+      if (cached && (cached.label || validCoord(cached.latitude ?? cached.lat))) {
         snippetRef.current = cached;
         setSnippet(cached);
       }
@@ -85,9 +90,7 @@ export function DeliveryLocationProvider({ children }) {
     if (!bootstrapped || snippetRef.current) return;
     const addr = user?.defaultAddress;
     if (!addr) return;
-    const lat = Number(addr.latitude);
-    const lng = Number(addr.longitude);
-    if (!Number.isFinite(lat) && !addr.city && !addr.postalCode) return;
+    if (!validCoord(addr.latitude) && !addr.city && !addr.postalCode) return;
     const next = {
       ...addr,
       label: formatSavedAddressLabel(addr) || addr.city || "Saved address",
@@ -103,7 +106,7 @@ export function DeliveryLocationProvider({ children }) {
 
       const now = Date.now();
       const cached = snippetRef.current;
-      if (!force && Number.isFinite(Number(cached?.latitude)) && now - lastDetectAtRef.current < DETECT_COOLDOWN_MS) {
+      if (!force && validCoord(cached?.latitude) && now - lastDetectAtRef.current < DETECT_COOLDOWN_MS) {
         return cached;
       }
 
@@ -135,13 +138,15 @@ export function DeliveryLocationProvider({ children }) {
   );
 
   useEffect(() => {
-    if (!bootstrapped || askedDetectRef.current || Platform.OS === "web") return;
-    if (Number.isFinite(Number(snippetRef.current?.latitude ?? snippetRef.current?.lat))) return;
+    if (!bootstrapped || Platform.OS === "web") return;
+    if (validCoord(snippetRef.current?.latitude ?? snippetRef.current?.lat)) return;
+    if (askedDetectRef.current) return;
     askedDetectRef.current = true;
     detect();
   }, [bootstrapped, detect, snippet, user?.defaultAddress]);
 
   useEffect(() => {
+    if (!bootstrapped) return undefined;
     const point = coordsFrom(snippet, user?.defaultAddress);
     if (point.latitude == null && !point.postalCode && !point.city) {
       setQuote(null);
@@ -158,12 +163,12 @@ export function DeliveryLocationProvider({ children }) {
     return () => {
       cancelled = true;
     };
-  }, [snippet, user?.defaultAddress]);
+  }, [bootstrapped, snippet, user?.defaultAddress]);
 
   const confirmLocation = useCallback(async (nextSnippet) => {
     const payload = nextSnippet || snippetRef.current;
     const now = Date.now();
-    if (payload?.label || Number.isFinite(Number(payload?.latitude))) {
+    if (payload?.label || validCoord(payload?.latitude)) {
       snippetRef.current = payload;
       setSnippet(payload);
       await saveCachedDeliverySnippet(payload);

@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Pressable, StyleSheet, Text } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { formatOrderPublicRef } from "../../content/appContent";
 import { getAdminChrome } from "../../theme/adminLayout";
@@ -14,6 +14,7 @@ import {
 } from "../../utils/orderStatus";
 import AdminStatusPill, { orderStatusTone } from "./AdminStatusPill";
 import AdminProductCell from "./AdminProductCell";
+import AdminQtyStepper from "./AdminQtyStepper";
 
 function AdminTableAction({ label, onPress, decorative = false }) {
   const { colors: c, isDark } = useTheme();
@@ -39,7 +40,7 @@ function AdminTableAction({ label, onPress, decorative = false }) {
 function createLinkStyles(chrome) {
   return StyleSheet.create({
     link: {
-      color: chrome.goldBright,
+      color: chrome.goldDeep,
       fontFamily: fonts.semibold,
       fontSize: 12.5,
     },
@@ -175,7 +176,16 @@ export function buildProductTableColumns({ onEdit, rowPressable = false }) {
   ];
 }
 
-export function buildInventoryTableColumns({ onEdit, rowPressable = false }) {
+export function buildInventoryTableColumns({
+  onEdit,
+  onDelta,
+  onApplyQty,
+  onToggle,
+  onDraft,
+  draftQty = {},
+  busyId,
+  rowPressable = false,
+}) {
   return [
     {
       key: "name",
@@ -183,31 +193,54 @@ export function buildInventoryTableColumns({ onEdit, rowPressable = false }) {
       flex: 1.5,
       render: (row) => <AdminProductCell name={row.name} imageUri={row.image} />,
     },
-    { key: "sku", label: "SKU", flex: 0.8, render: (row) => row.sku || "—" },
+    { key: "sku", label: "SKU", flex: 0.7, render: (row) => row.sku || "—" },
     {
-      key: "stock",
-      label: "Stock",
-      width: 72,
-      strong: true,
-      render: (row) => String(Math.max(0, Number(row.stockQty) || 0)),
+      key: "qty",
+      label: "Qty",
+      width: 140,
+      render: (row) => {
+        const dval =
+          draftQty[row._id] !== undefined
+            ? draftQty[row._id]
+            : String(Math.max(0, Number(row.stockQty) || 0));
+        return (
+          <AdminQtyStepper
+            value={dval}
+            busy={busyId === row._id}
+            onMinus={() => onDelta?.(row, -1)}
+            onPlus={() => onDelta?.(row, 1)}
+            onChange={(t) => onDraft?.(row, t)}
+            onCommit={() => onApplyQty?.(row)}
+          />
+        );
+      },
+    },
+    {
+      key: "avail",
+      label: "Sell",
+      width: 64,
+      render: (row) => (
+        <AdminTableAction
+          label={row.inStock === false ? "Off" : "On"}
+          onPress={() => onToggle?.(row, row.inStock === false)}
+        />
+      ),
     },
     {
       key: "status",
       label: "Status",
-      flex: 0.8,
+      flex: 0.7,
       render: (row) => {
         if (row.isPublished === false) {
-          return <AdminStatusPill label="Unpublished" tone="low" />;
+          return <AdminStatusPill label="Draft" tone="low" />;
         }
         if (row.comingSoon === true) {
-          return <AdminStatusPill label="Coming soon" tone="soon" />;
+          return <AdminStatusPill label="Soon" tone="soon" />;
         }
         const q = Math.max(0, Number(row.stockQty) || 0);
         const out = row.inStock === false || q < 1;
         const low = !out && q <= 5;
-        const label = out ? "Out" : low ? "Low stock" : "In stock";
-        const tone = out ? "low" : low ? "pend" : "ok";
-        return <AdminStatusPill label={label} tone={tone} />;
+        return <AdminStatusPill label={out ? "Out" : low ? "Low" : "In"} tone={out ? "low" : low ? "pend" : "ok"} />;
       },
     },
     {
@@ -219,6 +252,59 @@ export function buildInventoryTableColumns({ onEdit, rowPressable = false }) {
         onEdit ? (
           <AdminTableAction label="Edit" onPress={() => onEdit(row)} decorative={rowPressable} />
         ) : null,
+    },
+  ];
+}
+
+export function buildUserTableColumns({ onToggleAdmin, onToggleRider, onOrders, onDelete, busyId }) {
+  return [
+    {
+      key: "name",
+      label: "Person",
+      flex: 1.2,
+      strong: true,
+      render: (row) => row.name || "Unnamed",
+    },
+    { key: "email", label: "Email", flex: 1.3, render: (row) => row.email || "—" },
+    {
+      key: "role",
+      label: "Role",
+      flex: 0.9,
+      render: (row) => {
+        const bits = [row.isAdmin ? "Admin" : "Customer"];
+        if (row.isDeliveryPartner) bits.push("Rider");
+        return bits.join(" · ");
+      },
+    },
+    {
+      key: "joined",
+      label: "Joined",
+      flex: 0.7,
+      render: (row) =>
+        row.createdAt ? new Date(row.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "—",
+    },
+    {
+      key: "actions",
+      label: "",
+      flex: 1.4,
+      align: "right",
+      render: (row) => {
+        const busy = busyId === row._id;
+        return (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "flex-end" }}>
+            <AdminTableAction
+              label={row.isDeliveryPartner ? "Unride" : "Rider"}
+              onPress={() => !busy && onToggleRider?.(row)}
+            />
+            <AdminTableAction
+              label={row.isAdmin ? "Customer" : "Admin"}
+              onPress={() => !busy && onToggleAdmin?.(row)}
+            />
+            <AdminTableAction label="Orders" onPress={() => onOrders?.(row)} />
+            <AdminTableAction label="Delete" onPress={() => !busy && onDelete?.(row)} />
+          </View>
+        );
+      },
     },
   ];
 }

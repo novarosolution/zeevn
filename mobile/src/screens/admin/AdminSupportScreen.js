@@ -155,7 +155,7 @@ export default function AdminSupportScreen({ navigation, route }) {
               title="Conversations"
               icon="chatbubbles-outline"
               meta={`${(threads || []).length} threads`}
-              description="Select a thread to read and reply on the right."
+              description="Pick a thread, then reply."
             >
               {(threads || []).length === 0 ? (
                 <PremiumEmptyState
@@ -171,8 +171,10 @@ export default function AdminSupportScreen({ navigation, route }) {
                     padding="md"
                     interactive
                     onPress={() => setSelectedThreadId(thread._id)}
-                    goldAccent={selectedThreadId === thread._id}
-                    style={styles.threadCard}
+                    style={[
+                      styles.threadCard,
+                      selectedThreadId === thread._id ? styles.threadCardOn : null,
+                    ]}
                     accessibilityLabel={`Open conversation with ${thread.user?.name || "user"}`}
                   >
                     <Text style={[styles.threadTitle, { color: c.textPrimary }]}>{thread.user?.name || "User"}</Text>
@@ -289,6 +291,10 @@ function createAdminSupportStyles(c, shadowPremium) {
     threadCard: {
       marginBottom: spacing.sm,
       borderRadius: 14,
+    },
+    threadCardOn: {
+      borderWidth: 1,
+      borderColor: c.primaryBorder || c.primary,
     },
     threadTitle: {
       fontSize: 14,

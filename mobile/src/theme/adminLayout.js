@@ -1,11 +1,14 @@
 import { useMemo } from "react";
 import { Platform, StyleSheet } from "react-native";
 import { useTheme } from "../context/ThemeContext";
-import { ALCHEMY } from "./customerAlchemy";
 import { KANKREG_PALETTE } from "./kankregWeb";
 import { useKankregLayout } from "./kankregBreakpoints";
 import { shadowStyleForPlatform } from "./shadowPlatform";
-import { darkColors, getSemanticColors, layout, semanticRadius, spacing } from "./tokens";
+import { darkColors, getSemanticColors, semanticRadius, spacing } from "./tokens";
+
+/** Ivory desk + forest sidebar. Gold is brand only — not a chrome color. */
+const CANVAS = "#F3EEE3";
+const SIDEBAR = "#141810";
 
 /** Shared admin light/dark chrome — use in AdminTopBar, tables, KPI cards, etc. */
 export function getAdminChrome(c, isDark) {
@@ -14,38 +17,38 @@ export function getAdminChrome(c, isDark) {
     ink: c.textPrimary,
     inkSoft: c.textSecondary,
     inkFaint: c.textMuted,
-    card: isDark ? c.surface : ALCHEMY.cardBg,
-    paper: isDark ? c.surfaceMuted : "#FFFFFF",
-    canvas: isDark ? c.background : "#FFFFFF",
-    line: isDark ? c.border : ALCHEMY.line,
-    lineSoft: isDark ? semantic.border.subtle : "rgba(0, 0, 0, 0.06)",
-    topBarBg: isDark ? "rgba(24, 21, 19, 0.72)" : "rgba(255, 252, 247, 0.72)",
-    sidebarBg: isDark ? c.surfaceElevated : KANKREG_PALETTE.ink,
-    mainBg: isDark ? c.background : "#FFFFFF",
-    shellBg: isDark ? c.surface : "#FFFFFF",
-    shellBorder: isDark ? c.border : KANKREG_PALETTE.line,
-    linkMuted: isDark ? c.textMuted : "#bcb1a3",
-    linkOnBg: isDark ? "rgba(52, 211, 153, 0.14)" : "rgba(42, 117, 89, 0.16)",
-    linkOnBorder: isDark ? "rgba(52, 211, 153, 0.38)" : "rgba(42, 117, 89, 0.35)",
-    chipOnBg: isDark ? "rgba(52, 211, 153, 0.14)" : "rgba(42, 117, 89, 0.14)",
-    chipOnBorder: isDark ? "rgba(52, 211, 153, 0.38)" : "rgba(42, 117, 89, 0.35)",
-    tabOnBg: isDark ? c.primarySoft : KANKREG_PALETTE.ink,
-    tabOnBorder: isDark ? c.primaryBorder : KANKREG_PALETTE.ink,
-    tabOnText: isDark ? c.primaryBright : KANKREG_PALETTE.paper,
-    rowHover: isDark ? c.surfaceMuted : KANKREG_PALETTE.paper,
+    card: isDark ? c.surface : "#FFFFFF",
+    paper: isDark ? c.surfaceMuted : "#F8F4EA",
+    canvas: isDark ? c.background : CANVAS,
+    line: isDark ? c.border : "rgba(31, 51, 31, 0.1)",
+    lineSoft: isDark ? semantic.border.subtle : "rgba(31, 51, 31, 0.06)",
+    topBarBg: isDark ? "rgba(20, 24, 16, 0.72)" : "rgba(243, 238, 227, 0.78)",
+    sidebarBg: isDark ? c.surfaceElevated : SIDEBAR,
+    mainBg: isDark ? c.background : CANVAS,
+    shellBg: isDark ? c.surface : CANVAS,
+    shellBorder: isDark ? c.border : "rgba(31, 51, 31, 0.08)",
+    linkMuted: isDark ? c.textMuted : "rgba(246, 241, 228, 0.62)",
+    linkOnBg: isDark ? "rgba(220, 172, 116, 0.14)" : "rgba(246, 241, 228, 0.14)",
+    linkOnBorder: isDark ? "rgba(220, 172, 116, 0.28)" : "transparent",
+    chipOnBg: isDark ? "rgba(220, 172, 116, 0.14)" : "rgba(31, 51, 31, 0.06)",
+    chipOnBorder: isDark ? "rgba(220, 172, 116, 0.28)" : "rgba(31, 51, 31, 0.08)",
+    tabOnBg: isDark ? c.primarySoft : KANKREG_PALETTE.greenDeep,
+    tabOnBorder: isDark ? c.primaryBorder : KANKREG_PALETTE.greenDeep,
+    tabOnText: isDark ? c.primaryBright : "#F6F1E6",
+    rowHover: isDark ? c.surfaceMuted : "rgba(31, 51, 31, 0.035)",
     gold: c.primary,
     goldBright: c.primaryBright,
     goldDeep: isDark ? c.primaryDark : KANKREG_PALETTE.goldDeep,
     danger: c.danger,
     green: c.success,
-    meBorder: isDark ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.08)",
-    meName: isDark ? c.textPrimary : KANKREG_PALETTE.paper,
-    meEmail: isDark ? c.textMuted : "#bcb1a3",
-    brand: isDark ? c.primaryBright : KANKREG_PALETTE.paper,
-    groupLabel: isDark ? c.textMuted : "#6f6557",
+    meBorder: "rgba(255,255,255,0.08)",
+    meName: isDark ? c.textPrimary : "#F6F1E6",
+    meEmail: isDark ? c.textMuted : "rgba(246, 241, 228, 0.48)",
+    brand: isDark ? c.primaryBright : "#F6F1E6",
+    groupLabel: isDark ? c.textMuted : "rgba(246, 241, 228, 0.38)",
     shellShadow: isDark
       ? "0 1px 2px rgba(0,0,0,.35), 0 24px 56px -28px rgba(0,0,0,.6)"
-      : "0 1px 2px rgba(25,20,15,.05), 0 28px 64px -28px rgba(25,20,15,.28)",
+      : "0 1px 2px rgba(25,20,15,.04), 0 20px 48px -28px rgba(25,20,15,.16)",
   };
 }
 
@@ -155,14 +158,12 @@ export function adminPanel(c, shadowPremium, isDark) {
   const dark = typeof isDark === "boolean" ? isDark : themeIsDark(c);
   const semantic = getSemanticColors(c);
   const base = {
-    backgroundColor: dark ? semantic.bg.surface : "#fffcf7",
+    backgroundColor: dark ? semantic.bg.surface : "#FFFFFF",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: dark ? semantic.border.subtle : "rgba(25,20,15,0.08)",
-    borderRadius: Platform.select({ web: 20, default: semanticRadius.panel }),
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: dark ? semantic.border.subtle : "rgba(25,20,15,0.08)",
+    borderColor: dark ? semantic.border.subtle : "rgba(31, 51, 31, 0.08)",
+    borderRadius: Platform.select({ web: 18, default: semanticRadius.panel }),
     padding: Platform.select({
-      web: spacing.md + 10,
+      web: spacing.md + 8,
       default: spacing.md + 2,
     }),
     marginBottom: Platform.select({ web: spacing.md, default: 0 }),
@@ -172,15 +173,12 @@ export function adminPanel(c, shadowPremium, isDark) {
     return base;
   }
   const softShadow = dark
-    ? "0 1px 2px rgba(0,0,0,.28), 0 18px 40px -28px rgba(0,0,0,.55)"
-    : "0 1px 2px rgba(25,20,15,.04), 0 16px 36px -24px rgba(25,20,15,.18)";
-  const inset = dark
-    ? "inset 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.04)"
-    : "inset 0 0 0 1px rgba(255,253,249,0.85), inset 0 1px 0 rgba(255,255,255,0.95)";
+    ? "0 1px 2px rgba(0,0,0,.28), 0 16px 36px -28px rgba(0,0,0,.5)"
+    : "0 1px 1px rgba(31,51,31,.04), 0 14px 32px -22px rgba(31,51,31,.14)";
   return {
     ...base,
-    boxShadow: `${softShadow}, ${inset}`,
-    transition: "box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease",
+    boxShadow: softShadow,
+    transition: "box-shadow 160ms ease-out, border-color 160ms ease-out",
   };
 }
 
@@ -192,27 +190,25 @@ export function adminModuleSection(isDark, c) {
   const semantic = getSemanticColors(c);
   return {
     marginBottom: spacing.lg,
-    borderRadius: semanticRadius.card,
-    padding: spacing.md + 6,
-    paddingTop: spacing.sm,
-    backgroundColor: isDark ? semantic.bg.muted : ALCHEMY.creamAlt,
+    borderRadius: 16,
+    padding: spacing.md + 4,
+    paddingTop: spacing.sm + 4,
+    backgroundColor: isDark ? semantic.bg.muted : "#FFFFFF",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: isDark ? semantic.border.subtle : ALCHEMY.pillInactive,
-    borderLeftWidth: 3,
-    borderLeftColor: c.primary,
+    borderColor: isDark ? semantic.border.subtle : "rgba(31, 51, 31, 0.08)",
     ...Platform.select({
       ios: {
-        shadowColor: isDark ? "#000" : "#3D2A12",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: isDark ? 0.22 : 0.06,
-        shadowRadius: 10,
+        shadowColor: isDark ? "#000" : "#1F331F",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: isDark ? 0.18 : 0.04,
+        shadowRadius: 8,
       },
       android: { elevation: isDark ? 2 : 1 },
       web: {
         boxShadow: isDark
-          ? "0 14px 36px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.05)"
-          : "0 14px 36px rgba(22, 69, 51, 0.09), 0 4px 12px rgba(28, 25, 23, 0.045), inset 0 1px 0 rgba(255,253,251,0.88), inset 0 0 0 1px rgba(255,253,249,0.5)",
-        transition: "box-shadow 0.18s ease, border-color 0.18s ease, transform 0.18s ease",
+          ? "0 1px 2px rgba(0,0,0,.28), 0 14px 32px -24px rgba(0,0,0,.5)"
+          : "0 1px 1px rgba(31,51,31,.04), 0 12px 28px -20px rgba(31,51,31,.12)",
+        transition: "box-shadow 160ms ease-out, border-color 160ms ease-out",
       },
       default: {},
     }),

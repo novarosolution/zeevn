@@ -5,8 +5,6 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TextInput,
-  TouchableOpacity,
   View} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,11 +14,13 @@ import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminProducts, patchAdminProductStock } from "../../services/adminService";
-import { adminModuleSection, useAdminCompactLayout } from "../../theme/adminLayout";
+import { useAdminCompactLayout } from "../../theme/adminLayout";
 import AdminKpiCard, { AdminKpiGrid } from "../../components/admin/AdminKpiCard";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import AdminPanel from "../../components/admin/AdminPanel";
+import AdminToolbar, { AdminToolbarSlot } from "../../components/admin/AdminToolbar";
+import AdminQtyStepper from "../../components/admin/AdminQtyStepper";
 import { buildInventoryTableColumns } from "../../components/admin/adminTableColumns";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
@@ -196,6 +196,15 @@ export default function AdminInventoryScreen({ navigation, route }) {
         route={route}
         title={ADMIN_SCREEN_COPY.inventory.title}
         subtitle={ADMIN_SCREEN_COPY.inventory.subtitle}
+        headerRight={
+          <PremiumButton
+            label="Refresh"
+            variant="ghost"
+            size="sm"
+            iconLeft="refresh-outline"
+            onPress={() => load({ silent: false })}
+          />
+        }
       >
       <FlatList
         data={compact ? visible : []}
@@ -229,16 +238,14 @@ export default function AdminInventoryScreen({ navigation, route }) {
                 />
               </AdminKpiGrid>
             </AdminPanel>
-            <AdminFilterTabs
-              value={filter}
-              onChange={setFilter}
-              items={FILTERS.map((f) => ({ key: f.id, label: f.label }))}
-              style={{ marginVertical: spacing.sm }}
-            />
-
-            <View style={[adminModuleSection(isDark, c), styles.filterShell]}>
-              <View style={styles.searchRow}>
-                <View style={styles.searchInputFlex}>
+            <AdminPanel title="Find stock" icon="search-outline" meta={`${visible.length} of ${products.length}`}>
+              <AdminFilterTabs
+                value={filter}
+                onChange={setFilter}
+                items={FILTERS.map((f) => ({ key: f.id, label: f.label }))}
+              />
+              <AdminToolbar>
+                <AdminToolbarSlot flex>
                   <PremiumInput
                     label="Search name or SKU"
                     value={search}
@@ -247,18 +254,11 @@ export default function AdminInventoryScreen({ navigation, route }) {
                     iconRight={search ? "close-circle" : undefined}
                     onIconRightPress={search ? () => setSearch("") : undefined}
                     autoCapitalize="none"
+                    tone="warm"
                   />
-                </View>
-                <PremiumButton
-                  label="Refresh"
-                  iconLeft="refresh-outline"
-                  variant="secondary"
-                  size="sm"
-                  onPress={() => load({ silent: false })}
-                  accessibilityLabel="Refresh inventory"
-                />
-              </View>
-            </View>
+                </AdminToolbarSlot>
+              </AdminToolbar>
+            </AdminPanel>
 
             {error ? (
               <View style={styles.bannerSpacer}>
@@ -271,17 +271,25 @@ export default function AdminInventoryScreen({ navigation, route }) {
                 <PremiumLoader size="sm" caption="Loading inventory…" inline />
               </View>
             ) : null}
-            <Text style={styles.listCount}>
-              {visible.length} of {products.length} products
-            </Text>
-
             {!compact && visible.length > 0 ? (
-              <AdminPanel noPadding style={{ marginBottom: spacing.md }}>
+              <AdminPanel
+                noPadding
+                title="Adjust qty"
+                icon="layers-outline"
+                description="Plus or minus updates stock immediately."
+                style={{ marginBottom: spacing.md }}
+              >
                 <AdminDataTable
-                  rows={visible.slice(0, 50)}
+                  rows={visible.slice(0, 80)}
                   keyExtractor={(row) => row._id}
                   columns={buildInventoryTableColumns({
                     onEdit: (row) => navigation.navigate("AdminAddProduct", { product: row }),
+                    onDelta,
+                    onApplyQty,
+                    onToggle,
+                    onDraft: (row, t) => setDraftQty((o) => ({ ...o, [row._id]: t })),
+                    draftQty,
+                    busyId,
                   })}
                 />
               </AdminPanel>
@@ -328,31 +336,14 @@ export default function AdminInventoryScreen({ navigation, route }) {
               </View>
 
               <View style={styles.qtyRow}>
-                <View style={styles.stepper}>
-                  <TouchableOpacity
-                    style={styles.stepBtn}
-                    onPress={() => onDelta(p, -1)}
-                    disabled={busy}
-                    accessibilityLabel="Decrease stock"
-                  >
-                    <Ionicons name="remove" size={20} color={c.textPrimary} />
-                  </TouchableOpacity>
-                  <TextInput
-                    style={[
-                      styles.qtyField,
-                      { color: c.textPrimary, borderColor: c.border, backgroundColor: c.surface },
-                    ]}
-                    value={dval}
-                    keyboardType="number-pad"
-                    editable={!busy}
-                    onChangeText={(t) => setDraftQty((o) => ({ ...o, [p._id]: t }))}
-                    onSubmitEditing={() => onApplyQty(p)}
-                    onBlur={() => onApplyQty(p)}
-                  />
-                  <TouchableOpacity style={styles.stepBtn} onPress={() => onDelta(p, 1)} disabled={busy} accessibilityLabel="Increase stock">
-                    <Ionicons name="add" size={20} color={c.textPrimary} />
-                  </TouchableOpacity>
-                </View>
+                <AdminQtyStepper
+                  value={dval}
+                  busy={busy}
+                  onMinus={() => onDelta(p, -1)}
+                  onPlus={() => onDelta(p, 1)}
+                  onChange={(t) => setDraftQty((o) => ({ ...o, [p._id]: t }))}
+                  onCommit={() => onApplyQty(p)}
+                />
 
                 <View style={styles.switchBlock}>
                   <Text style={styles.switchLab}>Available</Text>

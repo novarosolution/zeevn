@@ -180,7 +180,7 @@ export default function AdminCouponsScreen({ navigation, route }) {
             title="Create coupon"
             icon="pricetag-outline"
             meta="Codes customers can apply"
-            description="Set type, value, limits, and visibility for checkout."
+            description="Code, value, and limits — then save."
           >
             <View style={styles.fieldGap}>
               <PremiumInput

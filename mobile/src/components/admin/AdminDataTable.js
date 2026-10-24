@@ -103,9 +103,9 @@ function createStyles(chrome, interactive) {
     tableMin: { minWidth: 640 },
     headRow: {
       flexDirection: "row",
-      borderBottomWidth: 1,
+      borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: chrome.line,
-      paddingVertical: 2,
+      paddingVertical: 0,
       backgroundColor: Platform.select({ web: chrome.paper, default: "transparent" }),
       ...Platform.select({
         web: {
@@ -145,12 +145,6 @@ function createStyles(chrome, interactive) {
       : {},
     trHover: {
       backgroundColor: chrome.rowHover,
-      ...Platform.select({
-        web: {
-          boxShadow: `inset 3px 0 0 ${chrome.goldBright || chrome.gold}`,
-        },
-        default: {},
-      }),
     },
     trPressed: {
       backgroundColor: chrome.rowHover,

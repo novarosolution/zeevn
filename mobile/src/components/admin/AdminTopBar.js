@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
-import { getAdminChrome } from "../../theme/adminLayout";
+import { adminShellMainPadding, getAdminChrome } from "../../theme/adminLayout";
 import { FONT_HEADING } from "../../theme/typographyRoles";
 import { fonts, spacing } from "../../theme/tokens";
 
@@ -63,13 +63,13 @@ export default function AdminTopBar({
 function createStyles(chrome) {
   return StyleSheet.create({
     bar: {
-      minHeight: Platform.select({ web: 68, default: 64 }),
+      minHeight: Platform.select({ web: 64, default: 64 }),
       borderBottomWidth: 0,
       flexDirection: "row",
       alignItems: "center",
       gap: 16,
-      paddingHorizontal: Platform.select({ web: 24, default: 26 }),
-      paddingVertical: Platform.select({ web: 14, default: 12 }),
+      paddingHorizontal: Platform.select({ web: adminShellMainPadding(), default: 26 }),
+      paddingVertical: Platform.select({ web: 16, default: 12 }),
       backgroundColor: chrome.topBarBg,
       flexWrap: "wrap",
       ...Platform.select({
@@ -77,9 +77,9 @@ function createStyles(chrome) {
           position: "sticky",
           top: 0,
           zIndex: 8,
-          backdropFilter: "blur(22px) saturate(180%)",
-          WebkitBackdropFilter: "blur(22px) saturate(180%)",
-          boxShadow: "0 1px 0 rgba(25,20,15,0.05), 0 18px 28px -22px rgba(25,20,15,0.22)",
+          backdropFilter: "blur(20px) saturate(160%)",
+          WebkitBackdropFilter: "blur(20px) saturate(160%)",
+          boxShadow: "0 1px 0 rgba(31,51,31,0.06)",
         },
         default: {},
       }),
@@ -98,9 +98,9 @@ function createStyles(chrome) {
     title: {
       fontFamily: FONT_HEADING,
       fontWeight: "500",
-      fontSize: Platform.select({ web: 28, default: 24 }),
-      letterSpacing: -0.55,
-      lineHeight: Platform.select({ web: 32, default: 28 }),
+      fontSize: Platform.select({ web: 26, default: 24 }),
+      letterSpacing: -0.6,
+      lineHeight: Platform.select({ web: 30, default: 28 }),
       color: chrome.ink,
     },
     sub: {
@@ -123,10 +123,10 @@ function createStyles(chrome) {
       marginLeft: "auto",
     },
     iconBtn: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      borderWidth: 1,
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: chrome.line,
       backgroundColor: chrome.card,
       alignItems: "center",

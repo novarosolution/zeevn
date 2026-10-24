@@ -247,45 +247,10 @@ export default function AdminDashboardScreen({ navigation, route }) {
             <View style={styles.desk}>
               <SectionReveal preset="fade-up">
                 <AdminPanel
-                  title="Needs attention"
-                  icon="alert-circle-outline"
-                  description="Stuck accepts and unassigned live runs surface here first."
-                  meta={attention.length ? `${attention.length} items` : "All clear"}
-                  action="All orders"
-                  onAction={() => navigation.navigate("AdminOrders")}
-                >
-                  {!attention.length ? (
-                    <Text style={[styles.muted, { color: c.textMuted }]}>
-                      No stuck accepts or unassigned live runs.
-                    </Text>
-                  ) : (
-                    attention.map((item) => (
-                      <PremiumButton
-                        key={String(item._id)}
-                        label={`${formatOrderPublicRef(item) || String(item._id).slice(-6)} · ${item.reason}`}
-                        variant="subtle"
-                        size="sm"
-                        fullWidth
-                        iconRight="chevron-forward-outline"
-                        onPress={() =>
-                          navigation.navigate("AdminOrderDetail", {
-                            orderId: String(item._id),
-                          })
-                        }
-                        style={styles.attentionBtn}
-                        textStyle={styles.attentionBtnText}
-                      />
-                    ))
-                  )}
-                </AdminPanel>
-              </SectionReveal>
-
-              <SectionReveal preset="fade-up" delay={40}>
-                <AdminPanel
                   title="Live ops"
                   icon="flash-outline"
-                  meta="Tap a tile to jump"
-                  description="Open runs, accepts, stock, and rider GPS — one tap into the desk."
+                  meta="Tap a tile"
+                  description="Open runs, accepts, stock, and riders — one tap."
                 >
                   <AdminKpiGrid compact={compact}>
                     <AdminKpiCard
@@ -326,12 +291,43 @@ export default function AdminDashboardScreen({ navigation, route }) {
                 </AdminPanel>
               </SectionReveal>
 
+              {attention.length ? (
+                <SectionReveal preset="fade-up" delay={30}>
+                  <AdminPanel
+                    title="Needs attention"
+                    icon="alert-circle-outline"
+                    description="Stuck accepts and unassigned live runs."
+                    meta={`${attention.length} items`}
+                    action="All orders"
+                    onAction={() => navigation.navigate("AdminOrders")}
+                  >
+                    {attention.map((item) => (
+                      <PremiumButton
+                        key={String(item._id)}
+                        label={`${formatOrderPublicRef(item) || String(item._id).slice(-6)} · ${item.reason}`}
+                        variant="subtle"
+                        size="sm"
+                        fullWidth
+                        iconRight="chevron-forward-outline"
+                        onPress={() =>
+                          navigation.navigate("AdminOrderDetail", {
+                            orderId: String(item._id),
+                          })
+                        }
+                        style={styles.attentionBtn}
+                        textStyle={styles.attentionBtnText}
+                      />
+                    ))}
+                  </AdminPanel>
+                </SectionReveal>
+              ) : null}
+
               <SectionReveal preset="fade-up" delay={60}>
                 <AdminPanel
                   title="Last 30 days"
                   icon="trending-up-outline"
                   meta="Store pulse"
-                  description="Revenue, orders, and cancel rate for the rolling month."
+                  description="Revenue, orders, and cancel rate."
                   action="Analytics"
                   onAction={() => navigation.navigate("AdminAnalytics")}
                 >

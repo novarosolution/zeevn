@@ -122,12 +122,12 @@ function createStyles(chrome, panelBase) {
       color: chrome.ink,
     },
     description: {
-      marginTop: 4,
-      fontSize: 12.5,
-      lineHeight: 17,
+      marginTop: 3,
+      fontSize: 13,
+      lineHeight: 18,
       color: chrome.inkFaint,
       fontFamily: fonts.regular,
-      maxWidth: 520,
+      maxWidth: 480,
     },
     metaPill: {
       paddingHorizontal: 9,

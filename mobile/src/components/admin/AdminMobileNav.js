@@ -42,10 +42,9 @@ export default function AdminMobileNav({ links, groups, current, onNavigate, onE
                   accessibilityLabel={link.hint ? `${link.label}. ${link.hint}` : link.label}
                 >
                   <AdminNavIcon
-                    imageKey={link.image}
                     icon={link.icon}
                     tone={link.tone}
-                    size={30}
+                    size={28}
                     compact
                     active={on}
                   />
@@ -109,8 +108,8 @@ function createStyles(chrome) {
       alignItems: "center",
       gap: 8,
       paddingHorizontal: 10,
-      paddingVertical: 6,
-      borderRadius: 14,
+      paddingVertical: 7,
+      borderRadius: 12,
       borderWidth: 1,
       borderColor: chrome.line,
       backgroundColor: chrome.card,

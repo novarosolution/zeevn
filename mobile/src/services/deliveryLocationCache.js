@@ -11,8 +11,12 @@ export async function loadCachedDeliverySnippet() {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!parsed || typeof parsed !== "object") return null;
+    const lat = Number(parsed.latitude ?? parsed.lat);
+    const lng = Number(parsed.longitude ?? parsed.lng);
+    const hasPoint = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) > 0.2 && Math.abs(lng) > 0.2;
     const updatedAt = Number(parsed.updatedAt || 0);
-    if (!updatedAt || Date.now() - updatedAt > CACHE_TTL_MS) return null;
+    const fresh = updatedAt && Date.now() - updatedAt <= CACHE_TTL_MS;
+    if (!fresh && !hasPoint) return null;
     return parsed;
   } catch {
     return null;

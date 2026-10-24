@@ -34,8 +34,23 @@ export function checkDeliveryServiceability({
   if (postalCode) q.set("postalCode", String(postalCode).trim());
   if (city) q.set("city", String(city).trim());
   if (itemsTotal != null) q.set("itemsTotal", String(Number(itemsTotal) || 0));
-  if (Number.isFinite(Number(latitude))) q.set("lat", String(latitude));
-  if (Number.isFinite(Number(longitude))) q.set("lng", String(longitude));
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+  if (Number.isFinite(lat) && Math.abs(lat) > 0.2) q.set("lat", String(lat));
+  if (Number.isFinite(lng) && Math.abs(lng) > 0.2) q.set("lng", String(lng));
   const qs = q.toString();
   return apiGet(`/delivery/check${qs ? `?${qs}` : ""}`, { auth: false });
+}
+
+export function etaFromQuote(quote) {
+  if (!quote || quote.serviceable === false) return "";
+  if (quote.etaLabel) return String(quote.etaLabel);
+  const min = Number(quote.etaMinutesMin);
+  if (!Number.isFinite(min) || min <= 0) return "";
+  const n = Math.max(1, Math.round(min));
+  if (n < 60) return `${n} minute${n === 1 ? "" : "s"}`;
+  const h = Math.floor(n / 60);
+  const m = n % 60;
+  if (!m) return h === 1 ? "1 hour" : `${h} hours`;
+  return `${h}h ${m}m`;
 }

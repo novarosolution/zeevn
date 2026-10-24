@@ -5,10 +5,7 @@ import { getAdminChrome } from "../../theme/adminLayout";
 import { FONT_PRICE } from "../../theme/typographyRoles";
 import { fonts } from "../../theme/tokens";
 
-/**
- * Ops metric tile. On web: equal 4-up grid, gold hairline, optional press.
- * Pass `tone="warn"` / `tone="hot"` when the number needs attention.
- */
+/** Ops metric tile. Use tone warn or hot when the number needs attention. */
 export default function AdminKpiCard({
   label,
   value,
@@ -47,11 +44,17 @@ export default function AdminKpiCard({
 
   return (
     <Wrapper {...wrapProps}>
-      <View style={[styles.accent, hot && styles.accentHot, tone === "warn" && styles.accentWarn]} />
       <Text style={styles.label} numberOfLines={1}>
         {label}
       </Text>
-      <Text style={[styles.value, hot && styles.valueHot]} numberOfLines={1}>
+      <Text
+        style={[
+          styles.value,
+          tone === "hot" && styles.valueHot,
+          tone === "warn" && styles.valueWarn,
+        ]}
+        numberOfLines={1}
+      >
         {value}
       </Text>
       {delta ? (
@@ -60,8 +63,6 @@ export default function AdminKpiCard({
             {deltaUp ? "▲" : "▼"} {delta}
           </Text>
         </View>
-      ) : onPress ? (
-        <Text style={styles.hint}>Open</Text>
       ) : null}
     </Wrapper>
   );
@@ -87,7 +88,7 @@ const stylesGrid = StyleSheet.create({
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 16,
+    gap: 12,
     marginBottom: 4,
   },
   gridCompact: {
@@ -95,32 +96,40 @@ const stylesGrid = StyleSheet.create({
     marginBottom: 2,
   },
   gridWeb: {
-    gap: 12,
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(168px, 1fr))",
+    gap: 10,
   },
-  grid2: {},
-  grid3: {},
+  grid2: Platform.select({
+    web: { gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },
+    default: {},
+  }),
+  grid3: Platform.select({
+    web: { gridTemplateColumns: "repeat(3, minmax(0, 1fr))" },
+    default: {},
+  }),
 });
 
 function createStyles(chrome) {
   return StyleSheet.create({
     card: {
       flexGrow: 1,
-      flexBasis: Platform.select({ web: "calc(25% - 9px)", default: "48%" }),
-      minWidth: Platform.select({ web: 150, default: 148 }),
-      maxWidth: Platform.select({ web: undefined, default: "48%" }),
-      backgroundColor: chrome.card,
-      borderWidth: 1,
+      flexBasis: Platform.select({ web: undefined, default: "48%" }),
+      width: Platform.select({ web: "100%", default: undefined }),
+      minWidth: Platform.select({ web: 0, default: 148 }),
+      maxWidth: Platform.select({ web: "100%", default: "48%" }),
+      backgroundColor: chrome.paper,
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: chrome.line,
-      borderRadius: Platform.select({ web: 16, default: 14 }),
-      paddingTop: Platform.select({ web: 16, default: 18 }),
+      borderRadius: Platform.select({ web: 14, default: 14 }),
+      paddingTop: Platform.select({ web: 14, default: 18 }),
       paddingBottom: Platform.select({ web: 14, default: 18 }),
-      paddingHorizontal: Platform.select({ web: 16, default: 18 }),
+      paddingHorizontal: Platform.select({ web: 14, default: 18 }),
       overflow: "hidden",
       position: "relative",
       ...Platform.select({
         web: {
-          boxShadow: "0 1px 2px rgba(25,20,15,.04), 0 10px 28px -18px rgba(25,20,15,.14)",
-          transition: "transform 100ms ease-out",
+          transition: "transform 100ms ease-out, background-color 100ms ease-out",
         },
         default: {},
       }),
@@ -131,21 +140,21 @@ function createStyles(chrome) {
     }),
     cardHot: {
       borderColor: Platform.select({
-        web: "rgba(185, 28, 28, 0.28)",
-        default: chrome.gold,
+        web: "rgba(184, 68, 47, 0.22)",
+        default: chrome.danger,
       }),
       backgroundColor: Platform.select({
-        web: "rgba(254, 242, 242, 0.95)",
+        web: "rgba(184, 68, 47, 0.06)",
         default: chrome.card,
       }),
     },
     cardWarn: {
       borderColor: Platform.select({
-        web: "rgba(169,119,46,0.42)",
+        web: "rgba(184, 136, 76, 0.28)",
         default: chrome.gold,
       }),
       backgroundColor: Platform.select({
-        web: "rgba(255,251,235,0.95)",
+        web: "rgba(212, 165, 116, 0.12)",
         default: chrome.card,
       }),
     },
@@ -153,40 +162,24 @@ function createStyles(chrome) {
       transform: [{ scale: 0.97 }],
       ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
     },
-    accent: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      height: 2.5,
-      backgroundColor: "transparent",
-      ...Platform.select({
-        web: { backgroundColor: "rgba(169,119,46,0.32)" },
-        default: {},
-      }),
-    },
-    accentHot: {
-      backgroundColor: chrome.danger || "#b91c1c",
-    },
-    accentWarn: {
-      backgroundColor: chrome.goldBright || chrome.gold,
-    },
     label: {
-      fontSize: 10.5,
+      fontSize: 11,
       color: chrome.inkFaint,
-      letterSpacing: 0.7,
-      textTransform: "uppercase",
-      fontFamily: fonts.semibold,
+      letterSpacing: 0.2,
+      fontFamily: fonts.medium,
     },
     value: {
       fontFamily: FONT_PRICE,
-      fontSize: Platform.select({ web: 28, default: 27 }),
+      fontSize: Platform.select({ web: 26, default: 26 }),
       fontWeight: "600",
       color: chrome.ink,
-      marginTop: 8,
-      letterSpacing: -0.6,
+      marginTop: 6,
+      letterSpacing: -0.55,
     },
     valueHot: {
+      color: chrome.danger,
+    },
+    valueWarn: {
       color: chrome.goldDeep,
     },
     deltaPill: {
@@ -208,13 +201,5 @@ function createStyles(chrome) {
     },
     up: { color: chrome.green },
     down: { color: chrome.danger },
-    hint: {
-      marginTop: 8,
-      fontSize: 10,
-      letterSpacing: 0.4,
-      textTransform: "uppercase",
-      color: chrome.inkFaint,
-      fontFamily: fonts.medium,
-    },
   });
 }

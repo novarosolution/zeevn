@@ -18,7 +18,7 @@ export default function AdminToggleRow({ title, subtitle, value, onValueChange, 
       <Switch
         value={value}
         onValueChange={onValueChange}
-        trackColor={{ false: chrome.paper, true: chrome.gold }}
+        trackColor={{ false: chrome.line, true: chrome.tabOnBg }}
         thumbColor="#fff"
       />
     </View>

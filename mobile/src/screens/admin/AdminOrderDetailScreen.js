@@ -5,6 +5,7 @@ import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import AdminBackLink from "../../components/admin/AdminBackLink";
 import AdminAlerts from "../../components/admin/AdminAlerts";
+import AdminPanel from "../../components/admin/AdminPanel";
 import AdminOrderManagePanel from "../../components/admin/AdminOrderManagePanel";
 import { AdminOrderStatusBadge, AdminPaymentStatusChip } from "../../components/admin/AdminOrderBadges";
 import { useAuth } from "../../context/AuthContext";
@@ -26,7 +27,6 @@ import { formatINR } from "../../utils/currency";
 import { getOrderItemQty } from "../../utils/adminOrderHelpers";
 import { ORDER_ADMIN_NEXT_STATUS, getAdminNextStatusLabel } from "../../utils/orderStatus";
 import PremiumLoader from "../../components/ui/PremiumLoader";
-import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumButton from "../../components/ui/PremiumButton";
 import SectionReveal from "../../components/motion/SectionReveal";
@@ -285,28 +285,15 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
               ) : (
                 <>
                   <SectionReveal preset="fade-up">
-                    <PremiumCard variant="muted" padding="lg" goldAccent style={styles.heroCard}>
-                      <View style={styles.heroTop}>
-                        <View style={styles.heroMain}>
-                          <Text style={[styles.heroKicker, { color: c.textMuted }]}>ORDER DETAILS</Text>
-                          <Text style={[styles.heroRef, { color: c.textPrimary }]}>{orderRef}</Text>
-                          <Text style={[styles.heroCustomer, { color: c.textSecondary }]}>
-                            {customerName}
-                            {order.user?.email ? ` · ${order.user.email}` : ""}
-                          </Text>
-                          {placedAt ? (
-                            <Text style={[styles.heroDate, { color: c.textMuted }]}>Placed {placedAt}</Text>
-                          ) : null}
-                        </View>
-                        <View style={styles.heroAside}>
-                          <Text style={[styles.heroAmount, { color: c.primary }]}>
-                            {formatINR(Number(order.totalPrice || 0))}
-                          </Text>
-                          <View style={styles.heroBadges}>
-                            <AdminOrderStatusBadge status={order.status} c={c} compact />
-                            <AdminPaymentStatusChip paymentStatus={order.paymentStatus} c={c} />
-                          </View>
-                        </View>
+                    <AdminPanel
+                      title={orderRef}
+                      icon="receipt-outline"
+                      meta={formatINR(Number(order.totalPrice || 0))}
+                      description={`${customerName}${order.user?.email ? ` · ${order.user.email}` : ""}${placedAt ? ` · ${placedAt}` : ""}`}
+                    >
+                      <View style={styles.heroBadges}>
+                        <AdminOrderStatusBadge status={order.status} c={c} compact />
+                        <AdminPaymentStatusChip paymentStatus={order.paymentStatus} c={c} />
                       </View>
                       <View style={styles.heroActions}>
                         {ORDER_ADMIN_NEXT_STATUS[order.status] ? (
@@ -339,7 +326,7 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
                           disabled={busy}
                         />
                       </View>
-                    </PremiumCard>
+                    </AdminPanel>
                   </SectionReveal>
 
                   {editForm ? (
@@ -421,7 +408,7 @@ function createStyles(c, shadowPremium) {
       flexDirection: "row",
       flexWrap: "wrap",
       gap: spacing.xs,
-      justifyContent: Platform.select({ web: "flex-end", default: "flex-start" }),
+      justifyContent: "flex-start",
     },
     heroActions: {
       marginTop: spacing.md,

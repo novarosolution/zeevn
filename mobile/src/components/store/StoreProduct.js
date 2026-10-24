@@ -8,6 +8,7 @@ import Animated, { FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useShare
 import { EASE_OUT, motionTiming, panelIn } from "../../theme/motion";
 import { useCart } from "../../context/CartContext";
 import { useDeliveryLocation } from "../../hooks/useDeliveryLocation";
+import { etaFromQuote } from "../../services/deliveryService";
 import { useWishlist } from "../../context/WishlistContext";
 import { DELIVERY_NOT_POSSIBLE, STORE_FREE_DELIVERY, STORE_PRODUCT } from "../../content/storefrontContent";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
@@ -611,12 +612,10 @@ export default function StoreProduct({
   /** MRP and % off are per product, so they only make sense when there is no size picker. */
   const discountPct = !hasVariants && showMrp && mrp && offPct != null && offPct > 0 ? offPct : null;
   const unit = String((hasVariants && selectedVariantLabel) || product?.unit || "").trim();
+  const liveEta = etaFromQuote(quote);
   const eta =
-    quote?.serviceable && quote.etaLabel
-      ? quote.etaLabel
-      : quote?.serviceable === false
-        ? quote.message || DELIVERY_NOT_POSSIBLE
-        : "";
+    liveEta ||
+    (quote?.serviceable === false ? quote.message || DELIVERY_NOT_POSSIBLE : "");
   const lead = String(pageContent.lead || "").trim();
   const longLead = lead.length > 190;
 

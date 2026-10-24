@@ -30,18 +30,12 @@ function createStyles(chrome) {
       flexWrap: "wrap",
       alignItems: Platform.select({ web: "flex-end", default: "stretch" }),
       gap: spacing.sm,
-      padding: Platform.select({ web: 14, default: spacing.sm }),
-      borderRadius: Platform.select({ web: 16, default: 12 }),
+      padding: Platform.select({ web: 12, default: spacing.sm }),
+      borderRadius: Platform.select({ web: 14, default: 12 }),
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: chrome.line,
       backgroundColor: chrome.paper,
       marginBottom: spacing.sm,
-      ...Platform.select({
-        web: {
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.7)",
-        },
-        default: {},
-      }),
     },
     barStacked: {
       flexDirection: "column",

@@ -14,6 +14,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useAuth } from "../../context/AuthContext";
 import { useDeliveryLocation } from "../../hooks/useDeliveryLocation";
+import { etaFromQuote } from "../../services/deliveryService";
 import { formatDeliveryLocationParts } from "../../utils/deliveryLocationLabel";
 import {
   STORE_HEADER,
@@ -192,12 +193,12 @@ export default function StoreHome({
     return next;
   }, [festival]);
   const outOfArea = deliveryQuote?.serviceable === false;
-  const locationMeta =
-    deliveryQuote?.serviceable && deliveryQuote.etaLabel
-      ? deliveryQuote.etaLabel
-      : outOfArea
-        ? deliveryQuote.message || STORE_HEADER.etaOutside
-        : "";
+  const liveEta = etaFromQuote(deliveryQuote);
+  const locationMeta = liveEta
+    ? liveEta
+    : outOfArea
+      ? deliveryQuote.message || STORE_HEADER.etaOutside
+      : "";
   const nearbyLabel = deliveryQuote?.distanceLabel || "";
   const locationParts = useMemo(
     () =>

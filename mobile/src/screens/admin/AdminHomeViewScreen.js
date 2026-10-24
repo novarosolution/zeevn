@@ -36,14 +36,12 @@ import { normalizeHeroSlides } from "../../utils/homeViewMedia";
 
 const FESTIVAL_KEYS = ADMIN_HOME_VIEW_COPY.festivalOptions.map((option) => option.key);
 
-function Section({ label, hint, children, styles, revealIndex = 0 }) {
+function Section({ label, hint, children, revealIndex = 0 }) {
   return (
     <SectionReveal index={revealIndex} preset="fade-up">
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>{label}</Text>
-        {hint ? <Text style={styles.sectionHint}>{hint}</Text> : null}
+      <AdminPanel title={label} description={hint || undefined}>
         {children}
-      </View>
+      </AdminPanel>
     </SectionReveal>
   );
 }

@@ -45,8 +45,8 @@ function createStyles(chrome) {
     track: Platform.select({
       web: {
         alignSelf: "stretch",
-        borderRadius: 14,
-        padding: 4,
+        borderRadius: 12,
+        padding: 3,
         backgroundColor: chrome.paper,
         borderWidth: StyleSheet.hairlineWidth,
         borderColor: chrome.line,
@@ -61,7 +61,7 @@ function createStyles(chrome) {
     tab: {
       paddingHorizontal: Platform.select({ web: 14, default: 13 }),
       paddingVertical: Platform.select({ web: 8, default: 7 }),
-      borderRadius: Platform.select({ web: 10, default: 999 }),
+      borderRadius: Platform.select({ web: 9, default: 999 }),
       borderWidth: Platform.select({ web: 0, default: 1 }),
       borderColor: chrome.line,
       backgroundColor: Platform.select({ web: "transparent", default: chrome.card }),

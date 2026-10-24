@@ -37,6 +37,8 @@ import AdminPanel from "../../components/admin/AdminPanel";
 import AdminKpiCard, { AdminKpiGrid } from "../../components/admin/AdminKpiCard";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminToolbar, { AdminToolbarSlot } from "../../components/admin/AdminToolbar";
+import AdminDataTable from "../../components/admin/AdminDataTable";
+import { buildUserTableColumns } from "../../components/admin/adminTableColumns";
 import { FONT_HEADING } from "../../theme/typographyRoles";
 
 export default function AdminUsersScreen({ navigation, route }) {
@@ -271,8 +273,9 @@ export default function AdminUsersScreen({ navigation, route }) {
                   label="Search users"
                   value={search}
                   onChangeText={setSearch}
-                  placeholder="Name, email, or phone"
-                  iconLeft="search-outline"
+                    placeholder="Name, email, or phone"
+                    tone="warm"
+                    iconLeft="search-outline"
                   iconRight={search ? "close-circle" : undefined}
                   onIconRightPress={search ? () => setSearch("") : undefined}
                   autoCapitalize="none"
@@ -293,7 +296,29 @@ export default function AdminUsersScreen({ navigation, route }) {
                 compact
               />
             ) : null}
-            {renderedUsers.map((item) => (
+            {!compactAdmin && renderedUsers.length > 0 ? (
+              <AdminPanel
+                noPadding
+                title="Directory"
+                icon="people-outline"
+                description="Tap Rider, Admin, Orders, or Delete on a row."
+                style={styles.tablePanel}
+              >
+                <AdminDataTable
+                  rows={renderedUsers}
+                  keyExtractor={(row) => row._id}
+                  columns={buildUserTableColumns({
+                    busyId: busyUserId,
+                    onToggleRider: (row) => handleDeliveryPartner(row._id, !row.isDeliveryPartner),
+                    onToggleAdmin: (row) => handleRole(row._id, !row.isAdmin),
+                    onOrders: (row) =>
+                      navigation.navigate("AdminOrders", { query: row.email || row.name }),
+                    onDelete: (row) => handleDelete(row._id),
+                  })}
+                />
+              </AdminPanel>
+            ) : null}
+            {(compactAdmin ? renderedUsers : []).map((item) => (
               <PremiumCard key={item._id} padding="md" style={styles.cardWrap}>
                 <View style={styles.cardTopRow}>
                   <View style={styles.userMain}>
@@ -315,59 +340,49 @@ export default function AdminUsersScreen({ navigation, route }) {
 
                 <View style={styles.actionsWrap}>
                   <PremiumButton
-                    label={
-                      busyUserId === item._id
-                        ? "Updating..."
-                        : item.isDeliveryPartner
-                          ? "Remove delivery"
-                          : "Enable delivery"
-                    }
-                    iconLeft="bicycle-outline"
-                    variant="ghost"
-                    size="sm"
-                    onPress={() => handleDeliveryPartner(item._id, !item.isDeliveryPartner)}
-                    disabled={busyUserId === item._id}
-                  />
-                  <PremiumButton
-                    label={
-                      busyUserId === item._id
-                        ? "Updating..."
-                        : item.isAdmin
-                          ? "Make Customer"
-                          : "Make Admin"
-                    }
-                    iconLeft="shield-checkmark-outline"
-                    variant="ghost"
-                    size="sm"
-                    onPress={() => handleRole(item._id, !item.isAdmin)}
-                    disabled={busyUserId === item._id}
-                  />
-                  <PremiumButton
-                    label="View Orders"
-                    iconLeft="receipt-outline"
-                    variant="ghost"
-                    size="sm"
-                    onPress={() => navigation.navigate("AdminOrders", { query: item.email || item.name })}
-                  />
-                  <PremiumButton
-                    label={expandedUserId === item._id ? "Hide Details" : "More Details"}
+                    label={expandedUserId === item._id ? "Close" : "Manage"}
                     iconLeft={expandedUserId === item._id ? "chevron-up" : "chevron-down"}
                     variant="subtle"
                     size="sm"
                     onPress={() => setExpandedUserId((current) => (current === item._id ? "" : item._id))}
                   />
-                  <PremiumButton
-                    label={busyUserId === item._id ? "Deleting..." : "Delete User"}
-                    iconLeft="trash-outline"
-                    variant="danger"
-                    size="sm"
-                    onPress={() => handleDelete(item._id)}
-                    disabled={busyUserId === item._id}
-                  />
                 </View>
 
                 {expandedUserId === item._id ? (
                   <View style={styles.detailsWrap}>
+                    <View style={styles.actionsWrap}>
+                      <PremiumButton
+                        label={item.isDeliveryPartner ? "Remove rider" : "Enable rider"}
+                        iconLeft="bicycle-outline"
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => handleDeliveryPartner(item._id, !item.isDeliveryPartner)}
+                        disabled={busyUserId === item._id}
+                      />
+                      <PremiumButton
+                        label={item.isAdmin ? "Make customer" : "Make admin"}
+                        iconLeft="shield-checkmark-outline"
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => handleRole(item._id, !item.isAdmin)}
+                        disabled={busyUserId === item._id}
+                      />
+                      <PremiumButton
+                        label="Orders"
+                        iconLeft="receipt-outline"
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => navigation.navigate("AdminOrders", { query: item.email || item.name })}
+                      />
+                      <PremiumButton
+                        label="Delete"
+                        iconLeft="trash-outline"
+                        variant="danger"
+                        size="sm"
+                        onPress={() => handleDelete(item._id)}
+                        disabled={busyUserId === item._id}
+                      />
+                    </View>
                     <View style={styles.sectionTitleRow}>
                       <Text style={[styles.sectionTitleText, { color: c.textPrimary }]}>Address</Text>
                     </View>

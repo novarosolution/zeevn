@@ -177,7 +177,7 @@ export default function AdminRewardsScreen({ navigation, route }) {
                 title="Create reward"
                 icon="gift-outline"
                 meta="Loyalty redemptions"
-                description="Points cost, discount type, and redemption caps for the Rewards shop."
+                description="Points, discount, and caps — then save."
               >
                 <View style={styles.fieldGap}>
                   <PremiumInput

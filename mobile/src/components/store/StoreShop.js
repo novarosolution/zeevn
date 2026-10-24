@@ -3,6 +3,7 @@ import { FlatList, RefreshControl, Share, StyleSheet, Text, View, useWindowDimen
 import { Image } from "expo-image";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDeliveryLocation } from "../../hooks/useDeliveryLocation";
+import { etaFromQuote } from "../../services/deliveryService";
 import { formatDeliveryLocationParts } from "../../utils/deliveryLocationLabel";
 import { useAuth } from "../../context/AuthContext";
 import { STORE_LINE_PAGES, STORE_SHOP, STORE_TABS, resolveFestivalTheme } from "../../content/storefrontContent";
@@ -111,7 +112,7 @@ export default function StoreShop({
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { user } = useAuth();
-  const { displayLabel, snippet } = useDeliveryLocation();
+  const { displayLabel, snippet, quote } = useDeliveryLocation();
   const festival = useMemo(() => resolveFestivalTheme({}), []);
 
   const [sheet, setSheet] = useState(null);
@@ -147,7 +148,8 @@ export default function StoreShop({
     displayLabel || "Set delivery location"
   );
   const kind = user?.defaultAddress?.addressType || "";
-  const deliveringLabel = `${kind || STORE_SHOP.deliveringTo}: ${locationParts.street}`;
+  const liveEta = etaFromQuote(quote);
+  const deliveringLabel = `${kind || STORE_SHOP.deliveringTo}: ${locationParts.street}${liveEta ? ` · ${liveEta}` : ""}`;
 
   const cardW = Math.floor((width - SHOP_SIDEBAR_WIDTH - GRID_PAD * 2 - GRID_GAP) / 2);
   const navPad = STORE_NAV_HEIGHT + Math.max(16, insets.bottom + 6) + 24;

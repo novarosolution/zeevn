@@ -5,7 +5,7 @@ import { useCart } from "../../context/CartContext";
 import { useStoreTheme } from "../../theme/storefront";
 import { formatINRWhole } from "../../utils/currency";
 import { productToCartLine } from "../../utils/productCart";
-import { productImageUri } from "../../utils/storefront";
+import { productImageSource } from "../../utils/storefront";
 import { isProductPurchasable } from "../../utils/productAvailability";
 import AddControl from "./AddControl";
 import BottomSheet from "./BottomSheet";
@@ -23,7 +23,7 @@ function VariantSheet({ product, visible, onClose }) {
   const { addToCart, removeFromCart, getItemQuantity } = useCart();
 
   const variants = Array.isArray(product?.variants) ? product.variants.filter((v) => v?.label) : [];
-  const imageUri = product ? productImageUri(product, 72) : "";
+  const imageSource = product ? productImageSource(product, 72) : null;
   const purchasable = product ? isProductPurchasable(product) : false;
 
   return (
@@ -52,8 +52,8 @@ function VariantSheet({ product, visible, onClose }) {
               style={[styles.row, { borderColor: quantity > 0 ? c.brandAlt : c.line, backgroundColor: c.cardSoft, borderRadius: r.lg }]}
             >
               <View style={[styles.thumb, { backgroundColor: c.well, borderColor: c.line }]}>
-                {imageUri ? (
-                  <Image source={{ uri: imageUri }} style={StyleSheet.absoluteFill} contentFit="contain" />
+                {imageSource ? (
+                  <Image source={imageSource} style={StyleSheet.absoluteFill} contentFit="contain" />
                 ) : null}
               </View>
               <View style={styles.rowText}>

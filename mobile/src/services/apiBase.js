@@ -1,7 +1,11 @@
 import Constants from "expo-constants";
+import { Platform } from "react-native";
 
 /** Local dev API — backend `npm run dev` on port 5001. */
 export const ZEEVAN_API_LOCAL_URL = "http://127.0.0.1:5001";
+
+/** Live shop API — Vercel /aws proxies EC2. Phone cannot use 127.0.0.1. */
+export const ZEEVAN_API_LIVE_URL = "https://www.zeevan.shop/aws";
 
 function isLoopbackHostname(host) {
   const h = String(host || "").toLowerCase();
@@ -136,8 +140,8 @@ export function getSocketBaseUrl() {
 }
 
 /**
- * Dev → local backend; production web → current origin (+ `/aws` on the shop);
- * native production → EXPO_PUBLIC_API_URL.
+ * Dev web → local backend; production web → current origin (+ `/aws` on the shop);
+ * native → live shop (loopback is the phone itself, so catalog images never load).
  */
 export function getApiBaseUrl() {
   const webRuntime = getWebRuntimeApiBaseUrl();
@@ -149,11 +153,17 @@ export function getApiBaseUrl() {
     return webRuntime;
   }
 
+  const native = Platform.OS !== "web";
+  if (native) {
+    if (configured && !isLoopbackHostname(hostnameOf(configured))) return configured;
+    return ZEEVAN_API_LIVE_URL;
+  }
+
   if (configured) return configured;
   if (typeof __DEV__ !== "undefined" && __DEV__) {
     return ZEEVAN_API_LOCAL_URL;
   }
-  return "";
+  return ZEEVAN_API_LIVE_URL;
 }
 
 export function isLocalApiUrl(url = getApiBaseUrl()) {

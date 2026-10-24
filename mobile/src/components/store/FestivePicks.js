@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import { STORE_SECTIONS } from "../../content/storefrontContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { hapticTick } from "../../utils/haptics";
-import { productImageUri } from "../../utils/storefront";
+import { productImageSource } from "../../utils/storefront";
 import PressableScale from "./PressableScale";
 import ProductRail from "./ProductRail";
 import { OrnamentTitle } from "./SectionTitle";
@@ -12,7 +12,7 @@ import StoreIcon from "./StoreIcon";
 
 function PickTab({ pick, active, width, onPress }) {
   const { c, r, type, shadow } = useStoreTheme();
-  const uri = pick.product ? productImageUri(pick.product, 70) : "";
+  const source = pick.product ? productImageSource(pick.product, 70) : null;
 
   return (
     <PressableScale
@@ -43,15 +43,15 @@ function PickTab({ pick, active, width, onPress }) {
           },
         ]}
       >
-        {uri ? (
+        {source ? (
           <Image
-            source={{ uri }}
+            source={source}
             style={styles.circleImg}
             contentFit="contain"
             contentPosition="center"
             cachePolicy="memory-disk"
             transition={0}
-            recyclingKey={uri}
+            recyclingKey={typeof source === "number" ? String(source) : source.uri}
           />
         ) : (
           <StoreIcon icon={pick.icon || { mci: "gift-outline" }} size={26} color={withAlpha(c.brand, 0.5)} />

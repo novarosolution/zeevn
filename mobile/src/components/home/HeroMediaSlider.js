@@ -228,9 +228,13 @@ function HeroSlideImage({
     () => getHeroSlideDisplayWidth(slideLayoutWidth, { isMobileWeb }),
     [isMobileWeb, slideLayoutWidth]
   );
+  const bundledSource = typeof slide?.url === "number" ? slide.url : null;
   const uri = useMemo(
-    () => getHeroSlideImageUri(slide?.url, { layoutWidth: slideLayoutWidth, isMobileWeb }),
-    [isMobileWeb, slideLayoutWidth, slide?.url]
+    () =>
+      bundledSource != null && Platform.OS !== "web"
+        ? ""
+        : getHeroSlideImageUri(slide?.url, { layoutWidth: slideLayoutWidth, isMobileWeb }),
+    [bundledSource, isMobileWeb, slideLayoutWidth, slide?.url]
   );
   const phoneFrameHeight = useMemo(() => {
     if (!isContain) return undefined;
@@ -249,7 +253,7 @@ function HeroSlideImage({
     slide?.caption ||
     "Hero slide";
 
-  if (!uri) return null;
+  if (!uri && bundledSource == null) return null;
 
   const containMediaStyle = fillParent
     ? styles.heroContainMediaFill
@@ -261,7 +265,7 @@ function HeroSlideImage({
         style={fillParent ? styles.heroContainFill : [styles.heroContainFrame, { height: phoneFrameHeight }]}
       >
         <Image
-          source={{ uri }}
+          source={bundledSource != null ? bundledSource : { uri }}
           className={kenClass}
           style={containMediaStyle}
           contentFit="contain"
@@ -269,7 +273,7 @@ function HeroSlideImage({
           transition={active ? 300 : 0}
           priority={active ? "high" : "normal"}
           cachePolicy="memory-disk"
-          recyclingKey={String(slide.id || slide.key || uri)}
+          recyclingKey={String(slide.id || slide.key || bundledSource || uri)}
           accessibilityLabel={label}
         />
       </View>
@@ -327,7 +331,7 @@ function HeroSlideImage({
 
   return (
     <Image
-      source={{ uri }}
+      source={bundledSource != null ? bundledSource : { uri }}
       className={kenClass}
       style={[styles.heroSlideImage, isContain && styles.heroSlideImageContain]}
       contentFit={imageFit}
@@ -335,7 +339,7 @@ function HeroSlideImage({
       transition={active ? 300 : 0}
       priority={active ? "high" : "normal"}
       cachePolicy="memory-disk"
-      recyclingKey={String(slide.id || slide.key || uri)}
+      recyclingKey={String(slide.id || slide.key || bundledSource || uri)}
       accessibilityLabel={label}
     />
   );

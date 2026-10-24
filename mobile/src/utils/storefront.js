@@ -2,6 +2,10 @@
  * Storefront data helpers — derive lines, tiles, pricing and labels from the API catalog.
  * Pure functions, no React.
  */
+import {
+  getPackagingImageModuleForLine,
+  resolveProductLineKey,
+} from "../content/productPackagingImages";
 import { ZEEVAN_PRODUCT_LINES, matchProductLine } from "../content/zeevanCatalogContent";
 import { productCoverUri } from "./adminProductHelpers";
 import { getImageUriCandidates } from "./image";
@@ -70,6 +74,14 @@ export function productImageUri(product, width = 480) {
   const raw = productCoverUri(product);
   if (!raw) return "";
   return getImageUriCandidates(raw, { width: Math.round(width * 2), quality: "auto:good" })[0] || "";
+}
+
+/** expo-image `source` — Metro module id on native, HTTPS `{ uri }` otherwise. */
+export function productImageSource(product, width = 480) {
+  const pack = getPackagingImageModuleForLine(resolveProductLineKey(product));
+  if (typeof pack === "number") return pack;
+  const uri = productImageUri(product, width);
+  return uri ? { uri } : null;
 }
 
 /** Gallery image URLs (up to `max`) for the card carousel dots. */

@@ -1,6 +1,6 @@
 import { Image as RNImage, Platform } from "react-native";
 import { Image } from "expo-image";
-import { getApiBaseUrl } from "../services/apiBase";
+import { getApiBaseUrl, ZEEVAN_API_LIVE_URL } from "../services/apiBase";
 
 function isLocalHost(hostname) {
   return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "0.0.0.0";
@@ -14,16 +14,50 @@ function unique(items) {
   return Array.from(new Set(items.filter(Boolean)));
 }
 
-/** Metro / Expo web bundled media (`/assets/…`, `unstable_path=`). Not API uploads. */
+/** Metro / Expo web bundled media. Remote shop `/assets/…` hashes are not Metro. */
 function isBundlerMediaPath(uri) {
   const value = String(uri || "");
-  return (
-    value.startsWith("/assets") ||
-    value.includes("/assets/") ||
-    value.includes("unstable_path=") ||
-    value.startsWith("data:image/") ||
-    value.startsWith("data:video/")
-  );
+  if (value.startsWith("data:image/") || value.startsWith("data:video/")) return true;
+  if (value.includes("unstable_path=")) return true;
+  if (value.startsWith("/assets")) return true;
+  try {
+    const url = new URL(value);
+    if (isLocalHost(url.hostname) && url.pathname.includes("/assets")) return true;
+  } catch {
+    if (value.includes("/assets/") && !/^https?:\/\//i.test(value)) return true;
+  }
+  return false;
+}
+
+/** Phone / APK must never prefix `/media` with empty or loopback. */
+function mediaApiBase() {
+  const api = getApiBaseUrl();
+  if (!api) return ZEEVAN_API_LIVE_URL;
+  try {
+    const host = new URL(api.includes("://") ? api : `https://${api}`).hostname;
+    if (Platform.OS !== "web" && isLocalHost(host)) return ZEEVAN_API_LIVE_URL;
+  } catch {
+    return ZEEVAN_API_LIVE_URL;
+  }
+  return api;
+}
+
+/** `https://www.zeevan.shop/media/x` is the SPA (HTML). Real files are under `/aws/media`. */
+function rewriteShopMediaUrl(uri) {
+  try {
+    const url = new URL(uri);
+    const host = url.hostname.toLowerCase();
+    const shop = /(^|\.)zeevan\.(shop|app)$/.test(host) || host.endsWith(".vercel.app");
+    if (!shop) return uri;
+    if (url.pathname.startsWith("/aws/")) return uri;
+    if (url.pathname.startsWith("/media/")) {
+      url.pathname = `/aws${url.pathname}`;
+      return url.toString();
+    }
+  } catch {
+    return uri;
+  }
+  return uri;
 }
 
 /** Same-origin absolute URL for bundled web assets (Metro dev + static export). */
@@ -52,11 +86,12 @@ function rewriteLocalApiUrl(urlString) {
   try {
     const url = new URL(urlString);
     if (!isLocalHost(url.hostname)) return null;
-    const apiBase = getApiBaseUrl();
+    if (url.pathname.includes("/assets") || url.search.includes("unstable_path=")) return null;
+    const apiBase = mediaApiBase();
     if (!apiBase) return null;
     const base = new URL(apiBase.includes("://") ? apiBase : `https://${apiBase}`);
     const prefix = base.pathname.replace(/\/+$/, "");
-    return `${base.origin}${prefix}${url.pathname}${url.search}${url.hash}`;
+    return rewriteShopMediaUrl(`${base.origin}${prefix}${url.pathname}${url.search}${url.hash}`);
   } catch {
     return null;
   }
@@ -113,28 +148,44 @@ export function resolveBundledModuleSrc(moduleRef) {
   const asset = RNImage.resolveAssetSource(moduleRef);
   const raw = String(asset?.uri || "").trim();
   if (!raw) return "";
-  return resolveImageUri(raw) || raw;
+  const resolved = resolveImageUri(raw);
+  if (resolved) return resolved;
+  // Phone cannot load Metro 127.0.0.1 / relative asset paths as `{ uri }`.
+  if (Platform.OS !== "web") return "";
+  return raw;
 }
 
 export function resolveImageUri(rawUri) {
   const raw = String(rawUri || "").trim();
   if (!raw) return "";
   // Metro `unstable_path` URLs are pre-encoded — encodeURI turns %2F into %252F (404 on web).
-  if (isBundlerMediaPath(raw)) return resolveBundlerMediaUri(raw);
+  if (isBundlerMediaPath(raw)) {
+    const bundled = resolveBundlerMediaUri(raw);
+    if (Platform.OS !== "web") {
+      try {
+        const host = new URL(bundled).hostname;
+        // Phone cannot fetch Metro at 127.0.0.1 — callers should use require() or /media.
+        if (isLocalHost(host)) return "";
+      } catch {
+        return "";
+      }
+    }
+    return bundled;
+  }
 
   const uri = encodeURI(raw);
-  const apiBase = getApiBaseUrl();
-  if (uri.startsWith("/")) return `${apiBase}${uri}`;
-  if (!/^https?:\/\//i.test(uri)) return `${apiBase}/${uri.replace(/^\/+/, "")}`;
+  const apiBase = mediaApiBase();
+  if (uri.startsWith("/")) return rewriteShopMediaUrl(`${apiBase}${uri}`);
+  if (!/^https?:\/\//i.test(uri)) return rewriteShopMediaUrl(`${apiBase}/${uri.replace(/^\/+/, "")}`);
 
   try {
     const url = new URL(uri);
 
     if (isLocalHost(url.hostname)) {
-      return rewriteLocalApiUrl(uri) || url.toString();
+      return rewriteLocalApiUrl(uri) || (Platform.OS === "web" ? url.toString() : "");
     }
 
-    return upgradeRemoteImageUrl(url.toString());
+    return rewriteShopMediaUrl(upgradeRemoteImageUrl(url.toString()));
   } catch {
     return uri;
   }
@@ -164,14 +215,15 @@ export function getImageUriCandidates(rawUri, { width, quality = "auto" } = {}) 
 
   let candidates = [];
   if (isBundlerMediaPath(raw)) {
-    candidates = [resolveBundlerMediaUri(raw)];
+    const bundled = resolveImageUri(raw);
+    candidates = bundled ? [bundled] : [];
   } else {
     const uri = encodeURI(raw);
-    const apiBase = getApiBaseUrl();
+    const apiBase = mediaApiBase();
     if (uri.startsWith("/")) {
-      candidates = hostVariants(`${apiBase}${uri}`);
+      candidates = hostVariants(rewriteShopMediaUrl(`${apiBase}${uri}`));
     } else if (!/^https?:\/\//i.test(uri)) {
-      candidates = hostVariants(`${apiBase}/${uri.replace(/^\/+/, "")}`);
+      candidates = hostVariants(rewriteShopMediaUrl(`${apiBase}/${uri.replace(/^\/+/, "")}`));
     } else {
       candidates = hostVariants(resolveImageUri(uri));
     }

@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { formatINRWhole } from "../../utils/currency";
-import { getProductPricing, productImageUri } from "../../utils/storefront";
+import { getProductPricing, productImageSource } from "../../utils/storefront";
 import { Stagger } from "./HomeMotion";
 import PressableScale from "./PressableScale";
 import StoreIcon from "./StoreIcon";
@@ -14,8 +14,8 @@ const GAP = 10;
 /** Product photo "mounted" at the bottom of a tile: rounded top corners, bleeding off the bottom edge. */
 function TileArt({ item, frameStyle, iconSize, radius = 16 }) {
   const { c } = useStoreTheme();
-  const uri = item.product ? productImageUri(item.product, 200) : "";
-  if (uri) {
+  const source = item.product ? productImageSource(item.product, 200) : null;
+  if (source) {
     return (
       <View
         style={[
@@ -25,7 +25,7 @@ function TileArt({ item, frameStyle, iconSize, radius = 16 }) {
         ]}
       >
         <Image
-          source={{ uri }}
+          source={source}
           style={StyleSheet.absoluteFill}
           contentFit="contain"
           contentPosition="center"

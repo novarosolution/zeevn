@@ -19,6 +19,7 @@ import {
   getStockHint,
   getUnitLabel,
   productGalleryUris,
+  productImageSource,
   productImageUri,
 } from "../../utils/storefront";
 import AddControl from "./AddControl";
@@ -96,14 +97,15 @@ function RatingChip({ rating }) {
  * Image block: single image, or a swipeable gallery with page dots (grid cards only). With `blend` the photo's white
  * studio backdrop dissolves into the tinted well behind it (multiply), so the jar looks printed on the card.
  */
-function CardImage({ uris, size, gallery, dim, c, blend }) {
+function CardImage({ uris, source, size, gallery, dim, c, blend }) {
   const [index, setIndex] = useState(0);
   const onEnd = useCallback(
     (e) => setIndex(Math.round(e.nativeEvent.contentOffset.x / Math.max(size, 1))),
     [size]
   );
 
-  if (!uris.length) {
+  const first = source || (uris[0] ? { uri: uris[0] } : null);
+  if (!first) {
     return (
       <View style={[styles.placeholder, { backgroundColor: c.soft }]}>
         <MaterialCommunityIcons name="image-outline" size={34} color={c.inkMute} />
@@ -118,12 +120,12 @@ function CardImage({ uris, size, gallery, dim, c, blend }) {
     return (
       <View style={[StyleSheet.absoluteFill, blendStyle]}>
         <Image
-          source={{ uri: uris[0] }}
+          source={first}
           style={imageStyle}
           contentFit="contain"
           transition={0}
           cachePolicy="memory-disk"
-          recyclingKey={uris[0]}
+          recyclingKey={typeof first === "number" ? String(first) : first.uri || uris[0]}
         />
       </View>
     );
@@ -186,6 +188,7 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
     () => (gallery ? productGalleryUris(product, imageSize) : [productImageUri(product, imageSize)].filter(Boolean)),
     [gallery, product, imageSize]
   );
+  const coverSource = useMemo(() => productImageSource(product, imageSize), [product, imageSize]);
   const wished = wishlist.has(product.id);
   const unit = getUnitLabel(product);
   const rawEta = getEtaLabel(product);
@@ -252,7 +255,7 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
       {rank ? <RankBadge rank={rank} /> : null}
       <View ref={wellRef} collapsable={false} style={[styles.well, { width: imageSize, height: imageSize, backgroundColor: blend ? range.wash[1] : c.well || WELL_FILL, borderRadius: WELL_RADIUS }]}>
         {blend ? <LinearGradient colors={range.wash} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} pointerEvents="none" /> : null}
-        <CardImage uris={uris} size={imageSize} gallery={gallery && !lite} dim={dim} c={c} blend={blend} />
+        <CardImage uris={uris} source={coverSource} size={imageSize} gallery={gallery && !lite} dim={dim} c={c} blend={blend} />
         {!lite ? <View style={[StyleSheet.absoluteFill, styles.wellRim]} pointerEvents="none" /> : null}
         {badge ? (
           <View style={[styles.badge, { backgroundColor: badgeColors.bg }]}>

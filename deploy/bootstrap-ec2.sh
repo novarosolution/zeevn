@@ -23,7 +23,9 @@ fi
 sudo systemctl enable --now docker
 if ! sudo docker ps -a --format '{{.Names}}' | grep -qx zeevan-mongo; then
   sudo docker run -d --name zeevan-mongo --restart unless-stopped \
-    -p 127.0.0.1:27017:27017 -v zeevan-mongo-data:/data/db mongo:7
+    --memory=320m --memory-swap=640m \
+    -p 127.0.0.1:27017:27017 -v zeevan-mongo-data:/data/db \
+    mongo:7 --wiredTigerCacheSizeGB 0.25 --bind_ip_all
 else
   sudo docker start zeevan-mongo || true
 fi

@@ -62,14 +62,18 @@ export default function ProgressiveImage({
   const eager = priority === "high";
   const [fullReady, setFullReady] = useState(eager);
 
+  const bundledSource = typeof source === "number" ? source : null;
+
   const fullSrc = useMemo(() => {
+    if (bundledSource != null && Platform.OS !== "web") return null;
     if (uri) return toImageSrc(uri, { width, quality });
     if (source != null) return toImageSrc(source, { width, quality });
     return null;
-  }, [quality, source, uri, width]);
+  }, [bundledSource, quality, source, uri, width]);
 
   const previewSrc = useMemo(() => {
     if (eager) return null;
+    if (bundledSource != null && Platform.OS !== "web") return null;
     if (previewSource != null) {
       return toImageSrc(previewSource, { width: 48, quality: "auto:low" });
     }
@@ -78,7 +82,7 @@ export default function ProgressiveImage({
     const fromHelper = getPreviewImageUri(raw);
     if (fromHelper) return fromHelper;
     return toImageSrc(raw, { width: 48, quality: "auto:low" });
-  }, [eager, previewSource, source, uri]);
+  }, [bundledSource, eager, previewSource, source, uri]);
 
   useEffect(() => {
     setFullReady(eager);
@@ -103,7 +107,7 @@ export default function ProgressiveImage({
     };
   }, [eager, fullSrc, onError, priority, skipFullLoad]);
 
-  if (!fullSrc && !previewSrc) return null;
+  if (!fullSrc && !previewSrc && bundledSource == null) return null;
 
   const objectFit = contentFit;
   const objectPosition = contentPosition || "center";
@@ -160,7 +164,7 @@ export default function ProgressiveImage({
         </View>
       ) : null}
       <Image
-        source={{ uri: fullSrc || previewUri }}
+        source={bundledSource != null ? bundledSource : { uri: fullSrc || previewUri }}
         style={styles.layer}
         contentFit={contentFit}
         contentPosition={contentPosition}
@@ -169,7 +173,7 @@ export default function ProgressiveImage({
         transition={eager ? 0 : 320}
         cachePolicy="memory-disk"
         priority={priority}
-        recyclingKey={recyclingKey || fullSrc || previewUri}
+        recyclingKey={recyclingKey || (bundledSource != null ? String(bundledSource) : fullSrc || previewUri)}
         onLoad={() => setFullReady(true)}
         onLoadEnd={() => setFullReady(true)}
         onError={onError}

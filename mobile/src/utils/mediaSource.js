@@ -31,6 +31,8 @@ function isBundledAsset(value) {
 export function resolveImageSource(value) {
   if (value == null || value === "") return null;
   if (typeof value === "number") {
+    // Phone: keep the module id. Stringifying to Metro 127.0.0.1 / file://android_res fails.
+    if (Platform.OS !== "web") return value;
     const asset = Image.resolveAssetSource(value);
     const uri = asset?.uri ? resolveImageUri(asset.uri) || asset.uri : "";
     if (!uri) return value;

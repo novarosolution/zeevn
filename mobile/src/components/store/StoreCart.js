@@ -10,7 +10,7 @@ import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefro
 import { formatINR, formatINRWhole } from "../../utils/currency";
 import { hapticTick } from "../../utils/haptics";
 import { cartLineKey } from "../../utils/productCart";
-import { productImageUri } from "../../utils/storefront";
+import { productImageSource } from "../../utils/storefront";
 import AddControl from "./AddControl";
 import FloatingNav from "./FloatingNav";
 import PressableScale from "./PressableScale";
@@ -101,14 +101,14 @@ function CartLine({ item, onIncrease, onDecrease, onRemove, compact = false }) {
   const variant = String(item.variantLabel || "").trim();
   const rawName = String(item.name || "").trim();
   const name = variant && rawName.endsWith(` — ${variant}`) ? rawName.slice(0, -(variant.length + 3)) : rawName;
-  const uri = productImageUri(item, compact ? 64 : 88);
+  const source = productImageSource(item, compact ? 64 : 88);
   const thumb = compact ? 62 : 84;
 
   return (
     <View style={[styles.line, shadow.soft, { backgroundColor: c.card, borderColor: c.line, borderRadius: r.xl }]}>
       <View style={[styles.thumb, { width: thumb, height: thumb, backgroundColor: c.well, borderColor: c.line, borderRadius: r.lg }]}>
-        {uri ? (
-          <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="contain" transition={150} cachePolicy="memory-disk" />
+        {source ? (
+          <Image source={source} style={StyleSheet.absoluteFill} contentFit="contain" transition={150} cachePolicy="memory-disk" />
         ) : (
           <MaterialCommunityIcons name="image-outline" size={26} color={c.inkMute} />
         )}

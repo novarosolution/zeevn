@@ -92,7 +92,7 @@ function CartFab({ count: liveCount, onPress }) {
       >
         <View style={[styles.fabClip, { borderColor: withAlpha("#FFFFFF", isDark ? 0.18 : 0.55) }]}>
           <LinearGradient colors={colors} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }} style={StyleSheet.absoluteFill} />
-          <StoreIcon icon={STORE_NAV.cart.icon} size={28} color={iconColor} />
+          <StoreIcon icon={STORE_NAV.cart.icon} size={30} color={iconColor} />
         </View>
         {count > 0 ? (
           <Animated.View

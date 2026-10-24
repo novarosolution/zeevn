@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { getAdminChrome } from "../../theme/adminLayout";
@@ -36,7 +36,7 @@ export default function AdminMobileNav({ links, groups, current, onNavigate, onE
                 <Pressable
                   key={link.key}
                   onPress={() => onNavigate(link.key)}
-                  style={[styles.chip, on && styles.chipOn]}
+                  style={({ pressed }) => [styles.chip, on && styles.chipOn, pressed && styles.chipPressed]}
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
                   accessibilityLabel={link.hint ? `${link.label}. ${link.hint}` : link.label}
@@ -62,7 +62,7 @@ export default function AdminMobileNav({ links, groups, current, onNavigate, onE
           <View style={styles.chipRow}>
             <Pressable
               onPress={onExitStore}
-              style={styles.exitChip}
+              style={({ pressed }) => [styles.exitChip, pressed && styles.chipPressed]}
               accessibilityRole="button"
               accessibilityLabel="Exit to store"
             >
@@ -114,7 +114,12 @@ function createStyles(chrome) {
       borderWidth: 1,
       borderColor: chrome.line,
       backgroundColor: chrome.card,
+      ...Platform.select({
+        web: { cursor: "pointer", transition: "transform 100ms ease-out" },
+        default: {},
+      }),
     },
+    chipPressed: { transform: [{ scale: 0.97 }] },
     chipOn: {
       backgroundColor: chrome.tabOnBg,
       borderColor: chrome.tabOnBorder,

@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import L from "leaflet";
 import "../../styles/leafletWeb.css";
 import { Circle, MapContainer, Marker, Polygon, Polyline, TileLayer, useMapEvents } from "react-leaflet";
@@ -27,6 +27,7 @@ export default function AdminDeliveryMap({
   radiusKm = 25,
   zones = [],
   draft = [],
+  hint = "",
   onMapClick,
 }) {
   const center = useMemo(() => {
@@ -81,10 +82,25 @@ export default function AdminDeliveryMap({
           <Polygon positions={draftPos} pathOptions={{ color: "#B8442F", weight: 2, fillColor: "#B8442F", fillOpacity: 0.12 }} />
         ) : null}
       </MapContainer>
+      {hint ? (
+        <View style={styles.hint} pointerEvents="none">
+          <Text style={styles.hintText}>{hint}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { overflow: "hidden", borderRadius: 16, minHeight: 360 },
+  wrap: { overflow: "hidden", borderRadius: 20, minHeight: 360, position: "relative" },
+  hint: {
+    position: "absolute",
+    left: 12,
+    top: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,252,247,0.88)",
+  },
+  hintText: { fontSize: 12, fontWeight: "600", color: "#19140f" },
 });

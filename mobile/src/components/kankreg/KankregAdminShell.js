@@ -5,7 +5,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { ADMIN_NAV_FLAT, ADMIN_NAV_GROUPS, openAdminNavLink } from "../../content/adminNav";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
 import { FONT_HEADING } from "../../theme/typographyRoles";
-import { platformElevation } from "../../theme/platformStyles";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
 import { fonts, spacing } from "../../theme/tokens";
@@ -68,24 +67,15 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
         key={link.key}
         onPress={() => openAdminNavLink(stackNav, link)}
         accessibilityLabel={`${link.label}. ${link.hint || ""}`}
-        style={[
+        style={({ pressed }) => [
           styles.sideLink,
           row && styles.sideLinkRow,
           on && {
             backgroundColor: palette.linkOnBg,
             borderWidth: 1,
             borderColor: palette.linkOnBorder,
-            ...platformElevation({
-              web: { boxShadow: "0 2px 8px rgba(25, 20, 15, 0.08)" },
-              ios: {
-                shadowColor: "#19140f",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.06,
-                shadowRadius: 4,
-              },
-              android: { elevation: 1 },
-            }),
           },
+          pressed && styles.sideLinkPressed,
         ]}
         accessibilityRole="button"
         accessibilityState={{ selected: on }}
@@ -133,7 +123,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
       </ScrollView>
       <Pressable
         onPress={() => stackNav.navigate("Home")}
-        style={styles.exitStore}
+        style={({ pressed }) => [styles.exitStore, pressed && styles.sideLinkPressed]}
         accessibilityRole="button"
         accessibilityLabel="Exit to store"
       >
@@ -165,7 +155,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
         {FLAT_LINKS.map((link) => renderLink(link, true))}
         <Pressable
           onPress={() => stackNav.navigate("Home")}
-          style={styles.exitStoreRow}
+          style={({ pressed }) => [styles.exitStoreRow, pressed && styles.sideLinkPressed]}
           accessibilityRole="button"
           accessibilityLabel="Exit to store"
         >
@@ -376,10 +366,11 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     marginVertical: 2,
     ...Platform.select({
-      web: { cursor: "pointer", transition: "background-color 0.12s ease, border-color 0.12s ease" },
+      web: { cursor: "pointer", transition: "transform 100ms ease-out, background-color 100ms ease-out" },
       default: {},
     }),
   },
+  sideLinkPressed: { transform: [{ scale: 0.97 }] },
   sideLinkRow: { marginVertical: 0, marginHorizontal: 4, paddingVertical: 6 },
   sideLinkCopy: { flex: 1, minWidth: 0 },
   sideLinkText: {

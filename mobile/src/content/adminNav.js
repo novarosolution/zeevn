@@ -24,7 +24,7 @@ export const ADMIN_NAV_GROUPS = [
     links: [
       {
         key: "AdminDashboard",
-        label: "Command",
+        label: "Dashboard",
         hint: "What needs you now",
         icon: "flash-outline",
         image: "command",
@@ -125,7 +125,7 @@ export const ADMIN_NAV_GROUPS = [
       },
       {
         key: "AdminNotifications",
-        label: "Notify",
+        label: "Notifications",
         hint: "Broadcast push",
         icon: "megaphone-outline",
         image: "notify",

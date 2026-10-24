@@ -23,10 +23,10 @@ export default function AdminFilterTabs({ items, value, onChange, style }) {
             <Pressable
               key={key}
               onPress={() => onChange(key)}
-              style={({ hovered }) => [
+              style={({ pressed }) => [
                 styles.tab,
                 on && styles.tabOn,
-                hovered && !on && styles.tabHover,
+                pressed && styles.tabPressed,
               ]}
               accessibilityRole="button"
               accessibilityState={{ selected: on }}
@@ -66,14 +66,11 @@ function createStyles(chrome) {
       borderColor: chrome.line,
       backgroundColor: Platform.select({ web: "transparent", default: chrome.card }),
       ...Platform.select({
-        web: { cursor: "pointer", transition: "background-color 0.12s ease, color 0.12s ease" },
+        web: { cursor: "pointer", transition: "transform 100ms ease-out, background-color 100ms ease-out" },
         default: {},
       }),
     },
-    tabHover: Platform.select({
-      web: { backgroundColor: "rgba(25,20,15,0.04)" },
-      default: {},
-    }),
+    tabPressed: { transform: [{ scale: 0.97 }] },
     tabOn: {
       backgroundColor: chrome.tabOnBg,
       borderColor: chrome.tabOnBorder,

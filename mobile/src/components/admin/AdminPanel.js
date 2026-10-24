@@ -51,7 +51,7 @@ export default function AdminPanel({
             <Pressable
               onPress={onAction}
               hitSlop={8}
-              style={({ hovered }) => [styles.actionBtn, hovered && styles.actionBtnHover]}
+              style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
               accessibilityRole="button"
             >
               <Text style={styles.action}>{action}</Text>
@@ -155,14 +155,11 @@ function createStyles(chrome, panelBase) {
       backgroundColor: chrome.chipOnBg || chrome.paper,
       marginTop: 2,
       ...Platform.select({
-        web: { cursor: "pointer", transition: "background-color 0.12s ease, transform 0.12s ease" },
+        web: { cursor: "pointer", transition: "transform 100ms ease-out" },
         default: {},
       }),
     },
-    actionBtnHover: Platform.select({
-      web: { transform: [{ translateY: -1 }], backgroundColor: chrome.card },
-      default: {},
-    }),
+    actionBtnPressed: { transform: [{ scale: 0.97 }] },
     action: {
       fontSize: 11,
       color: chrome.goldDeep,

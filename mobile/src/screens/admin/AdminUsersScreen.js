@@ -34,9 +34,8 @@ import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 import PremiumChip from "../../components/ui/PremiumChip";
 import AdminPanel from "../../components/admin/AdminPanel";
-import AdminDataTable from "../../components/admin/AdminDataTable";
-import AdminStatusPill from "../../components/admin/AdminStatusPill";
 import AdminKpiCard, { AdminKpiGrid } from "../../components/admin/AdminKpiCard";
+import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminToolbar, { AdminToolbarSlot } from "../../components/admin/AdminToolbar";
 import { FONT_HEADING } from "../../theme/typographyRoles";
 
@@ -151,10 +150,6 @@ export default function AdminUsersScreen({ navigation, route }) {
     );
   }
 
-  function FilterPill({ label, active, onPress }) {
-    return <PremiumChip label={label} tone={active ? "gold" : "neutral"} size="sm" selected={active} onPress={onPress} />;
-  }
-
   const handleDeliveryPartner = async (id, isDeliveryPartner) => {
     try {
       setBusyUserId(id);
@@ -260,6 +255,16 @@ export default function AdminUsersScreen({ navigation, route }) {
             meta={`${visibleUsers.length} shown`}
             description="Search by name, email, or phone. Assign admin or delivery roles from the list."
           >
+            <AdminFilterTabs
+              value={roleFilter}
+              onChange={setRoleFilter}
+              items={[
+                { key: "all", label: `All · ${stats.total}` },
+                { key: "admins", label: `Admins · ${stats.admins}` },
+                { key: "customers", label: `Customers · ${stats.customers}` },
+                { key: "delivery", label: `Riders · ${stats.deliveryPartners}` },
+              ]}
+            />
             <AdminToolbar>
               <AdminToolbarSlot flex>
                 <PremiumInput
@@ -275,71 +280,11 @@ export default function AdminUsersScreen({ navigation, route }) {
               </AdminToolbarSlot>
               <PremiumButton label="Refresh" iconLeft="refresh-outline" variant="secondary" size="sm" onPress={loadUsers} />
             </AdminToolbar>
-            <View style={styles.filtersRow}>
-              <FilterPill label="All" active={roleFilter === "all"} onPress={() => setRoleFilter("all")} />
-              <FilterPill label="Admins" active={roleFilter === "admins"} onPress={() => setRoleFilter("admins")} />
-              <FilterPill label="Customers" active={roleFilter === "customers"} onPress={() => setRoleFilter("customers")} />
-              <FilterPill label="Delivery" active={roleFilter === "delivery"} onPress={() => setRoleFilter("delivery")} />
-            </View>
           </AdminPanel>
           </SectionReveal>
 
           <SectionReveal preset="fade-up" delay={60}>
           <View style={styles.listContent}>
-            {visibleUsers.length > 0 && !compactAdmin ? (
-              <AdminPanel noPadding style={styles.tablePanel}>
-                <AdminDataTable
-                  rows={renderedUsers}
-                  keyExtractor={(row) => row._id}
-                  columns={[
-                    {
-                      key: "user",
-                      label: "User",
-                      flex: 1.5,
-                      render: (row) => (
-                        <View style={styles.userCell}>
-                          <View style={styles.userAv}>
-                            <Text style={styles.userAvText}>
-                              {String(row.name || row.email || "?").charAt(0).toUpperCase()}
-                            </Text>
-                          </View>
-                          <View style={{ flex: 1, minWidth: 0 }}>
-                            <Text style={styles.userName} numberOfLines={1}>
-                              {row.name || "Unnamed"}
-                            </Text>
-                            <Text style={styles.userEmail} numberOfLines={1}>
-                              {row.email}
-                            </Text>
-                          </View>
-                        </View>
-                      ),
-                    },
-                    {
-                      key: "role",
-                      label: "Role",
-                      flex: 0.8,
-                      render: (row) =>
-                        row.isAdmin ? "Admin" : row.isDeliveryPartner ? "Delivery" : "Customer",
-                    },
-                    { key: "orders", label: "Orders", width: 64, render: () => "—" },
-                    { key: "spent", label: "Spent", width: 72, render: () => "—" },
-                    {
-                      key: "joined",
-                      label: "Joined",
-                      flex: 0.8,
-                      render: (row) =>
-                        row.createdAt ? new Date(row.createdAt).toLocaleDateString(undefined, { month: "short", year: "numeric" }) : "—",
-                    },
-                    {
-                      key: "status",
-                      label: "Status",
-                      flex: 0.7,
-                      render: () => <AdminStatusPill label="Active" tone="ok" />,
-                    },
-                  ]}
-                />
-              </AdminPanel>
-            ) : null}
             {visibleUsers.length === 0 ? (
               <PremiumEmptyState
                 iconName="people-outline"
@@ -348,8 +293,7 @@ export default function AdminUsersScreen({ navigation, route }) {
                 compact
               />
             ) : null}
-            {compactAdmin
-              ? renderedUsers.map((item) => (
+            {renderedUsers.map((item) => (
               <PremiumCard key={item._id} padding="md" style={styles.cardWrap}>
                 <View style={styles.cardTopRow}>
                   <View style={styles.userMain}>
@@ -461,8 +405,7 @@ export default function AdminUsersScreen({ navigation, route }) {
                   </View>
                 ) : null}
               </PremiumCard>
-            ))
-              : null}
+            ))}
             {renderedUsers.length < visibleUsers.length ? (
               <PremiumButton
                 label={`Load more (${visibleUsers.length - renderedUsers.length} remaining)`}

@@ -11,14 +11,17 @@ export const ADMIN_GATE = {
 
 export const ADMIN_SCREEN_COPY = {
   dashboard: {
-    title: "Command",
-    subtitle: "What needs you now — open runs, accepts, stock",
+    title: "Dashboard",
+    subtitle: "Open orders, stock, and what needs you now",
   },
   delivery: {
-    title: "Zones & riders",
-    subtitle: "Shop pin, drawn areas, and 1 km = minutes you set",
-    emptyZones: "No delivery zones yet — create one to start",
+    title: "Zones",
+    subtitle: "Pin the shop, draw the area, save the zone",
+    emptyZones: "No zones yet — draw on the map, then save",
     emptyPartners: "No delivery partners enabled yet",
+    stepPin: "Tap the map to drop the shop pin",
+    stepDraw: "Tap the map to draw the delivery line",
+    stepSave: "Name the zone and save it",
   },
   products: {
     title: "Products",
@@ -38,8 +41,8 @@ export const ADMIN_SCREEN_COPY = {
     empty: "No users found",
   },
   notifications: {
-    title: "Notify",
-    subtitle: "Send a broadcast push to customers",
+    title: "Notifications",
+    subtitle: "Send a broadcast to customers",
     empty: "No broadcasts sent yet",
   },
   analytics: {
@@ -63,16 +66,16 @@ export const ADMIN_SCREEN_COPY = {
     selectThread: "Select a conversation to reply",
   },
   homeView: {
-    title: "Store & home",
-    subtitle: "Hero, festival look, and home sections",
+    title: "Store",
+    subtitle: "Hero, festival look, and shop pin",
   },
   addProduct: {
     title: "Add product",
     subtitle: "Name, price, stock, and photos",
   },
   inventory: {
-    title: "Stock desk",
-    subtitle: "Adjust qty or mark out of stock",
+    title: "Stock",
+    subtitle: "Change qty or mark out of stock",
     empty: "No stock rows yet",
   },
 };

@@ -236,31 +236,6 @@ export default function AdminDashboardScreen({ navigation, route }) {
           route={route || { name: "AdminDashboard" }}
           title={ADMIN_SCREEN_COPY.dashboard.title}
           subtitle={welcomeSub}
-          headerRight={
-            <View style={styles.headerActions}>
-              <PremiumButton
-                label="Zones"
-                iconLeft="bicycle-outline"
-                variant="ghost"
-                size="sm"
-                onPress={() => navigation.navigate("AdminDelivery")}
-              />
-              <PremiumButton
-                label="Orders"
-                iconLeft="receipt-outline"
-                variant="secondary"
-                size="sm"
-                onPress={() => navigation.navigate("AdminOrders")}
-              />
-              <PremiumButton
-                label="Analytics"
-                iconLeft="bar-chart-outline"
-                variant="primary"
-                size="sm"
-                onPress={() => navigation.navigate("AdminAnalytics")}
-              />
-            </View>
-          }
         >
           {error ? (
             <PremiumErrorBanner severity="error" message={error} compact style={styles.banner} />
@@ -439,7 +414,6 @@ const styles = StyleSheet.create({
   },
   desk: adminShellContent(),
   banner: { marginBottom: spacing.md },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
   cols: { marginTop: 0 },
   colsCompact: { marginTop: 0 },
   ordersPanel: { paddingHorizontal: 0, paddingBottom: 6 },

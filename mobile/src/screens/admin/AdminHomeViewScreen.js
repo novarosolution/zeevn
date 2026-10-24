@@ -7,7 +7,7 @@ import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { fetchAdminHomeView, updateAdminHomeView } from "../../services/adminService";
+import { fetchAdminHomeView, updateAdminHomeView, updateAdminStoreSettings } from "../../services/adminService";
 import {
   adminGatePanel,
   adminShellContent,
@@ -175,6 +175,15 @@ export default function AdminHomeViewScreen({ navigation, route }) {
         },
         heroSlides,
       });
+      const lat = shopLatitude.trim() ? Number(shopLatitude) : null;
+      const lng = shopLongitude.trim() ? Number(shopLongitude) : null;
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        await updateAdminStoreSettings(token, {
+          latitude: lat,
+          longitude: lng,
+          label: shopName.trim() || "Zeevan farm shop",
+        }).catch(() => {});
+      }
       setSuccess("Storefront settings saved.");
     } catch (err) {
       setError(err.message || "Unable to save settings.");

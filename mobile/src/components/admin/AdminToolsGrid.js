@@ -35,10 +35,9 @@ export default function AdminToolsGrid({ navigation, current, compact = false })
                   onPress={() => openAdminNavLink(navigation, link)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: on }}
-                  style={({ hovered, pressed }) => [
+                  style={({ pressed }) => [
                     styles.card,
                     on && styles.cardOn,
-                    hovered && Platform.OS === "web" ? styles.cardHover : null,
                     pressed ? styles.cardPressed : null,
                   ]}
                 >
@@ -105,7 +104,7 @@ function createStyles(chrome, compact) {
       ...Platform.select({
         web: {
           cursor: "pointer",
-          transition: "transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease",
+          transition: "transform 100ms ease-out",
           boxShadow: "0 1px 2px rgba(25,20,15,.03), 0 12px 28px -20px rgba(25,20,15,.14)",
         },
         default: {},
@@ -115,15 +114,7 @@ function createStyles(chrome, compact) {
       borderColor: chrome.linkOnBorder,
       backgroundColor: chrome.linkOnBg,
     },
-    cardHover: Platform.select({
-      web: {
-        transform: [{ translateY: -2 }],
-        borderColor: "rgba(85,107,50,0.35)",
-        boxShadow: "0 10px 26px -14px rgba(31,51,31,.22)",
-      },
-      default: {},
-    }),
-    cardPressed: { opacity: 0.92 },
+    cardPressed: { transform: [{ scale: 0.97 }] },
     copy: { flex: 1, minWidth: 0, gap: 2 },
     label: {
       fontFamily: FONT_HEADING,

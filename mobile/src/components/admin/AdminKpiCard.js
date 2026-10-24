@@ -27,11 +27,11 @@ export default function AdminKpiCard({
     ? {
         onPress,
         accessibilityRole: "button",
-        style: ({ hovered, pressed }) => [
+        style: ({ pressed }) => [
           styles.card,
+          styles.cardInteractive,
           hot && styles.cardHot,
           tone === "warn" && styles.cardWarn,
-          hovered && Platform.OS === "web" ? styles.cardHover : null,
           pressed ? styles.cardPressed : null,
           style,
         ],
@@ -120,13 +120,15 @@ function createStyles(chrome) {
       ...Platform.select({
         web: {
           boxShadow: "0 1px 2px rgba(25,20,15,.04), 0 10px 28px -18px rgba(25,20,15,.14)",
-          transition: "transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease",
-          cursor: "default",
-          backgroundImage: "linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 48%)",
+          transition: "transform 100ms ease-out",
         },
         default: {},
       }),
     },
+    cardInteractive: Platform.select({
+      web: { cursor: "pointer" },
+      default: {},
+    }),
     cardHot: {
       borderColor: Platform.select({
         web: "rgba(185, 28, 28, 0.28)",
@@ -147,18 +149,10 @@ function createStyles(chrome) {
         default: chrome.card,
       }),
     },
-    cardHover: {
-      ...Platform.select({
-        web: {
-          transform: [{ translateY: -2 }],
-          boxShadow: "0 8px 24px -12px rgba(25,20,15,.22)",
-          borderColor: chrome.linkOnBorder,
-          cursor: "pointer",
-        },
-        default: {},
-      }),
+    cardPressed: {
+      transform: [{ scale: 0.97 }],
+      ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
     },
-    cardPressed: { opacity: 0.92 },
     accent: {
       position: "absolute",
       top: 0,

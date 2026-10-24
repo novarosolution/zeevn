@@ -27,7 +27,6 @@ export default function AdminTopBar({
   return (
     <View style={[styles.bar, compact && styles.barCompact]}>
       <View style={styles.titleCol}>
-        <Text style={styles.kicker}>ADMIN DESK</Text>
         <Text style={styles.title} numberOfLines={1}>
           {title}
         </Text>
@@ -39,7 +38,7 @@ export default function AdminTopBar({
       </View>
       <View style={styles.actions}>
         <Pressable
-          style={({ hovered }) => [styles.iconBtn, hovered && styles.iconBtnHover]}
+          style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
           onPress={cycleTheme}
           accessibilityLabel={`Theme: ${mode}`}
         >
@@ -47,7 +46,7 @@ export default function AdminTopBar({
         </Pressable>
         {onNotifications ? (
           <Pressable
-            style={({ hovered }) => [styles.iconBtn, hovered && styles.iconBtnHover]}
+            style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
             onPress={onNotifications}
             accessibilityLabel="Notifications"
           >
@@ -64,9 +63,8 @@ export default function AdminTopBar({
 function createStyles(chrome) {
   return StyleSheet.create({
     bar: {
-      minHeight: Platform.select({ web: 72, default: 64 }),
-      borderBottomWidth: 1,
-      borderBottomColor: chrome.line,
+      minHeight: Platform.select({ web: 68, default: 64 }),
+      borderBottomWidth: 0,
       flexDirection: "row",
       alignItems: "center",
       gap: 16,
@@ -79,9 +77,9 @@ function createStyles(chrome) {
           position: "sticky",
           top: 0,
           zIndex: 8,
-          backdropFilter: "blur(16px)",
-          WebkitBackdropFilter: "blur(16px)",
-          boxShadow: "0 1px 0 rgba(255,255,255,0.45)",
+          backdropFilter: "blur(22px) saturate(180%)",
+          WebkitBackdropFilter: "blur(22px) saturate(180%)",
+          boxShadow: "0 1px 0 rgba(25,20,15,0.05), 0 18px 28px -22px rgba(25,20,15,0.22)",
         },
         default: {},
       }),
@@ -97,18 +95,12 @@ function createStyles(chrome) {
       gap: 10,
     },
     titleCol: { flexShrink: 1, minWidth: 120, flex: 1 },
-    kicker: {
-      fontSize: 9,
-      letterSpacing: 1.8,
-      fontFamily: fonts.bold,
-      color: chrome.goldDeep,
-      marginBottom: 3,
-    },
     title: {
       fontFamily: FONT_HEADING,
       fontWeight: "500",
-      fontSize: Platform.select({ web: 26, default: 24 }),
-      letterSpacing: -0.4,
+      fontSize: Platform.select({ web: 28, default: 24 }),
+      letterSpacing: -0.55,
+      lineHeight: Platform.select({ web: 32, default: 28 }),
       color: chrome.ink,
     },
     sub: {
@@ -143,20 +135,12 @@ function createStyles(chrome) {
       ...Platform.select({
         web: {
           cursor: "pointer",
-          transition: "transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease",
-          boxShadow: "0 1px 2px rgba(25,20,15,.04)",
+          transition: "transform 100ms ease-out",
         },
         default: {},
       }),
     },
-    iconBtnHover: Platform.select({
-      web: {
-        transform: [{ translateY: -1 }],
-        borderColor: chrome.linkOnBorder,
-        boxShadow: "0 4px 12px -6px rgba(25,20,15,.16)",
-      },
-      default: {},
-    }),
+    iconBtnPressed: { transform: [{ scale: 0.97 }] },
     dot: {
       position: "absolute",
       top: 8,

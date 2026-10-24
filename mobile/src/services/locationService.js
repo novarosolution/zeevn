@@ -91,7 +91,9 @@ export async function searchPlaces(query) {
     throw new Error("Unable to search places.");
   }
   const rows = await response.json();
+  const skip = new Set(["state_district", "state", "country", "county"]);
   return (Array.isArray(rows) ? rows : [])
+    .filter((hit) => !skip.has(String(hit.addresstype || "")))
     .map((hit) => placeFromNominatim(hit, Number(hit.lat), Number(hit.lon)))
     .filter((place) => validMapCoord(place.latitude) && validMapCoord(place.longitude));
 }

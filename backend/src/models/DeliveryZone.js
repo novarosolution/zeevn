@@ -34,12 +34,12 @@ const deliveryZoneSchema = new mongoose.Schema(
     },
     etaMinutesMin: {
       type: Number,
-      default: 60,
+      default: 0,
       min: 0,
     },
     etaMinutesMax: {
       type: Number,
-      default: 180,
+      default: 0,
       min: 0,
     },
     /** Drawn coverage on the admin map. Empty = pincode/city only. */

@@ -28,8 +28,15 @@ async function fetchOsrmRoute(origin, dest) {
     coords.map(([lng, lat]) => ({ latitude: Number(lat), longitude: Number(lng) }))
   );
   const km = Number(route.distance) / 1000;
+  const durationSec = Number(route.duration);
   if (!Number.isFinite(km) || path.length < 2) return null;
-  return { path, distanceKm: Math.round(km * 10) / 10, provider: "osrm", encodedPolyline: null };
+  return {
+    path,
+    distanceKm: Math.round(km * 10) / 10,
+    durationSec: Number.isFinite(durationSec) && durationSec > 0 ? durationSec : null,
+    provider: "osrm",
+    encodedPolyline: null,
+  };
 }
 
 /**
@@ -57,6 +64,7 @@ async function fetchDrivingRoute(originLat, originLng, destLat, destLng, cacheId
           encodedPolyline: encoded,
           path: null,
           distanceKm: typeof google === "object" ? google.distanceKm : null,
+          durationSec: typeof google === "object" ? google.durationSec : null,
           provider: "google",
         };
       }
@@ -72,20 +80,27 @@ async function fetchDrivingRoute(originLat, originLng, destLat, destLng, cacheId
   }
 }
 
-function applyRoadDistance(quote, minutesPerKm, km) {
-  if (!Number.isFinite(km)) return quote;
-  const minutes = minutesFromKm(km, minutesPerKm);
-  return {
-    ...quote,
-    distanceKm: Math.round(km * 10) / 10,
-    distanceLabel: formatKm(km),
-    etaMinutesMin: minutes,
-    etaMinutesMax: minutes,
-    etaLabel: formatMinutes(minutes),
-  };
+function etaMinutesFromRoute(km, minutesPerKm, durationSec) {
+  if (Number.isFinite(durationSec) && durationSec > 0) return Math.max(1, Math.round(durationSec / 60));
+  return minutesFromKm(km, minutesPerKm);
 }
 
-/** Add shortest-path line and, when OSRM gives road km, 1 km = minutesPerKm. */
+function applyRoadEta(quote, minutesPerKm, km, durationSec) {
+  const minutes = etaMinutesFromRoute(km, minutesPerKm, durationSec);
+  const next = { ...quote };
+  if (Number.isFinite(km)) {
+    next.distanceKm = Math.round(km * 10) / 10;
+    next.distanceLabel = formatKm(km);
+  }
+  if (minutes != null) {
+    next.etaMinutesMin = minutes;
+    next.etaMinutesMax = minutes;
+    next.etaLabel = formatMinutes(minutes);
+  }
+  return next;
+}
+
+/** Shortest-path line + drive minutes (OSRM/Google duration). km × minutesPerKm only if the router is silent. */
 async function enrichQuoteWithRoute(quote, { latitude, longitude, minutesPerKm = 3 } = {}) {
   if (!quote) return quote;
   const origin = cleanPoint(quote.storeLatitude, quote.storeLongitude);
@@ -101,7 +116,7 @@ async function enrichQuoteWithRoute(quote, { latitude, longitude, minutesPerKm =
   );
   if (!route) return quote;
 
-  const next = route.distanceKm != null ? applyRoadDistance(quote, minutesPerKm, route.distanceKm) : quote;
+  const next = applyRoadEta(quote, minutesPerKm, route.distanceKm, route.durationSec);
   return {
     ...next,
     encodedPolyline: route.encodedPolyline || null,
@@ -110,4 +125,10 @@ async function enrichQuoteWithRoute(quote, { latitude, longitude, minutesPerKm =
   };
 }
 
-module.exports = { fetchDrivingRoute, enrichQuoteWithRoute };
+module.exports = { fetchDrivingRoute, enrichQuoteWithRoute, etaMinutesFromRoute };
+
+if (require.main === module) {
+  console.assert(etaMinutesFromRoute(15, 3, 25 * 60) === 25, "drive time wins");
+  console.assert(etaMinutesFromRoute(15, 3, null) === 45, "km × 3 only without a route");
+  console.log("drivingRouteService ok");
+}

@@ -45,7 +45,11 @@ async function fetchDrivingRouteEncodedPolyline(orderId, originLat, originLng, d
   const key = cacheKey(orderId, originLat, originLng, destLat, destLng);
   const hit = routeCache.get(key);
   if (hit && Date.now() < hit.expiresAt) {
-    return { encodedPolyline: hit.encodedPolyline, distanceKm: hit.distanceKm ?? null };
+    return {
+      encodedPolyline: hit.encodedPolyline,
+      distanceKm: hit.distanceKm ?? null,
+      durationSec: hit.durationSec ?? null,
+    };
   }
 
   const params = new URLSearchParams({
@@ -73,17 +77,21 @@ async function fetchDrivingRouteEncodedPolyline(orderId, originLat, originLng, d
     return null;
   }
 
-  const meters = (data.routes[0].legs || []).reduce((sum, leg) => sum + Number(leg?.distance?.value || 0), 0);
+  const legs = data.routes[0].legs || [];
+  const meters = legs.reduce((sum, leg) => sum + Number(leg?.distance?.value || 0), 0);
+  const seconds = legs.reduce((sum, leg) => sum + Number(leg?.duration?.value || 0), 0);
   const distanceKm = meters > 0 ? Math.round((meters / 1000) * 10) / 10 : null;
+  const durationSec = seconds > 0 ? seconds : null;
 
   pruneCacheIfNeeded();
   routeCache.set(key, {
     encodedPolyline: points,
     distanceKm,
+    durationSec,
     expiresAt: Date.now() + ROUTE_CACHE_TTL_MS,
   });
 
-  return { encodedPolyline: points, distanceKm };
+  return { encodedPolyline: points, distanceKm, durationSec };
 }
 
 function getDirectionsApiKey() {

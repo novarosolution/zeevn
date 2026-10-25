@@ -1,6 +1,7 @@
 const Product = require("../models/Product");
 const StockClosing = require("../models/StockClosing");
 const { localParts } = require("../services/storeOpsService");
+const { qtyOf, recordStockChange } = require("../utils/stockHistory");
 
 const TZ = "Asia/Kolkata";
 
@@ -35,16 +36,36 @@ function lineKind(line) {
 }
 
 function presentLine(line) {
-  const counted = line.counted === null || line.counted === undefined ? null : Math.max(0, Number(line.counted));
-  const expected = Math.max(0, Number(line.expected) || 0);
-  const kind = lineKind({ counted, expected });
+  const countedOnline =
+    line.countedOnline === null || line.countedOnline === undefined
+      ? line.counted === null || line.counted === undefined
+        ? null
+        : Math.max(0, Number(line.counted))
+      : Math.max(0, Number(line.countedOnline));
+  const countedCounter =
+    line.countedCounter === null || line.countedCounter === undefined ? null : Math.max(0, Number(line.countedCounter));
+  const expectedOnline = Math.max(0, Number(line.expectedOnline ?? line.expected) || 0);
+  const expectedCounter = Math.max(0, Number(line.expectedCounter) || 0);
+  const expected = expectedOnline + expectedCounter;
+  const counted =
+    countedOnline === null && countedCounter === null
+      ? null
+      : (countedOnline || 0) + (countedCounter || 0);
+  const kind = lineKind({
+    counted: countedOnline === null && countedCounter === null ? null : counted,
+    expected,
+  });
   return {
     product: line.product,
     name: line.name || "Jar",
     sku: line.sku || "",
     unit: line.unit || "",
     expected,
+    expectedOnline,
+    expectedCounter,
     counted,
+    countedOnline,
+    countedCounter,
     note: line.note || "",
     variance: kind === "uncounted" ? null : counted - expected,
     kind,
@@ -92,19 +113,27 @@ function presentList(doc) {
 
 async function snapshotLines() {
   const products = await Product.find({ isPublished: { $ne: false } })
-    .select("name sku unit stockQty comingSoon")
+    .select("name sku unit stockQty stockCounter comingSoon")
     .lean();
   return products
     .filter((p) => !comingSoon(p))
-    .map((p) => ({
-      product: p._id,
-      name: String(p.name || "Jar").trim(),
-      sku: String(p.sku || "").trim(),
-      unit: String(p.unit || "").trim(),
-      expected: Math.max(0, Number(p.stockQty) || 0),
-      counted: null,
-      note: "",
-    }))
+    .map((p) => {
+      const expectedOnline = Math.max(0, Number(p.stockQty) || 0);
+      const expectedCounter = Math.max(0, Number(p.stockCounter) || 0);
+      return {
+        product: p._id,
+        name: String(p.name || "Jar").trim(),
+        sku: String(p.sku || "").trim(),
+        unit: String(p.unit || "").trim(),
+        expected: expectedOnline + expectedCounter,
+        expectedOnline,
+        expectedCounter,
+        counted: null,
+        countedOnline: null,
+        countedCounter: null,
+        note: "",
+      };
+    })
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -145,6 +174,8 @@ function applyLineEdits(doc, rawLines) {
     const edit = byId.get(String(line.product));
     if (!edit) return line;
     if (edit.counted !== undefined) line.counted = readCounted(edit.counted);
+    if (edit.countedOnline !== undefined) line.countedOnline = readCounted(edit.countedOnline);
+    if (edit.countedCounter !== undefined) line.countedCounter = readCounted(edit.countedCounter);
     if (edit.note !== undefined) line.note = String(edit.note || "").trim().slice(0, 120);
     return line;
   });
@@ -209,7 +240,12 @@ async function submitClosing(req, res, next) {
     if (!doc) return res.status(404).json({ message: "No closing for that date." });
     if (doc.status !== "draft") fail("This count is locked.");
     applyLineEdits(doc, req.body?.lines);
-    const missing = (doc.lines || []).some((line) => line.counted === null || line.counted === undefined);
+    const missing = (doc.lines || []).some((line) => {
+      const onlineMissing = line.countedOnline === null || line.countedOnline === undefined;
+      const counterMissing = line.countedCounter === null || line.countedCounter === undefined;
+      const legacyMissing = line.counted === null || line.counted === undefined;
+      return onlineMissing && counterMissing && legacyMissing;
+    });
     if (missing) fail("Count every jar before you submit.");
     doc.status = "submitted";
     doc.submittedAt = new Date();
@@ -240,6 +276,63 @@ async function reopenClosing(req, res, next) {
   }
 }
 
+async function applyVariance(req, res, next) {
+  try {
+    const date = String(req.params.date || "");
+    if (!isDateKey(date)) return res.status(400).json({ message: "Invalid date." });
+    const doc = await StockClosing.findOne({ date });
+    if (!doc) return res.status(404).json({ message: "No closing for that date." });
+    if (doc.status !== "submitted") fail("Submit the count before you apply it.");
+
+    let changed = 0;
+    for (const line of doc.lines || []) {
+      const product = await Product.findById(line.product);
+      if (!product) continue;
+      const nextOnline =
+        line.countedOnline === null || line.countedOnline === undefined
+          ? line.counted === null || line.counted === undefined
+            ? null
+            : readCounted(line.counted)
+          : readCounted(line.countedOnline);
+      const nextCounter = line.countedCounter === null || line.countedCounter === undefined ? null : readCounted(line.countedCounter);
+      if (nextOnline !== null && qtyOf(product.stockQty) !== nextOnline) {
+        const before = qtyOf(product.stockQty);
+        product.stockQty = nextOnline;
+        if (nextOnline <= 0) product.inStock = false;
+        await product.save();
+        await recordStockChange({
+          product,
+          before,
+          after: nextOnline,
+          why: "manual",
+          location: "online",
+          who: actorName(req.user),
+          receiptNote: `Closing ${date}`,
+        });
+        changed += 1;
+      }
+      if (nextCounter !== null && qtyOf(product.stockCounter) !== nextCounter) {
+        const before = qtyOf(product.stockCounter);
+        product.stockCounter = nextCounter;
+        await product.save();
+        await recordStockChange({
+          product,
+          before,
+          after: nextCounter,
+          why: "manual",
+          location: "counter",
+          who: actorName(req.user),
+          receiptNote: `Closing ${date}`,
+        });
+        changed += 1;
+      }
+    }
+    res.json({ ...present(doc), applied: changed });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   listClosings,
   getToday,
@@ -247,4 +340,5 @@ module.exports = {
   saveDraft,
   submitClosing,
   reopenClosing,
+  applyVariance,
 };

@@ -11,8 +11,7 @@ import AdminInput from "../../components/admin/AdminInput";
 import AdminPanel from "../../components/admin/AdminPanel";
 import AdminRewardTicket from "../../components/admin/AdminRewardTicket";
 import AdminToggleRow from "../../components/admin/AdminToggleRow";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumChip from "../../components/ui/PremiumChip";
+import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumLoader from "../../components/ui/PremiumLoader";
@@ -177,7 +176,7 @@ export default function AdminRewardsScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>
@@ -189,7 +188,7 @@ export default function AdminRewardsScreen({ navigation, route }) {
     <AdminPanel
       title={editingId ? "Edit reward" : "Create reward"}
       icon="gift-outline"
-      description="Customers buy this with reward points. Public codes stay on Coupons."
+      description="Customers buy this with reward points on the website. Public codes stay on Coupons. Walk-in bills at the counter do not use rewards."
     >
       <AdminInput
         label="Title"
@@ -215,24 +214,14 @@ export default function AdminRewardsScreen({ navigation, route }) {
         icon="star-outline"
       />
       <Text style={styles.fieldLabel}>Discount type</Text>
-      <View style={styles.typeRow}>
-        <PremiumChip
-          label="Percent"
-          tone="gold"
-          size="md"
-          selected={form.discountType === "percent"}
-          onPress={() => setForm((current) => ({ ...current, discountType: "percent" }))}
-          style={styles.typeChip}
-        />
-        <PremiumChip
-          label="Flat"
-          tone="gold"
-          size="md"
-          selected={form.discountType === "flat"}
-          onPress={() => setForm((current) => ({ ...current, discountType: "flat" }))}
-          style={styles.typeChip}
-        />
-      </View>
+      <AdminFilterTabs
+        value={form.discountType}
+        onChange={(discountType) => setForm((current) => ({ ...current, discountType }))}
+        items={[
+          { key: "percent", label: "Percent" },
+          { key: "flat", label: "Flat ₹" },
+        ]}
+      />
       <AdminInput
         label={form.discountType === "percent" ? "Discount value (%)" : "Discount value (₹)"}
         value={form.discountValue}
@@ -361,8 +350,6 @@ function createStyles(chrome, c, shadowPremium) {
       color: chrome.inkFaint,
       fontFamily: fonts.semibold,
     },
-    typeRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
-    typeChip: { flex: 1 },
     used: { fontSize: 12.5, color: chrome.inkFaint, fontFamily: fonts.regular, marginBottom: 4 },
     formActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
     listCol: { gap: 10 },

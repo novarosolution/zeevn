@@ -524,6 +524,7 @@ export default function KankregHomeScreen({ navigation }) {
                               quantity={getItemQuantity(item.id)}
                               styles={homeGridStyles}
                               isOutOfStock={flags.isOutOfStock}
+                              isAvailableAtCounter={flags.isAvailableAtCounter}
                               isComingSoon={flags.isComingSoon}
                               comingSoonNote={flags.comingSoonNote}
                               onAddToCart={() => handleAdd(item)}
@@ -577,6 +578,7 @@ export default function KankregHomeScreen({ navigation }) {
                             quantity={getItemQuantity(item.id)}
                             styles={homeGridStyles}
                             isOutOfStock={flags.isOutOfStock}
+                            isAvailableAtCounter={flags.isAvailableAtCounter}
                             isComingSoon={flags.isComingSoon}
                             comingSoonNote={flags.comingSoonNote}
                             onAddToCart={() => handleAdd(item)}

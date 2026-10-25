@@ -10,7 +10,6 @@ import AdminAlerts from "../../components/admin/AdminAlerts";
 import AdminButton from "../../components/admin/AdminButton";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminToggleRow from "../../components/admin/AdminToggleRow";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumLoader from "../../components/ui/PremiumLoader";
 import { useAuth } from "../../context/AuthContext";
@@ -142,7 +141,7 @@ export default function AdminFaqsScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>

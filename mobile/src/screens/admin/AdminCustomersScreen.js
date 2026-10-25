@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Platform, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { Linking, Platform, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import SectionReveal from "../../components/motion/SectionReveal";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
@@ -11,16 +11,17 @@ import AdminBadge from "../../components/admin/AdminBadge";
 import AdminButton from "../../components/admin/AdminButton";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminInput from "../../components/admin/AdminInput";
+import AdminPanel from "../../components/admin/AdminPanel";
 import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
-import PremiumButton from "../../components/ui/PremiumButton";
+import { useToast } from "../../context/ToastContext";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { fetchAdminUsers, searchAdminOrders } from "../../services/adminService";
-import { adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
+import { createAdminWalkInCustomer, fetchAdminUsers, searchAdminOrders, updateAdminCustomerNote } from "../../services/adminService";
+import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, radius, spacing } from "../../theme/tokens";
+import { radius, spacing } from "../../theme/tokens";
 import { formatRupees, formatShortDate } from "../../utils/adminFormat";
 import { adminStatusMeta, orderRef } from "../../utils/adminOrderUi";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
@@ -31,6 +32,8 @@ const TABS = [
   { key: "ordered", label: "Ordered" },
   { key: "never", label: "Never ordered" },
   { key: "address", label: "Has address" },
+  { key: "walkin", label: "Walk-in" },
+  { key: "counter", label: "Bought at counter" },
 ];
 
 function hasAddress(user) {
@@ -47,10 +50,32 @@ function addressLine(user) {
   return [a.houseNumber, a.line1, a.landmark, a.city, a.postalCode].map((part) => String(part || "").trim()).filter(Boolean).join(", ");
 }
 
+function whatsappUrl(phone) {
+  const digits = String(phone || "").replace(/\D/g, "");
+  if (digits.length < 10) return "";
+  const n = digits.length === 10 ? `91${digits}` : digits;
+  return `https://wa.me/${n}`;
+}
+
+function lastProducts(orders) {
+  const seen = [];
+  for (const order of orders || []) {
+    for (const line of order.products || []) {
+      const name = String(line.name || "").trim();
+      if (!name || seen.includes(name)) continue;
+      seen.push(name);
+      if (seen.length >= 5) return seen;
+    }
+  }
+  return seen;
+}
+
 function matchesTab(user, tab) {
   if (tab === "ordered") return (user.orderCount || 0) >= 1;
   if (tab === "never") return (user.orderCount || 0) < 1;
   if (tab === "address") return hasAddress(user);
+  if (tab === "walkin") return Boolean(user.walkIn);
+  if (tab === "counter") return Number(user.spentWalkIn || 0) > 0;
   return true;
 }
 
@@ -60,6 +85,7 @@ export default function AdminCustomersScreen({ navigation, route }) {
   const chrome = useAdminChrome();
   const compact = useAdminCompactLayout();
   const isAdmin = Boolean(user?.isAdmin);
+  const toast = useToast();
   const styles = useMemo(() => createStyles(chrome, c, shadowPremium), [chrome, c, shadowPremium]);
 
   const [customers, setCustomers] = useState([]);
@@ -71,6 +97,9 @@ export default function AdminCustomersScreen({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [ordersLoading, setOrdersLoading] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [noteDraft, setNoteDraft] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -134,6 +163,8 @@ export default function AdminCustomersScreen({ navigation, route }) {
       all: customers.length,
       ordered: customers.filter((row) => (row.orderCount || 0) >= 1).length,
       address: customers.filter(hasAddress).length,
+      walkin: customers.filter((row) => row.walkIn).length,
+      counter: customers.filter((row) => Number(row.spentWalkIn || 0) > 0).length,
     }),
     [customers]
   );
@@ -143,7 +174,7 @@ export default function AdminCustomersScreen({ navigation, route }) {
     return customers.filter((row) => {
       if (!matchesTab(row, tab)) return false;
       if (!q) return true;
-      return [row.name, row.email, row.phone].some((v) => String(v || "").toLowerCase().includes(q));
+      return [row.name, row.email, row.phone, row.adminNote].some((v) => String(v || "").toLowerCase().includes(q));
     });
   }, [customers, search, tab]);
 
@@ -154,7 +185,7 @@ export default function AdminCustomersScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton
+              <AdminButton
                 label={ADMIN_GATE.backHome}
                 variant="primary"
                 onPress={() => navigateCustomerRoute(navigation, "Home")}
@@ -204,11 +235,60 @@ export default function AdminCustomersScreen({ navigation, route }) {
                 ) : null}
               </View>
               <Text style={styles.body}>{addressLine(selected)}</Text>
+              <Text style={styles.meta}>
+                Online {formatRupees(selected.spentOnline || 0)} · Counter {formatRupees(selected.spentWalkIn || 0)}
+                {selected.lastVisit ? ` · Last ${formatShortDate(selected.lastVisit)}` : ""}
+              </Text>
               <Text style={styles.meta}>Reward points {selected.rewardPoints || 0}</Text>
+              <AdminInput
+                label="Note"
+                value={noteDraft || selected.adminNote || ""}
+                onChangeText={setNoteDraft}
+                placeholder="Private note"
+              />
+              <AdminButton
+                label="Save note"
+                variant="soft"
+                disabled={(noteDraft || selected.adminNote || "") === (selected.adminNote || "") && !noteDraft}
+                onPress={async () => {
+                  try {
+                    await updateAdminCustomerNote(null, selected._id, noteDraft || selected.adminNote);
+                    toast.toastSuccess("Note saved.");
+                    await load();
+                  } catch (err) {
+                    setError(err.message || "Could not save note.");
+                  }
+                }}
+              />
+              <AdminButton
+                label="Bill at counter"
+                variant="primary"
+                icon="storefront-outline"
+                onPress={() => navigation.navigate("AdminCounter", { customer: selected })}
+              />
+              {whatsappUrl(selected.phone) ? (
+                <AdminButton
+                  label="WhatsApp"
+                  variant="soft"
+                  icon="logo-whatsapp"
+                  onPress={() => Linking.openURL(whatsappUrl(selected.phone))}
+                />
+              ) : null}
+              {lastProducts(orders).length ? (
+                <Text style={styles.meta}>Last jars: {lastProducts(orders).join(" · ")}</Text>
+              ) : null}
 
               <Text style={styles.section}>Orders</Text>
               {ordersLoading ? <Text style={styles.muted}>Loading…</Text> : null}
-              {!ordersLoading && orders.length === 0 ? <Text style={styles.muted}>No orders yet.</Text> : null}
+              {!ordersLoading && orders.length === 0 ? (
+                <PremiumEmptyState
+                  iconName="receipt-outline"
+                  title="No orders yet."
+                  ctaLabel="Bill at counter"
+                  onCtaPress={() => navigation.navigate("AdminCounter", { customer: selected })}
+                  compact
+                />
+              ) : null}
               {orders.map((order) => {
                 const pill = adminStatusMeta(order.status);
                 return (
@@ -221,6 +301,7 @@ export default function AdminCustomersScreen({ navigation, route }) {
                   >
                     <Text style={styles.ref}>{orderRef(order)}</Text>
                     <Text style={styles.muted}>{formatShortDate(order.createdAt) || "—"}</Text>
+                    <AdminBadge label={order.channel === "walk_in" ? "Counter" : "Online"} tone={order.channel === "walk_in" ? "gold" : "green"} size="sm" />
                     <AdminBadge label={pill.label} tone={pill.tone} size="sm" />
                     <Text style={styles.amount}>{formatRupees(order.totalPrice)}</Text>
                   </Pressable>
@@ -254,6 +335,26 @@ export default function AdminCustomersScreen({ navigation, route }) {
         >
           <View style={styles.panel}>
             <AdminAlerts error={error} onCloseError={() => setError("")} />
+            <AdminPanel title="New walk-in" icon="person-add-outline" description="Name and phone. An existing phone opens that party.">
+              <AdminInput label="Name" value={newName} onChangeText={setNewName} placeholder="Name" />
+              <AdminInput label="Phone" value={newPhone} onChangeText={setNewPhone} placeholder="98765 43210" />
+              <AdminButton
+                label="Save walk-in customer"
+                variant="soft"
+                onPress={async () => {
+                  try {
+                    const created = await createAdminWalkInCustomer(null, { name: newName, phone: newPhone });
+                    setNewName("");
+                    setNewPhone("");
+                    await load();
+                    if (created?._id) setSelectedId(created._id);
+                    toast.toastSuccess("Customer saved.");
+                  } catch (err) {
+                    setError(err.message || "Could not save customer.");
+                  }
+                }}
+              />
+            </AdminPanel>
             <AdminStatGrid min={compact ? 100 : 160}>
               <AdminStatTile
                 icon="people-outline"
@@ -282,9 +383,27 @@ export default function AdminCustomersScreen({ navigation, route }) {
                 onPress={() => setTab("address")}
                 style={compact ? styles.tileRow : undefined}
               />
+              <AdminStatTile
+                icon="storefront-outline"
+                label="Walk-in"
+                value={String(tiles.walkin)}
+                tone={tiles.walkin ? "gold" : "neutral"}
+                selected={tab === "walkin"}
+                onPress={() => setTab("walkin")}
+                style={compact ? styles.tileRow : undefined}
+              />
+              <AdminStatTile
+                icon="cash-outline"
+                label="Counter"
+                value={String(tiles.counter)}
+                tone={tiles.counter ? "gold" : "neutral"}
+                selected={tab === "counter"}
+                onPress={() => setTab("counter")}
+                style={compact ? styles.tileRow : undefined}
+              />
             </AdminStatGrid>
             <AdminFilterTabs items={TABS} value={tab} onChange={setTab} />
-            <AdminInput label="Search" value={search} onChangeText={setSearch} placeholder="Name, email, or phone" icon="search-outline" />
+            <AdminInput label="Search" value={search} onChangeText={setSearch} placeholder="Name, phone, or note" icon="search-outline" />
 
             {loading ? <Text style={styles.muted}>Loading…</Text> : null}
             {!loading && customers.length === 0 ? <PremiumEmptyState iconName="people-outline" title={COPY.empty} compact /> : null}
@@ -298,7 +417,8 @@ export default function AdminCustomersScreen({ navigation, route }) {
                   <Text style={[styles.headText, styles.colWho]}>Customer</Text>
                   <Text style={[styles.headText, styles.colCity]}>City</Text>
                   <Text style={[styles.headText, styles.colNum]}>Orders</Text>
-                  <Text style={[styles.headText, styles.colAmt]}>Spent</Text>
+                    <Text style={[styles.headText, styles.colAmt]}>Online</Text>
+                    <Text style={[styles.headText, styles.colAmt]}>Counter</Text>
                   <Text style={[styles.headText, styles.colNum]}>Points</Text>
                 </View>
                 {visible.map((row) => (
@@ -313,14 +433,21 @@ export default function AdminCustomersScreen({ navigation, route }) {
                       <AdminAvatar name={row.name} uri={row.avatar} size={32} />
                       <View style={styles.whoText}>
                         <Text style={styles.name}>{row.name || "—"}</Text>
-                        <Text style={styles.meta}>{contactOf(row)}</Text>
+                        <Text style={styles.meta}>
+                          {contactOf(row)}
+                          {row.lastVisit ? ` · ${formatShortDate(row.lastVisit)}` : ""}
+                        </Text>
+                        {row.walkIn || Number(row.spentWalkIn || 0) > 0 ? (
+                          <AdminBadge label={row.walkIn ? "Walk-in" : "Counter"} tone="gold" size="sm" />
+                        ) : null}
                       </View>
                     </View>
                     <Text style={[styles.body, styles.colCity]} numberOfLines={1}>
                       {row.defaultAddress?.city || "—"}
                     </Text>
                     <Text style={styles.colNum}>{row.orderCount || 0}</Text>
-                    <Text style={styles.colAmt}>{formatRupees(row.spent)}</Text>
+                    <Text style={styles.colAmt}>{formatRupees(row.spentOnline || 0)}</Text>
+                    <Text style={styles.colAmt}>{formatRupees(row.spentWalkIn || 0)}</Text>
                     <Text style={styles.colNum}>{row.rewardPoints || 0}</Text>
                   </Pressable>
                 ))}
@@ -345,7 +472,7 @@ export default function AdminCustomersScreen({ navigation, route }) {
                       </View>
                     </View>
                     <Text style={styles.meta}>
-                      {row.orderCount || 0} orders · {formatRupees(row.spent)} · {row.rewardPoints || 0} pts
+                      {row.orderCount || 0} orders · web {formatRupees(row.spentOnline || 0)} · floor {formatRupees(row.spentWalkIn || 0)}
                     </Text>
                   </Pressable>
                 ))
@@ -386,7 +513,7 @@ function createStyles(chrome, c, shadowPremium) {
       letterSpacing: 0.7,
       textTransform: "uppercase",
       color: chrome.inkFaint,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
     },
     row: {
       flexDirection: "row",
@@ -409,13 +536,13 @@ function createStyles(chrome, c, shadowPremium) {
     pressed: { opacity: 0.72 },
     who: { flexDirection: "row", alignItems: "center", gap: 10 },
     whoText: { flex: 1, minWidth: 0 },
-    name: { color: chrome.ink, fontFamily: fonts.semibold, fontSize: 15 },
-    meta: { color: chrome.inkSoft, fontFamily: fonts.regular, fontSize: 12 },
-    muted: { color: chrome.inkFaint, fontFamily: fonts.medium, fontSize: 12 },
-    body: { color: chrome.ink, fontFamily: fonts.regular, fontSize: 13 },
-    ref: { color: chrome.ink, fontFamily: fonts.bold, fontSize: 13, width: 92 },
-    amount: { color: chrome.ink, fontFamily: fonts.semibold, fontSize: 13 },
-    section: { marginTop: spacing.sm, color: chrome.ink, fontFamily: fonts.semibold, fontSize: 14 },
+    name: { color: chrome.ink, fontFamily: ADMIN_FONT.semibold, fontSize: 15 },
+    meta: { color: chrome.inkSoft, fontFamily: ADMIN_FONT.regular, fontSize: 12 },
+    muted: { color: chrome.inkFaint, fontFamily: ADMIN_FONT.medium, fontSize: 12 },
+    body: { color: chrome.ink, fontFamily: ADMIN_FONT.regular, fontSize: 13 },
+    ref: { color: chrome.ink, fontFamily: ADMIN_FONT.bold, fontSize: 13, width: 92 },
+    amount: { color: chrome.ink, fontFamily: ADMIN_FONT.semibold, fontSize: 13 },
+    section: { marginTop: spacing.sm, color: chrome.ink, fontFamily: ADMIN_FONT.semibold, fontSize: 14 },
     detailHead: { flexDirection: "row", alignItems: "flex-start", gap: spacing.md },
     detailWho: { flex: 1, minWidth: 0, gap: 2 },
     orderRow: {
@@ -428,7 +555,7 @@ function createStyles(chrome, c, shadowPremium) {
     },
     colWho: { flex: 1.6, minWidth: 180 },
     colCity: { flex: 0.8, minWidth: 80 },
-    colNum: { width: 64, color: chrome.ink, fontFamily: fonts.semibold, fontSize: 13, textAlign: "right" },
-    colAmt: { width: 88, color: chrome.ink, fontFamily: fonts.semibold, fontSize: 13, textAlign: "right" },
+    colNum: { width: 64, color: chrome.ink, fontFamily: ADMIN_FONT.semibold, fontSize: 13, textAlign: "right" },
+    colAmt: { width: 88, color: chrome.ink, fontFamily: ADMIN_FONT.semibold, fontSize: 13, textAlign: "right" },
   });
 }

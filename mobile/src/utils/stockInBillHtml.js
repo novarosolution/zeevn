@@ -19,11 +19,17 @@ function fmtDate(value) {
 export function buildStockInBillHtml(receipt) {
   const lines = Array.isArray(receipt?.lines) ? receipt.lines : [];
   const total = lines.reduce((sum, line) => sum + Math.max(0, Number(line.quantity) || 0), 0);
+  const billValue = lines.reduce(
+    (sum, line) => sum + Math.max(0, Number(line.quantity) || 0) * Math.max(0, Number(line.unitCost) || 0),
+    0
+  );
+  const pile = receipt?.destination === "counter" ? "Shop floor" : "Online";
   const ref = String(receipt?.id || receipt?._id || "").slice(-6).toUpperCase() || "DRAFT";
   const p = KANKREG_PALETTE;
   const rows = lines
     .map((line, index) => {
       const qty = Math.max(0, Number(line.quantity) || 0);
+      const cost = Math.max(0, Number(line.unitCost) || 0);
       return `<tr>
         <td>${index + 1}</td>
         <td>
@@ -31,6 +37,7 @@ export function buildStockInBillHtml(receipt) {
           <div class="muted">${htmlEscape([line.sku, line.unit].filter(Boolean).join(" · ") || "—")}</div>
         </td>
         <td class="num">${qty}</td>
+        <td class="num">${cost ? `₹${cost}` : "—"}</td>
       </tr>`;
     })
     .join("");
@@ -60,15 +67,17 @@ export function buildStockInBillHtml(receipt) {
     <div class="meta">
       Bill ${htmlEscape(ref)}<br />
       ${htmlEscape(fmtDate(receipt?.receivedAt || receipt?.createdAt))}<br />
+      Pile: ${htmlEscape(pile)}<br />
+      ${receipt?.supplierName ? `Supplier: ${htmlEscape(receipt.supplierName)}<br />` : ""}
       ${receipt?.note ? `Note: ${htmlEscape(receipt.note)}<br />` : ""}
       ${receipt?.savedByName ? `Received by ${htmlEscape(receipt.savedByName)}` : ""}
     </div>
     <table>
-      <thead><tr><th>#</th><th>Product</th><th class="num">Qty in</th></tr></thead>
-      <tbody>${rows || `<tr><td colspan="3">No jars on this bill.</td></tr>`}</tbody>
+      <thead><tr><th>#</th><th>Product</th><th class="num">Qty</th><th class="num">Cost</th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="4">No jars on this bill.</td></tr>`}</tbody>
     </table>
     <div class="foot">
-      <span class="muted">Stock added to the shop.</span>
+      <span class="muted">${htmlEscape(pile)}${billValue ? ` · ₹${Math.round(billValue)}` : ""}</span>
       <span class="total">${total} in</span>
     </div>
   </body>

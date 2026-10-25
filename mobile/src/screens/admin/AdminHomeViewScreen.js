@@ -17,7 +17,6 @@ import AdminPanel from "../../components/admin/AdminPanel";
 import AdminPhonePreview from "../../components/admin/AdminPhonePreview";
 import AdminToggleRow from "../../components/admin/AdminToggleRow";
 import PremiumChip from "../../components/ui/PremiumChip";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -237,7 +236,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
-              <PremiumButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>

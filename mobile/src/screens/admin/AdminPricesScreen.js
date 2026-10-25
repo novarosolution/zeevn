@@ -12,7 +12,6 @@ import AdminButton from "../../components/admin/AdminButton";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminProductCell from "../../components/admin/AdminProductCell";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
@@ -225,7 +224,7 @@ export default function AdminPricesScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton
+              <AdminButton
                 label={ADMIN_GATE.backHome}
                 variant="primary"
                 onPress={() => navigateCustomerRoute(navigation, "Home")}
@@ -270,7 +269,11 @@ export default function AdminPricesScreen({ navigation, route }) {
         <View key={id} style={styles.card}>
           <View style={styles.cardTop}>
             <View style={styles.cardHead}>
-              <AdminProductCell name={p.name} imageUri={productCoverUri(p)} />
+              <AdminProductCell
+                name={p.name}
+                imageUri={productCoverUri(p)}
+                meta={`Floor ${Math.max(0, Number(p.stockCounter) || 0)}`}
+              />
               <Text style={styles.sku}>{p.sku || "No SKU"}</Text>
             </View>
             <AdminBadge label={offer.label} tone={offer.tone} size="sm" />
@@ -331,7 +334,11 @@ export default function AdminPricesScreen({ navigation, route }) {
       <View key={id} style={styles.block}>
         <View style={styles.row}>
           <View style={styles.nameCol}>
-            <AdminProductCell name={p.name} imageUri={productCoverUri(p)} />
+            <AdminProductCell
+              name={p.name}
+              imageUri={productCoverUri(p)}
+              meta={`Floor ${Math.max(0, Number(p.stockCounter) || 0)}`}
+            />
           </View>
           <Text style={styles.skuCol} numberOfLines={1}>
             {p.sku || "—"}

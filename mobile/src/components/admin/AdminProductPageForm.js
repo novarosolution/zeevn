@@ -4,9 +4,9 @@ import AdminFilterTabs from "./AdminFilterTabs";
 import AdminFormSection from "./AdminFormSection";
 import AdminRepeatBlock from "./AdminRepeatBlock";
 import AdminToggleRow from "./AdminToggleRow";
-import PremiumButton from "../ui/PremiumButton";
+import AdminButton from "./AdminButton";
+import AdminInput from "./AdminInput";
 import PremiumChip from "../ui/PremiumChip";
-import PremiumInput from "../ui/PremiumInput";
 import { PRODUCT_PAGE_TABS, COMMON_IONICONS } from "../../utils/adminProductHelpers";
 import { spacing } from "../../theme/tokens";
 
@@ -138,28 +138,28 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
             complete={heroComplete}
           >
             <View style={fs.fieldGap}>
-              <PremiumInput
+              <AdminInput
                 label="Page eyebrow"
                 value={pageEyebrow}
                 onChangeText={setPageEyebrow}
                 placeholder="e.g. The Benchmark of Purity"
-                helperText="Small label above the product title"
+                hint="Small label above the product title"
               />
             </View>
             <View style={fs.fieldGap}>
-              <PremiumInput
+              <AdminInput
                 label="Lead description"
                 value={description}
                 onChangeText={setDescription}
                 multiline
                 numberOfLines={4}
                 placeholder="Short paragraph under the price"
-                iconLeft="document-text-outline"
+                icon="document-text-outline"
               />
             </View>
             <View style={fs.row}>
               <View style={[fs.fieldGap, fs.halfInput]}>
-                <PremiumInput
+                <AdminInput
                   label="Delivery title"
                   value={deliveryTitle}
                   onChangeText={setDeliveryTitle}
@@ -167,7 +167,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
                 />
               </View>
               <View style={[fs.fieldGap, fs.halfInput]}>
-                <PremiumInput
+                <AdminInput
                   label="Delivery note"
                   value={deliveryBody}
                   onChangeText={setDeliveryBody}
@@ -176,14 +176,14 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
               </View>
             </View>
             <View style={fs.fieldGap}>
-              <PremiumInput
+              <AdminInput
                 label="Highlights"
                 value={highlightsText}
                 onChangeText={setHighlightsText}
                 placeholder="One checkmark bullet per line"
                 multiline
                 numberOfLines={4}
-                helperText="Each line becomes a ✓ under the buy box"
+                hint="Each line becomes a ✓ under the buy box"
               />
             </View>
           </AdminFormSection>
@@ -208,7 +208,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
                   }
                 />
                 <View style={fs.fieldGap}>
-                  <PremiumInput
+                  <AdminInput
                     label="Ionicons name"
                     value={row.icon}
                     onChangeText={(t) =>
@@ -219,7 +219,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
                   />
                 </View>
                 <View style={fs.fieldGap}>
-                  <PremiumInput
+                  <AdminInput
                     label="Label"
                     value={row.label}
                     onChangeText={(t) =>
@@ -230,9 +230,9 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
                 </View>
               </AdminRepeatBlock>
             ))}
-            <PremiumButton
+            <AdminButton
               label="Add trust chip"
-              iconLeft="add-outline"
+              icon="add-outline"
               variant="ghost"
               size="sm"
               onPress={() => setTrustRows((rows) => [...rows, { icon: "shield-checkmark-outline", label: "" }])}
@@ -256,7 +256,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
               >
                 <View style={fs.row}>
                   <View style={[fs.fieldGap, fs.halfInput]}>
-                    <PremiumInput
+                    <AdminInput
                       label="Label"
                       value={row.label}
                       onChangeText={(t) =>
@@ -266,18 +266,18 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
                     />
                   </View>
                   <View style={[fs.fieldGap, fs.halfInput]}>
-                    <PremiumInput
+                    <AdminInput
                       label="Price"
                       value={row.price}
                       onChangeText={(t) =>
                         setVariantRows((rows) => rows.map((r, i) => (i === idx ? { ...r, price: t } : r)))
                       }
-                      keyboardType="decimal-pad"
+                      numeric
                     />
                   </View>
                 </View>
                 <View style={fs.fieldGap}>
-                  <PremiumInput
+                  <AdminInput
                     label="Tag (optional)"
                     value={row.tag}
                     onChangeText={(t) =>
@@ -288,9 +288,9 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
                 </View>
               </AdminRepeatBlock>
             ))}
-            <PremiumButton
+            <AdminButton
               label="Add variant"
-              iconLeft="add-outline"
+              icon="add-outline"
               variant="ghost"
               size="sm"
               onPress={() => setVariantRows((rows) => [...rows, { label: "", price: "", tag: "" }])}
@@ -306,32 +306,32 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
           >
             <View style={fs.row}>
               <View style={[fs.fieldGap, fs.halfInput]}>
-                <PremiumInput
+                <AdminInput
                   label="Rating avg (0–5)"
                   value={ratingAverage}
                   onChangeText={setRatingAverage}
-                  keyboardType="decimal-pad"
+                  numeric
                 />
               </View>
               <View style={[fs.fieldGap, fs.halfInput]}>
-                <PremiumInput
+                <AdminInput
                   label="Review count"
                   value={reviewCount}
                   onChangeText={setReviewCount}
-                  keyboardType="number-pad"
+                  integer
                 />
               </View>
             </View>
             <View style={fs.fieldGap}>
-              <PremiumInput label="Hero badge" value={badgeText} onChangeText={setBadgeText} placeholder="e.g. HAND CHURNED" />
+              <AdminInput label="Hero badge" value={badgeText} onChangeText={setBadgeText} placeholder="e.g. HAND CHURNED" />
             </View>
             <View style={fs.fieldGap}>
-              <PremiumInput
+              <AdminInput
                 label="Lifestyle image URL"
                 value={lifestyleImage}
                 onChangeText={setLifestyleImage}
                 autoCapitalize="none"
-                iconLeft="image-outline"
+                icon="image-outline"
               />
             </View>
           </AdminFormSection>
@@ -348,13 +348,13 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
             complete={storyComplete}
           >
             <View style={fs.fieldGap}>
-              <PremiumInput label="Section kick" value={storyKick} onChangeText={setStoryKick} placeholder="e.g. Our Legacy of Purity" />
+              <AdminInput label="Section kick" value={storyKick} onChangeText={setStoryKick} placeholder="e.g. Our Legacy of Purity" />
             </View>
             <View style={fs.fieldGap}>
-              <PremiumInput label="Section title" value={storyTitle} onChangeText={setStoryTitle} placeholder="Crafted the ancient way…" />
+              <AdminInput label="Section title" value={storyTitle} onChangeText={setStoryTitle} placeholder="Crafted the ancient way…" />
             </View>
             <View style={fs.fieldGap}>
-              <PremiumInput
+              <AdminInput
                 label="Story body"
                 value={storyLegend}
                 onChangeText={setStoryLegend}
@@ -385,7 +385,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
                   }
                 />
                 <View style={fs.fieldGap}>
-                  <PremiumInput
+                  <AdminInput
                     label="Ionicons name"
                     value={row.icon}
                     onChangeText={(t) =>
@@ -395,7 +395,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
                   />
                 </View>
                 <View style={fs.fieldGap}>
-                  <PremiumInput
+                  <AdminInput
                     label="Title"
                     value={row.title}
                     onChangeText={(t) =>
@@ -404,7 +404,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
                   />
                 </View>
                 <View style={fs.fieldGap}>
-                  <PremiumInput
+                  <AdminInput
                     label="Description"
                     value={row.description}
                     onChangeText={(t) =>
@@ -416,9 +416,9 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
                 </View>
               </AdminRepeatBlock>
             ))}
-            <PremiumButton
+            <AdminButton
               label="Add USP card"
-              iconLeft="add-outline"
+              icon="add-outline"
               variant="ghost"
               size="sm"
               onPress={() => setUspRows((rows) => [...rows, { icon: "flask-outline", title: "", description: "" }])}
@@ -433,7 +433,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
             complete={Boolean(processTitle?.trim() || processStepsText?.trim())}
           >
             <View style={fs.fieldGap}>
-              <PremiumInput
+              <AdminInput
                 label="Process section title"
                 value={processTitle}
                 onChangeText={setProcessTitle}
@@ -441,7 +441,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
               />
             </View>
             <View style={fs.fieldGap}>
-              <PremiumInput
+              <AdminInput
                 label="Process steps"
                 value={processStepsText}
                 onChangeText={setProcessStepsText}
@@ -451,7 +451,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
               />
             </View>
             <View style={fs.fieldGap}>
-              <PremiumInput
+              <AdminInput
                 label="Highlight quote"
                 value={highlightQuote}
                 onChangeText={setHighlightQuote}
@@ -474,29 +474,29 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
           >
             <View style={fs.row}>
               <View style={[fs.fieldGap, fs.halfInput]}>
-                <PremiumInput label="Nutrition kick" value={nutritionKick} onChangeText={setNutritionKick} placeholder="Nutrition" />
+                <AdminInput label="Nutrition kick" value={nutritionKick} onChangeText={setNutritionKick} placeholder="Nutrition" />
               </View>
               <View style={[fs.fieldGap, fs.halfInput]}>
-                <PremiumInput label="Nutrition title" value={nutritionTitle} onChangeText={setNutritionTitle} placeholder="Nutritional Facts" />
+                <AdminInput label="Nutrition title" value={nutritionTitle} onChangeText={setNutritionTitle} placeholder="Nutritional Facts" />
               </View>
             </View>
             <View style={fs.row}>
               <View style={[fs.fieldGap, fs.halfInput]}>
-                <PremiumInput label="Table header" value={nutritionTableHead} onChangeText={setNutritionTableHead} placeholder="Per 100 g" />
+                <AdminInput label="Table header" value={nutritionTableHead} onChangeText={setNutritionTableHead} placeholder="Per 100 g" />
               </View>
               <View style={[fs.fieldGap, fs.halfInput]}>
-                <PremiumInput label="Table subhead" value={nutritionTableSub} onChangeText={setNutritionTableSub} placeholder="Approximate values" />
+                <AdminInput label="Table subhead" value={nutritionTableSub} onChangeText={setNutritionTableSub} placeholder="Approximate values" />
               </View>
             </View>
             <View style={fs.fieldGap}>
-              <PremiumInput
+              <AdminInput
                 label="Nutrition rows"
                 value={nutritionRowsText}
                 onChangeText={setNutritionRowsText}
                 placeholder="Energy|896.22 kcal — one row per line"
                 multiline
                 numberOfLines={6}
-                helperText="Format: Label|Value — one row per line"
+                hint="Format: Label|Value — one row per line"
               />
             </View>
           </AdminFormSection>
@@ -508,10 +508,10 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
             complete={Boolean(nutritionCardTitle?.trim() || nutritionCardBody?.trim())}
           >
             <View style={fs.fieldGap}>
-              <PremiumInput label="Info card title" value={nutritionCardTitle} onChangeText={setNutritionCardTitle} placeholder="From our farm to your table" />
+              <AdminInput label="Info card title" value={nutritionCardTitle} onChangeText={setNutritionCardTitle} placeholder="From our farm to your table" />
             </View>
             <View style={fs.fieldGap}>
-              <PremiumInput
+              <AdminInput
                 label="Info card body"
                 value={nutritionCardBody}
                 onChangeText={setNutritionCardBody}
@@ -521,7 +521,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
               />
             </View>
             <View style={fs.fieldGap}>
-              <PremiumInput
+              <AdminInput
                 label="Info card tags"
                 value={nutritionCardTagsText}
                 onChangeText={setNutritionCardTagsText}
@@ -529,7 +529,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
               />
             </View>
             <View style={fs.fieldGap}>
-              <PremiumInput
+              <AdminInput
                 label="Info card footer"
                 value={nutritionCardFooter}
                 onChangeText={setNutritionCardFooter}
@@ -548,10 +548,10 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
           >
             <View style={fs.row}>
               <View style={[fs.fieldGap, fs.halfInput]}>
-                <PremiumInput label="Reviews kick" value={reviewsKick} onChangeText={setReviewsKick} placeholder="Customer Reviews" />
+                <AdminInput label="Reviews kick" value={reviewsKick} onChangeText={setReviewsKick} placeholder="Customer Reviews" />
               </View>
               <View style={[fs.fieldGap, fs.halfInput]}>
-                <PremiumInput label="Reviews title" value={reviewsTitle} onChangeText={setReviewsTitle} placeholder="What families are saying" />
+                <AdminInput label="Reviews title" value={reviewsTitle} onChangeText={setReviewsTitle} placeholder="What families are saying" />
               </View>
             </View>
           </AdminFormSection>
@@ -580,7 +580,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
                 }
               />
               <View style={fs.fieldGap}>
-                <PremiumInput
+                <AdminInput
                   label="Ionicons name"
                   value={row.icon}
                   onChangeText={(t) =>
@@ -590,7 +590,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
                 />
               </View>
               <View style={fs.fieldGap}>
-                <PremiumInput
+                <AdminInput
                   label="Title"
                   value={row.title}
                   onChangeText={(t) =>
@@ -599,7 +599,7 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
                 />
               </View>
               <View style={fs.fieldGap}>
-                <PremiumInput
+                <AdminInput
                   label="Description"
                   value={row.description}
                   onChangeText={(t) =>
@@ -611,9 +611,9 @@ export default function AdminProductPageForm({ form, fieldStyles }) {
               </View>
             </AdminRepeatBlock>
           ))}
-          <PremiumButton
+          <AdminButton
             label="Add usage card"
-            iconLeft="add-outline"
+            icon="add-outline"
             variant="ghost"
             size="sm"
             onPress={() => setUsageRows((rows) => [...rows, { icon: "cafe-outline", title: "", description: "" }])}

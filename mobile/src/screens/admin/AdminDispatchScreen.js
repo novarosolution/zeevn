@@ -11,7 +11,6 @@ import AdminButton from "../../components/admin/AdminButton";
 import AdminSelect from "../../components/admin/AdminSelect";
 import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
 import AdminPagination from "../../components/admin/AdminPagination";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
@@ -153,7 +152,7 @@ export default function AdminDispatchScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
-              <PremiumButton label={ADMIN_GATE.backHome} iconLeft="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>

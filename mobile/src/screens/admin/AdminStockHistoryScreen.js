@@ -11,7 +11,6 @@ import AdminButton from "../../components/admin/AdminButton";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminPagination from "../../components/admin/AdminPagination";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
@@ -35,6 +34,12 @@ const RANGES = [
   { key: "all", label: "All" },
 ];
 
+const LOCATIONS = [
+  { key: "all", label: "All piles" },
+  { key: "online", label: "Online" },
+  { key: "counter", label: "Floor" },
+];
+
 const WHYS = [
   { key: "all", label: "All" },
   { key: "manual", label: "Manual" },
@@ -42,6 +47,9 @@ const WHYS = [
   { key: "sale", label: "Sale" },
   { key: "cancel", label: "Cancel" },
   { key: "return", label: "Return" },
+  { key: "transfer", label: "Transfer" },
+  { key: "stock-out", label: "Stock out" },
+  { key: "walk-in", label: "Walk-in" },
 ];
 
 function whyLabel(why) {
@@ -50,8 +58,8 @@ function whyLabel(why) {
 
 function whyTone(why) {
   if (why === "stock-in" || why === "cancel" || why === "return") return "green";
-  if (why === "sale") return "red";
-  if (why === "manual") return "gold";
+  if (why === "sale" || why === "walk-in" || why === "stock-out") return "red";
+  if (why === "manual" || why === "transfer") return "gold";
   return "neutral";
 }
 
@@ -69,6 +77,7 @@ export default function AdminStockHistoryScreen({ navigation, route }) {
 
   const [range, setRange] = useState("7d");
   const [why, setWhy] = useState("all");
+  const [location, setLocation] = useState("all");
   const [qInput, setQInput] = useState("");
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
@@ -78,8 +87,15 @@ export default function AdminStockHistoryScreen({ navigation, route }) {
   const [error, setError] = useState("");
 
   const query = useMemo(
-    () => ({ range, why: why === "all" ? "" : why, q, page, pageSize: 25 }),
-    [range, why, q, page]
+    () => ({
+      range,
+      why: why === "all" ? "" : why,
+      location: location === "all" ? "" : location,
+      q,
+      page,
+      pageSize: 25,
+    }),
+    [range, why, location, q, page]
   );
   const requestRef = useRef(0);
 
@@ -143,6 +159,10 @@ export default function AdminStockHistoryScreen({ navigation, route }) {
     if (row.receiptId) navigation.navigate("AdminStockIn", { receiptId: String(row.receiptId) });
   };
 
+  const openTransfer = (row) => {
+    if (row.transferId) navigation.navigate("AdminTransfers", { transferId: String(row.transferId) });
+  };
+
   if (user && !user.isAdmin) {
     return (
       <AdminScreenShell style={styles.screen}>
@@ -150,7 +170,7 @@ export default function AdminStockHistoryScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>
@@ -163,7 +183,7 @@ export default function AdminStockHistoryScreen({ navigation, route }) {
     const deltaColor = up ? chrome.green : chrome.danger;
     const productLabel = row.name || "Jar";
     const skuLine = row.sku ? row.sku : "";
-    const extra = row.orderRef || (row.why === "stock-in" && row.receiptNote ? row.receiptNote : "");
+    const extra = row.orderRef || row.receiptNote || "";
 
     if (compact) {
       return (
@@ -187,6 +207,7 @@ export default function AdminStockHistoryScreen({ navigation, route }) {
           </Text>
           <View style={styles.cardBadges}>
             <AdminBadge label={whyLabel(row.why)} tone={whyTone(row.why)} size="sm" />
+            <AdminBadge label={row.location === "counter" ? "Floor" : "Online"} tone="neutral" size="sm" />
             <Text style={styles.meta} numberOfLines={1}>
               {row.who || "—"}
             </Text>
@@ -199,6 +220,10 @@ export default function AdminStockHistoryScreen({ navigation, route }) {
           {row.why === "stock-in" && row.receiptId ? (
             <Pressable onPress={() => openReceipt(row)} accessibilityRole="button" accessibilityLabel="Open stock-in receipt">
               <Text style={styles.link}>{row.receiptNote || "Open receipt"}</Text>
+            </Pressable>
+          ) : row.why === "transfer" && row.transferId ? (
+            <Pressable onPress={() => openTransfer(row)} accessibilityRole="button" accessibilityLabel="Open transfer">
+              <Text style={styles.link}>Open transfer</Text>
             </Pressable>
           ) : extra && !row.orderRef ? (
             <Text style={styles.meta} numberOfLines={2}>
@@ -235,6 +260,9 @@ export default function AdminStockHistoryScreen({ navigation, route }) {
         <View style={{ width: 88 }}>
           <AdminBadge label={whyLabel(row.why)} tone={whyTone(row.why)} size="sm" />
         </View>
+        <View style={{ width: 72 }}>
+          <AdminBadge label={row.location === "counter" ? "Floor" : "Online"} tone="neutral" size="sm" />
+        </View>
         <Text style={[styles.body, { flex: 0.9 }]} numberOfLines={1}>
           {row.who || "—"}
         </Text>
@@ -242,6 +270,12 @@ export default function AdminStockHistoryScreen({ navigation, route }) {
           <Pressable style={{ width: 88 }} onPress={() => openOrder(row)} accessibilityRole="button">
             <Text style={styles.link} numberOfLines={1}>
               {row.orderRef}
+            </Text>
+          </Pressable>
+        ) : row.why === "transfer" && row.transferId ? (
+          <Pressable style={{ width: 88 }} onPress={() => openTransfer(row)} accessibilityRole="button">
+            <Text style={styles.link} numberOfLines={1}>
+              Transfer
             </Text>
           </Pressable>
         ) : row.why === "stock-in" && row.receiptId ? (
@@ -294,6 +328,15 @@ export default function AdminStockHistoryScreen({ navigation, route }) {
               </ScrollView>
 
               <AdminFilterTabs
+                items={LOCATIONS}
+                value={location}
+                onChange={(key) => {
+                  setLocation(key);
+                  setPage(1);
+                }}
+              />
+
+              <AdminFilterTabs
                 items={WHYS}
                 value={why}
                 onChange={(key) => {
@@ -325,6 +368,7 @@ export default function AdminStockHistoryScreen({ navigation, route }) {
                       <Text style={[styles.headText, { width: 64 }]}>Change</Text>
                       <Text style={[styles.headText, { width: 56 }]}>After</Text>
                       <Text style={[styles.headText, { width: 88 }]}>Why</Text>
+                      <Text style={[styles.headText, { width: 72 }]}>Pile</Text>
                       <Text style={[styles.headText, { flex: 0.9 }]}>Who</Text>
                       <Text style={[styles.headText, { width: 88 }]}>Order</Text>
                     </View>

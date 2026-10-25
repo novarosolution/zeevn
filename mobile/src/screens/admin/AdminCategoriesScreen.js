@@ -11,7 +11,6 @@ import AdminAlerts from "../../components/admin/AdminAlerts";
 import AdminButton from "../../components/admin/AdminButton";
 import AdminProductCell from "../../components/admin/AdminProductCell";
 import AdminSelect from "../../components/admin/AdminSelect";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -141,7 +140,7 @@ export default function AdminCategoriesScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton
+              <AdminButton
                 label={ADMIN_GATE.backHome}
                 variant="primary"
                 onPress={() => navigateCustomerRoute(navigation, "Home")}

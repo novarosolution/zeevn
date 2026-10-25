@@ -15,7 +15,6 @@ import AdminPanel from "../../components/admin/AdminPanel";
 import AdminProductCell from "../../components/admin/AdminProductCell";
 import AdminQtyStepper from "../../components/admin/AdminQtyStepper";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
@@ -27,9 +26,9 @@ import {
   saveAdminStockInDraft,
   searchAdminStockIn,
 } from "../../services/adminService";
-import { adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
+import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, spacing } from "../../theme/tokens";
+import { spacing } from "../../theme/tokens";
 import { productCoverUri } from "../../utils/adminProductHelpers";
 import { formatShortDateTime, plural } from "../../utils/adminFormat";
 import { printAdminHtml } from "../../utils/printAdminHtml";
@@ -55,6 +54,8 @@ function toEditor(doc) {
   return {
     id: doc?._id ? String(doc._id) : "",
     note: doc?.note || "",
+    supplierName: doc?.supplierName || "",
+    destination: doc?.destination || "online",
     status: doc?.status || "draft",
     savedByName: doc?.savedByName || "",
     receivedAt: doc?.receivedAt || null,
@@ -65,6 +66,7 @@ function toEditor(doc) {
       unit: line.unit || "",
       image: productCoverUri(line),
       quantity: parseQty(line.quantity, 1),
+      unitCost: String(line.unitCost || ""),
     })),
   };
 }
@@ -72,9 +74,15 @@ function toEditor(doc) {
 function payloadOf(editor) {
   return {
     note: String(editor.note || "").trim().slice(0, 200),
+    supplierName: String(editor.supplierName || "").trim().slice(0, 120),
+    destination: editor.destination === "counter" ? "counter" : "online",
     lines: editor.lines
       .filter((line) => line.productId)
-      .map((line) => ({ product: line.productId, quantity: parseQty(line.quantity, 1) })),
+      .map((line) => ({
+        product: line.productId,
+        quantity: parseQty(line.quantity, 1),
+        unitCost: Math.max(0, Number(line.unitCost) || 0),
+      })),
   };
 }
 
@@ -162,6 +170,7 @@ export default function AdminStockInScreen({ navigation, route }) {
           unit: product.unit || "",
           image: productCoverUri(product),
           quantity: 1,
+          unitCost: "",
         },
       ],
     });
@@ -240,6 +249,7 @@ export default function AdminStockInScreen({ navigation, route }) {
           unit: product.unit || "",
           image: productCoverUri(product),
           quantity: 1,
+          unitCost: "",
         },
       ],
     }));
@@ -250,6 +260,13 @@ export default function AdminStockInScreen({ navigation, route }) {
     setEditor((prev) => ({
       ...prev,
       lines: prev.lines.map((line) => (line.productId === productId ? { ...line, quantity } : line)),
+    }));
+  };
+
+  const setLineCost = (productId, unitCost) => {
+    setEditor((prev) => ({
+      ...prev,
+      lines: prev.lines.map((line) => (line.productId === productId ? { ...line, unitCost } : line)),
     }));
   };
 
@@ -334,7 +351,7 @@ export default function AdminStockInScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
-              <PremiumButton label={ADMIN_GATE.backHome} iconLeft="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>
@@ -463,11 +480,26 @@ export default function AdminStockInScreen({ navigation, route }) {
                     meta={locked ? formatShortDateTime(editor.receivedAt) : editor.savedByName || undefined}
                     description={locked ? `${plural(editor.lines.length, "line")} · ${plural(totalJars, "jar")} added` : "Search a jar, set how many arrived, then confirm."}
                   >
+                    <AdminFilterTabs
+                      value={editor.destination || "online"}
+                      onChange={(destination) => !locked && setEditor((prev) => ({ ...prev, destination }))}
+                      items={[
+                        { key: "online", label: "Online pile" },
+                        { key: "counter", label: "Shop floor" },
+                      ]}
+                    />
+                    <AdminInput
+                      label="Supplier"
+                      value={editor.supplierName}
+                      onChangeText={(supplierName) => setEditor((prev) => ({ ...prev, supplierName }))}
+                      placeholder="Who delivered this"
+                      editable={!locked}
+                    />
                     <AdminInput
                       label="Note"
                       value={editor.note}
                       onChangeText={(note) => setEditor((prev) => ({ ...prev, note }))}
-                      placeholder="Supplier or batch"
+                      placeholder="Batch or invoice no."
                       maxLength={200}
                       editable={!locked}
                     />
@@ -507,7 +539,10 @@ export default function AdminStockInScreen({ navigation, route }) {
                             </Text>
                           </View>
                           {locked ? (
-                            <Text style={styles.strong}>+{line.quantity}</Text>
+                            <Text style={styles.strong}>
+                              +{line.quantity}
+                              {Number(line.unitCost) > 0 ? ` · ₹${line.unitCost}` : ""}
+                            </Text>
                           ) : (
                             <View style={styles.lineActions}>
                               <AdminQtyStepper
@@ -518,6 +553,15 @@ export default function AdminStockInScreen({ navigation, route }) {
                                 onPlus={() => setLineQty(line.productId, line.quantity + 1)}
                                 onChange={(t) => setDraftQty((prev) => ({ ...prev, [line.productId]: t }))}
                                 onCommit={() => commitLineQty(line)}
+                              />
+                              <AdminInput
+                                value={String(line.unitCost || "")}
+                                onChangeText={(unitCost) => setLineCost(line.productId, unitCost)}
+                                placeholder="Cost"
+                                numeric
+                                prefix="₹"
+                                editable={!locked}
+                                style={styles.costField}
                               />
                               <AdminButton label="Remove" icon="trash-outline" variant="ghost" size="xs" onPress={() => removeLine(line.productId)} />
                             </View>
@@ -574,7 +618,7 @@ function createStyles(chrome, c, shadowPremium) {
       letterSpacing: 0.7,
       textTransform: "uppercase",
       color: chrome.inkFaint,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
     },
     row: {
       flexDirection: "row",
@@ -589,9 +633,9 @@ function createStyles(chrome, c, shadowPremium) {
     card: { padding: 14, gap: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: chrome.lineSoft },
     cardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
     pressed: { backgroundColor: chrome.paper },
-    strong: { fontSize: 13.5, color: chrome.ink, fontFamily: fonts.semibold },
-    body: { fontSize: 13, color: chrome.ink, fontFamily: fonts.regular },
-    sub: { fontSize: 11.5, color: chrome.inkFaint, fontFamily: fonts.regular },
+    strong: { fontSize: 13.5, color: chrome.ink, fontFamily: ADMIN_FONT.semibold },
+    body: { fontSize: 13, color: chrome.ink, fontFamily: ADMIN_FONT.regular },
+    sub: { fontSize: 11.5, color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular },
     hit: { paddingVertical: 8, gap: 2, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: chrome.lineSoft },
     lineRow: {
       flexDirection: "row",
@@ -608,6 +652,7 @@ function createStyles(chrome, c, shadowPremium) {
       borderBottomColor: chrome.lineSoft,
     },
     lineActions: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 },
+    costField: { width: 88 },
     actions: { flexDirection: "row", gap: 8 },
     actionsDock: { width: "100%" },
     actionBtn: { flex: 1 },

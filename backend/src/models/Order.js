@@ -148,6 +148,13 @@ const orderSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    /** online = delivery shop. walk_in = counter till. */
+    channel: {
+      type: String,
+      enum: ["online", "walk_in"],
+      default: "online",
+      index: true,
+    },
     shippingAddress: {
       fullName: { type: String, required: true, trim: true },
       phone: { type: String, required: true, trim: true },

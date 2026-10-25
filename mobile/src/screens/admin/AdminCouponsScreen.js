@@ -11,8 +11,7 @@ import AdminCouponTicket from "../../components/admin/AdminCouponTicket";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminPanel from "../../components/admin/AdminPanel";
 import AdminToggleRow from "../../components/admin/AdminToggleRow";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumChip from "../../components/ui/PremiumChip";
+import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumLoader from "../../components/ui/PremiumLoader";
@@ -172,7 +171,7 @@ export default function AdminCouponsScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>
@@ -184,7 +183,7 @@ export default function AdminCouponsScreen({ navigation, route }) {
     <AdminPanel
       title={editingId ? "Edit coupon" : "Create coupon"}
       icon="pricetag-outline"
-      description="A code for checkout. Rewards and home banners stay on their own screens."
+      description="A code for web checkout only. Walk-in bills at the counter do not use coupons."
     >
       <AdminInput
         label="Code"
@@ -202,24 +201,14 @@ export default function AdminCouponsScreen({ navigation, route }) {
         icon="text-outline"
       />
       <Text style={styles.fieldLabel}>Type</Text>
-      <View style={styles.typeRow}>
-        <PremiumChip
-          label="Percent"
-          tone="gold"
-          size="md"
-          selected={form.type === "percent"}
-          onPress={() => setForm((current) => ({ ...current, type: "percent" }))}
-          style={styles.typeChip}
-        />
-        <PremiumChip
-          label="Flat"
-          tone="gold"
-          size="md"
-          selected={form.type === "flat"}
-          onPress={() => setForm((current) => ({ ...current, type: "flat" }))}
-          style={styles.typeChip}
-        />
-      </View>
+      <AdminFilterTabs
+        value={form.type}
+        onChange={(type) => setForm((current) => ({ ...current, type }))}
+        items={[
+          { key: "percent", label: "Percent" },
+          { key: "flat", label: "Flat ₹" },
+        ]}
+      />
       <AdminInput
         label={form.type === "percent" ? "Value (%)" : "Value (₹)"}
         value={form.value}
@@ -341,8 +330,6 @@ function createStyles(chrome, c, shadowPremium) {
       color: chrome.inkFaint,
       fontFamily: fonts.semibold,
     },
-    typeRow: { flexDirection: "row", gap: 8, marginBottom: 8 },
-    typeChip: { flex: 1 },
     used: { fontSize: 12.5, color: chrome.inkFaint, fontFamily: fonts.regular, marginBottom: 4 },
     formActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
     listCol: { gap: 10 },

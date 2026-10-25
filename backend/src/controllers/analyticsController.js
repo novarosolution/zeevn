@@ -284,7 +284,7 @@ function stockSnapshot(products) {
   let inventoryRetailValue = 0;
   const categoryCounts = new Map();
   for (const product of products) {
-    const qty = Number(product.stockQty || 0);
+    const qty = Number(product.stockQty || 0) + Number(product.stockCounter || 0);
     if (qty > 0) inventoryRetailValue += Number(product.price || 0) * qty;
     const isOut = product.inStock === false || qty < 1;
     if (isOut) outOfStockProducts += 1;
@@ -386,6 +386,16 @@ async function getAdminAnalytics(req, res, next) {
         averageOrderValue: orders.length ? m.totalRevenue / orders.length : 0,
         byStatus: m.revenueByStatus,
       },
+      channels: (() => {
+        const live = orders.filter((order) => order.status !== "cancelled" && order.status !== "pending_payment");
+        const walkIn = live.filter((order) => order.channel === "walk_in");
+        const web = live.filter((order) => order.channel !== "walk_in");
+        const sum = (list) => list.reduce((n, order) => n + Number(order.totalPrice || 0), 0);
+        return {
+          online: { count: web.length, revenue: Math.round(sum(web)) },
+          counter: { count: walkIn.length, revenue: Math.round(sum(walkIn)) },
+        };
+      })(),
       funnel: {
         deliveredOrders: m.deliveredCount,
         cancelledOrders: m.cancelledCount,

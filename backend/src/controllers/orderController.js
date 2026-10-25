@@ -154,6 +154,7 @@ async function pickLeastLoadedPartner(zone, excludeIds = []) {
         assignedDeliveryUser: { $in: partners.map((p) => p._id) },
         status: { $in: LIVE_ASSIGN_STATUSES },
         deliveryAcceptStatus: { $in: ["pending", "accepted"] },
+        channel: { $ne: "walk_in" },
       },
     },
     { $group: { _id: "$assignedDeliveryUser", count: { $sum: 1 } } },
@@ -172,6 +173,7 @@ async function pickLeastLoadedPartner(zone, excludeIds = []) {
 }
 
 async function maybeAutoAssignPartner(order) {
+  if (order.channel === "walk_in") return order;
   if (order.assignedDeliveryUser) return order;
   if (!LIVE_ASSIGN_STATUSES.includes(String(order.status))) return order;
 
@@ -1325,6 +1327,7 @@ async function getMyDeliveryOrders(req, res, next) {
     const orders = await Order.find({
       assignedDeliveryUser: req.user._id,
       status: { $in: ORDER_STATUSES_DELIVERY_DASHBOARD },
+      channel: { $ne: "walk_in" },
     })
       .sort({ createdAt: -1 })
       .populate("user", "name email phone")
@@ -1506,6 +1509,7 @@ async function updateOrderStatus(req, res, next) {
     if (status === "cancelled" && previousStatus !== "cancelled" && order.stockAdjustedAt) {
       await restoreStockForOrderLines(order.products, {
         why: "cancel",
+        location: order.channel === "walk_in" ? "counter" : "online",
         order: order._id,
         orderRef: orderPublicRef(order._id),
       });
@@ -2064,6 +2068,7 @@ async function bulkUpdateOrderStatus(req, res, next) {
       if (status === "cancelled" && order.stockAdjustedAt) {
         await restoreStockForOrderLines(order.products, {
           why: "cancel",
+          location: order.channel === "walk_in" ? "counter" : "online",
           order: order._id,
           orderRef: orderPublicRef(order._id),
         });

@@ -85,6 +85,21 @@ export const AdminCategoriesScreen = createLazyScreenDevSafe(
   () => import("../screens/admin/AdminCategoriesScreen"),
   { screenName: "AdminCategoriesScreen" }
 );
+export const AdminCounterScreen = createLazyScreenDevSafe(
+  () => require("../screens/admin/AdminCounterScreen").default,
+  () => import("../screens/admin/AdminCounterScreen"),
+  { screenName: "AdminCounterScreen" }
+);
+export const AdminTransfersScreen = createLazyScreenDevSafe(
+  () => require("../screens/admin/AdminTransfersScreen").default,
+  () => import("../screens/admin/AdminTransfersScreen"),
+  { screenName: "AdminTransfersScreen" }
+);
+export const AdminStockOutScreen = createLazyScreenDevSafe(
+  () => require("../screens/admin/AdminStockOutScreen").default,
+  () => import("../screens/admin/AdminStockOutScreen"),
+  { screenName: "AdminStockOutScreen" }
+);
 export const AdminInventoryScreen = createLazyScreenDevSafe(
   () => require("../screens/admin/AdminInventoryScreen").default,
   () => import("../screens/admin/AdminInventoryScreen"),

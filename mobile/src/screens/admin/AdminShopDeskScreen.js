@@ -20,7 +20,6 @@ import { fonts, spacing } from "../../theme/tokens";
 import { formatRupees, formatWhole } from "../../utils/adminFormat";
 import PremiumLoader from "../../components/ui/PremiumLoader";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumButton from "../../components/ui/PremiumButton";
 
 const COPY = ADMIN_SCREEN_COPY.shopDesk;
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -98,7 +97,7 @@ export default function AdminShopDeskScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <View style={styles.denied}>
             <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
-            <PremiumButton label={ADMIN_GATE.backHome} iconLeft="home-outline" variant="primary" onPress={() => navigation.navigate("Home")} />
+            <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" onPress={() => navigation.navigate("Home")} />
           </View>
         </KankregScrollPage>
       </AdminScreenShell>
@@ -124,6 +123,7 @@ export default function AdminShopDeskScreen({ navigation, route }) {
     { key: "onRoute", label: "On the way", icon: "bicycle-outline", hint: "With rider", value: orders.onRoute, tab: "onroute" },
     { key: "today", label: "Today’s orders", icon: "receipt-outline", hint: "Since midnight", value: today.count, tab: "all", extra: { range: "today" } },
     { key: "revenue", label: "Today’s revenue", icon: "cash-outline", hint: "Since midnight", value: today.revenue, rupees: true, tab: "all", extra: { range: "today" } },
+    { key: "counter", label: "Counter today", icon: "storefront-outline", hint: "Walk-in bills", value: orders.counterToday?.revenue || 0, rupees: true, tab: "counter" },
   ];
 
   const side = [
@@ -182,6 +182,7 @@ export default function AdminShopDeskScreen({ navigation, route }) {
                     : `${todayRow.label} · ${clock(todayRow.open)} – ${clock(todayRow.close)} · Asia/Kolkata`}
                 </Text>
                 <AdminButton label="Edit hours" variant="ghost" icon="time-outline" onPress={() => navigation.navigate("AdminSettings")} />
+                <AdminButton label="Open till" variant="gold" icon="storefront-outline" onPress={() => navigation.navigate("AdminCounter")} />
               </AdminPanel>
 
               <AdminPanel title="Counter" icon="toggle-outline" description="These two switches are the day counter. Hours stay on Settings.">

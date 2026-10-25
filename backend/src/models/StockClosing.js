@@ -7,7 +7,11 @@ const closingLineSchema = new mongoose.Schema(
     sku: { type: String, default: "", trim: true },
     unit: { type: String, default: "", trim: true },
     expected: { type: Number, required: true, min: 0 },
+    expectedOnline: { type: Number, default: 0, min: 0 },
+    expectedCounter: { type: Number, default: 0, min: 0 },
     counted: { type: Number, default: null },
+    countedOnline: { type: Number, default: null },
+    countedCounter: { type: Number, default: null },
     note: { type: String, default: "", trim: true, maxlength: 120 },
   },
   { _id: false }

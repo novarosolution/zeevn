@@ -53,7 +53,7 @@ async function listStockReport(req, res, next) {
 
     const [products, orders] = await Promise.all([
       Product.find()
-        .select("name sku category unit image images stockQty inStock price")
+        .select("name sku category unit image images stockQty stockCounter inStock price")
         .lean(),
       Order.find({ status: "delivered" }).select("products statusHistory").lean(),
     ]);
@@ -74,7 +74,9 @@ async function listStockReport(req, res, next) {
     const items = products
       .map((product) => {
         const id = String(product._id);
-        const onHand = Math.max(0, Math.floor(Number(product.stockQty) || 0));
+        const online = Math.max(0, Math.floor(Number(product.stockQty) || 0));
+        const counter = Math.max(0, Math.floor(Number(product.stockCounter) || 0));
+        const onHand = online + counter;
         const price = Number(product.price || 0);
         const status = stockStatus(product);
         return {
@@ -84,6 +86,8 @@ async function listStockReport(req, res, next) {
           category: String(product.category || "").trim() || "General",
           unit: String(product.unit || "").trim(),
           image: coverUri(product),
+          online,
+          counter,
           onHand,
           inStock: product.inStock !== false,
           status,

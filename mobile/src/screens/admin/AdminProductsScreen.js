@@ -28,7 +28,6 @@ import { fonts, radius, spacing, typography } from "../../theme/tokens";
 import { formatRupees } from "../../utils/adminFormat";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumButton from "../../components/ui/PremiumButton";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
@@ -41,6 +40,7 @@ const TILES = [
   { key: "soon", label: "Coming soon", icon: "time-outline", tone: "purple" },
   { key: "low", label: "Low stock", icon: "alert-circle-outline", tone: "gold" },
   { key: "out", label: "Out of stock", icon: "close-circle-outline", tone: "red" },
+  { key: "floor", label: "Floor", icon: "storefront-outline", tone: "gold" },
 ];
 
 function matchesSearch(item, q) {
@@ -95,7 +95,9 @@ export default function AdminProductsScreen({ navigation, route }) {
   const stats = useMemo(() => catalogSummary(products), [products]);
   const filteredProducts = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return products.filter((item) => matchesProductFilter(item, filter) && matchesSearch(item, q));
+    const rows = products.filter((item) => matchesProductFilter(item, filter) && matchesSearch(item, q));
+    if (filter !== "floor") return rows;
+    return [...rows].sort((a, b) => (Number(b.stockCounter) || 0) - (Number(a.stockCounter) || 0));
   }, [products, search, filter]);
 
   const handleDelete = async (item) => {
@@ -118,8 +120,9 @@ export default function AdminProductsScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton
+              <AdminButton
                 label={ADMIN_GATE.backHome}
+                icon="home-outline"
                 variant="primary"
                 onPress={() => navigateCustomerRoute(navigation, "Home")}
                 style={styles.gateCta}

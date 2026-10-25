@@ -227,6 +227,8 @@ export default function AdminDashboardScreen({ navigation, route }) {
                   <AdminKpiGrid compact={compact}>
                     <AdminKpiCard icon="receipt-outline" label="Orders" hint="Today" value={String(today.count ?? 0)} onPress={() => go("AdminOrders", { range: "today" })} />
                     <AdminKpiCard icon="cash-outline" label="Revenue" hint="Today" value={formatINRCompact(today.revenue || 0)} onPress={() => go("AdminOrders", { range: "today" })} />
+                    <AdminKpiCard icon="storefront-outline" label="Counter" hint="Walk-in today" value={formatINRCompact(desk?.orders?.counterToday?.revenue || 0)} onPress={() => go("AdminOrders", { tab: "counter" })} />
+                    <AdminKpiCard icon="cash-outline" label="Open till" hint="Take a walk-in" value="POS" onPress={() => go("AdminCounter")} />
                     <AdminKpiCard icon="checkmark-done-outline" label="Delivered" hint="Done today" value={String(deliveredToday)} onPress={() => go("AdminOrders", { tab: "delivered" })} />
                     <AdminKpiCard icon="navigate-outline" label="Riders online" hint="On the map" value={String(k.partnersOnline ?? 0)} onPress={() => go("AdminRiderMap")} />
                   </AdminKpiGrid>

@@ -442,7 +442,7 @@ async function replaceMyCart(req, res, next) {
   }
 }
 
-const USER_LIST_SELECT = "name email phone isAdmin isDeliveryPartner createdAt defaultAddress";
+const USER_LIST_SELECT = "name email phone isAdmin isDeliveryPartner walkIn adminNote createdAt defaultAddress";
 
 async function attachOrderStats(users) {
   if (!users.length) return new Map();
@@ -455,6 +455,21 @@ async function attachOrderStats(users) {
           $sum: { $cond: [{ $in: ["$status", ["cancelled", "pending_payment"]] }, 0, 1] },
         },
         spent: { $sum: { $cond: [{ $eq: ["$status", "delivered"] }, "$totalPrice", 0] } },
+        spentOnline: {
+          $sum: {
+            $cond: [
+              { $and: [{ $eq: ["$status", "delivered"] }, { $ne: ["$channel", "walk_in"] }] },
+              "$totalPrice",
+              0,
+            ],
+          },
+        },
+        spentWalkIn: {
+          $sum: {
+            $cond: [{ $and: [{ $eq: ["$status", "delivered"] }, { $eq: ["$channel", "walk_in"] }] }, "$totalPrice", 0],
+          },
+        },
+        lastVisit: { $max: "$createdAt" },
       },
     },
   ]);
@@ -469,12 +484,17 @@ function presentAdminUser(user, stats) {
     phone: user.phone || "",
     isAdmin: Boolean(user.isAdmin),
     isDeliveryPartner: Boolean(user.isDeliveryPartner),
+    walkIn: Boolean(user.walkIn),
+    adminNote: user.adminNote || "",
     createdAt: user.createdAt,
     defaultAddress: user.defaultAddress || null,
   };
   if (!row.isAdmin) {
     row.orderCount = stats?.orderCount || 0;
     row.spent = Math.round(Number(stats?.spent) || 0);
+    row.spentOnline = Math.round(Number(stats?.spentOnline) || 0);
+    row.spentWalkIn = Math.round(Number(stats?.spentWalkIn) || 0);
+    row.lastVisit = stats?.lastVisit || null;
   }
   return row;
 }

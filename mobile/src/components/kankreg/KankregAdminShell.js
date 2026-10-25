@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
@@ -15,6 +15,7 @@ import { AdminDialog } from "../admin/AdminDialog";
 import AdminMobileNav from "../admin/AdminMobileNav";
 import AdminNavIcon from "../admin/AdminNavIcon";
 import AdminStoreStatusChip from "../admin/AdminStoreStatusChip";
+import AdminInput from "../admin/AdminInput";
 import AdminTopBar from "../admin/AdminTopBar";
 import { useAdminDesk, useAdminOrderPop } from "../../services/adminDeskStore";
 import { unlockAdminNewOrderSound } from "../../utils/adminNewOrderSound";
@@ -63,6 +64,18 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
     }),
     [chrome]
   );
+
+  const [navQuery, setNavQuery] = useState("");
+  const navQ = navQuery.trim().toLowerCase();
+  const filteredGroups = useMemo(() => {
+    if (!navQ) return NAV_GROUPS;
+    return NAV_GROUPS.map((group) => ({
+      ...group,
+      links: group.links.filter((link) =>
+        `${link.label} ${link.hint || ""} ${group.label}`.toLowerCase().includes(navQ)
+      ),
+    })).filter((group) => group.links.length);
+  }, [navQ]);
 
   const { summary } = useAdminDesk();
   const { open: popOpen, waiting: waitingPop, dismiss: dismissPop } = useAdminOrderPop();
@@ -156,17 +169,30 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
           <Text style={styles.badge}>Admin</Text>
         </View>
       </View>
+      <View style={styles.sideSearch}>
+        <AdminInput
+          value={navQuery}
+          onChangeText={setNavQuery}
+          placeholder="Find a tool…"
+          icon="search-outline"
+          autoCapitalize="none"
+        />
+      </View>
       <ScrollView
         style={styles.sideScroll}
         contentContainerStyle={styles.sideScrollInner}
         showsVerticalScrollIndicator={false}
       >
-        {NAV_GROUPS.map((group) => (
-          <View key={group.key}>
-            <Text style={[styles.grp, { color: palette.groupLabel }]}>{group.label}</Text>
-            {group.links.map((link) => renderLink(link))}
-          </View>
-        ))}
+        {filteredGroups.length ? (
+          filteredGroups.map((group) => (
+            <View key={group.key}>
+              <Text style={[styles.grp, { color: palette.groupLabel }]}>{group.label}</Text>
+              {group.links.map((link) => renderLink(link))}
+            </View>
+          ))
+        ) : (
+          <Text style={styles.sideEmpty}>No tool matches “{navQuery.trim()}”.</Text>
+        )}
       </ScrollView>
       <Pressable
         onPress={() => stackNav.navigate("Home")}
@@ -381,6 +407,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(232,200,90,0.28)",
     backgroundColor: "rgba(232,200,90,0.08)",
+  },
+  sideSearch: { paddingHorizontal: 4, marginBottom: 8 },
+  sideEmpty: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 12,
+    color: KANKREG_PALETTE.inkFaint,
+    fontFamily: ADMIN_FONT.medium,
   },
   sideScroll: { flex: 1, minHeight: 0 },
   sideScrollInner: { paddingBottom: 12 },

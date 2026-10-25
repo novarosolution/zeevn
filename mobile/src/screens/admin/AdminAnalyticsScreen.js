@@ -190,7 +190,51 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
                     hint={`${analytics.funnel?.deliveryRatePercent ?? 0}% delivered`}
                     style={tileStyle}
                   />
+                  <AdminStatTile
+                    icon="globe-outline"
+                    label="Online"
+                    value={formatRupees(analytics.channels?.online?.revenue || 0)}
+                    hint={`${analytics.channels?.online?.count || 0} orders`}
+                    style={tileStyle}
+                  />
+                  <AdminStatTile
+                    icon="storefront-outline"
+                    label="Counter"
+                    value={formatRupees(analytics.channels?.counter?.revenue || 0)}
+                    hint={`${analytics.channels?.counter?.count || 0} bills`}
+                    tone="gold"
+                    style={tileStyle}
+                  />
                 </AdminStatGrid>
+
+                <AdminPanel title="Day book" icon="book-outline" description="Online vs counter in this period.">
+                  <AdminCategoryBar
+                    name="Online"
+                    percent={
+                      (analytics.channels?.online?.revenue || 0) + (analytics.channels?.counter?.revenue || 0) > 0
+                        ? Math.round(
+                            ((analytics.channels?.online?.revenue || 0) /
+                              ((analytics.channels?.online?.revenue || 0) + (analytics.channels?.counter?.revenue || 0))) *
+                              100
+                          )
+                        : 0
+                    }
+                    meta={formatRupees(analytics.channels?.online?.revenue || 0)}
+                  />
+                  <AdminCategoryBar
+                    name="Counter"
+                    percent={
+                      (analytics.channels?.online?.revenue || 0) + (analytics.channels?.counter?.revenue || 0) > 0
+                        ? Math.round(
+                            ((analytics.channels?.counter?.revenue || 0) /
+                              ((analytics.channels?.online?.revenue || 0) + (analytics.channels?.counter?.revenue || 0))) *
+                              100
+                          )
+                        : 0
+                    }
+                    meta={formatRupees(analytics.channels?.counter?.revenue || 0)}
+                  />
+                </AdminPanel>
 
                 <AdminPanel
                   title="Revenue"

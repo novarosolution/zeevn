@@ -11,7 +11,6 @@ import AdminButton from "../../components/admin/AdminButton";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminProductCell from "../../components/admin/AdminProductCell";
 import AdminToggleRow from "../../components/admin/AdminToggleRow";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
@@ -204,7 +203,7 @@ export default function AdminHomeSectionsScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton
+              <AdminButton
                 label={ADMIN_GATE.backHome}
                 variant="primary"
                 onPress={() => navigateCustomerRoute(navigation, "Home")}

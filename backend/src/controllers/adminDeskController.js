@@ -39,7 +39,7 @@ const STATUS_BUCKETS = {
   unpaid: ["pending_payment"],
 };
 /** Delivered cash-on-delivery orders whose cash has not been marked collected. */
-const CASH_DUE = { status: "delivered", paymentMethod: "Cash on Delivery", paymentStatus: "pending" };
+const CASH_DUE = { status: "delivered", paymentMethod: "Cash on Delivery", paymentStatus: "pending", channel: { $ne: "walk_in" } };
 const STALE_MINUTES = 10;
 const ONLINE_WINDOW_MS = 15 * 60 * 1000;
 const PAGE_SIZES = { min: 5, max: 100, fallback: 25 };
@@ -205,6 +205,9 @@ async function buildBaseClauses(query) {
   const customer = String(query.user || "");
   if (isId(customer)) clauses.push({ user: toId(customer) });
 
+  const channel = String(query.channel || "");
+  if (channel === "walk_in" || channel === "online") clauses.push({ channel });
+
   const { from, to } = await resolveRange(query);
   if (from || to) {
     const range = {};
@@ -238,7 +241,7 @@ async function searchAdminOrders(req, res, next) {
     );
     const sort = SORTS[String(req.query.sort || "")] || SORTS.newest;
 
-    const [total, totals, byStatusRows, attention, cashDue] = await Promise.all([
+    const [total, totals, byStatusRows, attention, cashDue, walkIn] = await Promise.all([
       Order.countDocuments(filter),
       Order.aggregate([
         { $match: filter },
@@ -252,6 +255,7 @@ async function searchAdminOrders(req, res, next) {
       Order.aggregate([{ $match: baseFilter }, { $group: { _id: "$status", n: { $sum: 1 } } }]),
       Order.countDocuments(allOf([...base, attentionClause(now)])),
       Order.countDocuments(allOf([...base, { ...CASH_DUE }])),
+      Order.countDocuments(allOf([...base, { channel: "walk_in" }])),
     ]);
 
     const pages = Math.max(1, Math.ceil(total / pageSize));
@@ -286,6 +290,7 @@ async function searchAdminOrders(req, res, next) {
         byStatus,
         attention,
         cashDue,
+        walkIn,
       },
       totals: { count: total, revenue: Math.round((totals[0]?.revenue || 0) * 100) / 100 },
     });
@@ -301,7 +306,7 @@ async function getDeskSummary(req, res, next) {
   try {
     const now = new Date();
     const dayStart = await shopDayStart(0);
-    const [byStatusRows, attention, cashDue, today, deliveredToday, awaitingReply, lowStock, outOfStock, ridersTotal, ridersOnline, pendingReturns, ops] =
+    const [byStatusRows, attention, cashDue, today, deliveredToday, awaitingReply, lowStock, outOfStock, ridersTotal, ridersOnline, pendingReturns, ops, counterToday] =
       await Promise.all([
         Order.aggregate([{ $group: { _id: "$status", n: { $sum: 1 } } }]),
         Order.countDocuments(attentionClause(now)),
@@ -319,7 +324,12 @@ async function getDeskSummary(req, res, next) {
           "messages.0": { $exists: true },
           $expr: { $ne: [{ $arrayElemAt: ["$messages.senderRole", -1] }, "admin"] },
         }),
-        Product.countDocuments({ inStock: true, stockQty: { $gt: 0, $lte: 5 } }),
+        Product.countDocuments({
+          $or: [
+            { inStock: true, stockQty: { $gt: 0, $lte: 5 } },
+            { stockCounter: { $gt: 0, $lte: 5 } },
+          ],
+        }),
         Product.countDocuments({ $or: [{ inStock: false }, { stockQty: { $lte: 0 } }] }),
         User.countDocuments({ isDeliveryPartner: true }),
         User.countDocuments({
@@ -328,6 +338,10 @@ async function getDeskSummary(req, res, next) {
         }),
         OrderReturn.countDocuments({ status: "pending" }),
         getStoreOps({ fresh: true }),
+        Order.aggregate([
+          { $match: { createdAt: { $gte: dayStart }, channel: "walk_in", status: { $ne: "cancelled" } } },
+          { $group: { _id: null, count: { $sum: 1 }, revenue: { $sum: "$totalPrice" } } },
+        ]),
       ]);
 
     const byStatus = {};
@@ -357,6 +371,7 @@ async function getDeskSummary(req, res, next) {
         cashDue,
         today: { count: today[0]?.count || 0, revenue: Math.round((today[0]?.revenue || 0) * 100) / 100 },
         deliveredToday,
+        counterToday: { count: counterToday[0]?.count || 0, revenue: Math.round((counterToday[0]?.revenue || 0) * 100) / 100 },
       },
       support: { awaitingReply },
       returns: { pending: pendingReturns },

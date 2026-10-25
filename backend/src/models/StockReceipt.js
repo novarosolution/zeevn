@@ -7,14 +7,17 @@ const receiptLineSchema = new mongoose.Schema(
     sku: { type: String, default: "", trim: true },
     unit: { type: String, default: "", trim: true },
     quantity: { type: Number, required: true, min: 1 },
+    unitCost: { type: Number, default: 0, min: 0 },
   },
   { _id: false }
 );
 
-/** Jars arriving at the one Zeevan shop. Draft does not touch stock. Confirm adds to stockQty. */
+/** Jars arriving at the shop. Draft does not touch stock. Confirm adds to the chosen pile. */
 const stockReceiptSchema = new mongoose.Schema(
   {
     note: { type: String, default: "", trim: true, maxlength: 200 },
+    supplierName: { type: String, default: "", trim: true, maxlength: 120 },
+    destination: { type: String, enum: ["online", "counter"], default: "online" },
     status: { type: String, enum: ["draft", "received"], default: "draft", index: true },
     lines: { type: [receiptLineSchema], default: [] },
     savedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },

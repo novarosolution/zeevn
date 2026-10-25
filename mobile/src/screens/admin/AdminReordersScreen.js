@@ -10,7 +10,6 @@ import AdminBadge from "../../components/admin/AdminBadge";
 import AdminButton from "../../components/admin/AdminButton";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminProductCell from "../../components/admin/AdminProductCell";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
@@ -126,7 +125,7 @@ export default function AdminReordersScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
-              <PremiumButton label={ADMIN_GATE.backHome} iconLeft="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>
@@ -208,7 +207,7 @@ export default function AdminReordersScreen({ navigation, route }) {
                             <Text style={styles.suggest}>{row.suggest}</Text>
                           </View>
                           <Text style={styles.meta}>
-                            On hand {row.onHand} · sold {row.sold} · {rateLabel(row.perDay)} a day
+                            On hand {row.onHand} · web {row.online ?? "—"} · floor {row.counter ?? "—"} · sold {row.sold} · {rateLabel(row.perDay)} a day
                           </Text>
                           <Text style={styles.reason}>{row.reason}</Text>
                           {row.out ? <AdminBadge label="Out" tone="red" size="sm" /> : row.low ? <AdminBadge label="Low" tone="gold" size="sm" /> : null}

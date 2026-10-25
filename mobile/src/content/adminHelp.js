@@ -20,6 +20,12 @@ export const ADMIN_HELP = {
           route: "AdminStockIn",
         },
         {
+          title: "Transfer to floor, then open Counter",
+          body: "Move jars online → shop floor before you take walk-in bills. The till sells floor stock only.",
+          route: "AdminTransfers",
+          also: { label: "Open till", route: "AdminCounter" },
+        },
+        {
           title: "Set today’s prices",
           body: "The customer pays price. MRP is shown struck through only when it is above that price.",
           route: "AdminPrices",
@@ -111,7 +117,7 @@ export const ADMIN_HELP = {
     {
       key: "products",
       title: "Products and prices",
-      intro: "One jar, one stock count. Size options are a label and a price.",
+      intro: "One jar, two stock piles. Size options are a label and a price.",
       steps: [
         {
           title: "The five lines",
@@ -138,12 +144,32 @@ export const ADMIN_HELP = {
     {
       key: "stock",
       title: "Stock",
-      intro: "One integer per product. Low is in stock with a count from 1 to 5. Out is not for sale, or a count under 1. Coming soon is a teaser, not a stock state.",
+      intro: "Two piles — web vs shop floor. Online stock is what the website sells. Shop-floor stock is what the counter till sells. Transfer jars between them so a walk-in never steals a web order. Low is 1 to 5 on either pile.",
       steps: [
         {
-          title: "Change a count",
-          body: "A count above 0 is for sale. Setting 0 takes it off sale. Switching it off keeps the count.",
+          title: "Two piles",
+          body: "Online is delivery. Floor is the counter. Transfer moves jars. The shop website never sells floor stock.",
           route: "AdminInventory",
+        },
+        {
+          title: "Change a count",
+          body: "A count above 0 on online is for sale on the web. Setting 0 takes it off sale. Switching it off keeps the count. Floor qty is separate.",
+          route: "AdminInventory",
+        },
+        {
+          title: "Counter till",
+          body: "Walk-in bills deduct shop-floor stock only. Cash or UPI. The bill prints like an order invoice.",
+          route: "AdminCounter",
+        },
+        {
+          title: "Transfers",
+          body: "Move jars online → floor before you open the till, or floor → online if you need them for delivery.",
+          route: "AdminTransfers",
+        },
+        {
+          title: "Stock out",
+          body: "Waste, damage, sample, or staff use. Pick the pile.",
+          route: "AdminStockOut",
         },
         {
           title: "A delivery of jars",
@@ -157,17 +183,17 @@ export const ADMIN_HELP = {
         },
         {
           title: "Count the shelf",
-          body: "One closing per date in Asia/Kolkata. Submit only when every line is counted. The snapshot does not change the count on the product.",
+          body: "Count both piles. Submit only when every line is counted. After submit you can apply the variance to stock.",
           route: "AdminClosing",
         },
         {
           title: "Sold and remaining",
-          body: "",
+          body: "The report shows online, shop-floor, and total on-hand plus stock value. Low is 1 to 5 on either pile.",
           route: "AdminStockReport",
         },
         {
           title: "Who changed a count",
-          body: "",
+          body: "Filter by pile and why: sale, walk-in, transfer, stock-in, stock-out, cancel, return, or a manual edit.",
           route: "AdminStockHistory",
         },
       ],
@@ -216,7 +242,7 @@ export const ADMIN_HELP = {
         },
         {
           title: "A message to every customer",
-          body: "",
+          body: "Optional: mention low floor stock in a shop broadcast. There is no extra push type.",
           route: "AdminNotifications",
         },
         {
@@ -226,7 +252,7 @@ export const ADMIN_HELP = {
         },
         {
           title: "A customer",
-          body: "",
+          body: "Spend is split online vs counter. Create a walk-in party by name and phone, leave a note, WhatsApp them, then bill them at the till.",
           route: "AdminCustomers",
         },
         {

@@ -284,7 +284,7 @@ export default function DeliveryDashboardScreen({ navigation }) {
       setLoading(true);
       setError("");
       const data = await fetchMyDeliveryOrders(token);
-      setOrders(Array.isArray(data) ? data : []);
+      setOrders((Array.isArray(data) ? data : []).filter((row) => row?.channel !== "walk_in"));
     } catch (err) {
       setError(err.message || "Unable to load assigned orders.");
     } finally {

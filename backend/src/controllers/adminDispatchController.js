@@ -117,7 +117,7 @@ async function listAdminDispatch(req, res, next) {
     const result = RESULTS.has(String(req.query.result || "")) ? String(req.query.result) : "";
     const pageSize = Math.min(PAGE.max, Math.max(PAGE.min, Math.round(Number(req.query.pageSize)) || PAGE.fallback));
 
-    const orderFilter = {};
+    const orderFilter = { channel: { $ne: "walk_in" } };
     if (isId(zone)) orderFilter.deliveryZone = toId(zone);
 
     const noRiderFilter = {

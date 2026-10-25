@@ -58,6 +58,7 @@ function PremiumProductCardBase({
   onRemoveFromCart,
   quantity = 0,
   isOutOfStock = false,
+  isAvailableAtCounter = false,
   isComingSoon = false,
   comingSoonNote = "",
   index,
@@ -280,7 +281,9 @@ function PremiumProductCardBase({
                 <ComingSoonProductOverlay note={launchNote} compact={compact} isDark={isDark} />
               ) : isOutOfStock ? (
                 <View style={styles.outOfStockOverlay}>
-                  <Text style={styles.outOfStockText}>{CARD_UI.soldOut}</Text>
+                  <Text style={styles.outOfStockText}>
+                    {isAvailableAtCounter ? "Available at the shop counter" : CARD_UI.soldOut}
+                  </Text>
                 </View>
               ) : null}
             </View>

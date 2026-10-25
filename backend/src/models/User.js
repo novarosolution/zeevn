@@ -85,6 +85,17 @@ const userSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    /** Created from the counter till — name + phone, no app login. */
+    walkIn: {
+      type: Boolean,
+      default: false,
+    },
+    adminNote: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: 240,
+    },
     /** Profile photo URL (e.g. Cloudinary). */
     avatar: {
       type: String,
@@ -138,6 +149,8 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.index({ isDeliveryPartner: 1 });
+userSchema.index({ phone: 1 });
+userSchema.index({ walkIn: 1 });
 userSchema.index({ "deliveryLiveLocation.updatedAt": 1 });
 
 module.exports = mongoose.model("User", userSchema);

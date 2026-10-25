@@ -322,6 +322,7 @@ async function approveReturn(req, res, next) {
 
     await restoreStockForOrderLines(doc.lines, {
       why: "return",
+      location: order.channel === "walk_in" ? "counter" : "online",
       who: actorName(req.user),
       order: order._id,
       orderRef: publicRef(order),

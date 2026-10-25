@@ -41,7 +41,8 @@ function OrderListItem({
 }) {
   const { colors: c } = useTheme();
   const statusStr = String(order?.status || "");
-  const showLiveMap = ORDER_STATUSES_WITH_LIVE_MAP.has(statusStr);
+  const isWalkIn = order?.channel === "walk_in";
+  const showLiveMap = !isWalkIn && ORDER_STATUSES_WITH_LIVE_MAP.has(statusStr);
 
   return (
     <OrdersPremiumCard
@@ -57,8 +58,8 @@ function OrderListItem({
       <OrderCardActions
         expanded={expanded}
         onToggleDetails={onToggleDetails}
-        onChangeAddress={onOpenEditAddress}
-        canEditAddress={canEditAddress}
+        onChangeAddress={isWalkIn ? undefined : onOpenEditAddress}
+        canEditAddress={!isWalkIn && canEditAddress}
         onDownloadInvoice={onDownloadInvoice}
         downloading={downloading}
         invoiceReady={Boolean(order)}

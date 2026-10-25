@@ -36,9 +36,8 @@ import { radius, spacing } from "../../theme/tokens";
 import { getImageUriCandidates, PRODUCT_HERO_BLURHASH } from "../../utils/image";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import SectionReveal from "../../components/motion/SectionReveal";
-import PremiumInput from "../../components/ui/PremiumInput";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumChip from "../../components/ui/PremiumChip";
+import AdminInput from "../../components/admin/AdminInput";
+import AdminButton from "../../components/admin/AdminButton";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 function dedupeUrls(urls = []) {
@@ -104,6 +103,9 @@ export default function AdminAddProductScreen({ navigation, route }) {
   const [inStock, setInStock] = useState(editingProduct ? editingProduct.inStock !== false : false);
   const [stockQty, setStockQty] = useState(
     editingProduct?.stockQty !== undefined ? String(editingProduct.stockQty) : "0"
+  );
+  const [stockCounter, setStockCounter] = useState(
+    editingProduct?.stockCounter !== undefined ? String(editingProduct.stockCounter) : "0"
   );
   const [ratingAverage, setRatingAverage] = useState(
     editingProduct?.ratingAverage !== undefined ? String(editingProduct.ratingAverage) : ""
@@ -483,7 +485,9 @@ export default function AdminAddProductScreen({ navigation, route }) {
         comingSoon,
         comingSoonNote: comingSoonNote.trim(),
         inStock,
-        stockQty: Math.max(0, Math.floor(parsedStockQty))};
+        stockQty: Math.max(0, Math.floor(parsedStockQty)),
+        stockCounter: Math.max(0, Math.floor(Number(stockCounter) || 0)),
+      };
 
       if (mrp.trim() !== "") {
         payload.mrp = Number(mrp);
@@ -608,9 +612,9 @@ export default function AdminAddProductScreen({ navigation, route }) {
                 title={ADMIN_GATE.title}
                 message="This account does not have admin privileges."
               />
-              <PremiumButton
+              <AdminButton
                 label={ADMIN_GATE.backHome}
-                iconLeft="home-outline"
+                icon="home-outline"
                 variant="primary"
                 size="md"
                 onPress={() => navigateCustomerRoute(navigation, "Home")}
@@ -637,10 +641,10 @@ export default function AdminAddProductScreen({ navigation, route }) {
         headerRight={
           <>
             {editingProduct ? (
-              <PremiumButton label="Delete" variant="danger" size="sm" onPress={handleDelete} />
+              <AdminButton label="Delete" variant="danger" size="sm" onPress={handleDelete} />
             ) : null}
-            <PremiumButton label="Cancel" variant="ghost" size="sm" onPress={() => navigation.goBack()} />
-            <PremiumButton
+            <AdminButton label="Cancel" variant="ghost" size="sm" onPress={() => navigation.goBack()} />
+            <AdminButton
               label={isSaving ? "Saving…" : "Save"}
               variant="primary"
               size="sm"
@@ -689,36 +693,36 @@ export default function AdminAddProductScreen({ navigation, route }) {
         ) : null}
 
         <View style={styles.fieldGap}>
-          <PremiumInput label="Product name" value={name} onChangeText={setName} iconLeft="cube-outline" />
+          <AdminInput label="Product name" value={name} onChangeText={setName} icon="cube-outline" />
         </View>
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Price (sale)"
             value={price}
             onChangeText={setPrice}
-            keyboardType="decimal-pad"
-            iconLeft="pricetag-outline"
+            numeric
+            icon="pricetag-outline"
           />
         </View>
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="MRP (optional)"
             value={mrp}
             onChangeText={setMrp}
-            keyboardType="decimal-pad"
-            helperText="Shop shows a strike-through MRP only when it is greater than price"
-            iconLeft="trending-up-outline"
+            numeric
+            hint="Shop shows a strike-through MRP only when it is greater than price"
+            icon="trending-up-outline"
           />
         </View>
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Description"
             value={description}
             onChangeText={setDescription}
             multiline
             numberOfLines={4}
             placeholder="Short paragraph for the shop"
-            iconLeft="document-text-outline"
+            icon="document-text-outline"
           />
         </View>
 
@@ -729,9 +733,9 @@ export default function AdminAddProductScreen({ navigation, route }) {
           defaultOpen
           complete={Boolean(primaryImage || photoUrls.length)}
         >
-        <PremiumButton
+        <AdminButton
           label={isUploadingImage ? "Uploading…" : "Upload photo"}
-          iconLeft="cloud-upload-outline"
+          icon="cloud-upload-outline"
           variant="secondary"
           size="sm"
           loading={isUploadingImage}
@@ -742,16 +746,16 @@ export default function AdminAddProductScreen({ navigation, route }) {
 
         <View style={styles.manualUrlRow}>
           <View style={styles.manualUrlInputFlex}>
-            <PremiumInput
+            <AdminInput
               label="Or paste image URL"
               value={manualPhotoUrl}
               onChangeText={setManualPhotoUrl}
               autoCapitalize="none"
               autoCorrect={false}
-              iconLeft="link-outline"
+              icon="link-outline"
             />
           </View>
-          <PremiumButton
+          <AdminButton
             label="Add"
             variant="ghost"
             size="sm"
@@ -780,15 +784,15 @@ export default function AdminAddProductScreen({ navigation, route }) {
             <View style={styles.thumbCard}>
               <RetryImage sourceUri={item} style={styles.thumbImage} />
               <View style={styles.thumbActions}>
-                <PremiumButton
+                <AdminButton
                   label="Cover"
                   variant={primaryImage === item ? "primary" : "ghost"}
                   size="sm"
                   onPress={() => setPrimaryImage(item)}
                   style={styles.thumbCoverBtn}
                 />
-                <PremiumButton
-                  iconLeft="trash-outline"
+                <AdminButton
+                  icon="trash-outline"
                   variant="danger"
                   size="sm"
                   accessibilityLabel="Remove photo"
@@ -809,47 +813,57 @@ export default function AdminAddProductScreen({ navigation, route }) {
           complete={Boolean(category?.trim() && (brand?.trim() || unit?.trim()))}
         >
         <View style={styles.fieldGap}>
-          <PremiumInput label="Category" value={category} onChangeText={setCategory} placeholder="e.g. Dairy" iconLeft="folder-outline" />
+          <AdminInput label="Category" value={category} onChangeText={setCategory} placeholder="e.g. Dairy" icon="folder-outline" />
         </View>
         <View style={styles.categoryHintWrap}>
           <Text style={styles.categoryHintText}>Quick categories:</Text>
           <View style={styles.categoryChipsRow}>
-            {CATEGORY_OPTIONS.map((item) => (
-              <PremiumChip
-                key={item}
-                label={item}
-                tone="gold"
-                size="xs"
-                selected={String(category || "").trim().toLowerCase() === item.toLowerCase()}
-                onPress={() => setCategory(item)}
-              />
-            ))}
+            {CATEGORY_OPTIONS.map((item) => {
+              const on = String(category || "").trim().toLowerCase() === item.toLowerCase();
+              return (
+                <AdminButton
+                  key={item}
+                  label={item}
+                  size="xs"
+                  variant={on ? "gold" : "soft"}
+                  onPress={() => setCategory(item)}
+                />
+              );
+            })}
           </View>
         </View>
         <View style={styles.row}>
           <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="Brand" value={brand} onChangeText={setBrand} placeholder="e.g. Amul" />
+            <AdminInput label="Brand" value={brand} onChangeText={setBrand} placeholder="e.g. Amul" />
           </View>
           <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput label="SKU" value={sku} onChangeText={setSku} placeholder="e.g. MLK-1L-001" autoCapitalize="none" />
+            <AdminInput label="SKU" value={sku} onChangeText={setSku} placeholder="e.g. MLK-1L-001" autoCapitalize="none" />
           </View>
         </View>
         <View style={styles.fieldGap}>
-          <PremiumInput label="Unit" value={unit} onChangeText={setUnit} placeholder="1 pc" />
+          <AdminInput label="Unit" value={unit} onChangeText={setUnit} placeholder="1 pc" />
         </View>
         <View style={styles.row}>
           <View style={[styles.fieldGap, styles.halfInput]}>
-            <PremiumInput
-              label="Stock count"
+            <AdminInput
+              label="Online stock"
               value={stockQty}
               onChangeText={onStockQtyChange}
-              keyboardType="number-pad"
+              integer
             />
           </View>
-          <View style={[styles.halfInput, styles.stockSwitch]}>
-            <Text style={styles.stockSwitchLabel}>{inStock ? "In stock" : "Out of stock"}</Text>
-            <AdminSwitch value={inStock} onChange={onStockSwitch} accessibilityLabel="In stock" />
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <AdminInput
+              label="Floor stock"
+              value={stockCounter}
+              onChangeText={setStockCounter}
+              integer
+            />
           </View>
+        </View>
+        <View style={[styles.stockSwitch, { alignSelf: "flex-start" }]}>
+          <Text style={styles.stockSwitchLabel}>{inStock ? "In stock" : "Out of stock"}</Text>
+          <AdminSwitch value={inStock} onChange={onStockSwitch} accessibilityLabel="In stock" />
         </View>
         </AdminFormSection>
         </AdminPanel>
@@ -864,31 +878,31 @@ export default function AdminAddProductScreen({ navigation, route }) {
           defaultOpen
         >
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Home section"
             value={homeSection}
             onChangeText={setHomeSection}
             placeholder="e.g. Best Sellers"
-            iconLeft="home-outline"
+            icon="home-outline"
           />
         </View>
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Product type"
             value={productType}
             onChangeText={setProductType}
             placeholder="e.g. Milk, Chips, Juice"
-            iconLeft="pricetags-outline"
+            icon="pricetags-outline"
           />
         </View>
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Home order"
             value={homeOrder}
             onChangeText={setHomeOrder}
-            keyboardType="number-pad"
+            integer
             placeholder="0, 1, 2…"
-            helperText="Lower numbers appear first on the home grid"
+            hint="Lower numbers appear first on the home grid"
           />
         </View>
         </AdminFormSection>
@@ -947,23 +961,23 @@ export default function AdminAddProductScreen({ navigation, route }) {
           </View>
         ) : null}
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Launch note (optional)"
             value={comingSoonNote}
             onChangeText={setComingSoonNote}
             placeholder="Festive launch · November"
-            helperText="A coming-soon jar can stay visible and cannot be purchased"
-            iconLeft="sparkles-outline"
+            hint="A coming-soon jar can stay visible and cannot be purchased"
+            icon="sparkles-outline"
           />
         </View>
         </AdminFormSection>
         <View style={styles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="ETA"
             value={eta}
             onChangeText={setEta}
             placeholder="10 MINS"
-            helperText="Shown on the shop card. Default 10 MINS"
+            hint="Shown on the shop card. Default 10 MINS"
           />
         </View>
         </AdminPanel>
@@ -976,11 +990,11 @@ export default function AdminAddProductScreen({ navigation, route }) {
         ) : null}
 
         {compact ? null : (
-        <PremiumButton
+        <AdminButton
           label={isSaving ? "Saving…" : "Save"}
-          iconLeft="save-outline"
+          icon="save-outline"
           variant="primary"
-          size="lg"
+          size="md"
           loading={isSaving}
           disabled={isSaving}
           onPress={handleSubmit}
@@ -1012,9 +1026,9 @@ export default function AdminAddProductScreen({ navigation, route }) {
     </KeyboardAvoidingView>
       {compact ? (
         <View style={styles.stickySave}>
-          <PremiumButton
+          <AdminButton
             label={isSaving ? "Saving…" : "Save"}
-            iconLeft="save-outline"
+            icon="save-outline"
             variant="primary"
             size="md"
             loading={isSaving}

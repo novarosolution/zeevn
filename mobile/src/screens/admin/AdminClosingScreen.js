@@ -13,7 +13,6 @@ import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
@@ -25,10 +24,11 @@ import {
   saveAdminClosingDraft,
   searchAdminClosings,
   submitAdminClosing,
+  applyAdminClosing,
 } from "../../services/adminService";
-import { adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
+import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, spacing } from "../../theme/tokens";
+import { spacing } from "../../theme/tokens";
 function formatDateKey(key) {
   const [y, m, d] = String(key || "").split("-").map(Number);
   if (!y || !m || !d) return key || "";
@@ -49,9 +49,16 @@ function countedText(value) {
 }
 
 function lineKind(line) {
-  const raw = countedText(line.counted);
-  if (raw === "") return "uncounted";
-  const v = Number(raw) - Number(line.expected || 0);
+  const online = countedText(line.countedOnline);
+  const floor = countedText(line.countedCounter);
+  const legacy = countedText(line.counted);
+  if (online === "" && floor === "" && legacy === "") return "uncounted";
+  const counted =
+    online === "" && floor === ""
+      ? Number(legacy)
+      : (online === "" ? 0 : Number(online)) + (floor === "" ? 0 : Number(floor));
+  const expected = Number(line.expectedOnline ?? line.expected || 0) + Number(line.expectedCounter || 0);
+  const v = counted - expected;
   if (v < 0) return "shortage";
   if (v > 0) return "surplus";
   return "match";
@@ -62,6 +69,8 @@ function payloadOf(sheet) {
     lines: (sheet?.lines || []).map((line) => ({
       product: line.product,
       counted: countedText(line.counted) === "" ? null : Math.max(0, Number.parseInt(String(line.counted), 10) || 0),
+      countedOnline: countedText(line.countedOnline) === "" ? null : Math.max(0, Number.parseInt(String(line.countedOnline), 10) || 0),
+      countedCounter: countedText(line.countedCounter) === "" ? null : Math.max(0, Number.parseInt(String(line.countedCounter), 10) || 0),
       note: String(line.note || "").slice(0, 120),
     })),
   };
@@ -81,7 +90,7 @@ export default function AdminClosingScreen({ navigation, route }) {
   const compact = useAdminCompactLayout();
   const insets = useSafeAreaInsets();
   const isAdmin = Boolean(user?.isAdmin);
-  const styles = useMemo(() => createStyles(chrome, c, shadowPremium), [chrome, c, shadowPremium]);
+  const styles = useMemo(() => createStyles(chrome, c, shadowPremium, compact), [chrome, c, shadowPremium, compact]);
   const { confirm, dialog } = useAdminConfirm();
 
   const [mode, setMode] = useState("sheet");
@@ -160,7 +169,9 @@ export default function AdminClosingScreen({ navigation, route }) {
 
   const submit = async () => {
     if (!sheet || locked || busy) return;
-    const missing = (sheet.lines || []).some((line) => countedText(line.counted) === "");
+    const missing = (sheet.lines || []).some(
+      (line) => countedText(line.countedOnline) === "" && countedText(line.countedCounter) === "" && countedText(line.counted) === ""
+    );
     if (missing) {
       setError(COPY.submitBlocked);
       return;
@@ -195,6 +206,22 @@ export default function AdminClosingScreen({ navigation, route }) {
     }
   };
 
+  const apply = async () => {
+    if (!sheet || busy) return;
+    const ok = await confirm({ title: `Write ${sheet.date} counts onto stock?`, confirmLabel: "Apply", icon: "save-outline" });
+    if (!ok) return;
+    setBusy(true);
+    setError("");
+    try {
+      const saved = await applyAdminClosing(null, sheet.date);
+      setSheet(saved);
+    } catch (err) {
+      setError(err?.message || "Couldn't apply the count.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const goStock = (line) => {
     navigation.navigate("AdminInventory", { search: line.sku || line.name || "" });
   };
@@ -212,7 +239,7 @@ export default function AdminClosingScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
-              <PremiumButton label={ADMIN_GATE.backHome} iconLeft="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>
@@ -221,12 +248,17 @@ export default function AdminClosingScreen({ navigation, route }) {
   }
 
   const lines = (sheet?.lines || []).filter((line) => filter === "all" || lineKind(line) === filter);
-  const canSubmit = !locked && (sheet?.lines || []).every((line) => countedText(line.counted) !== "");
+  const canSubmit = !locked && (sheet?.lines || []).every(
+    (line) => countedText(line.countedOnline) !== "" || countedText(line.countedCounter) !== "" || countedText(line.counted) !== ""
+  );
 
   const actions = sheet ? (
     <View style={[styles.actions, compact && styles.actionsDock]}>
       {locked ? (
-        <AdminButton label="Reopen" icon="create-outline" variant="soft" onPress={reopen} loading={busy} style={styles.actionBtn} />
+        <>
+          <AdminButton label="Reopen" icon="create-outline" variant="soft" onPress={reopen} loading={busy} style={styles.actionBtn} />
+          <AdminButton label="Apply to stock" icon="save-outline" variant="gold" onPress={apply} loading={busy} style={styles.actionBtn} />
+        </>
       ) : (
         <>
           <AdminButton label="Save draft" icon="save-outline" variant="soft" onPress={saveDraft} loading={busy} style={styles.actionBtn} />
@@ -357,19 +389,30 @@ export default function AdminClosingScreen({ navigation, route }) {
                             <Text style={styles.sub} numberOfLines={1}>
                               {line.sku || "No SKU"}
                               {line.unit ? ` · ${line.unit}` : ""}
-                              {` · expected ${line.expected}`}
+                              {` · online ${line.expectedOnline ?? line.expected} · floor ${line.expectedCounter || 0}`}
                             </Text>
                           </View>
                           {locked ? (
-                            <Text style={styles.strong}>{countedText(line.counted)}</Text>
+                            <Text style={styles.strong}>
+                              {`web ${countedText(line.countedOnline) || countedText(line.counted) || "—"} · floor ${countedText(line.countedCounter) || "—"}`}
+                            </Text>
                           ) : (
-                            <AdminInput
-                              value={countedText(line.counted)}
-                              onChangeText={(counted) => setLine(line.product, { counted })}
-                              placeholder="Count"
-                              integer
-                              style={styles.countField}
-                            />
+                            <View style={styles.countPair}>
+                              <AdminInput
+                                value={countedText(line.countedOnline)}
+                                onChangeText={(countedOnline) => setLine(line.product, { countedOnline })}
+                                placeholder="Online"
+                                integer
+                                style={styles.countField}
+                              />
+                              <AdminInput
+                                value={countedText(line.countedCounter)}
+                                onChangeText={(countedCounter) => setLine(line.product, { countedCounter })}
+                                placeholder="Floor"
+                                integer
+                                style={styles.countField}
+                              />
+                            </View>
                           )}
                           {kind !== "uncounted" ? (
                             <AdminBadge
@@ -414,7 +457,7 @@ export default function AdminClosingScreen({ navigation, route }) {
   );
 }
 
-function createStyles(chrome, c, shadowPremium) {
+function createStyles(chrome, c, shadowPremium, compact) {
   return StyleSheet.create({
     screen: { flex: 1, width: "100%", alignSelf: "center", maxWidth: "100%" },
     panel: { ...adminShellContent(), gap: spacing.sm + 2 },
@@ -423,7 +466,7 @@ function createStyles(chrome, c, shadowPremium) {
     headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
     sheetHead: { gap: 10 },
     sheetTitle: { flexDirection: "row", alignItems: "center", gap: 10 },
-    date: { fontSize: 22, letterSpacing: -0.4, color: chrome.ink, fontFamily: fonts.semibold },
+    date: { fontSize: 22, letterSpacing: -0.4, color: chrome.ink, fontFamily: ADMIN_FONT.semibold },
     tilePhone: { flexBasis: "30%", flexGrow: 1, maxWidth: "32%" },
     list: {
       backgroundColor: chrome.card,
@@ -447,7 +490,7 @@ function createStyles(chrome, c, shadowPremium) {
       letterSpacing: 0.7,
       textTransform: "uppercase",
       color: chrome.inkFaint,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
     },
     row: {
       flexDirection: "row",
@@ -462,9 +505,9 @@ function createStyles(chrome, c, shadowPremium) {
     card: { padding: 14, gap: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: chrome.lineSoft },
     cardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
     pressed: { backgroundColor: chrome.paper },
-    strong: { fontSize: 13.5, color: chrome.ink, fontFamily: fonts.semibold },
-    body: { fontSize: 13, color: chrome.ink, fontFamily: fonts.regular },
-    sub: { fontSize: 11.5, color: chrome.inkFaint, fontFamily: fonts.regular },
+    strong: { fontSize: 13.5, color: chrome.ink, fontFamily: ADMIN_FONT.semibold },
+    body: { fontSize: 13, color: chrome.ink, fontFamily: ADMIN_FONT.regular },
+    sub: { fontSize: 11.5, color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular },
     lineRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -481,9 +524,10 @@ function createStyles(chrome, c, shadowPremium) {
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: chrome.lineSoft,
     },
-    countField: { width: 88 },
+    countPair: { flexDirection: compact ? "column" : "row", alignItems: compact ? "stretch" : "center", gap: 8, minWidth: compact ? "100%" : 184 },
+    countField: { width: compact ? "100%" : 88 },
     noteField: { flexGrow: 1, minWidth: 140 },
-    link: { fontSize: 12.5, color: chrome.goldDeep, fontFamily: fonts.semibold },
+    link: { fontSize: 12.5, color: chrome.goldDeep, fontFamily: ADMIN_FONT.semibold },
     actions: { flexDirection: "row", gap: 8 },
     actionsDock: { width: "100%" },
     actionBtn: { flex: 1 },

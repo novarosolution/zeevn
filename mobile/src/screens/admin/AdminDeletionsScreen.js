@@ -14,7 +14,6 @@ import AdminInput from "../../components/admin/AdminInput";
 import AdminPagination from "../../components/admin/AdminPagination";
 import AdminPanel from "../../components/admin/AdminPanel";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumLoader from "../../components/ui/PremiumLoader";
@@ -200,7 +199,7 @@ export default function AdminDeletionsScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
-              <PremiumButton label={ADMIN_GATE.backHome} iconLeft="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>

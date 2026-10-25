@@ -7,7 +7,6 @@ import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
 import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import AdminButton from "../../components/admin/AdminButton";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -41,7 +40,7 @@ export default function AdminHelpScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>

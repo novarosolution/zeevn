@@ -204,6 +204,7 @@ async function createProduct(req, res, next) {
     const variantRows = sanitizeVariants(variants);
 
     const createdQty = Math.max(0, toNumber(stockQty, 0));
+    const createdCounter = Math.max(0, toNumber(req.body?.stockCounter, 0));
     const product = await Product.create({
       name,
       price: priceNum,
@@ -226,6 +227,7 @@ async function createProduct(req, res, next) {
       comingSoonNote: String(comingSoonNote || "").trim(),
       inStock: toBoolean(inStock, true),
       stockQty: createdQty,
+      stockCounter: createdCounter,
       ratingAverage: ratingNum,
       reviewCount: reviewNum,
       badgeText: String(badgeText || "").trim(),
@@ -255,6 +257,15 @@ async function createProduct(req, res, next) {
       before: 0,
       after: createdQty,
       why: "manual",
+      location: "online",
+      who: actorName(req.user),
+    });
+    await recordStockChange({
+      product,
+      before: 0,
+      after: createdCounter,
+      why: "manual",
+      location: "counter",
       who: actorName(req.user),
     });
     await recordAdminAction(req, {
@@ -279,6 +290,7 @@ async function updateProduct(req, res, next) {
       return res.status(404).json({ message: "Product not found." });
     }
     const beforeQty = qtyOf(product.stockQty);
+    const beforeCounter = qtyOf(product.stockCounter);
 
     const {
       name,
@@ -355,6 +367,9 @@ async function updateProduct(req, res, next) {
     if (comingSoonNote !== undefined) product.comingSoonNote = String(comingSoonNote || "").trim();
     if (inStock !== undefined) product.inStock = toBoolean(inStock, product.inStock);
     if (stockQty !== undefined) product.stockQty = Math.max(0, toNumber(stockQty, product.stockQty));
+    if (req.body?.stockCounter !== undefined) {
+      product.stockCounter = Math.max(0, toNumber(req.body.stockCounter, product.stockCounter));
+    }
     if (ratingAverage !== undefined) {
       product.ratingAverage = Math.min(5, Math.max(0, toNumber(ratingAverage, product.ratingAverage)));
     }
@@ -388,11 +403,20 @@ async function updateProduct(req, res, next) {
       before: beforeQty,
       after: product.stockQty,
       why: "manual",
+      location: "online",
+      who: actorName(req.user),
+    });
+    await recordStockChange({
+      product,
+      before: beforeCounter,
+      after: product.stockCounter,
+      why: "manual",
+      location: "counter",
       who: actorName(req.user),
     });
     const keys = Object.keys(req.body || {}).filter((key) => req.body[key] !== undefined);
-    const stockOnly = keys.length > 0 && keys.every((key) => key === "stockQty" || key === "inStock");
-    const stockMoved = qtyOf(product.stockQty) !== beforeQty;
+    const stockOnly = keys.length > 0 && keys.every((key) => key === "stockQty" || key === "stockCounter" || key === "inStock");
+    const stockMoved = qtyOf(product.stockQty) !== beforeQty || qtyOf(product.stockCounter) !== beforeCounter;
     if (!stockOnly) {
       await recordAdminAction(req, {
         action: "Edited product",

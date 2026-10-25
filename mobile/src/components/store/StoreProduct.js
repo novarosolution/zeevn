@@ -561,6 +561,7 @@ export default function StoreProduct({
   liveRatingAvg = 0,
   reviewCountDisplay = 0,
   isOutOfStock,
+  soldTag: soldTagProp = "",
   isComingSoon,
   comingSoonNote,
   quantity = 0,
@@ -605,7 +606,11 @@ export default function StoreProduct({
   const dockPad = STORE_NAV_HEIGHT + dockBottom + 28;
 
   const wished = wishlist.has(product.id);
-  const unavailable = isComingSoon ? STORE_PRODUCT.unavailable.soon : isOutOfStock ? STORE_PRODUCT.unavailable.sold : "";
+  const unavailable = isComingSoon
+    ? STORE_PRODUCT.unavailable.soon
+    : isOutOfStock
+      ? soldTagProp || STORE_PRODUCT.unavailable.sold
+      : "";
   const stockHint = getStockHint(product);
   const rating = Number(liveRatingAvg) || 0;
   const hasVariants = variants.length > 0;
@@ -852,7 +857,13 @@ export default function StoreProduct({
               index={index}
               onIndex={handleIndex}
               badge={badge}
-              soldTag={isComingSoon ? comingSoonNote || STORE_PRODUCT.unavailable.soon : isOutOfStock ? STORE_PRODUCT.unavailable.sold : ""}
+              soldTag={
+                isComingSoon
+                  ? comingSoonNote || STORE_PRODUCT.unavailable.soon
+                  : isOutOfStock
+                    ? soldTagProp || STORE_PRODUCT.unavailable.sold
+                    : ""
+              }
               dim={Boolean(unavailable)}
             />
 

@@ -8,13 +8,12 @@ import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import AdminBadge from "../../components/admin/AdminBadge";
 import AdminButton from "../../components/admin/AdminButton";
 import { AdminSettingRow } from "../../components/admin/AdminSection";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumLoader from "../../components/ui/PremiumLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchApiHealth } from "../../services/apiClient";
-import { searchAdminOrders } from "../../services/adminService";
+import { fetchAdminProducts, searchAdminOrders } from "../../services/adminService";
 import { fetchStoreInfo } from "../../services/userService";
 import { adminGatePanel, adminShellContent, useAdminChrome } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
@@ -60,6 +59,7 @@ export default function AdminHealthScreen({ navigation, route }) {
   const [store, setStore] = useState(null);
   const [order, setOrder] = useState(null);
   const [ordersKnown, setOrdersKnown] = useState(false);
+  const [stockNote, setStockNote] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unreachable, setUnreachable] = useState(false);
@@ -70,11 +70,33 @@ export default function AdminHealthScreen({ navigation, route }) {
       const next = await fetchApiHealth();
       setHealth(next);
       setUnreachable(false);
-      const [storeRes, orderRes] = await Promise.allSettled([
+      const [storeRes, orderRes, productRes] = await Promise.allSettled([
         fetchStoreInfo(),
         searchAdminOrders(null, { page: 1, pageSize: 5, sort: "newest" }),
+        fetchAdminProducts(),
       ]);
       setStore(storeRes.status === "fulfilled" ? storeRes.value : null);
+      if (productRes.status === "fulfilled") {
+        const list = Array.isArray(productRes.value) ? productRes.value : [];
+        const lowOnline = list.filter((p) => {
+          const q = Math.max(0, Number(p?.stockQty) || 0);
+          return p?.inStock !== false && q >= 1 && q <= 5;
+        }).length;
+        const lowFloor = list.filter((p) => {
+          const f = Math.max(0, Number(p?.stockCounter) || 0);
+          return f >= 1 && f <= 5;
+        }).length;
+        if (!lowOnline && !lowFloor) setStockNote("Online and floor piles look healthy.");
+        else {
+          setStockNote(
+            [lowOnline ? `${lowOnline} jars low online` : "", lowFloor ? `${lowFloor} jars low on the floor` : ""]
+              .filter(Boolean)
+              .join(" · ")
+          );
+        }
+      } else {
+        setStockNote("");
+      }
       if (orderRes.status === "fulfilled") {
         setOrder(orderRes.value?.items?.[0] || null);
         setOrdersKnown(true);
@@ -113,7 +135,7 @@ export default function AdminHealthScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>
@@ -174,12 +196,23 @@ export default function AdminHealthScreen({ navigation, route }) {
                   <AdminSettingRow
                     title="Checkout"
                     description={checkout.detail || undefined}
-                    last
                     right={
                       <View style={styles.checkoutRight}>
                         <AdminBadge label={checkout.label} tone={checkout.tone} size="sm" />
                         <AdminButton label="Edit" variant="ghost" size="sm" onPress={() => navigation.navigate("AdminSettings")} />
                       </View>
+                    }
+                  />
+                  <AdminSettingRow
+                    title="Stock piles"
+                    description={stockNote || "Online delivery stock and shop-floor jars."}
+                    last
+                    right={
+                      <AdminBadge
+                        label={stockNote.includes("low") ? "Low" : "OK"}
+                        tone={stockNote.includes("low") ? "gold" : "green"}
+                        size="sm"
+                      />
                     }
                   />
                 </View>

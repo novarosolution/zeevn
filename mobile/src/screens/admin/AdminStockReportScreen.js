@@ -14,7 +14,6 @@ import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminProductCell from "../../components/admin/AdminProductCell";
 import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
@@ -23,6 +22,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminStockReport } from "../../services/adminService";
+import { printAdminHtml } from "../../utils/printAdminHtml";
 import { adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, radius, spacing } from "../../theme/tokens";
@@ -57,6 +57,14 @@ function pillOf(status) {
   return { label: "In stock", tone: "green" };
 }
 
+function escapeHtml(val) {
+  return String(val ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function csvEscape(val) {
   const s = String(val ?? "");
   if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
@@ -64,13 +72,15 @@ function csvEscape(val) {
 }
 
 async function exportRows(rows) {
-  const header = ["name", "SKU", "on hand", "status", "stock value", "sold", "sold ₹"];
+  const header = ["name", "SKU", "online", "floor", "on hand", "status", "stock value", "sold", "sold ₹"];
   const lines = [header.join(",")];
   for (const row of rows) {
     lines.push(
       [
         csvEscape(row.name),
         csvEscape(row.sku),
+        row.online ?? "",
+        row.counter ?? "",
         row.onHand,
         pillOf(row.status).label,
         formatRupees(row.stockValue),
@@ -203,6 +213,22 @@ export default function AdminStockReportScreen({ navigation, route }) {
     }
   };
 
+  const handlePrint = async () => {
+    try {
+      const rows = visible
+        .map(
+          (row) =>
+            `<tr><td>${escapeHtml(row.name)}</td><td>${escapeHtml(row.sku)}</td><td>${row.online ?? "—"}</td><td>${row.counter ?? "—"}</td><td>${row.onHand ?? "—"}</td><td>${escapeHtml(formatRupees(row.stockValue))}</td></tr>`
+        )
+        .join("");
+      await printAdminHtml(`<!doctype html><html><head><meta charset="utf-8"/><title>Stock report</title>
+        <style>body{font-family:system-ui,sans-serif;padding:16px;color:#1a1a1a}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border-bottom:1px solid #e5e5e5;padding:6px 8px;text-align:left}th{color:#666}</style></head>
+        <body><h1>Stock report</h1><table><thead><tr><th>Product</th><th>SKU</th><th>Online</th><th>Floor</th><th>On hand</th><th>Value</th></tr></thead><tbody>${rows}</tbody></table></body></html>`);
+    } catch (err) {
+      toastError(err.message || "Could not print.", { title: "Print failed" });
+    }
+  };
+
   if (user && !user.isAdmin) {
     return (
       <AdminScreenShell style={styles.screen}>
@@ -210,7 +236,7 @@ export default function AdminStockReportScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>
@@ -237,7 +263,7 @@ export default function AdminStockReportScreen({ navigation, route }) {
         </View>
         {compact ? (
           <View style={styles.cardStats}>
-            <Text style={styles.num}>On hand {row.onHand}</Text>
+            <Text style={styles.num}>On hand {row.onHand} · web {row.online ?? "—"} · floor {row.counter ?? "—"}</Text>
             <AdminBadge label={pill.label} tone={pill.tone} size="sm" />
             <Text style={styles.num}>{formatRupees(row.stockValue)}</Text>
             <Text style={styles.num}>Sold {row.sold}</Text>
@@ -245,6 +271,8 @@ export default function AdminStockReportScreen({ navigation, route }) {
           </View>
         ) : (
           <View style={styles.cols}>
+            <Text style={styles.num}>{row.online ?? "—"}</Text>
+            <Text style={styles.num}>{row.counter ?? "—"}</Text>
             <Text style={styles.num}>{row.onHand}</Text>
             <AdminBadge label={pill.label} tone={pill.tone} size="sm" />
             <Text style={styles.num}>{formatRupees(row.stockValue)}</Text>
@@ -273,6 +301,7 @@ export default function AdminStockReportScreen({ navigation, route }) {
           headerRight={
             <View style={styles.headerActions}>
               <AdminButton label="CSV" icon="download-outline" variant="ghost" size="sm" onPress={handleExport} disabled={!visible.length} />
+              <AdminButton label="Print" icon="print-outline" variant="ghost" size="sm" onPress={handlePrint} disabled={!visible.length} />
               <AdminButton label="Refresh" icon="refresh-outline" variant="ghost" size="sm" onPress={load} />
             </View>
           }
@@ -332,6 +361,8 @@ export default function AdminStockReportScreen({ navigation, route }) {
                 {!compact ? (
                   <View style={styles.head}>
                     <Text style={[styles.headText, styles.cell]}>Product</Text>
+                    <Text style={styles.headText}>Online</Text>
+                    <Text style={styles.headText}>Floor</Text>
                     <Text style={styles.headText}>On hand</Text>
                     <Text style={styles.headText}>Status</Text>
                     <Text style={styles.headText}>Value</Text>

@@ -175,7 +175,14 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    /** Online / delivery stockroom. Shop checkout sells from this pile only. */
     stockQty: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    /** Shop-floor / counter pile. Walk-in bills sell from this pile only. */
+    stockCounter: {
       type: Number,
       default: 0,
       min: 0,

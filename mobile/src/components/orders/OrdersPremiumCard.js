@@ -143,7 +143,14 @@ function OrdersPremiumCardBase({
               {formatINR(order?.totalPrice)}
             </Text>
           </View>
-          <StatusChip status={statusStr} c={c} isDark={isDark} />
+          <View style={styles.chipCol}>
+            {order?.channel === "walk_in" ? (
+              <View style={[styles.statusChip, { borderColor: c.primaryBorder, backgroundColor: c.primarySoft }]}>
+                <Text style={[styles.statusChipText, { color: isDark ? c.textPrimary : FIGMA.ink }]}>Counter</Text>
+              </View>
+            ) : null}
+            <StatusChip status={statusStr} c={c} isDark={isDark} />
+          </View>
         </View>
 
         <View style={[styles.summaryRow, { backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(250,245,236,0.8)" }]}>
@@ -173,7 +180,7 @@ function OrdersPremiumCardBase({
           )
         ) : null}
 
-        {compact && compactShipLine ? (
+        {compact && compactShipLine && order?.channel !== "walk_in" ? (
           <View style={styles.shipRow}>
             <Ionicons name={I.ship} size={14} color={FIGMA.goldDeep} />
             <Text style={[styles.shipText, figmaTextMuted(isDark)]} numberOfLines={1}>
@@ -262,6 +269,7 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 8,
   },
+  chipCol: { alignItems: "flex-end", gap: 6 },
   headText: {
     flex: 1,
     minWidth: 0,

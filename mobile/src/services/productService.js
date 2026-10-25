@@ -145,6 +145,7 @@ export function normalizeProduct(raw) {
     comingSoonNote: String(raw.comingSoonNote ?? "").trim(),
     inStock: raw.inStock !== false,
     stockQty: Number.isFinite(Number(raw.stockQty)) ? Math.max(0, Number(raw.stockQty)) : 0,
+    stockCounter: Number.isFinite(Number(raw.stockCounter)) ? Math.max(0, Number(raw.stockCounter)) : 0,
     ratingAverage: Number.isFinite(ratingAvg) ? Math.min(5, Math.max(0, ratingAvg)) : 0,
     reviewCount: Number.isFinite(reviewCt) ? Math.max(0, Math.floor(reviewCt)) : 0,
     badgeText: String(raw.badgeText ?? "").trim(),

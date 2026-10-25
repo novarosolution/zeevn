@@ -29,6 +29,8 @@ function present(row) {
     orderRef: row.orderRef || "",
     receiptId: row.receipt ? String(row.receipt) : "",
     receiptNote: row.receiptNote || "",
+    location: row.location || "online",
+    transferId: row.transfer ? String(row.transfer) : "",
   };
 }
 
@@ -48,6 +50,8 @@ async function listStockHistory(req, res, next) {
 
     const why = String(req.query.why || "").trim();
     if (WHYS.includes(why)) filter.why = why;
+    const location = String(req.query.location || "").trim();
+    if (location === "online" || location === "counter") filter.location = location;
 
     const text = String(req.query.q || "").trim();
     if (text) {
@@ -81,6 +85,7 @@ async function listStockHistory(req, res, next) {
       pageSize,
       range: picked.range,
       why: WHYS.includes(why) ? why : "all",
+      location: location === "online" || location === "counter" ? location : "all",
       from,
       to,
     });

@@ -114,7 +114,7 @@ export const ADMIN_SCREEN_COPY = {
   },
   customers: {
     title: "Customers",
-    subtitle: "Who has ordered",
+    subtitle: "Online and walk-in spend",
     empty: "No customers yet.",
     emptySearch: "No customers match that search.",
   },
@@ -139,7 +139,7 @@ export const ADMIN_SCREEN_COPY = {
   },
   analytics: {
     title: "Analytics",
-    subtitle: "Orders, revenue, and top jars",
+    subtitle: "Online vs counter, revenue, and top jars",
   },
   coupons: {
     title: "Coupons",
@@ -198,13 +198,13 @@ export const ADMIN_SCREEN_COPY = {
   },
   inventory: {
     title: "Stock",
-    subtitle: "In, out, and bills",
+    subtitle: "Online pile and shop floor",
     empty: "No products yet — add your first jar",
     emptySearch: "No products match that search",
   },
   stockIn: {
     title: "Stock in",
-    subtitle: "New stock and bills",
+    subtitle: "Choose online or shop floor",
     emptyDrafts: "No delivery waiting to book",
     emptyReceived: "No deliveries booked",
     confirm: "Add these jars to stock?",
@@ -220,19 +220,19 @@ export const ADMIN_SCREEN_COPY = {
   },
   closing: {
     title: "Daily closing",
-    subtitle: "Count the shelf",
+    subtitle: "Count online and floor",
     emptyPast: "No closing saved yet.",
     confirm: "Save this count? Stock will not change.",
     submitBlocked: "Count every jar before you submit.",
   },
   stockReport: {
     title: "Stock report",
-    subtitle: "On hand and sold",
+    subtitle: "Online, floor, total, and value",
     empty: "No products yet — add your first jar.",
   },
   stockHistory: {
     title: "Stock history",
-    subtitle: "What changed the count",
+    subtitle: "By pile and reason",
     empty: "No stock changes in this period.",
   },
 };

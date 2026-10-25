@@ -64,7 +64,7 @@ async function listReorders(req, res, next) {
 
     const [products, orders, drafts] = await Promise.all([
       Product.find({ isPublished: { $ne: false } })
-        .select("name sku image images unit stockQty inStock comingSoon")
+        .select("name sku image images unit stockQty stockCounter inStock comingSoon")
         .lean(),
       Order.find({
         status: "delivered",
@@ -101,7 +101,9 @@ async function listReorders(req, res, next) {
         const sold = soldBy.get(id) || 0;
         const perDay = sold / periodDays;
         const target = Math.ceil(perDay * coverDays);
-        const onHand = Math.max(0, Number(p.stockQty) || 0);
+        const online = Math.max(0, Number(p.stockQty) || 0);
+        const counter = Math.max(0, Number(p.stockCounter) || 0);
+        const onHand = online + counter;
         const coming = comingBy.get(id) || 0;
         const suggest = sold < 1 ? 0 : Math.max(0, target - onHand - coming);
         const out = stockOut(p);
@@ -113,6 +115,8 @@ async function listReorders(req, res, next) {
           unit: p.unit || "",
           image: coverUri(p),
           onHand,
+          online,
+          counter,
           sold,
           perDay,
           target,

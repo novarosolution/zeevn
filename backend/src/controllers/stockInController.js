@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const StockReceipt = require("../models/StockReceipt");
-const { restoreStockForOrderLines } = require("../utils/stock");
+const { restoreStockForOrderLines, locationOf } = require("../utils/stock");
 const { recordAdminAction, productOpen } = require("../utils/adminLog");
 
 const PAGE_SIZE = { min: 5, max: 100, fallback: 25 };
@@ -20,13 +20,20 @@ function actorName(user) {
 function present(doc) {
   const lines = doc.lines || [];
   const totalJars = lines.reduce((sum, line) => sum + Math.max(0, Number(line.quantity) || 0), 0);
+  const billValue = lines.reduce(
+    (sum, line) => sum + Math.max(0, Number(line.quantity) || 0) * Math.max(0, Number(line.unitCost) || 0),
+    0
+  );
   return {
     _id: doc._id,
     note: doc.note || "",
+    supplierName: doc.supplierName || "",
+    destination: doc.destination || "online",
     status: doc.status,
     lines,
     lineCount: lines.length,
     totalJars,
+    billValue: Math.round(billValue),
     savedByName: doc.savedByName || "",
     receivedAt: doc.receivedAt || null,
     createdAt: doc.createdAt,
@@ -45,8 +52,9 @@ async function sanitizeLines(raw) {
     if (seen.has(key)) continue;
     const quantity = Math.round(Number(row.quantity));
     if (!Number.isFinite(quantity) || quantity < 1) continue;
+    const unitCost = Math.max(0, Number(row.unitCost) || 0);
     seen.add(key);
-    wanted.push({ productId: key, quantity });
+    wanted.push({ productId: key, quantity, unitCost });
   }
 
   if (!wanted.length) return [];
@@ -65,6 +73,7 @@ async function sanitizeLines(raw) {
       sku: String(product.sku || "").trim(),
       unit: String(product.unit || "").trim(),
       quantity: row.quantity,
+      unitCost: row.unitCost,
     };
   });
 }
@@ -124,6 +133,8 @@ async function createReceipt(req, res, next) {
   try {
     const doc = await StockReceipt.create({
       note: readNote(req.body?.note),
+      supplierName: String(req.body?.supplierName || "").trim().slice(0, 120),
+      destination: locationOf(req.body?.destination),
       lines: await sanitizeLines(req.body?.lines),
       status: "draft",
       savedBy: req.user?._id || null,
@@ -142,6 +153,8 @@ async function updateReceipt(req, res, next) {
     if (!doc) return res.status(404).json({ message: "Receipt not found." });
     if (doc.status !== "draft") fail("This delivery is locked.");
     if (req.body?.note !== undefined) doc.note = readNote(req.body.note);
+    if (req.body?.supplierName !== undefined) doc.supplierName = String(req.body.supplierName || "").trim().slice(0, 120);
+    if (req.body?.destination !== undefined) doc.destination = locationOf(req.body.destination);
     if (req.body?.lines !== undefined) doc.lines = await sanitizeLines(req.body.lines);
     doc.savedBy = req.user?._id || null;
     doc.savedByName = actorName(req.user);
@@ -160,6 +173,8 @@ async function confirmReceipt(req, res, next) {
     if (!draft) fail("This delivery is locked.");
 
     if (req.body?.note !== undefined) draft.note = readNote(req.body.note);
+    if (req.body?.supplierName !== undefined) draft.supplierName = String(req.body.supplierName || "").trim().slice(0, 120);
+    if (req.body?.destination !== undefined) draft.destination = locationOf(req.body.destination);
     if (req.body?.lines !== undefined) draft.lines = await sanitizeLines(req.body.lines);
     draft.savedBy = req.user?._id || null;
     draft.savedByName = actorName(req.user);
@@ -183,6 +198,7 @@ async function confirmReceipt(req, res, next) {
     try {
       await restoreStockForOrderLines(locked.lines, {
         why: "stock-in",
+        location: locked.destination || "online",
         who: actorName(req.user),
         receipt: locked._id,
         receiptNote: locked.note,

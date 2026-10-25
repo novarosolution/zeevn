@@ -18,7 +18,6 @@ import ZoneEditor from "../../components/admin/zones/ZoneEditor";
 import ZoneRiders from "../../components/admin/zones/ZoneRiders";
 import ZoneShops from "../../components/admin/zones/ZoneShops";
 import { mapOrdersFrom, polygonPoints } from "../../components/admin/zones/zoneHelpers";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import SkeletonBlock from "../../components/ui/SkeletonBlock";
@@ -420,7 +419,7 @@ export default function AdminDeliveryScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton label={ADMIN_GATE.backHome} iconLeft="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>

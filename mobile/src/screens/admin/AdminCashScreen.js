@@ -12,13 +12,13 @@ import AdminSelect from "../../components/admin/AdminSelect";
 import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
 import AdminPagination from "../../components/admin/AdminPagination";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
 import { useLiveSocket } from "../../context/LiveSocketContext";
 import { useTheme } from "../../context/ThemeContext";
-import { searchAdminCash, updateAdminOrderPayment } from "../../services/adminService";
+import { searchAdminCash, searchAdminOrders, updateAdminOrderPayment } from "../../services/adminService";
+import AdminPanel from "../../components/admin/AdminPanel";
 import { adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, spacing } from "../../theme/tokens";
@@ -54,6 +54,9 @@ export default function AdminCashScreen({ navigation, route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState("");
+  const [counterCash, setCounterCash] = useState({ count: 0, amount: 0 });
+  const [counted, setCounted] = useState("");
+  const [countedNote, setCountedNote] = useState("");
 
   const query = useMemo(() => ({ range, rider, q, page, pageSize: 25 }), [range, rider, q, page]);
   const requestRef = useRef(0);
@@ -63,9 +66,18 @@ export default function AdminCashScreen({ navigation, route }) {
       const id = ++requestRef.current;
       if (!silent) setLoading(true);
       try {
-        const res = await searchAdminCash(null, query);
+        const [res, walkIns] = await Promise.all([
+          searchAdminCash(null, query),
+          searchAdminOrders(null, { channel: "walk_in", range: "today", pageSize: 100, sort: "newest" }).catch(() => ({ items: [] })),
+        ]);
         if (id !== requestRef.current) return;
         setData(res);
+        const live = (walkIns?.items || []).filter((row) => row.status !== "cancelled");
+        const cashOnly = live.filter((row) => /cash/i.test(String(row.paymentMethod || "")));
+        setCounterCash({
+          count: cashOnly.length,
+          amount: cashOnly.reduce((n, row) => n + Number(row.totalPrice || 0), 0),
+        });
         setError("");
       } catch (err) {
         if (id === requestRef.current) setError(err?.message || "Couldn't load cash to collect.");
@@ -135,7 +147,7 @@ export default function AdminCashScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton
+              <AdminButton
                 label={ADMIN_GATE.backHome}
                 variant="primary"
                 onPress={() => navigateCustomerRoute(navigation, "Home")}
@@ -171,6 +183,22 @@ export default function AdminCashScreen({ navigation, route }) {
           >
             <View style={styles.panel}>
               <AdminAlerts error={error} onCloseError={() => setError("")} />
+
+              <AdminPanel title="Today" icon="wallet-outline" description="COD still out vs cash already taken at the till.">
+                <Text style={styles.muted}>
+                  COD to collect {formatRupees(counts.amount)} · Counter cash {formatRupees(counterCash.amount)} ({counterCash.count} bills)
+                </Text>
+                <AdminInput label="Counted at till" value={counted} onChangeText={setCounted} numeric prefix="₹" />
+                <AdminInput label="Note" value={countedNote} onChangeText={setCountedNote} placeholder="Optional" />
+                <AdminButton
+                  label="Mark counter cash counted"
+                  variant="soft"
+                  onPress={() => {
+                    setCountedNote(countedNote || `Counted ₹${counted || 0}`);
+                  }}
+                />
+                {countedNote ? <Text style={styles.muted}>{countedNote}</Text> : null}
+              </AdminPanel>
 
               <AdminStatGrid min={compact ? 132 : 170}>
                 <AdminStatTile

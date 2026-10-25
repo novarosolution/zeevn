@@ -17,6 +17,7 @@ import {
   deleteAdminOrderNote,
   fetchAdminOrder,
   fetchAdminUsers,
+  voidAdminWalkIn,
   updateAdminOrderDetails,
   updateAdminOrderPayment,
   updateOrderStatus,
@@ -35,10 +36,9 @@ import { getOrderItemQty } from "../../utils/adminOrderHelpers";
 import { ORDER_ADMIN_NEXT_STATUS, ORDER_STATUSES_ALLOW_ADDRESS_EDIT, getAdminNextStatusLabel } from "../../utils/orderStatus";
 import PremiumLoader from "../../components/ui/PremiumLoader";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumButton from "../../components/ui/PremiumButton";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { openPickLocation, usePickedPlace } from "../../navigation/pickLocationNav";
-import { buildOrderInvoiceHtml } from "../../utils/orderInvoiceHtml";
+import { buildCounterBillHtml, buildOrderInvoiceHtml } from "../../utils/orderInvoiceHtml";
 import { printAdminHtml } from "../../utils/printAdminHtml";
 
 function buildEditForm(order) {
@@ -95,7 +95,7 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
     if (!order) return;
     try {
       setError("");
-      await printAdminHtml(buildOrderInvoiceHtml(order));
+      await printAdminHtml(order.channel === "walk_in" ? buildCounterBillHtml(order) : buildOrderInvoiceHtml(order));
       setSuccess("Invoice opened. Save as PDF if you need a file.");
     } catch (err) {
       setError(err.message || "Couldn't generate the invoice.");
@@ -395,17 +395,38 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
                       title={orderRef}
                       icon="receipt-outline"
                       meta={formatINR(Number(order.totalPrice || 0))}
-                      description={`${customerName}${order.user?.email ? ` · ${order.user.email}` : ""}${placedAt ? ` · ${placedAt}` : ""}`}
+                      description={`${order.channel === "walk_in" ? "Counter · " : ""}${customerName}${order.user?.email ? ` · ${order.user.email}` : ""}${placedAt ? ` · ${placedAt}` : ""}${order.paymentMethod ? ` · ${order.paymentMethod}` : ""}`}
                     >
                       <View style={styles.heroBadges}>
                         <AdminOrderStatusBadge status={order.status} c={c} compact />
                         <AdminPaymentStatusChip paymentStatus={order.paymentStatus} c={c} />
                       </View>
                       <View style={styles.heroActions}>
-                        {ORDER_ADMIN_NEXT_STATUS[order.status] ? (
-                          <PremiumButton
+                        {order.channel === "walk_in" && order.status !== "cancelled" ? (
+                          <AdminButton
+                            label="Void bill"
+                            icon="close-circle-outline"
+                            variant="danger"
+                            size="sm"
+                            disabled={busy}
+                            onPress={async () => {
+                              setBusy(true);
+                              try {
+                                const next = await voidAdminWalkIn(token, order._id);
+                                setOrder(next);
+                                setSuccess("Walk-in bill voided.");
+                              } catch (err) {
+                                setError(err.message || "Could not void the bill.");
+                              } finally {
+                                setBusy(false);
+                              }
+                            }}
+                          />
+                        ) : null}
+                        {order.channel !== "walk_in" && ORDER_ADMIN_NEXT_STATUS[order.status] ? (
+                          <AdminButton
                             label={`Advance · ${getAdminNextStatusLabel(order.status)}`}
-                            iconLeft="play-forward-outline"
+                            icon="play-forward-outline"
                             variant="primary"
                             size="sm"
                             loading={busy}
@@ -414,18 +435,18 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
                           />
                         ) : null}
                         {order.status !== "cancelled" && order.status !== "delivered" ? (
-                          <PremiumButton
+                          <AdminButton
                             label="Cancel order"
-                            iconLeft="close-circle-outline"
+                            icon="close-circle-outline"
                             variant="danger"
                             size="sm"
                             disabled={busy}
                             onPress={handleCancelOrder}
                           />
                         ) : null}
-                        <PremiumButton
+                        <AdminButton
                           label="Refresh"
-                          iconLeft="refresh-outline"
+                          icon="refresh-outline"
                           variant="ghost"
                           size="sm"
                           onPress={loadOrder}

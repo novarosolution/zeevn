@@ -95,6 +95,12 @@ export function buildOrderTableColumns({ onView, rowPressable = false }) {
       render: (row) => formatINR(row.totalPrice || 0),
     },
     {
+      key: "channel",
+      label: "Channel",
+      flex: 0.7,
+      render: (row) => (row.channel === "walk_in" ? "Counter" : "Online"),
+    },
+    {
       key: "payment",
       label: "Payment",
       flex: 0.8,
@@ -176,11 +182,15 @@ export function buildProductTableColumns({ onEdit, rowPressable = false }) {
 
 export function buildInventoryTableColumns({
   onDelta,
+  onDeltaFloor,
   onApplyQty,
+  onApplyFloor,
   onToggle,
   onDraft,
+  onDraftFloor,
   onStockIn,
   draftQty = {},
+  draftFloor = {},
   busyId,
   stockPill,
 }) {
@@ -196,8 +206,8 @@ export function buildInventoryTableColumns({
     { key: "unit", label: "Unit", flex: 0.6, render: (row) => String(row.unit || "").trim() || "—" },
     {
       key: "qty",
-      label: "Qty",
-      width: 140,
+      label: "Online",
+      width: 132,
       render: (row) => {
         const dval =
           draftQty[row._id] !== undefined
@@ -211,6 +221,27 @@ export function buildInventoryTableColumns({
             onPlus={() => onDelta?.(row, 1)}
             onChange={(t) => onDraft?.(row, t)}
             onCommit={() => onApplyQty?.(row)}
+          />
+        );
+      },
+    },
+    {
+      key: "floor",
+      label: "Floor",
+      width: 132,
+      render: (row) => {
+        const dval =
+          draftFloor[row._id] !== undefined
+            ? draftFloor[row._id]
+            : String(Math.max(0, Number(row.stockCounter) || 0));
+        return (
+          <AdminQtyStepper
+            value={dval}
+            busy={busyId === row._id}
+            onMinus={() => onDeltaFloor?.(row, -1)}
+            onPlus={() => onDeltaFloor?.(row, 1)}
+            onChange={(t) => onDraftFloor?.(row, t)}
+            onCommit={() => onApplyFloor?.(row)}
           />
         );
       },

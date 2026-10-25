@@ -12,7 +12,6 @@ import AdminInput from "../../components/admin/AdminInput";
 import AdminSection, { AdminSettingRow } from "../../components/admin/AdminSection";
 import AdminSelect from "../../components/admin/AdminSelect";
 import AdminSwitch from "../../components/admin/AdminSwitch";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import SkeletonBlock from "../../components/ui/SkeletonBlock";
 import { useAuth } from "../../context/AuthContext";
@@ -259,7 +258,7 @@ export default function AdminSettingsScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
-              <PremiumButton label={ADMIN_GATE.backHome} iconLeft="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>
@@ -355,7 +354,7 @@ export default function AdminSettingsScreen({ navigation, route }) {
                   <AdminSection
                     icon="time-outline"
                     title="Opening hours"
-                    description="Let the shop open and close by itself. Outside these hours checkout shows your closed message."
+                    description="Let the shop open and close by itself. Outside these hours checkout shows your closed message. The counter follows these same shop hours — there is no second clock."
                   >
                     <AdminSettingRow
                       title="Follow opening hours"

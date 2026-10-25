@@ -74,9 +74,11 @@ export const updateAdminProduct = async (_token, productId, payload) => {
 
 /** Stock desk only — PUT stockQty + inStock, never the rest of the product. */
 export const patchAdminProductStock = async (_token, productId, payload) => {
-  const stockQty = Math.max(0, Math.floor(Number(payload?.stockQty) || 0));
-  const inStock = payload?.inStock === true;
-  const raw = await updateAdminProduct(_token, productId, { stockQty, inStock });
+  const body = {};
+  if (payload?.stockQty !== undefined) body.stockQty = Math.max(0, Math.floor(Number(payload.stockQty) || 0));
+  if (payload?.stockCounter !== undefined) body.stockCounter = Math.max(0, Math.floor(Number(payload.stockCounter) || 0));
+  if (payload?.inStock !== undefined) body.inStock = payload.inStock === true;
+  const raw = await updateAdminProduct(_token, productId, body);
   return decorateAdminProduct(raw);
 };
 
@@ -215,6 +217,18 @@ export const saveAdminStockInDraft = (_token, payload, id) =>
   id ? apiPut(`/admin/stock-in/${id}`, payload) : apiPost("/admin/stock-in", payload);
 
 export const confirmAdminStockIn = (_token, id, payload) => apiPost(`/admin/stock-in/${id}/confirm`, payload);
+
+export const searchAdminTransfers = (_token, query = {}) => apiGet(`/admin/stock-transfers${queryString(query)}`);
+export const fetchAdminTransfer = (_token, id) => apiGet(`/admin/stock-transfers/${id}`);
+export const saveAdminTransferDraft = (_token, payload, id) =>
+  id ? apiPut(`/admin/stock-transfers/${id}`, payload) : apiPost("/admin/stock-transfers", payload);
+export const confirmAdminTransfer = (_token, id, payload) => apiPost(`/admin/stock-transfers/${id}/confirm`, payload);
+export const createAdminStockOut = (_token, payload) => apiPost("/admin/stock-out", payload);
+export const createAdminWalkIn = (_token, payload) => apiPost("/admin/walk-in", payload);
+export const voidAdminWalkIn = (_token, id) => apiPost(`/admin/walk-in/${id}/void`);
+export const createAdminWalkInCustomer = (_token, payload) => apiPost("/admin/customers", payload);
+export const updateAdminCustomerNote = (_token, id, adminNote) => apiPatch(`/admin/customers/${id}/note`, { adminNote });
+export const applyAdminClosing = (_token, date) => apiPost(`/admin/closings/${date}/apply`);
 
 export const fetchAdminReorders = (_token, query = {}) => apiGet(`/admin/reorders${queryString(query)}`);
 

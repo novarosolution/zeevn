@@ -28,6 +28,7 @@ import { PRODUCT_SCREEN } from "../content/appContent";
 import {
   getComingSoonNote,
   getShopCatalogProducts,
+  isAvailableAtCounter,
   isProductComingSoon,
   isProductOutOfStock,
   isProductPurchasable,
@@ -247,6 +248,7 @@ export default function ProductScreen({ route, navigation }) {
   const quantity = getItemQuantity(product.id, cartLine?.variantLabel ?? "");
   const isComingSoon = isProductComingSoon(product);
   const isOutOfStock = isProductOutOfStock(product);
+  const atCounter = isAvailableAtCounter(product);
   const comingSoonNote = getComingSoonNote(product, PRODUCT_SCREEN.comingSoonNoteFallback);
   const displayPrice = cartLine ? cartLine.price : product.price;
   const variants = Array.isArray(product.variants) ? product.variants : [];
@@ -322,6 +324,7 @@ export default function ProductScreen({ route, navigation }) {
         liveRatingAvg={liveRatingAvg}
         reviewCountDisplay={reviewCountDisplay}
         isOutOfStock={isOutOfStock}
+        soldTag={atCounter ? "Available at the shop counter" : undefined}
         isComingSoon={isComingSoon}
         comingSoonNote={comingSoonNote}
         quantity={quantity}
@@ -376,6 +379,7 @@ export default function ProductScreen({ route, navigation }) {
           liveRatingAvg={liveRatingAvg}
           reviewCountDisplay={reviewCountDisplay}
           isOutOfStock={isOutOfStock}
+        soldTag={atCounter ? "Available at the shop counter" : undefined}
           isComingSoon={isComingSoon}
           comingSoonNote={comingSoonNote}
           quantity={quantity}

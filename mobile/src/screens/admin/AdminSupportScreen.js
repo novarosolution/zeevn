@@ -12,7 +12,6 @@ import AdminButton from "../../components/admin/AdminButton";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminInput from "../../components/admin/AdminInput";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumLoader from "../../components/ui/PremiumLoader";
@@ -189,7 +188,7 @@ export default function AdminSupportScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>
@@ -271,6 +270,15 @@ export default function AdminSupportScreen({ navigation, route }) {
         </Pressable>
         <View style={styles.threadActions}>
           <AdminBadge label={selected.status === "closed" ? "Closed" : "Open"} tone={selected.status === "closed" ? "neutral" : isWaiting(selected) ? "gold" : "green"} size="sm" />
+          {selected.user?.phone ? (
+            <AdminButton
+              label="Bill at counter"
+              size="sm"
+              variant="soft"
+              icon="storefront-outline"
+              onPress={() => navigation.navigate("AdminCounter", { customer: selected.user })}
+            />
+          ) : null}
           {selected.status === "closed" ? (
             <AdminButton label="Reopen" size="sm" variant="soft" onPress={reopenThread} />
           ) : (

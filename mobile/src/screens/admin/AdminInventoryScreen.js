@@ -32,8 +32,6 @@ import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
 import PremiumLoader from "../../components/ui/PremiumLoader";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumButton from "../../components/ui/PremiumButton";
-import PremiumCard from "../../components/ui/PremiumCard";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { staggerDelay } from "../../theme/motion";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
@@ -51,10 +49,11 @@ const FILTERS = [
 
 function stockState(p) {
   const q = Math.max(0, Number(p.stockQty) || 0);
+  const floor = Math.max(0, Number(p.stockCounter) || 0);
   const out = p.inStock === false || q < 1;
   const available = !out;
-  const low = !out && q >= 1 && q <= LOW_STOCK_MAX;
-  return { q, out, available, low };
+  const low = (!out && q >= 1 && q <= LOW_STOCK_MAX) || (floor >= 1 && floor <= LOW_STOCK_MAX);
+  return { q, floor, out, available, low };
 }
 
 function categoryName(p) {
@@ -97,6 +96,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState("");
   const [draftQty, setDraftQty] = useState({});
+  const [draftFloor, setDraftFloor] = useState({});
   const busyRef = useRef("");
 
   const styles = useMemo(() => createStyles(c, shadowPremium, isDark), [c, shadowPremium, isDark]);
@@ -192,15 +192,18 @@ export default function AdminInventoryScreen({ navigation, route }) {
   const applyPatch = useCallback(
     async (id, body) => {
       if (!id || busyRef.current) return;
-      const stockQty = parseQty(body.stockQty);
-      const inStock = body.inStock === true;
       busyRef.current = id;
       setBusyId(id);
       setError("");
       try {
-        const row = await patchAdminProductStock(token, id, { stockQty, inStock });
+        const row = await patchAdminProductStock(token, id, body);
         setProducts((prev) => prev.map((p) => (String(p._id) === String(id) ? row : p)));
         setDraftQty((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+        setDraftFloor((prev) => {
           const next = { ...prev };
           delete next[id];
           return next;
@@ -220,6 +223,13 @@ export default function AdminInventoryScreen({ navigation, route }) {
     const next = Math.max(0, q + delta);
     if (next === q && (next > 0) === (p.inStock !== false)) return;
     applyPatch(p._id, { stockQty: next, inStock: next > 0 });
+  };
+
+  const onDeltaFloor = (p, delta) => {
+    const floor = Math.max(0, Number(p.stockCounter) || 0);
+    const next = Math.max(0, floor + delta);
+    if (next === floor) return;
+    applyPatch(p._id, { stockCounter: next, inStock: p.inStock !== false });
   };
 
   const onToggle = (p, value) => {
@@ -245,6 +255,20 @@ export default function AdminInventoryScreen({ navigation, route }) {
     applyPatch(p._id, { stockQty: next, inStock: next > 0 });
   };
 
+  const onApplyFloor = (p) => {
+    const raw = draftFloor[p._id] !== undefined ? draftFloor[p._id] : p.stockCounter;
+    const next = parseQty(raw);
+    if (next === parseQty(p.stockCounter)) {
+      setDraftFloor((prev) => {
+        const copy = { ...prev };
+        delete copy[p._id];
+        return copy;
+      });
+      return;
+    }
+    applyPatch(p._id, { stockCounter: next, inStock: p.inStock !== false });
+  };
+
   const openStockIn = (p) => {
     navigation.navigate("AdminStockIn", p?._id ? { productId: String(p._id) } : undefined);
   };
@@ -255,7 +279,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
         <View style={[styles.denied, { padding: spacing.lg, paddingTop: insets.top + spacing.md, flex: 1 }]}>
           <Text style={styles.deniedTitle}>Sign in</Text>
           <Text style={styles.deniedSub}>Log in with an admin account to manage inventory.</Text>
-          <PremiumButton label="Go to login" variant="primary" onPress={() => navigation.navigate("Login")} style={styles.gateCta} />
+          <AdminButton label="Go to login" variant="primary" onPress={() => navigation.navigate("Login")} style={styles.gateCta} />
         </View>
       </AdminScreenShell>
     );
@@ -268,7 +292,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
           <Ionicons name="shield-half-outline" size={44} color={c.primary} />
           <Text style={styles.deniedTitle}>Admins only</Text>
           <Text style={styles.deniedSub}>Sign in with an admin account to manage stock.</Text>
-          <PremiumButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
+          <AdminButton label={ADMIN_GATE.backHome} variant="primary" icon="home-outline" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
         </View>
       </AdminScreenShell>
     );
@@ -282,7 +306,12 @@ export default function AdminInventoryScreen({ navigation, route }) {
         title={ADMIN_SCREEN_COPY.inventory.title}
         subtitle={ADMIN_SCREEN_COPY.inventory.subtitle}
         headerRight={
-          <AdminButton label="Refresh" icon="refresh-outline" variant="ghost" size="sm" onPress={() => load({ silent: false })} />
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <AdminButton label="Counter" icon="storefront-outline" variant="gold" size="sm" onPress={() => navigation.navigate("AdminCounter")} />
+            <AdminButton label="Move" icon="swap-horizontal-outline" variant="soft" size="sm" onPress={() => navigation.navigate("AdminTransfers")} />
+            <AdminButton label="Out" icon="remove-outline" variant="soft" size="sm" onPress={() => navigation.navigate("AdminStockOut")} />
+            <AdminButton label="Refresh" icon="refresh-outline" variant="ghost" size="sm" onPress={() => load({ silent: false })} />
+          </View>
         }
       >
       <FlatList
@@ -429,7 +458,11 @@ export default function AdminInventoryScreen({ navigation, route }) {
                     onToggle,
                     onStockIn: openStockIn,
                     onDraft: (row, t) => setDraftQty((o) => ({ ...o, [row._id]: t })),
+                    onDraftFloor: (row, t) => setDraftFloor((o) => ({ ...o, [row._id]: t })),
                     draftQty,
+                    draftFloor,
+                    onDeltaFloor,
+                    onApplyFloor,
                     busyId,
                     stockPill,
                   })}
@@ -460,6 +493,10 @@ export default function AdminInventoryScreen({ navigation, route }) {
             draftQty[p._id] !== undefined
               ? draftQty[p._id]
               : String(Math.max(0, Number(p.stockQty) || 0));
+          const fval =
+            draftFloor[p._id] !== undefined
+              ? draftFloor[p._id]
+              : String(Math.max(0, Number(p.stockCounter) || 0));
           return (
             <SectionReveal delay={staggerDelay(Math.min(rowIndex, 10))} preset="fade-up">
             <View
@@ -480,14 +517,28 @@ export default function AdminInventoryScreen({ navigation, route }) {
               </View>
 
               <View style={styles.qtyRow}>
-                <AdminQtyStepper
-                  value={dval}
-                  busy={busy}
-                  onMinus={() => onDelta(p, -1)}
-                  onPlus={() => onDelta(p, 1)}
-                  onChange={(t) => setDraftQty((o) => ({ ...o, [p._id]: t }))}
-                  onCommit={() => onApplyQty(p)}
-                />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.switchLab}>Online</Text>
+                  <AdminQtyStepper
+                    value={dval}
+                    busy={busy}
+                    onMinus={() => onDelta(p, -1)}
+                    onPlus={() => onDelta(p, 1)}
+                    onChange={(t) => setDraftQty((o) => ({ ...o, [p._id]: t }))}
+                    onCommit={() => onApplyQty(p)}
+                  />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.switchLab}>Floor</Text>
+                  <AdminQtyStepper
+                    value={fval}
+                    busy={busy}
+                    onMinus={() => onDeltaFloor(p, -1)}
+                    onPlus={() => onDeltaFloor(p, 1)}
+                    onChange={(t) => setDraftFloor((o) => ({ ...o, [p._id]: t }))}
+                    onCommit={() => onApplyFloor(p)}
+                  />
+                </View>
 
                 <View style={styles.switchBlock}>
                   <Text style={styles.switchLab}>On/Off</Text>
@@ -501,7 +552,8 @@ export default function AdminInventoryScreen({ navigation, route }) {
               </View>
               <AdminButtonRow>
                 <AdminButton label="In" icon="download-outline" variant="gold" size="xs" onPress={() => openStockIn(p)} />
-                <AdminButton label="Out" icon="remove-outline" variant="soft" size="xs" onPress={() => onDelta(p, -1)} disabled={busy || s.q < 1} />
+                <AdminButton label="Move" icon="swap-horizontal-outline" variant="soft" size="xs" onPress={() => navigation.navigate("AdminTransfers", { search: p.sku || p.name || "" })} />
+                <AdminButton label="Out" icon="remove-outline" variant="soft" size="xs" onPress={() => navigation.navigate("AdminStockOut", { search: p.sku || p.name || "" })} />
               </AdminButtonRow>
             </View>
             </SectionReveal>
@@ -509,21 +561,15 @@ export default function AdminInventoryScreen({ navigation, route }) {
         }}
         ListFooterComponent={
           products.length > 0 ? (
-            <PremiumCard
-              padding="lg"
-              interactive
-              onPress={() => navigation.navigate("AdminAddProduct")}
-              goldAccent
-              style={[styles.footCta, { marginTop: spacing.lg }]}
-            >
-              <View style={styles.footCtaInner}>
-                <Ionicons name="add-circle-outline" size={24} color={c.primary} />
-                <View style={styles.footCtaTextCol}>
-                  <Text style={[styles.footCtaT, { color: c.textPrimary }]}>Add product</Text>
-                  <Text style={[styles.footCtaD, { color: c.textSecondary }]}>Set initial stock in the form.</Text>
-                </View>
-              </View>
-            </PremiumCard>
+            <View style={styles.footCta}>
+              <AdminButton
+                label="Add product"
+                icon="add-outline"
+                variant="primary"
+                size="md"
+                onPress={() => navigation.navigate("AdminAddProduct")}
+              />
+            </View>
           ) : null
         }
         showsVerticalScrollIndicator={false}
@@ -637,11 +683,7 @@ function createStyles(c, shadowPremium, isDark) {
     switchBlock: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
     switchLab: { color: c.textSecondary, fontSize: typography.caption, fontFamily: fonts.semibold },
     rowFoot: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
-    footCta: { marginBottom: 0 },
-    footCtaInner: { flexDirection: "row", alignItems: "center", gap: spacing.md },
-    footCtaTextCol: { flex: 1, minWidth: 0 },
-    footCtaT: { fontWeight: "700", fontSize: typography.body, fontFamily: fonts.bold },
-    footCtaD: { fontSize: typography.caption, marginTop: 2, fontFamily: fonts.regular },
+    footCta: { marginTop: spacing.lg, marginBottom: spacing.md, alignItems: "flex-start" },
     emptyWrap: { marginBottom: spacing.md },
     denied: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.sm },
     deniedTitle: { fontSize: typography.h2, fontFamily: ADMIN_FONT.semibold, fontWeight: "600", color: c.textPrimary, marginTop: spacing.md },

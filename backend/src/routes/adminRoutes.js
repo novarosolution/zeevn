@@ -105,7 +105,22 @@ const {
   saveDraft,
   submitClosing,
   reopenClosing,
+  applyVariance,
 } = require("../controllers/closingController");
+const {
+  listTransfers,
+  getTransfer,
+  createTransfer,
+  updateTransfer,
+  confirmTransfer,
+} = require("../controllers/stockTransferController");
+const { createStockOut } = require("../controllers/stockOutController");
+const {
+  createWalkIn,
+  voidWalkIn,
+  createWalkInCustomer,
+  updateCustomerNote,
+} = require("../controllers/walkInController");
 const { protect, adminOnly } = require("../middleware/authMiddleware");
 
 const router = express.Router();
@@ -147,6 +162,16 @@ router.post("/stock-in", createReceipt);
 router.get("/stock-in/:id", getReceipt);
 router.put("/stock-in/:id", updateReceipt);
 router.post("/stock-in/:id/confirm", confirmReceipt);
+router.get("/stock-transfers", listTransfers);
+router.post("/stock-transfers", createTransfer);
+router.get("/stock-transfers/:id", getTransfer);
+router.put("/stock-transfers/:id", updateTransfer);
+router.post("/stock-transfers/:id/confirm", confirmTransfer);
+router.post("/stock-out", createStockOut);
+router.post("/walk-in", createWalkIn);
+router.post("/walk-in/:id/void", voidWalkIn);
+router.post("/customers", createWalkInCustomer);
+router.patch("/customers/:id/note", updateCustomerNote);
 router.get("/reorders", listReorders);
 router.get("/stock-report", listStockReport);
 router.get("/stock-history", listStockHistory);
@@ -158,6 +183,7 @@ router.get("/closings/:date", getClosing);
 router.put("/closings/:date", saveDraft);
 router.post("/closings/:date/submit", submitClosing);
 router.post("/closings/:date/reopen", reopenClosing);
+router.post("/closings/:date/apply", applyVariance);
 
 router.get("/deletions", listAdminDeletions);
 router.get("/deletions/:id", getAdminDeletion);

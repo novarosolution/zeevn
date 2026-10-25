@@ -19,7 +19,6 @@ import AdminBulkBar from "../../components/admin/orders/AdminBulkBar";
 import AdminOrderDrawer from "../../components/admin/orders/AdminOrderDrawer";
 import AdminOrdersTable from "../../components/admin/orders/AdminOrdersTable";
 import useOrderActions from "../../components/admin/orders/useOrderActions";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
@@ -65,6 +64,7 @@ const SIDE_TABS = {
   attention: { attention: true },
   unpaid: { status: "unpaid" },
   cash: { payment: "cod_due" },
+  counter: { channel: "walk_in" },
   cancelled: { status: "cancelled" },
 };
 const TAB_FILTER = Object.fromEntries([
@@ -155,6 +155,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
       payment: f.payment || payment,
       status: f.status || "",
       attention: f.attention ? 1 : "",
+      channel: f.channel || "",
       sort,
       page,
       pageSize,
@@ -418,9 +419,9 @@ export default function AdminOrdersScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
-              <PremiumButton
+              <AdminButton
                 label={ADMIN_GATE.backHome}
-                iconLeft="home-outline"
+                icon="home-outline"
                 variant="primary"
                 size="md"
                 onPress={() => navigation.navigate("Home")}
@@ -440,6 +441,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
     { key: "attention", label: "Needs attention", count: data.counts.attention, tone: "red" },
     { key: "unpaid", label: "Unpaid", count: byStatus.pending_payment || 0, tone: "gold" },
     { key: "cash", label: "Cash to collect", count: data.counts.cashDue, tone: "gold" },
+    { key: "counter", label: "Counter", count: data.counts.walkIn || 0, tone: "gold" },
     { key: "cancelled", label: "Cancelled", count: byStatus.cancelled || 0 },
   ];
 
@@ -574,10 +576,10 @@ export default function AdminOrdersScreen({ navigation, route }) {
                 {!loading && data.items.length === 0 ? (
                   <PremiumEmptyState
                     iconName="receipt-outline"
-                    title={isFiltered ? ADMIN_SCREEN_COPY.orders.emptyFilter : ADMIN_SCREEN_COPY.orders.empty}
-                    description={isFiltered ? "Try another tab, widen the date range or clear the search." : "New orders appear here the moment a customer checks out."}
-                    ctaLabel={isFiltered ? "Clear filters" : undefined}
-                    onCtaPress={isFiltered ? clearFilters : undefined}
+                    title={tab === "counter" ? "No walk-in bills" : isFiltered ? ADMIN_SCREEN_COPY.orders.emptyFilter : ADMIN_SCREEN_COPY.orders.empty}
+                    description={tab === "counter" ? "Open the till to take the first counter bill." : isFiltered ? "Try another tab, widen the date range or clear the search." : "New orders appear here the moment a customer checks out."}
+                    ctaLabel={tab === "counter" ? "Open till" : isFiltered ? "Clear filters" : undefined}
+                    onCtaPress={tab === "counter" ? () => navigation.navigate("AdminCounter") : isFiltered ? clearFilters : undefined}
                     compact
                   />
                 ) : (

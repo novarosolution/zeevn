@@ -102,6 +102,7 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
   onRemoveFromCart,
   quantity = 0,
   isOutOfStock = false,
+  isAvailableAtCounter = false,
   isComingSoon = false,
   comingSoonNote = "",
   imagePriority = "normal",
@@ -248,7 +249,7 @@ const HomeEditorialProductCard = memo(function HomeEditorialProductCard({
             <SoonVeil note={launchNote} compact={compact} />
           ) : isOutOfStock ? (
             <View style={styles.soldOutBadge}>
-              <Text style={styles.soldOutText}>{copy.soldOut}</Text>
+              <Text style={styles.soldOutText}>{isAvailableAtCounter ? "Available at the shop counter" : copy.soldOut}</Text>
             </View>
           ) : null}
         </View>
@@ -359,6 +360,7 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
   onAddToCart,
   onRemoveFromCart,
   isOutOfStock,
+  isAvailableAtCounter = false,
   isComingSoon = false,
   comingSoonNote = "",
   compact = false,
@@ -372,6 +374,7 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
         featured={featured}
         imagePriority={idx < 2 || featured ? "high" : "low"}
         isOutOfStock={isOutOfStock}
+        isAvailableAtCounter={isAvailableAtCounter}
         isComingSoon={isComingSoon}
         comingSoonNote={comingSoonNote}
         quantity={quantity}
@@ -385,6 +388,7 @@ export const HomeCatalogGridCard = memo(function HomeCatalogGridCard({
         compact={compact}
         imagePriority={idx < 2 ? "high" : "low"}
         isOutOfStock={isOutOfStock}
+        isAvailableAtCounter={isAvailableAtCounter}
         isComingSoon={isComingSoon}
         comingSoonNote={comingSoonNote}
         product={item}

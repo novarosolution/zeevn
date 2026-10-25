@@ -47,6 +47,14 @@ export const ADMIN_NAV_GROUPS = [
         tone: "#2a7559",
       },
       {
+        key: "AdminCounter",
+        label: "Counter",
+        hint: "Walk-in till · POS · hold · cash or UPI",
+        icon: "storefront-outline",
+        image: "orders",
+        tone: "#c9a227",
+      },
+      {
         key: "AdminReturns",
         label: "Returns",
         hint: "Review a delivered order",
@@ -182,6 +190,22 @@ export const ADMIN_NAV_GROUPS = [
         tone: "#4f6430",
       },
       {
+        key: "AdminTransfers",
+        label: "Transfers",
+        hint: "Online ↔ shop floor · two piles",
+        icon: "swap-horizontal-outline",
+        image: "stock",
+        tone: "#2f5f7a",
+      },
+      {
+        key: "AdminStockOut",
+        label: "Stock out",
+        hint: "Waste, damage, sample, staff",
+        icon: "trash-outline",
+        image: "stock",
+        tone: "#8a4b32",
+      },
+      {
         key: "AdminReorders",
         label: "Reorders",
         hint: "What to bring in",
@@ -216,7 +240,7 @@ export const ADMIN_NAV_GROUPS = [
       {
         key: "AdminAnalytics",
         label: "Analytics",
-        hint: "Revenue and trends",
+        hint: "Day book · online vs counter",
         icon: "bar-chart-outline",
         image: "analytics",
         tone: "#1f6f5b",

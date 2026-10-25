@@ -542,6 +542,7 @@ export default function ShopScreen({ navigation, route }) {
                       quantity={getItemQuantity(item.id)}
                       styles={gridStyles}
                       isOutOfStock={flags.isOutOfStock}
+                      isAvailableAtCounter={flags.isAvailableAtCounter}
                       isComingSoon={flags.isComingSoon}
                       comingSoonNote={flags.comingSoonNote}
                       onAddToCart={() => addToCart(productToCartLine(item))}

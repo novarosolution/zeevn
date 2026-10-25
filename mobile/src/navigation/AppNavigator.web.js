@@ -59,6 +59,7 @@ const ProtectedDeliveryDashboard = withAuthGuard(LazyScreens.DeliveryDashboardSc
 const ProtectedAdminDashboard = withAuthGuard(LazyScreens.AdminDashboardScreen);
 const ProtectedAdminShopDesk = withAuthGuard(LazyScreens.AdminShopDeskScreen);
 const ProtectedAdminOrders = withAuthGuard(LazyScreens.AdminOrdersScreen);
+const ProtectedAdminCounter = withAuthGuard(LazyScreens.AdminCounterScreen);
 const ProtectedAdminOrderDetail = withAuthGuard(LazyScreens.AdminOrderDetailScreen);
 const ProtectedAdminReturns = withAuthGuard(LazyScreens.AdminReturnsScreen);
 const ProtectedAdminReturnDetail = withAuthGuard(LazyScreens.AdminReturnDetailScreen);
@@ -75,6 +76,8 @@ const ProtectedAdminCategories = withAuthGuard(LazyScreens.AdminCategoriesScreen
 const ProtectedAdminAddProduct = withAuthGuard(LazyScreens.AdminAddProductScreen);
 const ProtectedAdminInventory = withAuthGuard(LazyScreens.AdminInventoryScreen);
 const ProtectedAdminStockIn = withAuthGuard(LazyScreens.AdminStockInScreen);
+const ProtectedAdminTransfers = withAuthGuard(LazyScreens.AdminTransfersScreen);
+const ProtectedAdminStockOut = withAuthGuard(LazyScreens.AdminStockOutScreen);
 const ProtectedAdminReorders = withAuthGuard(LazyScreens.AdminReordersScreen);
 const ProtectedAdminClosing = withAuthGuard(LazyScreens.AdminClosingScreen);
 const ProtectedAdminStockReport = withAuthGuard(LazyScreens.AdminStockReportScreen);
@@ -148,6 +151,7 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
             <Stack.Screen name="AdminDashboard" component={ProtectedAdminDashboard} />
             <Stack.Screen name="AdminShopDesk" component={ProtectedAdminShopDesk} />
             <Stack.Screen name="AdminOrders" component={ProtectedAdminOrders} />
+            <Stack.Screen name="AdminCounter" component={ProtectedAdminCounter} />
             <Stack.Screen name="AdminOrderDetail" component={ProtectedAdminOrderDetail} />
             <Stack.Screen name="AdminReturns" component={ProtectedAdminReturns} />
             <Stack.Screen name="AdminReturnDetail" component={ProtectedAdminReturnDetail} />
@@ -164,6 +168,8 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
             <Stack.Screen name="AdminAddProduct" component={ProtectedAdminAddProduct} />
             <Stack.Screen name="AdminInventory" component={ProtectedAdminInventory} />
             <Stack.Screen name="AdminStockIn" component={ProtectedAdminStockIn} />
+            <Stack.Screen name="AdminTransfers" component={ProtectedAdminTransfers} />
+            <Stack.Screen name="AdminStockOut" component={ProtectedAdminStockOut} />
             <Stack.Screen name="AdminReorders" component={ProtectedAdminReorders} />
             <Stack.Screen name="AdminClosing" component={ProtectedAdminClosing} />
             <Stack.Screen name="AdminStockReport" component={ProtectedAdminStockReport} />

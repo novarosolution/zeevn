@@ -10,7 +10,6 @@ import AdminBadge from "../../components/admin/AdminBadge";
 import AdminButton from "../../components/admin/AdminButton";
 import AdminDeliveryMap from "../../components/admin/AdminDeliveryMap";
 import { mapOrdersFrom } from "../../components/admin/zones/zoneHelpers";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
@@ -98,7 +97,7 @@ export default function AdminRiderMapScreen({ navigation, route }) {
   }, []);
 
   const loadOrders = useCallback(async () => {
-    const res = await searchAdminOrders(null, { status: LIVE_STATUS, pageSize: 100 });
+    const res = await searchAdminOrders(null, { status: LIVE_STATUS, pageSize: 100, channel: "online" });
     setOrders(mapOrdersFrom(res.items || [], orderRef, (o) => customerOf(o).name, (s) => adminStatusMeta(s).label));
   }, []);
 
@@ -187,7 +186,7 @@ export default function AdminRiderMapScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton
+              <AdminButton
                 label={ADMIN_GATE.backHome}
                 variant="primary"
                 onPress={() => navigateCustomerRoute(navigation, "Home")}

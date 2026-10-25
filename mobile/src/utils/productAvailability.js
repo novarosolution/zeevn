@@ -25,6 +25,13 @@ export function isProductOutOfStock(product) {
   return product?.inStock === false || Number(product?.stockQty || 0) <= 0;
 }
 
+/** Online is 0 but the shop floor still has jars — show, do not sell on the web. */
+export function isAvailableAtCounter(product) {
+  if (isProductComingSoon(product)) return false;
+  if (Number(product?.stockQty || 0) > 0 && product?.inStock !== false) return false;
+  return Number(product?.stockCounter || 0) > 0;
+}
+
 export function isProductPurchasable(product) {
   return isProductShopVisible(product) && !isProductComingSoon(product) && !isProductOutOfStock(product);
 }
@@ -44,6 +51,7 @@ export function getProductCardFlags(product, noteFallback = "") {
   return {
     isComingSoon: isProductComingSoon(product),
     isOutOfStock: isProductOutOfStock(product),
+    isAvailableAtCounter: isAvailableAtCounter(product),
     comingSoonNote: getComingSoonNote(product, noteFallback),
   };
 }

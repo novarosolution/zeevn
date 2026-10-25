@@ -10,6 +10,7 @@ export const PRODUCT_FILTER_TABS = [
   { key: "soon", label: "Coming soon" },
   { key: "low", label: "Low stock" },
   { key: "out", label: "Out of stock" },
+  { key: "floor", label: "Floor" },
 ];
 
 export function productCoverUri(p) {
@@ -29,11 +30,15 @@ export function productStockMeta(p) {
   if (parseCatalogBoolean(p?.comingSoon, false)) {
     return { label: "Coming soon", tone: "soon", pill: "soon", badge: "purple" };
   }
-  const q = Math.max(0, Number(p?.stockQty) || 0);
-  if (p?.inStock === false || q < 1) {
+  const online = Math.max(0, Number(p?.stockQty) || 0);
+  const counter = Math.max(0, Number(p?.stockCounter) || 0);
+  if (p?.inStock === false || online < 1) {
+    if (counter >= 1 && counter <= LOW_STOCK_MAX) {
+      return { label: "Floor low", tone: "pend", pill: "pend", badge: "gold" };
+    }
     return { label: "Out of stock", tone: "low", pill: "low", badge: "red" };
   }
-  if (q <= LOW_STOCK_MAX) {
+  if (online <= LOW_STOCK_MAX || (counter >= 1 && counter <= LOW_STOCK_MAX)) {
     return { label: "Low stock", tone: "pend", pill: "pend", badge: "gold" };
   }
   return { label: "In stock", tone: "ok", pill: "ok", badge: "green" };
@@ -44,11 +49,17 @@ export function matchesProductFilter(p, filterKey) {
   const soon = parseCatalogBoolean(p?.comingSoon, false);
   const published = p?.isPublished !== false && !soon;
   const q = Math.max(0, Number(p?.stockQty) || 0);
+  const floor = Math.max(0, Number(p?.stockCounter) || 0);
   if (filterKey === "published") return published;
   if (filterKey === "draft") return p?.isPublished === false;
   if (filterKey === "soon") return soon;
-  if (filterKey === "low") return published && p?.inStock === true && q >= 1 && q <= LOW_STOCK_MAX;
+  if (filterKey === "low") {
+    const onlineLow = published && p?.inStock === true && q >= 1 && q <= LOW_STOCK_MAX;
+    const floorLow = floor >= 1 && floor <= LOW_STOCK_MAX;
+    return onlineLow || floorLow;
+  }
   if (filterKey === "out") return p?.inStock === false || q < 1;
+  if (filterKey === "floor") return floor > 0;
   return true;
 }
 
@@ -62,6 +73,7 @@ export function catalogSummary(products) {
     soon: count("soon"),
     low: count("low"),
     out: count("out"),
+    floor: count("floor"),
   };
 }
 

@@ -1,67 +1,80 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { ADMIN_NAV_GROUPS, openAdminNavLink } from "../../content/adminNav";
 import { useTheme } from "../../context/ThemeContext";
 import { ADMIN_FONT, getAdminChrome } from "../../theme/adminLayout";
 import { spacing } from "../../theme/tokens";
+import AdminInput from "./AdminInput";
 import AdminNavIcon from "./AdminNavIcon";
 import AdminPanel from "./AdminPanel";
 
-/**
- * Easy-manage launcher — lists every admin tool with icon + hint.
- */
+/** Easy-manage launcher — every admin tool, searchable. */
 export default function AdminToolsGrid({ navigation, current, compact = false }) {
   const { colors: c, isDark } = useTheme();
   const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
   const styles = useMemo(() => createStyles(chrome, compact), [chrome, compact]);
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+
+  const groups = useMemo(() => {
+    if (!q) return ADMIN_NAV_GROUPS;
+    return ADMIN_NAV_GROUPS.map((group) => ({
+      ...group,
+      links: group.links.filter((link) =>
+        `${link.label} ${link.hint || ""} ${group.label}`.toLowerCase().includes(q)
+      ),
+    })).filter((group) => group.links.length);
+  }, [q]);
 
   return (
     <AdminPanel
       title="All tools"
       icon="apps-outline"
-      description="Same list as the sidebar. Tap to open."
+      description="Search or tap a tool. Same list as the sidebar."
     >
-      {ADMIN_NAV_GROUPS.map((group) => (
-        <View key={group.key} style={styles.group}>
-          <Text style={styles.groupLabel}>{group.label}</Text>
-          <View style={styles.grid}>
-            {group.links.map((link) => {
-              const on = current === link.key;
-              return (
-                <Pressable
-                  key={link.key}
-                  onPress={() => openAdminNavLink(navigation, link)}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: on }}
-                  accessibilityLabel={link.hint ? `${link.label}. ${link.hint}` : link.label}
-                  style={({ pressed }) => [
-                    styles.card,
-                    on && styles.cardOn,
-                    pressed ? styles.cardPressed : null,
-                  ]}
-                >
-                  <AdminNavIcon
-                    icon={link.icon}
-                    tone={link.tone}
-                    size={28}
-                    active={on}
-                  />
-                  <View style={styles.copy}>
-                    <Text style={[styles.label, on && styles.labelOn]} numberOfLines={1}>
-                      {link.label}
-                    </Text>
-                    {link.hint ? (
-                      <Text style={styles.hint} numberOfLines={1}>
-                        {link.hint}
+      <AdminInput
+        value={query}
+        onChangeText={setQuery}
+        placeholder="Find a tool — orders, stock, riders…"
+        icon="search-outline"
+        autoCapitalize="none"
+      />
+      {groups.length ? (
+        groups.map((group) => (
+          <View key={group.key} style={styles.group}>
+            <Text style={styles.groupLabel}>{group.label}</Text>
+            <View style={styles.grid}>
+              {group.links.map((link) => {
+                const on = current === link.key;
+                return (
+                  <Pressable
+                    key={link.key}
+                    onPress={() => openAdminNavLink(navigation, link)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: on }}
+                    accessibilityLabel={link.hint ? `${link.label}. ${link.hint}` : link.label}
+                    style={({ pressed }) => [styles.card, on && styles.cardOn, pressed ? styles.cardPressed : null]}
+                  >
+                    <AdminNavIcon icon={link.icon} tone={link.tone} size={28} active={on} />
+                    <View style={styles.copy}>
+                      <Text style={[styles.label, on && styles.labelOn]} numberOfLines={1}>
+                        {link.label}
                       </Text>
-                    ) : null}
-                  </View>
-                </Pressable>
-              );
-            })}
+                      {link.hint ? (
+                        <Text style={styles.hint} numberOfLines={1}>
+                          {link.hint}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
           </View>
-        </View>
-      ))}
+        ))
+      ) : (
+        <Text style={styles.empty}>No tool matches “{query.trim()}”.</Text>
+      )}
     </AdminPanel>
   );
 }
@@ -130,6 +143,12 @@ function createStyles(chrome, compact) {
       fontSize: 11,
       color: chrome.inkFaint,
       fontFamily: ADMIN_FONT.regular,
+    },
+    empty: {
+      fontSize: 13,
+      color: chrome.inkSoft,
+      fontFamily: ADMIN_FONT.medium,
+      paddingVertical: 12,
     },
   });
 }

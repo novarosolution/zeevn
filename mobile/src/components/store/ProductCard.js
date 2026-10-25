@@ -186,7 +186,7 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
 
   const pricing = useMemo(() => getProductPricing(product), [product]);
   const flags = getProductCardFlags(product);
-  const state = flags.isComingSoon ? "soon" : flags.isOutOfStock ? "sold" : "ready";
+  const state = flags.isComingSoon ? "soon" : flags.isOutOfStock ? (flags.isAvailableAtCounter ? "counter" : "sold") : "ready";
   const quantity = getItemQuantity(product.id);
   const imageSize = Math.max(64, width - 16);
   const uris = useMemo(
@@ -204,6 +204,7 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
 
   const badge = useMemo(() => {
     if (state === "soon") return { text: STORE_CARD.comingSoon, tone: "soon" };
+    if (state === "counter") return { text: "AT THE COUNTER", tone: "soon" };
     if (pricing.discountPct) return { text: STORE_CARD.off(pricing.discountPct), tone: "offer" };
     if (product.badgeText) return { text: String(product.badgeText).toUpperCase(), tone: "brand" };
     return null;
@@ -234,7 +235,7 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
         ? { bg: "#FBEFD6", fg: "#8A5A12" }
         : { bg: c.brand, fg: c.onBrand };
 
-  const dim = state === "sold";
+  const dim = state === "sold" || state === "counter";
   const stacked = width < 150;
   const compact = stacked || lite;
   const priceSize = stacked ? 16 : 19;
@@ -305,10 +306,12 @@ function ProductCard({ product, width = 172, onPress, gallery = false, rank, hid
         ) : null}
         {!compact ? <Heart active={wished} onPress={handleWish} lite={lite} /> : null}
         {showRating && !compact ? <RatingChip rating={rating} /> : null}
-        {state === "sold" ? (
+        {state === "sold" || state === "counter" ? (
           <View style={styles.soldWrap} pointerEvents="none">
             <View style={[styles.soldTag, { backgroundColor: c.glassStrong, borderColor: c.line }]}>
-              <Text style={type.ui(11, "bold", c.inkSoft, { letterSpacing: 0.4 })}>{STORE_CARD.outOfStock}</Text>
+              <Text style={type.ui(11, "bold", c.inkSoft, { letterSpacing: 0.4 })}>
+                {state === "counter" ? "AT THE COUNTER" : STORE_CARD.outOfStock}
+              </Text>
             </View>
           </View>
         ) : null}

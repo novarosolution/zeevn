@@ -3,9 +3,9 @@ import { StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { useTheme } from "../../context/ThemeContext";
 import { getAdminChrome } from "../../theme/adminLayout";
-import { fonts } from "../../theme/tokens";
+import { ADMIN_FONT } from "../../theme/adminLayout";
 
-export default function AdminProductCell({ name, imageUri, index = 0 }) {
+export default function AdminProductCell({ name, imageUri, index = 0, meta = "" }) {
   const { colors: c, isDark } = useTheme();
   const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
   const styles = useMemo(() => createStyles(chrome, isDark), [chrome, isDark]);
@@ -22,9 +22,16 @@ export default function AdminProductCell({ name, imageUri, index = 0 }) {
           <Text style={styles.glyph}>∷</Text>
         </View>
       )}
-      <Text style={styles.name} numberOfLines={2}>
-        {name}
-      </Text>
+      <View style={styles.copy}>
+        <Text style={styles.name} numberOfLines={2}>
+          {name}
+        </Text>
+        {meta ? (
+          <Text style={styles.meta} numberOfLines={1}>
+            {meta}
+          </Text>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -47,11 +54,17 @@ function createStyles(chrome, isDark) {
       color: isDark ? chrome.goldBright : "#5a4326",
       fontSize: 14,
     },
+    copy: { flex: 1, minWidth: 0 },
     name: {
-      flex: 1,
       color: chrome.ink,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
       fontSize: 12.5,
+    },
+    meta: {
+      marginTop: 2,
+      color: chrome.inkFaint,
+      fontFamily: ADMIN_FONT.regular,
+      fontSize: 11,
     },
   });
 }

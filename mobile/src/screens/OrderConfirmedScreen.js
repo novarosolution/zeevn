@@ -245,6 +245,12 @@ export default function OrderConfirmedScreen({ navigation, route }) {
                 <Text style={[styles.summaryLabel, { color: c.textSecondary }]}>{COPY.labels.payment}</Text>
                 <Text style={[styles.summaryValue, { color: c.textPrimary }]}>{paymentLabel}</Text>
               </View>
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, { color: c.textSecondary }]}>Channel</Text>
+                <Text style={[styles.summaryValue, { color: c.textPrimary }]}>
+                  {order?.channel === "walk_in" ? "Shop counter" : "Online"}
+                </Text>
+              </View>
               {deliveryLine ? (
                 <View style={styles.summaryRow}>
                   <Text style={[styles.summaryLabel, { color: c.textSecondary }]}>{COPY.labels.delivery}</Text>

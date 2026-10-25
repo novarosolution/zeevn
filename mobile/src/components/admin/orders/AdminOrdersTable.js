@@ -99,6 +99,7 @@ const OrderRow = memo(function OrderRow({ order, selected, busy, riders, actions
           {orderRef(order)}
         </Text>
         <Text style={styles.sub} numberOfLines={1}>
+          {order.channel === "walk_in" ? "Counter · " : ""}
           {timeAgo(order.createdAt)}
         </Text>
       </View>
@@ -210,6 +211,7 @@ const OrderCard = memo(function OrderCard({ order, selected, busy, actions, onTo
         {areaLine(order) ? ` · ${areaLine(order)}` : ""}
       </Text>
       <View style={styles.cardBadges}>
+        <AdminBadge label={order.channel === "walk_in" ? "Counter" : "Online"} tone={order.channel === "walk_in" ? "gold" : "green"} size="sm" />
         <AdminBadge label={meta.label} tone={meta.tone} dot />
         <AdminBadge label={pay.label} tone={pay.tone} size="sm" />
         {flag ? <AdminBadge label={flag.label} tone={flag.tone} icon={flag.icon} size="sm" /> : null}

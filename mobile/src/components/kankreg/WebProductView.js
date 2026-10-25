@@ -248,6 +248,7 @@ export default function WebProductView({
   liveRatingAvg,
   reviewCountDisplay,
   isOutOfStock,
+  soldTag = "",
   isComingSoon = false,
   comingSoonNote = "",
   quantity,
@@ -437,7 +438,7 @@ export default function WebProductView({
   const stockLabel = isComingSoon
     ? PRODUCT_SCREEN.heroComingSoon
     : isOutOfStock
-      ? PRODUCT_SCREEN.heroOutOfStock
+      ? soldTag || PRODUCT_SCREEN.heroOutOfStock
       : PRODUCT_SCREEN.stockReady;
   const buyLabel = inCart ? PRODUCT_SCREEN.goToBag : PRODUCT_SCREEN.buyNow;
 

@@ -10,7 +10,6 @@ import AdminButton from "../../components/admin/AdminButton";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminPagination from "../../components/admin/AdminPagination";
-import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumChip from "../../components/ui/PremiumChip";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
@@ -40,6 +39,13 @@ const TABS = [
   { key: "riders", label: "Riders" },
   { key: "shop", label: "Shop" },
   { key: "people", label: "People" },
+];
+
+const ACTION_CHIPS = [
+  { key: "", label: "All actions" },
+  { key: "walk-in", label: "Walk-in" },
+  { key: "Transferred", label: "Transfers" },
+  { key: "Stock out", label: "Stock out" },
 ];
 
 export default function AdminLogsScreen({ navigation, route }) {
@@ -125,7 +131,7 @@ export default function AdminLogsScreen({ navigation, route }) {
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
               <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
-              <PremiumButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
+              <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
         </KankregScrollPage>
@@ -231,6 +237,23 @@ export default function AdminLogsScreen({ navigation, route }) {
                   setPage(1);
                 }}
               />
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
+                {ACTION_CHIPS.map((item) => (
+                  <PremiumChip
+                    key={item.key || "all-actions"}
+                    label={item.label}
+                    tone="gold"
+                    size="sm"
+                    selected={q === item.key}
+                    onPress={() => {
+                      setQInput(item.key);
+                      setQ(item.key);
+                      setPage(1);
+                    }}
+                  />
+                ))}
+              </ScrollView>
 
               <AdminInput
                 label="Search"

@@ -506,6 +506,10 @@ export function buildOrderInvoiceHtml(order) {
             <span class="key">Order Ref</span>
             <span class="val">#${htmlEscape(orderRef)}</span>
           </div>
+          <div class="row">
+            <span class="key">Channel</span>
+            <span class="val">${order?.channel === "walk_in" ? "Shop counter" : "Online"}</span>
+          </div>
           <div class="statusPill ${paymentBadge.tone}">${htmlEscape(paymentBadge.label)}</div>
         </div>
       </div>
@@ -582,6 +586,56 @@ export function buildOrderInvoiceHtml(order) {
           </div>
         </div>
       </div>
+    </div>
+  </body>
+</html>`;
+}
+
+/** Tight 80mm till slip. Reuses the same order fields as the full invoice. */
+export function buildCounterBillHtml(order) {
+  const invoiceNumber = resolveInvoiceNumber(order);
+  const orderRef = resolveOrderRef(order);
+  const totalAmount = Number(order?.totalPrice || 0);
+  const lines = (order?.products || [])
+    .map((p) => {
+      const qty = Number(p.quantity || 0);
+      const price = Number(p.price || 0);
+      return `<tr><td>${htmlEscape(p.name)}</td><td class="n">${qty}</td><td class="n">${fmtInr(qty * price)}</td></tr>`;
+    })
+    .join("");
+  const note = order?.invoice?.notes || order?.shippingAddress?.note || "";
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Bill ${htmlEscape(invoiceNumber)}</title>
+    <style>
+      @page { size: 80mm auto; margin: 4mm; }
+      body { margin: 0; font-family: system-ui, sans-serif; color: #1a1c14; font-size: 12px; }
+      .wrap { width: 72mm; margin: 0 auto; }
+      h1 { font-size: 16px; margin: 0 0 2px; letter-spacing: 0.4px; }
+      .muted { color: #6b6a62; }
+      table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+      td { padding: 3px 0; vertical-align: top; }
+      .n { text-align: right; white-space: nowrap; }
+      .total { font-size: 15px; font-weight: 700; border-top: 1px dashed #bbb; padding-top: 6px; }
+      .center { text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="center">
+        <h1>${htmlEscape(APP_DISPLAY_NAME)}</h1>
+        <div class="muted">${htmlEscape(APP_TAGLINE)}</div>
+        <div>${htmlEscape(invoiceNumber)} · #${htmlEscape(orderRef)}</div>
+        <div class="muted">${fmtDateTime(order?.createdAt)}</div>
+      </div>
+      <div>${htmlEscape(order?.shippingAddress?.fullName || "Walk-in")}</div>
+      <div class="muted">${htmlEscape(order?.shippingAddress?.phone || "")}</div>
+      <table>${lines}</table>
+      <div class="total n">Total ${fmtInr(totalAmount)}</div>
+      <div>${htmlEscape(order?.paymentMethod || "Cash")}${note ? ` · ${htmlEscape(note)}` : ""}</div>
+      <div class="center muted" style="margin-top:10px">${htmlEscape(APP_WORDMARK_SUBLINE)}</div>
     </div>
   </body>
 </html>`;

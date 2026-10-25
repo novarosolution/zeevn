@@ -3,6 +3,7 @@ import { Image, Linking, Platform, Pressable, StyleSheet, Text, View } from "rea
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Clipboard from "expo-clipboard";
+import { replaceCustomerRoute } from "../navigation/customerNavigate";
 import { verifyOrderPayment } from "../services/paymentService";
 
 function buildUpiUri({ upiUri, vpa, payeeName, amount, orderId }) {
@@ -29,7 +30,7 @@ export default function YoupiCheckoutScreen({ navigation, route }) {
 
   const finish = useCallback(() => {
     if (p.orderId) verifyOrderPayment(null, p.orderId, { confirmed: true }).catch(() => {});
-    navigation.replace("MyOrders");
+    replaceCustomerRoute(navigation, "MyOrders");
   }, [navigation, p.orderId]);
 
   const pay = useCallback(() => {

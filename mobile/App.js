@@ -5,6 +5,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import {
   flushPendingNavigationActions,
   navigationRef,
+  subscribeAndroidHardwareBack,
 } from "./src/navigation/navigationRef";
 import * as ExpoLinking from "expo-linking";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -207,6 +208,14 @@ function WebRouteSeoSync({ navReady }) {
   return null;
 }
 
+function AndroidBackGuard({ navReady }) {
+  useEffect(() => {
+    if (Platform.OS !== "android" || !navReady) return undefined;
+    return subscribeAndroidHardwareBack();
+  }, [navReady]);
+  return null;
+}
+
 function AppNavigationShell() {
   const [navReady, setNavReady] = useState(false);
 
@@ -215,10 +224,11 @@ function AppNavigationShell() {
       <AppIconSync />
       <WebBodySync />
       <WebRouteSeoSync navReady={navReady} />
+      <AndroidBackGuard navReady={navReady} />
       <ThemedStatusBar />
       <NavigationContainer
         ref={navigationRef}
-        linking={linking}
+        linking={Platform.OS === "web" ? linking : undefined}
         onReady={() => {
           setNavReady(true);
           flushPendingNavigationActions();

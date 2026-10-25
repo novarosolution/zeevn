@@ -5,6 +5,7 @@ import AuthGateShell from "../components/AuthGateShell";
 import PageTransition from "../components/motion/PageTransition";
 import * as CoreScreens from "./screenRegistryCore";
 import * as LazyScreens from "./lazyScreens";
+import * as AdminScreens from "./adminLazyScreens";
 import { useAuth } from "../context/AuthContext";
 import { DeliveryLocationProvider } from "../context/DeliveryLocationContext";
 
@@ -49,8 +50,8 @@ const WrappedWishlist = withPageTransition(LazyScreens.WishlistScreen);
 const WrappedProduct = withPageTransition(LazyScreens.ProductScreen);
 const WrappedAbout = withPageTransition(LazyScreens.AboutScreen);
 const WrappedLegal = withPageTransition(LazyScreens.LegalDocumentScreen);
+const WrappedCart = withPageTransition(LazyScreens.CartScreen);
 
-const ProtectedCart = withAuthGuard(LazyScreens.CartScreen);
 const ProtectedCheckout = withAuthGuard(LazyScreens.CheckoutScreen);
 const ProtectedYoupiCheckout = withAuthGuard(LazyScreens.YoupiCheckoutScreen);
 const ProtectedProfile = withAuthGuard(LazyScreens.ProfileScreen);
@@ -65,6 +66,50 @@ const ProtectedPickLocation = withAuthGuard(LazyScreens.PickLocationScreen);
 const ProtectedSupport = withAuthGuard(LazyScreens.SupportScreen);
 /** Auth only — role is checked inside the screen after a fresh profile fetch (avoids stale cache + wrong redirect). */
 const ProtectedDeliveryDashboard = withAuthGuard(LazyScreens.DeliveryDashboardScreen);
+
+const ADMIN_ROUTES = [
+  ["AdminDashboard", AdminScreens.AdminDashboardScreen],
+  ["AdminShopDesk", AdminScreens.AdminShopDeskScreen],
+  ["AdminOrders", AdminScreens.AdminOrdersScreen],
+  ["AdminOrderDetail", AdminScreens.AdminOrderDetailScreen],
+  ["AdminReturns", AdminScreens.AdminReturnsScreen],
+  ["AdminReturnDetail", AdminScreens.AdminReturnDetailScreen],
+  ["AdminDispatch", AdminScreens.AdminDispatchScreen],
+  ["AdminRiders", AdminScreens.AdminRidersScreen],
+  ["AdminRiderMap", AdminScreens.AdminRiderMapScreen],
+  ["AdminCash", AdminScreens.AdminCashScreen],
+  ["AdminRiderMessages", AdminScreens.AdminRiderMessagesScreen],
+  ["AdminRiderPerformance", AdminScreens.AdminRiderPerformanceScreen],
+  ["AdminDelivery", AdminScreens.AdminDeliveryScreen],
+  ["AdminProducts", AdminScreens.AdminProductsScreen],
+  ["AdminPrices", AdminScreens.AdminPricesScreen],
+  ["AdminCategories", AdminScreens.AdminCategoriesScreen],
+  ["AdminAddProduct", AdminScreens.AdminAddProductScreen],
+  ["AdminInventory", AdminScreens.AdminInventoryScreen],
+  ["AdminStockIn", AdminScreens.AdminStockInScreen],
+  ["AdminReorders", AdminScreens.AdminReordersScreen],
+  ["AdminClosing", AdminScreens.AdminClosingScreen],
+  ["AdminStockReport", AdminScreens.AdminStockReportScreen],
+  ["AdminStockHistory", AdminScreens.AdminStockHistoryScreen],
+  ["AdminAnalytics", AdminScreens.AdminAnalyticsScreen],
+  ["AdminHomeView", AdminScreens.AdminHomeViewScreen],
+  ["AdminHomeSections", AdminScreens.AdminHomeSectionsScreen],
+  ["AdminCoupons", AdminScreens.AdminCouponsScreen],
+  ["AdminRewards", AdminScreens.AdminRewardsScreen],
+  ["AdminFaqs", AdminScreens.AdminFaqsScreen],
+  ["AdminNotifications", AdminScreens.AdminNotificationsScreen],
+  ["AdminCustomers", AdminScreens.AdminCustomersScreen],
+  ["AdminDeletions", AdminScreens.AdminDeletionsScreen],
+  ["AdminUsers", AdminScreens.AdminUsersScreen],
+  ["AdminSupport", AdminScreens.AdminSupportScreen],
+  ["AdminHealth", AdminScreens.AdminHealthScreen],
+  ["AdminLogs", AdminScreens.AdminLogsScreen],
+  ["AdminHelp", AdminScreens.AdminHelpScreen],
+  ["AdminSettings", AdminScreens.AdminSettingsScreen],
+];
+const ProtectedAdmin = Object.fromEntries(
+  ADMIN_ROUTES.map(([name, Screen]) => [name, withAuthGuard(Screen)])
+);
 
 export default function AppNavigator() {
   const screenOptions = useMemo(
@@ -115,7 +160,7 @@ export default function AppNavigator() {
       <Stack.Group>
         <Stack.Screen
           name="Cart"
-          component={ProtectedCart}
+          component={WrappedCart}
           options={Platform.OS === "web" ? undefined : { animation: "fade_from_bottom" }}
         />
         <Stack.Screen
@@ -154,6 +199,12 @@ export default function AppNavigator() {
 
       <Stack.Group>
         <Stack.Screen name="DeliveryDashboard" component={ProtectedDeliveryDashboard} />
+      </Stack.Group>
+
+      <Stack.Group>
+        {ADMIN_ROUTES.map(([name]) => (
+          <Stack.Screen key={name} name={name} component={ProtectedAdmin[name]} />
+        ))}
       </Stack.Group>
     </Stack.Navigator>
     </DeliveryLocationProvider>

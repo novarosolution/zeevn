@@ -1,9 +1,8 @@
 import React, { useMemo } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-import { getAdminChrome } from "../../theme/adminLayout";
+import { ADMIN_FONT, getAdminChrome } from "../../theme/adminLayout";
 import { getAdminTone } from "../../theme/adminTones";
-import { fonts } from "../../theme/tokens";
 
 /**
  * Segmented tabs. Items: `{ key, label, count?, tone? }`. A `count` renders as a small number chip; give `tone`
@@ -95,8 +94,8 @@ function createStyles(chrome) {
       borderColor: chrome.tabOnBorder,
       ...Platform.select({ web: { boxShadow: "0 1px 3px rgba(25,20,15,0.12)" }, default: {} }),
     },
-    tabText: { fontSize: 12.5, color: chrome.inkSoft, fontFamily: fonts.medium },
-    tabTextOn: { color: chrome.tabOnText, fontFamily: fonts.semibold },
+    tabText: { fontSize: 12.5, color: chrome.inkSoft, fontFamily: ADMIN_FONT.medium },
+    tabTextOn: { color: chrome.tabOnText, fontFamily: ADMIN_FONT.semibold },
     count: {
       minWidth: 20,
       height: 18,
@@ -109,7 +108,7 @@ function createStyles(chrome) {
       borderColor: "transparent",
     },
     countOn: { backgroundColor: "rgba(246, 241, 230, 0.2)" },
-    countText: { fontSize: 11, color: chrome.inkSoft, fontFamily: fonts.semibold },
+    countText: { fontSize: 11, color: chrome.inkSoft, fontFamily: ADMIN_FONT.semibold },
     countTextOn: { color: chrome.tabOnText },
   });
 }

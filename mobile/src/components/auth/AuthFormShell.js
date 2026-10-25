@@ -1,46 +1,24 @@
 import React from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { useTheme } from "../../context/ThemeContext";
+import { StyleSheet, Text, View } from "react-native";
 import { AUTH_UI } from "../../content/appContent";
-import { FONT_HEADING } from "../../theme/typographyRoles";
-import { KANKREG_PALETTE, ZEEVAN_GREEN } from "../../theme/kankregWeb";
-import { fonts, lineHeight, spacing, typography } from "../../theme/tokens";
+import { useStoreTheme } from "../../theme/storefront";
 import AuthRoutePills from "./AuthRoutePills";
-import { useKankregLayout } from "../../theme/kankregBreakpoints";
 
-function AuthSocialDivider({ label, isDark }) {
-  const lineColor = isDark ? "rgba(52, 211, 153, 0.22)" : "rgba(36, 68, 36, 0.18)";
-  const textColor = isDark ? "#9a8f82" : KANKREG_PALETTE.inkFaint;
+function Divider({ label }) {
+  const { c, type } = useStoreTheme();
   return (
-    <View style={dividerStyles.row}>
-      <View style={[dividerStyles.line, { backgroundColor: lineColor }]} />
-      <Text style={[dividerStyles.label, { color: textColor }]}>{label}</Text>
-      <View style={[dividerStyles.line, { backgroundColor: lineColor }]} />
+    <View style={styles.divider}>
+      <View style={[styles.rule, { backgroundColor: c.lineStrong }]} />
+      <Text style={type.ui(12.5, "semibold", c.inkMute)}>{label}</Text>
+      <View style={[styles.rule, { backgroundColor: c.lineStrong }]} />
     </View>
   );
 }
 
-const dividerStyles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginVertical: spacing.md,
-  },
-  line: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-  },
-  label: {
-    fontFamily: fonts.semibold,
-    fontSize: typography.caption - 1,
-    letterSpacing: 0.4,
-    textTransform: "uppercase",
-  },
-});
-
 /**
- * Auth form shell — clear title, Sign in / Register toggle, fields, optional OAuth.
+ * Title, fields, optional Google / Apple row and footer for Login and Register.
+ * `compact` is the phone layout: centred title, and the Sign in / Create account switch is drawn by the hero shell.
+ * Without it (the wide-web form panel) the title is left-aligned and the switch sits under the subtitle.
  */
 export default function AuthFormShell({
   navigation,
@@ -52,67 +30,33 @@ export default function AuthFormShell({
   socialSlot,
   footerSlot,
   showRoutePills = true,
-  showForgotPassword = false,
-  onForgotPassword,
   compact = false,
 }) {
-  const { isDark } = useTheme();
-  const { isXs } = useKankregLayout();
-  const resolvedEyebrow =
-    formEyebrow ||
-    (activeRoute === "Login" ? AUTH_UI.loginFormEyebrow : AUTH_UI.registerFormEyebrow);
+  const { c, type } = useStoreTheme();
+  const eyebrow = formEyebrow || (activeRoute === "Login" ? AUTH_UI.loginFormEyebrow : AUTH_UI.registerFormEyebrow);
 
   return (
     <View style={[styles.shell, compact && styles.shellCompact]}>
+      {compact ? null : <Text style={type.eyebrow(c.brandAlt, 11)}>{eyebrow}</Text>}
       <Text
-        style={[
-          styles.formEyebrow,
-          { color: isDark ? KANKREG_PALETTE.goldBright : ZEEVAN_GREEN.deep },
-        ]}
-      >
-        {resolvedEyebrow}
-      </Text>
-      <Text
-        style={[
-          styles.h1,
-          isXs && styles.h1Compact,
-          { color: isDark ? KANKREG_PALETTE.paper : KANKREG_PALETTE.ink },
-        ]}
+        style={[type.display(compact ? 32 : 38, { semi: true }), compact && styles.centered, styles.title]}
+        accessibilityRole="header"
       >
         {title}
       </Text>
       {subtitle ? (
-        <Text style={[styles.sub, { color: isDark ? "#c8bdaf" : KANKREG_PALETTE.inkSoft }]}>
-          {subtitle}
-        </Text>
+        <Text style={[type.ui(14.5, "medium", c.inkMute, { lineHeight: 21 }), compact && styles.centered, styles.sub]}>{subtitle}</Text>
       ) : null}
 
-      {showRoutePills && navigation ? (
-        <AuthRoutePills navigation={navigation} activeRoute={activeRoute} wide />
+      {showRoutePills && navigation && !compact ? (
+        <AuthRoutePills navigation={navigation} activeRoute={activeRoute} style={styles.pills} />
       ) : null}
 
       <View style={styles.fields}>{children}</View>
 
-      {showForgotPassword && onForgotPassword ? (
-        <Pressable
-          onPress={onForgotPassword}
-          style={styles.forgotWrap}
-          accessibilityRole="button"
-        >
-          <Text
-            style={[
-              styles.forgot,
-              { color: isDark ? KANKREG_PALETTE.goldBright : KANKREG_PALETTE.goldDeep },
-            ]}
-          >
-            {AUTH_UI.forgotPassword}
-          </Text>
-        </Pressable>
-      ) : null}
-
       {socialSlot ? (
         <>
-          <AuthSocialDivider label={AUTH_UI.socialDivider} isDark={isDark} />
+          <Divider label={AUTH_UI.socialDivider} />
           {socialSlot}
         </>
       ) : null}
@@ -123,55 +67,14 @@ export default function AuthFormShell({
 }
 
 const styles = StyleSheet.create({
-  shell: {
-    width: "100%",
-    maxWidth: 440,
-    alignSelf: "center",
-  },
-  shellCompact: {
-    maxWidth: "100%",
-  },
-  formEyebrow: {
-    fontFamily: fonts.semibold,
-    fontSize: 11,
-    letterSpacing: 2.4,
-    textTransform: "uppercase",
-    marginBottom: spacing.xs,
-  },
-  h1: {
-    fontFamily: FONT_HEADING,
-    fontWeight: "400",
-    fontSize: Platform.select({ web: 36, default: typography.h1 }),
-    lineHeight: Platform.select({ web: 42, default: lineHeight.h1 + 4 }),
-    letterSpacing: -0.5,
-    marginBottom: spacing.xs,
-  },
-  h1Compact: {
-    fontSize: typography.h2 + 2,
-    lineHeight: lineHeight.h2 + 4,
-  },
-  sub: {
-    fontFamily: fonts.regular,
-    fontSize: typography.bodySmall,
-    lineHeight: lineHeight.bodySmall + 2,
-    marginBottom: spacing.sm,
-  },
-  fields: {
-    width: "100%",
-    gap: spacing.md,
-    marginTop: spacing.sm,
-  },
-  forgotWrap: {
-    alignSelf: "flex-end",
-    marginTop: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  forgot: {
-    fontSize: typography.caption,
-    fontFamily: fonts.semibold,
-  },
-  footer: {
-    marginTop: spacing.lg,
-    alignItems: "center",
-  },
+  shell: { width: "100%", maxWidth: 440, alignSelf: "center" },
+  shellCompact: { maxWidth: "100%" },
+  centered: { textAlign: "center", alignSelf: "center" },
+  title: { marginTop: 4 },
+  sub: { marginTop: 6, maxWidth: 320 },
+  pills: { marginTop: 22 },
+  fields: { width: "100%", gap: 12, marginTop: 22 },
+  divider: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 24, marginBottom: 16 },
+  rule: { flex: 1, height: StyleSheet.hairlineWidth * 2 },
+  footer: { marginTop: 18, alignItems: "center" },
 });

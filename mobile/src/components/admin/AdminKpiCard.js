@@ -1,14 +1,15 @@
 import React, { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
-import { getAdminChrome } from "../../theme/adminLayout";
-import { FONT_PRICE } from "../../theme/typographyRoles";
-import { fonts } from "../../theme/tokens";
+import { ADMIN_FONT, getAdminChrome } from "../../theme/adminLayout";
 
-/** Ops metric tile. Use tone warn or hot when the number needs attention. */
+/** Ops metric tile. Icon + hint make the number readable. Use tone warn or hot when it needs work. */
 export default function AdminKpiCard({
   label,
   value,
+  hint,
+  icon,
   delta,
   deltaUp = true,
   tone = "default",
@@ -24,6 +25,7 @@ export default function AdminKpiCard({
     ? {
         onPress,
         accessibilityRole: "button",
+        accessibilityLabel: hint ? `${label} ${value}. ${hint}` : `${label} ${value}`,
         style: ({ pressed }) => [
           styles.card,
           styles.cardInteractive,
@@ -44,9 +46,20 @@ export default function AdminKpiCard({
 
   return (
     <Wrapper {...wrapProps}>
-      <Text style={styles.label} numberOfLines={1}>
-        {label}
-      </Text>
+      <View style={styles.top}>
+        {icon ? (
+          <View style={[styles.iconWell, hot && styles.iconWellHot, tone === "warn" && styles.iconWellWarn]}>
+            <Ionicons
+              name={icon}
+              size={14}
+              color={tone === "hot" ? chrome.danger : tone === "warn" ? chrome.goldDeep : chrome.inkSoft}
+            />
+          </View>
+        ) : null}
+        <Text style={styles.label} numberOfLines={1}>
+          {label}
+        </Text>
+      </View>
       <Text
         style={[
           styles.value,
@@ -57,6 +70,11 @@ export default function AdminKpiCard({
       >
         {value}
       </Text>
+      {hint ? (
+        <Text style={[styles.hint, hot && styles.hintHot]} numberOfLines={1}>
+          {hint}
+        </Text>
+      ) : null}
       {delta ? (
         <View style={[styles.deltaPill, deltaUp ? styles.deltaUp : styles.deltaDown]}>
           <Text style={[styles.delta, deltaUp ? styles.up : styles.down]} numberOfLines={1}>
@@ -118,18 +136,19 @@ function createStyles(chrome) {
       width: Platform.select({ web: "100%", default: undefined }),
       minWidth: Platform.select({ web: 0, default: 148 }),
       maxWidth: Platform.select({ web: "100%", default: "48%" }),
-      backgroundColor: chrome.paper,
+      backgroundColor: chrome.card,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: chrome.line,
       borderRadius: Platform.select({ web: 14, default: 14 }),
-      paddingTop: Platform.select({ web: 14, default: 18 }),
-      paddingBottom: Platform.select({ web: 14, default: 18 }),
-      paddingHorizontal: Platform.select({ web: 14, default: 18 }),
+      paddingTop: Platform.select({ web: 14, default: 16 }),
+      paddingBottom: Platform.select({ web: 14, default: 16 }),
+      paddingHorizontal: Platform.select({ web: 14, default: 16 }),
       overflow: "hidden",
       position: "relative",
       ...Platform.select({
         web: {
-          transition: "transform 100ms ease-out, background-color 100ms ease-out",
+          boxShadow: "0 1px 1px rgba(20,24,16,0.03), 0 10px 22px -18px rgba(20,24,16,0.14)",
+          transition: "transform 100ms ease-out, background-color 100ms ease-out, box-shadow 120ms ease-out",
         },
         default: {},
       }),
@@ -147,6 +166,8 @@ function createStyles(chrome) {
         web: "rgba(184, 68, 47, 0.06)",
         default: chrome.card,
       }),
+      borderLeftWidth: 3,
+      borderLeftColor: chrome.danger,
     },
     cardWarn: {
       borderColor: Platform.select({
@@ -157,30 +178,55 @@ function createStyles(chrome) {
         web: "rgba(212, 165, 116, 0.12)",
         default: chrome.card,
       }),
+      borderLeftWidth: 3,
+      borderLeftColor: chrome.goldDeep,
     },
     cardPressed: {
       transform: [{ scale: 0.97 }],
       ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
     },
+    top: { flexDirection: "row", alignItems: "center", gap: 8 },
+    iconWell: {
+      width: 24,
+      height: 24,
+      borderRadius: 8,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: chrome.paper,
+    },
+    iconWellHot: { backgroundColor: "rgba(184, 68, 47, 0.12)" },
+    iconWellWarn: { backgroundColor: "rgba(212, 165, 116, 0.22)" },
     label: {
-      fontSize: 11,
-      color: chrome.inkFaint,
-      letterSpacing: 0.2,
-      fontFamily: fonts.medium,
+      flex: 1,
+      minWidth: 0,
+      fontSize: 12,
+      color: chrome.inkSoft,
+      letterSpacing: 0.1,
+      fontFamily: ADMIN_FONT.medium,
     },
     value: {
-      fontFamily: FONT_PRICE,
-      fontSize: Platform.select({ web: 26, default: 26 }),
+      fontFamily: ADMIN_FONT.bold,
+      fontSize: Platform.select({ web: 26, default: 24 }),
       fontWeight: "600",
       color: chrome.ink,
-      marginTop: 6,
-      letterSpacing: -0.55,
+      marginTop: 8,
+      letterSpacing: -0.6,
     },
     valueHot: {
       color: chrome.danger,
     },
     valueWarn: {
       color: chrome.goldDeep,
+    },
+    hint: {
+      marginTop: 4,
+      fontSize: 11.5,
+      color: chrome.inkFaint,
+      fontFamily: ADMIN_FONT.regular,
+    },
+    hintHot: {
+      color: chrome.goldDeep,
+      fontFamily: ADMIN_FONT.medium,
     },
     deltaPill: {
       alignSelf: "flex-start",
@@ -197,7 +243,7 @@ function createStyles(chrome) {
     },
     delta: {
       fontSize: 11,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
     },
     up: { color: chrome.green },
     down: { color: chrome.danger },

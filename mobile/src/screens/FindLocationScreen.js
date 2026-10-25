@@ -27,6 +27,7 @@ export default function FindLocationScreen({ navigation, route }) {
     savedLabel,
   } = useDeliveryLocation();
   const [phase, setPhase] = useState("searching");
+  const [locateError, setLocateError] = useState("");
   const mapPickedRef = useRef(false);
 
   useEffect(() => {
@@ -58,11 +59,18 @@ export default function FindLocationScreen({ navigation, route }) {
 
   const runDetect = useCallback(async () => {
     setPhase("searching");
+    setLocateError("");
     const result = await detect({ force: true });
-    if (result?.label || savedLabel) {
+    if (result?.error) {
+      setLocateError(result.error);
+      setPhase("error");
+      return;
+    }
+    if (result?.label || result?.latitude || savedLabel) {
       setPhase("found");
       return;
     }
+    setLocateError("Turn on location or pick your place on the map.");
     setPhase("error");
   }, [detect, savedLabel]);
 
@@ -129,6 +137,7 @@ export default function FindLocationScreen({ navigation, route }) {
     <StoreFindLocation
       phase={phase}
       snippet={displaySnippet}
+      errorMessage={locateError}
       onConfirm={handleConfirm}
       onRetry={runDetect}
       onOpenMap={() =>

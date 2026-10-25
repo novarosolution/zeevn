@@ -1,11 +1,11 @@
 /**
- * Zeevan product catalog — single source for ghee, tel, masala & Haldar honey.
+ * Zeevan product catalog — single source for ghee, oil, masala & Haldar honey.
  * Import here for home, shop, about, hero, and category UI (not ghee-only).
  */
 
-export const ZEEVAN_CATALOG_TAGLINE = "Ghee, tel, masala & honey — pure heritage delivered";
-export const ZEEVAN_CATALOG_SUBLINE = "Ghee · Tel · Masala · Honey";
-export const ZEEVAN_SEARCH_PLACEHOLDER = "Search ghee, tel, masala, honey…";
+export const ZEEVAN_CATALOG_TAGLINE = "Ghee, oil, masala & honey — pure heritage delivered";
+export const ZEEVAN_CATALOG_SUBLINE = "Ghee · Oil · Masala · Honey";
+export const ZEEVAN_SEARCH_PLACEHOLDER = "Search ghee, oil, masala, honey…";
 
 /** Core product lines shown on home, shop filters, and hero. */
 export const ZEEVAN_PRODUCT_LINES = [
@@ -28,19 +28,19 @@ export const ZEEVAN_PRODUCT_LINES = [
   },
   {
     key: "tel",
-    label: "Tel",
-    shopPill: "Tel",
-    aliases: ["tel", "oil", "tel oil", "cooking oil", "mustard", "sarson", "groundnut"],
+    label: "Oil",
+    shopPill: "Oil",
+    aliases: ["oil", "tel", "tel oil", "cooking oil", "mustard", "sarson", "groundnut"],
     icon: "water-outline",
-    description: "Cold-pressed tel",
+    description: "Cold-pressed oil",
     gradient: ["#eef2e4", "#d4dcc8"],
     gradientDark: ["#1a2018", "#101814"],
     accent: "#788844",
     hero: {
-      title: "Pure cooking tel",
+      title: "Pure cooking oil",
       subtitle: "Traditional oils — cold-pressed, kitchen-ready.",
       badge: "Pure · Natural",
-      cta: "Shop tel",
+      cta: "Shop oil",
     },
   },
   {
@@ -90,7 +90,7 @@ export const ZEEVAN_TRUST_STRIP = [
 
 export const ZEEVAN_HOME_MARQUEE = [
   "Pure ghee",
-  "Cold-pressed tel",
+  "Cold-pressed oil",
   "Fresh masala",
   "Haldar honey",
   "Secure checkout",
@@ -172,6 +172,7 @@ export function matchProductLinePill(product, pill) {
   if (!pill || pill === "All") return true;
   const keyMap = {
     Ghee: "ghee",
+    Oil: "tel",
     Tel: "tel",
     Masala: "masala",
     Honey: "honey",

@@ -148,6 +148,28 @@ export function getSocketBaseUrl() {
 }
 
 /**
+ * socket.io treats the first argument as origin + namespace, not a path prefix.
+ * `io("https://www.zeevan.shop/aws")` therefore hits `/socket.io` on Vercel (HTML 200)
+ * instead of the proxied API. Use `/aws/socket.io` there. Vercel cannot upgrade
+ * WebSockets, so that path stays on HTTP polling.
+ */
+export function getSocketConnect() {
+  const api = getSocketBaseUrl();
+  if (!api) return null;
+  try {
+    const parsed = new URL(api);
+    const prefix = parsed.pathname.replace(/\/+$/, "");
+    if (prefix === "/aws" || prefix.startsWith("/aws/")) {
+      return { url: parsed.origin, path: "/aws/socket.io", transports: ["polling"] };
+    }
+    const url = prefix ? `${parsed.origin}${prefix}` : parsed.origin;
+    return { url, path: "/socket.io", transports: ["websocket", "polling"] };
+  } catch {
+    return { url: api, path: "/socket.io", transports: ["websocket", "polling"] };
+  }
+}
+
+/**
  * Dev web → local backend; production web → current origin (+ `/aws` on the shop);
  * native → live shop (loopback is the phone itself, so catalog images never load).
  */

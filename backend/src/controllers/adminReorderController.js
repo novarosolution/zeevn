@@ -42,6 +42,19 @@ function reasonFor({ sold, perDay, onHand, target, suggest, out, periodDays, cov
   return `Enough for the next ${coverDays} days.`;
 }
 
+function deliveredAtOf(order) {
+  const events = (order.statusHistory || []).filter((row) => row.status === "delivered" && row.at);
+  return events.length ? events[events.length - 1].at : null;
+}
+
+function inRange(date, from, to) {
+  const t = date ? new Date(date).getTime() : NaN;
+  if (!Number.isFinite(t)) return false;
+  if (from && t < from.getTime()) return false;
+  if (to && t >= to.getTime()) return false;
+  return true;
+}
+
 async function listReorders(req, res, next) {
   try {
     const periodDays = Number(req.query.period) === 30 ? 30 : 7;
@@ -55,16 +68,16 @@ async function listReorders(req, res, next) {
         .lean(),
       Order.find({
         status: "delivered",
-        paymentStatus: { $ne: "failed" },
-        updatedAt: { $gte: range.from, $lt: range.to },
+        statusHistory: { $elemMatch: { status: "delivered", at: { $gte: range.from, $lt: range.to } } },
       })
-        .select("products")
+        .select("products statusHistory")
         .lean(),
       StockReceipt.find({ status: "draft" }).select("lines").lean(),
     ]);
 
     const soldBy = new Map();
     for (const order of orders) {
+      if (!inRange(deliveredAtOf(order), range.from, range.to)) continue;
       for (const line of order.products || []) {
         const id = String(line.product || "");
         if (!id) continue;

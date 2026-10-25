@@ -301,7 +301,7 @@ async function getDeskSummary(req, res, next) {
   try {
     const now = new Date();
     const dayStart = await shopDayStart(0);
-    const [byStatusRows, attention, cashDue, today, awaitingReply, lowStock, outOfStock, ridersTotal, ridersOnline, pendingReturns, ops] =
+    const [byStatusRows, attention, cashDue, today, deliveredToday, awaitingReply, lowStock, outOfStock, ridersTotal, ridersOnline, pendingReturns, ops] =
       await Promise.all([
         Order.aggregate([{ $group: { _id: "$status", n: { $sum: 1 } } }]),
         Order.countDocuments(attentionClause(now)),
@@ -310,6 +310,10 @@ async function getDeskSummary(req, res, next) {
           { $match: { createdAt: { $gte: dayStart }, status: { $ne: "cancelled" } } },
           { $group: { _id: null, count: { $sum: 1 }, revenue: { $sum: "$totalPrice" } } },
         ]),
+        Order.countDocuments({
+          status: "delivered",
+          statusHistory: { $elemMatch: { status: "delivered", at: { $gte: dayStart } } },
+        }),
         SupportThread.countDocuments({
           status: "open",
           "messages.0": { $exists: true },
@@ -352,6 +356,7 @@ async function getDeskSummary(req, res, next) {
         attention,
         cashDue,
         today: { count: today[0]?.count || 0, revenue: Math.round((today[0]?.revenue || 0) * 100) / 100 },
+        deliveredToday,
       },
       support: { awaitingReply },
       returns: { pending: pendingReturns },

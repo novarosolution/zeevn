@@ -2,9 +2,8 @@ import React, { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
-import { adminPanel, getAdminChrome } from "../../theme/adminLayout";
-import { FONT_HEADING } from "../../theme/typographyRoles";
-import { fonts, spacing } from "../../theme/tokens";
+import { ADMIN_FONT, adminPanel, getAdminChrome } from "../../theme/adminLayout";
+import { spacing } from "../../theme/tokens";
 
 export default function AdminPanel({
   title,
@@ -97,14 +96,14 @@ function createStyles(chrome, panelBase) {
       minWidth: 0,
     },
     iconWell: {
-      width: 34,
-      height: 34,
-      borderRadius: 11,
+      width: 32,
+      height: 32,
+      borderRadius: 10,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: chrome.chipOnBg,
+      backgroundColor: chrome.paper,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: chrome.chipOnBorder,
+      borderColor: chrome.line,
       marginTop: 1,
     },
     titleCol: { flex: 1, minWidth: 0 },
@@ -115,18 +114,18 @@ function createStyles(chrome, panelBase) {
       gap: 8,
     },
     title: {
-      fontFamily: FONT_HEADING,
-      fontSize: Platform.select({ web: 18, default: 17 }),
-      fontWeight: "500",
-      letterSpacing: -0.25,
+      fontFamily: ADMIN_FONT.semibold,
+      fontSize: Platform.select({ web: 17, default: 16 }),
+      fontWeight: "600",
+      letterSpacing: -0.2,
       color: chrome.ink,
     },
     description: {
       marginTop: 3,
       fontSize: 13,
       lineHeight: 18,
-      color: chrome.inkFaint,
-      fontFamily: fonts.regular,
+      color: chrome.inkSoft,
+      fontFamily: ADMIN_FONT.regular,
       maxWidth: 480,
     },
     metaPill: {
@@ -140,19 +139,19 @@ function createStyles(chrome, panelBase) {
     meta: {
       fontSize: 10.5,
       color: chrome.inkFaint,
-      fontFamily: fonts.medium,
+      fontFamily: ADMIN_FONT.medium,
       letterSpacing: 0.2,
     },
     actionBtn: {
       flexDirection: "row",
       alignItems: "center",
       gap: 4,
-      paddingHorizontal: 12,
-      paddingVertical: 7,
+      paddingHorizontal: 11,
+      paddingVertical: 6,
       borderRadius: 999,
       borderWidth: 1,
-      borderColor: chrome.chipOnBorder || chrome.line,
-      backgroundColor: chrome.chipOnBg || chrome.paper,
+      borderColor: chrome.line,
+      backgroundColor: chrome.paper,
       marginTop: 2,
       ...Platform.select({
         web: { cursor: "pointer", transition: "transform 100ms ease-out" },
@@ -163,7 +162,7 @@ function createStyles(chrome, panelBase) {
     action: {
       fontSize: 11,
       color: chrome.goldDeep,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
     },
     body: {
       gap: spacing.sm,

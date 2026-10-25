@@ -112,10 +112,16 @@ async function emitDeliveryPartnerLocation(partnerUser, location) {
   const lng = location?.longitude;
   const trackable = Number.isFinite(Number(lat)) && Number.isFinite(Number(lng));
 
-  const orders = await Order.find({
-    assignedDeliveryUser: partnerId,
-    status: { $in: Array.from(LIVE_LOCATION_STATUSES) },
-  }).select("user");
+  let orders = [];
+  try {
+    orders = await Order.find({
+      assignedDeliveryUser: partnerId,
+      status: { $in: Array.from(LIVE_LOCATION_STATUSES) },
+    }).select("user");
+  } catch (err) {
+    console.error("[socket] live-location lookup failed:", err.message);
+    return;
+  }
 
   const base = {
     latitude: trackable ? Number(lat) : null,

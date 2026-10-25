@@ -7,20 +7,14 @@ import SectionReveal from "../motion/SectionReveal";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 
 /**
- * Shared Login / Register layout: page body BG + split panel on wide web, mobile card on phone.
+ * Shared Login / Register layout: page backdrop + split panel on wide web, hero + form on phones.
+ * `navigation` feeds the Sign in / Create account switch the phone hero draws.
  */
-export default function AuthScreenBody({ artSubtitle, form, styles: screenStyles, mode = "login" }) {
+export default function AuthScreenBody({ artSubtitle, form, styles: screenStyles, mode = "login", navigation }) {
   const { useAuthSplit, isXs } = useKankregLayout();
   const useSplit = useAuthSplit && Platform.OS === "web";
-  const useMobileShell = !useSplit;
 
-  const body = useMobileShell ? (
-    <SectionReveal index={0} preset="fade-up" style={screenStyles.revealFill}>
-      <AuthMobileShell artSubtitle={artSubtitle} mode={mode}>
-        {form}
-      </AuthMobileShell>
-    </SectionReveal>
-  ) : (
+  const body = useSplit ? (
     <AuthSplitLayout artSubtitle={artSubtitle} mode={mode}>
       <SectionReveal index={1} preset="fade-up" style={screenStyles.revealFill}>
         <View
@@ -34,6 +28,10 @@ export default function AuthScreenBody({ artSubtitle, form, styles: screenStyles
         </View>
       </SectionReveal>
     </AuthSplitLayout>
+  ) : (
+    <AuthMobileShell mode={mode} navigation={navigation}>
+      {form}
+    </AuthMobileShell>
   );
 
   return <AuthPageBackdrop>{body}</AuthPageBackdrop>;

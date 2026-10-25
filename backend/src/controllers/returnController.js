@@ -337,10 +337,9 @@ async function approveReturn(req, res, next) {
     const covered =
       doc.refundAmount + others.reduce((sum, row) => sum + returnAmount(row), 0);
     const owed = Number(order.totalPrice || 0);
+    // Refunded means money that was already paid is fully covered. Unpaid cash stays pending; the cash desk drops the returned rupees.
     const canMarkRefunded =
-      owed > 0 &&
-      covered + 0.001 >= owed &&
-      (order.paymentStatus === "paid" || wasCodPending);
+      owed > 0 && covered + 0.001 >= owed && (order.paymentStatus === "paid" || wasCodPending);
     if (canMarkRefunded) {
       order.paymentStatus = "refunded";
       if (order.invoice) {

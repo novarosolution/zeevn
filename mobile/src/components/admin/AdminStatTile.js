@@ -1,11 +1,9 @@
 import React, { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAdminChrome } from "../../theme/adminLayout";
+import { ADMIN_FONT, useAdminChrome } from "../../theme/adminLayout";
 import { getAdminTone } from "../../theme/adminTones";
 import { useTheme } from "../../context/ThemeContext";
-import { fonts } from "../../theme/tokens";
-import { FONT_PRICE } from "../../theme/typographyRoles";
 
 /**
  * Number tile for the top of a desk screen. `tone` tints the icon and, when `selected` or `alert`, the whole tile.
@@ -86,7 +84,13 @@ function createStyles(chrome) {
       borderColor: chrome.line,
       backgroundColor: chrome.card,
       gap: 6,
-      ...Platform.select({ web: { transition: "background-color 120ms ease-out, border-color 120ms ease-out, transform 100ms ease-out" }, default: {} }),
+      ...Platform.select({
+        web: {
+          boxShadow: "0 1px 1px rgba(20,24,16,0.03), 0 10px 22px -18px rgba(20,24,16,0.12)",
+          transition: "background-color 120ms ease-out, border-color 120ms ease-out, transform 100ms ease-out",
+        },
+        default: {},
+      }),
     },
     interactive: Platform.select({ web: { cursor: "pointer" }, default: {} }),
     hover: { backgroundColor: chrome.paper },
@@ -100,8 +104,8 @@ function createStyles(chrome) {
       justifyContent: "center",
       borderWidth: StyleSheet.hairlineWidth,
     },
-    label: { flex: 1, fontSize: 12, color: chrome.inkSoft, fontFamily: fonts.medium },
-    value: { fontFamily: FONT_PRICE, fontSize: 25, letterSpacing: -0.5, color: chrome.ink, fontWeight: "600" },
-    hint: { fontSize: 11.5, color: chrome.inkFaint, fontFamily: fonts.regular },
+    label: { flex: 1, fontSize: 12, color: chrome.inkSoft, fontFamily: ADMIN_FONT.medium },
+    value: { fontFamily: ADMIN_FONT.bold, fontSize: 24, letterSpacing: -0.5, color: chrome.ink, fontWeight: "600" },
+    hint: { fontSize: 11.5, color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular },
   });
 }

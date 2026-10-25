@@ -10,8 +10,9 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
-import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
+import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import FloatingNav from "./FloatingNav";
+import { useStoreNavPad } from "./StoreTracker";
 import Glass from "./Glass";
 import PressableScale from "./PressableScale";
 
@@ -80,7 +81,7 @@ export default function StoreScreen({
     ],
   }));
 
-  const navPad = STORE_NAV_HEIGHT + Math.max(16, insets.bottom + 6) + 28;
+  const navPad = useStoreNavPad(insets);
 
   const wash = useMemo(() => {
     const total = WASH_OVERSCROLL + WASH_HEIGHT;

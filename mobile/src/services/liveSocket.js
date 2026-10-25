@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { getSocketBaseUrl } from "./apiBase";
+import { getSocketConnect } from "./apiBase";
 
 /** @type {import('socket.io-client').Socket | null} */
 let socket = null;
@@ -58,8 +58,8 @@ export async function connectLiveSocket(token) {
     return null;
   }
 
-  const url = getSocketBaseUrl();
-  if (!url) return null;
+  const conn = getSocketConnect();
+  if (!conn) return null;
 
   if (socket && activeToken === trimmed) {
     if (!socket.connected) socket.connect();
@@ -71,9 +71,10 @@ export async function connectLiveSocket(token) {
 
   try {
     const io = await resolveIo();
-    socket = io(url, {
+    socket = io(conn.url, {
+      path: conn.path,
       auth: { token: trimmed },
-      transports: Platform.OS === "android" ? ["polling", "websocket"] : ["websocket", "polling"],
+      transports: conn.transports,
       reconnection: true,
       reconnectionAttempts: 12,
       reconnectionDelay: 1200,

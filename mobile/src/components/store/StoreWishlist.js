@@ -3,8 +3,9 @@ import { RefreshControl, StyleSheet, Text, View, useWindowDimensions } from "rea
 import Animated, { useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { STORE_WISHLIST } from "../../content/storefrontContent";
-import { STORE_NAV_HEIGHT, useStoreTheme } from "../../theme/storefront";
+import { useStoreTheme } from "../../theme/storefront";
 import FloatingNav from "./FloatingNav";
+import { useStoreNavPad } from "./StoreTracker";
 import ProductCard from "./ProductCard";
 import ScreenHeader, { SCREEN_HEADER_PAD } from "./ScreenHeader";
 import { Card, EmptyState } from "./StoreKit";
@@ -22,7 +23,7 @@ export default function StoreWishlist({ navigation, items, loading, refreshing, 
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const cardW = Math.floor((width - gutter * 2 - GAP) / 2);
-  const navPad = STORE_NAV_HEIGHT + Math.max(16, insets.bottom + 6) + 24;
+  const navPad = useStoreNavPad(insets, -4);
 
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((event) => {

@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import { plainOilWord } from "../utils/displayText";
 import { apiGet, apiPost } from "./apiClient";
 import { parseCatalogBoolean } from "../utils/catalogBoolean";
 import { normalizeHeroSubtitle, normalizeHeroTitle } from "../utils/homeMarketingCopy";
@@ -44,8 +45,8 @@ export function normalizeProduct(raw) {
     Number.isFinite(mrpNum) && mrpNum > 0 ? mrpNum : null;
 
   const id = raw._id ?? raw.id;
-  const name = String(raw.name ?? "").trim() || "Untitled product";
-  const description = String(raw.description ?? "").trim();
+  const name = plainOilWord(String(raw.name ?? "").trim()) || "Untitled product";
+  const description = plainOilWord(String(raw.description ?? "").trim());
   const unit = String(raw.unit ?? "").trim() || "1 pc";
 
   const variants = Array.isArray(raw.variants)
@@ -129,9 +130,9 @@ export function normalizeProduct(raw) {
     lifestyleImage: packagingUri
       ? packagingUri
       : String(raw.lifestyleImage ?? "").trim(),
-    category: String(raw.category ?? "").trim() || "General",
+    category: plainOilWord(String(raw.category ?? "").trim()) || "General",
     homeSection: String(raw.homeSection ?? "").trim() || "Prime Products",
-    productType: String(raw.productType ?? raw.category ?? "").trim() || "General",
+    productType: plainOilWord(String(raw.productType ?? raw.category ?? "").trim()) || "General",
     showOnHome: raw.showOnHome !== false,
     isPublished: raw.isPublished !== false,
     homeOrder: Number.isFinite(Number(raw.homeOrder)) ? Number(raw.homeOrder) : 0,

@@ -2,12 +2,9 @@ import React, { useState } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import { AUTH_UI } from "../../content/appContent";
-import { useTheme } from "../../context/ThemeContext";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { fonts, typography } from "../../theme/tokens";
-import PremiumButton from "../ui/PremiumButton";
+import { useStoreTheme } from "../../theme/storefront";
 import PremiumErrorBanner from "../ui/PremiumErrorBanner";
+import AuthButton from "./AuthButton";
 import GoogleSignInButton from "./GoogleSignInButton";
 import {
   isAppleSignInConfigured,
@@ -15,33 +12,15 @@ import {
   signInWithAppleNative,
 } from "../../services/oauthSignIn";
 
-function DisabledSocialButton({ label, iconLeft, style }) {
-  return (
-    <PremiumButton
-      label={label}
-      variant="outline"
-      size="md"
-      fullWidth
-      iconLeft={iconLeft}
-      disabled
-      accessibilityHint={AUTH_UI.socialDisabledHint}
-      style={style}
-    />
-  );
-}
-
-/** Google / Apple sign-in — live when configured, disabled placeholders otherwise. */
+/** Google / Apple sign-in side by side — live when configured, dimmed placeholders otherwise. */
 export default function AuthSocialButtons({ onSuccess }) {
   const { loginWithApple } = useAuth();
-  const { isDark } = useTheme();
-  const { isXs, useAuthSplit } = useKankregLayout();
+  const { c, type } = useStoreTheme();
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const googleLive = isGoogleSignInConfigured();
   const appleLive = isAppleSignInConfigured();
   const showAppleSlot = Platform.OS === "ios" || Platform.OS === "web";
-  const stackSocial = isXs || (Platform.OS === "web" && useAuthSplit);
-  const btnStyle = stackSocial ? styles.btnStack : styles.btn;
 
   const runApple = async () => {
     if (!appleLive) return;
@@ -49,8 +28,8 @@ export default function AuthSocialButtons({ onSuccess }) {
       setBusy("apple");
       setError("");
       const { identityToken, fullName } = await signInWithAppleNative();
-      await loginWithApple({ identityToken, fullName });
-      onSuccess?.();
+      const user = await loginWithApple({ identityToken, fullName });
+      onSuccess?.(user);
     } catch (e) {
       if (e.code === "ERR_REQUEST_CANCELED") return;
       setError(e.message || "Apple sign-in failed.");
@@ -62,64 +41,42 @@ export default function AuthSocialButtons({ onSuccess }) {
   return (
     <View style={styles.wrap}>
       {error ? <PremiumErrorBanner severity="error" message={error} compact /> : null}
-      <View style={[styles.row, stackSocial && styles.rowStack]}>
+      <View style={styles.row}>
         {googleLive ? (
-          <GoogleSignInButton
-            onSuccess={onSuccess}
-            busy={busy}
-            setBusy={setBusy}
-            setError={setError}
-            style={btnStyle}
-          />
+          <GoogleSignInButton onSuccess={onSuccess} busy={busy} setBusy={setBusy} setError={setError} style={styles.cell} />
         ) : (
-          <DisabledSocialButton
+          <AuthButton
+            variant="secondary"
             label={AUTH_UI.googleLabel}
-            iconLeft="logo-google"
-            style={btnStyle}
+            icon="logo-google"
+            disabled
+            accessibilityHint={AUTH_UI.socialDisabledHint}
+            style={styles.cell}
           />
         )}
         {showAppleSlot ? (
-          appleLive ? (
-            <PremiumButton
-              label={AUTH_UI.appleLabel}
-              variant="outline"
-              size="md"
-              fullWidth
-              iconLeft="logo-apple"
-              loading={busy === "apple"}
-              disabled={Boolean(busy)}
-              onPress={runApple}
-              style={btnStyle}
-            />
-          ) : (
-            <DisabledSocialButton
-              label={AUTH_UI.appleLabel}
-              iconLeft="logo-apple"
-              style={btnStyle}
-            />
-          )
+          <AuthButton
+            variant="secondary"
+            label={AUTH_UI.appleLabel}
+            icon="logo-apple"
+            loading={busy === "apple"}
+            disabled={!appleLive || Boolean(busy)}
+            accessibilityHint={appleLive ? undefined : AUTH_UI.socialDisabledHint}
+            onPress={runApple}
+            style={styles.cell}
+          />
         ) : null}
       </View>
       {!googleLive && !appleLive ? (
-        <Text style={[styles.hint, { color: isDark ? "#9a8f82" : KANKREG_PALETTE.inkFaint }]}>
-          {AUTH_UI.socialDisabledHint}
-        </Text>
+        <Text style={[type.ui(12.5, "regular", c.inkMute), styles.hint]}>{AUTH_UI.socialDisabledHint}</Text>
       ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { width: "100%" },
+  wrap: { width: "100%", gap: 10 },
   row: { flexDirection: "row", gap: 12 },
-  rowStack: { flexDirection: "column", gap: 10 },
-  btn: { flex: 1 },
-  btnStack: { width: "100%" },
-  hint: {
-    marginTop: 10,
-    fontSize: typography.caption,
-    fontFamily: fonts.regular,
-    textAlign: "center",
-    lineHeight: 18,
-  },
+  cell: { flex: 1 },
+  hint: { textAlign: "center", lineHeight: 18 },
 });

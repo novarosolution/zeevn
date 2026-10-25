@@ -126,7 +126,7 @@ export const ABOUT_SECTION_DEFAULTS = {
   eyebrow: "Our story",
   title: "Craft rooted in tradition",
   body:
-    "Zeevan brings ghee, tel, masala & Haldar honey to your kitchen — small batches, honest labels, live delivery tracking.",
+    "Zeevan brings ghee, oil, masala & Haldar honey to your kitchen — small batches, honest labels, live delivery tracking.",
   videoUrl: "",
   videoCaption: "From farm to pantry.",
   photos: [],

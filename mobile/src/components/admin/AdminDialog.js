@@ -1,11 +1,9 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAdminChrome } from "../../theme/adminLayout";
+import { ADMIN_FONT, useAdminChrome } from "../../theme/adminLayout";
 import { getAdminTone } from "../../theme/adminTones";
 import { useTheme } from "../../context/ThemeContext";
-import { FONT_HEADING } from "../../theme/typographyRoles";
-import { fonts } from "../../theme/tokens";
 import AdminButton from "./AdminButton";
 
 /** Centered confirmation card. `tone="danger"` turns the confirm button red. Children render between message and buttons. */
@@ -125,8 +123,8 @@ function createStyles(chrome) {
       borderWidth: StyleSheet.hairlineWidth,
       marginBottom: 14,
     },
-    title: { fontFamily: FONT_HEADING, fontSize: 21, lineHeight: 26, letterSpacing: -0.3, color: chrome.ink },
-    message: { marginTop: 8, fontSize: 13.5, lineHeight: 20, color: chrome.inkSoft, fontFamily: fonts.regular },
+    title: { fontFamily: ADMIN_FONT.semibold, fontSize: 20, lineHeight: 26, letterSpacing: -0.35, color: chrome.ink, fontWeight: "600" },
+    message: { marginTop: 8, fontSize: 13.5, lineHeight: 20, color: chrome.inkSoft, fontFamily: ADMIN_FONT.regular },
     actions: { flexDirection: "row", justifyContent: "flex-end", gap: 10, marginTop: 22 },
   });
 }

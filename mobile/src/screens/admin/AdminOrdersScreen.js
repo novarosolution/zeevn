@@ -13,6 +13,7 @@ import AdminInput from "../../components/admin/AdminInput";
 import AdminPagination from "../../components/admin/AdminPagination";
 import AdminSelect from "../../components/admin/AdminSelect";
 import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
+import AdminToolbar from "../../components/admin/AdminToolbar";
 import { AdminDialog, useAdminConfirm } from "../../components/admin/AdminDialog";
 import AdminBulkBar from "../../components/admin/orders/AdminBulkBar";
 import AdminOrderDrawer from "../../components/admin/orders/AdminOrderDrawer";
@@ -504,54 +505,55 @@ export default function AdminOrdersScreen({ navigation, route }) {
                     tone={stage.tone}
                     selected={tab === stage.key}
                     onPress={() => pickTab(stage.key)}
-                    style={compact ? styles.tilePhone : undefined}
+                    style={compact && Platform.OS !== "web" ? styles.tilePhone : undefined}
                   />
                 ))}
               </AdminStatGrid>
 
               <AdminFilterTabs items={sideItems} value={SIDE_TABS[tab] ? tab : ""} onChange={pickTab} />
 
-              {/* filters */}
-              <View style={[styles.filters, compact && styles.filtersStack]}>
-                <View style={[styles.searchCell, compact && styles.filterCellPhone]}>
-                  <AdminInput
-                    value={qInput}
-                    onChangeText={setQInput}
-                    placeholder="Search order #, customer, phone, address"
-                    icon="search-outline"
-                    autoCapitalize="none"
+              <AdminToolbar stacked={compact} style={styles.filterBar}>
+                <View style={[styles.filters, compact && styles.filtersStack]}>
+                  <View style={[styles.searchCell, compact && styles.filterCellPhone]}>
+                    <AdminInput
+                      value={qInput}
+                      onChangeText={setQInput}
+                      placeholder="Search order #, customer, phone"
+                      icon="search-outline"
+                      autoCapitalize="none"
+                    />
+                  </View>
+                  <AdminSelect value={range} onChange={withPageReset(setRange)} options={RANGE_OPTIONS} icon="calendar-outline" style={[styles.filterCell, compact && styles.filterCellPhone]} />
+                  <AdminSelect
+                    value={zone}
+                    onChange={withPageReset(setZone)}
+                    options={[...zones.map((z) => ({ value: String(z._id), label: z.name, hint: z.isActive ? undefined : "Paused" })), { value: "none", label: "Outside zones" }]}
+                    placeholder="All zones"
+                    clearLabel="All zones"
+                    icon="map-outline"
+                    style={[styles.filterCell, compact && styles.filterCellPhone]}
                   />
+                  <AdminSelect
+                    value={rider}
+                    onChange={withPageReset(setRider)}
+                    options={[{ value: "unassigned", label: "Unassigned", icon: "person-remove-outline" }, ...riders.map((r) => ({ value: String(r._id), label: r.name || "Rider", meta: r.active ? `${r.active} active` : undefined }))]}
+                    placeholder="All riders"
+                    clearLabel="All riders"
+                    icon="bicycle-outline"
+                    style={[styles.filterCell, compact && styles.filterCellPhone]}
+                  />
+                  <AdminSelect
+                    value={payment}
+                    onChange={withPageReset(setPayment)}
+                    options={PAYMENT_OPTIONS}
+                    placeholder="All payments"
+                    clearLabel="All payments"
+                    icon="wallet-outline"
+                    style={[styles.filterCell, compact && styles.filterCellPhone]}
+                  />
+                  <AdminSelect value={sort} onChange={withPageReset(setSort)} options={SORT_OPTIONS} icon="swap-vertical-outline" style={[styles.filterCell, compact && styles.filterCellPhone]} />
                 </View>
-                <AdminSelect value={range} onChange={withPageReset(setRange)} options={RANGE_OPTIONS} icon="calendar-outline" style={[styles.filterCell, compact && styles.filterCellPhone]} />
-                <AdminSelect
-                  value={zone}
-                  onChange={withPageReset(setZone)}
-                  options={[...zones.map((z) => ({ value: String(z._id), label: z.name, hint: z.isActive ? undefined : "Paused" })), { value: "none", label: "Outside zones" }]}
-                  placeholder="All zones"
-                  clearLabel="All zones"
-                  icon="map-outline"
-                  style={[styles.filterCell, compact && styles.filterCellPhone]}
-                />
-                <AdminSelect
-                  value={rider}
-                  onChange={withPageReset(setRider)}
-                  options={[{ value: "unassigned", label: "Unassigned", icon: "person-remove-outline" }, ...riders.map((r) => ({ value: String(r._id), label: r.name || "Rider", meta: r.active ? `${r.active} active` : undefined }))]}
-                  placeholder="All riders"
-                  clearLabel="All riders"
-                  icon="bicycle-outline"
-                  style={[styles.filterCell, compact && styles.filterCellPhone]}
-                />
-                <AdminSelect
-                  value={payment}
-                  onChange={withPageReset(setPayment)}
-                  options={PAYMENT_OPTIONS}
-                  placeholder="All payments"
-                  clearLabel="All payments"
-                  icon="wallet-outline"
-                  style={[styles.filterCell, compact && styles.filterCellPhone]}
-                />
-                <AdminSelect value={sort} onChange={withPageReset(setSort)} options={SORT_OPTIONS} icon="swap-vertical-outline" style={[styles.filterCell, compact && styles.filterCellPhone]} />
-              </View>
+              </AdminToolbar>
 
               {/* selection bar or summary line */}
               {selected.size > 0 && !compact ? (
@@ -606,6 +608,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
                     setPageSize(n);
                     setPage(1);
                   }}
+                  pageSizes={[5, 10, 25, 50, 100]}
                 />
               ) : null}
             </View>
@@ -657,7 +660,8 @@ function createStyles(chrome, c, shadowPremium) {
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
     headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
-    filters: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end", gap: 8 },
+    filterBar: { width: "100%", alignItems: "stretch" },
+    filters: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end", gap: 8, width: "100%" },
     filtersStack: { flexDirection: "column", alignItems: "stretch" },
     searchCell: { flexGrow: 1, flexBasis: 280, minWidth: 220 },
     filterCell: { flexGrow: 1, flexBasis: 148, minWidth: 130, maxWidth: 220 },

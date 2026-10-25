@@ -310,7 +310,7 @@ export default function KankregHomeScreen({ navigation }) {
       <AppStartupScreen
         isDark={isDark}
         coverChrome
-        footnote="Curating ghee, tel, masala & honey…"
+        footnote="Curating ghee, oil, masala & honey…"
       />
     ) : (
       <StoreHomeSkeleton />
@@ -637,7 +637,7 @@ export default function KankregHomeScreen({ navigation }) {
             <KankregPageWrap gap={isMobileWeb ? spacing.md : 72}>
               <WebLineFocusSection
                 lineKey="tel"
-                title="Cold-pressed Tel"
+                title="Cold-pressed Oil"
                 kicker="Mustard, groundnut & sesame — pressed slow."
                 products={homeCatalog}
                 navigation={navigation}

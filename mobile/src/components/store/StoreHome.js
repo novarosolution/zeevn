@@ -27,7 +27,7 @@ import {
   resolveFestivalTheme,
   storeGreeting,
 } from "../../content/storefrontContent";
-import { STORE_NAV_HEIGHT, useStoreTheme } from "../../theme/storefront";
+import { useStoreTheme } from "../../theme/storefront";
 import {
   buildCategoryTiles,
   getFirstName,
@@ -47,13 +47,13 @@ import StoreHeader from "./StoreHeader";
 import StoreIcon from "./StoreIcon";
 import StoreSearchBar from "./StoreSearchBar";
 import StoreTabs from "./StoreTabs";
-import StoreTracker, { useActiveOrders } from "./StoreTracker";
+import { useStoreNavPad } from "./StoreTracker";
 import { BrandFooter, TrustStrip } from "./TrustFooter";
 import PressableScale from "./PressableScale";
 import { VariantSheetProvider } from "./VariantSheet";
 
 /** App Home only — website extras (line rails, festive picks, bento) stay on the site. */
-const APP_HOME_LAYOUT = ["tracker", "promos", "categories", "catalog", "trust", "footer"];
+const APP_HOME_LAYOUT = ["promos", "categories", "catalog", "trust", "footer"];
 
 
 const GRADIENT_OVERSCROLL = 800;
@@ -107,8 +107,6 @@ export default function StoreHome({
   const [requestedTab, setActiveTab] = useState("all");
   const activeTab = tabs.some((t) => t.key === requestedTab) ? requestedTab : "all";
   const activeTabDef = tabs.find((t) => t.key === activeTab) || tabs[0];
-  const activeOrders = useActiveOrders();
-
   /* ---- scroll-driven pinned header + section reveals ---- */
   const scrollRef = useAnimatedRef();
   const scrollY = useSharedValue(0);
@@ -225,17 +223,12 @@ export default function StoreHome({
     [activeTabDef?.lineKey, products]
   );
 
-  const openOrders = useCallback(() => navigation.navigate("MyOrders"), [navigation]);
   const openPromo = useCallback((item) => go(item.route), [go]);
 
   const blocks = useMemo(() => {
     const next = [];
     APP_HOME_LAYOUT.forEach((key) => {
       switch (key) {
-        case "tracker":
-          if (!activeOrders.length) break;
-          next.push({ key, node: <StoreTracker orders={activeOrders} onPress={openOrders} /> });
-          break;
         case "promos":
           next.push({
             key,
@@ -302,8 +295,6 @@ export default function StoreHome({
     });
     return next;
   }, [
-    activeOrders,
-    openOrders,
     promos,
     isAuthenticated,
     points,
@@ -314,7 +305,7 @@ export default function StoreHome({
     openProduct,
   ]);
 
-  const bottomPad = STORE_NAV_HEIGHT + Math.max(16, insets.bottom + 6) + 28;
+  const bottomPad = useStoreNavPad(insets);
   const gradient = isDark ? festival.header.gradientDark : festival.header.gradient;
   const gradTotal = GRADIENT_OVERSCROLL + GRADIENT_HEIGHT;
   const gradLocations = [0, GRADIENT_OVERSCROLL / gradTotal, ...c.headerLocations.slice(1).map((l) => (GRADIENT_OVERSCROLL + l * GRADIENT_HEIGHT) / gradTotal)];

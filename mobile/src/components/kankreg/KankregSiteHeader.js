@@ -21,6 +21,7 @@ import { KANKREG_HEADER } from "../../content/appContent";
 import { safeNavigate } from "../../navigation/navigationRef";
 import { setLcpShellVisible } from "../../utils/lcpShell";
 import { ensureWebPremiumCss } from "../../utils/webPremiumCss";
+import { LiveOrderDock, hideLiveOrderDock } from "../store/StoreTracker";
 
 if (Platform.OS === "web") ensureWebPremiumCss();
 
@@ -288,6 +289,9 @@ export default function KankregSiteHeader({ navigationRef, navReady = false }) {
         totalItems={totalItems}
         onLogoPress={() => go("Home")}
       />
+    ) : null}
+    {Platform.OS === "web" && !isNative ? (
+      <LiveOrderDock hidden={hideLiveOrderDock(currentRouteName)} />
     ) : null}
     </>
   );

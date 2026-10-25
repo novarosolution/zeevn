@@ -38,6 +38,7 @@ import { formatINR } from "../utils/currency";
 import { formatCompactShippingLine } from "../utils/shippingAddressFormat";
 import { platformShadow } from "../theme/shadowPlatform";
 import { StoreOrderConfirmed } from "../components/store/entry";
+import { replaceCustomerRoute } from "../navigation/customerNavigate";
 
 const COPY = ORDER_CELEBRATION_UI.screen;
 
@@ -163,7 +164,7 @@ export default function OrderConfirmedScreen({ navigation, route }) {
             <PremiumButton
               label={COPY.missingOrderCta}
               variant="primary"
-              onPress={() => navigation.replace("MyOrders")}
+              onPress={() => replaceCustomerRoute(navigation, "MyOrders")}
               style={styles.missingCta}
             />
           </PremiumCard>
@@ -287,13 +288,13 @@ export default function OrderConfirmedScreen({ navigation, route }) {
               label={COPY.ctaSecondary || "Continue shopping"}
               variant="primary"
               iconLeft="bag-outline"
-              onPress={() => navigation.replace("Shop")}
+              onPress={() => replaceCustomerRoute(navigation, "Shop")}
             />
             <PremiumButton
               label={COPY.ctaPrimary || "View orders"}
               variant="secondary"
               iconLeft="receipt-outline"
-              onPress={() => navigation.replace("MyOrders")}
+              onPress={() => replaceCustomerRoute(navigation, "MyOrders")}
             />
           </View>
         </SectionReveal>

@@ -1,20 +1,23 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useIsFocused } from "@react-navigation/native";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { Ionicons } from "@expo/vector-icons";
 import { ADMIN_NAV_FLAT, ADMIN_NAV_GROUPS, openAdminNavLink } from "../../content/adminNav";
+import { ADMIN_NEW_ORDER } from "../../content/adminContent";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { FONT_HEADING } from "../../theme/typographyRoles";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
-import { fonts, spacing } from "../../theme/tokens";
-import { adminShellMainPadding, getAdminChrome } from "../../theme/adminLayout";
+import { spacing } from "../../theme/tokens";
+import { ADMIN_FONT, adminShellMainPadding, getAdminChrome } from "../../theme/adminLayout";
 import AdminBackLink from "../admin/AdminBackLink";
+import { AdminDialog } from "../admin/AdminDialog";
 import AdminMobileNav from "../admin/AdminMobileNav";
 import AdminNavIcon from "../admin/AdminNavIcon";
 import AdminStoreStatusChip from "../admin/AdminStoreStatusChip";
 import AdminTopBar from "../admin/AdminTopBar";
-import { useAdminDesk } from "../../services/adminDeskStore";
+import { useAdminDesk, useAdminOrderPop } from "../../services/adminDeskStore";
+import { unlockAdminNewOrderSound } from "../../utils/adminNewOrderSound";
 
 /** Re-export for screens that import groups from the shell. */
 export { ADMIN_NAV_GROUPS };
@@ -36,6 +39,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
   const showMobileNav = !showSidebar && !showTopNavStrip;
   const isDashboard = current === "AdminDashboard";
   const showBackLink = !isDashboard && isPhone && !showMobileNav;
+  const focused = useIsFocused();
 
   const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
   const palette = useMemo(
@@ -47,6 +51,9 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
       linkMuted: chrome.linkMuted,
       linkOnBg: chrome.linkOnBg,
       linkOnBorder: chrome.linkOnBorder,
+      linkOnRail: chrome.linkOnRail,
+      linkOnText: chrome.linkOnText,
+      linkHover: chrome.linkHover,
       brand: chrome.brand,
       groupLabel: chrome.groupLabel,
       meName: chrome.meName,
@@ -58,6 +65,15 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
   );
 
   const { summary } = useAdminDesk();
+  const { open: popOpen, waiting: waitingPop, dismiss: dismissPop } = useAdminOrderPop();
+  const waiting = Number(summary?.orders?.new || waitingPop || 0);
+  const liveOrders = Number(summary?.orders?.active || 0);
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined") return undefined;
+    const unlock = () => unlockAdminNewOrderSound();
+    document.addEventListener("pointerdown", unlock, { once: true });
+    return () => document.removeEventListener("pointerdown", unlock);
+  }, []);
   /** Counters on nav links: what is waiting on the team right now. */
   const badges = useMemo(() => {
     const map = {};
@@ -97,28 +113,29 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
         key={link.key}
         onPress={() => openAdminNavLink(stackNav, link)}
         accessibilityLabel={`${link.label}. ${link.hint || ""}`}
-        style={({ pressed }) => [
+        style={({ pressed, hovered }) => [
           styles.sideLink,
           row && styles.sideLinkRow,
           on && { backgroundColor: palette.linkOnBg },
+          !on && hovered && { backgroundColor: palette.linkHover },
           pressed && styles.sideLinkPressed,
         ]}
         accessibilityRole="button"
         accessibilityState={{ selected: on }}
       >
+        {on && !row ? <View style={[styles.sideRail, { backgroundColor: palette.linkOnRail }]} /> : null}
         <AdminNavIcon
           icon={link.icon}
           size={row ? 28 : 32}
           compact
-          onInk
           active={on}
         />
         <View style={styles.sideLinkCopy}>
-          <Text style={[styles.sideLinkText, { color: palette.linkMuted }, on && styles.sideLinkTextOn]}>
+          <Text style={[styles.sideLinkText, { color: on ? palette.linkOnText : palette.linkMuted }]}>
             {link.label}
           </Text>
           {!row && link.hint ? (
-            <Text style={styles.sideLinkHint} numberOfLines={1}>
+            <Text style={[styles.sideLinkHint, on && styles.sideLinkHintOn]} numberOfLines={1}>
               {link.hint}
             </Text>
           ) : null}
@@ -129,7 +146,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
   }
 
   const sidebarContent = showSidebar ? (
-    <View style={[styles.side, { backgroundColor: palette.sideBg }]}>
+    <View style={[styles.side, { backgroundColor: palette.sideBg, borderRightColor: palette.shellBorder }]}>
       <View style={styles.brandRow}>
         <View style={styles.brandMark}>
           <Text style={styles.brandMarkText}>Z</Text>
@@ -157,7 +174,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
         accessibilityRole="button"
         accessibilityLabel="Exit to store"
       >
-        <Ionicons name="storefront-outline" size={15} color={KANKREG_PALETTE.goldBright} />
+        <Ionicons name="storefront-outline" size={15} color={KANKREG_PALETTE.goldDeep} />
         <Text style={styles.exitStoreText}>Exit to store</Text>
       </Pressable>
       <View style={[styles.me, { borderTopColor: palette.meBorder }]}>
@@ -189,7 +206,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
           accessibilityRole="button"
           accessibilityLabel="Exit to store"
         >
-          <Ionicons name="storefront-outline" size={14} color={KANKREG_PALETTE.goldBright} />
+          <Ionicons name="storefront-outline" size={14} color={KANKREG_PALETTE.goldDeep} />
           <Text style={styles.exitStoreText}>Store</Text>
         </Pressable>
       </ScrollView>
@@ -243,6 +260,30 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
           </View>
         ) : null}
 
+        {liveOrders > 0 ? (
+          <Pressable
+            onPress={() => stackNav.navigate("AdminOrders", { tab: waiting > 0 ? "new" : "active" })}
+            style={[
+              styles.liveBanner,
+              waiting > 0 ? styles.liveBannerNeed : styles.liveBannerGoing,
+              isPhone ? { marginHorizontal: pageGutter } : { marginHorizontal: adminShellMainPadding() },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel={waiting > 0 ? ADMIN_NEW_ORDER.bannerNeed(waiting) : ADMIN_NEW_ORDER.bannerLive(liveOrders)}
+          >
+            <Ionicons
+              name={waiting > 0 ? "notifications" : "bicycle-outline"}
+              size={16}
+              color={waiting > 0 ? KANKREG_PALETTE.goldDeep : KANKREG_PALETTE.greenDeep}
+            />
+            <Text style={styles.liveBannerText} numberOfLines={1}>
+              {waiting > 0 ? ADMIN_NEW_ORDER.bannerNeed(waiting) : ADMIN_NEW_ORDER.bannerLive(liveOrders)}
+              <Text style={styles.liveBannerUntil}> · {ADMIN_NEW_ORDER.bannerUntil}</Text>
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={KANKREG_PALETTE.inkFaint} />
+          </Pressable>
+        ) : null}
+
         <View
           style={[
             styles.content,
@@ -253,6 +294,20 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
           {children}
         </View>
       </View>
+
+      <AdminDialog
+        visible={focused && popOpen && waiting > 0}
+        title={ADMIN_NEW_ORDER.title}
+        message={waiting === 1 ? ADMIN_NEW_ORDER.one : ADMIN_NEW_ORDER.many(waiting)}
+        icon="notifications-outline"
+        confirmLabel={ADMIN_NEW_ORDER.open}
+        cancelLabel={ADMIN_NEW_ORDER.dismiss}
+        onConfirm={() => {
+          dismissPop();
+          stackNav.navigate("AdminOrders", { tab: "new" });
+        }}
+        onCancel={dismissPop}
+      />
     </View>
   );
 }
@@ -280,9 +335,9 @@ const styles = StyleSheet.create({
   },
   shellStack: { flexDirection: "column" },
   side: {
-    width: Platform.select({ web: 248, default: 224 }),
-    paddingVertical: 20,
-    paddingHorizontal: 12,
+    width: Platform.select({ web: 240, default: 224 }),
+    paddingVertical: 18,
+    paddingHorizontal: 10,
     flexDirection: "column",
     minHeight: Platform.OS === "web" ? "100vh" : undefined,
     ...Platform.select({
@@ -292,7 +347,7 @@ const styles = StyleSheet.create({
         alignSelf: "flex-start",
         height: "100vh",
         borderRightWidth: 1,
-        borderRightColor: "rgba(255,255,255,0.06)",
+        borderRightColor: KANKREG_PALETTE.line,
       },
       default: {},
     }),
@@ -312,8 +367,8 @@ const styles = StyleSheet.create({
   },
   exitStoreText: {
     fontSize: 12,
-    fontFamily: fonts.semibold,
-    color: KANKREG_PALETTE.goldBright,
+    fontFamily: ADMIN_FONT.semibold,
+    color: KANKREG_PALETTE.goldDeep,
   },
   exitStoreRow: {
     flexDirection: "row",
@@ -358,7 +413,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   brandMarkText: {
-    fontFamily: FONT_HEADING,
+    fontFamily: ADMIN_FONT.semibold,
     fontSize: 18,
     fontWeight: "600",
     color: "#141810",
@@ -366,17 +421,17 @@ const styles = StyleSheet.create({
   },
   brandCopy: { minWidth: 0 },
   brand: {
-    fontFamily: FONT_HEADING,
-    fontSize: 18,
+    fontFamily: ADMIN_FONT.semibold,
+    fontSize: 17,
     fontWeight: "600",
-    letterSpacing: -0.35,
+    letterSpacing: -0.3,
     lineHeight: 20,
   },
   badge: {
     fontSize: 11,
     letterSpacing: 0.2,
-    color: "rgba(246, 241, 228, 0.42)",
-    fontFamily: fonts.medium,
+    color: KANKREG_PALETTE.inkFaint,
+    fontFamily: ADMIN_FONT.medium,
     marginTop: 1,
   },
   grp: {
@@ -386,12 +441,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingTop: 14,
     paddingBottom: 6,
-    fontFamily: fonts.semibold,
+    fontFamily: ADMIN_FONT.semibold,
   },
   brandRowLabel: {
-    fontFamily: FONT_HEADING,
+    fontFamily: ADMIN_FONT.semibold,
     fontSize: 15,
-    color: KANKREG_PALETTE.goldBright,
+    color: KANKREG_PALETTE.greenDeep,
     paddingHorizontal: 10,
     marginRight: 4,
     flexShrink: 0,
@@ -400,38 +455,51 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingVertical: 7,
+    paddingVertical: 8,
     paddingHorizontal: 10,
-    borderRadius: 11,
+    paddingLeft: 12,
+    borderRadius: 12,
     marginVertical: 1,
+    overflow: "hidden",
+    position: "relative",
     ...Platform.select({
       web: { cursor: "pointer", transition: "transform 100ms ease-out, background-color 100ms ease-out" },
       default: {},
     }),
+  },
+  sideRail: {
+    position: "absolute",
+    left: 0,
+    top: 7,
+    bottom: 7,
+    width: 3,
+    borderRadius: 2,
   },
   sideLinkPressed: { transform: [{ scale: 0.97 }] },
   sideLinkRow: { marginVertical: 0, marginHorizontal: 4, paddingVertical: 6 },
   sideLinkCopy: { flex: 1, minWidth: 0 },
   sideLinkText: {
     fontSize: 13.5,
-    fontFamily: fonts.medium,
+    fontFamily: ADMIN_FONT.medium,
   },
   sideLinkTextOn: {
-    color: KANKREG_PALETTE.goldBright,
-    fontFamily: fonts.semibold,
+    fontFamily: ADMIN_FONT.semibold,
   },
   badgeWrap: { flexDirection: "row", alignItems: "center", gap: 5 },
   attentionDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#E5604A" },
   navBadge: { minWidth: 20, height: 20, paddingHorizontal: 6, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   navBadgeGold: { backgroundColor: KANKREG_PALETTE.goldBright },
   navBadgeRed: { backgroundColor: "#E5604A" },
-  navBadgeText: { fontSize: 11, color: "#1B1608", fontFamily: fonts.bold },
+  navBadgeText: { fontSize: 11, color: "#1B1608", fontFamily: ADMIN_FONT.bold },
   navBadgeTextRed: { color: "#FFFFFF" },
   sideLinkHint: {
     marginTop: 1,
-    fontSize: 10,
-    color: "rgba(246, 241, 228, 0.34)",
-    fontFamily: fonts.regular,
+    fontSize: 10.5,
+    color: KANKREG_PALETTE.inkFaint,
+    fontFamily: ADMIN_FONT.regular,
+  },
+  sideLinkHintOn: {
+    color: KANKREG_PALETTE.inkSoft,
   },
   me: {
     marginTop: "auto",
@@ -451,18 +519,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   meAvText: {
-    fontFamily: FONT_HEADING,
+    fontFamily: ADMIN_FONT.semibold,
     fontSize: 14,
     color: "#fff",
   },
   meText: { flex: 1, minWidth: 0 },
   meName: {
     fontSize: 12.5,
-    fontFamily: fonts.semibold,
+    fontFamily: ADMIN_FONT.semibold,
   },
   meEmail: {
     fontSize: 10,
-    fontFamily: fonts.regular,
+    fontFamily: ADMIN_FONT.regular,
   },
   main: { flex: 1, minWidth: 0 },
   backLink: { marginBottom: spacing.xs, marginTop: spacing.xs },
@@ -480,5 +548,36 @@ const styles = StyleSheet.create({
   },
   mobileNavWrap: {
     paddingHorizontal: adminShellMainPadding(),
+  },
+  liveBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 4,
+    marginBottom: 2,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
+  },
+  liveBannerNeed: {
+    backgroundColor: "rgba(212, 165, 116, 0.14)",
+    borderColor: "rgba(184, 136, 76, 0.32)",
+  },
+  liveBannerGoing: {
+    backgroundColor: "rgba(85, 107, 50, 0.08)",
+    borderColor: "rgba(85, 107, 50, 0.2)",
+  },
+  liveBannerText: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 13,
+    fontFamily: ADMIN_FONT.semibold,
+    color: KANKREG_PALETTE.ink,
+  },
+  liveBannerUntil: {
+    fontFamily: ADMIN_FONT.medium,
+    color: KANKREG_PALETTE.inkFaint,
   },
 });

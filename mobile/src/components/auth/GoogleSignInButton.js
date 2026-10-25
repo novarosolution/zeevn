@@ -1,8 +1,7 @@
 import React, { useEffect } from "react";
-import { StyleSheet } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import { AUTH_UI } from "../../content/appContent";
-import PremiumButton from "../ui/PremiumButton";
+import AuthButton from "./AuthButton";
 import {
   isGoogleSignInConfigured,
   useGoogleIdTokenAuthRequest,
@@ -20,8 +19,8 @@ function GoogleSignInButtonInner({ onSuccess, busy, setBusy, setError, style }) 
       try {
         setBusy("google");
         setError("");
-        await loginWithGoogle({ idToken });
-        onSuccess?.();
+        const user = await loginWithGoogle({ idToken });
+        onSuccess?.(user);
       } catch (e) {
         setError(e.message || "Google sign-in failed.");
       } finally {
@@ -31,16 +30,14 @@ function GoogleSignInButtonInner({ onSuccess, busy, setBusy, setError, style }) 
   }, [response, loginWithGoogle, onSuccess, setBusy, setError]);
 
   return (
-    <PremiumButton
+    <AuthButton
+      variant="secondary"
       label={AUTH_UI.googleLabel}
-      variant="ghost"
-      size="md"
-      fullWidth
-      iconLeft="logo-google"
+      icon="logo-google"
       loading={busy === "google"}
       disabled={Boolean(busy) || !request}
       onPress={() => promptGoogle()}
-      style={[styles.btn, style]}
+      style={style}
     />
   );
 }
@@ -52,7 +49,3 @@ export default function GoogleSignInButton(props) {
   }
   return <GoogleSignInButtonInner {...props} />;
 }
-
-const styles = StyleSheet.create({
-  btn: { flex: 1 },
-});

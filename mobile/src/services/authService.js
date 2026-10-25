@@ -1,6 +1,6 @@
 import { apiPost } from "./apiClient";
 
-const publicOpts = { auth: false };
+const publicOpts = { auth: false, timeoutMs: 25_000 };
 
 export function registerRequest({ name, email, password }) {
   return apiPost("/users/register", { name, email, password }, publicOpts);

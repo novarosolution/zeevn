@@ -23,6 +23,12 @@ const adminRoutes = require("./src/routes/adminRoutes");
 const deliveryRoutes = require("./src/routes/deliveryRoutes");
 const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
 
+function stayUp(kind, err) {
+  console.error(`[${kind}]`, err?.stack || err?.message || err);
+}
+process.on("unhandledRejection", (err) => stayUp("unhandledRejection", err));
+process.on("uncaughtException", (err) => stayUp("uncaughtException", err));
+
 const app = express();
 app.disable("x-powered-by");
 

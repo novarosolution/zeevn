@@ -1,9 +1,8 @@
 import React, { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-import { getAdminChrome } from "../../theme/adminLayout";
+import { ADMIN_FONT, getAdminChrome } from "../../theme/adminLayout";
 import { fonts } from "../../theme/tokens";
-import { FONT_HEADING } from "../../theme/typographyRoles";
 import { formatRupees } from "../../utils/adminFormat";
 import AdminBadge from "./AdminBadge";
 
@@ -70,10 +69,11 @@ function createStyles(chrome, clickable) {
       }),
     },
     code: {
-      fontFamily: FONT_HEADING,
-      fontSize: 18,
-      letterSpacing: 0.4,
+      fontFamily: ADMIN_FONT.semibold,
+      fontSize: 16,
+      letterSpacing: 0.3,
       color: chrome.ink,
+      fontWeight: "600",
     },
     title: { fontSize: 13.5, color: chrome.ink, fontFamily: fonts.semibold },
     meta: { fontSize: 12.5, color: chrome.inkSoft, fontFamily: fonts.regular },

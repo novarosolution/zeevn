@@ -13,7 +13,7 @@
     "userInterfaceStyle": "automatic",
     "icon": "./assets/app-icon-dark.png",
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/app-icon-dark.png",
       "bundler": "metro"
     },
     "ios": {
@@ -24,6 +24,7 @@
       }
     },
     "android": {
+      "predictiveBackGestureEnabled": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/app-icon-z-mark.png",
         "backgroundColor": "#0F3D24"

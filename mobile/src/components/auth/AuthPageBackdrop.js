@@ -1,23 +1,18 @@
 import React from "react";
 import { Platform, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useTheme } from "../../context/ThemeContext";
+import { useStoreTheme } from "../../theme/storefront";
 
 /**
- * Clean cream stage behind Login / Register — matches premium mock (no busy photo wash).
+ * The ivory (or deep-green) page behind Login / Register — the same canvas the storefront sits on.
  */
 export default function AuthPageBackdrop({ children }) {
-  const { isDark } = useTheme();
+  const { c } = useStoreTheme();
 
   return (
-    <View style={[styles.root, isDark && styles.rootDark]}>
+    <View style={[styles.root, { backgroundColor: c.page }]}>
       <LinearGradient
-        colors={
-          isDark
-            ? ["#161412", "#12100E", "#0E0C0A"]
-            : ["#FDF9F3", "#F8F2E8", "#F3ECDF"]
-        }
-        locations={[0, 0.55, 1]}
+        colors={[c.page, c.pageDeep]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={StyleSheet.absoluteFillObject}
@@ -33,7 +28,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     position: "relative",
     overflow: "hidden",
-    backgroundColor: "#FDF9F3",
     ...Platform.select({
       web: {
         minHeight: "calc(100vh - 72px)",
@@ -43,9 +37,6 @@ const styles = StyleSheet.create({
       },
       default: { minHeight: "100%" },
     }),
-  },
-  rootDark: {
-    backgroundColor: "#12100E",
   },
   content: {
     position: "relative",

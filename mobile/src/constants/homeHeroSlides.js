@@ -167,4 +167,4 @@ export function getHomeHeroMobileSliderSlides() {
 export const PACKAGING_RATIO = WEB_HERO_WIDE_RATIO;
 
 export const HOME_HERO_TITLE_DEFAULT = ZEEVAN_CATALOG_TAGLINE;
-export const HOME_HERO_SUBTITLE_DEFAULT = "Ghee · tel · masala · Haldar honey — delivered fresh.";
+export const HOME_HERO_SUBTITLE_DEFAULT = "Ghee · oil · masala · Haldar honey — delivered fresh.";

@@ -127,10 +127,10 @@ export const PRODUCT_LINE_PAGE_CONTENT = {
       "No hexane, no refining chemicals, no blending.",
     ],
     legacy: {
-      kick: "Pure cooking tel",
+      kick: "Pure cooking oil",
       title: "Pressed slow, bottled fresh",
       legend:
-        "Zeevan tel is extracted from premium oilseeds using traditional cold-press methods — groundnut, mustard, or sesame depending on the variant. No heat damage, no adulteration, just honest oil for your kitchen.",
+        "Zeevan oil is extracted from premium oilseeds using traditional cold-press methods — groundnut, mustard, or sesame depending on the variant. No heat damage, no adulteration, just honest oil for your kitchen.",
     },
     features: [
       { icon: "water-outline", title: "Cold pressed", subtitle: "Nutrients preserved" },
@@ -151,7 +151,7 @@ export const PRODUCT_LINE_PAGE_CONTENT = {
         { label: "Vitamin E", value: "Present" },
       ],
       card: {
-        title: "Kitchen-ready tel",
+        title: "Kitchen-ready oil",
         body: "Net quantity as labelled · Best before 9–12 months. Store upright, away from heat and sunlight.",
         tags: ["Cold pressed", "Single origin", "No adulteration"],
         footer: "FSSAI licensed · Packed by Zeevan, Gujarat.",
@@ -169,7 +169,7 @@ export const PRODUCT_LINE_PAGE_CONTENT = {
     usageRituals: [
       { icon: "flame-outline", title: "Tadka & frying", description: "Stable at high heat — perfect for Indian tempering." },
       { icon: "restaurant-outline", title: "Daily cooking", description: "Roti, sabzi, dal — replace refined oil entirely." },
-      { icon: "fitness-outline", title: "Salad drizzle", description: "Unrefined tel adds nutty depth to dressings." },
+      { icon: "fitness-outline", title: "Salad drizzle", description: "Unrefined oil adds nutty depth to dressings." },
     ],
     processSteps: ["Seed selection & cleaning", "Cold wood-press extraction", "Natural settling", "Filtered & bottled", "Batch quality check"],
     processTitle: "Seed to bottle",
@@ -177,7 +177,7 @@ export const PRODUCT_LINE_PAGE_CONTENT = {
     faq: [
       {
         q: "Is this oil refined?",
-        a: "No — Zeevan tel is cold-pressed and unrefined. You may notice natural sediment; that is a sign of purity.",
+        a: "No — Zeevan oil is cold-pressed and unrefined. You may notice natural sediment; that is a sign of purity.",
       },
       {
         q: "Can I use it for deep frying?",
@@ -224,7 +224,7 @@ export const PRODUCT_LINE_PAGE_CONTENT = {
     },
     usageRituals: [
       { icon: "restaurant-outline", title: "Daily sabzi", description: "Add to hot oil for full bloom of aroma." },
-      { icon: "pizza-outline", title: "Marinades", description: "Mix with tel and lemon for tandoor-style prep." },
+      { icon: "pizza-outline", title: "Marinades", description: "Mix with oil and lemon for tandoor-style prep." },
       { icon: "gift-outline", title: "Festive cooking", description: "Consistent blends for mithai & savoury alike." },
     ],
     processSteps: ["Whole spice sourcing", "Roasting on slow heat", "Cool & grind", "Sieve & blend", "Airtight packing"],

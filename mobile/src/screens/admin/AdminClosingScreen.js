@@ -199,6 +199,12 @@ export default function AdminClosingScreen({ navigation, route }) {
     navigation.navigate("AdminInventory", { search: line.sku || line.name || "" });
   };
 
+  const counts = useMemo(() => {
+    const next = { shortage: 0, surplus: 0, match: 0, uncounted: 0 };
+    for (const line of sheet?.lines || []) next[lineKind(line)] += 1;
+    return next;
+  }, [sheet]);
+
   if (user && !user.isAdmin) {
     return (
       <AdminScreenShell style={styles.screen}>
@@ -214,11 +220,6 @@ export default function AdminClosingScreen({ navigation, route }) {
     );
   }
 
-  const counts = useMemo(() => {
-    const next = { shortage: 0, surplus: 0, match: 0, uncounted: 0 };
-    for (const line of sheet?.lines || []) next[lineKind(line)] += 1;
-    return next;
-  }, [sheet]);
   const lines = (sheet?.lines || []).filter((line) => filter === "all" || lineKind(line) === filter);
   const canSubmit = !locked && (sheet?.lines || []).every((line) => countedText(line.counted) !== "");
 

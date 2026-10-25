@@ -1,10 +1,9 @@
 import React, { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { useAdminChrome } from "../../theme/adminLayout";
+import { ADMIN_FONT, useAdminChrome } from "../../theme/adminLayout";
 import { getAdminTone } from "../../theme/adminTones";
 import { useTheme } from "../../context/ThemeContext";
 import { useAdminDesk } from "../../services/adminDeskStore";
-import { fonts } from "../../theme/tokens";
 
 /** Live "is the shop taking orders?" pill for the desk header. Tapping it opens the settings page. */
 export default function AdminStoreStatusChip({ onPress, compact = false }) {
@@ -47,8 +46,8 @@ function createStyles() {
       flexDirection: "row",
       alignItems: "center",
       gap: 7,
-      height: 36,
-      paddingHorizontal: 12,
+      height: 34,
+      paddingHorizontal: 11,
       borderRadius: 10,
       borderWidth: StyleSheet.hairlineWidth,
       ...Platform.select({ web: { cursor: "pointer", transition: "transform 100ms ease-out, filter 100ms ease-out" }, default: {} }),
@@ -56,6 +55,6 @@ function createStyles() {
     hover: Platform.select({ web: { filter: "brightness(0.97)" }, default: {} }),
     pressed: { transform: [{ scale: 0.97 }] },
     dot: { width: 8, height: 8, borderRadius: 4 },
-    text: { fontSize: 12.5, fontFamily: fonts.semibold },
+    text: { fontSize: 12.5, fontFamily: ADMIN_FONT.semibold },
   });
 }

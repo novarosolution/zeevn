@@ -45,11 +45,21 @@ export default function AdminNavIcon({
   }
 
   return (
-    <View style={[styles.well, { width: dim, height: dim }]}>
+    <View
+      style={[
+        styles.well,
+        {
+          width: dim,
+          height: dim,
+          borderRadius: Math.round(dim * 0.28),
+          backgroundColor: active ? (onInk ? "rgba(230, 190, 136, 0.16)" : chrome.chipOnBg) : chrome.paper,
+        },
+      ]}
+    >
       <Ionicons
         name={icon || "ellipse-outline"}
         size={Math.round(dim * 0.58)}
-        color={active ? chrome.goldBright : idle}
+        color={active ? chrome.linkOnText || chrome.goldDeep : idle}
       />
     </View>
   );

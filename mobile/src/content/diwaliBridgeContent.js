@@ -6,7 +6,7 @@ export const DIWALI_BRIDGE_SECTION = {
   titleBefore: "Manao Yeh Diwali",
   titleHighlight: "Bilona",
   titleAfter: "Wali.",
-  body: "The biggest craft sale of the year — A2 ghee, cold-pressed tel & forest honey.",
+  body: "The biggest craft sale of the year — A2 ghee, cold-pressed oil & forest honey.",
   offerMain: "FLAT 25% OFF",
   offerExtra: "Extra 5% OFF on prepaid orders",
   codeLabel: "USE CODE",

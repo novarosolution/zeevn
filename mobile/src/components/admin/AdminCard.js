@@ -1,8 +1,7 @@
 import React, { useMemo } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAdminChrome } from "../../theme/adminLayout";
-import { FONT_HEADING } from "../../theme/typographyRoles";
+import { ADMIN_FONT, useAdminChrome } from "../../theme/adminLayout";
 import { fonts } from "../../theme/tokens";
 
 /**
@@ -52,7 +51,7 @@ function createStyles(chrome) {
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: chrome.line,
       overflow: "hidden",
-      ...Platform.select({ web: { boxShadow: "0 1px 1px rgba(31,51,31,0.03), 0 10px 26px -20px rgba(31,51,31,0.14)" }, default: {} }),
+      ...Platform.select({ web: { boxShadow: "0 1px 1px rgba(20,24,16,0.03), 0 12px 28px -20px rgba(20,24,16,0.14)" }, default: {} }),
     },
     soft: { backgroundColor: chrome.paper },
     head: {
@@ -79,8 +78,8 @@ function createStyles(chrome) {
       borderColor: chrome.chipOnBorder,
     },
     titleCol: { flex: 1, minWidth: 0 },
-    title: { fontFamily: FONT_HEADING, fontSize: 16, letterSpacing: -0.2, color: chrome.ink, fontWeight: "500" },
-    subtitle: { marginTop: 2, fontSize: 12, lineHeight: 16, color: chrome.inkFaint, fontFamily: fonts.regular },
+    title: { fontFamily: ADMIN_FONT.semibold, fontSize: 16, letterSpacing: -0.2, color: chrome.ink, fontWeight: "600" },
+    subtitle: { marginTop: 2, fontSize: 12, lineHeight: 16, color: chrome.inkSoft, fontFamily: ADMIN_FONT.regular },
     body: { padding: 16, gap: 12 },
   });
 }

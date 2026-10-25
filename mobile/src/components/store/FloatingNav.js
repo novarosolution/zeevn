@@ -15,6 +15,8 @@ import Animated, {
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { STORE_NAV } from "../../content/storefrontContent";
+import { navigateStoreTab } from "../../navigation/customerNavigate";
+import StoreTracker, { STORE_TRACKER_DOCK, useActiveOrders } from "./StoreTracker";
 import { EASE_OUT, motionSettle, motionTiming } from "../../theme/motion";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { hapticTick } from "../../utils/haptics";
@@ -156,12 +158,14 @@ function CartFab({ count: liveCount, onPress }) {
  * Floating bottom navigation: a glass pill (Home · Categories · Order Again · Account) whose active tab sits in a lighter
  * glass "lens" that glides between tabs, plus a round olive cart button with a live item badge.
  */
-export default function FloatingNav() {
+export default function FloatingNav({ hideTracker = false }) {
   const { isDark, gutter } = useStoreTheme();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const { isAuthenticated } = useAuth();
   const { totalItems } = useCart();
+  const activeOrders = useActiveOrders();
+  const showTracker = !hideTracker && activeOrders.length > 0;
   // This screen's own route, not the navigator's focused one: while the next (lazily loaded) screen is still mounting, the
   // navigator already points at it, which would move this bar's highlight early and leave the new bar nothing to glide from.
   const routeName = useRoute().name;
@@ -171,10 +175,16 @@ export default function FloatingNav() {
       const destination = requiresAuth && !isAuthenticated ? "Login" : route;
       if (routeName === destination) return;
       hapticTick();
-      navigation.navigate(destination);
+      navigateStoreTab(navigation, destination);
     },
     [isAuthenticated, navigation, routeName]
   );
+
+  const openLiveOrder = useCallback(() => {
+    const destination = isAuthenticated ? "MyOrders" : "Login";
+    const orderId = activeOrders[0]?._id;
+    navigation.navigate(destination, orderId ? { orderId: String(orderId) } : undefined);
+  }, [activeOrders, isAuthenticated, navigation]);
 
   const isActive = (key) => (STORE_NAV.activeRoutes[key] || [key]).includes(routeName);
   const activeIndex = STORE_NAV.items.findIndex((item) => isActive(item.key));
@@ -212,8 +222,10 @@ export default function FloatingNav() {
 
   return (
     <>
-      <ScrollEdgeFade height={dock + STORE_NAV_HEIGHT + 30} />
+      <ScrollEdgeFade height={dock + STORE_NAV_HEIGHT + (showTracker ? STORE_TRACKER_DOCK : 0) + 30} />
       <View style={[styles.wrap, { bottom: dock, left: gutter, right: gutter }]} pointerEvents="box-none">
+        {showTracker ? <StoreTracker orders={activeOrders} onPress={openLiveOrder} /> : null}
+        <View style={styles.navRow} pointerEvents="box-none">
         <Glass material="thin" radius={STORE_NAV_HEIGHT / 2} lift style={styles.pill} contentStyle={styles.pillBody}>
           <View style={styles.items} onLayout={(e) => setRowWidth(e.nativeEvent.layout.width)}>
             <Animated.View
@@ -237,6 +249,7 @@ export default function FloatingNav() {
           </View>
         </Glass>
         <CartFab count={totalItems} onPress={() => go(STORE_NAV.cart.route, STORE_NAV.cart.requiresAuth)} />
+        </View>
       </View>
     </>
   );
@@ -245,10 +258,15 @@ export default function FloatingNav() {
 const styles = StyleSheet.create({
   wrap: {
     position: "absolute",
+    flexDirection: "column",
+    alignItems: "stretch",
+    gap: 6,
+    zIndex: 100,
+  },
+  navRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: FAB_GAP,
-    zIndex: 100,
   },
   pill: { flex: 1, height: STORE_NAV_HEIGHT },
   pillBody: { flex: 1 },

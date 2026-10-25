@@ -14,7 +14,7 @@ export const CATEGORY_SECTION_UI = {
   eyebrow: "Collections",
   title: "Shop by line",
   titleFallback: "Shop by line",
-  subtitle: "Ghee · Tel · Masala · Honey — choose a line, then browse.",
+  subtitle: "Ghee · Oil · Masala · Honey — choose a line, then browse.",
   viewAllLabel: "View all",
   shopCta: "Shop",
   itemsSuffix: "items",
@@ -35,7 +35,7 @@ export const CATEGORY_TILE_CONFIG = {
   },
   tel: {
     tagline: "Cold-pressed cooking oils",
-    cta: "Shop tel",
+    cta: "Shop oil",
   },
   masala: {
     tagline: "Small-batch spices & blends",

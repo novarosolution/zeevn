@@ -59,7 +59,7 @@ export const HOME_HERO_PACKAGING = {
 /** Intro band below the web hero (`WebHomeIntroBand.js`) — typographic line rail CTA. */
 export const HOME_WEB_INTRO = {
   title: "Welcome to Zeevan",
-  subtitle: "Your one-stop store for purity — ghee, tel, masala & honey.",
+  subtitle: "Your one-stop store for purity — ghee, oil, masala & honey.",
   cta: "Shop all",
   ctaSecondary: "About",
 };

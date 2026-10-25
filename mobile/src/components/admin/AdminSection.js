@@ -1,9 +1,7 @@
 import React, { useMemo } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
-import { FONT_HEADING } from "../../theme/typographyRoles";
-import { fonts } from "../../theme/tokens";
+import { ADMIN_FONT, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 
 /**
  * Settings block: a short explanation on the left, the controls in a white card on the right (stacked on a phone).
@@ -69,8 +67,8 @@ function createStyles(chrome) {
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: chrome.chipOnBorder,
     },
-    title: { fontFamily: FONT_HEADING, fontSize: 19, letterSpacing: -0.3, color: chrome.ink, fontWeight: "500" },
-    description: { fontSize: 13, lineHeight: 19, color: chrome.inkFaint, fontFamily: fonts.regular },
+    title: { fontFamily: ADMIN_FONT.semibold, fontSize: 17, letterSpacing: -0.3, color: chrome.ink, fontWeight: "600" },
+    description: { fontSize: 13, lineHeight: 19, color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular },
     status: { marginTop: 2 },
     card: {
       flex: 1,
@@ -87,8 +85,8 @@ function createStyles(chrome) {
     rowDisabled: { opacity: 0.5 },
     rowTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 },
     rowCopy: { flex: 1, minWidth: 0 },
-    rowTitle: { fontSize: 14, color: chrome.ink, fontFamily: fonts.semibold },
-    rowDescription: { marginTop: 3, fontSize: 12.5, lineHeight: 18, color: chrome.inkFaint, fontFamily: fonts.regular },
+    rowTitle: { fontSize: 14, color: chrome.ink, fontFamily: ADMIN_FONT.semibold },
+    rowDescription: { marginTop: 3, fontSize: 12.5, lineHeight: 18, color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular },
     rowRight: { flexShrink: 0 },
     rowBody: { gap: 12 },
   });

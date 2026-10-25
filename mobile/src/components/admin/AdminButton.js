@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAdminChrome } from "../../theme/adminLayout";
+import { ADMIN_FONT, useAdminChrome } from "../../theme/adminLayout";
 import { getAdminTone } from "../../theme/adminTones";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../theme/tokens";
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   fullWidth: { alignSelf: "stretch" },
   pressed: { transform: [{ scale: 0.97 }] },
   disabled: { opacity: 0.45, ...Platform.select({ web: { cursor: "not-allowed" }, default: {} }) },
-  label: { fontFamily: fonts.semibold, letterSpacing: 0.1 },
+  label: { fontFamily: ADMIN_FONT.semibold, letterSpacing: 0.1 },
 });
 
 export function AdminButtonRow({ children, style }) {

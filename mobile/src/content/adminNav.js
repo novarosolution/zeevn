@@ -24,8 +24,8 @@ export const ADMIN_NAV_GROUPS = [
     links: [
       {
         key: "AdminDashboard",
-        label: "Overview",
-        hint: "Business overview",
+        label: "Dashboard",
+        hint: "What needs you now",
         icon: "flash-outline",
         image: "command",
         tone: "#c9a227",
@@ -168,7 +168,7 @@ export const ADMIN_NAV_GROUPS = [
       {
         key: "AdminInventory",
         label: "Stock",
-        hint: "Qty & availability",
+        hint: "In, out, bills",
         icon: "layers-outline",
         image: "stock",
         tone: "#6b5b95",
@@ -176,7 +176,7 @@ export const ADMIN_NAV_GROUPS = [
       {
         key: "AdminStockIn",
         label: "Stock in",
-        hint: "Book a delivery",
+        hint: "New delivery bill",
         icon: "download-outline",
         image: "stock",
         tone: "#4f6430",
@@ -208,7 +208,7 @@ export const ADMIN_NAV_GROUPS = [
       {
         key: "AdminStockHistory",
         label: "Stock history",
-        hint: "What changed the count",
+        hint: "In and out",
         icon: "time-outline",
         image: "stock",
         tone: "#3c5344",

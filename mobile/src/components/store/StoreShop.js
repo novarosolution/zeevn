@@ -7,12 +7,13 @@ import { etaFromQuote } from "../../services/deliveryService";
 import { formatDeliveryLocationParts } from "../../utils/deliveryLocationLabel";
 import { useAuth } from "../../context/AuthContext";
 import { STORE_LINE_PAGES, STORE_SHOP, STORE_TABS, resolveFestivalTheme } from "../../content/storefrontContent";
-import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
+import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { SHOP_PRICE_PRESETS, pricePresetFromRange } from "../../utils/shopFilters";
 import { productImageUri, productsForLine, visibleTabs } from "../../utils/storefront";
 import FilterChips from "./FilterChips";
 import FilterSheet from "./FilterSheet";
 import FloatingNav from "./FloatingNav";
+import { useStoreNavPad } from "./StoreTracker";
 import ProductCard from "./ProductCard";
 import ShopHeader from "./ShopHeader";
 import ShopSidebar, { SHOP_SIDEBAR_WIDTH } from "./ShopSidebar";
@@ -22,7 +23,7 @@ import SkeletonBlock from "../ui/SkeletonBlock";
 
 const GRID_GAP = 10;
 const GRID_PAD = 12;
-const LINE_PILLS = { ghee: "Ghee", tel: "Tel", masala: "Masala", honey: "Honey" };
+const LINE_PILLS = { ghee: "Ghee", tel: "Oil", masala: "Masala", honey: "Honey" };
 const GIFT_RE = /gift|hamper/i;
 
 /** Which sidebar item the current pill/category filters correspond to. */
@@ -152,7 +153,7 @@ export default function StoreShop({
   const deliveringLabel = `${kind || STORE_SHOP.deliveringTo}: ${locationParts.street}${liveEta ? ` · ${liveEta}` : ""}`;
 
   const cardW = Math.floor((width - SHOP_SIDEBAR_WIDTH - GRID_PAD * 2 - GRID_GAP) / 2);
-  const navPad = STORE_NAV_HEIGHT + Math.max(16, insets.bottom + 6) + 24;
+  const navPad = useStoreNavPad(insets, -4);
 
   const goBack = useCallback(() => {
     if (navigation.canGoBack?.()) navigation.goBack();

@@ -163,6 +163,7 @@ async function listAdminDispatch(req, res, next) {
 
     const counts = {
       offers: offers.length,
+      waiting: offers.filter((row) => row.result === "waiting").length,
       accepted: offers.filter((row) => row.result === "accepted").length,
       declined: offers.filter((row) => row.result === "declined").length,
       silent: offers.filter((row) => row.result === "silent").length,

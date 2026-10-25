@@ -2,8 +2,8 @@ import React, { useMemo } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
-import { getAdminChrome } from "../../theme/adminLayout";
-import { fonts, spacing } from "../../theme/tokens";
+import { ADMIN_FONT, getAdminChrome } from "../../theme/adminLayout";
+import { spacing } from "../../theme/tokens";
 import AdminNavIcon from "./AdminNavIcon";
 
 /**
@@ -95,7 +95,7 @@ function createStyles(chrome) {
       fontSize: 9,
       letterSpacing: 1.2,
       textTransform: "uppercase",
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
       color: chrome.inkFaint,
       paddingHorizontal: 4,
     },
@@ -106,15 +106,15 @@ function createStyles(chrome) {
     chip: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: 6,
       paddingHorizontal: 10,
-      paddingVertical: 7,
-      borderRadius: 12,
+      paddingVertical: 6,
+      borderRadius: 11,
       borderWidth: 1,
       borderColor: chrome.line,
       backgroundColor: chrome.card,
       ...Platform.select({
-        web: { cursor: "pointer", transition: "transform 100ms ease-out" },
+        web: { cursor: "pointer", transition: "transform 100ms ease-out, background-color 100ms ease-out" },
         default: {},
       }),
     },
@@ -125,12 +125,12 @@ function createStyles(chrome) {
     },
     label: {
       fontSize: 12,
-      fontFamily: fonts.medium,
+      fontFamily: ADMIN_FONT.medium,
       color: chrome.inkSoft,
     },
     labelOn: {
       color: chrome.tabOnText,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
     },
     exitChip: {
       flexDirection: "row",
@@ -145,8 +145,8 @@ function createStyles(chrome) {
     },
     exitLabel: {
       fontSize: 12,
-      fontFamily: fonts.semibold,
-      color: chrome.goldBright,
+      fontFamily: ADMIN_FONT.semibold,
+      color: chrome.goldDeep,
     },
   });
 }

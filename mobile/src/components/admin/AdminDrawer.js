@@ -1,9 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAdminChrome } from "../../theme/adminLayout";
-import { FONT_HEADING } from "../../theme/typographyRoles";
-import { fonts } from "../../theme/tokens";
+import { ADMIN_FONT, useAdminChrome } from "../../theme/adminLayout";
 
 const OPEN_MS = 280;
 const CLOSE_MS = 200;
@@ -123,11 +121,11 @@ function createStyles(chrome) {
       letterSpacing: 0.7,
       textTransform: "uppercase",
       color: chrome.goldDeep,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
       marginBottom: 3,
     },
-    title: { fontFamily: FONT_HEADING, fontSize: 22, lineHeight: 26, letterSpacing: -0.4, color: chrome.ink },
-    subtitle: { marginTop: 4, fontSize: 12.5, lineHeight: 17, color: chrome.inkFaint, fontFamily: fonts.regular },
+    title: { fontFamily: ADMIN_FONT.semibold, fontSize: 20, lineHeight: 26, letterSpacing: -0.4, color: chrome.ink, fontWeight: "600" },
+    subtitle: { marginTop: 4, fontSize: 12.5, lineHeight: 17, color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular },
     close: {
       width: 34,
       height: 34,

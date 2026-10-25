@@ -1,6 +1,9 @@
 import { Platform } from "react-native";
 import * as Location from "expo-location";
 
+const NOMINATIM_UA = "ZeevanShop/1.0 (https://www.zeevan.shop; hello@zeevan.shop)";
+const GPS_TIMEOUT_MS = 12_000;
+
 export function validMapCoord(n) {
   const v = Number(n);
   return Number.isFinite(v) && Math.abs(v) > 0.2;
@@ -13,19 +16,42 @@ export function validDeliveryCoord(lat, lng) {
   return Number.isFinite(a) && Number.isFinite(b) && a >= 6 && a <= 38 && b >= 68 && b <= 98;
 }
 
+function coordsOnly(latitude, longitude) {
+  return {
+    line1: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "India",
+    latitude: Number(latitude),
+    longitude: Number(longitude),
+    label: "",
+  };
+}
+
+async function nominatimFetch(url) {
+  const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), 8000) : null;
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Accept: "application/json",
+        "User-Agent": NOMINATIM_UA,
+      },
+      signal: controller?.signal,
+    });
+    if (!response.ok) {
+      throw new Error("Unable to fetch location details.");
+    }
+    return response.json();
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 async function reverseGeocodeWeb(latitude, longitude) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error("Unable to fetch location details.");
-  }
-
-  const data = await response.json();
+  const data = await nominatimFetch(url);
   return placeFromNominatim(data, latitude, longitude);
 }
 
@@ -44,7 +70,7 @@ function getCurrentPositionWeb() {
   });
 }
 
-/** Reverse-geocode a pin the user dropped on the map. */
+/** Reverse-geocode a pin. Never throws once we have real coordinates — address text is best-effort. */
 export async function addressFromCoords(latitude, longitude) {
   if (!validMapCoord(latitude) || !validMapCoord(longitude)) {
     throw new Error("Drop the pin on a real place.");
@@ -53,20 +79,37 @@ export async function addressFromCoords(latitude, longitude) {
   const lng = Number(longitude);
 
   if (Platform.OS === "web") {
-    const resolved = await reverseGeocodeWeb(lat, lng);
-    return { ...resolved, latitude: lat, longitude: lng };
+    try {
+      const resolved = await reverseGeocodeWeb(lat, lng);
+      return { ...resolved, latitude: lat, longitude: lng };
+    } catch {
+      return coordsOnly(lat, lng);
+    }
   }
 
-  const [resolved] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
-  return {
-    line1: resolved?.name || resolved?.street || "",
-    city: resolved?.city || resolved?.subregion || "",
-    state: resolved?.region || "",
-    postalCode: resolved?.postalCode || "",
-    country: resolved?.country || "",
-    latitude: lat,
-    longitude: lng,
-  };
+  try {
+    const [resolved] = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+    if (resolved) {
+      return {
+        line1: resolved.name || resolved.street || "",
+        city: resolved.city || resolved.subregion || "",
+        state: resolved.region || "",
+        postalCode: resolved.postalCode || "",
+        country: resolved.country || "",
+        latitude: lat,
+        longitude: lng,
+      };
+    }
+  } catch {
+    // Android often has no geocoder — try Nominatim, then keep the pin.
+  }
+
+  try {
+    const resolved = await reverseGeocodeWeb(lat, lng);
+    return { ...resolved, latitude: lat, longitude: lng };
+  } catch {
+    return coordsOnly(lat, lng);
+  }
 }
 
 function placeFromNominatim(hit, latitude, longitude) {
@@ -93,16 +136,36 @@ export async function searchPlaces(query) {
   const q = String(query || "").trim();
   if (q.length < 2) return [];
   const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&countrycodes=in&q=${encodeURIComponent(q)}`;
-  const response = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!response.ok) {
-    throw new Error("Unable to search places.");
+  try {
+    const rows = await nominatimFetch(url);
+    const skip = new Set(["state_district", "state", "country", "county"]);
+    return (Array.isArray(rows) ? rows : [])
+      .filter((hit) => !skip.has(String(hit.addresstype || "")))
+      .map((hit) => placeFromNominatim(hit, Number(hit.lat), Number(hit.lon)))
+      .filter((place) => validMapCoord(place.latitude) && validMapCoord(place.longitude));
+  } catch {
+    return [];
   }
-  const rows = await response.json();
-  const skip = new Set(["state_district", "state", "country", "county"]);
-  return (Array.isArray(rows) ? rows : [])
-    .filter((hit) => !skip.has(String(hit.addresstype || "")))
-    .map((hit) => placeFromNominatim(hit, Number(hit.lat), Number(hit.lon)))
-    .filter((place) => validMapCoord(place.latitude) && validMapCoord(place.longitude));
+}
+
+async function readNativePosition() {
+  const current = Location.getCurrentPositionAsync({
+    accuracy: Location.Accuracy.Balanced,
+  });
+  const timed = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("Location timed out.")), GPS_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([current, timed]);
+  } catch (first) {
+    try {
+      const last = await Location.getLastKnownPositionAsync();
+      if (last?.coords) return last;
+    } catch {
+      // no cache
+    }
+    throw first instanceof Error ? first : new Error("Unable to get current location.");
+  }
 }
 
 export async function getCurrentAddressFromGPS() {
@@ -113,12 +176,14 @@ export async function getCurrentAddressFromGPS() {
 
   const permission = await Location.requestForegroundPermissionsAsync();
   if (permission.status !== "granted") {
-    throw new Error("Location permission denied.");
+    throw new Error("Location permission denied. Allow location or pick a place on the map.");
   }
 
-  const location = await Location.getCurrentPositionAsync({
-    accuracy: Location.Accuracy.Balanced,
-  });
-
-  return addressFromCoords(location.coords.latitude, location.coords.longitude);
+  const location = await readNativePosition();
+  const lat = location.coords.latitude;
+  const lng = location.coords.longitude;
+  if (!validDeliveryCoord(lat, lng)) {
+    throw new Error("We couldn't find an India address. Pick your place on the map.");
+  }
+  return addressFromCoords(lat, lng);
 }

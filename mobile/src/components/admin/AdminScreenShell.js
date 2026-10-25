@@ -3,7 +3,7 @@ import { Platform, StyleSheet, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { adminScreenRoot, getAdminChrome } from "../../theme/adminLayout";
 
-/** Admin page canvas — warm ivory desk, no decorative grid. */
+/** Admin page canvas — white desk, no decorative grid. */
 export default function AdminScreenShell({ children, style }) {
   const { colors: c, isDark } = useTheme();
   const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);

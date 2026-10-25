@@ -1,4 +1,5 @@
 import { apiGet, apiPatch, apiPost, apiPut, apiRequest } from "./apiClient";
+import { plainOilOrder } from "../utils/displayText";
 
 export const fetchUserProfile = () => apiRequest("/users/profile");
 
@@ -15,7 +16,10 @@ export const uploadUserAvatar = (_token, { imageBase64, mimeType }) =>
   apiPost("/users/profile/avatar", { imageBase64, mimeType });
 
 /** @param {string} [_token] */
-export const fetchMyOrders = (_token) => apiGet("/users/my-orders");
+export const fetchMyOrders = async (_token) => {
+  const orders = await apiGet("/users/my-orders");
+  return Array.isArray(orders) ? orders.map(plainOilOrder) : orders;
+};
 
 export const fetchOrderLiveLocation = (orderId) =>
   apiGet(`/users/my-orders/${orderId}/live-location`);

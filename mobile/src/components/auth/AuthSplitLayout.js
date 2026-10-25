@@ -3,7 +3,7 @@ import { Image, Platform, StyleSheet, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { AUTH_HERO_IMAGE } from "../../content/authVisualContent";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { useTheme } from "../../context/ThemeContext";
+import { useStoreTheme } from "../../theme/storefront";
 import { spacing } from "../../theme/tokens";
 import AuthHeroPanel from "./AuthHeroPanel";
 
@@ -12,13 +12,11 @@ import AuthHeroPanel from "./AuthHeroPanel";
  */
 export default function AuthSplitLayout({ artTitle, artSubtitle, mode = "login", children }) {
   const { useAuthSplit, isXs } = useKankregLayout();
-  const { isDark } = useTheme();
+  const { c } = useStoreTheme();
 
   if (!useAuthSplit) {
     return <View style={styles.mobileOnly}>{children}</View>;
   }
-
-  const formBg = isDark ? "#141110" : "#FFFEF9";
 
   return (
     <View style={[styles.split, isXs && styles.splitStack]}>
@@ -54,7 +52,7 @@ export default function AuthSplitLayout({ artTitle, artSubtitle, mode = "login",
         style={[
           styles.form,
           isXs && styles.formStack,
-          { backgroundColor: formBg },
+          { backgroundColor: c.page },
         ]}
       >
         {children}

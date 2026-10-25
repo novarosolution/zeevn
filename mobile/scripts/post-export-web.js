@@ -243,5 +243,30 @@ if (fs.existsSync(indexHtml)) {
   console.log("[post-export-web] wrote dist/404.html for client-side routing");
 }
 
+function copyFavicon() {
+  const dark = path.join(__dirname, "..", "assets", "app-icon-dark.png");
+  const png = path.join(__dirname, "..", "assets", "favicon.png");
+  const src = fs.existsSync(png) ? png : dark;
+  if (!fs.existsSync(src) || !fs.existsSync(dist)) return;
+
+  fs.copyFileSync(src, path.join(dist, "favicon.png"));
+  fs.copyFileSync(src, path.join(dist, "favicon.ico"));
+
+  if (!fs.existsSync(indexHtml)) return;
+  let html = fs.readFileSync(indexHtml, "utf8");
+  const version = String(fs.statSync(src).mtimeMs);
+  const tags = `<link rel="icon" type="image/png" href="/favicon.png?v=${version}" />\n    <link rel="apple-touch-icon" href="/favicon.png?v=${version}" />`;
+  if (/<link rel="icon"[^>]*>/i.test(html)) {
+    html = html.replace(/<link rel="icon"[^>]*>/i, tags);
+  } else {
+    html = html.replace("</head>", `    ${tags}\n  </head>`);
+  }
+  fs.writeFileSync(indexHtml, html);
+  const spaFallback = path.join(dist, "404.html");
+  fs.copyFileSync(indexHtml, spaFallback);
+  console.log("[post-export-web] wrote current Zeevan favicon");
+}
+
 writeSitemap();
 copyRobotsTxt();
+copyFavicon();

@@ -25,8 +25,8 @@ import { isCod } from "../../utils/adminOrderUi";
 import { timeAgo } from "../../utils/adminFormat";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminButton from "../../components/admin/AdminButton";
-import { adminShellContent } from "../../theme/adminLayout";
-import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
+import { ADMIN_FONT, adminShellContent } from "../../theme/adminLayout";
+import { FONT_PRICE } from "../../theme/typographyRoles";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, spacing, typography } from "../../theme/tokens";
 import { formatOrderPublicRef } from "../../content/appContent";
@@ -38,6 +38,8 @@ import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumButton from "../../components/ui/PremiumButton";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { openPickLocation, usePickedPlace } from "../../navigation/pickLocationNav";
+import { buildOrderInvoiceHtml } from "../../utils/orderInvoiceHtml";
+import { printAdminHtml } from "../../utils/printAdminHtml";
 
 function buildEditForm(order) {
   if (!order) return null;
@@ -88,6 +90,17 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
   const [success, setSuccess] = useState("");
   const [noteText, setNoteText] = useState("");
   const [noteBusy, setNoteBusy] = useState(false);
+
+  const printInvoice = useCallback(async () => {
+    if (!order) return;
+    try {
+      setError("");
+      await printAdminHtml(buildOrderInvoiceHtml(order));
+      setSuccess("Invoice opened. Save as PDF if you need a file.");
+    } catch (err) {
+      setError(err.message || "Couldn't generate the invoice.");
+    }
+  }, [order]);
 
   const loadOrder = useCallback(async () => {
     if (!orderId) {
@@ -351,6 +364,11 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
             route={route}
             title={orderRef}
             subtitle={order ? `${customerName} · ${getOrderItemQty(order)} items` : "Loading order…"}
+            headerRight={
+              order ? (
+                <AdminButton label="Invoice" icon="document-text-outline" variant="gold" size="sm" onPress={printInvoice} />
+              ) : null
+            }
           >
             <View style={styles.panel}>
               <AdminBackLink navigation={navigation} label="All orders" target="AdminOrders" style={styles.backLink} />
@@ -517,7 +535,8 @@ function createStyles(c, shadowPremium) {
       letterSpacing: 1.4,
     },
     heroRef: {
-      fontFamily: FONT_HEADING,
+      fontFamily: ADMIN_FONT.semibold,
+      fontWeight: "600",
       fontSize: typography.h2,
       letterSpacing: -0.3,
       marginTop: 4,

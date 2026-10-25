@@ -19,8 +19,10 @@ import RazorpayBrandStrip from "./RazorpayBrandStrip";
 /**
  * Two-option payment selector for checkout — Razorpay vs Cash on Delivery.
  * Uses gold-framed selection state + animated checkmark when reduced motion is off.
+ * `availability` (optional) maps a method id to `{ available, note }`: a method the shop has switched off — or cash on
+ * delivery above its limit — stays listed but can't be picked, and `note` says why.
  */
-function PaymentMethodSelectorBase({ value, onChange, disabled, embedded = false, compact = false }) {
+function PaymentMethodSelectorBase({ value, onChange, disabled, availability, embedded = false, compact = false }) {
   const { colors: c, isDark } = useTheme();
   const reducedMotion = useReducedMotion();
   const styles = useMemo(() => createStyles(c, isDark), [c, isDark]);
@@ -40,26 +42,32 @@ function PaymentMethodSelectorBase({ value, onChange, disabled, embedded = false
       )}
 
       <View style={styles.grid}>
-        {PAYMENT_METHODS.map((method) => (
-          <PaymentMethodCard
-            key={method.id}
-            method={method}
-            selected={value === method.id}
-            disabled={disabled}
-            reducedMotion={reducedMotion}
-            compact={compact}
-            onPress={() => onChange(method.id)}
-            styles={styles}
-            isDark={isDark}
-            c={c}
-          />
-        ))}
+        {PAYMENT_METHODS.map((method) => {
+          const rule = availability?.[method.id];
+          const off = Boolean(rule) && !rule.available;
+          return (
+            <PaymentMethodCard
+              key={method.id}
+              method={method}
+              selected={value === method.id && !off}
+              disabled={disabled}
+              off={off}
+              offNote={off ? rule.note : ""}
+              reducedMotion={reducedMotion}
+              compact={compact}
+              onPress={() => onChange(method.id)}
+              styles={styles}
+              isDark={isDark}
+              c={c}
+            />
+          );
+        })}
       </View>
     </View>
   );
 }
 
-function PaymentMethodCard({ method, selected, disabled, reducedMotion, compact, onPress, styles, isDark, c }) {
+function PaymentMethodCard({ method, selected, disabled, off = false, offNote = "", reducedMotion, compact, onPress, styles, isDark, c }) {
   const scale = useSharedValue(selected ? 1 : 0);
   useEffect(() => {
     scale.value = withTiming(selected ? 1 : 0, {
@@ -74,24 +82,25 @@ function PaymentMethodCard({ method, selected, disabled, reducedMotion, compact,
   }));
 
   const isRazorpay = method.id === "Razorpay";
+  const blocked = disabled || off;
 
   return (
     <Pressable
-      onPress={disabled ? undefined : onPress}
-      disabled={disabled}
+      onPress={blocked ? undefined : onPress}
+      disabled={blocked}
       accessibilityRole="radio"
-      accessibilityState={{ selected, disabled }}
-      accessibilityLabel={`${method.title}. ${method.subtitle}`}
+      accessibilityState={{ selected, disabled: blocked }}
+      accessibilityLabel={`${method.title}. ${off && offNote ? offNote : method.subtitle}`}
       style={({ pressed, hovered }) => [
         styles.cardOuter,
         selected ? styles.cardOuterSelected : null,
-        hovered && Platform.OS === "web" && !disabled ? styles.cardOuterHover : null,
-        pressed ? styles.cardOuterPressed : null,
+        hovered && Platform.OS === "web" && !blocked ? styles.cardOuterHover : null,
+        pressed && !off ? styles.cardOuterPressed : null,
         disabled ? styles.cardDisabled : null,
       ]}
     >
       <View style={styles.cardTopRow}>
-        <View style={[styles.iconCircle, isRazorpay ? styles.iconCircleGold : styles.iconCircleBrown]}>
+        <View style={[styles.iconCircle, isRazorpay ? styles.iconCircleGold : styles.iconCircleBrown, off ? styles.dim : null]}>
           <Ionicons
             name={method.icon}
             size={icon.md}
@@ -100,7 +109,12 @@ function PaymentMethodCard({ method, selected, disabled, reducedMotion, compact,
         </View>
         <View style={styles.cardTitleCol}>
           {compact ? (
-            <Text style={[styles.cardTitle, { color: isDark ? c.textPrimary : ALCHEMY.brown }]}>{method.title}</Text>
+            <>
+              <Text style={[styles.cardTitle, { color: isDark ? c.textPrimary : ALCHEMY.brown }, off ? styles.dim : null]}>
+                {method.title}
+              </Text>
+              {off && offNote ? <Text style={styles.offNote}>{offNote}</Text> : null}
+            </>
           ) : (
             <>
               <View style={styles.eyebrowRow}>
@@ -111,8 +125,10 @@ function PaymentMethodCard({ method, selected, disabled, reducedMotion, compact,
                   </View>
                 ) : null}
               </View>
-              <Text style={[styles.cardTitle, { color: isDark ? c.textPrimary : ALCHEMY.brown }]}>{method.title}</Text>
-              <Text style={styles.cardSubtitle}>{method.subtitle}</Text>
+              <Text style={[styles.cardTitle, { color: isDark ? c.textPrimary : ALCHEMY.brown }, off ? styles.dim : null]}>
+                {method.title}
+              </Text>
+              {off && offNote ? <Text style={styles.offNote}>{offNote}</Text> : <Text style={styles.cardSubtitle}>{method.subtitle}</Text>}
             </>
           )}
         </View>
@@ -222,6 +238,17 @@ function createStyles(c, isDark) {
     },
     cardDisabled: {
       opacity: 0.55,
+    },
+    /** A method the shop has switched off: icon and title step back, the reason stays readable. */
+    dim: {
+      opacity: 0.5,
+    },
+    offNote: {
+      marginTop: 4,
+      fontFamily: fonts.bold,
+      fontSize: typography.caption,
+      color: isDark ? ALCHEMY.goldBright : "#7A4F12",
+      lineHeight: 18,
     },
     cardTopRow: {
       flexDirection: "row",

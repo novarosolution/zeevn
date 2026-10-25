@@ -14,26 +14,24 @@ import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminProducts, patchAdminProductStock } from "../../services/adminService";
-import { useAdminCompactLayout } from "../../theme/adminLayout";
+import { ADMIN_FONT, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminDataTable from "../../components/admin/AdminDataTable";
 import AdminPanel from "../../components/admin/AdminPanel";
-import AdminToolbar, { AdminToolbarSlot } from "../../components/admin/AdminToolbar";
 import AdminBadge from "../../components/admin/AdminBadge";
 import AdminProductCell from "../../components/admin/AdminProductCell";
 import AdminQtyStepper from "../../components/admin/AdminQtyStepper";
 import AdminSwitch from "../../components/admin/AdminSwitch";
+import AdminButton, { AdminButtonRow } from "../../components/admin/AdminButton";
+import AdminInput from "../../components/admin/AdminInput";
 import { buildInventoryTableColumns } from "../../components/admin/adminTableColumns";
 import { productCoverUri } from "../../utils/adminProductHelpers";
-import { ALCHEMY } from "../../theme/customerAlchemy";
-import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
 import PremiumLoader from "../../components/ui/PremiumLoader";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumInput from "../../components/ui/PremiumInput";
 import PremiumButton from "../../components/ui/PremiumButton";
 import PremiumCard from "../../components/ui/PremiumCard";
 import SectionReveal from "../../components/motion/SectionReveal";
@@ -87,6 +85,7 @@ function stockPill(p) {
 
 export default function AdminInventoryScreen({ navigation, route }) {
   const { colors: c, shadowPremium, isDark } = useTheme();
+  const chrome = useAdminChrome();
   const insets = useSafeAreaInsets();
   const { user, token } = useAuth();
   const [products, setProducts] = useState([]);
@@ -246,6 +245,10 @@ export default function AdminInventoryScreen({ navigation, route }) {
     applyPatch(p._id, { stockQty: next, inStock: next > 0 });
   };
 
+  const openStockIn = (p) => {
+    navigation.navigate("AdminStockIn", p?._id ? { productId: String(p._id) } : undefined);
+  };
+
   if (!user) {
     return (
       <AdminScreenShell style={styles.screen}>
@@ -279,13 +282,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
         title={ADMIN_SCREEN_COPY.inventory.title}
         subtitle={ADMIN_SCREEN_COPY.inventory.subtitle}
         headerRight={
-          <PremiumButton
-            label="Refresh"
-            variant="ghost"
-            size="sm"
-            iconLeft="refresh-outline"
-            onPress={() => load({ silent: false })}
-          />
+          <AdminButton label="Refresh" icon="refresh-outline" variant="ghost" size="sm" onPress={() => load({ silent: false })} />
         }
       >
       <FlatList
@@ -382,26 +379,26 @@ export default function AdminInventoryScreen({ navigation, route }) {
               </AdminPanel>
             ) : null}
 
+            <AdminButtonRow style={{ marginBottom: 8 }}>
+              <AdminButton label="Stock in" icon="download-outline" variant="primary" size="sm" onPress={() => openStockIn()} />
+              <AdminButton label="History" icon="time-outline" variant="soft" size="sm" onPress={() => navigation.navigate("AdminStockHistory")} />
+              <AdminButton label="Invoices" icon="document-text-outline" variant="soft" size="sm" onPress={() => navigation.navigate("AdminOrders")} />
+            </AdminButtonRow>
+
             <AdminPanel title="Find stock" icon="search-outline" meta={`${visible.length} of ${products.length}`}>
               <AdminFilterTabs
                 value={filter}
                 onChange={setFilter}
                 items={FILTERS.map((f) => ({ key: f.id, label: f.label }))}
               />
-              <AdminToolbar>
-                <AdminToolbarSlot flex>
-                  <PremiumInput
-                    label="Search name or SKU"
-                    value={search}
-                    onChangeText={setSearch}
-                    iconLeft="search-outline"
-                    iconRight={search ? "close-circle" : undefined}
-                    onIconRightPress={search ? () => setSearch("") : undefined}
-                    autoCapitalize="none"
-                    tone="warm"
-                  />
-                </AdminToolbarSlot>
-              </AdminToolbar>
+              <AdminInput
+                label="Search name or SKU"
+                value={search}
+                onChangeText={setSearch}
+                icon="search-outline"
+                autoCapitalize="none"
+                placeholder="Ghee, tel, SKU…"
+              />
             </AdminPanel>
 
             {error ? (
@@ -430,6 +427,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
                     onDelta,
                     onApplyQty,
                     onToggle,
+                    onStockIn: openStockIn,
                     onDraft: (row, t) => setDraftQty((o) => ({ ...o, [row._id]: t })),
                     draftQty,
                     busyId,
@@ -467,7 +465,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
             <View
               style={[
                 styles.rowCard,
-                { borderColor: c.border, backgroundColor: isDark ? c.surfaceMuted : ALCHEMY.creamAlt },
+                { borderColor: chrome.line, backgroundColor: chrome.card },
                 s.out ? styles.rowWarn : null,
               ]}
             >
@@ -501,6 +499,10 @@ export default function AdminInventoryScreen({ navigation, route }) {
                   />
                 </View>
               </View>
+              <AdminButtonRow>
+                <AdminButton label="In" icon="download-outline" variant="gold" size="xs" onPress={() => openStockIn(p)} />
+                <AdminButton label="Out" icon="remove-outline" variant="soft" size="xs" onPress={() => onDelta(p, -1)} disabled={busy || s.q < 1} />
+              </AdminButtonRow>
             </View>
             </SectionReveal>
           );
@@ -561,7 +563,8 @@ function createStyles(c, shadowPremium, isDark) {
     titleRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
     h1: {
       fontSize: typography.h1,
-      fontFamily: FONT_HEADING,
+      fontFamily: ADMIN_FONT.semibold,
+      fontWeight: "600",
       color: c.textPrimary,
       letterSpacing: -0.4},
     subH: {
@@ -641,7 +644,7 @@ function createStyles(c, shadowPremium, isDark) {
     footCtaD: { fontSize: typography.caption, marginTop: 2, fontFamily: fonts.regular },
     emptyWrap: { marginBottom: spacing.md },
     denied: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.sm },
-    deniedTitle: { fontSize: typography.h2, fontFamily: FONT_HEADING, color: c.textPrimary, marginTop: spacing.md },
+    deniedTitle: { fontSize: typography.h2, fontFamily: ADMIN_FONT.semibold, fontWeight: "600", color: c.textPrimary, marginTop: spacing.md },
     deniedSub: { color: c.textSecondary, textAlign: "center", paddingHorizontal: spacing.xl, fontFamily: fonts.regular },
     gateCta: { marginTop: spacing.md }});
 }

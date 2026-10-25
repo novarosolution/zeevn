@@ -29,7 +29,7 @@ const EMPTY = {
   page: 1,
   pages: 1,
   pageSize: 25,
-  counts: { offers: 0, accepted: 0, declined: 0, silent: 0, no_rider: 0 },
+  counts: { offers: 0, waiting: 0, accepted: 0, declined: 0, silent: 0, no_rider: 0 },
 };
 
 const RANGE_OPTIONS = [
@@ -40,9 +40,10 @@ const RANGE_OPTIONS = [
 
 const TILES = [
   { key: "", label: "Offers", count: (c) => c.offers || 0, tone: "olive", hint: "Asked to take a run" },
+  { key: "waiting", label: "Waiting", count: (c) => c.waiting || 0, tone: "gold", hint: "Asked, under 10 min" },
+  { key: "silent", label: "Silent", count: (c) => c.silent || 0, tone: "gold", hint: "No answer in 10 min" },
   { key: "accepted", label: "Accepted", count: (c) => c.accepted || 0, tone: "green", hint: "Rider took it" },
   { key: "declined", label: "Declined", count: (c) => c.declined || 0, tone: "red", hint: "Rider said no" },
-  { key: "silent", label: "Silent", count: (c) => c.silent || 0, tone: "gold", hint: "No answer in 10 min" },
   { key: "no_rider", label: "No rider", count: (c) => c.no_rider || 0, tone: "blue", hint: "Ready, nobody assigned" },
 ];
 

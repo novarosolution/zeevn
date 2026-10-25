@@ -11,9 +11,10 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
-import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
+import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { resolveImageSource } from "../../utils/mediaSource";
 import FloatingNav from "./FloatingNav";
+import { useStoreNavPad } from "./StoreTracker";
 import { useCountUp } from "./HomeMotion";
 import PressableScale from "./PressableScale";
 import { Button, Card, Rise, SectionLabel } from "./StoreKit";
@@ -64,7 +65,7 @@ export default function StoreAbout({ navigation, about, onShop, onContact }) {
   const photos = useMemo(() => (about?.photos || []).filter((p) => photoSource(p) != null), [about]);
   const hero = photos[0];
   const gallery = photos.slice(hero ? 1 : 0);
-  const navPad = STORE_NAV_HEIGHT + Math.max(16, insets.bottom + 6) + 28;
+  const navPad = useStoreNavPad(insets);
   const cardW = Math.min(280, width * 0.68);
 
   const heroStyle = useAnimatedStyle(() => ({

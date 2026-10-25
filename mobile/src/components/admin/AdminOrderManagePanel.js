@@ -3,9 +3,8 @@ import { Linking, Platform, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
-import { adminTwoColAside, adminTwoColMain, adminTwoColStyle, useAdminCompactLayout } from "../../theme/adminLayout";
+import { ADMIN_FONT, adminTwoColAside, adminTwoColMain, adminTwoColStyle, useAdminCompactLayout } from "../../theme/adminLayout";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
-import { FONT_HEADING } from "../../theme/typographyRoles";
 import { formatINR } from "../../utils/currency";
 import { getOrderItemQty } from "../../utils/adminOrderHelpers";
 import {
@@ -698,12 +697,14 @@ function createStyles(c) {
       borderTopWidth: StyleSheet.hairlineWidth,
     },
     totalLabel: {
-      fontFamily: FONT_HEADING,
+      fontFamily: ADMIN_FONT.medium,
       fontSize: typography.body,
     },
     totalValue: {
-      fontFamily: FONT_HEADING,
+      fontFamily: ADMIN_FONT.semibold,
       fontSize: typography.h3,
+      fontWeight: "600",
+      letterSpacing: -0.3,
     },
     primaryAction: { marginBottom: spacing.md },
     contactActions: {

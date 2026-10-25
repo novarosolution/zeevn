@@ -9,14 +9,26 @@ export const ADMIN_GATE = {
   goLogin: "Go to login",
 };
 
+/** Popup + chime when a new order lands on the desk. */
+export const ADMIN_NEW_ORDER = {
+  title: "New order",
+  one: "A new order is waiting. Confirm it to start the work.",
+  many: (n) => `${n} new orders are waiting. Confirm them to start the work.`,
+  open: "Open orders",
+  dismiss: "Later",
+  bannerNeed: (n) => (n === 1 ? "1 order needs you" : `${n} orders need you`),
+  bannerLive: (n) => (n === 1 ? "1 order still going" : `${n} orders still going`),
+  bannerUntil: "Shows until delivered",
+};
+
 export const ADMIN_SCREEN_COPY = {
   shopDesk: {
     title: "Shop desk",
     subtitle: "Open, pause, today’s queue",
   },
   dashboard: {
-    title: "Business overview",
-    subtitle: "Dashboard",
+    title: "Dashboard",
+    subtitle: "Gold tiles need you. Tap to open.",
     emptySales: "No sales in this period",
     emptySalesLink: "Last 30 days",
     emptyStores: "No stores yet",
@@ -127,7 +139,7 @@ export const ADMIN_SCREEN_COPY = {
   },
   analytics: {
     title: "Analytics",
-    subtitle: "Revenue and trends",
+    subtitle: "Orders, revenue, and top jars",
   },
   coupons: {
     title: "Coupons",
@@ -186,17 +198,18 @@ export const ADMIN_SCREEN_COPY = {
   },
   inventory: {
     title: "Stock",
-    subtitle: "Qty and availability",
+    subtitle: "In, out, and bills",
     empty: "No products yet — add your first jar",
     emptySearch: "No products match that search",
   },
   stockIn: {
     title: "Stock in",
-    subtitle: "Book a delivery",
+    subtitle: "New stock and bills",
     emptyDrafts: "No delivery waiting to book",
     emptyReceived: "No deliveries booked",
     confirm: "Add these jars to stock?",
     emptyConfirm: "Add at least one jar",
+    printBill: "Print bill",
   },
   reorders: {
     title: "Reorders",

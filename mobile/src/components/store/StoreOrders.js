@@ -743,7 +743,7 @@ export default function StoreOrders({
         }
       />
 
-      <FloatingNav />
+      <FloatingNav hideTracker />
     </View>
   );
 }

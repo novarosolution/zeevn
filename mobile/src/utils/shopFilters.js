@@ -15,6 +15,7 @@ const CATEGORY_ALIASES = {
   general: ["general"],
   ghee: ["ghee", "a2 ghee", "bilona"],
   tel: ["tel", "oil", "cooking oil"],
+  oil: ["tel", "oil", "cooking oil"],
   masala: ["masala", "spice", "spices"],
   honey: ["honey", "haldar honey", "haldar"],
 };
@@ -200,7 +201,7 @@ export function applyShopFilters(
     list = list.filter(isProductComingSoon);
   } else if (pill === "New" || pill === "New in") {
     list = [...list].sort((a, b) => getProductSortTime(b) - getProductSortTime(a)).slice(0, 8);
-  } else if (["Ghee", "Tel", "Masala", "Honey"].includes(pill)) {
+  } else if (["Ghee", "Oil", "Tel", "Masala", "Honey"].includes(pill)) {
     list = list.filter((p) => matchProductLinePill(p, pill));
   }
 

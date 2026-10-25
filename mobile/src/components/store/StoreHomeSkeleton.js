@@ -3,8 +3,9 @@ import { ScrollView, StyleSheet, View, useWindowDimensions } from "react-native"
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { resolveFestivalTheme } from "../../content/storefrontContent";
-import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
+import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import FloatingNav from "./FloatingNav";
+import { useStoreNavPad } from "./StoreTracker";
 import { heroSize } from "./HeroCarousel";
 import { Bone, ProductCardSkeleton, ShimmerProvider } from "./StoreSkeleton";
 
@@ -78,7 +79,7 @@ export default function StoreHomeSkeleton() {
   const hero = heroSize({ width, height, topInset: insets.top, bottomInset: insets.bottom });
   const colW = Math.floor((inner - 12) / 2);
   const tileH = Math.round(colW * 1.2);
-  const bottomPad = STORE_NAV_HEIGHT + Math.max(16, insets.bottom + 6) + 28;
+  const bottomPad = useStoreNavPad(insets);
 
   return (
     <View style={[styles.screen, { backgroundColor: c.canvas }]} accessibilityRole="progressbar" accessibilityLabel="Loading">

@@ -14,7 +14,7 @@ const ROUTE_SEO = {
   },
   Shop: {
     title: `Shop — ${APP_DISPLAY_NAME}`,
-    description: "Browse A2 ghee, tel, masala, honey and pantry essentials. Filter by category and order fresh delivery.",
+    description: "Browse A2 ghee, oil, masala, honey and pantry essentials. Filter by category and order fresh delivery.",
     path: "/shop",
   },
   About: {
@@ -118,6 +118,28 @@ function upsertLink(rel, href) {
   el.href = href;
 }
 
+function resolveAssetHref(mod) {
+  if (!mod) return "";
+  if (typeof mod === "string") return mod;
+  if (typeof mod.uri === "string") return mod.uri;
+  if (typeof mod.default === "string") return mod.default;
+  return "";
+}
+
+function injectWebIcons() {
+  let href = "";
+  try {
+    href = resolveAssetHref(require("../../assets/app-icon-dark.png"));
+  } catch {
+    href = "";
+  }
+  if (!href) return;
+  const icon = document.querySelector('link[rel="icon"]');
+  if (icon) icon.setAttribute("type", "image/png");
+  upsertLink("icon", href);
+  upsertLink("apple-touch-icon", href);
+}
+
 function upsertJsonLd(id, data) {
   if (typeof document === "undefined" || !data) return;
   let el = document.getElementById(id);
@@ -152,6 +174,7 @@ export function injectWebSeoBootstrap() {
   upsertMeta("name", "twitter:title", `${APP_DISPLAY_NAME} — ${APP_TAGLINE}`);
 
   upsertLink("canonical", `${siteUrl}/`);
+  injectWebIcons();
 
   upsertJsonLd("zeevan-org-jsonld", {
     "@context": "https://schema.org",

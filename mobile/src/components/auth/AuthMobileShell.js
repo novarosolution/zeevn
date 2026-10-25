@@ -1,131 +1,116 @@
 import React from "react";
-import { Image, Platform, StyleSheet, View } from "react-native";
+import { Image, Platform, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { StatusBar } from "expo-status-bar";
 import { LinearGradient } from "expo-linear-gradient";
+import Animated, { FadeIn } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AUTH_HERO_IMAGE } from "../../content/authVisualContent";
-import { useKankregLayout } from "../../theme/kankregBreakpoints";
-import { useTheme } from "../../context/ThemeContext";
-import { FIGMA } from "../../theme/figmaApp";
-import { radius, spacing } from "../../theme/tokens";
-import { platformShadow } from "../../theme/shadowPlatform";
-import AuthHeroPanel from "./AuthHeroPanel";
+import { AUTH_UI } from "../../content/appContent";
+import { APP_DISPLAY_NAME } from "../../constants/brand";
+import { EASE_OUT, motionTiming } from "../../theme/motion";
+import { useStoreTheme, withAlpha } from "../../theme/storefront";
+import { getWebHeaderHeight } from "../../theme/web";
+import { Emblem } from "../startup/ZeevanEmblem";
+import { AUTH_BODY_IN } from "./authMotion";
+import AuthRoutePills from "./AuthRoutePills";
 
-const cardShadow = platformShadow({
-  ios: {
-    shadowColor: "#3D2A12",
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 22,
-  },
-  android: { elevation: 10 },
-});
+/** The hero photo is a portrait (864 × 1152); the jar sits between a quarter and three quarters of the way down. */
+const PHOTO_RATIO = 1152 / 864;
+const JAR_TOP = 0.25;
+const SHELL_MAX = 520;
+const TOGGLE_OVERLAP = 26;
 
-/** Native + narrow web auth — stacked hero + form sheet. */
-export default function AuthMobileShell({ children, artTitle, artSubtitle, mode = "login" }) {
-  const { isDark } = useTheme();
-  const { isXs, useAuthSplit } = useKankregLayout();
+/**
+ * Native + narrow-web Login / Register: the product photo with the brand lockup on top, rounded at the bottom, and the
+ * Sign in / Create account glass switch straddling its lower edge. The form sits on the ivory page below. Both screens
+ * share this hero, so switching between them only changes the form.
+ */
+export default function AuthMobileShell({ children, mode = "login", navigation }) {
+  const { c, r, type } = useStoreTheme();
+  const insets = useSafeAreaInsets();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const isWeb = Platform.OS === "web";
 
-  if (isWeb && useAuthSplit) {
-    return <View style={styles.webFallback}>{children}</View>;
-  }
+  const width = Math.min(windowWidth, SHELL_MAX);
+  const photoHeight = width * PHOTO_RATIO;
+  // Native: the photo runs under the status bar and carries the brand lockup. Web: the site header already says Zeevan,
+  // so the photo starts below it and stays clean.
+  const heroHeight = Math.round(Math.min(400, Math.max(300, windowHeight * 0.36))) + (isWeb ? 0 : insets.top);
+  const lidY = isWeb ? 36 : insets.top + 62;
+  // Keep the jar's lid `lidY` below the top edge, without ever leaving a gap above or below the photo.
+  const photoTop = Math.min(0, Math.max(heroHeight - photoHeight, lidY - photoHeight * JAR_TOP));
+  const toggleWidth = Math.min(320, width - 56);
 
   return (
-    <View style={styles.root}>
-      <View style={[styles.heroBlock, isXs && styles.heroBlockCompact]}>
+    <View style={[styles.root, { maxWidth: SHELL_MAX, backgroundColor: c.page }]}>
+      {isWeb ? null : <StatusBar style="light" />}
+
+      <View
+        style={[
+          styles.hero,
+          { height: heroHeight, marginTop: isWeb ? getWebHeaderHeight(windowWidth) : 0, borderBottomLeftRadius: r.xxl + 6, borderBottomRightRadius: r.xxl + 6 },
+        ]}
+      >
         <Image
           source={AUTH_HERO_IMAGE}
-          style={styles.heroPhoto}
+          style={{ position: "absolute", left: 0, top: photoTop, width, height: photoHeight }}
           resizeMode="cover"
           accessibilityIgnoresInvertColors
         />
+        {isWeb ? null : (
+          <LinearGradient
+            colors={["rgba(22, 14, 6, 0.62)", "rgba(22, 14, 6, 0)"]}
+            style={[styles.topShade, { height: insets.top + 110 }]}
+            pointerEvents="none"
+          />
+        )}
         <LinearGradient
-          colors={["rgba(12,10,8,0.28)", "rgba(10,8,6,0.78)"]}
-          locations={[0.15, 1]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={StyleSheet.absoluteFillObject}
+          colors={["rgba(22, 14, 6, 0)", "rgba(22, 14, 6, 0.28)"]}
+          style={styles.bottomShade}
           pointerEvents="none"
         />
-        <View style={styles.heroInner}>
-          <AuthHeroPanel
-            mode={mode}
-            artTitle={artTitle}
-            artSubtitle={artSubtitle}
-            compact
-            showPerks={false}
-            variant="onDark"
-          />
+
+        {isWeb ? null : (
+          <Animated.View
+            entering={FadeIn.delay(60).duration(motionTiming.enter).easing(EASE_OUT)}
+            style={[styles.lockup, { top: insets.top + 14 }]}
+            accessibilityRole="header"
+          >
+            <View style={styles.emblem}>
+              <Emblem size={64} dark />
+            </View>
+            <View style={styles.lockupText}>
+              <Text style={type.display(26, { color: "#FFF8E8", semi: true, lh: 30 })}>{APP_DISPLAY_NAME}</Text>
+              <Text style={type.eyebrow(withAlpha("#F2CE9B", 0.96), 9.5)} numberOfLines={1}>
+                {AUTH_UI.brandLine}
+              </Text>
+            </View>
+          </Animated.View>
+        )}
+      </View>
+
+      {navigation ? (
+        <View style={styles.toggleRow}>
+          <AuthRoutePills glass navigation={navigation} activeRoute={mode === "login" ? "Login" : "Register"} style={{ width: toggleWidth }} />
         </View>
-      </View>
-      <View
-        style={[
-          styles.sheet,
-          isWeb && styles.sheetWeb,
-          cardShadow,
-          { backgroundColor: isDark ? "#141110" : "#FFFEF9" },
-        ]}
-      >
-        <View style={styles.sheetAccent} />
+      ) : null}
+
+      <Animated.View entering={AUTH_BODY_IN} style={[styles.body, !navigation && styles.bodyBare]}>
         {children}
-      </View>
+      </Animated.View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  webFallback: { width: "100%" },
-  root: { width: "100%", flexGrow: 1 },
-  heroBlock: {
-    position: "relative",
-    overflow: "hidden",
-    backgroundColor: "#1a1714",
-    minHeight: 240,
-    paddingBottom: spacing.lg + 4,
-  },
-  heroBlockCompact: {
-    minHeight: 160,
-    paddingBottom: spacing.sm,
-  },
-  heroPhoto: {
-    ...StyleSheet.absoluteFillObject,
-    width: "100%",
-    height: "100%",
-  },
-  heroInner: {
-    paddingTop: spacing.xl + 8,
-    paddingHorizontal: spacing.lg + 4,
-    paddingBottom: spacing.sm,
-  },
-  sheet: {
-    marginTop: -spacing.lg,
-    borderTopLeftRadius: FIGMA.radiusSheet + 4,
-    borderTopRightRadius: FIGMA.radiusSheet + 4,
-    paddingHorizontal: spacing.lg + 2,
-    paddingTop: spacing.lg + 6,
-    paddingBottom: spacing.xl,
-  },
-  sheetWeb: {
-    width: "100%",
-    maxWidth: 468,
-    alignSelf: "center",
-    marginTop: -spacing.md,
-    marginHorizontal: spacing.md,
-    borderRadius: radius.xl + 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(31, 92, 71, 0.14)",
-    ...Platform.select({
-      web: { boxShadow: "0 12px 32px -16px rgba(22, 69, 51, 0.12)" },
-      default: {},
-    }),
-  },
-  sheetAccent: {
-    position: "absolute",
-    top: 0,
-    left: "22%",
-    right: "22%",
-    height: 3,
-    borderBottomLeftRadius: 3,
-    borderBottomRightRadius: 3,
-    backgroundColor: "rgba(31, 92, 71, 0.7)",
-  },
+  root: { width: "100%", flexGrow: 1, alignSelf: "center" },
+  hero: { overflow: "hidden", backgroundColor: "#2A1C0E" },
+  topShade: { position: "absolute", top: 0, left: 0, right: 0 },
+  bottomShade: { position: "absolute", bottom: 0, left: 0, right: 0, height: 120 },
+  lockup: { position: "absolute", left: 18, flexDirection: "row", alignItems: "center", gap: 6 },
+  emblem: { width: 36, height: 36, alignItems: "center", justifyContent: "center" },
+  lockupText: { gap: 1 },
+  toggleRow: { alignItems: "center", marginTop: -TOGGLE_OVERLAP, zIndex: 2 },
+  body: { paddingHorizontal: 22, paddingTop: 24, paddingBottom: 8 },
+  bodyBare: { paddingTop: 28 },
 });

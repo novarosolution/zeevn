@@ -40,7 +40,7 @@ import GoldHairline from "../components/ui/GoldHairline";
 import SectionReveal from "../components/motion/SectionReveal";
 import { staggerDelay } from "../theme/motion";
 import { CART_ADDRESS, CART_UI } from "../content/appContent";
-import { DELIVERY_NOT_POSSIBLE } from "../content/storefrontContent";
+import { DELIVERY_NOT_POSSIBLE, STORE_RULES } from "../content/storefrontContent";
 import CheckoutPlacingOverlay from "../components/loading/CheckoutPlacingOverlay";
 import Animated, {
   Easing,
@@ -50,7 +50,10 @@ import Animated, {
   withSequence,
   withTiming} from "react-native-reanimated";
 import useReducedMotion from "../hooks/useReducedMotion";
+import useStoreInfo, { refreshStoreInfo } from "../hooks/useStoreInfo";
+import { friendlyOrderError, getStoreRules, isStoreRuleError, pickPaymentMethod } from "../utils/storeRules";
 import PaymentMethodSelector from "../components/payments/PaymentMethodSelector";
+import KankregStoreNotice from "../components/kankreg/KankregStoreNotice";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import KankregSplitLayout from "../components/kankreg/KankregSplitLayout";
 import KankregScrollPage from "../components/kankreg/KankregScrollPage";
@@ -62,7 +65,6 @@ import {
   openYoupiCheckout,
   verifyOrderPayment} from "../services/paymentService";
 import KankregCartRow from "../components/kankreg/KankregCartRow";
-import KankregCartCouponStrip from "../components/kankreg/KankregCartCouponStrip";
 import KankregCartPayBar from "../components/kankreg/KankregCartPayBar";
 import KankregCartSummaryCard from "../components/kankreg/KankregCartSummaryCard";
 import KankregCheckoutForm from "../components/kankreg/KankregCheckoutForm";
@@ -131,6 +133,14 @@ export default function CartScreen({ navigation, route }) {
     zoneName: "",
     checked: false,
   });
+
+  /** The shop's own rules (paused / closed hours, minimum order, payment switches) — the API still has the last word. */
+  const storeInfo = useStoreInfo();
+  const storeRules = useMemo(() => getStoreRules(storeInfo, totalAmount), [storeInfo, totalAmount]);
+  /** Why the order can't go through right now (`"closed" | "min" | "pay"`), or `null`. Disables the main button. */
+  const storeBlocked = Boolean(storeRules.blockedBy);
+  /** The shopper's pick, unless the shop has switched it off (or cash is over its limit) — then the method that still works. */
+  const activePayment = pickPaymentMethod(paymentMethod, storeRules);
 
   useEffect(() => {
     if (reducedMotion || cartItems.length === 0 || isPlacingOrder) {
@@ -370,7 +380,7 @@ export default function CartScreen({ navigation, route }) {
   };
 
   const handlePlaceOrder = async () => {
-    if (cartItems.length === 0) {
+    if (cartItems.length === 0 || storeBlocked) {
       return;
     }
 
@@ -409,12 +419,11 @@ export default function CartScreen({ navigation, route }) {
           latitude,
           longitude,
           note: note.trim()},
-        paymentMethod,
+        paymentMethod: activePayment,
         couponCode: appliedCoupon?.code || ""});
 
-      clearCart();
-
-      if (paymentMethod === "Cash on Delivery") {
+      if (activePayment === "Cash on Delivery") {
+        clearCart();
         showOrderConfirmed(created);
         return;
       }
@@ -446,6 +455,7 @@ export default function CartScreen({ navigation, route }) {
           razorpay_order_id: p.razorpay_order_id,
           razorpay_payment_id: p.razorpay_payment_id,
           razorpay_signature: p.razorpay_signature});
+        clearCart();
         showOrderConfirmed(verified || created);
         return;
       }
@@ -457,7 +467,14 @@ export default function CartScreen({ navigation, route }) {
       }
       navigation.navigate("MyOrders");
     } catch (err) {
-      setError(err.message || "Unable to place order.");
+      if (isStoreRuleError(err)) {
+        // The shop's rules changed since we last looked: re-read them (the notices and disabled buttons catch up) and
+        // explain the refusal with figures that agree with the server's.
+        const fresh = await refreshStoreInfo({ force: true });
+        setError(friendlyOrderError(err, { rules: getStoreRules(fresh, totalAmount), paymentMethod: activePayment }));
+      } else {
+        setError(err.message || "Unable to place order.");
+      }
     } finally {
       setIsPlacingOrder(false);
     }
@@ -499,14 +516,17 @@ export default function CartScreen({ navigation, route }) {
   const platformFee = 1.2;
   const discountAmount = Number(appliedCoupon?.discountAmount || 0);
   const payableAmount = Math.max(0, totalAmount + deliveryFee + platformFee - discountAmount);
-  const isRazorpayMethod = paymentMethod === "Razorpay";
-  const primaryCtaLabel = isCartBagView
-    ? isAuthenticated
-      ? CART_UI.checkoutCtaArrow
-      : CART_UI.loginCta
-    : isRazorpayMethod
-      ? `${CART_UI.payCta} · ${formatINR(payableAmount)}`
-      : CART_UI.placeOrderCta;
+  const isRazorpayMethod = activePayment === "Razorpay";
+  /** While the shop's rules stop the order, the web buttons say why ("Closed right now", "Add ₹120 more") instead of their usual label. */
+  const primaryCtaLabel = storeBlocked
+    ? storeRules.dockNote
+    : isCartBagView
+      ? isAuthenticated
+        ? CART_UI.checkoutCtaArrow
+        : CART_UI.loginCta
+      : isRazorpayMethod
+        ? `${CART_UI.payCta} · ${formatINR(payableAmount)}`
+        : CART_UI.placeOrderCta;
 
   const handlePrimaryCta = () => {
     if (isCartBagView) {
@@ -611,10 +631,11 @@ export default function CartScreen({ navigation, route }) {
         onOpenMap={openMap}
         hasSavedAddress={profileAddress.complete}
         onUseSaved={handleUseSavedAddress}
-        paymentMethod={paymentMethod}
+        paymentMethod={activePayment}
         onPaymentChange={setPaymentMethod}
         placing={isPlacingOrder}
-        ctaDisabled={cartItems.length === 0 || deliveryBlocked}
+        ctaDisabled={cartItems.length === 0 || deliveryBlocked || storeBlocked}
+        rules={storeRules}
         onPrimary={handlePrimaryCta}
       />
     );
@@ -655,6 +676,15 @@ export default function CartScreen({ navigation, route }) {
         )}
         {isCheckoutFlow ? <KankregCheckoutSteps active={2} /> : null}
 
+        {storeRules.closed ? (
+          <KankregStoreNotice
+            icon={storeRules.closed.reason === "paused" ? "pause-circle-outline" : "moon-outline"}
+            title={storeRules.closed.title}
+            message={storeRules.closed.message}
+            chip={storeRules.closed.reopensIn}
+          />
+        ) : null}
+
         <KankregSplitLayout
           asideStyle={isDesktop ? styles.cartRightCol : undefined}
           main={
@@ -692,6 +722,9 @@ export default function CartScreen({ navigation, route }) {
                   <Text style={styles.bagSubtotalPreview}>{formatINR(totalAmount)}</Text>
                 </View>
               </View>
+              {storeRules.minNote ? (
+                <KankregStoreNotice compact icon="arrow-up-circle-outline" message={storeRules.minNote} style={styles.ruleNote} />
+              ) : null}
             </View>
             <View style={styles.itemsPanel}>
               {cartItems.map((item, idx) =>
@@ -701,16 +734,6 @@ export default function CartScreen({ navigation, route }) {
                 })
               )}
             </View>
-            {isCartBagView ? (
-              <View style={styles.figmaCouponWrap}>
-                <KankregCartCouponStrip
-                  value={couponCode}
-                  onChangeText={setCouponCode}
-                  onApply={handleApplyCoupon}
-                  appliedLabel={appliedCouponText}
-                />
-              </View>
-            ) : null}
           </View>
         ) : null}
 
@@ -753,12 +776,16 @@ export default function CartScreen({ navigation, route }) {
         {showCheckoutDetails && (!kankregWebSplit || isCheckoutFlow) && cartItems.length > 0 ? (
           <KankregCheckoutSectionCard title="Payment">
             <PaymentMethodSelector
-              value={paymentMethod}
+              value={activePayment}
               onChange={setPaymentMethod}
               disabled={isPlacingOrder}
+              availability={storeRules.pay}
               embedded
               compact
             />
+            {storeRules.noPayment ? (
+              <KankregStoreNotice compact message={STORE_RULES.pay.none} style={styles.ruleNote} />
+            ) : null}
           </KankregCheckoutSectionCard>
         ) : null}
 
@@ -778,7 +805,7 @@ export default function CartScreen({ navigation, route }) {
             total={payableAmount}
             ctaLabel={primaryCtaLabel}
             onPress={handlePrimaryCta}
-            disabled={cartItems.length === 0 || deliveryBlocked}
+            disabled={cartItems.length === 0 || deliveryBlocked || storeBlocked}
             loading={isPlacingOrder}
             showCoupon
             couponCode={couponCode}
@@ -799,6 +826,9 @@ export default function CartScreen({ navigation, route }) {
               <Text style={styles.summaryLabel}>{CART_UI.stickySubtotalLabel}</Text>
               <Text style={styles.summaryValue}>{formatINR(totalAmount)}</Text>
             </View>
+            {storeRules.minNote ? (
+              <KankregStoreNotice compact icon="arrow-up-circle-outline" message={storeRules.minNote} />
+            ) : null}
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>{CART_UI.shippingLabel}</Text>
               <Text
@@ -853,15 +883,19 @@ export default function CartScreen({ navigation, route }) {
             <TouchableOpacity
               activeOpacity={0.92}
               onPress={handlePrimaryCta}
-              disabled={cartItems.length === 0 || isPlacingOrder || deliveryBlocked}
+              disabled={cartItems.length === 0 || isPlacingOrder || deliveryBlocked || storeBlocked}
               style={styles.checkoutGradientWrap}
               accessibilityRole="button"
               accessibilityLabel={primaryCtaLabel}
             >
-              {cartItems.length === 0 || isPlacingOrder ? (
+              {cartItems.length === 0 || isPlacingOrder || storeBlocked ? (
                 <View style={[styles.checkoutGradientBtn, styles.checkoutGradientMuted]}>
                   <Text style={styles.checkoutGradientText}>
-                    {cartItems.length === 0 ? "ADD ITEMS TO CONTINUE" : "PLACING ORDER…"}
+                    {cartItems.length === 0
+                      ? "ADD ITEMS TO CONTINUE"
+                      : isPlacingOrder
+                        ? "PLACING ORDER…"
+                        : primaryCtaLabel.toUpperCase()}
                   </Text>
                 </View>
               ) : (
@@ -898,7 +932,7 @@ export default function CartScreen({ navigation, route }) {
           total={payableAmount}
           ctaLabel={primaryCtaLabel}
           onPress={handlePrimaryCta}
-          disabled={cartItems.length === 0 || deliveryBlocked}
+          disabled={cartItems.length === 0 || deliveryBlocked || storeBlocked}
           loading={isPlacingOrder}
           itemCount={totalItems}
         />
@@ -1531,6 +1565,9 @@ function createCartStyles(c, shadowLift, shadowPremium, isDark) {
     fontSize: 18,
     color: isDark ? c.primaryBright : ALCHEMY.brown,
     letterSpacing: -0.3,
+  },
+  ruleNote: {
+    marginTop: spacing.sm,
   },
   trustStripInline: {
     flexDirection: "row",

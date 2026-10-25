@@ -88,7 +88,7 @@ export const PAYMENT_METHODS = [
 /** Fallback hero when API is offline — also seed defaults for new HomeViewConfig documents. */
 export const HOME_HERO_TITLE_DEFAULT = ZEEVAN_CATALOG_TAGLINE;
 export const HOME_HERO_SUBTITLE_DEFAULT =
-  "Ghee · tel · masala · Haldar honey — sourced with care, delivered fresh.";
+  "Ghee · oil · masala · Haldar honey — sourced with care, delivered fresh.";
 
 /** Premium ghee story blocks — import from `gheeHomeContent.js` (not re-exported here to keep bundle lean). */
 export const HOME_HERO_BANNER = {
@@ -164,7 +164,7 @@ export const HOME_SCREEN_UI = {
   },
   ourStory: {
     eyebrow: "Our story",
-    kicker: "Ghee, tel, masala & Haldar honey — crafted for Indian kitchens.",
+    kicker: "Ghee, oil, masala & Haldar honey — crafted for Indian kitchens.",
     readMore: "Read more",
     shopStory: "Shop",
     galleryEyebrow: "Range",
@@ -218,7 +218,7 @@ export const HOME_SCREEN_UI = {
     showThreeBackground: false,
     enableHomeGsap: false,
     heroEyebrow: ZEEVAN_CATALOG_SUBLINE,
-    atelierSupport: "Ghee, tel, masala & honey — crafted slow for Indian kitchens.",
+    atelierSupport: "Ghee, oil, masala & honey — crafted slow for Indian kitchens.",
     atelierCta: "Shop the collection",
     showHeroTrustChips: true,
     showIntroBand: true,
@@ -291,7 +291,7 @@ export const HOME_TESTIMONIALS = {
       name: "Rohan M.",
       city: "Surat",
       rating: 5,
-      quote: "Mustard tel for tadka — clean finish, no aftertaste. We switched the whole kitchen.",
+      quote: "Mustard oil for tadka — clean finish, no aftertaste. We switched the whole kitchen.",
       avatar: require("../../assets/testi-avatar-2.jpg"),
     },
     {
@@ -439,7 +439,7 @@ export const ABOUT_SCREEN_UI = {
   hero: {
     kicker: "Our story",
     title: "Premium pantry for Indian kitchens",
-    lead: "Ghee, tel, masala & Haldar honey — sourced with care, delivered with live tracking.",
+    lead: "Ghee, oil, masala & Haldar honey — sourced with care, delivered with live tracking.",
     ctaPrimary: "Shop all",
     ctaSecondary: "Our range",
     badge: "Gujarat, India",
@@ -458,13 +458,13 @@ export const ABOUT_SCREEN_UI = {
       key: "source",
       icon: "leaf-outline",
       title: "Thoughtful sourcing",
-      body: "Ghee, tel, masala & honey from partners we trust.",
+      body: "Ghee, oil, masala & honey from partners we trust.",
     },
     {
       key: "craft",
       icon: "flame-outline",
       title: "Slow craft",
-      body: "Traditional methods — Bilona ghee, cold-pressed tel, fresh-ground masala.",
+      body: "Traditional methods — Bilona ghee, cold-pressed oil, fresh-ground masala.",
     },
     {
       key: "fair",
@@ -484,7 +484,7 @@ export const ABOUT_SCREEN_UI = {
     title: "Farm to your kitchen",
     steps: [
       { key: "source", label: "01", title: "Source", body: "Pure ingredients from trusted farms and apiaries." },
-      { key: "craft", label: "02", title: "Craft", body: "Small batches — ghee, tel, masala & honey." },
+      { key: "craft", label: "02", title: "Craft", body: "Small batches — ghee, oil, masala & honey." },
       { key: "pack", label: "03", title: "Pack", body: "Sealed fresh, labelled honestly." },
       { key: "ship", label: "04", title: "Deliver", body: "Live tracking to your door." },
     ],
@@ -595,7 +595,7 @@ export const KANKREG_FOOTER_COLUMNS = [
     links: [
       { label: "All products", route: "Shop" },
       { label: "Ghee", route: "Shop", params: { pill: "Ghee" } },
-      { label: "Tel", route: "Shop", params: { pill: "Tel" } },
+      { label: "Oil", route: "Shop", params: { pill: "Oil" } },
       { label: "Masala", route: "Shop", params: { pill: "Masala" } },
       { label: "Haldar Honey", route: "Shop", params: { pill: "Honey" } },
     ],
@@ -670,7 +670,7 @@ export const CART_UI = {
   pageTitle: "Cart",
   checkoutTitle: "Checkout",
   emptyTitle: "Nothing in your bag yet",
-  emptyDescription: "Ghee, tel, masala & honey — add something for your table.",
+  emptyDescription: "Ghee, oil, masala & honey — add something for your table.",
   browseCta: "Browse shop",
   itemsSectionLabel: "In your bag",
   summaryTitle: "Order summary",
@@ -948,8 +948,22 @@ export const LOCATION_BAR = {
 /** Auth screens — Login / Register (kankreg.html `#auth`). */
 export const AUTH_UI = {
   loginTitle: "Welcome back",
-  loginSubtitle: "Sign in to save your bag, track orders, and checkout faster.",
+  loginSubtitle: "Sign in to track your orders and check out faster.",
   loginCta: "Sign in",
+  tabSignIn: "Sign in",
+  tabCreate: "Create account",
+  brandLine: ZEEVAN_CATALOG_SUBLINE,
+  fields: {
+    name: { label: "Full name", placeholder: "Your name" },
+    email: { label: "Email", placeholder: "you@example.com" },
+    password: { label: "Password", placeholder: "Your password" },
+    newPassword: { label: "Password", placeholder: "At least 8 characters" },
+    confirmPassword: { label: "Confirm password", placeholder: "Type it once more" },
+    showPassword: "Show password",
+    hidePassword: "Hide password",
+  },
+  signingIn: "Signing in…",
+  creating: "Creating…",
   loginFormEyebrow: "Account",
   loginHeroEyebrow: ZEEVAN_CATALOG_SUBLINE,
   loginHeroTitle: "Your pantry,\nbeautifully kept.",
@@ -959,7 +973,7 @@ export const AUTH_UI = {
     { icon: "leaf-outline", label: "Pure craft essentials" },
   ],
   registerTitle: "Create account",
-  registerSubtitle: "One email — orders, addresses, and rewards in one place.",
+  registerSubtitle: "One account for your orders, addresses and rewards.",
   registerCta: "Create account",
   registerFormEyebrow: "Join Zeevan",
   registerHeroTitle: "Start with\none quiet step.",

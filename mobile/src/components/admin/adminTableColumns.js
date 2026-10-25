@@ -179,6 +179,7 @@ export function buildInventoryTableColumns({
   onApplyQty,
   onToggle,
   onDraft,
+  onStockIn,
   draftQty = {},
   busyId,
   stockPill,
@@ -235,6 +236,12 @@ export function buildInventoryTableColumns({
         const pill = stockPill?.(row) || { label: "In stock", tone: "green" };
         return <AdminBadge label={pill.label} tone={pill.tone} size="sm" />;
       },
+    },
+    {
+      key: "bill",
+      label: "In",
+      width: 64,
+      render: (row) => <AdminTableAction label="In" onPress={() => onStockIn?.(row)} />,
     },
   ];
 }

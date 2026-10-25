@@ -83,6 +83,7 @@ export default function MyOrdersScreen({ navigation, route }) {
     country: "",
     note: ""});
   const routeInitialFilter = route?.params?.initialFilter;
+  const routeOrderId = route?.params?.orderId;
 
   useEffect(() => {
     if (isAuthLoading) return;
@@ -144,6 +145,12 @@ export default function MyOrdersScreen({ navigation, route }) {
       setFilter(routeInitialFilter);
     }
   }, [routeInitialFilter]);
+
+  useEffect(() => {
+    if (!routeOrderId) return;
+    setExpandedOrderId(String(routeOrderId));
+    setFilter("active");
+  }, [routeOrderId]);
 
   const orderStats = useMemo(() => {
     const total = orders.length;

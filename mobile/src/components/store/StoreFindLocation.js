@@ -173,12 +173,13 @@ function TextAction({ icon, label, onPress }) {
  * First-run "Confirm your spot": a map (or the radar while we look), what we found, and one button to confirm it. The
  * detection logic lives in `FindLocationScreen`; this is only the view.
  */
-export default function StoreFindLocation({ phase = "searching", snippet, onConfirm, onRetry, onOpenMap, onManual }) {
+export default function StoreFindLocation({ phase = "searching", snippet, errorMessage, onConfirm, onRetry, onOpenMap, onManual }) {
   const { c, type, gutter } = useStoreTheme();
   const insets = useSafeAreaInsets();
   const { quote } = useDeliveryLocation();
   const [dockH, setDockH] = useState(160);
   const copy = COPY[phase] || COPY.searching;
+  const body = phase === "error" && errorMessage ? errorMessage : copy.body;
   const found = phase === "found" && snippet;
   const hasCoords = found && validMapCoord(snippet.latitude ?? snippet.lat) && validMapCoord(snippet.longitude ?? snippet.lng);
 
@@ -197,7 +198,7 @@ export default function StoreFindLocation({ phase = "searching", snippet, onConf
           <Text style={[type.display(32, { ls: -0.8, lh: 38 }), styles.centred]} accessibilityRole="header">
             {copy.title}
           </Text>
-          <Text style={[type.ui(14.5, "medium", c.inkSoft), styles.centred, styles.body]}>{copy.body}</Text>
+          <Text style={[type.ui(14.5, "medium", c.inkSoft), styles.centred, styles.body]}>{body}</Text>
         </Rise>
 
         {found ? (

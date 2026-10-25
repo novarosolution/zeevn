@@ -25,6 +25,16 @@ function toMinutes(hhmm) {
   return (h || 0) * 60 + (m || 0);
 }
 
+/** True when `minutes` is inside today's hours. A close at or before open is an overnight shift (21:00–06:00). */
+function isOpenAt(row, minutes) {
+  if (!row || row.closed) return false;
+  const open = toMinutes(row.open);
+  const close = toMinutes(row.close);
+  if (close > open) return minutes >= open && minutes < close;
+  if (close < open) return minutes >= open || minutes < close;
+  return true;
+}
+
 /** Seven rows (Sunday..Saturday), filling anything missing or malformed with the default. */
 function normalizeHours(rows) {
   const base = defaultHours();
@@ -173,7 +183,7 @@ function evaluateOpen(ops, now = new Date()) {
   if (ops.autoSchedule) {
     const { day, minutes } = localParts(now, ops.timezone);
     const row = ops.hours.find((h) => h.day === day);
-    const inside = row && !row.closed && minutes >= toMinutes(row.open) && minutes < toMinutes(row.close);
+    const inside = isOpenAt(row, minutes);
     if (!inside) {
       const next = nextOpening(ops, now);
       return { open: false, reason: "hours", message: `${base} ${describeOpening(next, ops, now)}`.trim(), nextOpenAt: next };

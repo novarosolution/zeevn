@@ -99,7 +99,7 @@ export function storeGreeting(name, now = new Date()) {
 export const STORE_TABS = [
   { key: "all", label: "All", icon: { glyph: "all" } },
   { key: "ghee", label: "Ghee", lineKey: "ghee", icon: { glyph: "ghee" } },
-  { key: "tel", label: "Tel", lineKey: "tel", icon: { glyph: "tel" } },
+  { key: "tel", label: "Oil", lineKey: "tel", icon: { glyph: "tel" } },
   { key: "masala", label: "Masala", lineKey: "masala", icon: { glyph: "masala" } },
   { key: "honey", label: "Honey", lineKey: "honey", icon: { glyph: "honey" } },
   { key: "gifts", label: "Gifting", lineKey: "gifts", icon: { glyph: "gifts" } },
@@ -108,7 +108,7 @@ export const STORE_TABS = [
 /** Copy for the tab landing page (non-“All” tabs). */
 export const STORE_LINE_PAGES = {
   ghee: { title: "Pure A2 Bilona ghee", shopPill: "Ghee" },
-  tel: { title: "Cold-pressed tel", shopPill: "Tel" },
+  tel: { title: "Cold-pressed oil", shopPill: "Oil" },
   masala: { title: "Fresh masala", shopPill: "Masala" },
   honey: { title: "Haldar honey", shopPill: "Honey" },
   gifts: { title: "Gifts & hampers", category: "Gift Sets" },
@@ -209,7 +209,7 @@ const everydayTheme = {
     },
     tiles: [
       { key: "ghee", title: "Pure Ghee", match: { lineKey: "ghee" }, route: { name: "Shop", params: { pill: "Ghee" } } },
-      { key: "tel", title: "Cold-pressed Tel", match: { lineKey: "tel" }, route: { name: "Shop", params: { pill: "Tel" } } },
+      { key: "tel", title: "Cold-pressed Oil", match: { lineKey: "tel" }, route: { name: "Shop", params: { pill: "Oil" } } },
       { key: "masala", title: "Fresh Masala", match: { lineKey: "masala" }, route: { name: "Shop", params: { pill: "Masala" } } },
       { key: "honey", title: "Haldar Honey", match: { lineKey: "honey" }, route: { name: "Shop", params: { pill: "Honey" } } },
     ],
@@ -218,7 +218,7 @@ const everydayTheme = {
     title: "Pantry Picks",
     items: [
       { key: "ghee", title: "Ghee", match: { lineKeys: ["ghee"] }, route: { name: "Shop", params: { pill: "Ghee" } } },
-      { key: "tel", title: "Tel", match: { lineKeys: ["tel"] }, route: { name: "Shop", params: { pill: "Tel" } } },
+      { key: "tel", title: "Oil", match: { lineKeys: ["tel"] }, route: { name: "Shop", params: { pill: "Oil" } } },
       { key: "masala", title: "Masala", match: { lineKeys: ["masala"] }, route: { name: "Shop", params: { pill: "Masala" } } },
       { key: "honey", title: "Honey", match: { lineKeys: ["honey"] }, route: { name: "Shop", params: { pill: "Honey" } } },
     ],
@@ -275,7 +275,7 @@ const diwaliTheme = {
     },
   },
   /** Hero, the brand pillars, the ranges, the festive photo card, then the shelves. */
-  layout: ["tracker", "promos", "trust", "categories", "festive", "bestsellers", "lines", "footer"],
+  layout: ["promos", "trust", "categories", "festive", "bestsellers", "lines", "footer"],
   bento: {
     title: "Diwali gifting",
     action: "See all",
@@ -311,7 +311,7 @@ const diwaliTheme = {
     tiles: [
       { key: "diya", title: "Ghee for Diyas", match: { lineKey: "ghee" }, route: { name: "Shop", params: { pill: "Ghee" } } },
       { key: "mithai", title: "Mithai Makers", match: { lineKey: "ghee", index: 1 }, route: { name: "Shop", params: { pill: "Ghee" } } },
-      { key: "cooking", title: "Festive Cooking", match: { lineKey: "tel" }, route: { name: "Shop", params: { pill: "Tel" } } },
+      { key: "cooking", title: "Festive Cooking", match: { lineKey: "tel" }, route: { name: "Shop", params: { pill: "Oil" } } },
       { key: "honey", title: "Honey & Haldi", match: { lineKey: "honey" }, route: { name: "Shop", params: { pill: "Honey" } } },
     ],
   },
@@ -321,7 +321,7 @@ const diwaliTheme = {
       { key: "gifts", title: "Gift Hampers", match: { lineKeys: ["gifts"] }, route: { name: "Shop", params: { category: "Gift Sets" } } },
       { key: "ghee", title: "Ghee for Diyas", match: { lineKeys: ["ghee"] }, route: { name: "Shop", params: { pill: "Ghee" } } },
       { key: "honey", title: "Honey", match: { lineKeys: ["honey"] }, route: { name: "Shop", params: { pill: "Honey" } } },
-      { key: "pantry", title: "Tel & Masala", match: { lineKeys: ["tel", "masala"] }, route: { name: "Shop", params: { pill: "Tel" } } },
+      { key: "pantry", title: "Oil & Masala", match: { lineKeys: ["tel", "masala"] }, route: { name: "Shop", params: { pill: "Oil" } } },
     ],
   },
   shopBanner: { title: "Celebrate Diwali", subtitle: "Gift purity, light up every home", image: require("../../assets/diwali-divider.jpg") },
@@ -377,7 +377,7 @@ export function getFestivalCountdown(theme, now = new Date()) {
 
 /**
  * Sections on the Home "All" tab, top to bottom. Delete a key to hide that section, or reorder to move it:
- *  tracker     live order card (only while a signed-in customer has an order in progress)
+ *  tracker     live order dock above the bottom nav (not a scroll section — FloatingNav shows it)
  *  promos      the tall photo hero (one slide per range) + the rewards card
  *  trust       the four "Why Zeevan" pillars as icons, right under the hero
  *  categories  "Shop by category" — big photo tiles, one per product type
@@ -392,15 +392,45 @@ export function getFestivalCountdown(theme, now = new Date()) {
  * website, not on the app Home.
  */
 export const STORE_HOME = {
-  layout: ["tracker", "promos", "trust", "categories", "bestsellers", "lines", "footer"],
+  layout: ["promos", "trust", "categories", "bestsellers", "lines", "footer"],
 
-  /** Live order card. The status ("Out for delivery") comes from the order; its hint is read out to screen readers only. */
+  /**
+   * Floating live-order dock (above the bottom nav). Title is the short status line;
+   * `stage` is the sentence after the order number when no rider name is known.
+   */
   tracker: {
-    live: "Live",
+    live: "LIVE",
     cta: "Track",
-    ctaA11y: "Open order tracking",
-    more: (n) => `+${n} more`,
+    order: "Order",
+    ctaA11y: "Open live order tracking",
+    more: (n) => `+${n}`,
     items: (n) => (n === 1 ? "1 item" : `${n} items`),
+    etaSoon: "Soon",
+    etaUnit: "min",
+    ref: (id) => `Order #${id}`,
+    riderOnTheWay: (name) => `${name} is on the way`,
+    riderAssigned: (name) => `${name} will pick it up`,
+    moving: "Your order is moving",
+    title: {
+      pending_payment: "Waiting for payment",
+      pending: "Order placed",
+      confirmed: "Order confirmed",
+      paid: "Order confirmed",
+      preparing: "Order is being packed",
+      ready_for_pickup: "Rider is coming",
+      out_for_delivery: "Order on the way",
+      shipped: "Order on the way",
+    },
+    stage: {
+      pending_payment: "Complete payment to confirm",
+      pending: "We've received it",
+      confirmed: "The shop confirmed it",
+      paid: "The shop confirmed it",
+      preparing: "Being packed fresh",
+      ready_for_pickup: "Packed, waiting for the rider",
+      out_for_delivery: "On the way to you",
+      shipped: "On the way to you",
+    },
   },
 };
 
@@ -466,10 +496,10 @@ export const STORE_PROMOS = [
     kind: "image",
     art: require("../../assets/slider-phone-tel.jpg"),
     image: require("../../assets/promo-slider-tel.jpg"),
-    title: "Fresh Filtered Tel",
-    cta: "Shop tel",
-    a11y: "Fresh Filtered Tel — Diwali",
-    route: { name: "Shop", params: { pill: "Tel" } },
+    title: "Fresh Filtered Oil",
+    cta: "Shop oil",
+    a11y: "Fresh Filtered Oil — Diwali",
+    route: { name: "Shop", params: { pill: "Oil" } },
   },
   {
     key: "masala",
@@ -562,7 +592,7 @@ export const STORE_SHOP = {
   seeAll: "See all products",
   empty: { title: "No matches", body: "Try a different range or clear your filters.", cta: "Clear filters" },
   share: "Share",
-  shareMessage: (name) => `${name} — pure A2 ghee, tel, masala & honey from Zeevan.`,
+  shareMessage: (name) => `${name} — pure A2 ghee, oil, masala & honey from Zeevan.`,
 };
 
 /* ---- Profile ---- */
@@ -665,7 +695,7 @@ export const STORE_NAV = {
 export const STORE_PRODUCT = {
   back: "Back",
   share: "Share",
-  shareMessage: (name) => `${name} — pure A2 ghee, tel, masala & honey from Zeevan.`,
+  shareMessage: (name) => `${name} — pure A2 ghee, oil, masala & honey from Zeevan.`,
   wishlistAdd: "Save to wishlist",
   wishlistRemove: "Remove from wishlist",
   bag: (count) => (count > 0 ? `Bag, ${count} ${count === 1 ? "item" : "items"}` : "Bag"),
@@ -735,7 +765,7 @@ export const STORE_CART = {
   },
   empty: {
     title: "Your bag is empty",
-    body: "Ghee, tel, masala & honey — add something for your table.",
+    body: "Ghee, oil, masala & honey — add something for your table.",
     cta: "Start shopping",
   },
   /** Numeric twin of `STORE_FREE_DELIVERY` — drives the progress strip. Keep both in step. */
@@ -825,6 +855,43 @@ export const STORE_CART = {
       cod: { title: "Cash on delivery", caption: "Pay when it arrives", icon: "cash-outline" },
       secure: "Payments are processed securely.",
     },
+  },
+};
+
+/* ---- Shop rules in the bag & checkout (GET /store-info) ---- */
+
+/**
+ * What the shop's switches (pause orders, opening hours, minimum order, payment methods, cash limit) say to a shopper
+ * before they tap Place order. Rendered by `StoreCart` (native) and the web branch of `CartScreen`; the plain-English
+ * `errors` are the friendly twins of the API's `code` values, used when the server still refuses the order.
+ */
+export const STORE_RULES = {
+  closed: {
+    paused: "Orders are paused",
+    hours: "We're closed right now",
+    /** Only when the shop sends an empty message. */
+    fallback: "We're not taking orders right now. Please check back soon.",
+    reopensIn: (when) => `Reopens in ${when}`,
+  },
+  min: { more: (amount) => `Add ${amount} more to place this order` },
+  pay: {
+    off: "Not available right now",
+    codLimit: (max) => `For orders up to ${max} — pay online for this one`,
+    none: "No payment method is available for this order right now.",
+  },
+  /** The line above the total in the docked pay bar while the order can't go through. */
+  dock: {
+    closed: "Closed right now",
+    min: (amount) => `Add ${amount} more`,
+    pay: "No payment method available",
+  },
+  errors: {
+    closed: "We're not taking orders right now. Please check back soon.",
+    min: (amount) => `Add ${amount} more to place this order.`,
+    onlineOff: "Online payment is switched off right now. Please choose cash on delivery.",
+    codOff: "Cash on delivery isn't available right now. Please pay online.",
+    codLimit: (max) => `Cash on delivery is available up to ${max}. Please pay online for this order.`,
+    generic: "Unable to place order.",
   },
 };
 

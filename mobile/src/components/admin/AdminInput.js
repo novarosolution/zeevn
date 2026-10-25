@@ -1,10 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { Platform, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { WEB_NO_FOCUS_RING, useAdminChrome } from "../../theme/adminLayout";
+import { ADMIN_FONT, WEB_NO_FOCUS_RING, useAdminChrome } from "../../theme/adminLayout";
 import { getAdminTone } from "../../theme/adminTones";
 import { useTheme } from "../../context/ThemeContext";
-import { fonts } from "../../theme/tokens";
 
 /**
  * Compact labelled field for admin forms. `numeric` keeps digits and one dot, `integer` digits only.
@@ -105,7 +104,7 @@ function createStyles(chrome, red) {
       letterSpacing: 0.4,
       textTransform: "uppercase",
       color: chrome.inkFaint,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
       marginBottom: 6,
     },
     field: {
@@ -133,13 +132,13 @@ function createStyles(chrome, red) {
       paddingVertical: 9,
       fontSize: 13.5,
       color: chrome.ink,
-      fontFamily: fonts.medium,
+      fontFamily: ADMIN_FONT.medium,
       ...Platform.select({ web: { outlineStyle: "none" }, default: {} }),
     },
-    inputMulti: { minHeight: 64, textAlignVertical: "top", paddingVertical: 0, fontFamily: fonts.regular, lineHeight: 19 },
+    inputMulti: { minHeight: 64, textAlignVertical: "top", paddingVertical: 0, fontFamily: ADMIN_FONT.regular, lineHeight: 19 },
     alignRight: { textAlign: "right" },
-    affix: { fontSize: 13, color: chrome.inkFaint, fontFamily: fonts.semibold },
-    hint: { marginTop: 5, fontSize: 11.5, lineHeight: 16, color: chrome.inkFaint, fontFamily: fonts.regular },
-    error: { marginTop: 5, fontSize: 11.5, lineHeight: 16, color: red.fg, fontFamily: fonts.medium },
+    affix: { fontSize: 13, color: chrome.inkFaint, fontFamily: ADMIN_FONT.semibold },
+    hint: { marginTop: 5, fontSize: 11.5, lineHeight: 16, color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular },
+    error: { marginTop: 5, fontSize: 11.5, lineHeight: 16, color: red.fg, fontFamily: ADMIN_FONT.medium },
   });
 }

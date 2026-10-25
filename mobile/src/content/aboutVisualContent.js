@@ -11,7 +11,7 @@ export const ABOUT_GALLERY_DEFAULTS = [
   },
   {
     source: require("../../assets/about-gallery-tel.jpg"),
-    caption: "Cold-pressed tel — amber bottles, honest press",
+    caption: "Cold-pressed oil — amber bottles, honest press",
   },
   {
     source: require("../../assets/about-gallery-masala.jpg"),

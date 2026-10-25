@@ -117,13 +117,13 @@ export default function AdminShopDeskScreen({ navigation, route }) {
   const cols = compact ? 2 : 3;
 
   const queue = [
-    { key: "unpaid", label: "Unpaid", value: orders.unpaid, tab: "unpaid" },
-    { key: "new", label: "New", value: orders.new, tab: "new" },
-    { key: "packing", label: "Packing", value: orders.packing, tab: "packing" },
-    { key: "ready", label: "Ready", value: orders.ready, tab: "ready" },
-    { key: "onRoute", label: "On the route", value: orders.onRoute, tab: "onroute" },
-    { key: "today", label: "Today’s orders", value: today.count, tab: "all", extra: { range: "today" } },
-    { key: "revenue", label: "Today’s revenue", value: today.revenue, rupees: true, tab: "all", extra: { range: "today" } },
+    { key: "unpaid", label: "Unpaid", icon: "card-outline", hint: "Collect", value: orders.unpaid, tab: "unpaid" },
+    { key: "new", label: "New", icon: "sparkles-outline", hint: "Confirm", value: orders.new, tab: "new" },
+    { key: "packing", label: "Packing", icon: "cube-outline", hint: "Pack now", value: orders.packing, tab: "packing" },
+    { key: "ready", label: "Ready", icon: "bag-check-outline", hint: "Need a rider", value: orders.ready, tab: "ready" },
+    { key: "onRoute", label: "On the way", icon: "bicycle-outline", hint: "With rider", value: orders.onRoute, tab: "onroute" },
+    { key: "today", label: "Today’s orders", icon: "receipt-outline", hint: "Since midnight", value: today.count, tab: "all", extra: { range: "today" } },
+    { key: "revenue", label: "Today’s revenue", icon: "cash-outline", hint: "Since midnight", value: today.revenue, rupees: true, tab: "all", extra: { range: "today" } },
   ];
 
   const side = [
@@ -151,7 +151,7 @@ export default function AdminShopDeskScreen({ navigation, route }) {
       key: "riders",
       label: "Riders online",
       value: `${summary.riders.online || 0} of ${summary.riders.total}`,
-      go: () => navigation.navigate("AdminDelivery"),
+      go: () => navigation.navigate("AdminRiders"),
     },
   ].filter(Boolean);
 
@@ -217,7 +217,9 @@ export default function AdminShopDeskScreen({ navigation, route }) {
                   {queue.map((tile) => (
                     <AdminKpiCard
                       key={tile.key}
+                      icon={tile.icon}
                       label={tile.label}
+                      hint={tile.hint}
                       value={tile.rupees ? formatRupees(tile.value) : formatWhole(tile.value)}
                       tone={tile.value > 0 && tile.key !== "revenue" && tile.key !== "today" ? "hot" : "default"}
                       onPress={() => goOrders(tile.tab, tile.extra)}

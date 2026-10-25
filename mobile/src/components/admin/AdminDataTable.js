@@ -1,8 +1,7 @@
 import React, { useMemo } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
-import { getAdminChrome } from "../../theme/adminLayout";
-import { fonts } from "../../theme/tokens";
+import { ADMIN_FONT, getAdminChrome } from "../../theme/adminLayout";
 
 /**
  * Responsive admin table — horizontal scroll on narrow screens.
@@ -127,7 +126,7 @@ function createStyles(chrome, interactive) {
       letterSpacing: 0.8,
       textTransform: "uppercase",
       color: chrome.inkFaint,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
     },
     tr: {
       flexDirection: "row",
@@ -160,15 +159,15 @@ function createStyles(chrome, interactive) {
     tdText: {
       fontSize: Platform.select({ web: 13, default: 12.5 }),
       color: chrome.inkSoft,
-      fontFamily: fonts.regular,
+      fontFamily: ADMIN_FONT.regular,
       lineHeight: 18,
     },
     tdStrong: {
       color: chrome.ink,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
     },
     alignRight: { alignItems: "flex-end" },
     empty: { padding: 28, alignItems: "center" },
-    emptyText: { fontSize: 13, color: chrome.inkFaint, fontFamily: fonts.medium },
+    emptyText: { fontSize: 13, color: chrome.inkFaint, fontFamily: ADMIN_FONT.medium },
   });
 }

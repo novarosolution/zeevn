@@ -80,7 +80,7 @@ export default function WebLineFocusSection({
       lineKey === "ghee"
         ? "Ghee"
         : lineKey === "tel"
-          ? "Tel"
+          ? "Oil"
           : lineKey === "masala"
             ? "Masala"
             : lineKey === "honey"

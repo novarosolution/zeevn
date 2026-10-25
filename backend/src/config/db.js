@@ -29,6 +29,15 @@ async function connectDB() {
         socketTimeoutMS: 45000,
         heartbeatFrequencyMS: 10000,
       });
+      mongoose.connection.on("disconnected", () => {
+        console.error("MongoDB disconnected — waiting to reconnect (API stays up).");
+      });
+      mongoose.connection.on("reconnected", () => {
+        console.log("MongoDB reconnected.");
+      });
+      mongoose.connection.on("error", (err) => {
+        console.error("MongoDB error:", err.message);
+      });
       console.log(`MongoDB connected: ${connection.connection.host}`);
       return;
     } catch (error) {

@@ -5,7 +5,7 @@
 export const WEB_HOME_PREMIUM = {
   hero: {
     secondaryCta: "Our story",
-    eyebrowFallback: "Ghee · Tel · Masala · Honey",
+    eyebrowFallback: "Ghee · Oil · Masala · Honey",
     prev: "Previous slide",
     next: "Next slide",
   },

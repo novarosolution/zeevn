@@ -69,12 +69,12 @@ export function buildAboutPageExtrasDefaults() {
     pageLead: ZEEVAN_CATALOG_TAGLINE,
     pullQuote: "Nothing rushed.\nNothing added.\nPure craft.",
     bodyContinued:
-      "From Bilona ghee to cold-pressed tel, fresh masala and Haldar honey — we partner with small producers who share our standard for purity.",
+      "From Bilona ghee to cold-pressed oil, fresh masala and Haldar honey — we partner with small producers who share our standard for purity.",
     heritage: {
       eyebrow: "Range",
       title: "Four pillars of the pantry",
       body:
-        "Ghee, tel, masala & Haldar honey — each line crafted with traditional methods and honest labels. No shortcuts, no fillers.",
+        "Ghee, oil, masala & Haldar honey — each line crafted with traditional methods and honest labels. No shortcuts, no fillers.",
     },
     bilona: {
       eyebrow: "Craft",
@@ -95,7 +95,7 @@ export function buildAboutPageExtrasDefaults() {
       },
       {
         title: "Slow craft",
-        body: "Traditional methods for ghee, tel, masala & honey cannot be rushed.",
+        body: "Traditional methods for ghee, oil, masala & honey cannot be rushed.",
       },
       {
         title: "Fair to farmers",
@@ -130,14 +130,14 @@ export function buildAboutPageExtrasDefaults() {
         id: "source",
         icon: "leaf-outline",
         title: "Thoughtful sourcing",
-        body: "Ghee, tel, masala & honey from partners we trust.",
+        body: "Ghee, oil, masala & honey from partners we trust.",
         enabled: true,
       },
       {
         id: "craft",
         icon: "flame-outline",
         title: "Slow craft",
-        body: "Bilona ghee, cold-pressed tel, fresh-ground masala, raw honey.",
+        body: "Bilona ghee, cold-pressed oil, fresh-ground masala, raw honey.",
         enabled: true,
       },
       {
@@ -169,7 +169,7 @@ export function buildAboutPageExtrasDefaults() {
           id: "craft",
           label: "02",
           title: "Craft",
-          body: "Small batches — ghee, tel, masala & Haldar honey.",
+          body: "Small batches — ghee, oil, masala & Haldar honey.",
         },
         {
           id: "pack",

@@ -1,8 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { WEB_NO_FOCUS_RING, useAdminChrome } from "../../theme/adminLayout";
-import { fonts } from "../../theme/tokens";
+import { ADMIN_FONT, WEB_NO_FOCUS_RING, useAdminChrome } from "../../theme/adminLayout";
 
 const MENU_MAX_H = 320;
 
@@ -201,7 +200,7 @@ function createStyles(chrome) {
       letterSpacing: 0.4,
       textTransform: "uppercase",
       color: chrome.inkFaint,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
       marginBottom: 6,
     },
     trigger: {
@@ -221,9 +220,9 @@ function createStyles(chrome) {
     triggerOpen: { borderColor: chrome.tabOnBg },
     triggerPressed: { backgroundColor: chrome.paper },
     disabled: { opacity: 0.5 },
-    value: { flex: 1, minWidth: 0, fontSize: 13.5, color: chrome.ink, fontFamily: fonts.medium },
+    value: { flex: 1, minWidth: 0, fontSize: 13.5, color: chrome.ink, fontFamily: ADMIN_FONT.medium },
     valueCompact: { fontSize: 12.5 },
-    placeholder: { color: chrome.inkFaint, fontFamily: fonts.regular },
+    placeholder: { color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular },
     backdrop: { flex: 1 },
     backdropDim: { backgroundColor: "rgba(20, 24, 16, 0.42)", justifyContent: "flex-end" },
     menu: {
@@ -252,7 +251,7 @@ function createStyles(chrome) {
       flex: 1,
       fontSize: 13.5,
       color: chrome.ink,
-      fontFamily: fonts.regular,
+      fontFamily: ADMIN_FONT.regular,
       ...Platform.select({ web: { outlineStyle: "none" }, default: {} }),
     },
     list: { flexGrow: 0 },
@@ -262,7 +261,7 @@ function createStyles(chrome) {
       letterSpacing: 0.6,
       textTransform: "uppercase",
       color: chrome.inkFaint,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
       paddingHorizontal: 10,
       paddingTop: 10,
       paddingBottom: 4,
@@ -281,11 +280,11 @@ function createStyles(chrome) {
     optionActive: { backgroundColor: chrome.chipOnBg },
     optionDisabled: { opacity: 0.45 },
     optionText: { flex: 1, minWidth: 0 },
-    optionLabel: { fontSize: 13.5, color: chrome.ink, fontFamily: fonts.medium },
-    optionLabelActive: { fontFamily: fonts.semibold },
+    optionLabel: { fontSize: 13.5, color: chrome.ink, fontFamily: ADMIN_FONT.medium },
+    optionLabelActive: { fontFamily: ADMIN_FONT.semibold },
     optionMuted: { color: chrome.inkSoft },
-    optionHint: { marginTop: 1, fontSize: 11.5, color: chrome.inkFaint, fontFamily: fonts.regular },
-    optionMeta: { fontSize: 11.5, color: chrome.inkFaint, fontFamily: fonts.medium },
-    empty: { padding: 16, textAlign: "center", fontSize: 12.5, color: chrome.inkFaint, fontFamily: fonts.regular },
+    optionHint: { marginTop: 1, fontSize: 11.5, color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular },
+    optionMeta: { fontSize: 11.5, color: chrome.inkFaint, fontFamily: ADMIN_FONT.medium },
+    empty: { padding: 16, textAlign: "center", fontSize: 12.5, color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular },
   });
 }

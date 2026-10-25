@@ -17,7 +17,7 @@ import {
   paymentShortLabel,
   primaryOrderAction,
 } from "../../../utils/adminOrderUi";
-import { copyText, formatRupees, mapsHref, openExternal, telHref, timeAgo, whatsappHref } from "../../../utils/adminFormat";
+import { copyText, formatRupees, mapsHref, openExternal, plural, telHref, timeAgo, whatsappHref } from "../../../utils/adminFormat";
 import AdminBadge from "../AdminBadge";
 import AdminButton from "../AdminButton";
 import AdminCheckbox from "../AdminCheckbox";
@@ -109,7 +109,7 @@ const OrderRow = memo(function OrderRow({ order, selected, busy, riders, actions
         </Text>
         <Text style={styles.sub} numberOfLines={1}>
           {areaLine(order) || "—"}
-          {order.noteCount > 0 ? ` · ${order.noteCount} notes` : ""}
+          {order.noteCount > 0 ? ` · ${order.noteCount} ${order.noteCount === 1 ? "note" : "notes"}` : ""}
         </Text>
       </View>
 
@@ -203,7 +203,7 @@ const OrderCard = memo(function OrderCard({ order, selected, busy, actions, onTo
         <Text style={styles.total}>{formatRupees(order.totalPrice)}</Text>
       </View>
       <Text style={styles.body} numberOfLines={1}>
-        {itemCount(order)} items · {paymentShortLabel(order)}
+        {plural(itemCount(order), "item")} · {paymentShortLabel(order)}
       </Text>
       <Text style={styles.sub} numberOfLines={1}>
         {order.assignedDeliveryUser?.name || "No rider"}
@@ -353,7 +353,6 @@ function createStyles(chrome) {
     cellRider: { width: W.rider, gap: 3 },
     cellActions: { width: W.actions, flexDirection: "row", alignItems: "center", justifyContent: "flex-end", gap: 6 },
     ref: { fontSize: 13, color: chrome.ink, fontFamily: fonts.bold, letterSpacing: 0.2 },
-    refInline: { fontSize: 11.5, color: chrome.inkSoft, fontFamily: fonts.semibold, letterSpacing: 0.2 },
     strong: { fontSize: 13.5, color: chrome.ink, fontFamily: fonts.semibold },
     body: { fontSize: 13, color: chrome.ink, fontFamily: fonts.regular },
     sub: { fontSize: 11.5, color: chrome.inkFaint, fontFamily: fonts.regular },

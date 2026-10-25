@@ -128,10 +128,12 @@ export function DeliveryLocationProvider({ children }) {
         lastDetectAtRef.current = now;
         setStatus("ready");
         return next;
-      } catch {
+      } catch (err) {
         const fallback = snippetRef.current;
+        const message = err instanceof Error ? err.message : "Unable to find your location.";
         setStatus(fallback?.label || savedLabel ? "ready" : "error");
-        return fallback;
+        if (fallback) return fallback;
+        return { error: message };
       } finally {
         detectInFlightRef.current = false;
       }

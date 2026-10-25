@@ -55,7 +55,7 @@ function shopParamsForSlide(slide) {
   const pill = String(slide?.shopPill || "").trim();
   if (pill) return { category: pill, pill };
   const id = String(slide?.id || "").toLowerCase();
-  if (id.includes("tel")) return { category: "Tel", pill: "Tel" };
+  if (id.includes("tel")) return { category: "Oil", pill: "Oil" };
   if (id.includes("masala")) return { category: "Masala", pill: "Masala" };
   if (id.includes("honey")) return { category: "Honey", pill: "Honey" };
   if (id.includes("packaging") || id.includes("ghee")) return { category: "Ghee", pill: "Ghee" };

@@ -99,8 +99,15 @@ function serializePublicUser(user) {
   };
 }
 
+function dbReady(res) {
+  if (mongoose.connection.readyState === 1) return true;
+  res.status(503).json({ message: "Shop is busy. Try again in a moment.", code: "DB_DOWN" });
+  return false;
+}
+
 async function registerUser(req, res, next) {
   try {
+    if (!dbReady(res)) return;
     const { name, password, phone } = req.body;
     const email = normalizeEmail(req.body?.email);
 
@@ -140,6 +147,7 @@ async function registerUser(req, res, next) {
 
 async function loginUser(req, res, next) {
   try {
+    if (!dbReady(res)) return;
     const email = normalizeEmail(req.body?.email);
     const { password } = req.body;
 
@@ -180,6 +188,7 @@ async function loginUser(req, res, next) {
 
 async function authGoogle(req, res, next) {
   try {
+    if (!dbReady(res)) return;
     const profile = await verifyGoogleIdToken(req.body?.idToken);
     const user = await findOrCreateOAuthUser(profile);
     issueAuthResponse(user, res);
@@ -193,6 +202,7 @@ async function authGoogle(req, res, next) {
 
 async function authApple(req, res, next) {
   try {
+    if (!dbReady(res)) return;
     const profile = await verifyAppleIdentityToken(req.body?.identityToken);
     if (req.body?.fullName) {
       const parts = [req.body.fullName.givenName, req.body.fullName.familyName].filter(Boolean);
@@ -210,6 +220,7 @@ async function authApple(req, res, next) {
 
 async function refreshAccessToken(req, res, next) {
   try {
+    if (!dbReady(res)) return;
     const refreshToken = String(req.body?.refreshToken || "").trim();
     if (!refreshToken) {
       return res.status(400).json({ message: "refreshToken is required." });

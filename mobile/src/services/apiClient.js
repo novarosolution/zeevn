@@ -82,7 +82,23 @@ async function readJson(response) {
   }
 }
 
-async function doFetch(path, options, token) {
+/** An `Error` carrying the server's machine-readable `code` (e.g. `MIN_ORDER`) and HTTP `status` next to its message. */
+function requestError(data, fallback, status) {
+  const error = new Error(data?.message || fallback);
+  error.status = status;
+  if (data?.code) error.code = data.code;
+  return error;
+}
+
+function networkError(err) {
+  const raw = String(err?.message || err || "");
+  if (/abort|timeout|network request failed|unreachable|failed to fetch/i.test(raw)) {
+    return new Error("Can't reach the shop. Check your internet and try again.");
+  }
+  return err instanceof Error ? err : new Error(raw || "Request failed.");
+}
+
+async function doFetch(path, options, token, timeoutMs) {
   const headers = { ...(options.headers || {}) };
   if (!headers["Content-Type"] && options.body && typeof options.body === "string") {
     headers["Content-Type"] = "application/json";
@@ -93,7 +109,7 @@ async function doFetch(path, options, token) {
   if (/^https?:\/\//i.test(path)) {
     return fetch(path, { ...options, headers });
   }
-  return fetchBalanced(path, { ...options, headers });
+  return fetchBalanced(path, { ...options, headers }, { timeoutMs });
 }
 
 async function refreshAccessToken() {
@@ -137,15 +153,20 @@ async function refreshAccessToken() {
  * (used internally for /login, /register, /refresh).
  */
 export async function apiRequest(path, options = {}) {
-  const { auth = true, ...rest } = options;
+  const { auth = true, timeoutMs, ...rest } = options;
   const initialToken = auth ? getAccessToken() : null;
 
-  let response = await doFetch(path, rest, initialToken);
+  let response;
+  try {
+    response = await doFetch(path, rest, initialToken, timeoutMs);
+  } catch (err) {
+    throw networkError(err);
+  }
 
   if (response.status !== 401 || !auth) {
     const data = await readJson(response);
     if (!response.ok) {
-      throw new Error(data.message || `Request failed (${response.status}).`);
+      throw requestError(data, `Request failed (${response.status}).`, response.status);
     }
     return data;
   }
@@ -164,14 +185,18 @@ export async function apiRequest(path, options = {}) {
     throw err instanceof Error ? err : new Error("Refresh failed.");
   }
 
-  response = await doFetch(path, rest, nextToken);
+  try {
+    response = await doFetch(path, rest, nextToken, timeoutMs);
+  } catch (err) {
+    throw networkError(err);
+  }
   const data = await readJson(response);
   if (response.status === 401) {
     emitSessionExpired("retry-401");
     throw new Error(data.message || "Session expired.");
   }
   if (!response.ok) {
-    throw new Error(data.message || `Request failed (${response.status}).`);
+    throw requestError(data, `Request failed (${response.status}).`, response.status);
   }
   return data;
 }

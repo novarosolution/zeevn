@@ -32,6 +32,8 @@ import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, spacing } from "../../theme/tokens";
 import { productCoverUri } from "../../utils/adminProductHelpers";
 import { formatShortDateTime, plural } from "../../utils/adminFormat";
+import { printAdminHtml } from "../../utils/printAdminHtml";
+import { buildStockInBillHtml } from "../../utils/stockInBillHtml";
 
 const EMPTY = { items: [], total: 0, page: 1, pages: 1, pageSize: 25, counts: { draft: 0, received: 0 } };
 const TABS = [
@@ -139,6 +141,32 @@ export default function AdminStockInScreen({ navigation, route }) {
       .then((doc) => setEditor(toEditor(doc)))
       .catch((err) => setError(err?.message || "Couldn't open that delivery."));
   }, [isAdmin, route?.params?.receiptId]);
+
+  useEffect(() => {
+    const productId = route?.params?.productId;
+    if (!isAdmin || !productId || !products.length || route?.params?.receiptId) return;
+    const product = products.find((p) => String(p._id) === String(productId));
+    if (!product) return;
+    setEditor(toEditor());
+    setDraftQty({});
+    setSearch("");
+    setError("");
+    setMode("edit");
+    setEditor({
+      ...toEditor(),
+      lines: [
+        {
+          productId: String(product._id),
+          name: product.name || "Jar",
+          sku: product.sku || "",
+          unit: product.unit || "",
+          image: productCoverUri(product),
+          quantity: 1,
+        },
+      ],
+    });
+    navigation.setParams?.({ productId: undefined });
+  }, [isAdmin, route?.params?.productId, products, navigation]);
 
   const onPull = async () => {
     setRefreshing(true);
@@ -254,6 +282,18 @@ export default function AdminStockInScreen({ navigation, route }) {
     }
   };
 
+  const printBill = async () => {
+    if (!editor.lines.length) {
+      setError(COPY.emptyConfirm);
+      return;
+    }
+    try {
+      await printAdminHtml(buildStockInBillHtml(editor));
+    } catch (err) {
+      setError(err?.message || "Couldn't print this bill.");
+    }
+  };
+
   const confirmReceipt = async () => {
     if (locked || busy) return;
     if (!editor.lines.length) {
@@ -333,10 +373,13 @@ export default function AdminStockInScreen({ navigation, route }) {
             subtitle={COPY.subtitle}
             headerRight={
               inForm ? (
-                <AdminButton label="All deliveries" icon="chevron-back-outline" variant="ghost" size="sm" onPress={backToList} />
+                <View style={styles.headerActions}>
+                  {locked ? <AdminButton label={COPY.printBill} icon="print-outline" variant="gold" size="sm" onPress={printBill} /> : null}
+                  <AdminButton label="All bills" icon="chevron-back-outline" variant="ghost" size="sm" onPress={backToList} />
+                </View>
               ) : (
                 <View style={styles.headerActions}>
-                  <AdminButton label="New receipt" icon="add-outline" variant="primary" size="sm" onPress={openNew} />
+                  <AdminButton label="New bill" icon="add-outline" variant="primary" size="sm" onPress={openNew} />
                   <AdminButton label="Refresh" icon="refresh-outline" variant="soft" size="sm" onPress={() => loadList()} />
                 </View>
               )
@@ -358,7 +401,7 @@ export default function AdminStockInScreen({ navigation, route }) {
                     <PremiumEmptyState
                       iconName="download-outline"
                       title={emptyTitle}
-                      ctaLabel={tab === "draft" ? "New receipt" : undefined}
+                      ctaLabel={tab === "draft" ? "New bill" : undefined}
                       ctaIconLeft="add-outline"
                       onCtaPress={tab === "draft" ? openNew : undefined}
                       compact
@@ -415,7 +458,7 @@ export default function AdminStockInScreen({ navigation, route }) {
               ) : (
                 <>
                   <AdminPanel
-                    title={locked ? "Received" : editor.id ? "Draft" : "New receipt"}
+                    title={locked ? "Received bill" : editor.id ? "Draft bill" : "New bill"}
                     icon="download-outline"
                     meta={locked ? formatShortDateTime(editor.receivedAt) : editor.savedByName || undefined}
                     description={locked ? `${plural(editor.lines.length, "line")} · ${plural(totalJars, "jar")} added` : "Search a jar, set how many arrived, then confirm."}
@@ -483,7 +526,11 @@ export default function AdminStockInScreen({ navigation, route }) {
                       ))
                     )}
                   </AdminPanel>
-                  {!compact ? actions : null}
+                  {locked ? (
+                    <AdminButton label={COPY.printBill} icon="print-outline" variant="gold" onPress={printBill} />
+                  ) : !compact ? (
+                    actions
+                  ) : null}
                 </>
               )}
             </View>

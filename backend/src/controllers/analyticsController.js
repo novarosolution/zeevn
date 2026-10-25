@@ -282,6 +282,7 @@ function stockSnapshot(products) {
   let outOfStockProducts = 0;
   let inStockProducts = 0;
   let inventoryRetailValue = 0;
+  const categoryCounts = new Map();
   for (const product of products) {
     const qty = Number(product.stockQty || 0);
     if (qty > 0) inventoryRetailValue += Number(product.price || 0) * qty;
@@ -289,8 +290,13 @@ function stockSnapshot(products) {
     if (isOut) outOfStockProducts += 1;
     else if (qty <= 5) lowStockProducts += 1;
     else inStockProducts += 1;
+    const name = String(product.category || "General").trim() || "General";
+    categoryCounts.set(name, (categoryCounts.get(name) || 0) + 1);
   }
-  return { lowStockProducts, outOfStockProducts, inStockProducts, inventoryRetailValue };
+  const topCategories = [...categoryCounts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+  return { lowStockProducts, outOfStockProducts, inStockProducts, inventoryRetailValue, topCategories };
 }
 
 function cartSnapshot(users) {

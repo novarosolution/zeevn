@@ -22,6 +22,7 @@ import { formatINR } from "../../utils/currency";
 import { formatOrderShortId } from "../../utils/orderDisplay";
 import { formatCompactShippingLine } from "../../utils/shippingAddressFormat";
 import { productImageUri } from "../../utils/storefront";
+import { replaceCustomerRoute } from "../../navigation/customerNavigate";
 import FloatingNav from "./FloatingNav";
 import PressableScale from "./PressableScale";
 
@@ -329,9 +330,9 @@ export default function StoreOrderConfirmed({ navigation, order }) {
                 <TrustRow />
               </Animated.View>
               <Animated.View entering={PLACED_IN[3]} style={styles.actions}>
-                <PrimaryButton label={COPY.primary} icon="navigate-outline" onPress={() => navigation.replace("MyOrders")} />
-                <OutlineButton label={COPY.secondary} icon="bag-handle-outline" onPress={() => navigation.replace("Shop")} />
-                <PressableScale onPress={() => navigation.replace("Home")} accessibilityRole="button" accessibilityLabel={COPY.tertiary} style={styles.link}>
+                <PrimaryButton label={COPY.primary} icon="navigate-outline" onPress={() => replaceCustomerRoute(navigation, "MyOrders")} />
+                <OutlineButton label={COPY.secondary} icon="bag-handle-outline" onPress={() => replaceCustomerRoute(navigation, "Shop")} />
+                <PressableScale onPress={() => replaceCustomerRoute(navigation, "Home")} accessibilityRole="button" accessibilityLabel={COPY.tertiary} style={styles.link}>
                   <Text style={type.ui(14.5, "bold", c.inkSoft)}>{COPY.tertiary}</Text>
                 </PressableScale>
               </Animated.View>
@@ -344,7 +345,7 @@ export default function StoreOrderConfirmed({ navigation, order }) {
               <Text style={[type.display(24, { semi: true, ls: -0.4, lh: 30 }), styles.centerText]}>{COPY.missingTitle}</Text>
               <Text style={[type.ui(14.5, "medium", c.inkMute, { lineHeight: 21 }), styles.centerText]}>{COPY.missingBody}</Text>
               <PressableScale
-                onPress={() => navigation.replace("MyOrders")}
+                onPress={() => replaceCustomerRoute(navigation, "MyOrders")}
                 accessibilityRole="button"
                 accessibilityLabel={COPY.missingCta}
                 style={[styles.missingBtn, { backgroundColor: c.brand }]}
@@ -358,7 +359,7 @@ export default function StoreOrderConfirmed({ navigation, order }) {
       <View style={[styles.scrim, { height: insets.top }]} pointerEvents="none">
         <View style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(c.page, 0.55) }]} />
       </View>
-      <FloatingNav />
+      <FloatingNav hideTracker />
     </View>
   );
 }

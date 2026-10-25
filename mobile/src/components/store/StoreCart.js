@@ -5,8 +5,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { LinearTransition, useAnimatedScrollHandler, useSharedValue } from "react-native-reanimated";
-import { stateIn } from "../../theme/motion";
-import { STORE_CART } from "../../content/storefrontContent";
+import { panelIn, panelOut, stateIn } from "../../theme/motion";
+import { STORE_CART, STORE_RULES } from "../../content/storefrontContent";
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { formatINR, formatINRWhole } from "../../utils/currency";
 import { hapticTick } from "../../utils/haptics";
@@ -14,6 +14,7 @@ import { cartLineKey } from "../../utils/productCart";
 import { productImageSource } from "../../utils/storefront";
 import AddControl from "./AddControl";
 import FloatingNav from "./FloatingNav";
+import { STORE_TRACKER_DOCK, useActiveOrders } from "./StoreTracker";
 import PressableScale from "./PressableScale";
 import ScreenHeader, { SCREEN_HEADER_PAD } from "./ScreenHeader";
 import ScrollEdgeFade from "./ScrollEdgeFade";
@@ -62,6 +63,51 @@ function Heading({ title, caption }) {
       </Text>
       {caption ? <Text style={type.ui(14.5, "medium", c.inkSoft)}>{caption}</Text> : null}
     </View>
+  );
+}
+
+/* ---- shop rules (from /store-info, built by `getStoreRules`) ---- */
+
+/** Calm gold notice at the top of the bag and checkout while the shop isn't taking orders. */
+function ClosedNotice({ closed }) {
+  const { c, r, type, isDark } = useStoreTheme();
+  const ink = isDark ? c.goldText : "#7A4F12";
+  return (
+    <Animated.View
+      entering={panelIn}
+      exiting={panelOut}
+      accessible
+      accessibilityLabel={`${closed.title}. ${closed.message}${closed.reopensIn ? ` ${closed.reopensIn}.` : ""}`}
+      style={[styles.notice, { backgroundColor: c.goldSoft, borderColor: withAlpha(c.gold, 0.45), borderRadius: r.xl }]}
+    >
+      <View style={[styles.noticeIcon, { backgroundColor: c.card }]}>
+        <Ionicons name={closed.reason === "paused" ? "pause-circle-outline" : "moon-outline"} size={20} color={c.goldText} />
+      </View>
+      <View style={styles.flex}>
+        <Text style={type.ui(14.5, "extrabold", c.ink)}>{closed.title}</Text>
+        <Text style={type.ui(13, "medium", c.inkSoft, { lineHeight: 19 })}>{closed.message}</Text>
+        {closed.reopensIn ? (
+          <View style={[styles.reopenPill, { backgroundColor: withAlpha(c.gold, isDark ? 0.18 : 0.24) }]}>
+            <Text style={type.ui(12, "bold", ink)}>{closed.reopensIn}</Text>
+          </View>
+        ) : null}
+      </View>
+    </Animated.View>
+  );
+}
+
+/** "Add ₹X more to place this order" — sits under the item total. */
+function MinOrderNote({ text }) {
+  const { c, r, type, isDark } = useStoreTheme();
+  return (
+    <Animated.View
+      entering={stateIn}
+      exiting={panelOut}
+      style={[styles.minNote, { backgroundColor: c.goldSoft, borderColor: withAlpha(c.gold, 0.45), borderRadius: r.md }]}
+    >
+      <Ionicons name="arrow-up-circle-outline" size={17} color={c.goldText} />
+      <Text style={[type.ui(13, "bold", isDark ? c.goldText : "#7A4F12"), styles.flex]}>{text}</Text>
+    </Animated.View>
   );
 }
 
@@ -215,7 +261,7 @@ function BillRow({ label, value, tone, strong = false }) {
   );
 }
 
-function BillCard({ bill }) {
+function BillCard({ bill, minNote = "" }) {
   const { c, r, type, isDark } = useStoreTheme();
   const { subtotal, deliveryFee, deliveryBlocked, deliveryHint, platformFee, discount, total } = bill;
   const good = isDark ? c.brandBright : SUCCESS_INK;
@@ -224,6 +270,7 @@ function BillCard({ bill }) {
       <CardTitle icon="receipt-outline" title={STORE_CART.bill.title} />
       <View style={styles.billBody}>
         <BillRow label={STORE_CART.bill.items} value={formatINR(subtotal)} />
+        {minNote ? <MinOrderNote text={minNote} /> : null}
         <BillRow
           label={STORE_CART.bill.delivery}
           value={deliveryBlocked ? STORE_CART.bill.unavailable : deliveryFee > 0 ? formatINR(deliveryFee) : STORE_CART.bill.free}
@@ -405,19 +452,28 @@ function AddressCard({ form, onChange, errors, detecting, onUseGps, onOpenMap, h
   );
 }
 
-function PaymentCard({ value, onChange, disabled }) {
-  const { c, r, type } = useStoreTheme();
+/**
+ * `availability` maps a method id to `{ available, note }` (from `getStoreRules`): a method the shop has switched off,
+ * or cash on delivery above its limit, stays visible but can't be picked, and `note` replaces its caption to say why.
+ */
+function PaymentCard({ value, onChange, disabled, availability, noneAvailable = false }) {
+  const { c, r, type, isDark } = useStoreTheme();
   const copy = STORE_CART.checkout.payment;
   const options = [
     { id: "Razorpay", ...copy.online },
     { id: "Cash on Delivery", ...copy.cod },
   ];
+  const noteInk = isDark ? c.goldText : "#7A4F12";
   return (
     <Card>
       <CardTitle icon="wallet-outline" title={copy.title} caption={copy.subtitle} />
       <View style={styles.payOptions} accessibilityRole="radiogroup">
         {options.map((opt) => {
-          const active = value === opt.id;
+          const rule = availability?.[opt.id];
+          const off = Boolean(rule) && !rule.available;
+          const active = value === opt.id && !off;
+          const locked = disabled || off;
+          const caption = off && rule.note ? rule.note : opt.caption;
           return (
             <PressableScale
               key={opt.id}
@@ -425,43 +481,52 @@ function PaymentCard({ value, onChange, disabled }) {
                 hapticTick();
                 onChange(opt.id);
               }}
-              disabled={disabled}
+              disabled={locked}
               scaleTo={0.985}
               accessibilityRole="radio"
-              accessibilityState={{ selected: active, disabled }}
-              accessibilityLabel={`${opt.title}. ${opt.caption}`}
+              accessibilityState={{ selected: active, disabled: locked }}
+              accessibilityLabel={`${opt.title}. ${caption}`}
               style={[
                 styles.payOption,
                 { backgroundColor: active ? c.brandSoft : c.cardSoft, borderColor: active ? c.brand : c.line, borderWidth: active ? 1.5 : 1, borderRadius: r.xl, opacity: disabled ? 0.55 : 1 },
               ]}
             >
-              <View style={[styles.payIcon, { backgroundColor: active ? c.card : c.soft }]}>
+              <View style={[styles.payIcon, { backgroundColor: active ? c.card : c.soft }, off && styles.dim]}>
                 <Ionicons name={opt.icon} size={21} color={active ? c.brand : c.inkSoft} />
               </View>
               <View style={styles.flex}>
-                <Text style={type.ui(15.5, "extrabold", c.ink)}>{opt.title}</Text>
-                <Text style={type.ui(12.5, "medium", c.inkMute)}>{opt.caption}</Text>
+                <Text style={[type.ui(15.5, "extrabold", c.ink), off && styles.dim]}>{opt.title}</Text>
+                <Text style={type.ui(12.5, "medium", off ? noteInk : c.inkMute)}>{caption}</Text>
               </View>
-              <Ionicons name={active ? "radio-button-on" : "radio-button-off"} size={22} color={active ? c.brand : c.lineStrong} />
+              <Ionicons name={active ? "radio-button-on" : "radio-button-off"} size={22} color={active ? c.brand : c.lineStrong} style={off ? styles.dim : undefined} />
             </PressableScale>
           );
         })}
       </View>
-      <View style={styles.secure}>
-        <Ionicons name="shield-checkmark-outline" size={15} color={c.inkMute} />
-        <Text style={type.ui(12, "medium", c.inkMute)}>{copy.secure}</Text>
-      </View>
+      {noneAvailable ? (
+        <View style={styles.secure}>
+          <Ionicons name="information-circle-outline" size={15} color={noteInk} />
+          <Text style={[type.ui(12, "bold", noteInk), styles.flex]}>{STORE_RULES.pay.none}</Text>
+        </View>
+      ) : (
+        <View style={styles.secure}>
+          <Ionicons name="shield-checkmark-outline" size={15} color={c.inkMute} />
+          <Text style={type.ui(12, "medium", c.inkMute)}>{copy.secure}</Text>
+        </View>
+      )}
     </Card>
   );
 }
 
 /* ---- docked pay bar ---- */
 
-function PayDock({ bottom, total, meta, label, disabled, loading, onPress }) {
+function PayDock({ bottom, total, meta, notice = false, label, disabled, loading, onPress }) {
   const { c, type, shadow, isDark, gutter } = useStoreTheme();
   const inactive = disabled || loading;
   const colors = inactive ? [c.softStrong, c.softStrong] : isDark ? ["#C9DA8C", "#9DB45B"] : ["#3F6231", "#244424"];
   const ink = inactive ? c.inkMute : isDark ? "#18200C" : "#FFFFFF";
+  /** `notice` swaps the usual "2 items · Free delivery" line for why the order can't go through, in the shop's gold. */
+  const metaInk = notice ? (isDark ? c.goldText : "#7A4F12") : c.inkMute;
 
   return (
     <View style={[styles.payWrap, { bottom, left: gutter, right: gutter }]} pointerEvents="box-none">
@@ -470,7 +535,7 @@ function PayDock({ bottom, total, meta, label, disabled, loading, onPress }) {
           <View style={[StyleSheet.absoluteFill, { backgroundColor: c.glassStrong }]} />
           <View style={styles.payRow}>
             <View style={styles.flex}>
-              <Text style={type.ui(11, "bold", c.inkMute, { letterSpacing: 0.4 })} numberOfLines={1}>
+              <Text style={type.ui(11, "bold", metaInk, { letterSpacing: 0.4 })} numberOfLines={1}>
                 {STORE_CART.cta.total} · {meta}
               </Text>
               <Text style={type.display(25, { ls: -0.6, lh: 30, semi: true })} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
@@ -531,13 +596,17 @@ function CenterCard({ icon, title, body, primary, onPrimary, secondary, onSecond
 /* ---- screen ---- */
 
 const EMPTY_FORM = {};
+/** No shop rules known (or none set): nothing extra is drawn and nothing is disabled. */
+const NO_RULES = { closed: null, minNote: "", pay: undefined, noPayment: false, dockNote: "" };
 
 /**
  * Native bag + checkout. One component for the three states of `CartScreen`:
  *  - `bag`      items, free-delivery progress, coupon, bill, pay dock → Checkout
  *  - `checkout` order summary, delivery address, payment method, bill, pay dock → place order
  *  - `gate`     signed-out guest reaching checkout
- * All state and side effects (coupon, delivery quote, Razorpay / COD) stay in `CartScreen`.
+ * All state and side effects (coupon, delivery quote, Razorpay / COD) stay in `CartScreen`, and so does
+ * the decision to disable the pay dock (`ctaDisabled`); `rules` (from `getStoreRules`) only says what to show: the
+ * closed notice, the minimum-order note, which payment methods are off.
  */
 export default function StoreCart({
   mode = "bag",
@@ -564,6 +633,7 @@ export default function StoreCart({
   onPaymentChange,
   placing = false,
   ctaDisabled = false,
+  rules = NO_RULES,
   onPrimary,
 }) {
   const { c, type, gutter } = useStoreTheme();
@@ -573,7 +643,8 @@ export default function StoreCart({
     scrollY.value = event.contentOffset.y;
   });
   const navDock = Math.max(16, insets.bottom + 6);
-  const payBottom = navDock + STORE_NAV_HEIGHT + 10;
+  const liveDock = useActiveOrders().length ? STORE_TRACKER_DOCK : 0;
+  const payBottom = navDock + STORE_NAV_HEIGHT + 10 + liveDock;
   const isCheckout = mode === "checkout";
   const hasItems = items.length > 0;
   const showDock = mode !== "gate" && hasItems;
@@ -598,11 +669,12 @@ export default function StoreCart({
       : STORE_CART.cta.signIn;
 
   const meta = useMemo(() => {
+    if (rules.dockNote) return rules.dockNote;
     const parts = [STORE_CART.bag.count(totalItems)];
     if (bill?.deliveryBlocked) parts.push(STORE_CART.bill.unavailable);
     else if (bill && !bill.deliveryFee) parts.push(STORE_CART.freeDelivery.pill);
     return parts.join(" · ");
-  }, [bill, totalItems]);
+  }, [bill, totalItems, rules.dockNote]);
 
   const renderItems = (compact) =>
     items.map((item) => (
@@ -641,6 +713,7 @@ export default function StoreCart({
     body = (
       <View style={{ paddingHorizontal: gutter, gap: 16 }}>
         <Heading title={STORE_CART.checkout.heading} caption={caption} />
+        {rules.closed ? <ClosedNotice closed={rules.closed} /> : null}
         <Steps active={addressDone ? 2 : 1} />
         {error ? <StoreBanner message={error} onClose={onDismissError} /> : null}
         <AddressCard
@@ -654,7 +727,7 @@ export default function StoreCart({
           onUseSaved={onUseSaved}
           bill={bill}
         />
-        <PaymentCard value={paymentMethod} onChange={onPaymentChange} disabled={placing} />
+        <PaymentCard value={paymentMethod} onChange={onPaymentChange} disabled={placing} availability={rules.pay} noneAvailable={rules.noPayment} />
         <Card>
           <CardTitle
             icon="bag-check-outline"
@@ -668,20 +741,21 @@ export default function StoreCart({
           />
           <View style={styles.summaryList}>{renderItems(true)}</View>
         </Card>
-        <BillCard bill={bill} />
+        <BillCard bill={bill} minNote={rules.minNote} />
       </View>
     );
   } else {
     body = (
       <View style={{ paddingHorizontal: gutter, gap: 16 }}>
         <Heading title={STORE_CART.bag.title} caption={caption} />
+        {rules.closed ? <ClosedNotice closed={rules.closed} /> : null}
         {error ? <StoreBanner message={error} onClose={onDismissError} /> : null}
         <FreeDeliveryStrip subtotal={bill.subtotal} />
         <Animated.View layout={LinearTransition.duration(200)} style={styles.lines}>
           {renderItems(false)}
         </Animated.View>
         {coupon ? <CouponCard coupon={coupon} /> : null}
-        <BillCard bill={bill} />
+        <BillCard bill={bill} minNote={rules.minNote} />
       </View>
     );
   }
@@ -709,7 +783,7 @@ export default function StoreCart({
 
       {showDock && bill ? <ScrollEdgeFade height={payBottom + PAY_DOCK_HEIGHT + 22} /> : null}
       {showDock && bill ? (
-        <PayDock bottom={payBottom} total={bill.total} meta={meta} label={ctaLabel} disabled={ctaDisabled} loading={placing} onPress={onPrimary} />
+        <PayDock bottom={payBottom} total={bill.total} meta={meta} notice={Boolean(rules.dockNote)} label={ctaLabel} disabled={ctaDisabled} loading={placing} onPress={onPrimary} />
       ) : null}
 
       <FloatingNav />
@@ -726,6 +800,11 @@ const styles = StyleSheet.create({
   titleIcon: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   heading: { gap: 5, paddingTop: 4 },
   banner: { flexDirection: "row", alignItems: "center", gap: 9, padding: 13, borderWidth: 1 },
+  notice: { flexDirection: "row", alignItems: "flex-start", gap: 11, padding: 14, borderWidth: 1 },
+  noticeIcon: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
+  reopenPill: { alignSelf: "flex-start", marginTop: 8, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 11 },
+  minNote: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderWidth: 1 },
+  dim: { opacity: 0.5 },
   free: { padding: 14, gap: 11, borderWidth: 1 },
   freeTop: { flexDirection: "row", alignItems: "center", gap: 11 },
   freeIcon: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },

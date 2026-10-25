@@ -1,54 +1,68 @@
 import { useMemo } from "react";
 import { Platform, StyleSheet } from "react-native";
 import { useTheme } from "../context/ThemeContext";
-import { KANKREG_PALETTE } from "./kankregWeb";
+import { KANKREG_PALETTE, ZEEVAN_GOLD, ZEEVAN_GREEN } from "./kankregWeb";
 import { useKankregLayout } from "./kankregBreakpoints";
 import { shadowStyleForPlatform } from "./shadowPlatform";
-import { darkColors, getSemanticColors, semanticRadius, spacing } from "./tokens";
+import { darkColors, fonts, getSemanticColors, semanticRadius, spacing } from "./tokens";
 
-/** Ivory desk + forest sidebar. Gold is brand only — not a chrome color. */
-const CANVAS = "#F3EEE3";
-const SIDEBAR = "#141810";
+/** Admin UI uses the platform sans so every letter renders. Do not point at the shop webfont on web. */
+const WEB_SANS = 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+export const ADMIN_FONT = {
+  regular: Platform.select({ web: WEB_SANS, default: fonts.regular }),
+  medium: Platform.select({ web: WEB_SANS, default: fonts.medium }),
+  semibold: Platform.select({ web: WEB_SANS, default: fonts.semibold }),
+  bold: Platform.select({ web: WEB_SANS, default: fonts.bold }),
+};
+
+/** Same white canvas + forest/gold as the shop. */
+const WHITE = "#FFFFFF";
+const PAPER = "#F6F7F4";
 
 /** Shared admin light/dark chrome — use in AdminTopBar, tables, KPI cards, etc. */
 export function getAdminChrome(c, isDark) {
   const semantic = getSemanticColors(c);
   return {
-    ink: c.textPrimary,
-    inkSoft: c.textSecondary,
-    inkFaint: c.textMuted,
-    card: isDark ? c.surface : "#FFFFFF",
-    paper: isDark ? c.surfaceMuted : "#F8F4EA",
-    canvas: isDark ? c.background : CANVAS,
-    line: isDark ? c.border : "rgba(31, 51, 31, 0.1)",
-    lineSoft: isDark ? semantic.border.subtle : "rgba(31, 51, 31, 0.06)",
-    topBarBg: isDark ? "rgba(20, 24, 16, 0.72)" : "rgba(243, 238, 227, 0.78)",
-    sidebarBg: isDark ? c.surfaceElevated : SIDEBAR,
-    mainBg: isDark ? c.background : CANVAS,
-    shellBg: isDark ? c.surface : CANVAS,
-    shellBorder: isDark ? c.border : "rgba(31, 51, 31, 0.08)",
-    linkMuted: isDark ? c.textMuted : "rgba(246, 241, 228, 0.62)",
-    linkOnBg: isDark ? "rgba(220, 172, 116, 0.14)" : "rgba(246, 241, 228, 0.14)",
-    linkOnBorder: isDark ? "rgba(220, 172, 116, 0.28)" : "transparent",
-    chipOnBg: isDark ? "rgba(220, 172, 116, 0.14)" : "rgba(31, 51, 31, 0.06)",
-    chipOnBorder: isDark ? "rgba(220, 172, 116, 0.28)" : "rgba(31, 51, 31, 0.08)",
+    ink: isDark ? c.textPrimary : KANKREG_PALETTE.ink,
+    inkSoft: isDark ? c.textSecondary : KANKREG_PALETTE.inkSoft,
+    inkFaint: isDark ? c.textMuted : KANKREG_PALETTE.inkFaint,
+    card: isDark ? c.surface : WHITE,
+    paper: isDark ? c.surfaceMuted : PAPER,
+    canvas: isDark ? c.background : PAPER,
+    line: isDark ? c.border : KANKREG_PALETTE.line,
+    lineSoft: isDark ? semantic.border.subtle : KANKREG_PALETTE.lineSoft,
+    topBarBg: isDark ? "rgba(18, 22, 15, 0.84)" : "rgba(246,247,244,0.88)",
+    sidebarBg: isDark ? c.surfaceElevated : WHITE,
+    mainBg: isDark ? c.background : PAPER,
+    shellBg: isDark ? c.surface : PAPER,
+    shellBorder: isDark ? c.border : KANKREG_PALETTE.line,
+    linkMuted: isDark ? c.textMuted : KANKREG_PALETTE.inkSoft,
+    linkOnBg: isDark ? "rgba(220, 172, 116, 0.16)" : ZEEVAN_GREEN.soft,
+    linkOnBorder: isDark ? "rgba(220, 172, 116, 0.32)" : ZEEVAN_GREEN.border,
+    linkOnRail: isDark ? c.primaryBright : ZEEVAN_GOLD.base,
+    linkOnText: isDark ? c.primaryBright : KANKREG_PALETTE.greenDeep,
+    linkHover: isDark ? "rgba(255,255,255,0.05)" : "rgba(85, 107, 50, 0.05)",
+    tileOnBg: isDark ? "rgba(220, 172, 116, 0.14)" : ZEEVAN_GOLD.soft,
+    tileOnBorder: isDark ? "rgba(220, 172, 116, 0.28)" : ZEEVAN_GOLD.border,
+    chipOnBg: isDark ? "rgba(220, 172, 116, 0.14)" : ZEEVAN_GREEN.soft,
+    chipOnBorder: isDark ? "rgba(220, 172, 116, 0.28)" : ZEEVAN_GREEN.border,
     tabOnBg: isDark ? c.primarySoft : KANKREG_PALETTE.greenDeep,
     tabOnBorder: isDark ? c.primaryBorder : KANKREG_PALETTE.greenDeep,
-    tabOnText: isDark ? c.primaryBright : "#F6F1E6",
+    tabOnText: isDark ? c.primaryBright : WHITE,
     rowHover: isDark ? c.surfaceMuted : "rgba(31, 51, 31, 0.035)",
-    gold: c.primary,
-    goldBright: c.primaryBright,
+    gold: isDark ? c.primary : KANKREG_PALETTE.gold,
+    goldBright: isDark ? c.primaryBright : KANKREG_PALETTE.goldBright,
     goldDeep: isDark ? c.primaryDark : KANKREG_PALETTE.goldDeep,
-    danger: c.danger,
-    green: c.success,
-    meBorder: "rgba(255,255,255,0.08)",
-    meName: isDark ? c.textPrimary : "#F6F1E6",
-    meEmail: isDark ? c.textMuted : "rgba(246, 241, 228, 0.48)",
-    brand: isDark ? c.primaryBright : "#F6F1E6",
-    groupLabel: isDark ? c.textMuted : "rgba(246, 241, 228, 0.38)",
+    danger: isDark ? c.danger : KANKREG_PALETTE.danger,
+    green: isDark ? c.success : KANKREG_PALETTE.green,
+    meBorder: isDark ? "rgba(255,255,255,0.08)" : KANKREG_PALETTE.line,
+    meName: isDark ? c.textPrimary : KANKREG_PALETTE.ink,
+    meEmail: isDark ? c.textMuted : KANKREG_PALETTE.inkFaint,
+    brand: isDark ? c.primaryBright : KANKREG_PALETTE.ink,
+    groupLabel: isDark ? c.textMuted : KANKREG_PALETTE.inkFaint,
     shellShadow: isDark
       ? "0 1px 2px rgba(0,0,0,.35), 0 24px 56px -28px rgba(0,0,0,.6)"
-      : "0 1px 2px rgba(25,20,15,.04), 0 20px 48px -28px rgba(25,20,15,.16)",
+      : "0 1px 0 rgba(26,28,20,.06)",
   };
 }
 
@@ -166,8 +180,8 @@ export function adminPanel(c, shadowPremium, isDark) {
   const base = {
     backgroundColor: dark ? semantic.bg.surface : "#FFFFFF",
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: dark ? semantic.border.subtle : "rgba(31, 51, 31, 0.08)",
-    borderRadius: Platform.select({ web: 18, default: semanticRadius.panel }),
+    borderColor: dark ? semantic.border.subtle : "rgba(20, 24, 16, 0.08)",
+    borderRadius: Platform.select({ web: 16, default: semanticRadius.panel }),
     padding: Platform.select({
       web: spacing.md + 8,
       default: spacing.md + 2,
@@ -227,7 +241,7 @@ export function adminShellMainPadding() {
 }
 
 /**
- * Content area inside `KankregAdminShell` — flat cream canvas (no nested gold-top card).
+ * Content area inside `KankregAdminShell` — flat white canvas.
  * Use `adminPanel()` only for standalone gate/denied blocks outside the shell.
  */
 export function adminShellContent() {

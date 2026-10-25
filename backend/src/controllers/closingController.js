@@ -223,8 +223,9 @@ async function saveDraft(req, res, next) {
     if (!isDateKey(date)) return res.status(400).json({ message: "Invalid date." });
     const doc = date === todayKey() ? await ensureToday(req.user) : await StockClosing.findOne({ date });
     if (!doc) return res.status(404).json({ message: "No closing for that date." });
-    if (doc.status !== "draft") fail("This count is locked.");
-    applyLineEdits(doc, req.body?.lines);
+    const cashOnly = req.body?.lines === undefined;
+    if (doc.status !== "draft" && !cashOnly) fail("This count is locked.");
+    if (doc.status === "draft") applyLineEdits(doc, req.body?.lines);
     if (req.body?.cashCounted !== undefined) {
       const n = Number(req.body.cashCounted);
       doc.cashCounted = Number.isFinite(n) ? Math.max(0, n) : null;

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Linking, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { Linking, Platform, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { ADMIN_GATE } from "../../content/adminContent";
 import SectionReveal from "../../components/motion/SectionReveal";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
@@ -43,7 +43,8 @@ export default function AdminSuppliersScreen({ navigation, route }) {
 
   const load = useCallback(async () => {
     try {
-      setRows(await fetchAdminSuppliers());
+      const list = await fetchAdminSuppliers();
+      setRows(Array.isArray(list) ? list : list?.items || []);
       setError("");
     } catch (err) {
       setError(err.message || "Could not load suppliers.");
@@ -95,7 +96,7 @@ export default function AdminSuppliersScreen({ navigation, route }) {
         scrollVariant="admin"
         showFooter={false}
         style={customerScrollFill}
-        refreshControl={<RefreshControl refreshing={false} onRefresh={load} />}
+        refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={false} onRefresh={load} />}
       >
         <KankregAdminShell
           navigation={navigation}
@@ -147,8 +148,8 @@ export default function AdminSuppliersScreen({ navigation, route }) {
 function createStyles(chrome, c, shadowPremium) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: chrome.page },
-    panel: { ...adminShellContent, gap: spacing.md },
-    gatePanel: adminGatePanel,
+    panel: { ...adminShellContent(), gap: spacing.md },
+    gatePanel: adminGatePanel(c, shadowPremium),
     card: {
       backgroundColor: chrome.card,
       borderWidth: StyleSheet.hairlineWidth,

@@ -185,8 +185,8 @@ export default function AdminCycleCountScreen({ navigation, route }) {
 function createStyles(chrome, c, shadowPremium) {
   return StyleSheet.create({
     screen: { flex: 1, backgroundColor: chrome.page },
-    panel: { ...adminShellContent, gap: spacing.md },
-    gatePanel: adminGatePanel,
+    panel: { ...adminShellContent(), gap: spacing.md },
+    gatePanel: adminGatePanel(c, shadowPremium),
     body: { fontFamily: ADMIN_FONT.regular, fontSize: 13, color: chrome.ink },
   });
 }

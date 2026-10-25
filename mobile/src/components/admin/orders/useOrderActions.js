@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import {
   bulkAssignAdminOrderRider,
+  fetchAdminOrder,
   updateAdminOrderPayment,
   updateOrderStatus,
 } from "../../../services/adminService";
@@ -118,7 +119,11 @@ export default function useOrderActions({ toast, confirm, onChanged }) {
     async (order) => {
       if (!order) return null;
       try {
-        await printAdminHtml(order.channel === "walk_in" ? buildCounterBillHtml(order) : buildOrderInvoiceHtml(order));
+        const full =
+          Array.isArray(order.products) && order.products.length
+            ? order
+            : await fetchAdminOrder(null, order._id);
+        await printAdminHtml(full.channel === "walk_in" ? buildCounterBillHtml(full) : buildOrderInvoiceHtml(full));
         toast.toastSuccess("Bill ready to print.");
         return true;
       } catch (err) {

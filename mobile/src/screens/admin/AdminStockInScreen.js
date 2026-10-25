@@ -153,7 +153,10 @@ export default function AdminStockInScreen({ navigation, route }) {
         const cached = await readAdminCatalogCache();
         if (cached.products.length) setProducts(cached.products);
       });
-    fetchAdminSuppliers(null).then((res) => setSuppliers(res?.items || res || [])).catch(() => {});
+    fetchAdminSuppliers(null)
+      .then((res) => setSuppliers(Array.isArray(res) ? res : res?.items || []))
+      .catch(() => {});
+    if (route?.params?.receiptId) return undefined;
     const seedSupplier = String(route?.params?.supplier || "").trim();
     if (seedSupplier) {
       setEditor((prev) => ({ ...prev, supplierName: seedSupplier }));
@@ -161,11 +164,11 @@ export default function AdminStockInScreen({ navigation, route }) {
       searchAdminStockIn(null, { status: "received", page: 1, pageSize: 1 })
         .then((res) => {
           const last = res?.items?.[0];
-          if (last?.supplierName) setEditor((prev) => (prev.supplierName ? prev : { ...prev, supplierName: last.supplierName }));
+          if (last?.supplierName) setEditor((prev) => (prev.id || prev.supplierName ? prev : { ...prev, supplierName: last.supplierName }));
         })
         .catch(() => {});
     }
-  }, [isAdmin, route?.params?.supplier]);
+  }, [isAdmin, route?.params?.supplier, route?.params?.receiptId]);
 
   useEffect(() => {
     const id = route?.params?.receiptId;

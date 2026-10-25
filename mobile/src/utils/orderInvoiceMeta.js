@@ -18,7 +18,10 @@ export function resolveInvoiceNumber(order) {
 }
 
 export function resolveOrderRef(order) {
-  return String(order?._id || "").slice(-6).toUpperCase();
+  const id = String(order?._id || "").slice(-6).toUpperCase();
+  if (id) return id;
+  if (order?.invoice?.number) return String(order.invoice.number);
+  return "DRAFT";
 }
 
 /** @returns {{ label: string, tone: 'paid' | 'pending' | 'failed' | 'refunded' | 'void' | 'draft' }} */

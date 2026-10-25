@@ -57,7 +57,7 @@ function lineKind(line) {
     online === "" && floor === ""
       ? Number(legacy)
       : (online === "" ? 0 : Number(online)) + (floor === "" ? 0 : Number(floor));
-  const expected = Number(line.expectedOnline ?? line.expected || 0) + Number(line.expectedCounter || 0);
+  const expected = Number(line.expectedOnline ?? line.expected ?? 0) + Number(line.expectedCounter || 0);
   const v = counted - expected;
   if (v < 0) return "shortage";
   if (v > 0) return "surplus";

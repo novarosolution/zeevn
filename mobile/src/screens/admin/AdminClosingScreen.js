@@ -27,6 +27,8 @@ import {
   applyAdminClosing,
 } from "../../services/adminService";
 import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
+import { printAdminHtml } from "../../utils/printAdminHtml";
+import { formatRupees } from "../../utils/adminFormat";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { spacing } from "../../theme/tokens";
 function formatDateKey(key) {
@@ -66,6 +68,8 @@ function lineKind(line) {
 
 function payloadOf(sheet) {
   return {
+    cashCounted: sheet?.cashCounted === "" || sheet?.cashCounted == null ? undefined : Math.max(0, Number(sheet.cashCounted) || 0),
+    cashNote: String(sheet?.cashNote || "").trim().slice(0, 160),
     lines: (sheet?.lines || []).map((line) => ({
       product: line.product,
       counted: countedText(line.counted) === "" ? null : Math.max(0, Number.parseInt(String(line.counted), 10) || 0),
@@ -372,6 +376,36 @@ export default function AdminClosingScreen({ navigation, route }) {
                         style={compact ? styles.tilePhone : undefined}
                       />
                     </AdminStatGrid>
+                    <AdminInput
+                      label="Cash counted"
+                      value={countedText(sheet.cashCounted)}
+                      onChangeText={(cashCounted) => !locked && setSheet((prev) => ({ ...prev, cashCounted }))}
+                      numeric
+                      prefix="₹"
+                      editable={!locked}
+                    />
+                    <AdminInput
+                      label="Cash note"
+                      value={sheet.cashNote || ""}
+                      onChangeText={(cashNote) => !locked && setSheet((prev) => ({ ...prev, cashNote }))}
+                      placeholder="Optional"
+                      editable={!locked}
+                    />
+                    <AdminButton
+                      label="Print count"
+                      variant="soft"
+                      icon="print-outline"
+                      onPress={() => {
+                        const html = `<!doctype html><html><head><meta charset="utf-8"><title>Closing ${sheet.date}</title>
+                          <style>body{font-family:system-ui,sans-serif;padding:24px;color:#1a2118}h1{font-size:20px;margin:0 0 8px}p{color:#5c6658}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px 0;border-bottom:1px solid #e6e3d8}</style></head>
+                          <body><h1>Closing ${formatDateKey(sheet.date)}</h1>
+                          <p>Cash counted ${sheet.cashCounted != null && sheet.cashCounted !== "" ? formatRupees(sheet.cashCounted) : "—"} ${sheet.cashNote ? `· ${sheet.cashNote}` : ""}</p>
+                          <table><thead><tr><th>Jar</th><th>Online</th><th>Floor</th></tr></thead><tbody>
+                          ${(sheet.lines || []).map((line) => `<tr><td>${line.name}</td><td>${countedText(line.countedOnline) || countedText(line.counted) || "—"}</td><td>${countedText(line.countedCounter) || "—"}</td></tr>`).join("")}
+                          </tbody></table></body></html>`;
+                        printAdminHtml(html);
+                      }}
+                    />
                   </View>
 
                   <AdminFilterTabs items={FILTERS} value={filter} onChange={setFilter} />

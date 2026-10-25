@@ -33,6 +33,7 @@ import { formatINR, formatINRCompact } from "../../utils/currency";
 import { getOrderItemQty } from "../../utils/adminOrderHelpers";
 import { getOrderStatusLabel } from "../../utils/orderStatus";
 import AdminButton from "../../components/admin/AdminButton";
+import { listAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
 import PremiumLoader from "../../components/ui/PremiumLoader";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import SectionReveal from "../../components/motion/SectionReveal";
@@ -65,6 +66,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
   const [ops, setOps] = useState(null);
   const [desk, setDesk] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [drafts, setDrafts] = useState(0);
 
   const load = useCallback(
     async ({ pull = false } = {}) => {
@@ -82,6 +84,8 @@ export default function AdminDashboardScreen({ navigation, route }) {
         setOps(opsSummary);
         setDesk(deskSummary);
         setOrders(Array.isArray(orderPage?.items) ? orderPage.items : []);
+        const queued = await listAdminOfflineDrafts();
+        setDrafts(queued.length);
       } catch (err) {
         setError(err.message || "Unable to load the dashboard.");
       } finally {
@@ -214,6 +218,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
                     <AdminKpiCard icon="close-circle-outline" label="Out of stock" hint={k.outOfStock ? "Restock" : "All in stock"} value={String(k.outOfStock ?? 0)} tone={tone(k.outOfStock)} onPress={() => go("AdminInventory", { filter: "out" })} />
                     <AdminKpiCard icon="chatbubble-ellipses-outline" label="Support" hint={desk?.support?.awaitingReply ? "Reply" : "Caught up"} value={String(desk?.support?.awaitingReply ?? 0)} tone={tone(desk?.support?.awaitingReply)} onPress={() => go("AdminSupport")} />
                     <AdminKpiCard icon="cash-outline" label="Cash due" hint={desk?.orders?.cashDue ? "Collect COD" : "Nothing due"} value={String(desk?.orders?.cashDue ?? 0)} tone={Number(desk?.orders?.cashDue) > 0 ? "hot" : "default"} onPress={() => go("AdminCash")} />
+                    <AdminKpiCard icon="cloud-offline-outline" label="Drafts on this phone" hint={drafts ? "Sync when online" : "None waiting"} value={String(drafts)} tone={tone(drafts)} onPress={() => go("AdminCounter")} />
                   </AdminKpiGrid>
                 </AdminPanel>
               </SectionReveal>

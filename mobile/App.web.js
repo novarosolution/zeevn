@@ -71,6 +71,8 @@ const linking = {
       AdminStockIn: "admin/stock-in",
       AdminTransfers: "admin/transfers",
       AdminStockOut: "admin/stock-out",
+      AdminSuppliers: "admin/suppliers",
+      AdminCycleCount: "admin/cycle-count",
       AdminReorders: "admin/reorders",
       AdminClosing: "admin/closing",
       AdminStockReport: "admin/stock-report",

@@ -229,6 +229,10 @@ export const voidAdminWalkIn = (_token, id) => apiPost(`/admin/walk-in/${id}/voi
 export const createAdminWalkInCustomer = (_token, payload) => apiPost("/admin/customers", payload);
 export const updateAdminCustomerNote = (_token, id, adminNote) => apiPatch(`/admin/customers/${id}/note`, { adminNote });
 export const applyAdminClosing = (_token, date) => apiPost(`/admin/closings/${date}/apply`);
+export const saveAdminCashCount = (_token, date, payload) => apiPut(`/admin/closings/${date}`, payload);
+export const fetchAdminSuppliers = (_token, query = {}) => apiGet(`/admin/suppliers${queryString(query)}`);
+export const saveAdminSupplier = (_token, payload) => apiPost("/admin/suppliers", payload);
+export const applyAdminCycleCount = (_token, payload) => apiPost("/admin/cycle-count", payload);
 
 export const fetchAdminReorders = (_token, query = {}) => apiGet(`/admin/reorders${queryString(query)}`);
 

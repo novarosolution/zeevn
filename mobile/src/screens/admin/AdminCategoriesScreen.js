@@ -15,9 +15,9 @@ import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminProducts, saveAdminProductLine } from "../../services/adminService";
-import { adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
+import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, radius, spacing } from "../../theme/tokens";
+import { radius, spacing } from "../../theme/tokens";
 import { productCoverUri } from "../../utils/adminProductHelpers";
 import { isGiftProduct } from "../../utils/storefront";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
@@ -273,10 +273,10 @@ function createStyles(chrome, c, shadowPremium) {
     coverEmpty: { alignItems: "center", justifyContent: "center", borderWidth: StyleSheet.hairlineWidth, borderColor: c.border },
     coverGlyph: { color: c.textMuted, fontSize: 16 },
     headCopy: { flex: 1, minWidth: 0 },
-    lineName: { color: chrome.ink, fontFamily: fonts.semibold, fontSize: 16 },
-    lineMeta: { marginTop: 2, color: chrome.inkFaint, fontFamily: fonts.medium, fontSize: 12 },
+    lineName: { color: chrome.ink, fontFamily: ADMIN_FONT.semibold, fontSize: 16 },
+    lineMeta: { marginTop: 2, color: chrome.inkFaint, fontFamily: ADMIN_FONT.medium, fontSize: 12 },
     body: { paddingTop: 8, gap: 8 },
-    empty: { color: chrome.inkFaint, fontFamily: fonts.medium, fontSize: 13, paddingVertical: 8 },
+    empty: { color: chrome.inkFaint, fontFamily: ADMIN_FONT.medium, fontSize: 13, paddingVertical: 8 },
     jar: {
       flexDirection: "row",
       flexWrap: "wrap",
@@ -285,9 +285,9 @@ function createStyles(chrome, c, shadowPremium) {
       paddingVertical: 6,
     },
     jarMain: { flex: 1, minWidth: 160 },
-    sku: { marginTop: 2, color: chrome.inkFaint, fontFamily: fonts.regular, fontSize: 11 },
+    sku: { marginTop: 2, color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular, fontSize: 11 },
     picker: { width: 160, flexGrow: 0 },
-    rowErr: { width: "100%", color: "#A8402C", fontFamily: fonts.medium, fontSize: 12 },
+    rowErr: { width: "100%", color: "#A8402C", fontFamily: ADMIN_FONT.medium, fontSize: 12 },
     pressed: { opacity: 0.72 },
   });
 }

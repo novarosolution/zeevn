@@ -25,6 +25,8 @@ import { radius, spacing } from "../../theme/tokens";
 import { formatRupees, formatShortDate } from "../../utils/adminFormat";
 import { adminStatusMeta, orderRef } from "../../utils/adminOrderUi";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
+import { printAdminHtml } from "../../utils/printAdminHtml";
+import { buildCounterBillHtml } from "../../utils/orderInvoiceHtml";
 
 const COPY = ADMIN_SCREEN_COPY.customers;
 const TABS = [
@@ -266,6 +268,14 @@ export default function AdminCustomersScreen({ navigation, route }) {
                 icon="storefront-outline"
                 onPress={() => navigation.navigate("AdminCounter", { customer: selected })}
               />
+              {orders.find((row) => row.channel === "walk_in") ? (
+                <AdminButton
+                  label="Reprint last counter bill"
+                  variant="soft"
+                  icon="print-outline"
+                  onPress={() => printAdminHtml(buildCounterBillHtml(orders.find((row) => row.channel === "walk_in")))}
+                />
+              ) : null}
               {whatsappUrl(selected.phone) ? (
                 <AdminButton
                   label="WhatsApp"

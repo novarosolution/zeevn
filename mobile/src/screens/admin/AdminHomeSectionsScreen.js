@@ -22,9 +22,9 @@ import {
   saveAdminProductHomeOrder,
   saveAdminProductHomeSection,
 } from "../../services/adminService";
-import { adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
+import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, radius, spacing } from "../../theme/tokens";
+import { radius, spacing } from "../../theme/tokens";
 import { formatRupees } from "../../utils/adminFormat";
 import { productCoverUri } from "../../utils/adminProductHelpers";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
@@ -339,7 +339,7 @@ function createStyles(chrome, c, shadowPremium) {
     panel: { ...adminShellContent(), gap: spacing.md, paddingBottom: spacing.xl },
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
-    muted: { color: chrome.inkFaint, fontFamily: fonts.medium, fontSize: 13 },
+    muted: { color: chrome.inkFaint, fontFamily: ADMIN_FONT.medium, fontSize: 13 },
     block: {
       gap: 10,
       paddingBottom: spacing.md,
@@ -354,8 +354,8 @@ function createStyles(chrome, c, shadowPremium) {
       borderRadius: radius.lg,
       backgroundColor: chrome.card,
     },
-    heading: { fontSize: 17, color: chrome.ink, fontFamily: fonts.semibold },
-    hint: { fontSize: 12.5, color: chrome.inkFaint, fontFamily: fonts.regular },
+    heading: { fontSize: 17, color: chrome.ink, fontFamily: ADMIN_FONT.semibold },
+    hint: { fontSize: 12.5, color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular },
     rename: { flexDirection: "row", alignItems: "flex-end", gap: 8 },
     renameField: { flex: 1, minWidth: 0 },
     jars: { gap: 8 },
@@ -375,9 +375,9 @@ function createStyles(chrome, c, shadowPremium) {
     },
     jarMain: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 10 },
     cell: { flex: 1, minWidth: 140 },
-    price: { fontSize: 13.5, color: chrome.ink, fontFamily: fonts.semibold },
+    price: { fontSize: 13.5, color: chrome.ink, fontFamily: ADMIN_FONT.semibold },
     actions: { flexDirection: "row", gap: 8 },
-    rowErr: { color: "#A8402C", fontFamily: fonts.medium, fontSize: 12 },
+    rowErr: { color: "#A8402C", fontFamily: ADMIN_FONT.medium, fontSize: 12 },
     pressed: { opacity: 0.82 },
   });
 }

@@ -64,7 +64,7 @@ async function listReorders(req, res, next) {
 
     const [products, orders, drafts] = await Promise.all([
       Product.find({ isPublished: { $ne: false } })
-        .select("name sku image images unit stockQty stockCounter inStock comingSoon")
+        .select("name sku image images unit stockQty stockCounter inStock comingSoon reorderMinOnline reorderMinCounter lastCost")
         .lean(),
       Order.find({
         status: "delivered",
@@ -105,7 +105,10 @@ async function listReorders(req, res, next) {
         const counter = Math.max(0, Number(p.stockCounter) || 0);
         const onHand = online + counter;
         const coming = comingBy.get(id) || 0;
-        const suggest = sold < 1 ? 0 : Math.max(0, target - onHand - coming);
+        const minOnline = Math.max(0, Number(p.reorderMinOnline) || 0);
+        const minCounter = Math.max(0, Number(p.reorderMinCounter) || 0);
+        const belowMin = (minOnline > 0 && online < minOnline) || (minCounter > 0 && counter < minCounter);
+        const suggest = sold < 1 && !belowMin ? 0 : Math.max(0, Math.max(target, minOnline + minCounter) - onHand - coming);
         const out = stockOut(p);
         const low = stockLow(p);
         return {
@@ -117,6 +120,9 @@ async function listReorders(req, res, next) {
           onHand,
           online,
           counter,
+          minOnline,
+          minCounter,
+          lastCost: Number(p.lastCost) || 0,
           sold,
           perDay,
           target,
@@ -124,7 +130,10 @@ async function listReorders(req, res, next) {
           suggest,
           out,
           low,
-          reason: reasonFor({ sold, perDay, onHand, target, suggest, out, periodDays, coverDays }),
+          belowMin,
+          reason: belowMin
+            ? `Below min · online ${online}/${minOnline || "—"} · floor ${counter}/${minCounter || "—"}`
+            : reasonFor({ sold, perDay, onHand, target, suggest, out, periodDays, coverDays }),
         };
       })
       .sort((a, b) => a.name.localeCompare(b.name));
@@ -134,8 +143,8 @@ async function listReorders(req, res, next) {
       cover: coverDays,
       items,
       counts: {
-        needs: items.filter((row) => row.suggest >= 1).length,
-        low: items.filter((row) => row.out || row.low).length,
+        needs: items.filter((row) => row.suggest >= 1 || row.belowMin).length,
+        low: items.filter((row) => row.out || row.low || row.belowMin).length,
         all: items.length,
       },
     });

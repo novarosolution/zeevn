@@ -24,6 +24,14 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
 import { createAdminWalkIn, fetchAdminProducts, fetchAdminUsers, searchAdminOrders, voidAdminWalkIn } from "../../services/adminService";
+import AdminOfflineBanner from "../../components/admin/AdminOfflineBanner";
+import {
+  cacheAdminCatalog,
+  enqueueAdminOfflineDraft,
+  isLikelyOffline,
+  readAdminCatalogCache,
+  syncAdminOfflineDrafts,
+} from "../../utils/adminOfflineQueue";
 import {
   ADMIN_FONT,
   adminGatePanel,
@@ -73,6 +81,7 @@ export default function AdminCounterScreen({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [lastBill, setLastBill] = useState(null);
   const [openBill, setOpenBill] = useState(null);
+  const [syncing, setSyncing] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -82,10 +91,13 @@ export default function AdminCounterScreen({ navigation, route }) {
         searchAdminOrders(null, { channel: "walk_in", pageSize: 10, sort: "newest" }),
       ]);
       setProducts(Array.isArray(list) ? list : []);
+      cacheAdminCatalog(list);
       setCustomers(Array.isArray(people) ? people : []);
       setBills(Array.isArray(recent?.items) ? recent.items : []);
       setError("");
     } catch (err) {
+      const cached = await readAdminCatalogCache();
+      if (cached.products.length) setProducts(cached.products);
       setError(err.message || "Could not load the till.");
     } finally {
       setLoading(false);
@@ -186,6 +198,20 @@ export default function AdminCounterScreen({ navigation, route }) {
     setCashReceived(row.cashReceived || "");
   };
 
+  const syncDrafts = async () => {
+    setSyncing(true);
+    try {
+      const { done, pending } = await syncAdminOfflineDrafts({
+        walk_in: (payload) => createAdminWalkIn(null, payload),
+      });
+      if (done.length) toast.toastSuccess(`Synced ${done.length} bill${done.length === 1 ? "" : "s"}.`);
+      if (pending[0]?.error) setError(pending[0].error);
+      await load();
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const holdBill = () => {
     if (!cart.length) {
       setError("Add a jar first.");
@@ -227,7 +253,18 @@ export default function AdminCounterScreen({ navigation, route }) {
       await load();
       if (seedCustomer?._id) navigation.navigate("AdminCustomers", { userId: String(seedCustomer._id) });
     } catch (err) {
-      setError(err.message || "Could not take the bill.");
+      if (isLikelyOffline(err)) {
+        await enqueueAdminOfflineDraft(
+          "walk_in",
+          { products: cart.map((line) => ({ product: line.productId, quantity: line.quantity })), customerId: customerId || undefined, name, phone, tender, upiRef, cashReceived: received || undefined },
+          `Walk-in ${formatRupees(total)}`
+        );
+        setCart([]);
+        toast.toastSuccess("Saved on this phone.");
+        setError("");
+      } else {
+        setError(err.message || "Could not take the bill.");
+      }
     } finally {
       setBusy(false);
     }
@@ -437,6 +474,7 @@ export default function AdminCounterScreen({ navigation, route }) {
             <SectionReveal delay={20} preset="fade-up">
               <View style={styles.panel}>
                 <AdminAlerts error={error} onCloseError={() => setError("")} />
+                <AdminOfflineBanner kinds={["walk_in"]} syncing={syncing} onSync={syncDrafts} />
                 <View style={adminTwoColStyle(compact)}>
                   <View style={adminTwoColMain(compact)}>{searchCol}</View>
                   <View style={adminTwoColAside(compact)}>{billCol}</View>

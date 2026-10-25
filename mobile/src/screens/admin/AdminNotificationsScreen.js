@@ -14,9 +14,9 @@ import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminNotifications, sendAdminBroadcastNotification } from "../../services/adminService";
-import { adminGatePanel, adminShellContent, useAdminChrome } from "../../theme/adminLayout";
+import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, radius, spacing } from "../../theme/tokens";
+import { radius, spacing } from "../../theme/tokens";
 import { formatShortDateTime } from "../../utils/adminFormat";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
@@ -203,8 +203,8 @@ function createStyles(chrome, c, shadowPremium) {
       borderColor: chrome.line,
       backgroundColor: chrome.card,
     },
-    title: { color: chrome.ink, fontFamily: fonts.semibold, fontSize: 15 },
-    body: { color: chrome.inkSoft, fontFamily: fonts.regular, fontSize: 13, lineHeight: 19 },
-    muted: { color: chrome.inkFaint, fontFamily: fonts.medium, fontSize: 12 },
+    title: { color: chrome.ink, fontFamily: ADMIN_FONT.semibold, fontSize: 15 },
+    body: { color: chrome.inkSoft, fontFamily: ADMIN_FONT.regular, fontSize: 13, lineHeight: 19 },
+    muted: { color: chrome.inkFaint, fontFamily: ADMIN_FONT.medium, fontSize: 12 },
   });
 }

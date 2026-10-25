@@ -25,9 +25,9 @@ import {
   rejectAdminDeletion,
   searchAdminDeletions,
 } from "../../services/adminService";
-import { adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
+import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, spacing } from "../../theme/tokens";
+import { spacing } from "../../theme/tokens";
 import { timeAgo } from "../../utils/adminFormat";
 
 const COPY = ADMIN_SCREEN_COPY.deletions;
@@ -417,7 +417,7 @@ function createStyles(chrome, c, shadowPremium) {
       letterSpacing: 0.7,
       textTransform: "uppercase",
       color: chrome.inkFaint,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
     },
     row: {
       flexDirection: "row",
@@ -432,9 +432,9 @@ function createStyles(chrome, c, shadowPremium) {
     card: { padding: 14, gap: 6, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: chrome.lineSoft },
     cardTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
     pressed: { backgroundColor: chrome.paper },
-    strong: { fontSize: 13.5, color: chrome.ink, fontFamily: fonts.semibold },
-    body: { fontSize: 13, color: chrome.ink, fontFamily: fonts.regular },
-    sub: { fontSize: 11.5, color: chrome.inkFaint, fontFamily: fonts.regular },
+    strong: { fontSize: 13.5, color: chrome.ink, fontFamily: ADMIN_FONT.semibold },
+    body: { fontSize: 13, color: chrome.ink, fontFamily: ADMIN_FONT.regular },
+    sub: { fontSize: 11.5, color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular },
     badges: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
     actions: { gap: 10, marginTop: 12 },
     actionsDock: {

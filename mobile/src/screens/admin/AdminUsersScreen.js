@@ -17,9 +17,9 @@ import PremiumLoader from "../../components/ui/PremiumLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminUsers, updateAdminRole, updateDeliveryPartnerRole } from "../../services/adminService";
-import { adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
+import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, radius, spacing } from "../../theme/tokens";
+import { radius, spacing } from "../../theme/tokens";
 import { formatRupees } from "../../utils/adminFormat";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
@@ -296,7 +296,7 @@ function createStyles(chrome, c, shadowPremium, compact) {
       letterSpacing: 0.4,
       textTransform: "uppercase",
       color: chrome.inkFaint,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
     },
     row: {
       flexDirection: "row",
@@ -314,12 +314,12 @@ function createStyles(chrome, c, shadowPremium, compact) {
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: chrome.lineSoft,
     },
-    name: { fontSize: 14, color: chrome.ink, fontFamily: fonts.semibold },
-    meta: { fontSize: 12.5, color: chrome.inkSoft, fontFamily: fonts.regular },
+    name: { fontSize: 14, color: chrome.ink, fontFamily: ADMIN_FONT.semibold },
+    meta: { fontSize: 12.5, color: chrome.inkSoft, fontFamily: ADMIN_FONT.regular },
     pills: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: compact ? 2 : 4 },
     rowSwitches: { width: 148, flexDirection: "row", alignItems: "center", gap: 10 },
     cardSwitches: { flexDirection: "row", alignItems: "center", gap: 16, marginTop: 8 },
     switchItem: { flexDirection: "row", alignItems: "center", gap: 8 },
-    switchLabel: { fontSize: 12, color: chrome.inkSoft, fontFamily: fonts.medium },
+    switchLabel: { fontSize: 12, color: chrome.inkSoft, fontFamily: ADMIN_FONT.medium },
   });
 }

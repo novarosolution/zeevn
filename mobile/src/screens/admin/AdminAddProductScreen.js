@@ -107,6 +107,12 @@ export default function AdminAddProductScreen({ navigation, route }) {
   const [stockCounter, setStockCounter] = useState(
     editingProduct?.stockCounter !== undefined ? String(editingProduct.stockCounter) : "0"
   );
+  const [reorderMinOnline, setReorderMinOnline] = useState(
+    editingProduct?.reorderMinOnline !== undefined ? String(editingProduct.reorderMinOnline) : "0"
+  );
+  const [reorderMinCounter, setReorderMinCounter] = useState(
+    editingProduct?.reorderMinCounter !== undefined ? String(editingProduct.reorderMinCounter) : "0"
+  );
   const [ratingAverage, setRatingAverage] = useState(
     editingProduct?.ratingAverage !== undefined ? String(editingProduct.ratingAverage) : ""
   );
@@ -487,6 +493,8 @@ export default function AdminAddProductScreen({ navigation, route }) {
         inStock,
         stockQty: Math.max(0, Math.floor(parsedStockQty)),
         stockCounter: Math.max(0, Math.floor(Number(stockCounter) || 0)),
+        reorderMinOnline: Math.max(0, Math.floor(Number(reorderMinOnline) || 0)),
+        reorderMinCounter: Math.max(0, Math.floor(Number(reorderMinCounter) || 0)),
       };
 
       if (mrp.trim() !== "") {
@@ -857,6 +865,24 @@ export default function AdminAddProductScreen({ navigation, route }) {
               label="Floor stock"
               value={stockCounter}
               onChangeText={setStockCounter}
+              integer
+            />
+          </View>
+        </View>
+        <View style={styles.row}>
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <AdminInput
+              label="Min online"
+              value={reorderMinOnline}
+              onChangeText={setReorderMinOnline}
+              integer
+            />
+          </View>
+          <View style={[styles.fieldGap, styles.halfInput]}>
+            <AdminInput
+              label="Min floor"
+              value={reorderMinCounter}
+              onChangeText={setReorderMinCounter}
               integer
             />
           </View>

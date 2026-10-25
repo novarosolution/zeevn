@@ -49,7 +49,7 @@ export const ADMIN_NAV_GROUPS = [
       {
         key: "AdminCounter",
         label: "Counter",
-        hint: "Walk-in till · POS · hold · cash or UPI",
+        hint: "Walk-in till · POS · hold · cash or UPI · offline drafts",
         icon: "storefront-outline",
         image: "orders",
         tone: "#c9a227",
@@ -204,6 +204,22 @@ export const ADMIN_NAV_GROUPS = [
         icon: "trash-outline",
         image: "stock",
         tone: "#8a4b32",
+      },
+      {
+        key: "AdminSuppliers",
+        label: "Suppliers",
+        hint: "Who the last bill came from",
+        icon: "people-outline",
+        image: "stock",
+        tone: "#4f6430",
+      },
+      {
+        key: "AdminCycleCount",
+        label: "Cycle count",
+        hint: "Mid-day check · one pile",
+        icon: "clipboard-outline",
+        image: "stock",
+        tone: "#2F5F86",
       },
       {
         key: "AdminReorders",

@@ -228,6 +228,9 @@ async function createProduct(req, res, next) {
       inStock: toBoolean(inStock, true),
       stockQty: createdQty,
       stockCounter: createdCounter,
+      reorderMinOnline: Math.max(0, toNumber(req.body?.reorderMinOnline, 0)),
+      reorderMinCounter: Math.max(0, toNumber(req.body?.reorderMinCounter, 0)),
+      lastCost: Math.max(0, toNumber(req.body?.lastCost, 0)),
       ratingAverage: ratingNum,
       reviewCount: reviewNum,
       badgeText: String(badgeText || "").trim(),
@@ -369,6 +372,15 @@ async function updateProduct(req, res, next) {
     if (stockQty !== undefined) product.stockQty = Math.max(0, toNumber(stockQty, product.stockQty));
     if (req.body?.stockCounter !== undefined) {
       product.stockCounter = Math.max(0, toNumber(req.body.stockCounter, product.stockCounter));
+    }
+    if (req.body?.reorderMinOnline !== undefined) {
+      product.reorderMinOnline = Math.max(0, toNumber(req.body.reorderMinOnline, product.reorderMinOnline));
+    }
+    if (req.body?.reorderMinCounter !== undefined) {
+      product.reorderMinCounter = Math.max(0, toNumber(req.body.reorderMinCounter, product.reorderMinCounter));
+    }
+    if (req.body?.lastCost !== undefined) {
+      product.lastCost = Math.max(0, toNumber(req.body.lastCost, product.lastCost));
     }
     if (ratingAverage !== undefined) {
       product.ratingAverage = Math.min(5, Math.max(0, toNumber(ratingAverage, product.ratingAverage)));

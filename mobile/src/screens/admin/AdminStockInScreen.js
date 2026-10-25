@@ -10,6 +10,7 @@ import AdminAlerts from "../../components/admin/AdminAlerts";
 import AdminBadge from "../../components/admin/AdminBadge";
 import AdminButton from "../../components/admin/AdminButton";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
+import AdminHitRow from "../../components/admin/AdminHitRow";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminPanel from "../../components/admin/AdminPanel";
 import AdminProductCell from "../../components/admin/AdminProductCell";
@@ -23,9 +24,13 @@ import {
   confirmAdminStockIn,
   fetchAdminProducts,
   fetchAdminStockIn,
+  fetchAdminSuppliers,
   saveAdminStockInDraft,
   searchAdminStockIn,
 } from "../../services/adminService";
+import { useToast } from "../../context/ToastContext";
+import AdminOfflineBanner from "../../components/admin/AdminOfflineBanner";
+import { cacheAdminCatalog, enqueueAdminOfflineDraft, isLikelyOffline, readAdminCatalogCache, syncAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
 import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { spacing } from "../../theme/tokens";
@@ -107,6 +112,9 @@ export default function AdminStockInScreen({ navigation, route }) {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [draftQty, setDraftQty] = useState({});
+  const [suppliers, setSuppliers] = useState([]);
+  const [syncing, setSyncing] = useState(false);
+  const toast = useToast();
 
   const requestRef = useRef(0);
   const locked = editor.status === "received";
@@ -135,8 +143,28 @@ export default function AdminStockInScreen({ navigation, route }) {
 
   useEffect(() => {
     if (!isAdmin) return undefined;
-    fetchAdminProducts().then(setProducts).catch(() => {});
-  }, [isAdmin]);
+    fetchAdminProducts()
+      .then((list) => {
+        setProducts(Array.isArray(list) ? list : []);
+        cacheAdminCatalog(list);
+      })
+      .catch(async () => {
+        const cached = await readAdminCatalogCache();
+        if (cached.products.length) setProducts(cached.products);
+      });
+    fetchAdminSuppliers(null).then((res) => setSuppliers(res?.items || res || [])).catch(() => {});
+    const seedSupplier = String(route?.params?.supplier || "").trim();
+    if (seedSupplier) {
+      setEditor((prev) => ({ ...prev, supplierName: seedSupplier }));
+    } else {
+      searchAdminStockIn(null, { status: "received", page: 1, pageSize: 1 })
+        .then((res) => {
+          const last = res?.items?.[0];
+          if (last?.supplierName) setEditor((prev) => (prev.supplierName ? prev : { ...prev, supplierName: last.supplierName }));
+        })
+        .catch(() => {});
+    }
+  }, [isAdmin, route?.params?.supplier]);
 
   useEffect(() => {
     const id = route?.params?.receiptId;
@@ -170,7 +198,7 @@ export default function AdminStockInScreen({ navigation, route }) {
           unit: product.unit || "",
           image: productCoverUri(product),
           quantity: 1,
-          unitCost: "",
+          unitCost: product.lastCost ? String(product.lastCost) : "",
         },
       ],
     });
@@ -249,7 +277,7 @@ export default function AdminStockInScreen({ navigation, route }) {
           unit: product.unit || "",
           image: productCoverUri(product),
           quantity: 1,
-          unitCost: "",
+          unitCost: product.lastCost ? String(product.lastCost) : "",
         },
       ],
     }));
@@ -293,7 +321,13 @@ export default function AdminStockInScreen({ navigation, route }) {
       const saved = await saveAdminStockInDraft(null, payloadOf(editor), editor.id);
       setEditor(toEditor(saved));
     } catch (err) {
-      setError(err?.message || "Couldn't save draft.");
+      if (isLikelyOffline(err)) {
+        await enqueueAdminOfflineDraft("stock_in", payloadOf(editor), editor.supplierName || "Stock in");
+        toast.toastSuccess("Saved on this phone.");
+        setError("");
+      } else {
+        setError(err?.message || "Couldn't save draft.");
+      }
     } finally {
       setBusy(false);
     }
@@ -325,9 +359,9 @@ export default function AdminStockInScreen({ navigation, route }) {
     if (!ok) return;
     setBusy(true);
     setError("");
+    let current = editor;
     try {
       let id = editor.id;
-      let current = editor;
       if (!id) {
         const saved = await saveAdminStockInDraft(null, payloadOf(editor));
         current = toEditor(saved);
@@ -338,7 +372,13 @@ export default function AdminStockInScreen({ navigation, route }) {
       setEditor(toEditor(booked));
       setMode("view");
     } catch (err) {
-      setError(err?.message || "Couldn't book that delivery.");
+      if (isLikelyOffline(err)) {
+        await enqueueAdminOfflineDraft("stock_in", payloadOf(current), current.supplierName || "Stock in");
+        toast.toastSuccess("Saved on this phone.");
+        setError("");
+      } else {
+        setError(err?.message || "Couldn't book that delivery.");
+      }
     } finally {
       setBusy(false);
     }
@@ -364,6 +404,31 @@ export default function AdminStockInScreen({ navigation, route }) {
   const emptyTitle = tab === "draft" ? COPY.emptyDrafts : COPY.emptyReceived;
   const inForm = mode !== "list";
   const totalJars = editor.lines.reduce((sum, line) => sum + parseQty(line.quantity, 1), 0);
+
+  const syncDrafts = async () => {
+    setSyncing(true);
+    try {
+      const { done, pending } = await syncAdminOfflineDrafts({
+        stock_in: async (payload) => {
+          const saved = await saveAdminStockInDraft(null, payload);
+          return confirmAdminStockIn(null, saved._id, payload);
+        },
+      });
+      if (done.length) toast.toastSuccess(`Synced ${done.length} ${done.length === 1 ? "delivery" : "deliveries"}.`);
+      if (pending[0]?.error) setError(pending[0].error);
+      await loadList({ silent: true });
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const supplierHits = useMemo(() => {
+    const q = String(editor.supplierName || "").trim().toLowerCase();
+    if (!q) return [];
+    return (Array.isArray(suppliers) ? suppliers : [])
+      .filter((row) => String(row.name || "").toLowerCase().includes(q) && String(row.name || "").toLowerCase() !== q)
+      .slice(0, 5);
+  }, [suppliers, editor.supplierName]);
 
   const actions = !locked ? (
     <View style={[styles.actions, compact && styles.actionsDock]}>
@@ -404,6 +469,7 @@ export default function AdminStockInScreen({ navigation, route }) {
           >
             <View style={styles.panel}>
               <AdminAlerts error={error} onCloseError={() => setError("")} />
+              <AdminOfflineBanner kinds={["stock_in"]} syncing={syncing} onSync={syncDrafts} />
 
               {mode === "list" ? (
                 <>
@@ -495,6 +561,16 @@ export default function AdminStockInScreen({ navigation, route }) {
                       placeholder="Who delivered this"
                       editable={!locked}
                     />
+                    {!locked
+                      ? supplierHits.map((row) => (
+                          <AdminHitRow
+                            key={row._id || row.name}
+                            name={row.name}
+                            meta={row.phone || "Supplier"}
+                            onPress={() => setEditor((prev) => ({ ...prev, supplierName: row.name }))}
+                          />
+                        ))
+                      : null}
                     <AdminInput
                       label="Note"
                       value={editor.note}
@@ -518,7 +594,11 @@ export default function AdminStockInScreen({ navigation, route }) {
                         {hits.map((p) => (
                           <Pressable key={p._id} onPress={() => addLine(p)} style={({ pressed }) => [styles.hit, pressed && styles.pressed]}>
                             <AdminProductCell name={p.name} imageUri={productCoverUri(p)} />
-                            <Text style={styles.sub}>{p.sku || "No SKU"}{p.unit ? ` · ${p.unit}` : ""}</Text>
+                            <Text style={styles.sub}>
+                              {p.sku || "No SKU"}
+                              {p.unit ? ` · ${p.unit}` : ""}
+                              {Number(p.lastCost) > 0 ? ` · last ₹${p.lastCost}` : ""}
+                            </Text>
                           </Pressable>
                         ))}
                       </>

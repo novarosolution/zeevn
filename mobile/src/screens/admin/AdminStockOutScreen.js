@@ -20,6 +20,8 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
 import { createAdminStockOut, fetchAdminProducts } from "../../services/adminService";
+import AdminOfflineBanner from "../../components/admin/AdminOfflineBanner";
+import { cacheAdminCatalog, enqueueAdminOfflineDraft, isLikelyOffline, readAdminCatalogCache, syncAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
 import {
   ADMIN_FONT,
   adminGatePanel,
@@ -63,13 +65,17 @@ export default function AdminStockOutScreen({ navigation, route }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const list = await fetchAdminProducts(null);
       setProducts(Array.isArray(list) ? list : []);
+      cacheAdminCatalog(list);
       setError("");
     } catch (err) {
+      const cached = await readAdminCatalogCache();
+      if (cached.products.length) setProducts(cached.products);
       setError(err.message || "Could not load products.");
     } finally {
       setLoading(false);
@@ -127,7 +133,17 @@ export default function AdminStockOutScreen({ navigation, route }) {
       await load();
       if (res?.product) setPicked(res.product);
     } catch (err) {
-      setError(err.message || "Could not write stock out.");
+      if (isLikelyOffline(err)) {
+        await enqueueAdminOfflineDraft(
+          "stock_out",
+          { product: picked._id, quantity: qty, location, reason, note },
+          `${picked.name} ×${qty}`
+        );
+        toast.toastSuccess("Saved on this phone.");
+        setError("");
+      } else {
+        setError(err.message || "Could not write stock out.");
+      }
     } finally {
       setBusy(false);
     }
@@ -146,6 +162,20 @@ export default function AdminStockOutScreen({ navigation, route }) {
     );
   }
 
+  const syncDrafts = async () => {
+    setSyncing(true);
+    try {
+      const { done, pending } = await syncAdminOfflineDrafts({
+        stock_out: (payload) => createAdminStockOut(null, payload),
+      });
+      if (done.length) toast.toastSuccess(`Synced ${done.length} write-off${done.length === 1 ? "" : "s"}.`);
+      if (pending[0]?.error) setError(pending[0].error);
+      await load();
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const actions = <AdminButton label="Remove from stock" variant="danger" loading={busy} onPress={submit} />;
 
   return (
@@ -157,11 +187,17 @@ export default function AdminStockOutScreen({ navigation, route }) {
             route={route}
             title="Stock out"
             subtitle="Waste, damage, sample, or staff use. Picks one pile."
-            headerRight={<AdminButton label="Refresh" icon="refresh-outline" variant="ghost" size="sm" onPress={load} />}
+            headerRight={
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <AdminButton label="Waste log" icon="trash-outline" variant="ghost" size="sm" onPress={() => navigation.navigate("AdminStockHistory", { why: "stock-out" })} />
+                <AdminButton label="Refresh" icon="refresh-outline" variant="ghost" size="sm" onPress={load} />
+              </View>
+            }
           >
             <SectionReveal delay={20} preset="fade-up">
               <View style={styles.panel}>
                 <AdminAlerts error={error} onCloseError={() => setError("")} />
+                <AdminOfflineBanner kinds={["stock_out"]} syncing={syncing} onSync={syncDrafts} />
                 <View style={adminTwoColStyle(compact)}>
                   <View style={adminTwoColMain(compact)}>
                     <AdminPanel title="Jar" icon="cube-outline">

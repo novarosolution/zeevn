@@ -208,6 +208,14 @@ async function confirmReceipt(req, res, next) {
       throw error;
     }
 
+    const { touchSupplier } = require("./supplierController");
+    await touchSupplier(locked.supplierName);
+    for (const line of locked.lines || []) {
+      const cost = Math.max(0, Number(line.unitCost) || 0);
+      if (!cost || !line.product) continue;
+      await Product.updateOne({ _id: line.product }, { $set: { lastCost: cost } });
+    }
+
     const first = locked.lines[0]?.name || "Stock in";
     const extra = locked.lines.length > 1 ? ` +${locked.lines.length - 1}` : "";
     await recordAdminAction(req, {

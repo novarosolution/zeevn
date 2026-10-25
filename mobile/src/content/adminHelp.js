@@ -182,9 +182,19 @@ export const ADMIN_HELP = {
           route: "AdminReorders",
         },
         {
+          title: "Cycle count",
+          body: "Spot-count one pile and write the true number. Use this between full closings. It changes stock now.",
+          route: "AdminCycleCount",
+        },
+        {
           title: "Count the shelf",
           body: "Count both piles. Submit only when every line is counted. After submit you can apply the variance to stock.",
           route: "AdminClosing",
+        },
+        {
+          title: "Offline drafts",
+          body: "If the phone has no network, Counter, transfer, stock-in, and stock-out save a draft on this phone. Sync when you are back online. Live pile counts still only change on the server.",
+          route: "AdminCounter",
         },
         {
           title: "Sold and remaining",

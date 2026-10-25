@@ -28,11 +28,12 @@ import {
   adminTwoColAside,
   adminTwoColMain,
   adminTwoColStyle,
+  ADMIN_FONT,
   useAdminChrome,
   useAdminCompactLayout,
 } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, radius, spacing } from "../../theme/tokens";
+import { radius, spacing } from "../../theme/tokens";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 const COPY = ADMIN_SCREEN_COPY.homeView;
@@ -440,7 +441,7 @@ function createStyles(chrome, c, shadowPremium) {
       letterSpacing: 0.4,
       textTransform: "uppercase",
       color: chrome.inkFaint,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
     },
     row: { flexDirection: "row", gap: 8 },
     chip: { flex: 1 },
@@ -472,8 +473,8 @@ function createStyles(chrome, c, shadowPremium) {
       backgroundColor: chrome.paper,
     },
     linkCopy: { flex: 1, minWidth: 0 },
-    linkTitle: { fontSize: 13.5, color: chrome.ink, fontFamily: fonts.semibold },
-    linkSub: { marginTop: 2, fontSize: 11.5, color: chrome.inkFaint, fontFamily: fonts.regular },
+    linkTitle: { fontSize: 13.5, color: chrome.ink, fontFamily: ADMIN_FONT.semibold },
+    linkSub: { marginTop: 2, fontSize: 11.5, color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular },
     saveBar: { marginTop: 4 },
     saveDock: {
       marginTop: 0,

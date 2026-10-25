@@ -28,7 +28,7 @@ import AdminInput from "../../components/admin/AdminInput";
 import { buildInventoryTableColumns } from "../../components/admin/adminTableColumns";
 import { productCoverUri } from "../../utils/adminProductHelpers";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, layout, radius, spacing, typography } from "../../theme/tokens";
+import { layout, radius, spacing, typography } from "../../theme/tokens";
 import PremiumLoader from "../../components/ui/PremiumLoader";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
@@ -53,7 +53,8 @@ function stockState(p) {
   const out = p.inStock === false || q < 1;
   const available = !out;
   const low = (!out && q >= 1 && q <= LOW_STOCK_MAX) || (floor >= 1 && floor <= LOW_STOCK_MAX);
-  return { q, floor, out, available, low };
+  const bothLow = q <= LOW_STOCK_MAX && floor <= LOW_STOCK_MAX;
+  return { q, floor, out, available, low, bothLow };
 }
 
 function categoryName(p) {
@@ -143,9 +144,11 @@ export default function AdminInventoryScreen({ navigation, route }) {
     let low = 0;
     let value = 0;
     let missingPicture = 0;
+    let bothLow = 0;
     const byCat = new Map();
     for (const p of products) {
       const s = stockState(p);
+      if (s.bothLow) bothLow += 1;
       if (s.out) out += 1;
       else {
         inStock += 1;
@@ -168,6 +171,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
       inStock,
       out,
       low,
+      bothLow,
       value,
       missingPicture,
       categories: [...byCat.values()].sort((a, b) => a.name.localeCompare(b.name)),
@@ -181,6 +185,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
       if (filter === "in_stock" && s.out) return false;
       if (filter === "out" && !s.out) return false;
       if (filter === "low" && !s.low) return false;
+      if (filter === "both" && !s.bothLow) return false;
       if (!q) return true;
       const name = String(p.name || "").toLowerCase();
       const sku = String(p.sku || "").toLowerCase();
@@ -308,6 +313,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
         headerRight={
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
             <AdminButton label="Counter" icon="storefront-outline" variant="gold" size="sm" onPress={() => navigation.navigate("AdminCounter")} />
+            <AdminButton label="Count" icon="checkbox-outline" variant="soft" size="sm" onPress={() => navigation.navigate("AdminCycleCount")} />
             <AdminButton label="Move" icon="swap-horizontal-outline" variant="soft" size="sm" onPress={() => navigation.navigate("AdminTransfers")} />
             <AdminButton label="Out" icon="remove-outline" variant="soft" size="sm" onPress={() => navigation.navigate("AdminStockOut")} />
             <AdminButton label="Refresh" icon="refresh-outline" variant="ghost" size="sm" onPress={() => load({ silent: false })} />
@@ -393,6 +399,18 @@ export default function AdminInventoryScreen({ navigation, route }) {
               </AdminPanel>
             ) : null}
 
+            {stats.bothLow > 0 ? (
+              <Pressable
+                onPress={() => setFilter("both")}
+                style={({ pressed }) => [styles.warnStrip, pressed && styles.pressed]}
+                accessibilityRole="button"
+                accessibilityLabel="Jars low on both piles"
+              >
+                <Text style={styles.warnStripText}>
+                  {stats.bothLow} jar{stats.bothLow === 1 ? "" : "s"} low on both online and floor
+                </Text>
+              </Pressable>
+            ) : null}
             {stats.missingPicture > 0 ? (
               <AdminPanel title="Needs a picture" icon="image-outline">
                 <Pressable
@@ -602,8 +620,8 @@ function createStyles(c, shadowPremium, isDark) {
     catRowStack: { flexDirection: "column", alignItems: "flex-start", gap: 2 },
     catRowLast: { borderBottomWidth: 0, paddingBottom: 2 },
     catRowPressed: { opacity: 0.72 },
-    catName: { flex: 1, minWidth: 0, fontFamily: fonts.semibold, color: c.textPrimary, fontSize: typography.bodySmall },
-    catMeta: { flexShrink: 0, fontFamily: fonts.medium, color: c.textMuted, fontSize: typography.caption },
+    catName: { flex: 1, minWidth: 0, fontFamily: ADMIN_FONT.semibold, color: c.textPrimary, fontSize: typography.bodySmall },
+    catMeta: { flexShrink: 0, fontFamily: ADMIN_FONT.medium, color: c.textMuted, fontSize: typography.caption },
     topHead: { marginBottom: spacing.xs },
     titleBlock: { marginBottom: spacing.md },
     titleRow: { flexDirection: "row", alignItems: "flex-start", gap: spacing.sm },
@@ -617,7 +635,7 @@ function createStyles(c, shadowPremium, isDark) {
       marginTop: 6,
       color: c.textSecondary,
       fontSize: typography.bodySmall,
-      fontFamily: fonts.regular,
+      fontFamily: ADMIN_FONT.regular,
       lineHeight: 20},
     inventoryList: { flex: 1, width: "100%" },
     statsScrollContent: { flexDirection: "row", gap: spacing.sm, paddingBottom: spacing.xs },
@@ -636,13 +654,24 @@ function createStyles(c, shadowPremium, isDark) {
       padding: spacing.sm,
       alignItems: "center",
       gap: 4},
-    statVal: { fontFamily: fonts.extrabold, color: c.primary, fontSize: typography.h2 },
-    statLab: { fontSize: 10, fontFamily: fonts.bold, color: c.textMuted, textTransform: "uppercase" },
+    statVal: { fontFamily: ADMIN_FONT.bold, color: c.primary, fontSize: typography.h2 },
+    statLab: { fontSize: 10, fontFamily: ADMIN_FONT.bold, color: c.textMuted, textTransform: "uppercase" },
     bannerSpacer: { marginBottom: spacing.sm },
+    warnStrip: {
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.primary,
+      backgroundColor: isDark ? "rgba(180,140,40,0.12)" : "rgba(200,160,50,0.1)",
+      borderRadius: radius.lg,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      marginBottom: spacing.sm,
+    },
+    warnStripText: { fontFamily: ADMIN_FONT.medium, color: c.textPrimary, fontSize: 13 },
+    pressed: { opacity: 0.85 },
     filterShell: { marginBottom: spacing.md },
     sectionKicker: {
       fontSize: 10,
-      fontFamily: fonts.extrabold,
+      fontFamily: ADMIN_FONT.bold,
       letterSpacing: 1,
       marginBottom: spacing.sm},
     chips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginBottom: spacing.md },
@@ -650,7 +679,7 @@ function createStyles(c, shadowPremium, isDark) {
     searchInputFlex: { flex: 1, minWidth: 0 },
     loadRow: { marginBottom: spacing.sm },
     busyInline: { marginRight: 8 },
-    listCount: { fontSize: typography.caption, color: c.textMuted, fontFamily: fonts.semibold, marginBottom: spacing.sm },
+    listCount: { fontSize: typography.caption, color: c.textMuted, fontFamily: ADMIN_FONT.semibold, marginBottom: spacing.sm },
     rowCard: {
       borderWidth: 1,
       borderRadius: radius.xl,
@@ -666,8 +695,8 @@ function createStyles(c, shadowPremium, isDark) {
         default: {}})},
     rowWarn: { borderLeftWidth: 3, borderLeftColor: c.danger },
     rowTop: { flexDirection: "row", alignItems: "flex-start", gap: spacing.xs, marginBottom: spacing.sm },
-    pName: { fontFamily: fonts.bold, color: c.textPrimary, fontSize: typography.body },
-    pSku: { marginTop: 4, fontSize: 11, color: c.textMuted, fontFamily: fonts.regular },
+    pName: { fontFamily: ADMIN_FONT.bold, color: c.textPrimary, fontSize: typography.body },
+    pSku: { marginTop: 4, fontSize: 11, color: c.textMuted, fontFamily: ADMIN_FONT.regular },
     qtyRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", justifyContent: "space-between", gap: spacing.md },
     stepper: { flexDirection: "row", alignItems: "center", gap: 0 },
     stepBtn: { padding: 8, borderRadius: radius.md, backgroundColor: c.surface },
@@ -678,15 +707,15 @@ function createStyles(c, shadowPremium, isDark) {
       borderWidth: 1,
       borderRadius: radius.md,
       paddingVertical: 8,
-      fontFamily: fonts.extrabold,
+      fontFamily: ADMIN_FONT.bold,
       fontSize: typography.body},
     switchBlock: { flexDirection: "row", alignItems: "center", gap: spacing.xs },
-    switchLab: { color: c.textSecondary, fontSize: typography.caption, fontFamily: fonts.semibold },
+    switchLab: { color: c.textSecondary, fontSize: typography.caption, fontFamily: ADMIN_FONT.semibold },
     rowFoot: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
     footCta: { marginTop: spacing.lg, marginBottom: spacing.md, alignItems: "flex-start" },
     emptyWrap: { marginBottom: spacing.md },
     denied: { flex: 1, alignItems: "center", justifyContent: "center", gap: spacing.sm },
     deniedTitle: { fontSize: typography.h2, fontFamily: ADMIN_FONT.semibold, fontWeight: "600", color: c.textPrimary, marginTop: spacing.md },
-    deniedSub: { color: c.textSecondary, textAlign: "center", paddingHorizontal: spacing.xl, fontFamily: fonts.regular },
+    deniedSub: { color: c.textSecondary, textAlign: "center", paddingHorizontal: spacing.xl, fontFamily: ADMIN_FONT.regular },
     gateCta: { marginTop: spacing.md }});
 }

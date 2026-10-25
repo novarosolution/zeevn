@@ -93,6 +93,8 @@ function present(doc) {
     savedByName: doc.savedByName || "",
     submittedAt: doc.submittedAt || null,
     submittedByName: doc.submittedByName || "",
+    cashCounted: doc.cashCounted == null ? null : Number(doc.cashCounted),
+    cashNote: doc.cashNote || "",
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
   };
@@ -223,6 +225,11 @@ async function saveDraft(req, res, next) {
     if (!doc) return res.status(404).json({ message: "No closing for that date." });
     if (doc.status !== "draft") fail("This count is locked.");
     applyLineEdits(doc, req.body?.lines);
+    if (req.body?.cashCounted !== undefined) {
+      const n = Number(req.body.cashCounted);
+      doc.cashCounted = Number.isFinite(n) ? Math.max(0, n) : null;
+    }
+    if (req.body?.cashNote !== undefined) doc.cashNote = String(req.body.cashNote || "").trim().slice(0, 160);
     doc.savedBy = req.user?._id || null;
     doc.savedByName = actorName(req.user);
     await doc.save();

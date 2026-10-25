@@ -23,6 +23,8 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
 import { confirmAdminTransfer, fetchAdminProducts, fetchAdminTransfer, saveAdminTransferDraft, searchAdminTransfers } from "../../services/adminService";
+import AdminOfflineBanner from "../../components/admin/AdminOfflineBanner";
+import { cacheAdminCatalog, enqueueAdminOfflineDraft, isLikelyOffline, readAdminCatalogCache, syncAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
 import {
   ADMIN_FONT,
   adminGatePanel,
@@ -60,6 +62,7 @@ export default function AdminTransfersScreen({ navigation, route }) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
 
   const to = from === "online" ? "counter" : "online";
 
@@ -67,9 +70,12 @@ export default function AdminTransfersScreen({ navigation, route }) {
     try {
       const [list, moves] = await Promise.all([fetchAdminProducts(null), searchAdminTransfers(null, { status: "done", pageSize: 10 })]);
       setProducts(Array.isArray(list) ? list : []);
+      cacheAdminCatalog(list);
       setHistory(moves?.items || []);
       setError("");
     } catch (err) {
+      const cached = await readAdminCatalogCache();
+      if (cached.products.length) setProducts(cached.products);
       setError(err.message || "Could not load transfers.");
     } finally {
       setLoading(false);
@@ -141,6 +147,40 @@ export default function AdminTransfersScreen({ navigation, route }) {
     );
   };
 
+  const reverseOpened = () => {
+    if (!opened?.lines?.length) return;
+    const nextFrom = opened.to === "online" ? "online" : "counter";
+    setFrom(nextFrom);
+    setNote(`Reverse of ${opened.note || "transfer"}`.slice(0, 80));
+    setLines(
+      opened.lines
+        .map((line) => {
+          const id = String(line.product?._id || line.product);
+          const product = products.find((p) => String(p._id) === id);
+          const available = nextFrom === "online" ? Number(product?.stockQty) || 0 : Number(product?.stockCounter) || 0;
+          return { productId: id, name: line.name || product?.name || "Jar", quantity: Math.min(Number(line.quantity) || 1, available || 1), available };
+        })
+        .filter((row) => row.productId)
+    );
+  };
+
+  const syncDrafts = async () => {
+    setSyncing(true);
+    try {
+      const { done, pending } = await syncAdminOfflineDrafts({
+        transfer: async (payload) => {
+          const draft = await saveAdminTransferDraft(null, payload);
+          await confirmAdminTransfer(null, draft._id);
+        },
+      });
+      if (done.length) toast.toastSuccess(`Synced ${done.length} move${done.length === 1 ? "" : "s"}.`);
+      if (pending[0]?.error) setError(pending[0].error);
+      await load();
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const move = async () => {
     if (!lines.length) {
       setError("Add at least one jar.");
@@ -168,7 +208,18 @@ export default function AdminTransfersScreen({ navigation, route }) {
       toast.toastSuccess("Moved.");
       await load();
     } catch (err) {
-      setError(err.message || "Transfer failed.");
+      if (isLikelyOffline(err)) {
+        await enqueueAdminOfflineDraft(
+          "transfer",
+          { from, to, note, lines: lines.map((line) => ({ product: line.productId, quantity: line.quantity })) },
+          `${from} → ${to}`
+        );
+        setLines([]);
+        toast.toastSuccess("Saved on this phone.");
+        setError("");
+      } else {
+        setError(err.message || "Transfer failed.");
+      }
     } finally {
       setBusy(false);
     }
@@ -203,6 +254,7 @@ export default function AdminTransfersScreen({ navigation, route }) {
             <SectionReveal delay={20} preset="fade-up">
               <View style={styles.panel}>
                 <AdminAlerts error={error} onCloseError={() => setError("")} />
+                <AdminOfflineBanner kinds={["transfer"]} syncing={syncing} onSync={syncDrafts} />
                 <View style={adminTwoColStyle(compact)}>
                   <View style={adminTwoColMain(compact)}>
                     <AdminPanel title="Direction" icon="swap-horizontal-outline">
@@ -275,6 +327,9 @@ export default function AdminTransfersScreen({ navigation, route }) {
                           ))}
                           {opened.note ? <Text style={styles.meta}>{opened.note}</Text> : null}
                           <AdminBadge label={opened.status === "done" ? "Done" : "Draft"} tone={opened.status === "done" ? "green" : "gold"} size="sm" />
+                          {opened.status === "done" ? (
+                            <AdminButton label="Reverse this" variant="soft" onPress={reverseOpened} />
+                          ) : null}
                         </View>
                       ) : null}
                     </AdminPanel>

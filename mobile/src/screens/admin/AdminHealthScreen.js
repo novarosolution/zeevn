@@ -14,6 +14,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchApiHealth } from "../../services/apiClient";
 import { fetchAdminProducts, searchAdminOrders } from "../../services/adminService";
+import { listAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
 import { fetchStoreInfo } from "../../services/userService";
 import { adminGatePanel, adminShellContent, useAdminChrome } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
@@ -63,10 +64,13 @@ export default function AdminHealthScreen({ navigation, route }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [unreachable, setUnreachable] = useState(false);
+  const [queueCount, setQueueCount] = useState(0);
 
   const load = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
     try {
+      const queued = await listAdminOfflineDrafts();
+      setQueueCount(queued.length);
       const next = await fetchApiHealth();
       setHealth(next);
       setUnreachable(false);
@@ -206,7 +210,6 @@ export default function AdminHealthScreen({ navigation, route }) {
                   <AdminSettingRow
                     title="Stock piles"
                     description={stockNote || "Online delivery stock and shop-floor jars."}
-                    last
                     right={
                       <AdminBadge
                         label={stockNote.includes("low") ? "Low" : "OK"}
@@ -214,6 +217,12 @@ export default function AdminHealthScreen({ navigation, route }) {
                         size="sm"
                       />
                     }
+                  />
+                  <AdminSettingRow
+                    title="Offline drafts"
+                    description={queueCount ? "Bills and stock moves waiting on this phone. Open Counter to sync." : "Nothing queued on this phone."}
+                    last
+                    right={<AdminBadge label={queueCount ? String(queueCount) : "None"} tone={queueCount ? "gold" : "green"} size="sm" />}
                   />
                 </View>
 

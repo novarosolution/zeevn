@@ -25,6 +25,7 @@ import { customerScrollFill } from "../../theme/screenLayout";
 import { spacing } from "../../theme/tokens";
 import { formatRupees } from "../../utils/adminFormat";
 import { exportAnalyticsCsv } from "../../utils/adminAnalyticsCsv";
+import { printAdminHtml } from "../../utils/printAdminHtml";
 import { ALL_ORDER_STATUSES, getOrderStatusLabel } from "../../utils/orderStatus";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
@@ -102,6 +103,26 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
     }
   }, [analytics, toastSuccess, toastError]);
 
+  const printDayBook = useCallback(async () => {
+    if (!analytics) return;
+    const online = analytics.channels?.online || {};
+    const counter = analytics.channels?.counter || {};
+    const range = RANGE_TABS.find((tab) => tab.key === rangePreset)?.label || "Range";
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Zeevan day book</title>
+      <style>body{font-family:system-ui,sans-serif;padding:24px;color:#1a2118}h1{font-size:20px;margin:0 0 4px}p{color:#5c6658;margin:0 0 16px}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px 0;border-bottom:1px solid #e6e3d8}th{color:#7a8474;font-size:12px}</style></head>
+      <body><h1>Zeevan day book</h1><p>${range}</p>
+      <table><thead><tr><th>Channel</th><th>Bills</th><th>Revenue</th></tr></thead><tbody>
+      <tr><td>Online</td><td>${online.count || 0}</td><td>₹${Number(online.revenue || 0).toLocaleString("en-IN")}</td></tr>
+      <tr><td>Counter</td><td>${counter.count || 0}</td><td>₹${Number(counter.revenue || 0).toLocaleString("en-IN")}</td></tr>
+      <tr><td>Total</td><td>${Number(online.count || 0) + Number(counter.count || 0)}</td><td>₹${Number(analytics.revenue?.total || 0).toLocaleString("en-IN")}</td></tr>
+      </tbody></table></body></html>`;
+    try {
+      await printAdminHtml(html);
+    } catch (err) {
+      toastError(err.message || "Could not print the day book.");
+    }
+  }, [analytics, rangePreset, toastError]);
+
   const series = analytics?.trends?.rangeSeries;
   const chart = useMemo(() => {
     const labels = series?.labels || [];
@@ -146,7 +167,10 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
           title={COPY.title}
           subtitle={COPY.subtitle}
           headerRight={
-            <AdminButton label="CSV" icon="download-outline" variant="ghost" size="sm" onPress={handleExportCsv} disabled={!analytics} />
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <AdminButton label="Print day book" icon="print-outline" variant="ghost" size="sm" onPress={printDayBook} disabled={!analytics} />
+              <AdminButton label="CSV" icon="download-outline" variant="ghost" size="sm" onPress={handleExportCsv} disabled={!analytics} />
+            </View>
           }
         >
           <View style={styles.panel}>
@@ -207,7 +231,7 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
                   />
                 </AdminStatGrid>
 
-                <AdminPanel title="Day book" icon="book-outline" description="Online vs counter in this period.">
+                <AdminPanel title="Day book" icon="book-outline" description="Online vs counter in this period." action="Print" onAction={printDayBook}>
                   <AdminCategoryBar
                     name="Online"
                     percent={

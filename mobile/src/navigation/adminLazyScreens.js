@@ -200,6 +200,16 @@ export const AdminHelpScreen = createLazyScreenDevSafe(
   () => import("../screens/admin/AdminHelpScreen"),
   { screenName: "AdminHelpScreen" }
 );
+export const AdminSuppliersScreen = createLazyScreenDevSafe(
+  () => require("../screens/admin/AdminSuppliersScreen").default,
+  () => import("../screens/admin/AdminSuppliersScreen"),
+  { screenName: "AdminSuppliersScreen" }
+);
+export const AdminCycleCountScreen = createLazyScreenDevSafe(
+  () => require("../screens/admin/AdminCycleCountScreen").default,
+  () => import("../screens/admin/AdminCycleCountScreen"),
+  { screenName: "AdminCycleCountScreen" }
+);
 
 export const AdminSettingsScreen = createLazyScreenDevSafe(
   () => require("../screens/admin/AdminSettingsScreen").default,

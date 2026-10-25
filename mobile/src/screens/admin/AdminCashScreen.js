@@ -17,7 +17,8 @@ import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
 import { useLiveSocket } from "../../context/LiveSocketContext";
 import { useTheme } from "../../context/ThemeContext";
-import { searchAdminCash, searchAdminOrders, updateAdminOrderPayment } from "../../services/adminService";
+import { fetchAdminClosing, saveAdminCashCount, searchAdminCash, searchAdminOrders, updateAdminOrderPayment } from "../../services/adminService";
+import { useToast } from "../../context/ToastContext";
 import AdminPanel from "../../components/admin/AdminPanel";
 import { adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
@@ -43,6 +44,8 @@ export default function AdminCashScreen({ navigation, route }) {
   const isAdmin = Boolean(user?.isAdmin);
   const styles = useMemo(() => createStyles(chrome, c, shadowPremium), [chrome, c, shadowPremium]);
   const { confirm, dialog } = useAdminConfirm();
+  const toast = useToast();
+  const [cashBusy, setCashBusy] = useState(false);
 
   const [range, setRange] = useState(RANGE_OPTIONS.some((o) => o.value === route?.params?.range) ? route.params.range : "today");
   const [rider, setRider] = useState(String(route?.params?.rider || ""));
@@ -78,6 +81,12 @@ export default function AdminCashScreen({ navigation, route }) {
           count: cashOnly.length,
           amount: cashOnly.reduce((n, row) => n + Number(row.totalPrice || 0), 0),
         });
+        const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+        const sheet = await fetchAdminClosing(null, today).catch(() => null);
+        if (sheet) {
+          if (sheet.cashCounted != null) setCounted(String(sheet.cashCounted));
+          if (sheet.cashNote) setCountedNote(sheet.cashNote);
+        }
         setError("");
       } catch (err) {
         if (id === requestRef.current) setError(err?.message || "Couldn't load cash to collect.");
@@ -191,10 +200,25 @@ export default function AdminCashScreen({ navigation, route }) {
                 <AdminInput label="Counted at till" value={counted} onChangeText={setCounted} numeric prefix="₹" />
                 <AdminInput label="Note" value={countedNote} onChangeText={setCountedNote} placeholder="Optional" />
                 <AdminButton
-                  label="Mark counter cash counted"
+                  label="Save counted cash"
                   variant="soft"
-                  onPress={() => {
-                    setCountedNote(countedNote || `Counted ₹${counted || 0}`);
+                  loading={cashBusy}
+                  onPress={async () => {
+                    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+                    const note = countedNote || `Counted ₹${counted || 0}`;
+                    setCashBusy(true);
+                    try {
+                      await saveAdminCashCount(null, today, {
+                        cashCounted: Math.max(0, Number(counted) || 0),
+                        cashNote: note,
+                      });
+                      setCountedNote(note);
+                      toast.toastSuccess("Cash count saved on today’s closing.");
+                    } catch (err) {
+                      setError(err.message || "Could not save cash count.");
+                    } finally {
+                      setCashBusy(false);
+                    }
                   }}
                 />
                 {countedNote ? <Text style={styles.muted}>{countedNote}</Text> : null}

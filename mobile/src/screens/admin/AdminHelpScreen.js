@@ -10,9 +10,9 @@ import AdminButton from "../../components/admin/AdminButton";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
-import { adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
+import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, radius, spacing } from "../../theme/tokens";
+import { radius, spacing } from "../../theme/tokens";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 export default function AdminHelpScreen({ navigation, route }) {
@@ -152,13 +152,13 @@ function createStyles(chrome, c, shadowPremium, compact) {
       ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
     },
     sectionOn: { backgroundColor: chrome.paper, borderLeftColor: chrome.goldDeep },
-    sectionTitle: { fontSize: 14, color: chrome.ink, fontFamily: fonts.semibold },
+    sectionTitle: { fontSize: 14, color: chrome.ink, fontFamily: ADMIN_FONT.semibold },
     sectionTitleOn: { color: chrome.ink },
     pressed: { opacity: 0.82 },
     stepsCol: { gap: 10 },
     phoneSteps: { paddingBottom: 24, gap: 10 },
-    detailTitle: { fontSize: 20, color: chrome.ink, fontFamily: fonts.bold },
-    intro: { fontSize: 14, lineHeight: 21, color: chrome.inkSoft, fontFamily: fonts.regular },
+    detailTitle: { fontSize: 20, color: chrome.ink, fontFamily: ADMIN_FONT.bold },
+    intro: { fontSize: 14, lineHeight: 21, color: chrome.inkSoft, fontFamily: ADMIN_FONT.regular },
     steps: {
       backgroundColor: chrome.card,
       borderRadius: radius.lg,
@@ -174,7 +174,7 @@ function createStyles(chrome, c, shadowPremium, compact) {
       borderBottomColor: chrome.lineSoft,
     },
     stepMain: { gap: 4, ...Platform.select({ web: { cursor: "pointer" }, default: {} }) },
-    stepTitle: { fontSize: 15, color: chrome.ink, fontFamily: fonts.semibold },
-    stepBody: { fontSize: 13.5, lineHeight: 20, color: chrome.inkSoft, fontFamily: fonts.regular },
+    stepTitle: { fontSize: 15, color: chrome.ink, fontFamily: ADMIN_FONT.semibold },
+    stepBody: { fontSize: 13.5, lineHeight: 20, color: chrome.inkSoft, fontFamily: ADMIN_FONT.regular },
   });
 }

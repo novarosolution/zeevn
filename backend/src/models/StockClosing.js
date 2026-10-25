@@ -27,6 +27,8 @@ const stockClosingSchema = new mongoose.Schema(
     savedByName: { type: String, default: "", trim: true, maxlength: 80 },
     submittedAt: { type: Date, default: null },
     submittedByName: { type: String, default: "", trim: true, maxlength: 80 },
+    cashCounted: { type: Number, default: null },
+    cashNote: { type: String, default: "", trim: true, maxlength: 160 },
   },
   { timestamps: true }
 );

@@ -187,6 +187,9 @@ const productSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    reorderMinOnline: { type: Number, default: 0, min: 0 },
+    reorderMinCounter: { type: Number, default: 0, min: 0 },
+    lastCost: { type: Number, default: 0, min: 0 },
     /** Rich PDP: average rating 0–5 */
     ratingAverage: {
       type: Number,

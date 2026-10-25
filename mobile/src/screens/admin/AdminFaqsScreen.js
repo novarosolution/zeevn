@@ -15,9 +15,9 @@ import PremiumLoader from "../../components/ui/PremiumLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminFaqs, updateAdminFaqs } from "../../services/adminService";
-import { adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
+import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, radius, spacing } from "../../theme/tokens";
+import { radius, spacing } from "../../theme/tokens";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
 const COPY = ADMIN_SCREEN_COPY.faqs;
@@ -285,8 +285,8 @@ function createStyles(chrome, c, shadowPremium) {
     panel: { ...adminShellContent(), gap: spacing.sm },
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
-    hint: { fontSize: 13, lineHeight: 18, color: chrome.inkFaint, fontFamily: fonts.regular },
-    empty: { fontSize: 13.5, color: chrome.inkSoft, fontFamily: fonts.medium },
+    hint: { fontSize: 13, lineHeight: 18, color: chrome.inkFaint, fontFamily: ADMIN_FONT.regular },
+    empty: { fontSize: 13.5, color: chrome.inkSoft, fontFamily: ADMIN_FONT.medium },
     card: {
       backgroundColor: chrome.card,
       borderWidth: 1,
@@ -304,7 +304,7 @@ function createStyles(chrome, c, shadowPremium) {
     cardTitle: {
       fontSize: 13,
       color: chrome.inkFaint,
-      fontFamily: fonts.semibold,
+      fontFamily: ADMIN_FONT.semibold,
       letterSpacing: 0.3,
       textTransform: "uppercase",
     },

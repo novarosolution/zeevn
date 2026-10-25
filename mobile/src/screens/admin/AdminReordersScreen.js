@@ -42,8 +42,8 @@ function rateLabel(n) {
 }
 
 function matchesTab(row, tab) {
-  if (tab === "needs") return row.suggest >= 1;
-  if (tab === "low") return row.out || row.low;
+  if (tab === "needs") return row.suggest >= 1 || row.belowMin;
+  if (tab === "low") return row.out || row.low || row.belowMin;
   return true;
 }
 
@@ -211,6 +211,7 @@ export default function AdminReordersScreen({ navigation, route }) {
                           </Text>
                           <Text style={styles.reason}>{row.reason}</Text>
                           {row.out ? <AdminBadge label="Out" tone="red" size="sm" /> : row.low ? <AdminBadge label="Low" tone="gold" size="sm" /> : null}
+                          {row.belowMin ? <AdminBadge label="Below min" tone="gold" size="sm" /> : null}
                         </>
                       ) : (
                         <>
@@ -225,7 +226,10 @@ export default function AdminReordersScreen({ navigation, route }) {
                           <Text style={[styles.body, { width: 56 }]}>{row.sold}</Text>
                           <Text style={[styles.body, { width: 64 }]}>{rateLabel(row.perDay)}</Text>
                           <Text style={[styles.suggest, { width: 64 }]}>{row.suggest}</Text>
-                          <Text style={[styles.reason, { flex: 1.6 }]}>{row.reason}</Text>
+                          <View style={{ flex: 1.6 }}>
+                            <Text style={styles.reason}>{row.reason}</Text>
+                            {row.belowMin ? <AdminBadge label="Below min" tone="gold" size="sm" /> : null}
+                          </View>
                         </>
                       )}
                     </View>

@@ -76,7 +76,7 @@ export default function AdminStockHistoryScreen({ navigation, route }) {
   const styles = useMemo(() => createStyles(chrome, c, shadowPremium, compact), [chrome, c, shadowPremium, compact]);
 
   const [range, setRange] = useState("7d");
-  const [why, setWhy] = useState("all");
+  const [why, setWhy] = useState(route?.params?.why && route.params.why !== "all" ? route.params.why : "all");
   const [location, setLocation] = useState("all");
   const [qInput, setQInput] = useState("");
   const [q, setQ] = useState("");

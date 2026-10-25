@@ -115,6 +115,8 @@ const {
   confirmTransfer,
 } = require("../controllers/stockTransferController");
 const { createStockOut } = require("../controllers/stockOutController");
+const { listSuppliers, upsertSupplier } = require("../controllers/supplierController");
+const { applyCycleCount } = require("../controllers/cycleCountController");
 const {
   createWalkIn,
   voidWalkIn,
@@ -168,6 +170,9 @@ router.get("/stock-transfers/:id", getTransfer);
 router.put("/stock-transfers/:id", updateTransfer);
 router.post("/stock-transfers/:id/confirm", confirmTransfer);
 router.post("/stock-out", createStockOut);
+router.get("/suppliers", listSuppliers);
+router.post("/suppliers", upsertSupplier);
+router.post("/cycle-count", applyCycleCount);
 router.post("/walk-in", createWalkIn);
 router.post("/walk-in/:id/void", voidWalkIn);
 router.post("/customers", createWalkInCustomer);

@@ -4,6 +4,14 @@
   "installCommand": "npm ci --include=dev",
   "rewrites": [
     {
+      "source": "/aws/socket.io",
+      "destination": "http://54.173.67.136:5001/socket.io/"
+    },
+    {
+      "source": "/aws/socket.io/",
+      "destination": "http://54.173.67.136:5001/socket.io/"
+    },
+    {
       "source": "/aws/socket.io/:path*",
       "destination": "http://54.173.67.136:5001/socket.io/:path*"
     },
@@ -45,6 +53,18 @@
     }
   ],
   "headers": [
+    {
+      "source": "/aws/socket.io",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
+    {
+      "source": "/aws/socket.io/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    },
     {
       "source": "/aws/media/(.*)",
       "headers": [

@@ -468,8 +468,9 @@ export default function AdminSettingsScreen({ navigation, route }) {
                   </AdminSection>
 
                   {/* delivery pointer */}
-                  <AdminSection icon="cube-outline" title="Stock & till" description="One shop, two piles. Walk-in bills sell floor stock only. If the phone is offline, the till saves a draft and syncs later.">
-                    <AdminSettingRow title="Online vs shop floor" description="Website sales take from online stock. The counter takes from floor stock. Transfer between them so a walk-in never steals a web order." last right={<AdminButton label="Inventory" icon="cube-outline" variant="soft" size="sm" onPress={() => navigation.navigate("AdminInventory")} />} />
+                  <AdminSection icon="cube-outline" title="Stock & till" description="One shop, two piles. Walk-in bills sell floor stock only. If the phone is offline, the till saves a draft and Store selling manages it.">
+                    <AdminSettingRow title="Online vs shop floor" description="Website sales take from online stock. The counter takes from floor stock. Transfer between them so a walk-in never steals a web order." right={<AdminButton label="Inventory" icon="cube-outline" variant="soft" size="sm" onPress={() => navigation.navigate("AdminInventory")} />} />
+                    <AdminSettingRow last title="Store selling" description="Manage live shop bills and any sale saved on this phone while offline. Reprint, void, sync, or print the day book. The till still rings the sale." right={<AdminButton label="Open" icon="receipt-outline" variant="soft" size="sm" onPress={() => navigation.navigate("AdminStoreSelling")} />} />
                   </AdminSection>
                   <AdminSection icon="bicycle-outline" title="Delivery" description="Areas, fees, riders and delivery times are managed together on the Zones page.">
                     <AdminSettingRow last title="Zones, fees & riders" description="Draw areas on the map, set delivery fees and free-delivery levels, and choose who delivers where." right={<AdminButton label="Open Zones" icon="map-outline" variant="primary" size="sm" onPress={() => navigation.navigate("AdminDelivery")} />} />

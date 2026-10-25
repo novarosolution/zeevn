@@ -22,6 +22,7 @@ const ROUTE_GROUPS = {
     "AdminDashboard",
     "AdminShopDesk",
     "AdminOrders",
+    "AdminStoreSelling",
     "AdminOrderDetail",
     "AdminReturns",
     "AdminReturnDetail",

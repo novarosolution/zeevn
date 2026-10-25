@@ -219,10 +219,17 @@ export default function AdminHealthScreen({ navigation, route }) {
                     }
                   />
                   <AdminSettingRow
-                    title="Offline drafts"
-                    description={queueCount ? "Bills and stock moves waiting on this phone. Open Offline drafts to sync or print." : "Nothing queued on this phone."}
+                    title="Store selling drafts"
+                    description={queueCount ? "Shop bills and stock moves waiting on this phone. Open Store selling for bills, Offline drafts for stock moves." : "Nothing queued on this phone."}
                     last
-                    right={<AdminBadge label={queueCount ? String(queueCount) : "None"} tone={queueCount ? "gold" : "green"} size="sm" />}
+                    right={
+                      <AdminButton
+                        label={queueCount ? String(queueCount) : "Open"}
+                        variant="ghost"
+                        size="sm"
+                        onPress={() => navigation.navigate("AdminStoreSelling", { tab: "waiting" })}
+                      />
+                    }
                   />
                 </View>
 

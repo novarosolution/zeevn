@@ -197,6 +197,7 @@ export default function AdminCashScreen({ navigation, route }) {
                 <Text style={styles.muted}>
                   COD to collect {formatRupees(counts.amount)} · Counter cash {formatRupees(counterCash.amount)} ({counterCash.count} bills)
                 </Text>
+                <AdminButton label="Store selling" variant="ghost" size="sm" icon="receipt-outline" onPress={() => navigation.navigate("AdminStoreSelling")} />
                 <AdminInput label="Counted at till" value={counted} onChangeText={setCounted} numeric prefix="₹" />
                 <AdminInput label="Note" value={countedNote} onChangeText={setCountedNote} placeholder="Optional" />
                 <AdminButton

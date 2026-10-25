@@ -72,6 +72,7 @@ const ADMIN_ROUTES = [
   ["AdminShopDesk", AdminScreens.AdminShopDeskScreen],
   ["AdminOrders", AdminScreens.AdminOrdersScreen],
   ["AdminCounter", AdminScreens.AdminCounterScreen],
+  ["AdminStoreSelling", AdminScreens.AdminStoreSellingScreen],
   ["AdminOrderDetail", AdminScreens.AdminOrderDetailScreen],
   ["AdminReturns", AdminScreens.AdminReturnsScreen],
   ["AdminReturnDetail", AdminScreens.AdminReturnDetailScreen],

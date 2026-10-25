@@ -39,7 +39,7 @@ export function adminOfflineHandlers() {
 }
 
 export function draftKindLabel(kind) {
-  if (kind === "walk_in") return "Walk-in bill";
+  if (kind === "walk_in") return "Store sale";
   if (kind === "transfer") return "Transfer";
   if (kind === "stock_out") return "Stock out";
   if (kind === "stock_in") return "Stock in";
@@ -47,7 +47,7 @@ export function draftKindLabel(kind) {
 }
 
 export function draftDesk(kind) {
-  if (kind === "walk_in") return "AdminCounter";
+  if (kind === "walk_in") return "AdminStoreSelling";
   if (kind === "transfer") return "AdminTransfers";
   if (kind === "stock_out") return "AdminStockOut";
   if (kind === "stock_in") return "AdminStockIn";

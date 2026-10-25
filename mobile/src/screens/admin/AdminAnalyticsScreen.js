@@ -223,11 +223,12 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
                   />
                   <AdminStatTile
                     icon="storefront-outline"
-                    label="Counter"
+                    label="Store selling"
                     value={formatRupees(analytics.channels?.counter?.revenue || 0)}
                     hint={`${analytics.channels?.counter?.count || 0} bills`}
                     tone="gold"
                     style={tileStyle}
+                    onPress={() => navigation.navigate("AdminStoreSelling")}
                   />
                 </AdminStatGrid>
 

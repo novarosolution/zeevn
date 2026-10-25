@@ -26,6 +26,11 @@ export const ADMIN_HELP = {
           also: { label: "Open till", route: "AdminCounter" },
         },
         {
+          title: "Manage store selling",
+          body: "Every shop-floor bill lives here: today’s live bills and any sale saved on this phone while offline. Reprint, void, sync, or print the day book. The till still rings the sale.",
+          route: "AdminStoreSelling",
+        },
+        {
           title: "Set today’s prices",
           body: "The customer pays price. MRP is shown struck through only when it is above that price.",
           route: "AdminPrices",
@@ -162,6 +167,11 @@ export const ADMIN_HELP = {
           route: "AdminCounter",
         },
         {
+          title: "Store selling",
+          body: "Manage every store sale after it is rung: live bills and offline drafts. Search by name, phone, bill number, or cashier. Reprint, void, or sync. Stock still only moves on the server.",
+          route: "AdminStoreSelling",
+        },
+        {
           title: "Transfers",
           body: "Move jars online → floor before you open the till, or floor → online if you need them for delivery.",
           route: "AdminTransfers",
@@ -193,13 +203,15 @@ export const ADMIN_HELP = {
         },
         {
           title: "Offline drafts",
-          body: "If the phone has no network, Counter, transfer, stock-in, and stock-out save a draft on this phone. Open Offline drafts to see every one, print it, sync it, or remove it. Live pile counts still only change on the server.",
-          route: "AdminOffline",
+          body: "If the phone has no network, Counter, transfer, stock-in, and stock-out save a draft on this phone. Store sales wait on Store selling. Stock moves stay on Offline drafts. Live pile counts still only change on the server.",
+          route: "AdminStoreSelling",
+          also: { label: "Stock drafts", route: "AdminOffline" },
         },
         {
           title: "Print a bill",
-          body: "At the till: Print bill before charge, or Print last after. On Orders, use Print bill on the row or in the drawer. Offline drafts can print too. The slip shows customer name, phone, cashier, jars, and payment.",
-          route: "AdminCounter",
+          body: "At the till: Print bill before charge, or Print last after. Store selling reprints any live or waiting bill. The slip shows customer name, phone, cashier, jars, and payment.",
+          route: "AdminStoreSelling",
+          also: { label: "Open till", route: "AdminCounter" },
         },
         {
           title: "Sold and remaining",

@@ -478,7 +478,7 @@ export default function AdminCounterScreen({ navigation, route }) {
         </AdminPanel>
       ) : null}
 
-      <AdminPanel title="Last bills" icon="time-outline">
+      <AdminPanel title="Last bills" icon="time-outline" action="See all" onAction={() => navigation.navigate("AdminStoreSelling")}>
         {bills.length === 0 ? <PremiumEmptyState iconName="receipt-outline" title="No walk-in bills yet." compact /> : null}
         {bills.map((bill) => (
           <AdminHitRow
@@ -512,6 +512,7 @@ export default function AdminCounterScreen({ navigation, route }) {
             subtitle="Walk-in bills sell from shop-floor stock only."
             headerRight={
               <View style={styles.headerActions}>
+                <AdminButton label="Store selling" variant="soft" size="sm" onPress={() => navigation.navigate("AdminStoreSelling")} />
                 <AdminButton label="Transfers" variant="soft" size="sm" onPress={() => navigation.navigate("AdminTransfers")} />
                 <AdminButton label="Refresh" icon="refresh-outline" variant="ghost" size="sm" onPress={load} />
               </View>
@@ -520,7 +521,7 @@ export default function AdminCounterScreen({ navigation, route }) {
             <SectionReveal delay={20} preset="fade-up">
               <View style={styles.panel}>
                 <AdminAlerts error={error} onCloseError={() => setError("")} />
-                <AdminOfflineBanner kinds={["walk_in"]} syncing={syncing} onSync={syncDrafts} onManage={() => navigation.navigate("AdminOffline")} />
+                <AdminOfflineBanner kinds={["walk_in"]} syncing={syncing} onSync={syncDrafts} onManage={() => navigation.navigate("AdminStoreSelling", { tab: "waiting" })} />
                 <View style={adminTwoColStyle(compact)}>
                   <View style={adminTwoColMain(compact)}>{searchCol}</View>
                   <View style={adminTwoColAside(compact)}>{billCol}</View>

@@ -487,6 +487,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
             subtitle={ADMIN_SCREEN_COPY.orders.subtitle}
             headerRight={
               <View style={styles.headerActions}>
+                <AdminButton label="Store selling" icon="storefront-outline" variant="soft" size="sm" onPress={() => navigation.navigate("AdminStoreSelling")} />
                 <AdminButton label="Export" icon="download-outline" variant="soft" size="sm" loading={exporting} onPress={exportAll} />
                 <AdminButton label="Refresh" icon="refresh-outline" variant="primary" size="sm" onPress={() => load()} />
               </View>

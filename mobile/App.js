@@ -98,6 +98,7 @@ const ADMIN_SCREENS = {
   AdminShopDesk: "admin/desk",
   AdminOrders: "admin/orders",
   AdminCounter: "admin/counter",
+  AdminStoreSelling: "admin/store-selling",
   AdminOrderDetail: "admin/orders/:orderId",
   AdminReturns: "admin/returns",
   AdminReturnDetail: "admin/returns/:returnId",

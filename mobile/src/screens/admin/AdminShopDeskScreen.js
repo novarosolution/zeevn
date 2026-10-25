@@ -123,7 +123,7 @@ export default function AdminShopDeskScreen({ navigation, route }) {
     { key: "onRoute", label: "On the way", icon: "bicycle-outline", hint: "With rider", value: orders.onRoute, tab: "onroute" },
     { key: "today", label: "Today’s orders", icon: "receipt-outline", hint: "Since midnight", value: today.count, tab: "all", extra: { range: "today" } },
     { key: "revenue", label: "Today’s revenue", icon: "cash-outline", hint: "Since midnight", value: today.revenue, rupees: true, tab: "all", extra: { range: "today" } },
-    { key: "counter", label: "Counter today", icon: "storefront-outline", hint: "Walk-in bills", value: orders.counterToday?.revenue || 0, rupees: true, tab: "counter" },
+    { key: "counter", label: "Store selling", icon: "storefront-outline", hint: "Walk-in bills", value: orders.counterToday?.revenue || 0, rupees: true, go: () => navigation.navigate("AdminStoreSelling") },
   ];
 
   const side = [
@@ -183,6 +183,7 @@ export default function AdminShopDeskScreen({ navigation, route }) {
                 </Text>
                 <AdminButton label="Edit hours" variant="ghost" icon="time-outline" onPress={() => navigation.navigate("AdminSettings")} />
                 <AdminButton label="Open till" variant="gold" icon="storefront-outline" onPress={() => navigation.navigate("AdminCounter")} />
+                <AdminButton label="Store selling" variant="soft" icon="receipt-outline" onPress={() => navigation.navigate("AdminStoreSelling")} />
               </AdminPanel>
 
               <AdminPanel title="Counter" icon="toggle-outline" description="These two switches are the day counter. Hours stay on Settings.">
@@ -223,7 +224,7 @@ export default function AdminShopDeskScreen({ navigation, route }) {
                       hint={tile.hint}
                       value={tile.rupees ? formatRupees(tile.value) : formatWhole(tile.value)}
                       tone={tile.value > 0 && tile.key !== "revenue" && tile.key !== "today" ? "hot" : "default"}
-                      onPress={() => goOrders(tile.tab, tile.extra)}
+                      onPress={() => (tile.go ? tile.go() : goOrders(tile.tab, tile.extra))}
                     />
                   ))}
                 </AdminKpiGrid>

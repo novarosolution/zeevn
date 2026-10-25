@@ -215,6 +215,11 @@ export const AdminOfflineScreen = createLazyScreenDevSafe(
   () => import("../screens/admin/AdminOfflineScreen"),
   { screenName: "AdminOfflineScreen" }
 );
+export const AdminStoreSellingScreen = createLazyScreenDevSafe(
+  () => require("../screens/admin/AdminStoreSellingScreen").default,
+  () => import("../screens/admin/AdminStoreSellingScreen"),
+  { screenName: "AdminStoreSellingScreen" }
+);
 
 export const AdminSettingsScreen = createLazyScreenDevSafe(
   () => require("../screens/admin/AdminSettingsScreen").default,

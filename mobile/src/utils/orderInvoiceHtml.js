@@ -632,6 +632,81 @@ export function tillDraftOrder({
   };
 }
 
+/** Day book of shop-floor bills (live + waiting drafts). One shop, walk_in only. */
+export function buildStoreDayBookHtml({ title = "Store selling", rangeLabel = "Today", bills = [], drafts = [] } = {}) {
+  const live = (bills || []).filter((row) => row.status !== "cancelled");
+  const voided = (bills || []).filter((row) => row.status === "cancelled");
+  const cash = live.filter((row) => /cash/i.test(String(row.paymentMethod || "")));
+  const upi = live.filter((row) => !/cash/i.test(String(row.paymentMethod || "")));
+  const sum = (rows) => rows.reduce((n, row) => n + Number(row.totalPrice || 0), 0);
+  const draftTotal = (row) =>
+    (row?.payload?.products || []).reduce((n, line) => n + Number(line.price || 0) * Number(line.quantity || 1), 0);
+  const waitingSum = (drafts || []).reduce((n, row) => n + draftTotal(row), 0);
+  const rowHtml = (bill, badge) => {
+    const name = bill.shippingAddress?.fullName || bill.user?.name || "Walk-in";
+    const phone = bill.shippingAddress?.phone || bill.user?.phone || "";
+    const cashier = (bill.invoice && bill.invoice.billedBy) || "";
+    return `<tr>
+      <td>${htmlEscape(resolveOrderRef(bill))}${badge ? `<div class="muted">${htmlEscape(badge)}</div>` : ""}</td>
+      <td>${htmlEscape(name)}${phone ? `<div class="muted">${htmlEscape(phone)}</div>` : ""}</td>
+      <td>${htmlEscape(bill.paymentMethod || "Cash")}</td>
+      <td>${htmlEscape(cashier)}</td>
+      <td class="n">${fmtInr(bill.totalPrice)}</td>
+    </tr>`;
+  };
+  const liveRows = live.map((bill) => rowHtml(bill, "")).join("");
+  const voidRows = voided.map((bill) => rowHtml(bill, "Voided")).join("");
+  const draftRows = (drafts || [])
+    .map((row) => {
+      const p = row.payload || {};
+      return `<tr>
+        <td>DRAFT<div class="muted">Waiting on phone</div></td>
+        <td>${htmlEscape(p.name || "Walk-in")}${p.phone ? `<div class="muted">${htmlEscape(p.phone)}</div>` : ""}</td>
+        <td>${htmlEscape(p.tender || "Cash")}</td>
+        <td>${htmlEscape(p.cashierName || "")}</td>
+        <td class="n">${fmtInr(draftTotal(row))}</td>
+      </tr>`;
+    })
+    .join("");
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>${htmlEscape(title)}</title>
+    <style>
+      body { font-family: system-ui, sans-serif; color: #1a2118; padding: 20px; }
+      h1 { font-size: 20px; margin: 0 0 4px; }
+      .muted { color: #6b6a62; font-size: 12px; }
+      table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+      th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid #e6e2d6; vertical-align: top; }
+      .n { text-align: right; white-space: nowrap; }
+      .kpis { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0 4px; }
+      .kpi { min-width: 120px; }
+    </style>
+  </head>
+  <body>
+    <h1>${htmlEscape(APP_DISPLAY_NAME)} · ${htmlEscape(title)}</h1>
+    <div class="muted">${htmlEscape(rangeLabel)} · Shop floor only · Asia/Kolkata</div>
+    <div class="kpis">
+      <div class="kpi"><strong>${live.length}</strong><div class="muted">Live bills</div></div>
+      <div class="kpi"><strong>${fmtInr(sum(live))}</strong><div class="muted">Taken</div></div>
+      <div class="kpi"><strong>${fmtInr(sum(cash))}</strong><div class="muted">Cash · ${cash.length}</div></div>
+      <div class="kpi"><strong>${fmtInr(sum(upi))}</strong><div class="muted">UPI · ${upi.length}</div></div>
+      <div class="kpi"><strong>${(drafts || []).length}</strong><div class="muted">Waiting · ${fmtInr(waitingSum)}</div></div>
+    </div>
+    <table>
+      <thead><tr><th>Bill</th><th>Customer</th><th>Tender</th><th>Cashier</th><th class="n">Amount</th></tr></thead>
+      <tbody>
+        ${draftRows || ""}
+        ${liveRows || ""}
+        ${voidRows || ""}
+        ${!draftRows && !liveRows && !voidRows ? `<tr><td colspan="5" class="muted">No store sales in this range.</td></tr>` : ""}
+      </tbody>
+    </table>
+  </body>
+</html>`;
+}
+
 /** Tight 80mm till slip. Reuses the same order fields as the full invoice. */
 export function buildCounterBillHtml(order) {
   const invoiceNumber = resolveInvoiceNumber(order);

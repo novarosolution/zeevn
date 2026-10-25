@@ -276,6 +276,12 @@ export default function AdminCustomersScreen({ navigation, route }) {
                   onPress={() => printAdminHtml(buildCounterBillHtml(orders.find((row) => row.channel === "walk_in")))}
                 />
               ) : null}
+              <AdminButton
+                label="Store selling"
+                variant="ghost"
+                icon="receipt-outline"
+                onPress={() => navigation.navigate("AdminStoreSelling")}
+              />
               {whatsappUrl(selected.phone) ? (
                 <AdminButton
                   label="WhatsApp"

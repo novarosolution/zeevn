@@ -26,6 +26,10 @@ export const ADMIN_SCREEN_COPY = {
     title: "Shop desk",
     subtitle: "Open, pause, today’s queue",
   },
+  storeSelling: {
+    title: "Store selling",
+    subtitle: "Shop-floor bills — live and waiting on this phone",
+  },
   dashboard: {
     title: "Dashboard",
     subtitle: "Gold tiles need you. Tap to open.",

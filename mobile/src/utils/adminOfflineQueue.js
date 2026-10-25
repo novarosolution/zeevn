@@ -90,11 +90,17 @@ export function isLikelyOffline(err) {
   return /network|failed to fetch|offline|timeout|internet|load failed/i.test(m);
 }
 
-export async function syncAdminOfflineDrafts(handlers = {}) {
+export async function syncAdminOfflineDrafts(handlers = {}, options = {}) {
+  const kinds = Array.isArray(options.kinds) && options.kinds.length ? new Set(options.kinds) : null;
+  const ids = Array.isArray(options.ids) && options.ids.length ? new Set(options.ids) : null;
   const rows = await readQueue();
   const kept = [];
   const done = [];
   for (const row of rows) {
+    if ((kinds && !kinds.has(row.kind)) || (ids && !ids.has(row.id))) {
+      kept.push(row);
+      continue;
+    }
     const run = handlers[row.kind];
     if (typeof run !== "function") {
       kept.push(row);

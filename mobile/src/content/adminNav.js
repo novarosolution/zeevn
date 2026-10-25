@@ -55,6 +55,14 @@ export const ADMIN_NAV_GROUPS = [
         tone: "#c9a227",
       },
       {
+        key: "AdminStoreSelling",
+        label: "Store selling",
+        hint: "Manage shop bills · waiting drafts · reprint · void · day book",
+        icon: "receipt-outline",
+        image: "orders",
+        tone: "#8F5E14",
+      },
+      {
         key: "AdminReturns",
         label: "Returns",
         hint: "Review a delivered order",

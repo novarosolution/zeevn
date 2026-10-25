@@ -183,6 +183,7 @@ async function createWalkIn(req, res, next) {
       issueDate: new Date(),
       status: "paid",
       notes: slipNote,
+      billedBy: String(req.user?.name || req.body?.cashierName || "Admin").trim().slice(0, 80),
       updatedAt: new Date(),
     };
     await order.save();

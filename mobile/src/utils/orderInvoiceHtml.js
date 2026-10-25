@@ -518,8 +518,9 @@ export function buildOrderInvoiceHtml(order) {
         <div class="metaGrid">
           <div class="metaCard">
             <div class="label">Bill To</div>
-            <div class="heading">${htmlEscape(order?.shippingAddress?.fullName || "Customer")}</div>
-            <div class="line">${htmlEscape(order?.shippingAddress?.phone || "")}</div>
+            <div class="heading">${htmlEscape(order?.shippingAddress?.fullName || order?.user?.name || "Customer")}</div>
+            <div class="line">${htmlEscape(order?.shippingAddress?.phone || order?.user?.phone || "")}</div>
+            ${order?.invoice?.billedBy ? `<div class="line muted">Billed by ${htmlEscape(order.invoice.billedBy)}</div>` : ""}
             <div class="line muted">${htmlEscape(order?.shippingAddress?.line1 || "")}</div>
             <div class="line muted">${htmlEscape(order?.shippingAddress?.city || "")}${order?.shippingAddress?.city && order?.shippingAddress?.state ? ", " : ""}${htmlEscape(order?.shippingAddress?.state || "")} ${htmlEscape(order?.shippingAddress?.postalCode || "")}</div>
             <div class="line muted">${htmlEscape(order?.shippingAddress?.country || "")}</div>
@@ -591,16 +592,61 @@ export function buildOrderInvoiceHtml(order) {
 </html>`;
 }
 
+export function tillDraftOrder({
+  name = "",
+  phone = "",
+  cart = [],
+  tender = "Cash",
+  upiRef = "",
+  cashReceived = 0,
+  cashierName = "",
+  note = "",
+  createdAt = new Date().toISOString(),
+} = {}) {
+  const products = (cart || []).map((line) => ({
+    name: line.name || "Jar",
+    quantity: Number(line.quantity) || 1,
+    price: Number(line.price) || 0,
+  }));
+  const totalPrice = products.reduce((sum, line) => sum + line.price * line.quantity, 0);
+  const cash = Math.max(0, Number(cashReceived) || 0);
+  const slip =
+    note ||
+    (tender === "UPI" && upiRef ? `UPI ${upiRef}` : "") ||
+    (tender === "Cash" && cash > 0 ? `Cash received ₹${Math.round(cash)}` : "");
+  return {
+    channel: "walk_in",
+    createdAt,
+    totalPrice,
+    paymentMethod: tender || "Cash",
+    products,
+    user: { name: name || "Walk-in", phone: phone || "" },
+    shippingAddress: { fullName: name || "Walk-in", phone: phone || "" },
+    invoice: {
+      number: "DRAFT",
+      notes: slip,
+      billedBy: cashierName || "",
+      status: "draft",
+    },
+    cashReceived: cash,
+  };
+}
+
 /** Tight 80mm till slip. Reuses the same order fields as the full invoice. */
 export function buildCounterBillHtml(order) {
   const invoiceNumber = resolveInvoiceNumber(order);
   const orderRef = resolveOrderRef(order);
   const totalAmount = Number(order?.totalPrice || 0);
+  const customerName = order?.shippingAddress?.fullName || order?.user?.name || "Walk-in";
+  const customerPhone = order?.shippingAddress?.phone || order?.user?.phone || "";
+  const cashier = order?.invoice?.billedBy || order?.cashierName || "";
+  const cashReceived = Math.max(0, Number(order?.cashReceived || 0));
+  const change = cashReceived > 0 ? Math.max(0, cashReceived - totalAmount) : 0;
   const lines = (order?.products || [])
     .map((p) => {
       const qty = Number(p.quantity || 0);
       const price = Number(p.price || 0);
-      return `<tr><td>${htmlEscape(p.name)}</td><td class="n">${qty}</td><td class="n">${fmtInr(qty * price)}</td></tr>`;
+      return `<tr><td>${htmlEscape(p.name)}${p.sku ? `<div class="muted">${htmlEscape(p.sku)}</div>` : ""}</td><td class="n">${qty} × ${fmtInr(price)}</td><td class="n">${fmtInr(qty * price)}</td></tr>`;
     })
     .join("");
   const note = order?.invoice?.notes || order?.shippingAddress?.note || "";
@@ -630,11 +676,13 @@ export function buildCounterBillHtml(order) {
         <div>${htmlEscape(invoiceNumber)} · #${htmlEscape(orderRef)}</div>
         <div class="muted">${fmtDateTime(order?.createdAt)}</div>
       </div>
-      <div>${htmlEscape(order?.shippingAddress?.fullName || "Walk-in")}</div>
-      <div class="muted">${htmlEscape(order?.shippingAddress?.phone || "")}</div>
+      <div><strong>${htmlEscape(customerName)}</strong></div>
+      ${customerPhone ? `<div class="muted">${htmlEscape(customerPhone)}</div>` : ""}
+      ${cashier ? `<div class="muted">Billed by ${htmlEscape(cashier)}</div>` : ""}
       <table>${lines}</table>
       <div class="total n">Total ${fmtInr(totalAmount)}</div>
       <div>${htmlEscape(order?.paymentMethod || "Cash")}${note ? ` · ${htmlEscape(note)}` : ""}</div>
+      ${cashReceived > 0 ? `<div class="muted">Received ${fmtInr(cashReceived)}${change > 0 ? ` · Change ${fmtInr(change)}` : ""}</div>` : ""}
       <div class="center muted" style="margin-top:10px">${htmlEscape(APP_WORDMARK_SUBLINE)}</div>
     </div>
   </body>

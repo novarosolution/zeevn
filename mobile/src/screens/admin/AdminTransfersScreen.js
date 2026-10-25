@@ -25,6 +25,7 @@ import { useToast } from "../../context/ToastContext";
 import { confirmAdminTransfer, fetchAdminProducts, fetchAdminTransfer, saveAdminTransferDraft, searchAdminTransfers } from "../../services/adminService";
 import AdminOfflineBanner from "../../components/admin/AdminOfflineBanner";
 import { cacheAdminCatalog, enqueueAdminOfflineDraft, isLikelyOffline, readAdminCatalogCache, syncAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
+import { adminOfflineHandlers } from "../../utils/adminOfflineSync";
 import {
   ADMIN_FONT,
   adminGatePanel,
@@ -167,12 +168,7 @@ export default function AdminTransfersScreen({ navigation, route }) {
   const syncDrafts = async () => {
     setSyncing(true);
     try {
-      const { done, pending } = await syncAdminOfflineDrafts({
-        transfer: async (payload) => {
-          const draft = await saveAdminTransferDraft(null, payload);
-          await confirmAdminTransfer(null, draft._id);
-        },
-      });
+      const { done, pending } = await syncAdminOfflineDrafts(adminOfflineHandlers());
       if (done.length) toast.toastSuccess(`Synced ${done.length} move${done.length === 1 ? "" : "s"}.`);
       if (pending[0]?.error) setError(pending[0].error);
       await load();
@@ -254,7 +250,7 @@ export default function AdminTransfersScreen({ navigation, route }) {
             <SectionReveal delay={20} preset="fade-up">
               <View style={styles.panel}>
                 <AdminAlerts error={error} onCloseError={() => setError("")} />
-                <AdminOfflineBanner kinds={["transfer"]} syncing={syncing} onSync={syncDrafts} />
+                <AdminOfflineBanner kinds={["transfer"]} syncing={syncing} onSync={syncDrafts} onManage={() => navigation.navigate("AdminOffline")} />
                 <View style={adminTwoColStyle(compact)}>
                   <View style={adminTwoColMain(compact)}>
                     <AdminPanel title="Direction" icon="swap-horizontal-outline">

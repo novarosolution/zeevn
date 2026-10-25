@@ -49,7 +49,7 @@ export const ADMIN_NAV_GROUPS = [
       {
         key: "AdminCounter",
         label: "Counter",
-        hint: "Walk-in till · POS · hold · cash or UPI · offline drafts",
+        hint: "Walk-in till · POS · hold · cash or UPI · print bill",
         icon: "storefront-outline",
         image: "orders",
         tone: "#c9a227",
@@ -352,6 +352,14 @@ export const ADMIN_NAV_GROUPS = [
         icon: "chatbubbles-outline",
         image: "support",
         tone: "#6d5a4a",
+      },
+      {
+        key: "AdminOffline",
+        label: "Offline drafts",
+        hint: "See, print, sync or remove phone drafts",
+        icon: "cloud-offline-outline",
+        image: "command",
+        tone: "#8F5E14",
       },
       {
         key: "AdminHealth",

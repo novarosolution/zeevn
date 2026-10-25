@@ -32,6 +32,7 @@ import {
   readAdminCatalogCache,
   syncAdminOfflineDrafts,
 } from "../../utils/adminOfflineQueue";
+import { adminOfflineHandlers } from "../../utils/adminOfflineSync";
 import {
   ADMIN_FONT,
   adminGatePanel,
@@ -47,7 +48,7 @@ import { spacing } from "../../theme/tokens";
 import { productCoverUri } from "../../utils/adminProductHelpers";
 import { formatRupees, formatShortDateTime } from "../../utils/adminFormat";
 import { orderRef } from "../../utils/adminOrderUi";
-import { buildCounterBillHtml } from "../../utils/orderInvoiceHtml";
+import { buildCounterBillHtml, tillDraftOrder } from "../../utils/orderInvoiceHtml";
 import { printAdminHtml } from "../../utils/printAdminHtml";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
@@ -201,9 +202,7 @@ export default function AdminCounterScreen({ navigation, route }) {
   const syncDrafts = async () => {
     setSyncing(true);
     try {
-      const { done, pending } = await syncAdminOfflineDrafts({
-        walk_in: (payload) => createAdminWalkIn(null, payload),
-      });
+      const { done, pending } = await syncAdminOfflineDrafts(adminOfflineHandlers());
       if (done.length) toast.toastSuccess(`Synced ${done.length} bill${done.length === 1 ? "" : "s"}.`);
       if (pending[0]?.error) setError(pending[0].error);
       await load();
@@ -242,6 +241,7 @@ export default function AdminCounterScreen({ navigation, route }) {
         tender,
         upiRef,
         cashReceived: received || undefined,
+        cashierName: user?.name,
       });
       setLastBill(bill);
       setOpenBill(bill);
@@ -254,14 +254,39 @@ export default function AdminCounterScreen({ navigation, route }) {
       if (seedCustomer?._id) navigation.navigate("AdminCustomers", { userId: String(seedCustomer._id) });
     } catch (err) {
       if (isLikelyOffline(err)) {
+        const draft = tillDraftOrder({
+          name,
+          phone,
+          cart,
+          tender,
+          upiRef,
+          cashReceived: received,
+          cashierName: user?.name,
+        });
         await enqueueAdminOfflineDraft(
           "walk_in",
-          { products: cart.map((line) => ({ product: line.productId, quantity: line.quantity })), customerId: customerId || undefined, name, phone, tender, upiRef, cashReceived: received || undefined },
-          `Walk-in ${formatRupees(total)}`
+          {
+            products: cart.map((line) => ({
+              product: line.productId,
+              productId: line.productId,
+              name: line.name,
+              price: line.price,
+              quantity: line.quantity,
+            })),
+            customerId: customerId || undefined,
+            name,
+            phone,
+            tender,
+            upiRef,
+            cashReceived: received || undefined,
+            cashierName: user?.name,
+          },
+          `${name || "Walk-in"} ${formatRupees(total)}`
         );
         setCart([]);
         toast.toastSuccess("Saved on this phone.");
         setError("");
+        await printAdminHtml(buildCounterBillHtml(draft));
       } else {
         setError(err.message || "Could not take the bill.");
       }
@@ -301,9 +326,30 @@ export default function AdminCounterScreen({ navigation, route }) {
     );
   }
 
+  const printDraftBill = () => {
+    if (!cart.length) {
+      setError("Add a jar first.");
+      return;
+    }
+    printAdminHtml(
+      buildCounterBillHtml(
+        tillDraftOrder({
+          name,
+          phone,
+          cart,
+          tender,
+          upiRef,
+          cashReceived: received,
+          cashierName: user?.name,
+        })
+      )
+    );
+  };
+
   const chargeBar = (
     <AdminButtonRow>
       <AdminButton label={`Charge ${formatRupees(total)}`} variant="primary" loading={busy} onPress={charge} />
+      <AdminButton label="Print bill" variant="soft" disabled={busy || !cart.length} onPress={printDraftBill} />
       <AdminButton label="Hold" variant="soft" disabled={busy || !cart.length} onPress={holdBill} />
       {lastBill?._id ? (
         <AdminButton label="Print last" variant="soft" disabled={busy} onPress={() => printAdminHtml(buildCounterBillHtml(lastBill))} />
@@ -474,7 +520,7 @@ export default function AdminCounterScreen({ navigation, route }) {
             <SectionReveal delay={20} preset="fade-up">
               <View style={styles.panel}>
                 <AdminAlerts error={error} onCloseError={() => setError("")} />
-                <AdminOfflineBanner kinds={["walk_in"]} syncing={syncing} onSync={syncDrafts} />
+                <AdminOfflineBanner kinds={["walk_in"]} syncing={syncing} onSync={syncDrafts} onManage={() => navigation.navigate("AdminOffline")} />
                 <View style={adminTwoColStyle(compact)}>
                   <View style={adminTwoColMain(compact)}>{searchCol}</View>
                   <View style={adminTwoColAside(compact)}>{billCol}</View>

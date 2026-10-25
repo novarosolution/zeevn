@@ -4,7 +4,7 @@ import { ADMIN_FONT, useAdminChrome } from "../../theme/adminLayout";
 import { listAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
 import AdminButton from "./AdminButton";
 
-export default function AdminOfflineBanner({ onSync, syncing = false, kinds = [] }) {
+export default function AdminOfflineBanner({ onSync, onManage, syncing = false, kinds = [] }) {
   const chrome = useAdminChrome();
   const [count, setCount] = useState(0);
   const kindKey = Array.isArray(kinds) ? kinds.join(",") : "";
@@ -27,9 +27,12 @@ export default function AdminOfflineBanner({ onSync, syncing = false, kinds = []
       <Text style={[styles.copy, { color: chrome.ink }]}>
         {count} draft{count === 1 ? "" : "s"} waiting on this phone.
       </Text>
-      {onSync ? (
-        <AdminButton label="Sync" size="sm" variant="soft" loading={syncing} onPress={onSync} />
-      ) : null}
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        {onManage ? <AdminButton label="See all" size="sm" variant="ghost" onPress={onManage} /> : null}
+        {onSync ? (
+          <AdminButton label="Sync" size="sm" variant="soft" loading={syncing} onPress={onSync} />
+        ) : null}
+      </View>
     </View>
   );
 }

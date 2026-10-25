@@ -193,7 +193,12 @@ export const ADMIN_HELP = {
         },
         {
           title: "Offline drafts",
-          body: "If the phone has no network, Counter, transfer, stock-in, and stock-out save a draft on this phone. Sync when you are back online. Live pile counts still only change on the server.",
+          body: "If the phone has no network, Counter, transfer, stock-in, and stock-out save a draft on this phone. Open Offline drafts to see every one, print it, sync it, or remove it. Live pile counts still only change on the server.",
+          route: "AdminOffline",
+        },
+        {
+          title: "Print a bill",
+          body: "At the till: Print bill before charge, or Print last after. On Orders, use Print bill on the row or in the drawer. Offline drafts can print too. The slip shows customer name, phone, cashier, jars, and payment.",
           route: "AdminCounter",
         },
         {

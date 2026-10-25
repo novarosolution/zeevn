@@ -31,6 +31,7 @@ import {
 import { useToast } from "../../context/ToastContext";
 import AdminOfflineBanner from "../../components/admin/AdminOfflineBanner";
 import { cacheAdminCatalog, enqueueAdminOfflineDraft, isLikelyOffline, readAdminCatalogCache, syncAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
+import { adminOfflineHandlers } from "../../utils/adminOfflineSync";
 import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { spacing } from "../../theme/tokens";
@@ -408,12 +409,7 @@ export default function AdminStockInScreen({ navigation, route }) {
   const syncDrafts = async () => {
     setSyncing(true);
     try {
-      const { done, pending } = await syncAdminOfflineDrafts({
-        stock_in: async (payload) => {
-          const saved = await saveAdminStockInDraft(null, payload);
-          return confirmAdminStockIn(null, saved._id, payload);
-        },
-      });
+      const { done, pending } = await syncAdminOfflineDrafts(adminOfflineHandlers());
       if (done.length) toast.toastSuccess(`Synced ${done.length} ${done.length === 1 ? "delivery" : "deliveries"}.`);
       if (pending[0]?.error) setError(pending[0].error);
       await loadList({ silent: true });
@@ -469,7 +465,7 @@ export default function AdminStockInScreen({ navigation, route }) {
           >
             <View style={styles.panel}>
               <AdminAlerts error={error} onCloseError={() => setError("")} />
-              <AdminOfflineBanner kinds={["stock_in"]} syncing={syncing} onSync={syncDrafts} />
+              <AdminOfflineBanner kinds={["stock_in"]} syncing={syncing} onSync={syncDrafts} onManage={() => navigation.navigate("AdminOffline")} />
 
               {mode === "list" ? (
                 <>

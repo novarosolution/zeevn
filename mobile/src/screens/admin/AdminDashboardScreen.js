@@ -218,7 +218,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
                     <AdminKpiCard icon="close-circle-outline" label="Out of stock" hint={k.outOfStock ? "Restock" : "All in stock"} value={String(k.outOfStock ?? 0)} tone={tone(k.outOfStock)} onPress={() => go("AdminInventory", { filter: "out" })} />
                     <AdminKpiCard icon="chatbubble-ellipses-outline" label="Support" hint={desk?.support?.awaitingReply ? "Reply" : "Caught up"} value={String(desk?.support?.awaitingReply ?? 0)} tone={tone(desk?.support?.awaitingReply)} onPress={() => go("AdminSupport")} />
                     <AdminKpiCard icon="cash-outline" label="Cash due" hint={desk?.orders?.cashDue ? "Collect COD" : "Nothing due"} value={String(desk?.orders?.cashDue ?? 0)} tone={Number(desk?.orders?.cashDue) > 0 ? "hot" : "default"} onPress={() => go("AdminCash")} />
-                    <AdminKpiCard icon="cloud-offline-outline" label="Drafts on this phone" hint={drafts ? "Sync when online" : "None waiting"} value={String(drafts)} tone={tone(drafts)} onPress={() => go("AdminCounter")} />
+                    <AdminKpiCard icon="cloud-offline-outline" label="Drafts on this phone" hint={drafts ? "Sync when online" : "None waiting"} value={String(drafts)} tone={tone(drafts)} onPress={() => go("AdminOffline")} />
                   </AdminKpiGrid>
                 </AdminPanel>
               </SectionReveal>

@@ -5,6 +5,8 @@ import {
   updateOrderStatus,
 } from "../../../services/adminService";
 import { adminAdvanceFor, adminStatusMeta, orderRef, primaryOrderAction } from "../../../utils/adminOrderUi";
+import { buildCounterBillHtml, buildOrderInvoiceHtml } from "../../../utils/orderInvoiceHtml";
+import { printAdminHtml } from "../../../utils/printAdminHtml";
 
 /**
  * The one-order actions the Orders desk offers from a row, the bulk bar and the quick-view drawer, with the same
@@ -112,5 +114,20 @@ export default function useOrderActions({ toast, confirm, onChanged }) {
     [advance, setPayment]
   );
 
-  return { busyId, advance, cancel, setPayment, assignRider, runPrimary };
+  const printBill = useCallback(
+    async (order) => {
+      if (!order) return null;
+      try {
+        await printAdminHtml(order.channel === "walk_in" ? buildCounterBillHtml(order) : buildOrderInvoiceHtml(order));
+        toast.toastSuccess("Bill ready to print.");
+        return true;
+      } catch (err) {
+        toast.toastError(err?.message || "Could not print this bill.");
+        return null;
+      }
+    },
+    [toast]
+  );
+
+  return { busyId, advance, cancel, setPayment, assignRider, runPrimary, printBill };
 }

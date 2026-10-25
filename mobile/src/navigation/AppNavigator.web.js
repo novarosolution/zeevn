@@ -80,6 +80,7 @@ const ProtectedAdminTransfers = withAuthGuard(LazyScreens.AdminTransfersScreen);
 const ProtectedAdminStockOut = withAuthGuard(LazyScreens.AdminStockOutScreen);
 const ProtectedAdminSuppliers = withAuthGuard(LazyScreens.AdminSuppliersScreen);
 const ProtectedAdminCycleCount = withAuthGuard(LazyScreens.AdminCycleCountScreen);
+const ProtectedAdminOffline = withAuthGuard(LazyScreens.AdminOfflineScreen);
 const ProtectedAdminReorders = withAuthGuard(LazyScreens.AdminReordersScreen);
 const ProtectedAdminClosing = withAuthGuard(LazyScreens.AdminClosingScreen);
 const ProtectedAdminStockReport = withAuthGuard(LazyScreens.AdminStockReportScreen);
@@ -174,6 +175,7 @@ export default function AppNavigator({ navigationRef, navReady = false }) {
             <Stack.Screen name="AdminStockOut" component={ProtectedAdminStockOut} />
             <Stack.Screen name="AdminSuppliers" component={ProtectedAdminSuppliers} />
             <Stack.Screen name="AdminCycleCount" component={ProtectedAdminCycleCount} />
+            <Stack.Screen name="AdminOffline" component={ProtectedAdminOffline} />
             <Stack.Screen name="AdminReorders" component={ProtectedAdminReorders} />
             <Stack.Screen name="AdminClosing" component={ProtectedAdminClosing} />
             <Stack.Screen name="AdminStockReport" component={ProtectedAdminStockReport} />

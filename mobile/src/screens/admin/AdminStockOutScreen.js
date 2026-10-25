@@ -22,6 +22,7 @@ import { useToast } from "../../context/ToastContext";
 import { createAdminStockOut, fetchAdminProducts } from "../../services/adminService";
 import AdminOfflineBanner from "../../components/admin/AdminOfflineBanner";
 import { cacheAdminCatalog, enqueueAdminOfflineDraft, isLikelyOffline, readAdminCatalogCache, syncAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
+import { adminOfflineHandlers } from "../../utils/adminOfflineSync";
 import {
   ADMIN_FONT,
   adminGatePanel,
@@ -165,9 +166,7 @@ export default function AdminStockOutScreen({ navigation, route }) {
   const syncDrafts = async () => {
     setSyncing(true);
     try {
-      const { done, pending } = await syncAdminOfflineDrafts({
-        stock_out: (payload) => createAdminStockOut(null, payload),
-      });
+      const { done, pending } = await syncAdminOfflineDrafts(adminOfflineHandlers());
       if (done.length) toast.toastSuccess(`Synced ${done.length} write-off${done.length === 1 ? "" : "s"}.`);
       if (pending[0]?.error) setError(pending[0].error);
       await load();
@@ -197,7 +196,7 @@ export default function AdminStockOutScreen({ navigation, route }) {
             <SectionReveal delay={20} preset="fade-up">
               <View style={styles.panel}>
                 <AdminAlerts error={error} onCloseError={() => setError("")} />
-                <AdminOfflineBanner kinds={["stock_out"]} syncing={syncing} onSync={syncDrafts} />
+                <AdminOfflineBanner kinds={["stock_out"]} syncing={syncing} onSync={syncDrafts} onManage={() => navigation.navigate("AdminOffline")} />
                 <View style={adminTwoColStyle(compact)}>
                   <View style={adminTwoColMain(compact)}>
                     <AdminPanel title="Jar" icon="cube-outline">

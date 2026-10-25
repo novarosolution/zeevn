@@ -118,6 +118,7 @@ const ADMIN_SCREENS = {
   AdminStockOut: "admin/stock-out",
   AdminSuppliers: "admin/suppliers",
   AdminCycleCount: "admin/cycle-count",
+  AdminOffline: "admin/offline",
   AdminReorders: "admin/reorders",
   AdminClosing: "admin/closing",
   AdminStockReport: "admin/stock-report",

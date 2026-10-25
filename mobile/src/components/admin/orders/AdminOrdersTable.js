@@ -49,6 +49,7 @@ function menuItemsFor(order, { onFullOpen, actions }) {
   const customer = customerOf(order);
   const items = [
     { key: "open", label: "Open full order", icon: "open-outline", onPress: () => onFullOpen(order) },
+    { key: "print", label: "Print bill", icon: "print-outline", onPress: () => actions.printBill?.(order) },
     { key: "copy", label: "Copy order number", icon: "copy-outline", onPress: () => copyText(orderRef(order)) },
   ];
   if (telHref(customer.phone)) items.push({ key: "call", label: "Call customer", icon: "call-outline", onPress: () => openExternal(telHref(customer.phone)) });

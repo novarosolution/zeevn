@@ -92,6 +92,7 @@ const ADMIN_ROUTES = [
   ["AdminStockOut", AdminScreens.AdminStockOutScreen],
   ["AdminSuppliers", AdminScreens.AdminSuppliersScreen],
   ["AdminCycleCount", AdminScreens.AdminCycleCountScreen],
+  ["AdminOffline", AdminScreens.AdminOfflineScreen],
   ["AdminReorders", AdminScreens.AdminReordersScreen],
   ["AdminClosing", AdminScreens.AdminClosingScreen],
   ["AdminStockReport", AdminScreens.AdminStockReportScreen],

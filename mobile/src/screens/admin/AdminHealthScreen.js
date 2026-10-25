@@ -220,7 +220,7 @@ export default function AdminHealthScreen({ navigation, route }) {
                   />
                   <AdminSettingRow
                     title="Offline drafts"
-                    description={queueCount ? "Bills and stock moves waiting on this phone. Open Counter to sync." : "Nothing queued on this phone."}
+                    description={queueCount ? "Bills and stock moves waiting on this phone. Open Offline drafts to sync or print." : "Nothing queued on this phone."}
                     last
                     right={<AdminBadge label={queueCount ? String(queueCount) : "None"} tone={queueCount ? "gold" : "green"} size="sm" />}
                   />

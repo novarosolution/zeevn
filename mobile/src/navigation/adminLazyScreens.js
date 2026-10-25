@@ -210,6 +210,11 @@ export const AdminCycleCountScreen = createLazyScreenDevSafe(
   () => import("../screens/admin/AdminCycleCountScreen"),
   { screenName: "AdminCycleCountScreen" }
 );
+export const AdminOfflineScreen = createLazyScreenDevSafe(
+  () => require("../screens/admin/AdminOfflineScreen").default,
+  () => import("../screens/admin/AdminOfflineScreen"),
+  { screenName: "AdminOfflineScreen" }
+);
 
 export const AdminSettingsScreen = createLazyScreenDevSafe(
   () => require("../screens/admin/AdminSettingsScreen").default,

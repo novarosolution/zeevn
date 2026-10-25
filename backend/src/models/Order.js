@@ -217,6 +217,7 @@ const orderSchema = new mongoose.Schema(
       issueDate: { type: Date, default: Date.now },
       dueDate: { type: Date, default: null },
       notes: { type: String, default: "", trim: true },
+      billedBy: { type: String, default: "", trim: true },
       taxRatePercent: { type: Number, default: 0, min: 0 },
       taxAmount: { type: Number, default: 0, min: 0 },
       status: {

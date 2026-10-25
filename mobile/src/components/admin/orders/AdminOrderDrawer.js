@@ -174,6 +174,7 @@ export default function AdminOrderDrawer({ orderId, seed, riders, onClose, onCha
   const footer = current ? (
     <View style={styles.footer}>
       {!final ? <AdminButton label="Cancel order" icon="close-circle-outline" variant="danger" size="md" onPress={() => actions.cancel(current)} disabled={busy} /> : null}
+      <AdminButton label="Print bill" icon="print-outline" variant="soft" size="md" onPress={() => actions.printBill(current)} />
       <AdminButton label="Full page" icon="open-outline" variant="soft" size="md" onPress={() => onFullOpen?.(current)} />
       <View style={{ flex: 1 }} />
       {primary ? (

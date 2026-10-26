@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const Product = require("../models/Product");
 const StockTransfer = require("../models/StockTransfer");
-const { transferStock, locationOf } = require("../utils/stock");
+const { transferStock, locationOf, qtyAt } = require("../utils/stock");
 const { recordAdminAction, productOpen } = require("../utils/adminLog");
 
 const PAGE_SIZE = { min: 5, max: 100, fallback: 25 };
@@ -70,6 +70,24 @@ async function sanitizeLines(raw) {
 
 function readPile(value, fallback = "online") {
   return locationOf(value || fallback);
+}
+
+/** Check every line against the source pile first, so a short line can't leave the others half moved. */
+async function assertEnoughToMove(lines, from) {
+  const products = await Product.find({ _id: { $in: lines.map((line) => line.product) } })
+    .select("name stockQty stockCounter")
+    .lean();
+  const byId = new Map(products.map((p) => [String(p._id), p]));
+  for (const line of lines) {
+    const product = byId.get(String(line.product));
+    const name = product?.name || line.name || "That jar";
+    if (!product) fail(`${name} is gone.`);
+    const have = qtyAt(product, from);
+    const need = Math.max(1, Math.floor(Number(line.quantity) || 0));
+    if (have < need) {
+      fail(`Only ${have} ${name} ${from === "online" ? "online" : "on the floor"}, can't move ${need}.`);
+    }
+  }
 }
 
 async function listTransfers(req, res, next) {
@@ -172,6 +190,7 @@ async function confirmTransfer(req, res, next) {
     if (req.body?.lines !== undefined) draft.lines = await sanitizeLines(req.body.lines);
     if (draft.from === draft.to) fail("Move from one pile to the other.");
     if (!draft.lines.length) fail("Add at least one jar.");
+    await assertEnoughToMove(draft.lines, draft.from);
     draft.savedBy = req.user?._id || null;
     draft.savedByName = actorName(req.user);
     await draft.save();
@@ -183,6 +202,7 @@ async function confirmTransfer(req, res, next) {
     );
     if (!locked) fail("This transfer is locked.");
 
+    const moved = [];
     try {
       for (const line of locked.lines) {
         await transferStock({
@@ -194,8 +214,21 @@ async function confirmTransfer(req, res, next) {
           transfer: locked._id,
           receiptNote: locked.note,
         });
+        moved.push(line);
       }
     } catch (error) {
+      // Someone sold a jar between the check and the move: put back what already moved, then reopen the draft.
+      for (const line of moved.reverse()) {
+        await transferStock({
+          productId: line.product,
+          from: locked.to,
+          to: locked.from,
+          qty: line.quantity,
+          who: actorName(req.user),
+          transfer: locked._id,
+          receiptNote: "Undone, transfer did not finish",
+        }).catch(() => {});
+      }
       await StockTransfer.updateOne({ _id: locked._id }, { $set: { status: "draft", doneAt: null } });
       throw error;
     }

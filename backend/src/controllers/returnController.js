@@ -302,7 +302,7 @@ async function getAdminReturn(req, res, next) {
 async function approveReturn(req, res, next) {
   try {
     if (!isId(req.params.id)) return res.status(400).json({ message: "Invalid return id." });
-    const doc = await OrderReturn.findById(req.params.id);
+    let doc = await OrderReturn.findById(req.params.id);
     if (!doc) return res.status(404).json({ message: "Return not found." });
     if (doc.status !== "pending") {
       return res.status(400).json({ message: "This return has already been decided." });
@@ -312,13 +312,23 @@ async function approveReturn(req, res, next) {
 
     const amount = (doc.lines || []).reduce((sum, line) => sum + lineAmount(line), 0);
     const wasCodPending = isCod(order) && order.paymentStatus === "pending";
-    doc.status = "approved";
-    doc.refundAmount = Math.round(amount * 100) / 100;
-    doc.remarks = String(req.body?.remarks || doc.remarks || "").trim().slice(0, 500);
-    doc.decidedBy = req.user?._id || null;
-    doc.decidedByName = actorName(req.user);
-    doc.decidedAt = new Date();
-    await doc.save();
+    // Decide it atomically: a double tap must not put the jars back, and count the refund, twice.
+    const claimed = await OrderReturn.findOneAndUpdate(
+      { _id: doc._id, status: "pending" },
+      {
+        $set: {
+          status: "approved",
+          refundAmount: Math.round(amount * 100) / 100,
+          remarks: String(req.body?.remarks || doc.remarks || "").trim().slice(0, 500),
+          decidedBy: req.user?._id || null,
+          decidedByName: actorName(req.user),
+          decidedAt: new Date(),
+        },
+      },
+      { new: true }
+    );
+    if (!claimed) return res.status(400).json({ message: "This return has already been decided." });
+    doc = claimed;
 
     await restoreStockForOrderLines(doc.lines, {
       why: "return",
@@ -379,12 +389,19 @@ async function rejectReturn(req, res, next) {
     const order = await Order.findById(doc.order).select("+adminNotes");
     if (!order) return res.status(404).json({ message: "Order not found." });
 
-    doc.status = "rejected";
-    doc.remarks = remarks;
-    doc.decidedBy = req.user?._id || null;
-    doc.decidedByName = actorName(req.user);
-    doc.decidedAt = new Date();
-    await doc.save();
+    const claimed = await OrderReturn.findOneAndUpdate(
+      { _id: doc._id, status: "pending" },
+      {
+        $set: {
+          status: "rejected",
+          remarks,
+          decidedBy: req.user?._id || null,
+          decidedByName: actorName(req.user),
+          decidedAt: new Date(),
+        },
+      }
+    );
+    if (!claimed) return res.status(400).json({ message: "This return has already been decided." });
 
     pushOrderNote(order, req.user, `Return rejected — ${remarks}`);
     await order.save();

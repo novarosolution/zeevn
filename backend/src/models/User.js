@@ -144,6 +144,11 @@ const userSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    /** Set when an account deletion is approved: the details are wiped and every login token stops working. */
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

@@ -2,8 +2,7 @@ import React, { useMemo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { useTheme } from "../../context/ThemeContext";
-import { getAdminChrome } from "../../theme/adminLayout";
-import { ADMIN_FONT } from "../../theme/adminLayout";
+import { ADMIN_FONT, getAdminChrome } from "../../theme/adminLayout";
 
 export default function AdminProductCell({ name, imageUri, index = 0, meta = "" }) {
   const { colors: c, isDark } = useTheme();

@@ -214,7 +214,7 @@ export default function StoreProfile({
   onSignOut,
   signingOut,
 }) {
-  const { c, r, type, isDark, gutter } = useStoreTheme();
+  const { c, r, type, gutter } = useStoreTheme();
   const insets = useSafeAreaInsets();
   const scrollY = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler((event) => {

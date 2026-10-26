@@ -29,6 +29,7 @@ import {
 import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { printAdminHtml } from "../../utils/printAdminHtml";
 import { formatRupees } from "../../utils/adminFormat";
+import { htmlEscape } from "../../utils/orderInvoiceMeta";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { spacing } from "../../theme/tokens";
 function formatDateKey(key) {
@@ -50,19 +51,30 @@ function countedText(value) {
   return String(value);
 }
 
+/**
+ * What was counted against what the shelf held, from the boxes as they are typed right now (the server's `counted`
+ * only catches up after a save). An empty box means "not counted", never "zero", so only the piles somebody counted
+ * are compared. Sheets saved before the floor pile existed carry one `counted`, which was the online count.
+ */
+function compareLine(line) {
+  const onlineRaw = countedText(line.countedOnline);
+  const floorRaw = countedText(line.countedCounter);
+  const legacyRaw = countedText(line.counted);
+  const online = onlineRaw !== "" ? Number(onlineRaw) : floorRaw === "" && legacyRaw !== "" ? Number(legacyRaw) : null;
+  const floor = floorRaw !== "" ? Number(floorRaw) : null;
+  if (online === null && floor === null) return null;
+  const expectedOnline = Number(line.expectedOnline ?? line.expected ?? 0);
+  const expectedFloor = Number(line.expectedCounter || 0);
+  const counted = (online ?? 0) + (floor ?? 0);
+  const expected = (online === null ? 0 : expectedOnline) + (floor === null ? 0 : expectedFloor);
+  return { counted, expected, variance: counted - expected };
+}
+
 function lineKind(line) {
-  const online = countedText(line.countedOnline);
-  const floor = countedText(line.countedCounter);
-  const legacy = countedText(line.counted);
-  if (online === "" && floor === "" && legacy === "") return "uncounted";
-  const counted =
-    online === "" && floor === ""
-      ? Number(legacy)
-      : (online === "" ? 0 : Number(online)) + (floor === "" ? 0 : Number(floor));
-  const expected = Number(line.expectedOnline ?? line.expected ?? 0) + Number(line.expectedCounter || 0);
-  const v = counted - expected;
-  if (v < 0) return "shortage";
-  if (v > 0) return "surplus";
+  const compared = compareLine(line);
+  if (!compared) return "uncounted";
+  if (compared.variance < 0) return "shortage";
+  if (compared.variance > 0) return "surplus";
   return "match";
 }
 
@@ -81,10 +93,16 @@ function payloadOf(sheet) {
 }
 
 function varianceLabel(line) {
-  if (lineKind(line) === "uncounted") return "";
-  const v = Number(countedText(line.counted)) - Number(line.expected || 0);
-  if (v === 0) return "Match";
-  return v > 0 ? `+${v}` : String(v);
+  const compared = compareLine(line);
+  if (!compared) return "";
+  if (compared.variance === 0) return "Match";
+  return compared.variance > 0 ? `+${compared.variance}` : String(compared.variance);
+}
+
+function formatAppliedAt(value) {
+  const at = value ? new Date(value) : null;
+  if (!at || Number.isNaN(at.getTime())) return "";
+  return at.toLocaleString("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 }
 
 export default function AdminClosingScreen({ navigation, route }) {
@@ -211,14 +229,23 @@ export default function AdminClosingScreen({ navigation, route }) {
   };
 
   const apply = async () => {
-    if (!sheet || busy) return;
-    const ok = await confirm({ title: `Write ${sheet.date} counts onto stock?`, confirmLabel: "Apply", icon: "save-outline" });
+    if (!sheet || busy || sheet.appliedAt) return;
+    const ok = await confirm({
+      title: `Write ${formatDateKey(sheet.date)} counts onto stock?`,
+      message: sheet.today
+        ? "Stock will be set to these counts."
+        : "This count is from an earlier day. Anything sold or received since then will be overwritten.",
+      confirmLabel: "Apply",
+      tone: sheet.today ? "default" : "danger",
+      icon: "save-outline",
+    });
     if (!ok) return;
     setBusy(true);
     setError("");
     try {
       const saved = await applyAdminClosing(null, sheet.date);
       setSheet(saved);
+      await loadPast();
     } catch (err) {
       setError(err?.message || "Couldn't apply the count.");
     } finally {
@@ -261,7 +288,11 @@ export default function AdminClosingScreen({ navigation, route }) {
       {locked ? (
         <>
           <AdminButton label="Reopen" icon="create-outline" variant="soft" onPress={reopen} loading={busy} style={styles.actionBtn} />
-          <AdminButton label="Apply to stock" icon="save-outline" variant="gold" onPress={apply} loading={busy} style={styles.actionBtn} />
+          {sheet.appliedAt ? (
+            <AdminButton label="On stock" icon="checkmark-done-outline" variant="soft" disabled style={styles.actionBtn} />
+          ) : (
+            <AdminButton label="Apply to stock" icon="save-outline" variant="gold" onPress={apply} loading={busy} style={styles.actionBtn} />
+          )}
         </>
       ) : (
         <>
@@ -325,7 +356,7 @@ export default function AdminClosingScreen({ navigation, route }) {
                           <>
                             <View style={styles.cardTop}>
                               <Text style={styles.strong}>{formatDateKey(row.date)}</Text>
-                              <AdminBadge label={row.status === "submitted" ? "Submitted" : "Draft"} tone={row.status === "submitted" ? "green" : "gold"} />
+                              <AdminBadge label={row.applied ? "On stock" : row.status === "submitted" ? "Submitted" : "Draft"} tone={row.status === "submitted" ? "green" : "gold"} />
                             </View>
                             <Text style={styles.sub}>
                               {row.shortage} shortage · {row.surplus} surplus
@@ -335,7 +366,7 @@ export default function AdminClosingScreen({ navigation, route }) {
                           <>
                             <Text style={[styles.strong, { flex: 1.2 }]}>{formatDateKey(row.date)}</Text>
                             <View style={{ width: 100 }}>
-                              <AdminBadge label={row.status === "submitted" ? "Submitted" : "Draft"} tone={row.status === "submitted" ? "green" : "gold"} />
+                              <AdminBadge label={row.applied ? "On stock" : row.status === "submitted" ? "Submitted" : "Draft"} tone={row.status === "submitted" ? "green" : "gold"} />
                             </View>
                             <Text style={[styles.body, { width: 88 }]}>{row.shortage}</Text>
                             <Text style={[styles.body, { width: 80 }]}>{row.surplus}</Text>
@@ -350,8 +381,13 @@ export default function AdminClosingScreen({ navigation, route }) {
                   <View style={styles.sheetHead}>
                     <View style={styles.sheetTitle}>
                       <Text style={styles.date}>{formatDateKey(sheet.date)}</Text>
-                      <AdminBadge label={locked ? "Submitted" : "Draft"} tone={locked ? "green" : "gold"} />
+                      <AdminBadge label={sheet.appliedAt ? "On stock" : locked ? "Submitted" : "Draft"} tone={locked ? "green" : "gold"} />
                     </View>
+                    {sheet.appliedAt ? (
+                      <Text style={styles.sub}>
+                        {`Written onto stock ${formatAppliedAt(sheet.appliedAt)}${sheet.appliedByName ? ` by ${sheet.appliedByName}` : ""}. Reopen to count again.`}
+                      </Text>
+                    ) : null}
                     <AdminStatGrid min={compact ? 96 : 120}>
                       <AdminStatTile
                         label="Shortage"
@@ -399,9 +435,9 @@ export default function AdminClosingScreen({ navigation, route }) {
                         const html = `<!doctype html><html><head><meta charset="utf-8"><title>Closing ${sheet.date}</title>
                           <style>body{font-family:system-ui,sans-serif;padding:24px;color:#1a2118}h1{font-size:20px;margin:0 0 8px}p{color:#5c6658}table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:6px 0;border-bottom:1px solid #e6e3d8}</style></head>
                           <body><h1>Closing ${formatDateKey(sheet.date)}</h1>
-                          <p>Cash counted ${sheet.cashCounted != null && sheet.cashCounted !== "" ? formatRupees(sheet.cashCounted) : "—"} ${sheet.cashNote ? `· ${sheet.cashNote}` : ""}</p>
+                          <p>Cash counted ${sheet.cashCounted != null && sheet.cashCounted !== "" ? formatRupees(sheet.cashCounted) : "—"} ${sheet.cashNote ? `· ${htmlEscape(sheet.cashNote)}` : ""}</p>
                           <table><thead><tr><th>Jar</th><th>Online</th><th>Floor</th></tr></thead><tbody>
-                          ${(sheet.lines || []).map((line) => `<tr><td>${line.name}</td><td>${countedText(line.countedOnline) || countedText(line.counted) || "—"}</td><td>${countedText(line.countedCounter) || "—"}</td></tr>`).join("")}
+                          ${(sheet.lines || []).map((line) => `<tr><td>${htmlEscape(line.name)}</td><td>${countedText(line.countedOnline) || countedText(line.counted) || "—"}</td><td>${countedText(line.countedCounter) || "—"}</td></tr>`).join("")}
                           </tbody></table></body></html>`;
                         printAdminHtml(html);
                       }}

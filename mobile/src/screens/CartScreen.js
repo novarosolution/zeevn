@@ -20,7 +20,7 @@ import {
   createOrderRequest,
   validateCouponRequest} from "../services/orderService";
 import { checkDeliveryServiceability } from "../services/deliveryService";
-import { getCurrentAddressFromGPS } from "../services/locationService";
+import { getCurrentAddressFromGPS, validDeliveryCoord, validMapCoord } from "../services/locationService";
 import { useDeliveryLocation } from "../context/DeliveryLocationContext";
 import { openPickLocation, usePickedPlace } from "../navigation/pickLocationNav";
 import { useTheme } from "../context/ThemeContext";
@@ -90,7 +90,7 @@ function getProfileAddressCompletion(defaultAddress) {
 export default function CartScreen({ navigation, route }) {
   const { cartItems, totalAmount, totalItems, addToCart, removeFromCart, removeLineFromCart, clearCart } = useCart();
   const { isAuthenticated, token, user } = useAuth();
-  const { applyPlace } = useDeliveryLocation();
+  const { applyPlace, snippet: confirmedPlace } = useDeliveryLocation();
   const { showOrderConfirmed } = useOrderCelebration();
   const { toastSuccess } = useToast();
   const isCheckoutFlow = route?.name === "Checkout" || route?.params?.flow === "checkout";
@@ -167,17 +167,23 @@ export default function CartScreen({ navigation, route }) {
     setCity(user?.defaultAddress?.city || "");
     setPostalCode(user?.defaultAddress?.postalCode || "");
     setCountry(user?.defaultAddress?.country || "");
-    setLatitude(
-      Number.isFinite(Number(user?.defaultAddress?.latitude))
-        ? Number(user.defaultAddress.latitude)
-        : null
-    );
-    setLongitude(
-      Number.isFinite(Number(user?.defaultAddress?.longitude))
-        ? Number(user.defaultAddress.longitude)
-        : null
-    );
+    setLatitude(validMapCoord(user?.defaultAddress?.latitude) ? Number(user.defaultAddress.latitude) : null);
+    setLongitude(validMapCoord(user?.defaultAddress?.longitude) ? Number(user.defaultAddress.longitude) : null);
   }, [user]);
+
+  /** A shopper with no saved address has still told us where they are (the spot confirmed on first launch): start the form there. */
+  useEffect(() => {
+    const saved = user?.defaultAddress;
+    if (!confirmedPlace || saved?.line1 || saved?.city || saved?.postalCode) return;
+    setLine1((prev) => prev || confirmedPlace.line1 || "");
+    setCity((prev) => prev || confirmedPlace.city || "");
+    setPostalCode((prev) => prev || confirmedPlace.postalCode || "");
+    setCountry((prev) => prev || confirmedPlace.country || "");
+    if (validDeliveryCoord(confirmedPlace.latitude, confirmedPlace.longitude)) {
+      setLatitude((prev) => prev ?? Number(confirmedPlace.latitude));
+      setLongitude((prev) => prev ?? Number(confirmedPlace.longitude));
+    }
+  }, [confirmedPlace, user?.defaultAddress]);
 
   useEffect(() => {
     if (!appliedCoupon) return;
@@ -228,7 +234,7 @@ export default function CartScreen({ navigation, route }) {
   useEffect(() => {
     const pin = String(postalCode || "").replace(/\D/g, "");
     const cityName = String(city || "").trim();
-    const hasPoint = Number.isFinite(Number(latitude)) && Number.isFinite(Number(longitude));
+    const hasPoint = validDeliveryCoord(latitude, longitude);
     if (pin.length < 6 && !cityName && !hasPoint) {
       setDeliveryQuote({ serviceable: true, fee: 0, zoneName: "", checked: false });
       return undefined;
@@ -247,6 +253,7 @@ export default function CartScreen({ navigation, route }) {
           setDeliveryQuote({
             serviceable: Boolean(res?.serviceable),
             fee: Number(res?.fee || 0),
+            freeAbove: Number(res?.freeAbove || 0),
             zoneName: res?.zoneName || "",
             checked: true,
             etaMinutesMin: res?.etaMinutesMin,
@@ -275,8 +282,8 @@ export default function CartScreen({ navigation, route }) {
     if (place.city) setCity(place.city);
     if (place.postalCode) setPostalCode(place.postalCode);
     if (place.country) setCountry(place.country);
-    if (Number.isFinite(Number(place.latitude))) setLatitude(Number(place.latitude));
-    if (Number.isFinite(Number(place.longitude))) setLongitude(Number(place.longitude));
+    if (validMapCoord(place.latitude)) setLatitude(Number(place.latitude));
+    if (validMapCoord(place.longitude)) setLongitude(Number(place.longitude));
     applyPlace(place);
     toastSuccess("Place set — review the address, then place the order.", { title: "New place" });
   });
@@ -373,8 +380,8 @@ export default function CartScreen({ navigation, route }) {
     setCity(a.city || "");
     setPostalCode(a.postalCode || "");
     setCountry(a.country || "India");
-    setLatitude(Number.isFinite(Number(a.latitude)) ? Number(a.latitude) : null);
-    setLongitude(Number.isFinite(Number(a.longitude)) ? Number(a.longitude) : null);
+    setLatitude(validMapCoord(a.latitude) ? Number(a.latitude) : null);
+    setLongitude(validMapCoord(a.longitude) ? Number(a.longitude) : null);
     setFieldErrors({});
     toastSuccess("Saved address applied.", { title: "Address loaded" });
   };
@@ -557,8 +564,8 @@ export default function CartScreen({ navigation, route }) {
     if (!houseNumber.trim() && address.line1) {
       setHouseNumber(String(address.line1).split(",")[0].slice(0, 32));
     }
-    if (Number.isFinite(Number(address.latitude))) setLatitude(Number(address.latitude));
-    if (Number.isFinite(Number(address.longitude))) setLongitude(Number(address.longitude));
+    if (validMapCoord(address.latitude)) setLatitude(Number(address.latitude));
+    if (validMapCoord(address.longitude)) setLongitude(Number(address.longitude));
     await applyPlace(address);
   };
 
@@ -617,6 +624,8 @@ export default function CartScreen({ navigation, route }) {
           deliveryFee,
           deliveryBlocked,
           deliveryHint,
+          /** The area's own free-delivery rule once the address is known (0 = never charged); `null` until then. */
+          freeAbove: deliveryQuote.checked && deliveryQuote.serviceable ? Number(deliveryQuote.freeAbove || 0) : null,
           platformFee,
           discount: discountAmount,
           total: payableAmount,

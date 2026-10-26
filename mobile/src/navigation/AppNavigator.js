@@ -1,3 +1,6 @@
+/* eslint-disable import/namespace --
+   This is the native navigator (the web build uses AppNavigator.web.js). The linter resolves "./screenRegistryCore" and
+   "./lazyScreens" to their .web.js twins, which leave out FindLocation and Wishlist on purpose, and reports them missing. */
 import React, { useMemo } from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Platform, StyleSheet, View } from "react-native";

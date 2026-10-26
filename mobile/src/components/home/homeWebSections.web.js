@@ -1,5 +1,3 @@
-import React from "react";
-import { View } from "react-native";
 
 /**
  * Web lean home — heavy marketing sections load only when leanHome is disabled.

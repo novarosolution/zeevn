@@ -21,7 +21,7 @@ import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefro
 import { formatINR } from "../../utils/currency";
 import { formatOrderShortId } from "../../utils/orderDisplay";
 import { formatCompactShippingLine } from "../../utils/shippingAddressFormat";
-import { productImageUri } from "../../utils/storefront";
+import { productImageSource } from "../../utils/storefront";
 import { replaceCustomerRoute } from "../../navigation/customerNavigate";
 import FloatingNav from "./FloatingNav";
 import PressableScale from "./PressableScale";
@@ -171,10 +171,10 @@ function Summary({ order }) {
       {shown.length ? (
         <View style={styles.thumbRow}>
           {shown.map((p, i) => {
-            const uri = productImageUri({ image: p.image }, 56);
+            const source = productImageSource({ name: p.name, image: p.image }, 56);
             return (
               <View key={`${p.name}-${i}`} style={[styles.thumb, { backgroundColor: c.well, borderColor: c.line }]}>
-                {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="memory-disk" /> : null}
+                {source ? <Image source={source} style={StyleSheet.absoluteFill} contentFit={typeof source === "number" ? "contain" : "cover"} cachePolicy="memory-disk" /> : null}
               </View>
             );
           })}
@@ -307,7 +307,7 @@ export function StoreOrderPlaced({ order, onTrack, onContinue }) {
  * track / shop / home actions. Shown from `OrderConfirmedScreen`.
  */
 export default function StoreOrderConfirmed({ navigation, order }) {
-  const { c, type, gutter, isDark } = useStoreTheme();
+  const { c, type, gutter } = useStoreTheme();
   const insets = useSafeAreaInsets();
   const navPad = STORE_NAV_HEIGHT + Math.max(16, insets.bottom + 6) + 28;
   const hasOrder = Boolean(order?._id || order?.id);

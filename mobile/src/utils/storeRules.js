@@ -27,7 +27,11 @@ const positive = (value) => {
 export function normalizeStoreInfo(raw) {
   if (!raw || typeof raw !== "object") return null;
   const nextOpenAt = raw.nextOpenAt ? Date.parse(raw.nextOpenAt) : NaN;
+  const support = raw.support && typeof raw.support === "object" ? raw.support : {};
+  const text = (value) => String(value || "").trim();
   return {
+    /** How to reach the shop, as the admin set it in Settings (each may be empty). */
+    support: { email: text(support.email), phone: text(support.phone), whatsapp: text(support.whatsapp) },
     open: raw.open !== false,
     reason: raw.reason === "paused" || raw.reason === "hours" ? raw.reason : null,
     message: String(raw.message || "").trim(),

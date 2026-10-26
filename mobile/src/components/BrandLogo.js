@@ -61,7 +61,6 @@ export default function BrandLogo({
 
   const useImage = !textOnly && ZEEVAN_BRAND_ASSETS.wordmark;
   const imageSource = resolveBrandImageSource({ mark, variant: resolvedVariant, isDark });
-  const imageAspect = mark ? 1 : BRAND_LOGO_ASPECT;
   const imageWidth = mark ? resolvedHeight : resolvedWidth;
   const imageHeight = resolvedHeight;
 

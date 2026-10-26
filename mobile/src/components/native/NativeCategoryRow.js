@@ -34,11 +34,10 @@ export default function NativeCategoryRow({ categories, products, onPress }) {
   const { isDark, colors: c } = useTheme();
   const { isMobileWeb, pageGutterClamp } = useKankregLayout();
   const stripGutter = isMobileWeb ? pageGutterClamp : FIGMA.gutter;
-  const safeProducts = Array.isArray(products) ? products : [];
   const tiles = useMemo(() => {
     if (Array.isArray(categories) && categories.length) return categories;
-    return buildNativeCategoryTiles(safeProducts, { max: 6 });
-  }, [categories, safeProducts]);
+    return buildNativeCategoryTiles(Array.isArray(products) ? products : [], { max: 6 });
+  }, [categories, products]);
 
   if (Platform.OS === "web" && !isMobileWeb) return null;
 

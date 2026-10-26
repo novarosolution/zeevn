@@ -57,7 +57,6 @@ export function injectWebDisplayFont() {}
 /** Web-only: description, theme-color, lang, Open Graph, JSON-LD. */
 export function injectWebDocumentMeta() {
   if (Platform.OS !== "web") return;
-  // eslint-disable-next-line global-require
   const { injectWebSeoBootstrap } = require("../utils/webSeo");
   injectWebSeoBootstrap();
 }

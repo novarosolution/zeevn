@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { fonts, icon, layout, lineHeight, radius, spacing, typography } from "../../theme/tokens";
 import { ALCHEMY } from "../../theme/customerAlchemy";
-import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
+import { FONT_PRICE } from "../../theme/typographyRoles";
 import { HOME_STATS_STRIP } from "../../content/appContent";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import useInViewport from "../../hooks/useInViewport";

@@ -8,12 +8,44 @@ import { deferAfterFirstPaint } from "../utils/deferAfterFirstPaint";
 
 const CartContext = createContext(undefined);
 
+/** One short string per bag, so "did anything change since the server last had it?" is a cheap compare. */
+function cartSignature(items = []) {
+  return items
+    .map((item) => `${cartLineKey(item)}:${Number(item.quantity) || 0}`)
+    .sort()
+    .join("|");
+}
+
+/**
+ * The saved bag plus anything picked on this phone before it loaded (a guest who then signs in). Lines on both keep the
+ * larger quantity and the richer local object; with an empty local bag the saved bag comes back untouched.
+ */
+function mergeCartLines(serverItems, localItems) {
+  if (!localItems.length) return serverItems;
+  const byKey = new Map(serverItems.map((item) => [cartLineKey(item), item]));
+  for (const item of localItems) {
+    const key = cartLineKey(item);
+    const saved = byKey.get(key);
+    byKey.set(
+      key,
+      saved ? { ...saved, ...item, quantity: Math.max(Number(saved.quantity) || 0, Number(item.quantity) || 0) } : item
+    );
+  }
+  return [...byKey.values()];
+}
+
 export function CartProvider({ children }) {
   const { isAuthenticated, token } = useAuth();
   const { toastInfo } = useToastSafe();
   const [cartItems, setCartItems] = useState([]);
   const [isCartSyncing, setIsCartSyncing] = useState(false);
-  const isHydratingRef = useRef(false);
+  /**
+   * "pending" until this session's saved bag has been read, then "ok" (or "failed" if it couldn't be). Nothing is written
+   * to the server while pending: at cold start the local bag is still empty, and saving that would wipe the saved one.
+   */
+  const hydrateStateRef = useRef("pending");
+  /** Signature of the bag the server is known to hold, so unchanged bags are not sent again. */
+  const lastSyncedRef = useRef(null);
   const syncTimerRef = useRef(null);
 
   const addToCart = useCallback(
@@ -145,28 +177,34 @@ export function CartProvider({ children }) {
   useEffect(() => {
     let isMounted = true;
 
+    // A new session (or a refreshed token) starts unsynced until its saved bag has been read.
+    hydrateStateRef.current = "pending";
+    lastSyncedRef.current = null;
+
     async function hydrateCart() {
-      if (!isAuthenticated || !token) {
-        setCartItems([]);
-        setIsCartSyncing(false);
-        isHydratingRef.current = false;
-        return;
-      }
       try {
         setIsCartSyncing(true);
-        isHydratingRef.current = true;
         const serverItems = await fetchMyCart();
-        if (isMounted) {
-          setCartItems(serverItems);
-        }
+        if (!isMounted) return;
+        lastSyncedRef.current = cartSignature(serverItems);
+        hydrateStateRef.current = "ok";
+        setCartItems((local) => mergeCartLines(serverItems, local));
       } catch {
-        // Continue with local state if server load fails.
+        // Continue with local state if server load fails (never save an empty bag over one we couldn't read).
+        if (isMounted) hydrateStateRef.current = "failed";
       } finally {
         if (isMounted) {
           setIsCartSyncing(false);
         }
-        isHydratingRef.current = false;
       }
+    }
+
+    if (!isAuthenticated || !token) {
+      setCartItems([]);
+      setIsCartSyncing(false);
+      return () => {
+        isMounted = false;
+      };
     }
 
     const cancelDeferred = deferAfterFirstPaint(() => {
@@ -180,7 +218,15 @@ export function CartProvider({ children }) {
   }, [isAuthenticated, token]);
 
   useEffect(() => {
-    if (!isAuthenticated || !token || isHydratingRef.current) {
+    if (!isAuthenticated || !token) {
+      return;
+    }
+    const state = hydrateStateRef.current;
+    if (state === "pending" || (state === "failed" && cartItems.length === 0)) {
+      return;
+    }
+    const signature = cartSignature(cartItems);
+    if (signature === lastSyncedRef.current) {
       return;
     }
 
@@ -188,9 +234,13 @@ export function CartProvider({ children }) {
       clearTimeout(syncTimerRef.current);
     }
     syncTimerRef.current = setTimeout(() => {
-      replaceMyCart(cartItems).catch(() => {
-        // Ignore sync error; user can continue using cart offline.
-      });
+      replaceMyCart(cartItems)
+        .then(() => {
+          lastSyncedRef.current = signature;
+        })
+        .catch(() => {
+          // Ignore sync error; user can continue using cart offline.
+        });
     }, 300);
 
     return () => {
@@ -208,6 +258,8 @@ export function CartProvider({ children }) {
     try {
       setIsCartSyncing(true);
       const serverItems = await fetchMyCart();
+      lastSyncedRef.current = cartSignature(serverItems);
+      hydrateStateRef.current = "ok";
       setCartItems(serverItems);
       return serverItems;
     } finally {

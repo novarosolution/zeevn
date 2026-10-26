@@ -494,7 +494,7 @@ async function listRiders(req, res, next) {
         const key = String(rider._id);
         const loc = rider.deliveryLiveLocation || {};
         const at = loc.updatedAt ? new Date(loc.updatedAt).getTime() : null;
-        const lat = cleanMapCoord(loc.latitude);
+        const lat = cleanMapCoord(loc.latitude, 90);
         const lng = cleanMapCoord(loc.longitude);
         const hasPoint = lat != null && lng != null;
         const ageSeconds = at == null ? null : Math.max(0, Math.round((now - at) / 1000));

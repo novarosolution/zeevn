@@ -51,10 +51,9 @@ function presentLine(line) {
     countedOnline === null && countedCounter === null
       ? null
       : (countedOnline || 0) + (countedCounter || 0);
-  const kind = lineKind({
-    counted: countedOnline === null && countedCounter === null ? null : counted,
-    expected,
-  });
+  // An empty box means "not counted", never "zero": compare only the piles somebody counted.
+  const comparedExpected = (countedOnline === null ? 0 : expectedOnline) + (countedCounter === null ? 0 : expectedCounter);
+  const kind = lineKind({ counted, expected: comparedExpected });
   return {
     product: line.product,
     name: line.name || "Jar",
@@ -67,7 +66,7 @@ function presentLine(line) {
     countedOnline,
     countedCounter,
     note: line.note || "",
-    variance: kind === "uncounted" ? null : counted - expected,
+    variance: kind === "uncounted" ? null : counted - comparedExpected,
     kind,
   };
 }
@@ -93,6 +92,8 @@ function present(doc) {
     savedByName: doc.savedByName || "",
     submittedAt: doc.submittedAt || null,
     submittedByName: doc.submittedByName || "",
+    appliedAt: doc.appliedAt || null,
+    appliedByName: doc.appliedByName || "",
     cashCounted: doc.cashCounted == null ? null : Number(doc.cashCounted),
     cashNote: doc.cashNote || "",
     createdAt: doc.createdAt,
@@ -107,6 +108,7 @@ function presentList(doc) {
     date: sheet.date,
     today: sheet.today,
     status: sheet.status,
+    applied: Boolean(sheet.appliedAt),
     shortage: sheet.counts.shortage,
     surplus: sheet.counts.surplus,
     match: sheet.counts.match,
@@ -275,6 +277,8 @@ async function reopenClosing(req, res, next) {
     if (!doc) return res.status(404).json({ message: "No closing for that date." });
     doc.status = "draft";
     doc.submittedAt = null;
+    doc.appliedAt = null;
+    doc.appliedByName = "";
     doc.savedBy = req.user?._id || null;
     doc.savedByName = actorName(req.user);
     await doc.save();
@@ -292,50 +296,66 @@ async function applyVariance(req, res, next) {
     if (!doc) return res.status(404).json({ message: "No closing for that date." });
     if (doc.status !== "submitted") fail("Submit the count before you apply it.");
 
+    // Claim the sheet first: a second tap, or an old sheet applied later, would put old counts over newer sales.
+    const alreadyOnStock = "This count is already on stock. Reopen it to count again.";
+    if (doc.appliedAt) fail(alreadyOnStock);
+    const claimed = await StockClosing.findOneAndUpdate(
+      { _id: doc._id, status: "submitted", appliedAt: null },
+      { $set: { appliedAt: new Date(), appliedByName: actorName(req.user) } },
+      { new: true }
+    );
+    if (!claimed) fail(alreadyOnStock);
+
     let changed = 0;
-    for (const line of doc.lines || []) {
-      const product = await Product.findById(line.product);
-      if (!product) continue;
-      const nextOnline =
-        line.countedOnline === null || line.countedOnline === undefined
-          ? line.counted === null || line.counted === undefined
-            ? null
-            : readCounted(line.counted)
-          : readCounted(line.countedOnline);
-      const nextCounter = line.countedCounter === null || line.countedCounter === undefined ? null : readCounted(line.countedCounter);
-      if (nextOnline !== null && qtyOf(product.stockQty) !== nextOnline) {
-        const before = qtyOf(product.stockQty);
-        product.stockQty = nextOnline;
-        if (nextOnline <= 0) product.inStock = false;
-        await product.save();
-        await recordStockChange({
-          product,
-          before,
-          after: nextOnline,
-          why: "manual",
-          location: "online",
-          who: actorName(req.user),
-          receiptNote: `Closing ${date}`,
-        });
-        changed += 1;
+    try {
+      for (const line of claimed.lines || []) {
+        const product = await Product.findById(line.product);
+        if (!product) continue;
+        const nextOnline =
+          line.countedOnline === null || line.countedOnline === undefined
+            ? line.counted === null || line.counted === undefined
+              ? null
+              : readCounted(line.counted)
+            : readCounted(line.countedOnline);
+        const nextCounter = line.countedCounter === null || line.countedCounter === undefined ? null : readCounted(line.countedCounter);
+        if (nextOnline !== null && qtyOf(product.stockQty) !== nextOnline) {
+          const before = qtyOf(product.stockQty);
+          product.stockQty = nextOnline;
+          // Same rule as a cycle count: jars on the shelf are sellable, an empty shelf is sold out.
+          product.inStock = nextOnline > 0;
+          await product.save();
+          await recordStockChange({
+            product,
+            before,
+            after: nextOnline,
+            why: "manual",
+            location: "online",
+            who: actorName(req.user),
+            receiptNote: `Closing ${date}`,
+          });
+          changed += 1;
+        }
+        if (nextCounter !== null && qtyOf(product.stockCounter) !== nextCounter) {
+          const before = qtyOf(product.stockCounter);
+          product.stockCounter = nextCounter;
+          await product.save();
+          await recordStockChange({
+            product,
+            before,
+            after: nextCounter,
+            why: "manual",
+            location: "counter",
+            who: actorName(req.user),
+            receiptNote: `Closing ${date}`,
+          });
+          changed += 1;
+        }
       }
-      if (nextCounter !== null && qtyOf(product.stockCounter) !== nextCounter) {
-        const before = qtyOf(product.stockCounter);
-        product.stockCounter = nextCounter;
-        await product.save();
-        await recordStockChange({
-          product,
-          before,
-          after: nextCounter,
-          why: "manual",
-          location: "counter",
-          who: actorName(req.user),
-          receiptNote: `Closing ${date}`,
-        });
-        changed += 1;
-      }
+    } catch (error) {
+      await StockClosing.updateOne({ _id: claimed._id }, { $set: { appliedAt: null, appliedByName: "" } });
+      throw error;
     }
-    res.json({ ...present(doc), applied: changed });
+    res.json({ ...present(claimed), applied: changed });
   } catch (error) {
     next(error);
   }

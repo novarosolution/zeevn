@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
+import { fonts, icon, spacing, typography } from "../../theme/tokens";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { KANKREG_PALETTE, ZEEVAN_GOLD } from "../../theme/kankregWeb";
 import { inputOutlineWeb } from "../../theme/screenLayout";

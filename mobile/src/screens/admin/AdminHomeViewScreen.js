@@ -35,15 +35,11 @@ import {
 import { customerScrollFill } from "../../theme/screenLayout";
 import { radius, spacing } from "../../theme/tokens";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
+import { realCoord } from "../../utils/geoCoord";
 
 const COPY = ADMIN_SCREEN_COPY.homeView;
 const LABELS = ADMIN_HOME_VIEW_COPY;
 const FESTIVAL_KEYS = LABELS.festivalOptions.map((option) => option.key);
-
-function realCoord(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : null;
-}
 
 function applyConfig(data, setters) {
   setters.setHeroTitle(data.heroTitle || HOME_VIEW_DEFAULTS.heroTitle);
@@ -60,8 +56,8 @@ function applyConfig(data, setters) {
   setters.setShopCity(shop.city || "");
   setters.setShopState(shop.state || "");
   setters.setShopPostalCode(shop.postalCode || "");
-  setters.setShopLatitude(Number.isFinite(Number(shop.latitude)) ? String(shop.latitude) : "");
-  setters.setShopLongitude(Number.isFinite(Number(shop.longitude)) ? String(shop.longitude) : "");
+  setters.setShopLatitude(realCoord(shop.latitude) !== null ? String(shop.latitude) : "");
+  setters.setShopLongitude(realCoord(shop.longitude) !== null ? String(shop.longitude) : "");
   setters.setHeroSlides(
     (Array.isArray(data.heroSlides) ? data.heroSlides : []).map((slide, index) => ({
       id: slide.id || `slide-${index + 1}`,
@@ -140,7 +136,8 @@ export default function AdminHomeViewScreen({ navigation, route }) {
   const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const setters = {
+  // State setters never change identity, so the bundle is built once and `loadSettings` stays stable.
+  const setters = useMemo(() => ({
     setHeroTitle,
     setHeroSubtitle,
     setPrimeSectionTitle,
@@ -157,7 +154,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
     setShopLatitude,
     setShopLongitude,
     setHeroSlides,
-  };
+  }), []);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -166,7 +163,7 @@ export default function AdminHomeViewScreen({ navigation, route }) {
     } catch (err) {
       setError(err.message || "Unable to load home view settings.");
     }
-  }, [token]);
+  }, [token, setters]);
 
   useEffect(() => {
     if (user?.isAdmin) loadSettings();

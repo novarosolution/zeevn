@@ -32,7 +32,7 @@ function initSocketServer(httpServer) {
         return next(new Error("Unauthorized"));
       }
       const user = await User.findById(decoded.id).select("-password");
-      if (!user) {
+      if (!user || user.deletedAt) {
         return next(new Error("Unauthorized"));
       }
       socket.user = user;
@@ -96,10 +96,23 @@ function emitOrderUpdated(order) {
   if (orderId) io.to(`order:${orderId}`).emit("orders:updated", payload);
   if (userId) io.to(`user:${userId}`).emit("orders:updated", payload);
   io.to("role:admin").emit("orders:updated", payload);
-  io.to("role:delivery").emit("orders:updated", payload);
   const partnerId = order.assignedDeliveryUser?._id || order.assignedDeliveryUser;
   if (partnerId) {
     io.to(`user:${String(partnerId)}`).emit("orders:updated", payload);
+  }
+  // Every rider hears that an order changed (so one it was handed can be dropped), but only the assigned rider gets
+  // the customer's name, phone and address.
+  if (orderId) {
+    const stub = {
+      order: {
+        _id: orderId,
+        status: order.status,
+        assignedDeliveryUser: partnerId ? String(partnerId) : null,
+      },
+    };
+    let riders = io.to("role:delivery");
+    if (partnerId) riders = riders.except(`user:${String(partnerId)}`);
+    riders.emit("orders:updated", stub);
   }
 }
 

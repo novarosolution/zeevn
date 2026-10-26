@@ -21,6 +21,7 @@ import {
   customerPanel,
   customerScrollFill} from "../theme/screenLayout";
 import { SUPPORT_EMAIL_DISPLAY, SUPPORT_SCREEN } from "../content/appContent";
+import useStoreInfo from "../hooks/useStoreInfo";
 import { ALCHEMY } from "../theme/customerAlchemy";
 import { fonts, icon, radius, spacing, typography } from "../theme/tokens";
 import PremiumEmptyState from "../components/ui/PremiumEmptyState";
@@ -32,7 +33,17 @@ import SkeletonBlock from "../components/ui/SkeletonBlock";
 import { StoreSupport } from "../components/store/entry";
 import { FIGMA } from "../theme/figmaApp";
 
-function buildSupportContactLinks() {
+/** `https://wa.me/…` for a WhatsApp number (a bare 10-digit number is taken as Indian), or "" when there isn't one. */
+function whatsappUrl(raw) {
+  const digits = String(raw || "").replace(/\D/g, "");
+  if (digits.length < 8) return "";
+  return `https://wa.me/${digits.length === 10 ? `91${digits}` : digits}`;
+}
+
+/** Chat and email always; a phone and a WhatsApp tile only when the shop has set those numbers. */
+function buildSupportContactLinks({ email = SUPPORT_EMAIL_DISPLAY, phone = "", whatsapp = "" } = {}) {
+  const dial = String(phone || "").replace(/[^\d+]/g, "");
+  const wa = whatsappUrl(whatsapp);
   return [
     {
       key: "chat",
@@ -45,10 +56,16 @@ function buildSupportContactLinks() {
       key: "email",
       icon: "mail",
       title: "Email",
-      description: SUPPORT_SCREEN.contactEmailSub,
+      description: email,
       accent: "navy",
       actionType: "link",
-      url: `mailto:${SUPPORT_EMAIL_DISPLAY}`},
+      url: `mailto:${email}`},
+    dial
+      ? { key: "call", icon: "call", title: "Call", description: phone, accent: "gold", actionType: "link", url: `tel:${dial}` }
+      : null,
+    wa
+      ? { key: "whatsapp", icon: "logo-whatsapp", title: "WhatsApp", description: whatsapp, accent: "navy", actionType: "link", url: wa }
+      : null,
   ].filter(Boolean);
 }
 
@@ -62,6 +79,16 @@ export default function SupportScreen({ navigation }) {
   );
   const insets = useSafeAreaInsets();
   const { isAuthenticated, token, isAuthLoading } = useAuth();
+  const storeInfo = useStoreInfo();
+  const contactLinks = useMemo(
+    () =>
+      buildSupportContactLinks({
+        email: storeInfo?.support?.email || SUPPORT_EMAIL_DISPLAY,
+        phone: storeInfo?.support?.phone,
+        whatsapp: storeInfo?.support?.whatsapp,
+      }),
+    [storeInfo]
+  );
   const reducedMotion = useReducedMotion();
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -158,7 +185,7 @@ export default function SupportScreen({ navigation }) {
   }, [toast]);
 
   const handleContactPress = useCallback(async (link) => {
-    if (link.actionType === "link" && link.url) {
+    if (link?.actionType === "link" && link.url) {
       try {
         const can = await Linking.canOpenURL(link.url);
         if (can) await Linking.openURL(link.url);
@@ -188,8 +215,11 @@ export default function SupportScreen({ navigation }) {
         onMessage={setMessage}
         sending={sending}
         onSend={handleSend}
-        onEmail={() => handleContactPress(buildSupportContactLinks()[1])}
-        emailLabel={SUPPORT_EMAIL_DISPLAY}
+        onEmail={() => handleContactPress(contactLinks.find((link) => link.key === "email"))}
+        emailLabel={contactLinks.find((link) => link.key === "email")?.description || SUPPORT_EMAIL_DISPLAY}
+        extraContacts={contactLinks
+          .filter((link) => link.key === "call" || link.key === "whatsapp")
+          .map((link) => ({ key: link.key, icon: link.icon, title: link.title, sub: link.description, tone: link.accent, onPress: () => handleContactPress(link) }))}
         faqs={faqs}
       />
     );
@@ -217,7 +247,7 @@ export default function SupportScreen({ navigation }) {
         />
         <SectionReveal preset="fade-up" delay={20}>
           <View style={[styles.contactGrid, isNativeApp && styles.nativeContactGrid]}>
-            {buildSupportContactLinks().map((link) => {
+            {contactLinks.map((link) => {
               const palette = getContactPalette(link.accent, c, isDark);
               return (
                 <PremiumCard

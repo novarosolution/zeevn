@@ -1,4 +1,5 @@
 import { Linking, Platform } from "react-native";
+import { realCoord } from "../../utils/geoCoord";
 
 /** Follow-up (not in-app yet): iOS Dynamic Island / Live Activities need a dev client + native module (e.g. expo prebuild). */
 
@@ -58,11 +59,12 @@ export function openMapsDirections(partner, destination) {
  * Navigate to a single drop-off (delivery partner). Prefers coordinates; falls back to address query.
  */
 export function openNavigateToDropoff({ latitude, longitude, addressQuery }) {
-  const lat = Number(latitude);
-  const lng = Number(longitude);
+  const lat = realCoord(latitude);
+  const lng = realCoord(longitude);
+  const hasPoint = lat !== null && lng !== null;
 
   if (Platform.OS === "web") {
-    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    if (hasPoint) {
       Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
       return;
     }
@@ -71,7 +73,7 @@ export function openNavigateToDropoff({ latitude, longitude, addressQuery }) {
     return;
   }
 
-  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+  if (hasPoint) {
     if (Platform.OS === "ios") {
       Linking.openURL(`http://maps.apple.com/?daddr=${lat},${lng}`);
       return;

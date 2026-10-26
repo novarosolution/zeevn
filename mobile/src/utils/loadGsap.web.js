@@ -10,15 +10,12 @@ function isWebGsapEnabled() {
 
 export async function getGsap() {
   if (!isWebGsapEnabled()) return null;
-  // eslint-disable-next-line global-require
   return require("gsap").gsap;
 }
 
 export async function getScrollTrigger() {
   if (!isWebGsapEnabled()) return null;
-  // eslint-disable-next-line global-require
   const gsap = require("gsap").gsap;
-  // eslint-disable-next-line global-require
   const stMod = require("gsap/ScrollTrigger");
   if (!scrollTriggerRegistered) {
     gsap.registerPlugin(stMod.ScrollTrigger);

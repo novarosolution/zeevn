@@ -12,9 +12,9 @@ const LINES = buildShopCollectionLines();
  * Web shop line filter — image chips (premium, not Blinkit pills).
  */
 export default function ShopAtelierLineRail({ selectedPill = "All", onSelectPill }) {
+  const { isDark } = useTheme();
   if (Platform.OS !== "web") return null;
 
-  const { isDark } = useTheme();
   const ink = isDark ? "#FAF8F4" : KANKREG_PALETTE.ink;
   const items = [
     { key: "all", pill: "All", label: "All", image: null },

@@ -20,14 +20,12 @@ import { SectionHeader } from "../home/editorial";
 import PremiumButton from "../ui/PremiumButton";
 import PremiumInput from "../ui/PremiumInput";
 import PremiumErrorBanner from "../ui/PremiumErrorBanner";
-import GoldHairline from "../ui/GoldHairline";
 import ProgressiveProductImage from "../ui/ProgressiveProductImage";
 import { useTheme } from "../../context/ThemeContext";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { FONT_BODY_SEMIBOLD, FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import {
-  GOLD_HAIRLINE_EDITORIAL,
   HOME_SPACE,
   HOME_TYPE,
   homeEditorialInk,
@@ -159,18 +157,6 @@ function ProductTrustChip({ icon, label, styles, isDark }) {
     <View style={[styles.tchip, isDark && styles.tchipDark]}>
       <Ionicons name={icon} size={14} color={KANKREG_PALETTE.green} />
       <Text style={[styles.tchipText, { color: isDark ? "#d8cdb8" : KANKREG_PALETTE.inkSoft }]}>{label}</Text>
-    </View>
-  );
-}
-
-function ProductPullQuote({ quote, isDark, styles }) {
-  if (!quote) return null;
-  const ink = homeEditorialInk(isDark);
-  return (
-    <View style={[styles.pullQuote, isDark && styles.pullQuoteDark]}>
-      <Text style={[styles.pullQuoteGlyph, { color: KANKREG_PALETTE.gold }]}>{"\u201C"}</Text>
-      <Text style={[styles.pullQuoteText, { color: ink }]}>{quote}</Text>
-      <GoldHairline {...GOLD_HAIRLINE_EDITORIAL.subtle} marginVertical={HOME_SPACE.sm} />
     </View>
   );
 }
@@ -1051,14 +1037,6 @@ const relatedGridStyles = StyleSheet.create({
 });
 
 function createStyles(c, isDark) {
-  const cardShadow = platformShadow({
-    web: {
-      boxShadow: isDark
-        ? "0 12px 40px rgba(0,0,0,0.32)"
-        : "0 12px 36px rgba(22, 69, 51, 0.07), 0 4px 14px rgba(28, 25, 23, 0.04)",
-    },
-  });
-
   return StyleSheet.create({
     page: {
       width: "100%",

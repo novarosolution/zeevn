@@ -1,7 +1,7 @@
 import React, { memo, useMemo } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { fonts, radius } from "../../theme/tokens";
-import { FONT_PRICE, FONT_PRICE_MEDIUM } from "../../theme/typographyRoles";
+import { FONT_PRICE } from "../../theme/typographyRoles";
 import { ALCHEMY } from "../../theme/customerAlchemy";
 import { useTheme } from "../../context/ThemeContext";
 import { formatINRWhole } from "../../utils/currency";

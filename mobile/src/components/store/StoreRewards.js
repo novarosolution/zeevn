@@ -130,7 +130,9 @@ const fmtPoints = (n) => Number(n || 0).toLocaleString("en-IN");
 
 function OfferCard({ item, balance, busy, cartAware, onRedeem }) {
   const { c, type } = useStoreTheme();
-  const short = Math.max(0, Number(item.pointsCost || 0) - Number(balance || 0));
+  // "N more points to unlock" only makes sense while points are the one thing missing, not for a maxed-out offer.
+  const blockedForAnotherReason = Boolean(item.disabledReason) && item.disabledReason !== "Not enough points";
+  const short = blockedForAnotherReason ? 0 : Math.max(0, Number(item.pointsCost || 0) - Number(balance || 0));
   const saves = cartAware && item.eligibleForSubtotal && Number(item.estimatedDiscount) > 0 ? Number(item.estimatedDiscount) : 0;
   return (
     <Card style={styles.offer}>

@@ -5,7 +5,7 @@ import { AUTH_UI } from "../../content/appContent";
 import { APP_DISPLAY_NAME } from "../../constants/brand";
 import { FONT_HEADING } from "../../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { fonts, icon, spacing, typography } from "../../theme/tokens";
+import { fonts, icon, typography } from "../../theme/tokens";
 
 /** Premium auth hero copy + perk chips — split web panel & native sheet header. */
 export default function AuthHeroPanel({

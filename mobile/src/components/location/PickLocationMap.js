@@ -48,7 +48,7 @@ export default function PickLocationMap({
     }
     if (!hasPin) return;
     mapRef.current.animateToRegion(
-      { ...coord, latitudeDelta: 0.012, longitudeDelta: 0.012 },
+      { latitude: coord.latitude, longitude: coord.longitude, latitudeDelta: 0.012, longitudeDelta: 0.012 },
       220
     );
   }, [coord.latitude, coord.longitude, hasPin, line, padTop, padBottom]);

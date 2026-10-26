@@ -10,13 +10,15 @@ const {
   normalizePostalCode,
 } = require("../services/deliveryZoneService");
 const { recordAdminAction } = require("../utils/adminLog");
+const { cleanMapCoord } = require("../utils/shopLocation");
 
 function sanitizeStores(rows) {
   return (Array.isArray(rows) ? rows : [])
     .map((s) => {
-      const lat = Number(s.latitude);
-      const lng = Number(s.longitude);
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+      // A blank or 0,0 pin is "no location", not a shop in the ocean.
+      const lat = cleanMapCoord(s.latitude, 90);
+      const lng = cleanMapCoord(s.longitude);
+      if (lat === null || lng === null) return null;
       const row = {
         label: String(s.label || "Shop").trim() || "Shop",
         latitude: lat,
@@ -224,10 +226,10 @@ async function updateStoreSettings(req, res, next) {
       return res.json(doc);
     }
 
-    const lat = Number(req.body.latitude);
-    const lng = Number(req.body.longitude);
-    if (Number.isFinite(lat)) doc.latitude = lat;
-    if (Number.isFinite(lng)) doc.longitude = lng;
+    const lat = cleanMapCoord(req.body.latitude, 90);
+    const lng = cleanMapCoord(req.body.longitude);
+    if (lat !== null) doc.latitude = lat;
+    if (lng !== null) doc.longitude = lng;
     if (req.body.label != null) doc.label = String(req.body.label).trim() || doc.label;
     const radius = Number(req.body.maxRadiusKm);
     if (Number.isFinite(radius) && radius >= 0) doc.maxRadiusKm = radius;
@@ -243,8 +245,8 @@ async function updateStoreSettings(req, res, next) {
       ];
     } else {
       const first = doc.stores[0];
-      if (Number.isFinite(lat)) first.latitude = lat;
-      if (Number.isFinite(lng)) first.longitude = lng;
+      if (lat !== null) first.latitude = lat;
+      if (lng !== null) first.longitude = lng;
       if (req.body.label != null) first.label = doc.label;
       if (Number.isFinite(radius) && radius >= 0) first.maxRadiusKm = radius;
     }

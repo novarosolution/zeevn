@@ -30,7 +30,7 @@ import {
 } from "../../services/adminService";
 import { useToast } from "../../context/ToastContext";
 import AdminOfflineBanner from "../../components/admin/AdminOfflineBanner";
-import { cacheAdminCatalog, enqueueAdminOfflineDraft, isLikelyOffline, readAdminCatalogCache, syncAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
+import { cacheAdminCatalog, enqueueAdminOfflineDraft, isLikelyOffline, newClientRef, readAdminCatalogCache, syncAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
 import { adminOfflineHandlers } from "../../utils/adminOfflineSync";
 import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
@@ -59,6 +59,8 @@ function lineId(line) {
 function toEditor(doc) {
   return {
     id: doc?._id ? String(doc._id) : "",
+    /** A delivery that isn't on the server yet carries one reference for every attempt to save it (see `newClientRef`). */
+    clientRef: doc?._id ? "" : newClientRef(),
     note: doc?.note || "",
     supplierName: doc?.supplierName || "",
     destination: doc?.destination || "online",
@@ -79,6 +81,8 @@ function toEditor(doc) {
 
 function payloadOf(editor) {
   return {
+    clientRef: editor.clientRef || undefined,
+    receiptId: editor.id || undefined,
     note: String(editor.note || "").trim().slice(0, 200),
     supplierName: String(editor.supplierName || "").trim().slice(0, 120),
     destination: editor.destination === "counter" ? "counter" : "online",
@@ -207,7 +211,7 @@ export default function AdminStockInScreen({ navigation, route }) {
       ],
     });
     navigation.setParams?.({ productId: undefined });
-  }, [isAdmin, route?.params?.productId, products, navigation]);
+  }, [isAdmin, route?.params?.productId, route?.params?.receiptId, products, navigation]);
 
   const onPull = async () => {
     setRefreshing(true);
@@ -265,6 +269,14 @@ export default function AdminStockInScreen({ navigation, route }) {
       })
       .slice(0, 8);
   }, [products, search, editor.lines]);
+
+  const supplierHits = useMemo(() => {
+    const q = String(editor.supplierName || "").trim().toLowerCase();
+    if (!q) return [];
+    return (Array.isArray(suppliers) ? suppliers : [])
+      .filter((row) => String(row.name || "").toLowerCase().includes(q) && String(row.name || "").toLowerCase() !== q)
+      .slice(0, 5);
+  }, [suppliers, editor.supplierName]);
 
   const addLine = (product) => {
     if (locked) return;
@@ -326,7 +338,8 @@ export default function AdminStockInScreen({ navigation, route }) {
       setEditor(toEditor(saved));
     } catch (err) {
       if (isLikelyOffline(err)) {
-        await enqueueAdminOfflineDraft("stock_in", payloadOf(editor), editor.supplierName || "Stock in");
+        // A saved draft stays a draft when it reaches the server; only Confirm books the stock.
+        await enqueueAdminOfflineDraft("stock_in", { ...payloadOf(editor), confirm: false }, `${editor.supplierName || "Stock in"} · draft`);
         toast.toastSuccess("Saved on this phone.");
         setError("");
       } else {
@@ -420,14 +433,6 @@ export default function AdminStockInScreen({ navigation, route }) {
       setSyncing(false);
     }
   };
-
-  const supplierHits = useMemo(() => {
-    const q = String(editor.supplierName || "").trim().toLowerCase();
-    if (!q) return [];
-    return (Array.isArray(suppliers) ? suppliers : [])
-      .filter((row) => String(row.name || "").toLowerCase().includes(q) && String(row.name || "").toLowerCase() !== q)
-      .slice(0, 5);
-  }, [suppliers, editor.supplierName]);
 
   const actions = !locked ? (
     <View style={[styles.actions, compact && styles.actionsDock]}>

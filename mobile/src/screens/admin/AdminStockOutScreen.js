@@ -21,7 +21,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
 import { createAdminStockOut, fetchAdminProducts } from "../../services/adminService";
 import AdminOfflineBanner from "../../components/admin/AdminOfflineBanner";
-import { cacheAdminCatalog, enqueueAdminOfflineDraft, isLikelyOffline, readAdminCatalogCache, syncAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
+import { cacheAdminCatalog, enqueueAdminOfflineDraft, isLikelyOffline, newClientRef, readAdminCatalogCache, syncAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
 import { adminOfflineHandlers } from "../../utils/adminOfflineSync";
 import {
   ADMIN_FONT,
@@ -119,6 +119,7 @@ export default function AdminStockOutScreen({ navigation, route }) {
     if (!ok) return;
     setBusy(true);
     setError("");
+    const clientRef = newClientRef();
     try {
       const res = await createAdminStockOut(null, {
         product: picked._id,
@@ -126,6 +127,7 @@ export default function AdminStockOutScreen({ navigation, route }) {
         location,
         reason,
         note,
+        clientRef,
       });
       setLast(res);
       setQuantity("1");
@@ -137,7 +139,7 @@ export default function AdminStockOutScreen({ navigation, route }) {
       if (isLikelyOffline(err)) {
         await enqueueAdminOfflineDraft(
           "stock_out",
-          { product: picked._id, quantity: qty, location, reason, note },
+          { product: picked._id, quantity: qty, location, reason, note, clientRef },
           `${picked.name} ×${qty}`
         );
         toast.toastSuccess("Saved on this phone.");

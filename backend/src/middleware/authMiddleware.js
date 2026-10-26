@@ -19,6 +19,9 @@ async function protect(req, res, next) {
     if (!user) {
       return res.status(401).json({ message: "Not authorized. User not found." });
     }
+    if (user.deletedAt) {
+      return res.status(401).json({ message: "This account has been closed.", code: "ACCOUNT_CLOSED" });
+    }
 
     req.user = user;
     next();

@@ -17,8 +17,6 @@ import {
 } from "../theme/customerAlchemy";
 import { getSemanticColors } from "../theme/tokens";
 import { useScrollOffsetValue } from "../hooks/useScrollOffset";
-import useReducedMotion from "../hooks/useReducedMotion";
-import { useKankregLayout } from "../theme/kankregBreakpoints";
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -40,8 +38,6 @@ const AnimatedView = Animated.createAnimatedComponent(View);
 export default function CustomerScreenShell({ children, style, topAccent = true }) {
   const shellLayout = Platform.OS === "web" ? styles.webShell : null;
   const { colors: c, isDark } = useTheme();
-  const reducedMotion = useReducedMotion();
-  const { isMobileWeb } = useKankregLayout();
   const liteWebChrome = Platform.OS === "web";
   const shellColors = getCustomerShellGradient(isDark, c);
   const semantic = getSemanticColors(c);

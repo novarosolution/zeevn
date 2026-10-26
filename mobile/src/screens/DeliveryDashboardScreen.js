@@ -26,6 +26,7 @@ import AuthGateShell from "../components/AuthGateShell";
 import CustomerScreenShell from "../components/CustomerScreenShell";
 import KankregUnifiedPageHeader from "../components/kankreg/KankregUnifiedPageHeader";
 import { useAuth } from "../context/AuthContext";
+import { hasRealPoint } from "../utils/geoCoord";
 import { useLiveSocket } from "../context/LiveSocketContext";
 import { useTheme } from "../context/ThemeContext";
 import {
@@ -298,9 +299,10 @@ export default function DeliveryDashboardScreen({ navigation }) {
   }, [profileHydrated, isAuthLoading, isAuthenticated, user?.isDeliveryPartner, load]);
 
   const { on: onLiveEvent } = useLiveSocket();
+  const partnerId = String(user?.id || user?._id || "");
   useEffect(() => {
-    if (!isAuthenticated || !user?.isDeliveryPartner) return undefined;
-    const partnerId = String(user._id || "");
+    // The profile calls the id `id`. An empty one would treat every unassigned order as this rider's and drop their own.
+    if (!isAuthenticated || !user?.isDeliveryPartner || !partnerId) return undefined;
     return onLiveEvent("orders:updated", ({ order }) => {
       if (!order?._id) return;
       const orderId = String(order._id);
@@ -317,7 +319,7 @@ export default function DeliveryDashboardScreen({ navigation }) {
         return prev;
       });
     });
-  }, [isAuthenticated, user?._id, user?.isDeliveryPartner, onLiveEvent]);
+  }, [isAuthenticated, partnerId, user?.isDeliveryPartner, onLiveEvent]);
 
   useEffect(() => {
     setRenderCount(20);
@@ -586,9 +588,7 @@ export default function DeliveryDashboardScreen({ navigation }) {
               (item.status === "ready_for_pickup" ||
                 item.status === "shipped" ||
                 item.status === "out_for_delivery");
-            const lat = Number(addr.latitude);
-            const lng = Number(addr.longitude);
-            const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+            const hasCoords = hasRealPoint(addr.latitude, addr.longitude);
             const addressQuery = [addr.line1, addr.city, addr.state, addr.postalCode, addr.country]
               .filter((x) => String(x || "").trim())
               .join(", ");

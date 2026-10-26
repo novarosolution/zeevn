@@ -124,6 +124,7 @@ const {
   updateCustomerNote,
 } = require("../controllers/walkInController");
 const { protect, adminOnly } = require("../middleware/authMiddleware");
+const { idempotent } = require("../middleware/idempotency");
 
 const router = express.Router();
 
@@ -160,20 +161,20 @@ router.post("/returns/:id/approve", approveReturn);
 router.post("/returns/:id/reject", rejectReturn);
 
 router.get("/stock-in", listReceipts);
-router.post("/stock-in", createReceipt);
+router.post("/stock-in", idempotent("stock-in"), createReceipt);
 router.get("/stock-in/:id", getReceipt);
 router.put("/stock-in/:id", updateReceipt);
 router.post("/stock-in/:id/confirm", confirmReceipt);
 router.get("/stock-transfers", listTransfers);
-router.post("/stock-transfers", createTransfer);
+router.post("/stock-transfers", idempotent("transfer"), createTransfer);
 router.get("/stock-transfers/:id", getTransfer);
 router.put("/stock-transfers/:id", updateTransfer);
 router.post("/stock-transfers/:id/confirm", confirmTransfer);
-router.post("/stock-out", createStockOut);
+router.post("/stock-out", idempotent("stock-out"), createStockOut);
 router.get("/suppliers", listSuppliers);
 router.post("/suppliers", upsertSupplier);
 router.post("/cycle-count", applyCycleCount);
-router.post("/walk-in", createWalkIn);
+router.post("/walk-in", idempotent("walk-in"), createWalkIn);
 router.post("/walk-in/:id/void", voidWalkIn);
 router.post("/customers", createWalkInCustomer);
 router.patch("/customers/:id/note", updateCustomerNote);

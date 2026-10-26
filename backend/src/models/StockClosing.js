@@ -17,7 +17,10 @@ const closingLineSchema = new mongoose.Schema(
   { _id: false }
 );
 
-/** Shelf count vs what the app said. Snapshot only — never writes stockQty or inStock. */
+/**
+ * Shelf count vs what the app said. A draft or submitted sheet is only a record; "apply" writes the counted piles
+ * onto stock once (`appliedAt`), and reopening the sheet clears that so it can be counted and applied again.
+ */
 const stockClosingSchema = new mongoose.Schema(
   {
     date: { type: String, required: true, unique: true, trim: true },
@@ -27,6 +30,8 @@ const stockClosingSchema = new mongoose.Schema(
     savedByName: { type: String, default: "", trim: true, maxlength: 80 },
     submittedAt: { type: Date, default: null },
     submittedByName: { type: String, default: "", trim: true, maxlength: 80 },
+    appliedAt: { type: Date, default: null },
+    appliedByName: { type: String, default: "", trim: true, maxlength: 80 },
     cashCounted: { type: Number, default: null },
     cashNote: { type: String, default: "", trim: true, maxlength: 160 },
   },

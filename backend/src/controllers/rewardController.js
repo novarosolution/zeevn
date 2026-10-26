@@ -372,116 +372,122 @@ async function getMyRewardCoupons(req, res, next) {
   }
 }
 
+/**
+ * Spend points on a reward coupon. The live database is a single MongoDB server, which refuses multi-document
+ * transactions, so every step is one atomic update and anything already done is undone if a later step fails:
+ * take the points (only while the balance still covers them) -> reserve a slot -> issue the coupon -> record it.
+ */
 async function redeemReward(req, res, next) {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const undo = [];
+  const rollback = async () => {
+    for (const step of undo.reverse()) {
+      try {
+        await step();
+      } catch (undoError) {
+        console.error("[rewards] could not undo a redeem step:", undoError.message);
+      }
+    }
+  };
   try {
     const rewardId = req.params.rewardId;
     if (!mongoose.Types.ObjectId.isValid(String(rewardId))) {
-      await session.abortTransaction();
       return res.status(400).json({ message: "Invalid reward id." });
     }
 
-    const reward = await Reward.findById(rewardId).session(session);
+    const reward = await Reward.findById(rewardId);
     if (!reward || !reward.isActive || !reward.isVisibleToUsers) {
-      await session.abortTransaction();
       return res.status(404).json({ message: "Reward not available." });
     }
     const now = new Date();
     if (reward.expiresAt && new Date(reward.expiresAt).getTime() <= now.getTime()) {
-      await session.abortTransaction();
       return res.status(400).json({ message: "This reward has expired." });
     }
-    if (
-      reward.totalRedemptionLimit != null &&
-      Number.isFinite(Number(reward.totalRedemptionLimit)) &&
-      Number(reward.redemptionCount || 0) >= Number(reward.totalRedemptionLimit)
-    ) {
-      await session.abortTransaction();
+    const totalLimit =
+      reward.totalRedemptionLimit != null && Number.isFinite(Number(reward.totalRedemptionLimit))
+        ? Number(reward.totalRedemptionLimit)
+        : null;
+    if (totalLimit !== null && Number(reward.redemptionCount || 0) >= totalLimit) {
       return res.status(400).json({ message: "This reward is fully redeemed." });
     }
 
-    const userRedemptions = await RewardRedemption.countDocuments({
-      user: req.user._id,
-      reward: reward._id,
-    }).session(session);
-    if (userRedemptions >= Number(reward.perUserLimit || 1)) {
-      await session.abortTransaction();
+    const perUserLimit = Math.max(1, Number(reward.perUserLimit || 1));
+    const userRedemptions = await RewardRedemption.countDocuments({ user: req.user._id, reward: reward._id });
+    if (userRedemptions >= perUserLimit) {
       return res.status(400).json({ message: "You have reached the redeem limit for this reward." });
     }
 
-    const user = await User.findById(req.user._id).session(session);
-    if (!user) {
-      await session.abortTransaction();
-      return res.status(404).json({ message: "User not found." });
-    }
-    const balance = Number(user.rewardPoints || 0);
-    const cost = Number(reward.pointsCost || 0);
-    if (balance < cost) {
-      await session.abortTransaction();
+    const cost = Math.max(0, Number(reward.pointsCost || 0));
+    const paid = await User.findOneAndUpdate(
+      { _id: req.user._id, rewardPoints: { $gte: cost } },
+      { $inc: { rewardPoints: -cost } },
+      { new: true }
+    );
+    if (!paid) {
       return res.status(400).json({ message: "Not enough reward points." });
     }
+    undo.push(() => User.updateOne({ _id: paid._id }, { $inc: { rewardPoints: cost } }));
+
+    const slot = await Reward.findOneAndUpdate(
+      totalLimit !== null
+        ? { _id: reward._id, redemptionCount: { $lt: totalLimit } }
+        : { _id: reward._id },
+      { $inc: { redemptionCount: 1 } },
+      { new: true }
+    );
+    if (!slot) {
+      await rollback();
+      return res.status(400).json({ message: "This reward is fully redeemed." });
+    }
+    undo.push(() => Reward.updateOne({ _id: reward._id }, { $inc: { redemptionCount: -1 } }));
 
     const code = await ensureUniqueCouponCode();
     const couponExpires = new Date(
       now.getTime() + Math.max(1, Number(reward.issuedCouponValidDays || 90)) * 86400000
     );
+    const coupon = await Coupon.create({
+      code,
+      title: String(reward.title || "Reward").slice(0, 120),
+      type: reward.discountType,
+      value: Number(reward.discountValue || 0),
+      minOrderAmount: Number(reward.minOrderAmount || 0),
+      maxDiscountAmount:
+        reward.maxDiscountAmount === null || reward.maxDiscountAmount === undefined
+          ? null
+          : Number(reward.maxDiscountAmount),
+      usageLimit: 1,
+      usedCount: 0,
+      isActive: true,
+      isVisibleToUsers: false,
+      isOneTimePerUser: false,
+      expiresAt: couponExpires,
+      issuedForUser: paid._id,
+    });
+    undo.push(() => Coupon.deleteOne({ _id: coupon._id }));
 
-    const [coupon] = await Coupon.create(
-      [
-        {
-          code,
-          title: String(reward.title || "Reward").slice(0, 120),
-          type: reward.discountType,
-          value: Number(reward.discountValue || 0),
-          minOrderAmount: Number(reward.minOrderAmount || 0),
-          maxDiscountAmount:
-            reward.maxDiscountAmount === null || reward.maxDiscountAmount === undefined
-              ? null
-              : Number(reward.maxDiscountAmount),
-          usageLimit: 1,
-          usedCount: 0,
-          isActive: true,
-          isVisibleToUsers: false,
-          isOneTimePerUser: false,
-          expiresAt: couponExpires,
-          issuedForUser: user._id,
-        },
-      ],
-      { session }
-    );
+    const redemption = await RewardRedemption.create({
+      user: paid._id,
+      reward: reward._id,
+      coupon: coupon._id,
+      pointsSpent: cost,
+    });
+    undo.push(() => RewardRedemption.deleteOne({ _id: redemption._id }));
 
-    user.rewardPoints = balance - cost;
-    reward.redemptionCount = Number(reward.redemptionCount || 0) + 1;
-
-    await user.save({ session });
-    await reward.save({ session });
-
-    await RewardRedemption.create(
-      [
-        {
-          user: user._id,
-          reward: reward._id,
-          coupon: coupon._id,
-          pointsSpent: cost,
-        },
-      ],
-      { session }
-    );
-
-    await session.commitTransaction();
+    // Two taps at once can both pass the check above; if this one went over the limit, give everything back.
+    const mine = await RewardRedemption.countDocuments({ user: paid._id, reward: reward._id });
+    if (mine > perUserLimit) {
+      await rollback();
+      return res.status(400).json({ message: "You have reached the redeem limit for this reward." });
+    }
 
     res.status(201).json({
       message: `Redeemed! Use code ${code} at checkout before ${couponExpires.toLocaleDateString()}.`,
       couponCode: code,
-      rewardPoints: user.rewardPoints,
+      rewardPoints: paid.rewardPoints,
       couponExpiresAt: couponExpires.toISOString(),
     });
   } catch (error) {
-    await session.abortTransaction();
+    await rollback();
     next(error);
-  } finally {
-    session.endSession();
   }
 }
 

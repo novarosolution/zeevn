@@ -20,7 +20,6 @@ import Animated, {
 import useAddToCartAnim from "../hooks/useAddToCartAnim";
 import { SHOP_SCREEN_UI, HOME_SCREEN_UI } from "../content/appContent";
 import { ALCHEMY } from "../theme/customerAlchemy";
-import { FONT_HEADING } from "../theme/typographyRoles";
 import { KANKREG_PALETTE } from "../theme/kankregWeb";
 import { useTheme } from "../context/ThemeContext";
 import { fonts, getSemanticColors, icon, radius, spacing, typography } from "../theme/tokens";

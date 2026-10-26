@@ -4,7 +4,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { ADMIN_FONT, useAdminChrome } from "../../theme/adminLayout";
 import { getAdminTone } from "../../theme/adminTones";
 import { useTheme } from "../../context/ThemeContext";
-import { fonts } from "../../theme/tokens";
 
 const SIZES = {
   xs: { height: 28, padX: 10, font: 12, icon: 13, gap: 5, radius: 8 },

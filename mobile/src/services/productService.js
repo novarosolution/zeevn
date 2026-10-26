@@ -1,5 +1,5 @@
 import { Platform } from "react-native";
-import { plainOilWord } from "../utils/displayText";
+import { plainOilWord, plainProductName } from "../utils/displayText";
 import { apiGet, apiPost } from "./apiClient";
 import { parseCatalogBoolean } from "../utils/catalogBoolean";
 import { normalizeHeroSubtitle, normalizeHeroTitle } from "../utils/homeMarketingCopy";
@@ -45,7 +45,7 @@ export function normalizeProduct(raw) {
     Number.isFinite(mrpNum) && mrpNum > 0 ? mrpNum : null;
 
   const id = raw._id ?? raw.id;
-  const name = plainOilWord(String(raw.name ?? "").trim()) || "Untitled product";
+  const name = plainProductName(String(raw.name ?? "").trim()) || "Untitled product";
   const description = plainOilWord(String(raw.description ?? "").trim());
   const unit = String(raw.unit ?? "").trim() || "1 pc";
 

@@ -46,7 +46,7 @@ import PremiumEmptyState from "../components/ui/PremiumEmptyState";
 import PremiumErrorBanner from "../components/ui/PremiumErrorBanner";
 import { useKankregLayout } from "../theme/kankregBreakpoints";
 import { KANKREG_CHROME } from "../theme/kankregWeb";
-import { HOME_SECTION_GAP, HOME_SPACE } from "../theme/homeEditorial";
+import { HOME_SPACE } from "../theme/homeEditorial";
 import { useCart } from "../context/CartContext";
 import { useTheme } from "../context/ThemeContext";
 import { DEFAULT_HOME_VIEW_CONFIG, getHomeViewConfig, getProducts, hydrateCatalogFromDisk } from "../services/productService";

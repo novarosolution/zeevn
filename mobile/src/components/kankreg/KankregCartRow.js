@@ -9,7 +9,7 @@ import { formatINR } from "../../utils/currency";
 import { getProductThumbImageUri } from "../../utils/image";
 import ProgressiveProductImage from "../ui/ProgressiveProductImage";
 import { CART_UI, fillProductScreen } from "../../content/appContent";
-import { fonts, spacing } from "../../theme/tokens";
+import { fonts } from "../../theme/tokens";
 
 /** Premium cart line — refined thumb, soft qty stepper, clear line total. */
 export default function KankregCartRow({

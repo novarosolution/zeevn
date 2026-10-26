@@ -39,7 +39,6 @@ function attachSocketListeners(sock) {
 }
 
 async function resolveIo() {
-  // eslint-disable-next-line global-require
   return require("socket.io-client").io;
 }
 

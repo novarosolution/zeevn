@@ -1,9 +1,7 @@
 import React, { useMemo } from "react";
 import { Image } from "expo-image";
 import { Platform, StyleSheet, Text, View } from "react-native";
-import { homeEditorialMuted } from "../../theme/homeEditorial";
-import { KANKREG_PALETTE } from "../../theme/kankregWeb";
-import { HOME_SPACE, HOME_TYPE } from "../../theme/homeEditorial";
+import { HOME_SPACE, HOME_TYPE, homeEditorialMuted } from "../../theme/homeEditorial";
 import { fonts, radius } from "../../theme/tokens";
 import { resolveImageSource } from "../../utils/mediaSource";
 import { HtmlDiv, toImageSrc } from "./compareWebDom";

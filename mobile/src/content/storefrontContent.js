@@ -706,7 +706,19 @@ export const STORE_PRODUCT = {
   lowStock: (n) => `Only ${n} left`,
   unavailable: { sold: "Out of stock", soon: "Coming soon" },
   options: { title: "Choose a size", from: "Pick one — the price updates for you." },
-  delivery: { fallbackTitle: "Doorstep delivery", fallbackBody: "Live tracking from our farm to your home." },
+  delivery: {
+    fallbackTitle: "Doorstep delivery",
+    fallbackBody: "Live tracking from our farm to your home.",
+    /** Said once the shopper's delivery area is known, from what that area really charges. */
+    area: {
+      freeTitle: "Free delivery to your area",
+      freeBody: "Cash on Delivery available · Sealed for freshness, easy returns.",
+      freeAboveTitle: (amount) => `Free delivery over ${amount}`,
+      feeBody: (fee) => `${fee} below that · Cash on Delivery available · Sealed for freshness, easy returns.`,
+      flatTitle: (fee) => `Delivery ${fee}`,
+      flatBody: "Cash on Delivery available · Sealed for freshness, easy returns.",
+    },
+  },
   about: { title: "About this item", more: "Read more", less: "Show less" },
   highlightsTitle: "Why you'll love it",
   sections: {

@@ -241,13 +241,13 @@ function liveLocationDestinationSummary(shippingAddress) {
 async function resolveShippingCoordinates(shippingAddress) {
   const { cleanMapCoord } = require("../utils/shopLocation");
   const base = shippingAddress && typeof shippingAddress === "object" ? { ...shippingAddress } : {};
-  let lat = cleanMapCoord(base.latitude);
+  let lat = cleanMapCoord(base.latitude, 90);
   let lng = cleanMapCoord(base.longitude);
 
   if (lat == null || lng == null) {
     const geo = await geocodeAddress(base);
     if (geo) {
-      lat = cleanMapCoord(geo.latitude);
+      lat = cleanMapCoord(geo.latitude, 90);
       lng = cleanMapCoord(geo.longitude);
     }
   }
@@ -318,6 +318,10 @@ async function createOrder(req, res, next) {
       });
     }
 
+    if (products.some((item) => !item || typeof item !== "object")) {
+      return res.status(400).json({ message: "Each product must have a quantity of 1 or more." });
+    }
+
     const objectIdItems = products.filter((item) => mongoose.Types.ObjectId.isValid(item.product));
     const objectProductIds = objectIdItems.map((item) => item.product);
     const foundProducts = objectProductIds.length
@@ -328,69 +332,53 @@ async function createOrder(req, res, next) {
     const normalizedItems = [];
 
     for (const rawItem of products) {
-      const quantity = Number(rawItem.quantity || 1);
-      if (!quantity || quantity < 1) {
+      const quantity = rawItem.quantity === undefined || rawItem.quantity === null ? 1 : Number(rawItem.quantity);
+      // Whole jars only: 1.5 would pass a ">= 1" check and leave a fractional stock count behind.
+      if (!Number.isInteger(quantity) || quantity < 1) {
         return res.status(400).json({ message: "Each product must have a quantity of 1 or more." });
       }
 
-      const hasObjectId = mongoose.Types.ObjectId.isValid(rawItem.product);
-      if (hasObjectId) {
-        const matchedProduct = productMap.get(String(rawItem.product));
-        if (!matchedProduct) {
-          return res.status(404).json({ message: "One or more products were not found." });
-        }
+      // Prices come from the catalog, never from the request. A line the catalog doesn't know can't be ordered.
+      const matchedProduct = mongoose.Types.ObjectId.isValid(rawItem.product)
+        ? productMap.get(String(rawItem.product))
+        : null;
+      if (!matchedProduct) {
+        return res.status(404).json({ message: "One or more products were not found." });
+      }
 
-        if (matchedProduct.isPublished === false) {
-          return res.status(400).json({
-            message: `${matchedProduct.name || "Product"} is no longer available in the store.`,
-          });
-        }
-
-        if (matchedProduct.comingSoon) {
-          return res.status(400).json({
-            message: `${matchedProduct.name || "Product"} is not yet available to order.`,
-          });
-        }
-
-        if (!matchedProduct.inStock || Number(matchedProduct.stockQty || 0) <= 0) {
-          return res.status(400).json({
-            message: `${matchedProduct.name || "Product"} is out of stock.`,
-          });
-        }
-
-        let line;
-        try {
-          line = resolveProductLineFromRaw(matchedProduct, rawItem);
-        } catch (e) {
-          return res.status(e.statusCode || 400).json({ message: e.message || "Invalid product line." });
-        }
-
-        normalizedItems.push({
-          product: matchedProduct._id,
-          name: line.name,
-          price: line.price,
-          image: matchedProduct.image || "",
-          quantity,
-          ...(line.variantLabel ? { variantLabel: line.variantLabel } : {}),
-        });
-      } else {
-        const externalName = String(rawItem.name || "").trim();
-        const externalPrice = Number(rawItem.price);
-
-        if (!externalName || Number.isNaN(externalPrice) || externalPrice < 0) {
-          return res.status(400).json({
-            message: "Custom product items need valid name and price.",
-          });
-        }
-
-        normalizedItems.push({
-          externalProductId: String(rawItem.product || rawItem.id || ""),
-          name: externalName,
-          price: externalPrice,
-          image: String(rawItem.image || ""),
-          quantity,
+      if (matchedProduct.isPublished === false) {
+        return res.status(400).json({
+          message: `${matchedProduct.name || "Product"} is no longer available in the store.`,
         });
       }
+
+      if (matchedProduct.comingSoon) {
+        return res.status(400).json({
+          message: `${matchedProduct.name || "Product"} is not yet available to order.`,
+        });
+      }
+
+      if (!matchedProduct.inStock || Number(matchedProduct.stockQty || 0) <= 0) {
+        return res.status(400).json({
+          message: `${matchedProduct.name || "Product"} is out of stock.`,
+        });
+      }
+
+      let line;
+      try {
+        line = resolveProductLineFromRaw(matchedProduct, rawItem);
+      } catch (e) {
+        return res.status(e.statusCode || 400).json({ message: e.message || "Invalid product line." });
+      }
+
+      normalizedItems.push({
+        product: matchedProduct._id,
+        name: line.name,
+        price: line.price,
+        image: matchedProduct.image || "",
+        quantity,
+        ...(line.variantLabel ? { variantLabel: line.variantLabel } : {}),
+      });
     }
 
     const stockCheck = validateOrderStockLines(normalizedItems, productMap);
@@ -1189,7 +1177,7 @@ async function updateAdminOrderDetails(req, res, next) {
       }
       const { cleanMapCoord } = require("../utils/shopLocation");
       const next = { ...order.shippingAddress, ...req.body.shippingAddress };
-      next.latitude = cleanMapCoord(next.latitude);
+      next.latitude = cleanMapCoord(next.latitude, 90);
       next.longitude = cleanMapCoord(next.longitude);
       order.shippingAddress = next;
     }
@@ -1871,12 +1859,15 @@ async function claimMyOrderReward(req, res, next) {
     }
 
     const eligiblePoints = Math.max(0, Number(order.reward?.eligiblePoints || 25));
-    order.reward = {
-      eligiblePoints,
-      claimedPoints: eligiblePoints,
-      claimedAt: new Date(),
-    };
-    await order.save();
+    // Claim atomically: two taps at once must not both pay out the points.
+    const claimed = await Order.findOneAndUpdate(
+      { _id: order._id, "reward.claimedAt": null },
+      { $set: { reward: { eligiblePoints, claimedPoints: eligiblePoints, claimedAt: new Date() } } }
+    );
+    if (!claimed) {
+      return res.status(409).json({ message: "Reward already claimed for this order." });
+    }
+    order.reward = { eligiblePoints, claimedPoints: eligiblePoints, claimedAt: new Date() };
 
     await User.findByIdAndUpdate(req.user._id, {
       $inc: { rewardPoints: eligiblePoints },

@@ -82,7 +82,7 @@ function SectionHeaderBase({
           alignSelf: "center",
         },
       }),
-    [centered, ink, muted, titleSize]
+    [centered, flush, ink, muted, titleSize]
   );
 
   const eyebrowText = String(eyebrow ?? "").trim();

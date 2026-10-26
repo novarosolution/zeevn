@@ -13,7 +13,6 @@ import {
 import { useTheme } from "../../context/ThemeContext";
 import { formatINR } from "../../utils/currency";
 import { getImageUriCandidates, prefetchProductHeroImage } from "../../utils/image";
-import { SHOP_SCREEN_UI } from "../../content/appContent";
 import { fonts } from "../../theme/tokens";
 import { platformShadow } from "../../theme/shadowPlatform";
 import ComingSoonProductOverlay from "../product/ComingSoonProductOverlay";

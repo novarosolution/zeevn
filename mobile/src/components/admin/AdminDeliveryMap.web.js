@@ -112,7 +112,8 @@ function riderIcon(rider, selected) {
     .slice(0, 2)
     .map((w) => w[0])
     .join("")
-    .toUpperCase();
+    .toUpperCase()
+    .replace(/[^\p{L}\p{N}?]/gu, "");
   const ring = selected ? "#C9A227" : online ? "#2FA36B" : "#A8A29E";
   const size = selected ? 38 : 32;
   const fade = online ? "1" : "0.45";

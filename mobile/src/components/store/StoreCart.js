@@ -113,12 +113,14 @@ function MinOrderNote({ text }) {
 
 /* ---- free delivery progress ---- */
 
-function FreeDeliveryStrip({ subtotal }) {
+function FreeDeliveryStrip({ subtotal, freeAbove = null }) {
   const { c, r, type } = useStoreTheme();
-  const { threshold, progress, unlocked } = STORE_CART.freeDelivery;
+  const { threshold: defaultThreshold, progress, unlocked } = STORE_CART.freeDelivery;
+  // Once the address is known the area's own rule wins (0 = it never charges); until then the shop-wide default.
+  const threshold = freeAbove === null || freeAbove === undefined ? defaultThreshold : freeAbove;
   const left = Math.max(0, threshold - subtotal);
   const done = left <= 0;
-  const pct = Math.min(1, subtotal / threshold);
+  const pct = threshold > 0 ? Math.min(1, subtotal / threshold) : 1;
 
   return (
     <View style={[styles.free, { backgroundColor: done ? c.brandSoft : c.goldSoft, borderColor: done ? withAlpha(c.brand, 0.25) : withAlpha(c.gold, 0.45), borderRadius: r.xl }]}>
@@ -750,7 +752,7 @@ export default function StoreCart({
         <Heading title={STORE_CART.bag.title} caption={caption} />
         {rules.closed ? <ClosedNotice closed={rules.closed} /> : null}
         {error ? <StoreBanner message={error} onClose={onDismissError} /> : null}
-        <FreeDeliveryStrip subtotal={bill.subtotal} />
+        <FreeDeliveryStrip subtotal={bill.subtotal} freeAbove={bill.freeAbove} />
         <Animated.View layout={LinearTransition.duration(200)} style={styles.lines}>
           {renderItems(false)}
         </Animated.View>

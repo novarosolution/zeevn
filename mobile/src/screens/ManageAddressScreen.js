@@ -98,8 +98,8 @@ export default function ManageAddressScreen({ navigation, route }) {
     if (!houseNumber.trim() && address.line1) {
       setHouseNumber(String(address.line1).split(",")[0].slice(0, 32));
     }
-    if (Number.isFinite(Number(address.latitude))) setLatitude(Number(address.latitude));
-    if (Number.isFinite(Number(address.longitude))) setLongitude(Number(address.longitude));
+    if (validMapCoord(address.latitude)) setLatitude(Number(address.latitude));
+    if (validMapCoord(address.longitude)) setLongitude(Number(address.longitude));
     await applyPlace(address);
     setSuccess(okMessage);
   };

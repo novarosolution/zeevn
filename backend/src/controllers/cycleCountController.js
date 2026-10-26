@@ -19,8 +19,11 @@ async function applyCycleCount(req, res, next) {
     for (const row of raw) {
       const id = row?.product?._id || row?.product;
       if (!mongoose.Types.ObjectId.isValid(String(id || ""))) continue;
-      const counted = Math.max(0, Math.round(Number(row.counted)));
-      if (!Number.isFinite(counted)) continue;
+      // Number(null) and Number("") are 0, so a jar nobody counted would be wiped to zero.
+      const entered = row?.counted;
+      if (entered === null || entered === undefined || String(entered).trim() === "") continue;
+      const counted = Math.round(Number(entered));
+      if (!Number.isFinite(counted) || counted < 0) continue;
       lines.push({ productId: String(id), counted });
     }
     if (!lines.length) fail("Count at least one jar.");

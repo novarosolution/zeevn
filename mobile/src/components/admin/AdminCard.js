@@ -2,7 +2,6 @@ import React, { useMemo } from "react";
 import { Platform, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { ADMIN_FONT, useAdminChrome } from "../../theme/adminLayout";
-import { fonts } from "../../theme/tokens";
 
 /**
  * Dense white card with an optional header row. Lighter than `AdminPanel`: use it for blocks inside drawers, side

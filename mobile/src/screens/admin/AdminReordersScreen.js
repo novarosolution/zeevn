@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import SectionReveal from "../../components/motion/SectionReveal";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";

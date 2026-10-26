@@ -3,7 +3,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { ALCHEMY } from "../../theme/customerAlchemy";
-import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
+import { fonts, icon, spacing, typography } from "../../theme/tokens";
 
 export const ADDRESS_TYPES = [
   { key: "Home", label: "Home", iconName: "home" },

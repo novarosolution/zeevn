@@ -85,7 +85,6 @@ export const COMMUNITY_HOME_CONTENT = {
 /** No bundled image fallbacks — admin must upload `imageUrl` per post. */
 export const COMMUNITY_POST_IMAGE_FALLBACKS = {};
 
-const FALLBACK_POST_ORDER = COMMUNITY_HOME_CONTENT.posts.map((post) => post.id);
 
 /** Admin API shape defaults — edit in Admin → Home View → Community. */
 export function buildCommunitySectionDefaults() {

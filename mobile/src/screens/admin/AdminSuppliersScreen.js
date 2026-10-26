@@ -15,7 +15,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
 import { fetchAdminSuppliers, saveAdminSupplier } from "../../services/adminService";
-import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
+import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { spacing } from "../../theme/tokens";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
@@ -30,7 +30,6 @@ export default function AdminSuppliersScreen({ navigation, route }) {
   const { user } = useAuth();
   const { colors: c, shadowPremium } = useTheme();
   const chrome = useAdminChrome();
-  const compact = useAdminCompactLayout();
   const toast = useToast();
   const styles = useMemo(() => createStyles(chrome, c, shadowPremium), [chrome, c, shadowPremium]);
   const [rows, setRows] = useState([]);

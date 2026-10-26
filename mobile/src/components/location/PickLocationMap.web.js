@@ -18,6 +18,7 @@ function pinIcon(bg = "#1F331F") {
 
 function MapReady({ center, path }) {
   const map = useMap();
+  const [centerLat, centerLng] = center;
   useEffect(() => {
     const kick = () => {
       map.invalidateSize({ animate: false });
@@ -27,13 +28,13 @@ function MapReady({ center, path }) {
           { padding: [28, 28], maxZoom: 15, animate: false }
         );
       } else {
-        map.setView(center, map.getZoom() || 15, { animate: false });
+        map.setView([centerLat, centerLng], map.getZoom() || 15, { animate: false });
       }
     };
     kick();
     const t = setTimeout(kick, 120);
     return () => clearTimeout(t);
-  }, [map, center[0], center[1], path]);
+  }, [map, centerLat, centerLng, path]);
   return null;
 }
 

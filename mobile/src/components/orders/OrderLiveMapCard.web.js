@@ -7,7 +7,7 @@ import { fetchOrderDrivingRoute } from "../../services/userService";
 import useOrderLiveLocation from "../../hooks/useOrderLiveLocation";
 import { pathFromQuote } from "../../utils/polylineRoute";
 import { formatLiveLocationUpdatedLine } from "../../utils/formatLiveLocationUpdated";
-import { fonts, icon, radius, semanticRadius, spacing, typography } from "../../theme/tokens";
+import { fonts, icon, radius, spacing, typography } from "../../theme/tokens";
 import PremiumCard from "../ui/PremiumCard";
 import PremiumButton from "../ui/PremiumButton";
 import PremiumSectionHeader from "../ui/PremiumSectionHeader";

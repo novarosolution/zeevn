@@ -8,6 +8,17 @@ import {
 } from "../services/adminService";
 import { buildCounterBillHtml, tillDraftOrder } from "./orderInvoiceHtml";
 import { buildStockInBillHtml } from "./stockInBillHtml";
+import { htmlEscape } from "./orderInvoiceMeta";
+
+/** A retry whose first attempt already went through meets a locked document: that means done, not failed. */
+async function confirmOnce(run) {
+  try {
+    return await run();
+  } catch (err) {
+    if (/locked/i.test(String(err?.message || ""))) return null;
+    throw err;
+  }
+}
 
 export function adminOfflineHandlers() {
   return {
@@ -25,15 +36,22 @@ export function adminOfflineHandlers() {
         cashReceived: payload.cashReceived,
         cashierName: payload.cashierName,
         note: payload.note,
+        clientRef: payload.clientRef,
       }),
     transfer: async (payload) => {
       const draft = await saveAdminTransferDraft(null, payload);
-      await confirmAdminTransfer(null, draft._id);
+      await confirmOnce(() => confirmAdminTransfer(null, draft._id));
     },
     stock_out: (payload) => createAdminStockOut(null, payload),
     stock_in: async (payload) => {
+      const saveOnly = payload.confirm === false; // "Save draft" while offline: keep it a draft on the server
+      // A delivery opened from the Drafts list already exists on the server; only a brand-new one needs creating.
+      if (payload.receiptId) {
+        if (saveOnly) return saveAdminStockInDraft(null, payload, payload.receiptId);
+        return confirmOnce(() => confirmAdminStockIn(null, payload.receiptId, payload));
+      }
       const saved = await saveAdminStockInDraft(null, payload);
-      return confirmAdminStockIn(null, saved._id, payload);
+      return saveOnly ? saved : confirmOnce(() => confirmAdminStockIn(null, saved._id, payload));
     },
   };
 }
@@ -81,15 +99,15 @@ export function buildOfflineDraftHtml(row) {
     });
   }
   const lines = (payload.lines || payload.products || [])
-    .map((line) => `${line.name || "Jar"} ×${line.quantity || 1}`)
+    .map((line) => `${htmlEscape(line.name || "Jar")} ×${Number(line.quantity) || 1}`)
     .join("<br/>");
-  return `<!doctype html><html><head><meta charset="utf-8"><title>${draftKindLabel(row?.kind)}</title>
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${htmlEscape(draftKindLabel(row?.kind))}</title>
     <style>body{font-family:system-ui,sans-serif;padding:20px;color:#1a2118}h1{font-size:18px}</style></head>
-    <body><h1>${draftKindLabel(row?.kind)}</h1>
-    <p>${row?.label || ""}</p>
-    <p>${payload.from ? `${payload.from} → ${payload.to}` : payload.location || ""}</p>
-    <p>${payload.name || payload.supplierName || ""} ${payload.phone || ""}</p>
-    <p>${lines || payload.note || ""}</p>
+    <body><h1>${htmlEscape(draftKindLabel(row?.kind))}</h1>
+    <p>${htmlEscape(row?.label || "")}</p>
+    <p>${payload.from ? `${htmlEscape(payload.from)} → ${htmlEscape(payload.to)}` : htmlEscape(payload.location || "")}</p>
+    <p>${htmlEscape(payload.name || payload.supplierName || "")} ${htmlEscape(payload.phone || "")}</p>
+    <p>${lines || htmlEscape(payload.note || "")}</p>
     <p>Draft on this phone · ${row?.at ? new Date(row.at).toLocaleString("en-IN") : ""}</p>
     </body></html>`;
 }

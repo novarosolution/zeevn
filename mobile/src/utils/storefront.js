@@ -9,6 +9,7 @@ import {
 import { ZEEVAN_PRODUCT_LINES, matchProductLine } from "../content/zeevanCatalogContent";
 import { productCoverUri } from "./adminProductHelpers";
 import { getImageUriCandidates } from "./image";
+import { realCoord } from "./geoCoord";
 import { isProductComingSoon, isProductOutOfStock } from "./productAvailability";
 
 const GIFT_RE = /\b(gift|gifting|hamper|combo)\b/i;
@@ -214,11 +215,11 @@ export function getFirstName(user) {
 
 /** Great-circle distance in km, or null when a point is missing. */
 export function distanceKm(a, b) {
-  const lat1 = Number(a?.latitude);
-  const lon1 = Number(a?.longitude);
-  const lat2 = Number(b?.latitude);
-  const lon2 = Number(b?.longitude);
-  if (![lat1, lon1, lat2, lon2].every(Number.isFinite)) return null;
+  const lat1 = realCoord(a?.latitude);
+  const lon1 = realCoord(a?.longitude);
+  const lat2 = realCoord(b?.latitude);
+  const lon2 = realCoord(b?.longitude);
+  if ([lat1, lon1, lat2, lon2].some((v) => v === null)) return null;
   const rad = Math.PI / 180;
   const dLat = (lat2 - lat1) * rad;
   const dLon = (lon2 - lon1) * rad;

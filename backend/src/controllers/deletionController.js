@@ -140,6 +140,7 @@ async function wipeUser(user) {
         name: "Deleted user",
         email: `deleted+${user._id}@zeevan.invalid`,
         phone: "",
+        adminNote: "",
         password: "",
         authProviders: [],
         expoPushTokens: [],
@@ -149,6 +150,7 @@ async function wipeUser(user) {
         isDeliveryPartner: false,
         deliveryLiveLocation: { latitude: null, longitude: null, accuracyMeters: null, updatedAt: null },
         rewardPoints: 0,
+        deletedAt: new Date(),
       },
     }
   );

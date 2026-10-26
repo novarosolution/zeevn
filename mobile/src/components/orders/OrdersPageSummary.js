@@ -2,7 +2,6 @@ import React, { memo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { MY_ORDERS_UI } from "../../content/appContent";
-import { ALCHEMY } from "../../theme/customerAlchemy";
 import { FONT_PRICE } from "../../theme/typographyRoles";
 import { useTheme } from "../../context/ThemeContext";
 import { FIGMA } from "../../theme/figmaApp";

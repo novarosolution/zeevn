@@ -40,7 +40,6 @@ export function ProductSpecsGrid({ specs = [], isDark, eyebrow, title }) {
 
 export function ProductIngredientsCard({ ingredients, isDark, eyebrow, title }) {
   if (!ingredients?.body) return null;
-  const ink = homeEditorialInk(isDark);
   const muted = homeEditorialMuted(isDark);
   return (
     <SectionBlock eyebrow={eyebrow} title={title || ingredients.title} isDark={isDark}>

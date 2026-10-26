@@ -238,7 +238,7 @@ async function refreshAccessToken(req, res, next) {
     }
 
     const user = await User.findById(decoded.id).select("-password");
-    if (!user) {
+    if (!user || user.deletedAt) {
       return res.status(401).json({ message: "User no longer exists." });
     }
 
@@ -285,7 +285,7 @@ async function updateProfile(req, res, next) {
       user.defaultAddress = {
         ...user.defaultAddress,
         ...defaultAddress,
-        latitude: cleanMapCoord(defaultAddress.latitude ?? user.defaultAddress?.latitude),
+        latitude: cleanMapCoord(defaultAddress.latitude ?? user.defaultAddress?.latitude, 90),
         longitude: cleanMapCoord(defaultAddress.longitude ?? user.defaultAddress?.longitude),
       };
     }
@@ -389,49 +389,38 @@ async function replaceMyCart(req, res, next) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    const inputItems = Array.isArray(req.body?.items) ? req.body.items : [];
-    const objectIdItems = inputItems.filter((item) => mongoose.Types.ObjectId.isValid(item.product));
-    const objectProductIds = objectIdItems.map((item) => item.product);
+    const inputItems = (Array.isArray(req.body?.items) ? req.body.items : []).filter(
+      (item) => item && typeof item === "object"
+    );
+    const objectIdItems = inputItems.filter((item) => mongoose.Types.ObjectId.isValid(item.product || item.id));
+    const objectProductIds = objectIdItems.map((item) => item.product || item.id);
     const foundProducts = objectProductIds.length
       ? await Product.find({ _id: { $in: objectProductIds } })
       : [];
     const productMap = new Map(foundProducts.map((product) => [String(product._id), product]));
 
+    // Only catalog jars live in a saved cart (priced by the catalog); anything else could never be ordered.
     const normalizedItems = [];
     for (const rawItem of inputItems) {
-      const quantity = Number(rawItem.quantity || 1);
-      if (!quantity || quantity < 1) continue;
+      const quantity = rawItem.quantity === undefined || rawItem.quantity === null ? 1 : Math.floor(Number(rawItem.quantity));
+      if (!Number.isFinite(quantity) || quantity < 1) continue;
 
-      const hasObjectId = mongoose.Types.ObjectId.isValid(rawItem.product || rawItem.id);
-      if (hasObjectId) {
-        const matched = productMap.get(String(rawItem.product || rawItem.id));
-        if (!matched) continue;
-        let line;
-        try {
-          line = resolveProductLineFromRaw(matched, rawItem);
-        } catch {
-          continue;
-        }
-        normalizedItems.push({
-          product: matched._id,
-          name: line.name,
-          price: line.price,
-          image: matched.image || "",
-          quantity,
-          ...(line.variantLabel ? { variantLabel: line.variantLabel } : {}),
-        });
-      } else {
-        const name = String(rawItem.name || "").trim();
-        const price = Number(rawItem.price);
-        if (!name || Number.isNaN(price) || price < 0) continue;
-        normalizedItems.push({
-          externalProductId: String(rawItem.product || rawItem.id || ""),
-          name,
-          price,
-          image: String(rawItem.image || ""),
-          quantity,
-        });
+      const matched = productMap.get(String(rawItem.product || rawItem.id));
+      if (!matched) continue;
+      let line;
+      try {
+        line = resolveProductLineFromRaw(matched, rawItem);
+      } catch {
+        continue;
       }
+      normalizedItems.push({
+        product: matched._id,
+        name: line.name,
+        price: line.price,
+        image: matched.image || "",
+        quantity,
+        ...(line.variantLabel ? { variantLabel: line.variantLabel } : {}),
+      });
     }
 
     user.cartItems = normalizedItems;

@@ -170,7 +170,7 @@ function ChatSkeleton() {
   );
 }
 
-function SupportBody({ scrollRef, error, onDismissError, toast, loading, thread, message, onMessage, sending, onSend, onEmail, emailLabel, faqs = [] }) {
+function SupportBody({ scrollRef, error, onDismissError, toast, loading, thread, message, onMessage, sending, onSend, onEmail, emailLabel, extraContacts = [], faqs = [] }) {
   const { c, type } = useStoreTheme();
   const origin = useScreenOrigin();
   const chatY = useRef(0);
@@ -193,6 +193,15 @@ function SupportBody({ scrollRef, error, onDismissError, toast, loading, thread,
         />
         <ContactTile icon="mail" title="Email" sub={emailLabel} tone="brand" onPress={onEmail} />
       </Rise>
+
+      {extraContacts.length ? (
+        <Rise index={1} style={styles.tiles}>
+          {extraContacts.map((contact) => (
+            <ContactTile key={contact.key} icon={contact.icon} title={contact.title} sub={contact.sub} tone={contact.tone === "gold" ? "gold" : "brand"} onPress={contact.onPress} />
+          ))}
+          {extraContacts.length === 1 ? <View style={styles.tileSpacer} /> : null}
+        </Rise>
+      ) : null}
 
       <Rise index={1} onLayout={(e) => (chatY.current = e.nativeEvent.layout.y)}>
         <View style={styles.chatHead}>
@@ -249,6 +258,7 @@ export default function StoreSupport({ navigation, ...body }) {
 const styles = StyleSheet.create({
   tiles: { flexDirection: "row", gap: 12 },
   tile: { flex: 1, gap: 4 },
+  tileSpacer: { flex: 1 },
   tileIcon: { width: 48, height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center", marginBottom: 8 },
   chatHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
   noMargin: { marginBottom: 0 },

@@ -22,7 +22,8 @@ function orderIdOf(order) {
 }
 
 export function OrderCelebrationProvider({ children, navigationRef }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const myId = String(user?.id || user?._id || "");
   const { on: onLiveEvent } = useLiveSocket();
   const [celebration, setCelebration] = useState(null);
   const statusByOrderRef = useRef(new Map());
@@ -77,6 +78,9 @@ export function OrderCelebrationProvider({ children, navigationRef }) {
 
     return onLiveEvent("orders:updated", ({ order }) => {
       if (!order?._id && !order?.id) return;
+      // Admins and riders are sent every order's updates; only the person it belongs to gets the celebration.
+      const owner = String(order.user?._id || order.user?.id || order.user || "");
+      if (!myId || (owner && owner !== myId)) return;
       const id = orderIdOf(order);
       const nextStatus = String(order.status || "");
       const prevStatus = statusByOrderRef.current.get(id);
@@ -101,7 +105,7 @@ export function OrderCelebrationProvider({ children, navigationRef }) {
         showCelebration("confirmed", order);
       }
     });
-  }, [isAuthenticated, navigationRef, onLiveEvent, showCelebration]);
+  }, [isAuthenticated, myId, navigationRef, onLiveEvent, showCelebration]);
 
   const seedOrderStatuses = useCallback((orders = []) => {
     orders.forEach((order) => {

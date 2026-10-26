@@ -24,7 +24,7 @@ import {
   isPartnerPending,
 } from "../../utils/orderStatus";
 import { formatCompactShippingLine } from "../../utils/shippingAddressFormat";
-import { productImageUri } from "../../utils/storefront";
+import { productImageSource } from "../../utils/storefront";
 import OrderLiveMapCard from "../orders/OrderLiveMapCard";
 import PaymentStatusBanner from "../payments/PaymentStatusBanner";
 import OrderReturnRequest from "../orders/OrderReturnRequest";
@@ -76,10 +76,11 @@ function Thumbs({ products }) {
   return (
     <View style={styles.thumbs}>
       {shown.map((p, i) => {
-        const uri = productImageUri({ image: p.image }, 52);
+        // Same resolver as the bag: the stored photo, or the packaging shot for that line when the order kept none.
+        const source = productImageSource({ name: p.name, image: p.image }, 52);
         return (
           <View key={`${p.name}-${i}`} style={[styles.thumb, { backgroundColor: c.well, borderColor: c.card, marginLeft: i ? -14 : 0, zIndex: shown.length - i }]}>
-            {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="memory-disk" /> : <MaterialCommunityIcons name="image-outline" size={18} color={c.inkMute} />}
+            {source ? <Image source={source} style={StyleSheet.absoluteFill} contentFit={typeof source === "number" ? "contain" : "cover"} cachePolicy="memory-disk" /> : <MaterialCommunityIcons name="image-outline" size={18} color={c.inkMute} />}
           </View>
         );
       })}
@@ -172,11 +173,11 @@ function Breakdown({ order }) {
 
       <View style={styles.lineItems}>
         {(order.products || []).map((p, i) => {
-          const uri = productImageUri({ image: p.image }, 48);
+          const source = productImageSource({ name: p.name, image: p.image }, 48);
           return (
             <View key={`${p.name}-${i}`} style={styles.lineItem}>
               <View style={[styles.lineThumb, { backgroundColor: c.well, borderColor: c.line }]}>
-                {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="memory-disk" /> : null}
+                {source ? <Image source={source} style={StyleSheet.absoluteFill} contentFit={typeof source === "number" ? "contain" : "cover"} cachePolicy="memory-disk" /> : null}
               </View>
               <Text style={[type.ui(13.5, "semibold", c.ink, { lineHeight: 18 }), styles.flex]} numberOfLines={2}>
                 {p.name}

@@ -1,3 +1,5 @@
+import { realCoord } from "./geoCoord";
+
 const DEFAULT_REGION = {
   latitude: 20.5937,
   longitude: 78.9629,
@@ -5,36 +7,20 @@ const DEFAULT_REGION = {
   longitudeDelta: 40,
 };
 
-/** Collect finite lat/lng points for map fitting. */
+function pointOf(place, kind) {
+  const latitude = realCoord(place?.latitude);
+  const longitude = realCoord(place?.longitude);
+  return latitude === null || longitude === null ? null : { latitude, longitude, kind };
+}
+
+/** Collect real lat/lng points for map fitting. */
 export function collectOrderMapPoints({ shop, partner, destination } = {}) {
-  const points = [];
-
-  const slat = Number(shop?.latitude);
-  const slng = Number(shop?.longitude);
-  if (Number.isFinite(slat) && Number.isFinite(slng)) {
-    points.push({ latitude: slat, longitude: slng, kind: "shop" });
-  }
-
-  const plat = Number(partner?.latitude);
-  const plng = Number(partner?.longitude);
-  if (Number.isFinite(plat) && Number.isFinite(plng)) {
-    points.push({ latitude: plat, longitude: plng, kind: "partner" });
-  }
-
-  const dlat = Number(destination?.latitude);
-  const dlng = Number(destination?.longitude);
-  if (Number.isFinite(dlat) && Number.isFinite(dlng)) {
-    points.push({ latitude: dlat, longitude: dlng, kind: "destination" });
-  }
-
-  return points;
+  return [pointOf(shop, "shop"), pointOf(partner, "partner"), pointOf(destination, "destination")].filter(Boolean);
 }
 
 /** React Native Maps `initialRegion` from multiple markers. */
 export function computeMapRegionFromPoints(points, { paddingFactor = 2.4, minDelta = 0.025 } = {}) {
-  const valid = (points || []).filter(
-    (p) => Number.isFinite(Number(p.latitude)) && Number.isFinite(Number(p.longitude))
-  );
+  const valid = (points || []).filter((p) => realCoord(p?.latitude) !== null && realCoord(p?.longitude) !== null);
   if (!valid.length) return DEFAULT_REGION;
   if (valid.length === 1) {
     return {

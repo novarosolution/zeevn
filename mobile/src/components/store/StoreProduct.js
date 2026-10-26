@@ -14,6 +14,7 @@ import { DELIVERY_NOT_POSSIBLE, STORE_FREE_DELIVERY, STORE_PRODUCT } from "../..
 import { STORE_NAV_HEIGHT, useStoreTheme, withAlpha } from "../../theme/storefront";
 import { fonts } from "../../theme/tokens";
 import { formatINRWhole } from "../../utils/currency";
+import { describeAreaDelivery } from "../../utils/deliveryPromise";
 import { hapticSuccess, hapticTap, hapticTick } from "../../utils/haptics";
 import { getProductHeroImageUri, getProductThumbImageUri } from "../../utils/image";
 import { getStockHint } from "../../utils/storefront";
@@ -582,7 +583,7 @@ export default function StoreProduct({
   isAuthenticated = false,
   shelfMatch = false,
 }) {
-  const { c, r, type, isDark, gutter } = useStoreTheme();
+  const { c, r, type, gutter } = useStoreTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { totalItems } = useCart();
@@ -660,8 +661,10 @@ export default function StoreProduct({
   );
 
   const delivery = pageContent.delivery;
-  const deliveryTitle = delivery?.title || STORE_PRODUCT.delivery.fallbackTitle;
-  const deliveryBody = delivery?.body || STORE_PRODUCT.delivery.fallbackBody;
+  // Once the shopper's area is known say what it really charges; until then the shop-wide wording stands.
+  const areaDelivery = describeAreaDelivery(quote);
+  const deliveryTitle = areaDelivery?.title || delivery?.title || STORE_PRODUCT.delivery.fallbackTitle;
+  const deliveryBody = areaDelivery?.body || delivery?.body || STORE_PRODUCT.delivery.fallbackBody;
   const trustChips = Array.isArray(pageContent.trustChips) ? pageContent.trustChips : [];
   const highlights = Array.isArray(pageContent.highlights) ? pageContent.highlights : [];
   const sameText = (a, b) => String(a || "").replace(/\s+/g, " ").trim().toLowerCase() === String(b || "").replace(/\s+/g, " ").trim().toLowerCase();
@@ -916,7 +919,7 @@ export default function StoreProduct({
                 <View style={styles.rowText}>
                   <Text style={type.ui(14, "extrabold", c.ink)}>{deliveryTitle}</Text>
                   <Text style={type.ui(12.5, "medium", c.inkSoft, { lineHeight: 18 })}>{deliveryBody}</Text>
-                  {delivery ? null : <Text style={type.ui(12, "bold", c.brandAlt)}>{STORE_FREE_DELIVERY}</Text>}
+                  {delivery || areaDelivery ? null : <Text style={type.ui(12, "bold", c.brandAlt)}>{STORE_FREE_DELIVERY}</Text>}
                 </View>
               </View>
             </Surface>

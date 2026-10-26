@@ -65,7 +65,7 @@ export default function HomePromoVideo({
   minimalChrome = false,
 }) {
   const { isDark } = useTheme();
-  const { width, isXs } = useKankregLayout();
+  const { width } = useKankregLayout();
   const [isMuted, setIsMuted] = useState(true);
 
   const bannerHeight =

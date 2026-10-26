@@ -22,7 +22,6 @@ import PremiumButton from "../ui/PremiumButton";
 import GoldHairline from "../ui/GoldHairline";
 import { HOME_SCREEN_UI } from "../../content/appContent";
 import { GHEE_HOME_CONTENT as HOME_STORY_CONTENT } from "../../content/gheeHomeContent";
-import useReducedMotion from "../../hooks/useReducedMotion";
 import { injectWebCssOnce } from "../../utils/injectWebCssOnce";
 
 const PHOTO_LEAD_ASPECT = 5 / 6;
@@ -150,7 +149,6 @@ function CinematicStoryVideo({
   isStoryPhone = false,
 }) {
   const [muted, setMuted] = useState(true);
-  const reducedMotion = useReducedMotion();
   const reelStyle = cinemaReelStyle(layoutWidth, isStoryPhone);
   const useWebCssReel = Platform.OS === "web";
 

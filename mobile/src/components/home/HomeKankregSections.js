@@ -6,12 +6,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { getCategoryGridCellStyle, useKankregLayout } from "../../theme/kankregBreakpoints";
 import PremiumButton from "../ui/PremiumButton";
 import { SectionHeader } from "./editorial";
-import {
-  HOME_EYEBROW_LETTER_SPACING,
-  HOME_SPACE,
-  HOME_TYPE,
-} from "../../theme/homeEditorial";
-import { ALCHEMY } from "../../theme/customerAlchemy";
+import { HOME_SPACE, HOME_TYPE } from "../../theme/homeEditorial";
 import { FONT_HEADING, FONT_PRICE } from "../../theme/typographyRoles";
 import { KANKREG_PALETTE, ZEEVAN_GOLD } from "../../theme/kankregWeb";
 import { createKankregEyebrowStyle } from "../../theme/kankregScreenStyles";

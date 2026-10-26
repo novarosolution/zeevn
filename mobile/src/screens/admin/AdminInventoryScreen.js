@@ -28,7 +28,7 @@ import AdminInput from "../../components/admin/AdminInput";
 import { buildInventoryTableColumns } from "../../components/admin/adminTableColumns";
 import { productCoverUri } from "../../utils/adminProductHelpers";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { layout, radius, spacing, typography } from "../../theme/tokens";
+import { radius, spacing, typography } from "../../theme/tokens";
 import PremiumLoader from "../../components/ui/PremiumLoader";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";

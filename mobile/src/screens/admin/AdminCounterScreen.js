@@ -29,6 +29,7 @@ import {
   cacheAdminCatalog,
   enqueueAdminOfflineDraft,
   isLikelyOffline,
+  newClientRef,
   readAdminCatalogCache,
   syncAdminOfflineDrafts,
 } from "../../utils/adminOfflineQueue";
@@ -232,6 +233,8 @@ export default function AdminCounterScreen({ navigation, route }) {
     if (!ok) return;
     setBusy(true);
     setError("");
+    // One reference for this sale: the first try and any queued retry carry it, so the shop bills it once.
+    const clientRef = newClientRef();
     try {
       const bill = await createAdminWalkIn(null, {
         products: cart.map((line) => ({ product: line.productId, quantity: line.quantity })),
@@ -242,6 +245,7 @@ export default function AdminCounterScreen({ navigation, route }) {
         upiRef,
         cashReceived: received || undefined,
         cashierName: user?.name,
+        clientRef,
       });
       setLastBill(bill);
       setOpenBill(bill);
@@ -280,6 +284,7 @@ export default function AdminCounterScreen({ navigation, route }) {
             upiRef,
             cashReceived: received || undefined,
             cashierName: user?.name,
+            clientRef,
           },
           `${name || "Walk-in"} ${formatRupees(total)}`
         );

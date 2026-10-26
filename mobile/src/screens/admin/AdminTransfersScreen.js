@@ -7,7 +7,7 @@ import KankregAdminShell from "../../components/kankreg/KankregAdminShell";
 import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import AdminAlerts from "../../components/admin/AdminAlerts";
 import AdminBadge from "../../components/admin/AdminBadge";
-import AdminButton, { AdminButtonRow } from "../../components/admin/AdminButton";
+import AdminButton from "../../components/admin/AdminButton";
 import AdminDeskDock from "../../components/admin/AdminDeskDock";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminHitRow from "../../components/admin/AdminHitRow";
@@ -24,7 +24,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
 import { confirmAdminTransfer, fetchAdminProducts, fetchAdminTransfer, saveAdminTransferDraft, searchAdminTransfers } from "../../services/adminService";
 import AdminOfflineBanner from "../../components/admin/AdminOfflineBanner";
-import { cacheAdminCatalog, enqueueAdminOfflineDraft, isLikelyOffline, readAdminCatalogCache, syncAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
+import { cacheAdminCatalog, enqueueAdminOfflineDraft, isLikelyOffline, newClientRef, readAdminCatalogCache, syncAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
 import { adminOfflineHandlers } from "../../utils/adminOfflineSync";
 import {
   ADMIN_FONT,
@@ -191,12 +191,14 @@ export default function AdminTransfersScreen({ navigation, route }) {
     if (!ok) return;
     setBusy(true);
     setError("");
+    const clientRef = newClientRef();
     try {
       const draft = await saveAdminTransferDraft(null, {
         from,
         to,
         note,
         lines: lines.map((line) => ({ product: line.productId, quantity: line.quantity })),
+        clientRef,
       });
       await confirmAdminTransfer(null, draft._id);
       setLines([]);
@@ -207,7 +209,7 @@ export default function AdminTransfersScreen({ navigation, route }) {
       if (isLikelyOffline(err)) {
         await enqueueAdminOfflineDraft(
           "transfer",
-          { from, to, note, lines: lines.map((line) => ({ product: line.productId, quantity: line.quantity })) },
+          { from, to, note, lines: lines.map((line) => ({ product: line.productId, quantity: line.quantity })), clientRef },
           `${from} → ${to}`
         );
         setLines([]);

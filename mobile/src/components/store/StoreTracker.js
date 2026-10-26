@@ -121,12 +121,11 @@ const firstName = (name) => {
   return word ? word.charAt(0).toUpperCase() + word.slice(1) : "";
 };
 
+/** The same reference the order card, confirmation and invoice show (the last 6 characters of the id), so it can be quoted to support. */
 function publicOrderNo(order) {
   const raw = order?.orderNumber || order?.number || order?.publicRef;
   if (raw) return String(raw).replace(/^#/, "").replace(/^KG-?/i, "");
-  const hex = String(order?._id || order?.id || "").slice(-3);
-  const n = parseInt(hex, 16);
-  return Number.isFinite(n) ? String(n) : formatOrderShortId(order?._id);
+  return formatOrderShortId(order?._id || order?.id);
 }
 
 const THUMB = 24;

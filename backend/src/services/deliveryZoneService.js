@@ -118,7 +118,7 @@ function storePinFrom(store, settings) {
   return {
     storeId: store?._id ? String(store._id) : null,
     storeName: store?.label || "",
-    storeLatitude: cleanMapCoord(store?.latitude),
+    storeLatitude: cleanMapCoord(store?.latitude, 90),
     storeLongitude: cleanMapCoord(store?.longitude),
     minutesPerKm: Number(settings?.minutesPerKm) > 0 ? Number(settings.minutesPerKm) : 3,
   };
@@ -131,7 +131,7 @@ function storePinFrom(store, settings) {
 async function resolveDeliveryQuote({ postalCode, city, itemsTotal = 0, latitude, longitude } = {}) {
   const settings = await StoreSettings.get();
   const stores = StoreSettings.listStores(settings);
-  const lat = cleanMapCoord(latitude);
+  const lat = cleanMapCoord(latitude, 90);
   const lng = cleanMapCoord(longitude);
   const inIndia = lat != null && lng != null && lat >= 6 && lat <= 38 && lng >= 68 && lng <= 98;
   const hasPoint = inIndia;

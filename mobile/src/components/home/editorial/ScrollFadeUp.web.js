@@ -1,5 +1,4 @@
 import React from "react";
-import { View } from "react-native";
 import SectionReveal from "../../motion/SectionReveal";
 
 /** Web — passthrough to lightweight SectionReveal.web (no GSAP/Reanimated). */

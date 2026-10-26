@@ -142,7 +142,7 @@ function PremiumButtonBase({
         ? [c.primaryBright, c.primary, c.primaryDark]
         : [c.primaryBright, c.primary, c.primaryDark];
     return [ALCHEMY.goldBright, ALCHEMY.gold, ALCHEMY.greenDeep];
-  }, [disabled, loading, isDanger, isSecondary, isGold, isPrimary, isDark, c.secondary, c.secondaryDark, c.secondaryBright]);
+  }, [disabled, loading, isDanger, isSecondary, isGold, isPrimary, isDark, c.primary, c.primaryBright, c.primaryDark, c.secondary, c.secondaryDark, c.secondaryBright]);
 
   const textNode = label != null
     ? <Text style={[styles.text, { color: variantTextColor }, textStyle]} numberOfLines={1}>{label}</Text>

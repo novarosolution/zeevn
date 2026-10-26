@@ -12,7 +12,6 @@ import {
   figmaTextMuted,
   figmaTextPrimary,
 } from "../../theme/figmaApp";
-import { ALCHEMY } from "../../theme/customerAlchemy";
 import { FONT_BODY_SEMIBOLD } from "../../theme/typographyRoles";
 import { fonts, radius } from "../../theme/tokens";
 import { formatINR } from "../../utils/currency";

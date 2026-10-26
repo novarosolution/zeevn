@@ -126,11 +126,13 @@ export default function AdminSupportScreen({ navigation, route }) {
     setError("");
   }, [selectedId]);
 
+  const openThreadId = selected?._id;
+  const openThreadMessages = selected?.messages?.length;
   useEffect(() => {
-    if (!selected || !listRef.current) return;
+    if (!openThreadId || !listRef.current) return;
     const timer = setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 40);
     return () => clearTimeout(timer);
-  }, [selected?._id, selected?.messages?.length]);
+  }, [openThreadId, openThreadMessages]);
 
   const send = async () => {
     const text = draft.trim();

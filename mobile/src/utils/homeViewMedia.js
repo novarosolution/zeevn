@@ -1,5 +1,5 @@
 import { buildAboutPageExtrasDefaults } from "../content/aboutPageContent";
-import { ABOUT_GALLERY_DEFAULTS } from "../content/aboutVisualContent";
+import { ABOUT_GALLERY_DEFAULTS, ABOUT_HERO_IMAGE } from "../content/aboutVisualContent";
 import {
   buildCommunitySectionDefaults,
   getCommunityPostImageFallback,
@@ -113,12 +113,34 @@ function normalizeAboutPhoto(photo) {
   };
 }
 
+/**
+ * The photos the shop itself uploaded: they always have a web address. A photo with only a `source` number is one of the
+ * bundled defaults that came back through a saved copy of the home config — and a bundled image's number changes with
+ * every build, so a saved one can point at some other picture (the About page opened on a stray bottle crop). Those are
+ * never trusted; the defaults are taken from the running build instead.
+ */
+function adminAboutPhotos(photosIn) {
+  return Array.isArray(photosIn) ? photosIn.map(normalizeAboutPhoto).filter((photo) => photo && photo.url) : [];
+}
+
 function resolveAboutPhotos(photosIn) {
-  const fromAdmin = Array.isArray(photosIn)
-    ? photosIn.map(normalizeAboutPhoto).filter(Boolean)
-    : [];
+  const fromAdmin = adminAboutPhotos(photosIn);
   if (fromAdmin.length) return fromAdmin;
   return ABOUT_GALLERY_DEFAULTS.map((photo) => normalizeAboutPhoto(photo)).filter(Boolean);
+}
+
+/**
+ * The native About page opens on one photo and keeps the rest for its gallery. The shop's own first photo leads; with none
+ * set, the bundled atelier photograph opens the page and all four product shots stay in the gallery (the product shots
+ * alone cropped to a grey sliver of bottle cap at hero size).
+ */
+function splitAboutPhotos(photosIn) {
+  const fromAdmin = adminAboutPhotos(photosIn);
+  if (fromAdmin.length) return { heroPhoto: fromAdmin[0], galleryPhotos: fromAdmin.slice(1) };
+  return {
+    heroPhoto: normalizeAboutPhoto({ source: ABOUT_HERO_IMAGE }),
+    galleryPhotos: ABOUT_GALLERY_DEFAULTS.map((photo) => normalizeAboutPhoto(photo)).filter(Boolean),
+  };
 }
 
 export const ABOUT_SECTION_DEFAULTS = {
@@ -194,9 +216,10 @@ function normalizeValueItem(item) {
 export function normalizeAboutSection(about) {
   const extras = buildAboutPageExtrasDefaults();
   if (!about || typeof about !== "object") {
-    return { ...ABOUT_SECTION_DEFAULTS, ...extras, photos: resolveAboutPhotos([]) };
+    return { ...ABOUT_SECTION_DEFAULTS, ...extras, photos: resolveAboutPhotos([]), ...splitAboutPhotos([]) };
   }
   const photos = resolveAboutPhotos(about.photos);
+  const { heroPhoto, galleryPhotos } = splitAboutPhotos(about.photos);
 
   const highlightsIn = Array.isArray(about.highlights) ? about.highlights : [];
   const highlights =
@@ -248,6 +271,8 @@ export function normalizeAboutSection(about) {
     videoUrl: asTrimmedString(about.videoUrl),
     videoCaption: asTrimmedString(about.videoCaption, ABOUT_SECTION_DEFAULTS.videoCaption),
     photos,
+    heroPhoto,
+    galleryPhotos,
     pageLead: asTrimmedString(about.pageLead, extras.pageLead),
     pullQuote: asTrimmedString(about.pullQuote, extras.pullQuote),
     bodyContinued: asTrimmedString(about.bodyContinued, extras.bodyContinued),

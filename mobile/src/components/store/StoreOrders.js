@@ -34,6 +34,7 @@ import PressableScale from "./PressableScale";
 import ScreenHeader, { SCREEN_HEADER_PAD } from "./ScreenHeader";
 import StoreBanner from "./StoreBanner";
 import StoreField from "./StoreField";
+import { Card, EmptyState } from "./StoreKit";
 
 const LIVE_MAP_STATUSES = new Set(["ready_for_pickup", "shipped", "out_for_delivery"]);
 const GOOD_INK = "#2F5A22";
@@ -523,18 +524,10 @@ function SectionLabel({ title, caption, count, live }) {
 }
 
 function EmptyOrders({ onShop }) {
-  const { c, r, type, shadow } = useStoreTheme();
   return (
-    <View style={[styles.empty, shadow.soft, { backgroundColor: c.card, borderColor: c.line, borderRadius: r.xxl }]}>
-      <View style={[styles.emptyIcon, { backgroundColor: c.brandSoft }]}>
-        <MaterialCommunityIcons name="repeat" size={34} color={c.brand} />
-      </View>
-      <Text style={type.display(23, { semi: true, ls: -0.4, lh: 29 })}>{STORE_ORDERS.empty.title}</Text>
-      <Text style={[type.ui(14, "medium", c.inkMute, { lineHeight: 20 }), styles.centerText]}>{STORE_ORDERS.empty.body}</Text>
-      <PressableScale onPress={onShop} accessibilityRole="button" accessibilityLabel={STORE_ORDERS.empty.cta} style={[styles.emptyBtn, { backgroundColor: c.brand }]}>
-        <Text style={type.ui(14.5, "extrabold", c.onBrand)}>{STORE_ORDERS.empty.cta}</Text>
-      </PressableScale>
-    </View>
+    <Card padded={false}>
+      <EmptyState icon="bag-handle-outline" title={STORE_ORDERS.empty.title} body={STORE_ORDERS.empty.body} actionLabel={STORE_ORDERS.empty.cta} onAction={onShop} />
+    </Card>
   );
 }
 
@@ -809,7 +802,4 @@ const styles = StyleSheet.create({
   reorderFill: { borderRadius: 26 },
   more: { height: 50, borderRadius: 25, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   loading: { gap: 14 },
-  empty: { alignItems: "center", gap: 11, paddingVertical: 34, paddingHorizontal: 24, borderWidth: StyleSheet.hairlineWidth },
-  emptyIcon: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center", marginBottom: 2 },
-  emptyBtn: { height: 50, paddingHorizontal: 28, borderRadius: 25, alignItems: "center", justifyContent: "center", marginTop: 6 },
 });

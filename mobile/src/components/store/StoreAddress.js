@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { MANAGE_ADDRESS_SCREEN_UI } from "../../content/appContent";
+import { STORE_ADDRESS } from "../../content/storefrontContent";
 import { useDeliveryLocation } from "../../context/DeliveryLocationContext";
 import { useStoreTheme } from "../../theme/storefront";
 import { hapticSuccess } from "../../utils/haptics";
@@ -12,9 +13,9 @@ import StoreScreen from "./StoreScreen";
 import { Button, Rise, SectionLabel, Segmented } from "./StoreKit";
 
 const TYPES = [
-  { key: "Home", label: "Home", icon: "home-outline" },
-  { key: "Work", label: "Work", icon: "briefcase-outline" },
-  { key: "Other", label: "Other", icon: "location-outline" },
+  { key: "Home", label: STORE_ADDRESS.types.Home, icon: "home-outline" },
+  { key: "Work", label: STORE_ADDRESS.types.Work, icon: "briefcase-outline" },
+  { key: "Other", label: STORE_ADDRESS.types.Other, icon: "location-outline" },
 ];
 
 /**
@@ -61,13 +62,13 @@ function PlaceCard({ kind, house, line1, landmark, city, postalCode, latitude, l
               {quote || gps ? (
                 <View style={styles.chips}>
                   <DeliveryChip quote={quote} />
-                  {gps ? <StatusChip icon="checkmark-circle" label="GPS verified" /> : null}
+                  {gps ? <StatusChip icon="checkmark-circle" label={STORE_ADDRESS.gpsVerified} /> : null}
                 </View>
               ) : null}
             </>
           ) : (
             <>
-              <Text style={type.ui(17, "bold", c.ink, { letterSpacing: -0.2 })}>Add your address</Text>
+              <Text style={type.ui(17, "bold", c.ink, { letterSpacing: -0.2 })}>{STORE_ADDRESS.add}</Text>
               <Text style={type.ui(13.5, "medium", c.inkMute)}>{MANAGE_ADDRESS_SCREEN_UI.mapHint}</Text>
             </>
           )}
@@ -127,12 +128,12 @@ export default function StoreAddress({
 
   return (
     <StoreScreen
-      title="Delivery address"
+      title={STORE_ADDRESS.title}
       navigation={navigation}
       scrollRef={scrollRef}
       dock={
         <GlassDock>
-          <Button label={saving ? "Saving…" : "Save address"} onPress={onSave} loading={saving} />
+          <Button label={saving ? STORE_ADDRESS.saving : STORE_ADDRESS.save} onPress={onSave} loading={saving} />
         </GlassDock>
       }
     >
@@ -158,14 +159,14 @@ export default function StoreAddress({
       </Rise>
 
       <Rise index={1}>
-        <SectionLabel>Save as</SectionLabel>
+        <SectionLabel>{STORE_ADDRESS.saveAs}</SectionLabel>
         <Segmented options={TYPES} value={addressType || "Home"} onChange={onAddressType} />
       </Rise>
 
       <Rise index={2}>
         <FormGroup>
           <FormField
-            label="House / Flat / Building no."
+            label={STORE_ADDRESS.fields.house}
             value={houseNumber}
             onChangeText={onHouseNumber}
             error={fieldErrors.houseNumber}
@@ -175,7 +176,7 @@ export default function StoreAddress({
             onSubmitEditing={focusNext(0)}
           />
           <FormField
-            label="Street / Area / Colony"
+            label={STORE_ADDRESS.fields.street}
             value={line1}
             onChangeText={onLine1}
             error={fieldErrors.line1}
@@ -185,10 +186,10 @@ export default function StoreAddress({
             onSubmitEditing={focusNext(1)}
           />
           <FormField
-            label="Landmark (optional)"
+            label={STORE_ADDRESS.fields.landmark}
             value={landmark}
             onChangeText={onLandmark}
-            placeholder="e.g. Near city mall"
+            placeholder={STORE_ADDRESS.fields.landmarkHint}
             inputRef={attach(2)}
             returnKeyType="next"
             blurOnSubmit={false}
@@ -197,7 +198,7 @@ export default function StoreAddress({
           <FormPair>
             <FormField
               style={styles.half}
-              label="City"
+              label={STORE_ADDRESS.fields.city}
               value={city}
               onChangeText={onCity}
               error={fieldErrors.city}
@@ -208,7 +209,7 @@ export default function StoreAddress({
             />
             <FormField
               style={styles.half}
-              label="Pincode"
+              label={STORE_ADDRESS.fields.pincode}
               value={postalCode}
               onChangeText={onPostalCode}
               error={fieldErrors.postalCode}

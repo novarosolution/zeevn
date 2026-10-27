@@ -8,6 +8,8 @@ import { fonts } from "../../theme/tokens";
 
 /**
  * Customer/rider “Delete my account” on profile. Admins cannot file for themselves.
+ * `variant`: "store" (outlined button) · "menu" (flat menu row) · "quiet" (a small centred text button — the profile uses it
+ * under Sign out, because closing an account is rare and must not compete with the everyday actions).
  */
 export default function DeleteAccountAction({ variant = "store", tone }) {
   const { user, refreshProfile } = useAuth();
@@ -26,6 +28,7 @@ export default function DeleteAccountAction({ variant = "store", tone }) {
   const danger = tone?.danger || "#a8442f";
   const line = tone?.line || "rgba(168,68,47,0.35)";
   const paper = tone?.paper || "#fff";
+  const quiet = variant === "quiet";
 
   const submit = async () => {
     if (busy || pending) return;
@@ -46,9 +49,16 @@ export default function DeleteAccountAction({ variant = "store", tone }) {
   if (pending) {
     return (
       <View style={styles.block}>
-        <View style={[styles.btn, variant === "menu" ? styles.menuBtn : null, { borderColor: line, backgroundColor: paper, opacity: 0.72 }]}>
-          <Ionicons name="hourglass-outline" size={18} color={danger} />
-          <Text style={[styles.label, { color: danger }]}>{STORE_PROFILE.deletionRequested}</Text>
+        <View
+          style={[
+            styles.btn,
+            variant === "menu" ? styles.menuBtn : null,
+            quiet ? styles.quietBtn : { borderColor: line, backgroundColor: paper },
+            { opacity: 0.72 },
+          ]}
+        >
+          <Ionicons name="hourglass-outline" size={quiet ? 16 : 18} color={quiet ? mute : danger} />
+          <Text style={[styles.label, quiet && styles.quietLabel, { color: quiet ? mute : danger }]}>{STORE_PROFILE.deletionRequested}</Text>
         </View>
       </View>
     );
@@ -66,14 +76,14 @@ export default function DeleteAccountAction({ variant = "store", tone }) {
         style={({ pressed }) => [
           styles.btn,
           variant === "menu" ? styles.menuBtn : null,
-          { borderColor: line, backgroundColor: paper },
-          pressed && { opacity: 0.88 },
+          quiet ? styles.quietBtn : { borderColor: line, backgroundColor: paper },
+          pressed && { opacity: quiet ? 0.6 : 0.88 },
         ]}
         accessibilityRole="button"
         accessibilityLabel={STORE_PROFILE.deleteAccount}
       >
-        <Ionicons name="person-remove-outline" size={18} color={danger} />
-        <Text style={[styles.label, { color: danger }]}>{STORE_PROFILE.deleteAccount}</Text>
+        {quiet ? null : <Ionicons name="person-remove-outline" size={18} color={danger} />}
+        <Text style={[styles.label, quiet && styles.quietLabel, { color: danger }]}>{STORE_PROFILE.deleteAccount}</Text>
       </Pressable>
       {open ? (
         <View style={styles.form}>
@@ -122,7 +132,9 @@ const styles = StyleSheet.create({
     borderWidth: 0,
     paddingHorizontal: 12,
   },
+  quietBtn: { minHeight: 44, borderWidth: 0, borderRadius: 12, backgroundColor: "transparent" },
   label: { fontFamily: fonts.semibold, fontSize: 15 },
+  quietLabel: { fontSize: 13.5, textDecorationLine: "underline" },
   form: { gap: 8 },
   hint: { fontFamily: fonts.regular, fontSize: 12.5, lineHeight: 18 },
   input: {

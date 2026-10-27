@@ -104,7 +104,7 @@ function AppearanceRow() {
         style={styles.rowInner}
       >
         <View style={[styles.rowIcon, { backgroundColor: c.soft }]}>
-          <Ionicons name="sunny-outline" size={22} color={c.ink} />
+          <StoreIcon icon={current.icon} size={22} color={c.ink} />
         </View>
         <Text style={[type.ui(17, "medium", c.ink), styles.rowLabel]}>{STORE_PROFILE.appearance.label}</Text>
         <View style={[styles.valuePill, { backgroundColor: c.soft }]}>
@@ -139,7 +139,7 @@ function AppearanceRow() {
 }
 
 function PreferencesRow({ onPress }) {
-  const { c, r, type } = useStoreTheme();
+  const { c, r, type, shadow } = useStoreTheme();
   const item = STORE_PROFILE.preferences;
   return (
     <PressableScale
@@ -147,16 +147,7 @@ function PreferencesRow({ onPress }) {
       scaleTo={0.985}
       accessibilityRole="button"
       accessibilityLabel={item.label}
-      style={[
-        styles.card,
-        styles.rowInner,
-        {
-          backgroundColor: c.card,
-          borderColor: item.highlight ? c.brandAlt : c.line,
-          borderWidth: item.highlight ? 1.5 : StyleSheet.hairlineWidth,
-          borderRadius: r.xl,
-        },
-      ]}
+      style={[styles.card, styles.rowInner, shadow.soft, { backgroundColor: c.card, borderColor: c.line, borderRadius: r.xl }]}
     >
       <View style={[styles.rowIcon, { backgroundColor: c.soft }]}>
         <StoreIcon icon={item.icon} size={22} color={c.ink} />
@@ -165,11 +156,6 @@ function PreferencesRow({ onPress }) {
         <Text style={type.ui(17, "medium", c.ink)}>{item.label}</Text>
         {item.caption ? <Text style={type.ui(12.5, "medium", c.inkMute)}>{item.caption}</Text> : null}
       </View>
-      {item.badge ? (
-        <View style={[styles.badge, { backgroundColor: c.brand }]}>
-          <Text style={type.ui(12, "extrabold", c.onBrand)}>{item.badge}</Text>
-        </View>
-      ) : null}
       <Ionicons name="chevron-forward" size={20} color={c.ink} />
     </PressableScale>
   );
@@ -311,8 +297,7 @@ export default function StoreProfile({
           ))}
         </View>
 
-        <View style={{ paddingHorizontal: gutter, marginTop: 26, gap: 14 }}>
-          <DeleteAccountAction tone={{ ink: c.ink, mute: c.inkMute, danger: c.danger, line: withAlpha(c.danger, 0.4), paper: c.card }} />
+        <View style={{ paddingHorizontal: gutter, marginTop: 26, gap: 10 }}>
           <PressableScale
             onPress={onSignOut}
             disabled={signingOut}
@@ -323,6 +308,7 @@ export default function StoreProfile({
             <Ionicons name="log-out-outline" size={20} color={c.danger} />
             <Text style={type.ui(16, "extrabold", c.danger)}>{signingOut ? STORE_PROFILE.signingOut : STORE_PROFILE.signOut}</Text>
           </PressableScale>
+          <DeleteAccountAction variant="quiet" tone={{ ink: c.ink, mute: c.inkMute, danger: c.danger, line: withAlpha(c.danger, 0.4), paper: c.card }} />
           <Text style={[type.ui(12, "medium", c.inkMute), styles.version]}>{STORE_PROFILE.version(version)}</Text>
         </View>
       </Animated.ScrollView>
@@ -362,7 +348,6 @@ const styles = StyleSheet.create({
   valuePill: { paddingHorizontal: 12, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
   segment: { flexDirection: "row", gap: 4, margin: 12, marginTop: 0, padding: 4, borderRadius: 16 },
   segmentItem: { flex: 1, height: 42, borderRadius: 13, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6 },
-  badge: { paddingHorizontal: 10, height: 24, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   sectionLabel: { marginBottom: 6 },
   infoRow: { flexDirection: "row", alignItems: "center", gap: 14, minHeight: 62 },
   count: { minWidth: 26, height: 24, paddingHorizontal: 8, borderRadius: 12, alignItems: "center", justifyContent: "center" },

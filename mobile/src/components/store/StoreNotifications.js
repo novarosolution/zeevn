@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Animated, { FadeOut, LinearTransition } from "react-native-reanimated";
 import ReanimatedSwipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import { Ionicons } from "@expo/vector-icons";
+import { STORE_NOTIFICATIONS } from "../../content/storefrontContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { hapticTap } from "../../utils/haptics";
 import PressableScale from "./PressableScale";
@@ -154,11 +155,7 @@ function InboxSkeleton() {
   );
 }
 
-const FILTER_EMPTY = {
-  unread: { icon: "checkmark-done-outline", title: "No unread notifications", body: "You're all up to date." },
-  archived: { icon: "archive-outline", title: "Nothing archived", body: "Swipe a notification left to archive it." },
-  all: { icon: "notifications-off-outline", title: "You're all caught up", body: "We'll notify you when something arrives." },
-};
+const FILTER_EMPTY = STORE_NOTIFICATIONS.empty;
 
 /**
  * Native inbox: filter chips, date-grouped cards, swipe a row left to archive / restore, tap to mark read.
@@ -182,9 +179,9 @@ export default function StoreNotifications({
   const groups = useMemo(() => {
     const g = groupByDate(items);
     return [
-      { key: "today", label: "Today", items: g.today },
-      { key: "week", label: "This week", items: g.week },
-      { key: "earlier", label: "Earlier", items: g.earlier },
+      { key: "today", label: STORE_NOTIFICATIONS.groups.today, items: g.today },
+      { key: "week", label: STORE_NOTIFICATIONS.groups.week, items: g.week },
+      { key: "earlier", label: STORE_NOTIFICATIONS.groups.earlier, items: g.earlier },
     ].filter((section) => section.items.length > 0);
   }, [items]);
 
@@ -192,15 +189,15 @@ export default function StoreNotifications({
   const emptyCopy = FILTER_EMPTY[nothingAtAll ? "all" : filter] || FILTER_EMPTY.all;
 
   return (
-    <StoreScreen title="Notifications" navigation={navigation} refreshing={refreshing} onRefresh={onRefresh}>
+    <StoreScreen title={STORE_NOTIFICATIONS.title} navigation={navigation} refreshing={refreshing} onRefresh={onRefresh}>
       {error ? <StoreBanner message={error} onClose={onDismissError} /> : null}
 
       {!nothingAtAll || loading ? (
         <Rise>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips} style={styles.chipScroll}>
-            <Chip label="All" count={counts.all || undefined} selected={filter === "all"} onPress={() => onFilter("all")} />
-            <Chip label="Unread" count={counts.unread || undefined} selected={filter === "unread"} onPress={() => onFilter("unread")} />
-            <Chip label="Archived" count={counts.archived || undefined} selected={filter === "archived"} onPress={() => onFilter("archived")} />
+            <Chip label={STORE_NOTIFICATIONS.filters.all} count={counts.all || undefined} selected={filter === "all"} onPress={() => onFilter("all")} />
+            <Chip label={STORE_NOTIFICATIONS.filters.unread} count={counts.unread || undefined} selected={filter === "unread"} onPress={() => onFilter("unread")} />
+            <Chip label={STORE_NOTIFICATIONS.filters.archived} count={counts.archived || undefined} selected={filter === "archived"} onPress={() => onFilter("archived")} />
           </ScrollView>
         </Rise>
       ) : null}

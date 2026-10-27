@@ -41,9 +41,14 @@ const CRITICAL_FONTS = Platform.select({
     HankenGrotesk_700Bold,
     Fraunces_600SemiBold,
   },
+  // Every sans weight the screens use is in before the first frame. A label built in a weight iOS has not registered yet
+  // keeps the system font (and a width measured for it) for good — the tab strip showed "A.." for "All".
   default: {
     HankenGrotesk_400Regular,
+    HankenGrotesk_500Medium,
+    HankenGrotesk_600SemiBold,
     HankenGrotesk_700Bold,
+    HankenGrotesk_800ExtraBold,
   },
 });
 

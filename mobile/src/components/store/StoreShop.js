@@ -42,14 +42,13 @@ function lineToFilters(key) {
 }
 
 /**
- * The strip above the grid: the festival's (or the farm's) photograph with its two-line title floating in the clear
+ * The strip above the grid: the festival's (or the farm's) photograph with its title floating in the clear
  * space above the lamps. In dark mode a scrim keeps the ivory photo from glaring.
  */
 function ShopBanner({ theme }) {
   const { c, isDark, type, gutter } = useStoreTheme();
   const { shopBanner } = theme;
   const ink = isDark ? c.ink : "#4A2A0C";
-  const sub = isDark ? c.inkSoft : "#6A4A1C";
   return (
     <View style={{ paddingHorizontal: gutter - 4, paddingBottom: 6 }}>
       <View style={[styles.banner, { borderColor: withAlpha(c.gold, isDark ? 0.3 : 0.5), backgroundColor: isDark ? c.card : c.goldSoft }]}>
@@ -58,11 +57,8 @@ function ShopBanner({ theme }) {
         ) : null}
         {isDark ? <View style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha("#0F0D0A", 0.74) }]} /> : null}
         <View style={styles.bannerCopy}>
-          <Text style={type.display(20, { color: ink, ls: -0.3, lh: 24 })} numberOfLines={1}>
+          <Text style={type.display(22, { color: ink, ls: -0.3, lh: 26 })} numberOfLines={1} maxFontSizeMultiplier={1.05}>
             {shopBanner.title}
-          </Text>
-          <Text style={type.ui(12.5, "semibold", sub)} numberOfLines={1}>
-            {shopBanner.subtitle}
           </Text>
         </View>
       </View>
@@ -286,6 +282,6 @@ const styles = StyleSheet.create({
   column: { gap: GRID_GAP, paddingHorizontal: GRID_PAD, marginBottom: GRID_GAP + 2 },
   countRow: { paddingHorizontal: GRID_PAD + 2, paddingBottom: 10 },
   banner: { height: 108, borderRadius: 22, overflow: "hidden", borderWidth: 1, alignItems: "center" },
-  bannerCopy: { alignItems: "center", gap: 2, paddingTop: 10 },
+  bannerCopy: { alignItems: "center", paddingTop: 12 },
   skeletonWrap: { flexDirection: "row", flexWrap: "wrap", gap: GRID_GAP, paddingHorizontal: GRID_PAD, rowGap: 16 },
 });

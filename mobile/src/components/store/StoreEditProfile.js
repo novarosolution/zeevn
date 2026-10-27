@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring } from "react-native-reanimated";
+import { STORE_EDIT_PROFILE } from "../../content/storefrontContent";
 import { useStoreTheme } from "../../theme/storefront";
 import { hapticSuccess } from "../../utils/haptics";
 import PressableScale from "./PressableScale";
@@ -35,7 +36,7 @@ function PhotoPicker({ name, uri, uploading, onPick, onRemove }) {
           disabled={uploading}
           scaleTo={0.96}
           accessibilityRole="button"
-          accessibilityLabel="Change profile photo"
+          accessibilityLabel={STORE_EDIT_PROFILE.changePhotoA11y}
           style={[styles.avatarRing, shadow.card, { borderColor: c.card, backgroundColor: c.card }]}
         >
           <Avatar name={name} uri={uri} size={AVATAR - 8} />
@@ -49,19 +50,18 @@ function PhotoPicker({ name, uri, uploading, onPick, onRemove }) {
           onPress={onPick}
           disabled={uploading}
           scaleTo={0.9}
-          accessibilityRole="button"
-          accessibilityLabel="Choose a new photo"
+          accessible={false}
           style={[styles.camera, shadow.soft, { backgroundColor: c.brand, borderColor: c.page }]}
         >
           <Ionicons name="camera" size={17} color={c.onBrand} />
         </PressableScale>
       </Animated.View>
       {uri ? (
-        <PressableScale onPress={onRemove} disabled={uploading} scaleTo={0.96} accessibilityRole="button" accessibilityLabel="Remove photo" style={styles.remove}>
-          <Text style={type.ui(14, "bold", c.danger)}>Remove photo</Text>
+        <PressableScale onPress={onRemove} disabled={uploading} scaleTo={0.96} accessibilityRole="button" accessibilityLabel={STORE_EDIT_PROFILE.removePhoto} style={styles.remove}>
+          <Text style={type.ui(14, "bold", c.danger)}>{STORE_EDIT_PROFILE.removePhoto}</Text>
         </PressableScale>
       ) : (
-        <Text style={type.ui(13.5, "medium", c.inkMute)}>Tap to add a photo</Text>
+        <Text style={type.ui(13.5, "medium", c.inkMute)}>{STORE_EDIT_PROFILE.addPhoto}</Text>
       )}
     </View>
   );
@@ -111,7 +111,7 @@ export default function StoreEditProfile({
   }, [success]);
 
   return (
-    <StoreScreen title="Edit profile" navigation={navigation}>
+    <StoreScreen title={STORE_EDIT_PROFILE.title} navigation={navigation}>
       {error ? <StoreBanner message={error} onClose={onDismissError} /> : null}
       {success ? <StoreBanner tone="success" message={success} onClose={onDismissSuccess} /> : null}
 
@@ -126,7 +126,7 @@ export default function StoreEditProfile({
           <Rise index={1}>
             <Card style={styles.fields}>
               <StoreField
-                label="Full name"
+                label={STORE_EDIT_PROFILE.fullName}
                 icon="person-outline"
                 value={name}
                 onChangeText={onName}
@@ -136,7 +136,7 @@ export default function StoreEditProfile({
                 returnKeyType="next"
               />
               <StoreField
-                label="Phone number"
+                label={STORE_EDIT_PROFILE.phone}
                 icon="call-outline"
                 value={phone}
                 onChangeText={onPhone}
@@ -152,16 +152,16 @@ export default function StoreEditProfile({
             <Group>
               <Row
                 icon="location-outline"
-                title={hasAddress ? "Delivery address" : "Add delivery address"}
-                subtitle={hasAddress ? "Saved — tap to manage" : "Where should we deliver?"}
+                title={(hasAddress ? STORE_EDIT_PROFILE.address.saved : STORE_EDIT_PROFILE.address.none).title}
+                subtitle={(hasAddress ? STORE_EDIT_PROFILE.address.saved : STORE_EDIT_PROFILE.address.none).subtitle}
                 onPress={() => navigation.navigate("ManageAddress")}
               />
             </Group>
           </Rise>
 
           <Rise index={3}>
-            <Button label="Save changes" icon="checkmark-circle-outline" onPress={onSave} loading={saving} />
-            {account ? <Text style={[type.ui(12.5, "medium", c.inkMute), styles.account]}>Signed in as {account}</Text> : null}
+            <Button label={STORE_EDIT_PROFILE.save} icon="checkmark-circle-outline" onPress={onSave} loading={saving} />
+            {account ? <Text style={[type.ui(12.5, "medium", c.inkMute), styles.account]}>{STORE_EDIT_PROFILE.signedInAs(account)}</Text> : null}
           </Rise>
         </>
       )}

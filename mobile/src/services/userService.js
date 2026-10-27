@@ -1,5 +1,5 @@
 import { apiGet, apiPatch, apiPost, apiPut, apiRequest } from "./apiClient";
-import { plainOilOrder } from "../utils/displayText";
+import { mapApiList, plainOilOrder, plainRupeeFields } from "../utils/displayText";
 
 export const fetchUserProfile = () => apiRequest("/users/profile");
 
@@ -27,12 +27,16 @@ export const fetchOrderLiveLocation = (orderId) =>
 export const fetchOrderDrivingRoute = (orderId) =>
   apiGet(`/users/my-orders/${orderId}/driving-route`);
 
-/** @param {string} [_token] */
-export const fetchMyNotifications = (_token) => apiGet("/users/notifications");
+const tidyNotification = (row) => plainRupeeFields(row, ["title", "message"]);
+const tidyReward = (row) => plainRupeeFields(row, ["title", "description", "benefitSummary"]);
+const tidyCoupon = (row) => plainRupeeFields(row, ["title", "benefitSummary"]);
 
 /** @param {string} [_token] */
-export const fetchMyNotificationsIncludingArchived = (_token) =>
-  apiGet("/users/notifications?includeArchived=true");
+export const fetchMyNotifications = async (_token) => mapApiList(await apiGet("/users/notifications"), "items", tidyNotification);
+
+/** @param {string} [_token] */
+export const fetchMyNotificationsIncludingArchived = async (_token) =>
+  mapApiList(await apiGet("/users/notifications?includeArchived=true"), "items", tidyNotification);
 
 /** @param {string} [_token] */
 export const markMyNotificationRead = (_token, notificationId) =>
@@ -61,7 +65,7 @@ export const fetchMySupportThread = (_token) => apiGet("/users/support-thread");
 export const sendMySupportMessage = (_token, message) =>
   apiPost("/users/support-thread/messages", { message });
 
-export const fetchRewardsCatalog = (subtotal) => {
+export const fetchRewardsCatalog = async (subtotal) => {
   const qs =
     subtotal !== undefined &&
     subtotal !== null &&
@@ -69,10 +73,10 @@ export const fetchRewardsCatalog = (subtotal) => {
     Number(subtotal) >= 0
       ? `?subtotal=${encodeURIComponent(String(Number(subtotal)))}`
       : "";
-  return apiRequest(`/users/rewards/catalog${qs}`);
+  return mapApiList(await apiRequest(`/users/rewards/catalog${qs}`), "rewards", tidyReward);
 };
 
-export const fetchMyRewardCoupons = () => apiRequest("/users/rewards/my-coupons");
+export const fetchMyRewardCoupons = async () => mapApiList(await apiRequest("/users/rewards/my-coupons"), "coupons", tidyCoupon);
 
 export const redeemRewardRequest = (rewardId) =>
   apiRequest(`/users/rewards/${rewardId}/redeem`, {

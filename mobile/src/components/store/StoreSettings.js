@@ -14,16 +14,16 @@ import {
   resolveAppIconName,
   setAppIconPreference,
 } from "../../services/appIconService";
-import { STORE_PROFILE } from "../../content/storefrontContent";
+import { STORE_PROFILE, STORE_SETTINGS } from "../../content/storefrontContent";
 import PressableScale from "./PressableScale";
 import StoreBanner from "./StoreBanner";
 import StoreScreen from "./StoreScreen";
 import { Button, Card, Group, Rise, Row, SectionLabel, Segmented } from "./StoreKit";
 
 const ICON_OPTIONS = [
-  { key: APP_ICON_PREF.auto, label: "Match theme" },
-  { key: APP_ICON_PREF.light, label: "Light" },
-  { key: APP_ICON_PREF.dark, label: "Dark" },
+  { key: APP_ICON_PREF.auto, label: STORE_SETTINGS.appIconOptions.auto },
+  { key: APP_ICON_PREF.light, label: STORE_SETTINGS.appIconOptions.light },
+  { key: APP_ICON_PREF.dark, label: STORE_SETTINGS.appIconOptions.dark },
 ];
 
 function IconTile({ option, selected, previewSource, onPress, disabled }) {
@@ -48,7 +48,7 @@ function IconTile({ option, selected, previewSource, onPress, disabled }) {
       scaleTo={0.95}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      accessibilityLabel={`App icon: ${option.label}`}
+      accessibilityLabel={STORE_SETTINGS.appIconA11y(option.label)}
       style={styles.tileWrap}
     >
       <Animated.View
@@ -141,7 +141,8 @@ function AppIconChooser({ onStatus }) {
 }
 
 /**
- * Native Settings: appearance switch, app icon picker, alerts, account shortcuts and sign out.
+ * Native Settings: appearance switch, app icon picker, alerts and sign out. (Orders, address and profile live on the
+ * Profile page, one tap away — they are not repeated here.)
  * notices — [{ id, tone, message }] shown as dismissible banners at the top.
  */
 export default function StoreSettings({
@@ -162,55 +163,45 @@ export default function StoreSettings({
   const go = (name) => () => navigation.navigate(name);
 
   return (
-    <StoreScreen title="Settings" navigation={navigation}>
+    <StoreScreen title={STORE_SETTINGS.title} navigation={navigation}>
       {notices.map((notice) => (
         <StoreBanner key={notice.id} tone={notice.tone} message={notice.message} onClose={() => onDismissNotice?.(notice.id)} />
       ))}
 
       <Rise index={0}>
-        <SectionLabel>Appearance</SectionLabel>
+        <SectionLabel>{STORE_SETTINGS.appearance}</SectionLabel>
         <Segmented options={STORE_PROFILE.appearance.options} value={mode} onChange={onMode} />
       </Rise>
 
       <Rise index={1}>
-        <SectionLabel>App icon</SectionLabel>
+        <SectionLabel>{STORE_SETTINGS.appIcon}</SectionLabel>
         <Card padded>
           <AppIconChooser onStatus={onIconStatus} />
         </Card>
       </Rise>
 
       <Rise index={2}>
-        <SectionLabel>Alerts</SectionLabel>
+        <SectionLabel>{STORE_SETTINGS.alerts}</SectionLabel>
         <Group>
           <Row
             icon="notifications-outline"
-            title="Push notifications"
-            subtitle="Order updates and offers"
+            title={STORE_SETTINGS.push.title}
+            subtitle={STORE_SETTINGS.push.body}
             trailing={notificationsLabel}
             onPress={onEnableNotifications}
           />
-          <Row icon="mail-unread-outline" title="Notification inbox" onPress={go("Notifications")} />
-        </Group>
-      </Rise>
-
-      <Rise index={3}>
-        <SectionLabel>Account</SectionLabel>
-        <Group>
-          <Row icon="create-outline" title="Edit profile" onPress={go("EditProfile")} />
-          <Row icon="location-outline" title="Manage address" onPress={go("ManageAddress")} />
-          <Row icon="bag-handle-outline" title="My orders" onPress={go("MyOrders")} />
-          <Row icon="chatbubble-ellipses-outline" title="Help & support" onPress={go("Support")} />
+          <Row icon="mail-unread-outline" title={STORE_SETTINGS.inbox} onPress={go("Notifications")} />
         </Group>
       </Rise>
 
       {signedIn ? (
-        <Rise index={4}>
-          <Button label="Sign out" icon="log-out-outline" tone="danger" onPress={onSignOut} loading={signingOut} />
+        <Rise index={3}>
+          <Button label={STORE_PROFILE.signOut} icon="log-out-outline" tone="danger" onPress={onSignOut} loading={signingOut} />
         </Rise>
       ) : null}
 
-      <Rise index={5}>
-        <Text style={[type.ui(12.5, "medium", c.inkMute), styles.version]}>Zeevan app · v{version}</Text>
+      <Rise index={4}>
+        <Text style={[type.ui(12.5, "medium", c.inkMute), styles.version]}>{STORE_PROFILE.version(version)}</Text>
       </Rise>
     </StoreScreen>
   );

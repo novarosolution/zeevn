@@ -815,14 +815,14 @@ export const SUPPORT_SCREEN = {
   pageEyebrow: "Support",
   pageSubtitle: "",
   liveChatTitle: "Live chat",
-  contactChatSub: "Usually minutes",
+  contactChatSub: "Message the shop",
   contactEmailSub: SUPPORT_EMAIL_DISPLAY,
   contactWhatsAppSub: "Anytime",
   faqTitle: "Common questions",
   chatPlaceholder: "Type your message…",
   sendCta: "Send",
   sending: "Sending…",
-  emptyThread: "Start a conversation — we typically reply within minutes.",
+  emptyThread: "Start a conversation — replies appear right here.",
   faqs: [
     {
       q: "When will my order arrive?",

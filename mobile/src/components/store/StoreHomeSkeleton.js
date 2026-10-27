@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { resolveFestivalTheme } from "../../content/storefrontContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import FloatingNav from "./FloatingNav";
-import { useStoreNavPad } from "./StoreTracker";
+import { storeNavBase, useStoreNavPad } from "./StoreTracker";
 import { heroSize } from "./HeroCarousel";
 import { Bone, ProductCardSkeleton, ShimmerProvider } from "./StoreSkeleton";
 
@@ -76,10 +76,10 @@ export default function StoreHomeSkeleton() {
 
   const { height } = useWindowDimensions();
   const inner = width - gutter * 2;
-  const hero = heroSize({ width, height, topInset: insets.top, bottomInset: insets.bottom });
+  const bottomPad = useStoreNavPad(insets);
+  const hero = heroSize({ width, height, topInset: insets.top, bottomInset: insets.bottom, reserve: bottomPad > storeNavBase(insets) ? bottomPad - storeNavBase(insets) + 12 : 0 });
   const colW = Math.floor((inner - 12) / 2);
   const tileH = Math.round(colW * 1.2);
-  const bottomPad = useStoreNavPad(insets);
 
   return (
     <View style={[styles.screen, { backgroundColor: c.canvas }]} accessibilityRole="progressbar" accessibilityLabel="Loading">

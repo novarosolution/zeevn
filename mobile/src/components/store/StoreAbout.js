@@ -1,16 +1,20 @@
-import React, { useMemo } from "react";
-import { Image as RNImage, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import React, { useMemo, useState } from "react";
+import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
+import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
   Extrapolation,
   interpolate,
+  runOnJS,
+  useAnimatedReaction,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
 } from "react-native-reanimated";
+import { STORE_ABOUT, STORE_COMMON } from "../../content/storefrontContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { resolveImageSource } from "../../utils/mediaSource";
 import FloatingNav from "./FloatingNav";
@@ -20,6 +24,8 @@ import PressableScale from "./PressableScale";
 import { Button, Card, Rise, SectionLabel } from "./StoreKit";
 
 const HERO_H = 340;
+/** Where the hero photograph is anchored: a little right of centre, so the jar stays in frame beside the title. */
+const HERO_FOCUS = { left: "66%", top: "58%" };
 
 function photoSource(photo) {
   if (!photo) return null;
@@ -27,11 +33,21 @@ function photoSource(photo) {
   return resolveImageSource(photo.source || photo.url);
 }
 
-function Photo({ photo, style }) {
+/** `focus` is where the picture is anchored when it is cropped to fill (the hero shows the jar, not the middle of the room). */
+function Photo({ photo, style, focus }) {
   const source = photoSource(photo);
   if (source == null) return <View style={[style, styles.photoEmpty]} />;
-  if (typeof source === "number") return <RNImage source={source} style={style} resizeMode="cover" accessibilityIgnoresInvertColors />;
-  return <Image source={source} style={style} contentFit="cover" transition={260} cachePolicy="memory-disk" />;
+  return (
+    <Image
+      source={source}
+      style={style}
+      contentFit="cover"
+      contentPosition={focus}
+      transition={typeof source === "number" ? 0 : 260}
+      cachePolicy="memory-disk"
+      accessibilityIgnoresInvertColors
+    />
+  );
 }
 
 function Stat({ stat }) {
@@ -62,9 +78,17 @@ export default function StoreAbout({ navigation, about, onShop, onContact }) {
     scrollY.value = event.contentOffset.y;
   });
 
-  const photos = useMemo(() => (about?.photos || []).filter((p) => photoSource(p) != null), [about]);
-  const hero = photos[0];
-  const gallery = photos.slice(hero ? 1 : 0);
+  // The photograph is dark at the top: the clock and battery turn white while it is under the status bar.
+  const [overPhoto, setOverPhoto] = useState(true);
+  useAnimatedReaction(
+    () => scrollY.value < HERO_H - 110,
+    (over, was) => {
+      if (over !== was) runOnJS(setOverPhoto)(over);
+    }
+  );
+
+  const hero = useMemo(() => (photoSource(about?.heroPhoto) != null ? about.heroPhoto : null), [about]);
+  const gallery = useMemo(() => (about?.galleryPhotos || []).filter((p) => photoSource(p) != null), [about]);
   const navPad = useStoreNavPad(insets);
   const cardW = Math.min(280, width * 0.68);
 
@@ -88,15 +112,16 @@ export default function StoreAbout({ navigation, about, onShop, onContact }) {
 
   return (
     <View style={[styles.screen, { backgroundColor: c.page }]}>
+      <StatusBar style={overPhoto && hero ? "light" : "auto"} />
       <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: navPad }}>
         <View style={styles.hero}>
           <Animated.View style={[StyleSheet.absoluteFill, heroStyle]}>
-            {hero ? <Photo photo={hero} style={StyleSheet.absoluteFill} /> : <View style={[StyleSheet.absoluteFill, { backgroundColor: c.brand }]} />}
+            {hero ? <Photo photo={hero} style={StyleSheet.absoluteFill} focus={HERO_FOCUS} /> : <View style={[StyleSheet.absoluteFill, { backgroundColor: c.brand }]} />}
           </Animated.View>
           <LinearGradient colors={["rgba(12,16,8,0.5)", "rgba(12,16,8,0.1)", "rgba(12,16,8,0.62)", "rgba(12,16,8,0.88)"]} locations={[0, 0.26, 0.62, 1]} style={StyleSheet.absoluteFill} />
           <Animated.View style={[styles.heroText, { paddingHorizontal: gutter }, heroTextStyle]}>
-            <Text style={type.ui(12, "bold", "#F2D9A5", { letterSpacing: 1.6 })}>{String(about?.eyebrow || "Our story").toUpperCase()}</Text>
-            <Text style={type.display(36, { color: "#FFFFFF", ls: -0.8, lh: 41 })}>{about?.title || "About Zeevan"}</Text>
+            <Text style={type.ui(12, "bold", "#F2D9A5", { letterSpacing: 1.6 })}>{String(about?.eyebrow || STORE_ABOUT.eyebrow).toUpperCase()}</Text>
+            <Text style={type.display(36, { color: "#FFFFFF", ls: -0.8, lh: 41 })}>{about?.title || STORE_ABOUT.title}</Text>
             {about?.pageLead ? (
               <Text style={type.ui(15, "medium", "rgba(255,255,255,0.88)", { lineHeight: 22 })} numberOfLines={3}>
                 {about.pageLead}
@@ -132,7 +157,7 @@ export default function StoreAbout({ navigation, about, onShop, onContact }) {
 
           {gallery.length ? (
             <Rise>
-              <SectionLabel>Crafted for the pantry</SectionLabel>
+              <SectionLabel>{STORE_ABOUT.gallery}</SectionLabel>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} decelerationRate="fast" snapToInterval={cardW + 12} contentContainerStyle={styles.gallery} style={styles.galleryScroll}>
                 {gallery.map((photo, index) => (
                   <View key={`${index}-${photo.caption}`} style={[styles.shot, shadow.card, { width: cardW, borderRadius: r.xxl }]}>
@@ -161,7 +186,7 @@ export default function StoreAbout({ navigation, about, onShop, onContact }) {
 
           {values.length ? (
             <Rise>
-              <SectionLabel>What guides us</SectionLabel>
+              <SectionLabel>{STORE_ABOUT.values}</SectionLabel>
               <View style={styles.values}>
                 {values.map((value, index) => (
                   <View key={value.title} style={[styles.value, shadow.soft, { backgroundColor: c.card, borderColor: c.line, borderRadius: r.xl }]}>
@@ -182,7 +207,7 @@ export default function StoreAbout({ navigation, about, onShop, onContact }) {
 
           {steps.length ? (
             <Rise>
-              <SectionLabel>{about?.craft?.title || "How it is made"}</SectionLabel>
+              <SectionLabel>{about?.craft?.title || STORE_ABOUT.craft}</SectionLabel>
               <View style={styles.timeline}>
                 {steps.map((step, index) => (
                   <View key={step.id} style={styles.step}>
@@ -205,11 +230,11 @@ export default function StoreAbout({ navigation, about, onShop, onContact }) {
           <Rise>
             <View style={[styles.cta, shadow.card, { borderRadius: r.xxl }]}>
               <LinearGradient colors={isDark ? ["#2B3A1C", "#1B2612"] : ["#355A2A", "#244424"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-              <Text style={type.display(26, { color: "#FFFFFF", ls: -0.4, lh: 31 })}>{about?.ctaBand?.title || "Bring purity home"}</Text>
+              <Text style={type.display(26, { color: "#FFFFFF", ls: -0.4, lh: 31 })}>{about?.ctaBand?.title || STORE_ABOUT.ctaTitle}</Text>
               <View style={styles.ctaRow}>
-                <Button label={about?.ctaBand?.ctaLabel || "Shop Zeevan"} icon="arrow-forward" onPress={onShop} compact tone="ghost" style={[styles.ctaBtn, { backgroundColor: "#FFFFFF", borderColor: "#FFFFFF" }]} />
-                <PressableScale onPress={onContact} scaleTo={0.96} accessibilityRole="button" accessibilityLabel="Talk to us" style={styles.ctaLink}>
-                  <Text style={type.ui(14.5, "bold", "#F2D9A5")}>{about?.ctaBand?.ctaSecondaryLabel || "Talk to us"}</Text>
+                <Button label={about?.ctaBand?.ctaLabel || STORE_ABOUT.ctaLabel} icon="arrow-forward" onPress={onShop} compact tone="ghost" style={[styles.ctaBtn, { backgroundColor: "#FFFFFF", borderColor: "#FFFFFF" }]} />
+                <PressableScale onPress={onContact} scaleTo={0.96} accessibilityRole="button" accessibilityLabel={about?.ctaBand?.ctaSecondaryLabel || STORE_ABOUT.ctaSecondary} style={styles.ctaLink}>
+                  <Text style={type.ui(14.5, "bold", "#F2D9A5")}>{about?.ctaBand?.ctaSecondaryLabel || STORE_ABOUT.ctaSecondary}</Text>
                 </PressableScale>
               </View>
             </View>
@@ -219,11 +244,11 @@ export default function StoreAbout({ navigation, about, onShop, onContact }) {
 
       <Animated.View pointerEvents="none" style={[styles.bar, { height: insets.top + 58, backgroundColor: c.glassStrong, borderBottomColor: c.line }, barStyle]}>
         <Text style={[type.ui(18, "extrabold", c.ink), styles.barTitle]} numberOfLines={1}>
-          {about?.title || "About Zeevan"}
+          {about?.title || STORE_ABOUT.title}
         </Text>
       </Animated.View>
       <View style={[styles.backWrap, { top: insets.top + 6, left: gutter }]}>
-        <PressableScale onPress={goBack} scaleTo={0.92} accessibilityRole="button" accessibilityLabel="Back" style={[styles.back, { backgroundColor: withAlpha("#FFFFFF", 0.92) }]}>
+        <PressableScale onPress={goBack} scaleTo={0.92} accessibilityRole="button" accessibilityLabel={STORE_COMMON.back} style={[styles.back, { backgroundColor: withAlpha("#FFFFFF", 0.92) }]}>
           <Ionicons name="chevron-back" size={21} color="#1D2618" />
         </PressableScale>
       </View>

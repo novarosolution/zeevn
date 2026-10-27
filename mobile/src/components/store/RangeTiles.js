@@ -70,11 +70,12 @@ export function Jar({ uri, size, style, blend }) {
 function RangeTile({ tile, width, height, wide, blend, onPress }) {
   const { c, r, type, shadow, isDark } = useStoreTheme();
   const range = pickRange(c, tile.line);
-  const size = wide ? Math.round(height * 1.04) : Math.round(width * 1.02);
-  // The jar fills roughly 12%–92% of its photo square: centre it in a wide tile, stand it near the bottom in a tall one.
+  const size = wide ? Math.round(height * 1.04) : Math.round(width * 0.98);
+  // The jar fills roughly 6%–93% of its photo square: centre it in a wide tile, stand it near the bottom in a tall one,
+  // lifted far enough that the tall oil bottle keeps a margin under it instead of running into the tile's edge.
   const jarStyle = wide
     ? { position: "absolute", right: 26, top: Math.round(height / 2 - size * 0.52) }
-    : { position: "absolute", left: Math.round((width - size) / 2), top: height - size + 16 };
+    : { position: "absolute", left: Math.round((width - size) / 2), top: height - size + 10 };
   const spotX = wide ? width - 22 - size / 2 : width / 2;
   const spotY = wide ? height / 2 : height * 0.64;
 
@@ -94,11 +95,6 @@ function RangeTile({ tile, width, height, wide, blend, onPress }) {
           <Text style={type.display(wide ? 25 : 22, { color: range.ink, ls: -0.5, lh: wide ? 29 : 25 })} numberOfLines={2}>
             {tile.label}
           </Text>
-          {tile.count ? (
-            <Text style={type.ui(12, "semibold", withAlpha(range.ink, 0.72), { letterSpacing: 0.15, marginTop: 3 })}>
-              {STORE_SECTIONS.categories.count(tile.count)}
-            </Text>
-          ) : null}
         </View>
         <View style={[styles.arrow, wide && styles.arrowWide, { backgroundColor: range.ink }]} pointerEvents="none">
           <StoreIcon icon={{ ion: "arrow-forward" }} size={15} color={range.wash[0]} />

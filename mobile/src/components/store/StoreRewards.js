@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from "react-native-reanimated";
+import { STORE_REWARDS } from "../../content/storefrontContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import { formatINR } from "../../utils/currency";
 import { hapticSuccess } from "../../utils/haptics";
@@ -36,11 +37,11 @@ function PointsHero({ points }) {
       <View style={styles.heroCoin} pointerEvents="none">
         <CoinArt size={132} />
       </View>
-      <Text style={type.ui(13, "bold", isDark ? c.goldText : "#8A5A12", { letterSpacing: 1.2 })}>YOUR POINTS</Text>
+      <Text style={type.ui(13, "bold", isDark ? c.goldText : "#8A5A12", { letterSpacing: 1.2 })}>{STORE_REWARDS.points}</Text>
       <Text style={type.display(54, { color: isDark ? c.ink : "#3A2A0C", ls: -1.2, lh: 60 })}>{shown.toLocaleString("en-IN")}</Text>
       <View style={[styles.heroPill, { backgroundColor: withAlpha(isDark ? "#FFFFFF" : "#3A2A0C", isDark ? 0.1 : 0.08) }]}>
         <Ionicons name="sparkles" size={13} color={isDark ? c.goldText : "#8A5A12"} />
-        <Text style={type.ui(12.5, "bold", isDark ? c.inkSoft : "#6A4A1C")}>Earn on every delivered order</Text>
+        <Text style={type.ui(12.5, "bold", isDark ? c.inkSoft : "#6A4A1C")}>{STORE_REWARDS.earn}</Text>
       </View>
     </View>
   );
@@ -58,15 +59,15 @@ function Ticket({ code, expiresAt, onCopy, onCart }) {
           <Ionicons name="ticket" size={22} color={c.goldText} />
         </View>
         <View style={styles.flex}>
-          <Text style={type.ui(15, "extrabold", c.ink)}>Reward unlocked</Text>
-          {expiresAt ? <Text style={type.ui(12.5, "medium", c.inkMute)}>Use before {shortDate(expiresAt)}</Text> : null}
+          <Text style={type.ui(15, "extrabold", c.ink)}>{STORE_REWARDS.unlocked}</Text>
+          {expiresAt ? <Text style={type.ui(12.5, "medium", c.inkMute)}>{STORE_REWARDS.validUntil(shortDate(expiresAt))}</Text> : null}
         </View>
       </View>
       <PressableScale
         onPress={onCopy}
         scaleTo={0.98}
         accessibilityRole="button"
-        accessibilityLabel={`Copy code ${code}`}
+        accessibilityLabel={STORE_REWARDS.copyCodeA11y(code)}
         style={[styles.code, { borderColor: c.brandAlt, backgroundColor: c.brandSoft, borderRadius: r.lg }]}
       >
         <Text style={type.display(26, { color: c.brand, ls: 3, semi: true })} selectable>
@@ -75,8 +76,8 @@ function Ticket({ code, expiresAt, onCopy, onCart }) {
         <Ionicons name="copy-outline" size={20} color={c.brand} />
       </PressableScale>
       <View style={styles.ticketActions}>
-        <Button label="Copy" icon="copy-outline" tone="secondary" compact onPress={onCopy} style={styles.flex} />
-        <Button label="Use in cart" icon="bag-handle-outline" compact onPress={onCart} style={styles.flex} />
+        <Button label={STORE_REWARDS.copy} icon="copy-outline" tone="secondary" compact onPress={onCopy} style={styles.flex} />
+        <Button label={STORE_REWARDS.useInCart} icon="bag-handle-outline" compact onPress={onCart} style={styles.flex} />
       </View>
     </Card>
   );
@@ -94,15 +95,15 @@ function WalletRow({ coupon, onCopy, onCart }) {
           {coupon.code}
         </Text>
         <Text style={type.ui(12.5, "medium", c.inkMute)} numberOfLines={2}>
-          {[coupon.benefitSummary, coupon.minOrderAmount > 0 ? `Min ${formatINR(coupon.minOrderAmount)}` : "", coupon.expiresAt ? `Expires ${shortDate(coupon.expiresAt)}` : ""]
+          {[coupon.benefitSummary, coupon.minOrderAmount > 0 ? STORE_REWARDS.minOrder(formatINR(coupon.minOrderAmount)) : "", coupon.expiresAt ? STORE_REWARDS.expires(shortDate(coupon.expiresAt)) : ""]
             .filter(Boolean)
             .join(" · ")}
         </Text>
       </View>
-      <PressableScale onPress={onCopy} scaleTo={0.92} accessibilityRole="button" accessibilityLabel={`Copy ${coupon.code}`} style={[styles.mini, { backgroundColor: c.soft }]}>
+      <PressableScale onPress={onCopy} scaleTo={0.92} accessibilityRole="button" accessibilityLabel={STORE_REWARDS.copyA11y(coupon.code)} style={[styles.mini, { backgroundColor: c.soft }]}>
         <Ionicons name="copy-outline" size={18} color={c.ink} />
       </PressableScale>
-      <PressableScale onPress={onCart} scaleTo={0.92} accessibilityRole="button" accessibilityLabel="Use in cart" style={[styles.mini, { backgroundColor: c.brand }]}>
+      <PressableScale onPress={onCart} scaleTo={0.92} accessibilityRole="button" accessibilityLabel={STORE_REWARDS.useInCart} style={[styles.mini, { backgroundColor: c.brand }]}>
         <Ionicons name="bag-handle-outline" size={18} color={c.onBrand} />
       </PressableScale>
     </View>
@@ -131,7 +132,7 @@ const fmtPoints = (n) => Number(n || 0).toLocaleString("en-IN");
 function OfferCard({ item, balance, busy, cartAware, onRedeem }) {
   const { c, type } = useStoreTheme();
   // "N more points to unlock" only makes sense while points are the one thing missing, not for a maxed-out offer.
-  const blockedForAnotherReason = Boolean(item.disabledReason) && item.disabledReason !== "Not enough points";
+  const blockedForAnotherReason = Boolean(item.disabledReason) && item.disabledReason !== STORE_REWARDS.notEnoughPoints;
   const short = blockedForAnotherReason ? 0 : Math.max(0, Number(item.pointsCost || 0) - Number(balance || 0));
   const saves = cartAware && item.eligibleForSubtotal && Number(item.estimatedDiscount) > 0 ? Number(item.estimatedDiscount) : 0;
   return (
@@ -146,7 +147,7 @@ function OfferCard({ item, balance, busy, cartAware, onRedeem }) {
           </Text>
           <Text style={type.ui(13.5, "medium", c.inkMute)} numberOfLines={2}>
             {item.benefitSummary || item.description}
-            {item.minOrderAmount > 0 ? ` · Min ${formatINR(item.minOrderAmount)}` : ""}
+            {item.minOrderAmount > 0 ? ` · ${STORE_REWARDS.minOrder(formatINR(item.minOrderAmount))}` : ""}
           </Text>
         </View>
         <View style={[styles.cost, { backgroundColor: c.goldSoft }]}>
@@ -154,15 +155,15 @@ function OfferCard({ item, balance, busy, cartAware, onRedeem }) {
           <Text style={type.ui(13.5, "extrabold", c.goldText)}>{fmtPoints(item.pointsCost)}</Text>
         </View>
       </View>
-      {saves ? <Text style={type.ui(12.5, "bold", c.brand)}>≈ Save {formatINR(saves)} on your cart</Text> : null}
+      {saves ? <Text style={type.ui(12.5, "bold", c.brand)}>{STORE_REWARDS.saves(formatINR(saves))}</Text> : null}
       {short > 0 ? (
         <View style={styles.progress}>
           <Progress value={Number(balance || 0) / Math.max(1, Number(item.pointsCost || 1))} />
-          <Text style={type.ui(12, "semibold", c.inkMute)}>{fmtPoints(short)} more {short === 1 ? "point" : "points"} to unlock</Text>
+          <Text style={type.ui(12, "semibold", c.inkMute)}>{STORE_REWARDS.morePoints(fmtPoints(short))}</Text>
         </View>
       ) : null}
       <Button
-        label={item.canRedeem ? "Redeem" : item.disabledReason || "Not available yet"}
+        label={item.canRedeem ? STORE_REWARDS.redeem : item.disabledReason || STORE_REWARDS.unavailable}
         icon={item.canRedeem ? "gift-outline" : undefined}
         tone={item.canRedeem ? "primary" : "ghost"}
         compact
@@ -205,7 +206,7 @@ export default function StoreRewards({
   cartAware,
 }) {
   return (
-    <StoreScreen title="Rewards" navigation={navigation}>
+    <StoreScreen title={STORE_REWARDS.title} navigation={navigation}>
       {error ? <StoreBanner message={error} onClose={onDismissError} /> : null}
       {toast ? <StoreBanner tone="success" message={toast} onClose={onDismissToast} /> : null}
 
@@ -225,7 +226,7 @@ export default function StoreRewards({
         <>
           {wallet.length > 0 ? (
             <Rise index={2}>
-              <SectionLabel>Your codes</SectionLabel>
+              <SectionLabel>{STORE_REWARDS.codes}</SectionLabel>
               <Group>
                 {wallet.map((coupon) => (
                   <WalletRow key={String(coupon._id || coupon.code)} coupon={coupon} onCopy={() => onCopy(coupon.code)} onCart={() => onCart(coupon.code)} />
@@ -235,10 +236,10 @@ export default function StoreRewards({
           ) : null}
 
           <Rise index={3}>
-            <SectionLabel>Redeem with points</SectionLabel>
+            <SectionLabel>{STORE_REWARDS.redeemSection}</SectionLabel>
             {catalog.length === 0 ? (
               <Card padded={false}>
-                <EmptyState icon="gift-outline" title="No rewards right now" body="New offers will appear here." />
+                <EmptyState icon="gift-outline" title={STORE_REWARDS.empty.title} body={STORE_REWARDS.empty.body} />
               </Card>
             ) : (
               <View style={styles.offers}>

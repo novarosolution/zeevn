@@ -35,3 +35,30 @@ export function plainOilOrder(order) {
     products: order.products.map((line) => (line && typeof line.name === "string" ? { ...line, name: plainProductName(line.name) } : line)),
   };
 }
+
+/**
+ * Money the shop typed by hand ("Rs 50 off", "Rs. 1,499", "INR 499") reads with the ₹ sign the rest of the app uses.
+ * Only a currency word directly followed by a number is touched.
+ */
+export function plainRupee(text) {
+  if (typeof text !== "string" || !text) return text;
+  return text.replace(/\b(?:Rs|INR)\.?\s*(?=\d)/gi, "\u20B9");
+}
+
+/** A copy of `row` with `plainRupee` applied to the listed text fields. */
+export function plainRupeeFields(row, fields) {
+  if (!row || typeof row !== "object") return row;
+  const next = { ...row };
+  fields.forEach((field) => {
+    if (typeof next[field] === "string") next[field] = plainRupee(next[field]);
+  });
+  return next;
+}
+
+/** Applies `fix` to each row of an API list, whether it comes bare or wrapped as `{ [key]: [...] }`. */
+export function mapApiList(data, key, fix) {
+  if (Array.isArray(data)) return data.map(fix);
+  if (data && Array.isArray(data[key])) return { ...data, [key]: data[key].map(fix) };
+  return data;
+}
+

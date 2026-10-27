@@ -1,3 +1,4 @@
+import "./src/bootstrap/textScale";
 import { LogBox, Platform } from "react-native";
 import { enableScreens } from "react-native-screens";
 import { registerRootComponent } from "expo";

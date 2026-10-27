@@ -29,7 +29,7 @@ export default function StoreBanner({ message, tone = "error", onClose, style })
       <Ionicons name={isError ? "alert-circle-outline" : "checkmark-circle-outline"} size={19} color={color} />
       <Text style={[type.ui(13.5, "medium", color), styles.text]}>{message}</Text>
       {onClose ? (
-        <PressableScale scaleTo={0.88} lite onPress={onClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="Dismiss">
+        <PressableScale scaleTo={0.88} lite onPress={onClose} hitSlop={13} accessibilityRole="button" accessibilityLabel="Dismiss">
           <Ionicons name="close" size={18} color={color} />
         </PressableScale>
       ) : null}

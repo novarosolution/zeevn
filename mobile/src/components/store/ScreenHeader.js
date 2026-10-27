@@ -7,6 +7,9 @@ import Animated, { Extrapolation, interpolate, useAnimatedStyle } from "react-na
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import PressableScale from "./PressableScale";
 
+/** Round back / action buttons: Apple's 44 pt minimum touch target. */
+const ROUND = 44;
+
 /** Height of the bar below the status bar — screens add it (plus the top inset) to their scroll padding. */
 export const SCREEN_HEADER_PAD = 64;
 
@@ -70,12 +73,12 @@ const styles = StyleSheet.create({
   wrap: { position: "absolute", top: 0, left: 0, right: 0, zIndex: 20, paddingBottom: 6 },
   row: { height: 52, flexDirection: "row", alignItems: "center", gap: 10 },
   title: { flex: 1, textAlign: "center" },
-  right: { minWidth: 42, alignItems: "flex-end" },
-  spacer: { width: 42, height: 42 },
+  right: { minWidth: ROUND, alignItems: "flex-end" },
+  spacer: { width: ROUND, height: ROUND },
   round: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: ROUND,
+    height: ROUND,
+    borderRadius: ROUND / 2,
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: "center",
     justifyContent: "center",

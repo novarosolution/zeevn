@@ -78,10 +78,13 @@ export function useActiveOrders() {
   return orders;
 }
 
+/** The room the bottom nav takes at the foot of a screen, without the order strip above it. */
+export const storeNavBase = (insets) => STORE_NAV_HEIGHT + Math.max(16, (insets?.bottom || 0) + 6) + 28;
+
 export function useStoreNavPad(insets, extra = 0) {
   const orders = useActiveOrders();
   const tracker = orders.length ? STORE_TRACKER_DOCK : 0;
-  return STORE_NAV_HEIGHT + Math.max(16, (insets?.bottom || 0) + 6) + 28 + tracker + extra;
+  return storeNavBase(insets) + tracker + extra;
 }
 
 function useNow(everyMs = 30000) {

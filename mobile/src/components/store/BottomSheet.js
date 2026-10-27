@@ -15,6 +15,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { motionSettle, motionTiming, projectVelocity, rubberband } from "../../theme/motion";
+import { STORE_COMMON } from "../../content/storefrontContent";
 import { useStoreTheme } from "../../theme/storefront";
 import { hapticTap } from "../../utils/haptics";
 import PressableScale from "./PressableScale";
@@ -151,7 +152,7 @@ export default function BottomSheet({ visible, onClose, title, subtitle, childre
     <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
       <GestureHandlerRootView style={styles.root}>
         <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: c.scrim }, backdropStyle]}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" />
+          <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityRole="button" accessibilityLabel={STORE_COMMON.close} />
         </Animated.View>
 
         <Animated.View
@@ -207,7 +208,7 @@ export default function BottomSheet({ visible, onClose, title, subtitle, childre
                       lite
                       style={[styles.close, { backgroundColor: c.soft }]}
                       accessibilityRole="button"
-                      accessibilityLabel="Close"
+                      accessibilityLabel={STORE_COMMON.close}
                     >
                       <Ionicons name="close" size={18} color={c.inkSoft} />
                     </PressableScale>

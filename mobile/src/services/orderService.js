@@ -1,4 +1,5 @@
 import { apiGet, apiPatch, apiPost } from "./apiClient";
+import { mapApiList, plainRupeeFields } from "../utils/displayText";
 
 /** @param {string} [_token] Legacy — token comes from AuthContext via apiClient. */
 export const createOrderRequest = (_token, payload) => apiPost("/orders", payload);
@@ -12,13 +13,13 @@ export const reorderMyOrderRequest = (_token, orderId) =>
   apiPost(`/orders/${orderId}/reorder`, {});
 
 /** @param {string} [_token] */
-export const fetchAvailableCouponsRequest = (_token, subtotal) => {
+export const fetchAvailableCouponsRequest = async (_token, subtotal) => {
   const numericSubtotal = Number(subtotal);
   const query =
     Number.isFinite(numericSubtotal) && numericSubtotal >= 0
       ? `?subtotal=${encodeURIComponent(numericSubtotal)}`
       : "";
-  return apiGet(`/orders/available-coupons${query}`);
+  return mapApiList(await apiGet(`/orders/available-coupons${query}`), "coupons", (row) => plainRupeeFields(row, ["title"]));
 };
 
 /** @param {string} [_token] */

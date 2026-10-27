@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
+import { STORE_COMMON, STORE_PRODUCT } from "../../content/storefrontContent";
 import { useCart } from "../../context/CartContext";
 import { useStoreTheme } from "../../theme/storefront";
 import { formatINRWhole } from "../../utils/currency";
@@ -30,16 +31,16 @@ function VariantSheet({ product, visible, onClose }) {
     <BottomSheet
       visible={visible}
       onClose={onClose}
-      title={product?.name || "Choose size"}
-      subtitle="Choose a size"
+      title={product?.name || STORE_PRODUCT.options.title}
+      subtitle={STORE_PRODUCT.options.title}
       footer={
         <PressableScale
           onPress={onClose}
           style={[styles.done, { backgroundColor: c.brand, borderRadius: r.lg }]}
           accessibilityRole="button"
-          accessibilityLabel="Done"
+          accessibilityLabel={STORE_COMMON.done}
         >
-          <Text style={type.ui(15, "extrabold", c.onBrand, { letterSpacing: 0.4 })}>Done</Text>
+          <Text style={type.ui(15, "extrabold", c.onBrand, { letterSpacing: 0.4 })}>{STORE_COMMON.done}</Text>
         </PressableScale>
       }
     >

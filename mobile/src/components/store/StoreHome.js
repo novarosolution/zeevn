@@ -47,7 +47,7 @@ import StoreHeader from "./StoreHeader";
 import StoreIcon from "./StoreIcon";
 import StoreSearchBar from "./StoreSearchBar";
 import StoreTabs from "./StoreTabs";
-import { useStoreNavPad } from "./StoreTracker";
+import { storeNavBase, useStoreNavPad } from "./StoreTracker";
 import { BrandFooter, TrustStrip } from "./TrustFooter";
 import PressableScale from "./PressableScale";
 import { VariantSheetProvider } from "./VariantSheet";
@@ -225,6 +225,12 @@ export default function StoreHome({
 
   const openPromo = useCallback((item) => go(item.route), [go]);
 
+  const bottomPad = useStoreNavPad(insets);
+  // What the live-order strip takes above the nav (plus a little air): the hero is trimmed by it so its button is not hidden
+  // behind the strip.
+  const trackerPad = bottomPad - storeNavBase(insets);
+  const trackerReserve = trackerPad > 0 ? trackerPad + 12 : 0;
+
   const blocks = useMemo(() => {
     const next = [];
     APP_HOME_LAYOUT.forEach((key) => {
@@ -238,6 +244,7 @@ export default function StoreHome({
                 signedIn={Boolean(isAuthenticated)}
                 points={points}
                 onPressItem={openPromo}
+                reserve={trackerReserve}
               />
             ),
           });
@@ -303,9 +310,9 @@ export default function StoreHome({
     openShop,
     catalog,
     openProduct,
+    trackerReserve,
   ]);
 
-  const bottomPad = useStoreNavPad(insets);
   const gradient = isDark ? festival.header.gradientDark : festival.header.gradient;
   const gradTotal = GRADIENT_OVERSCROLL + GRADIENT_HEIGHT;
   const gradLocations = [0, GRADIENT_OVERSCROLL / gradTotal, ...c.headerLocations.slice(1).map((l) => (GRADIENT_OVERSCROLL + l * GRADIENT_HEIGHT) / gradTotal)];

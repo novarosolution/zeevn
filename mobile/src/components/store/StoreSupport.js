@@ -10,6 +10,7 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 import { EASE_OUT, motionTiming, panelIn, panelOut, riseIn } from "../../theme/motion";
+import { STORE_SUPPORT } from "../../content/storefrontContent";
 import { useStoreTheme } from "../../theme/storefront";
 import { hapticTap } from "../../utils/haptics";
 import PressableScale from "./PressableScale";
@@ -67,7 +68,7 @@ function Bubble({ item, index }) {
         <Text style={type.ui(15, "medium", mine ? c.onBrand : c.ink, { lineHeight: 21 })}>{item.message}</Text>
       </View>
       <Text style={[type.ui(11.5, "medium", c.inkMute), styles.stamp]}>
-        {mine ? "You" : "Zeevan"} · {when(item.createdAt)}
+        {mine ? STORE_SUPPORT.you : STORE_SUPPORT.shop} · {when(item.createdAt)}
       </Text>
     </Animated.View>
   );
@@ -91,7 +92,7 @@ function Composer({ value, onChange, onSend, sending }) {
           onChangeText={onChange}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
-          placeholder="Write a message…"
+          placeholder={STORE_SUPPORT.placeholder}
           placeholderTextColor={c.inkMute}
           selectionColor={c.brand}
           multiline
@@ -107,7 +108,7 @@ function Composer({ value, onChange, onSend, sending }) {
         scaleTo={0.9}
         disabled={!ready}
         accessibilityRole="button"
-        accessibilityLabel="Send message"
+        accessibilityLabel={STORE_SUPPORT.send}
         style={[styles.send, { opacity: ready || sending ? 1 : 0.45 }]}
       >
         <LinearGradient colors={colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
@@ -186,12 +187,12 @@ function SupportBody({ scrollRef, error, onDismissError, toast, loading, thread,
       <Rise index={0} style={styles.tiles}>
         <ContactTile
           icon="chatbubble-ellipses"
-          title="Live chat"
-          sub="Usually minutes"
+          title={STORE_SUPPORT.chat.title}
+          sub={STORE_SUPPORT.chat.sub}
           tone="gold"
           onPress={() => scrollRef.current?.scrollTo?.({ y: Math.max(0, origin + chatY.current - 84), animated: true })}
         />
-        <ContactTile icon="mail" title="Email" sub={emailLabel} tone="brand" onPress={onEmail} />
+        <ContactTile icon="mail" title={STORE_SUPPORT.email} sub={emailLabel} tone="brand" onPress={onEmail} />
       </Rise>
 
       {extraContacts.length ? (
@@ -205,7 +206,7 @@ function SupportBody({ scrollRef, error, onDismissError, toast, loading, thread,
 
       <Rise index={1} onLayout={(e) => (chatY.current = e.nativeEvent.layout.y)}>
         <View style={styles.chatHead}>
-          <SectionLabel style={styles.noMargin}>Conversation</SectionLabel>
+          <SectionLabel style={styles.noMargin}>{STORE_SUPPORT.conversation}</SectionLabel>
           {thread ? (
             <View style={[styles.status, { backgroundColor: status === "open" ? c.brandSoft : c.soft }]}>
               <View style={[styles.statusDot, { backgroundColor: status === "open" ? c.brand : c.inkMute }]} />
@@ -217,7 +218,7 @@ function SupportBody({ scrollRef, error, onDismissError, toast, loading, thread,
           {loading ? (
             <ChatSkeleton />
           ) : messages.length === 0 ? (
-            <EmptyState icon="chatbubbles-outline" title="Start the conversation" body="Tell us how we can help — we usually reply within a few hours." />
+            <EmptyState icon="chatbubbles-outline" title={STORE_SUPPORT.empty.title} body={STORE_SUPPORT.empty.body} />
           ) : (
             <View style={styles.thread}>
               {messages.map((item, index) => (
@@ -233,7 +234,7 @@ function SupportBody({ scrollRef, error, onDismissError, toast, loading, thread,
 
       {faqs.length ? (
       <Rise index={2}>
-        <SectionLabel>Common questions</SectionLabel>
+        <SectionLabel>{STORE_SUPPORT.faqTitle}</SectionLabel>
         <Group>
           {faqs.map((item, index) => (
             <FaqItem key={`${item.q}-${index}`} q={item.q} a={item.a} open={openFaq === index} onToggle={() => setOpenFaq(openFaq === index ? -1 : index)} />
@@ -249,7 +250,7 @@ function SupportBody({ scrollRef, error, onDismissError, toast, loading, thread,
 export default function StoreSupport({ navigation, ...body }) {
   const scrollRef = useRef(null);
   return (
-    <StoreScreen title="Help & support" navigation={navigation} scrollRef={scrollRef}>
+    <StoreScreen title={STORE_SUPPORT.title} navigation={navigation} scrollRef={scrollRef}>
       <SupportBody scrollRef={scrollRef} {...body} />
     </StoreScreen>
   );

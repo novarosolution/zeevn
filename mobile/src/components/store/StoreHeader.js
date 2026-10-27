@@ -56,7 +56,7 @@ function RewardsPill({ points, onPress }) {
       ]}
     >
       <MaterialCommunityIcons name="star-circle" size={15} color={isDark ? c.gold : c.goldText} />
-      <Text style={type.ui(12.5, "bold", isDark ? c.ink : c.goldText, { letterSpacing: -0.2 })}>
+      <Text style={type.ui(12.5, "bold", isDark ? c.ink : c.goldText, { letterSpacing: -0.2 })} maxFontSizeMultiplier={1.15} numberOfLines={1}>
         {shown.toLocaleString("en-IN")}
       </Text>
     </PressableScale>
@@ -79,7 +79,9 @@ function NearbyPill({ label }) {
       accessibilityLabel={text}
     >
       <Ionicons name="bicycle" size={15} color={isDark ? c.gold : c.brand} />
-      <Text style={type.ui(12.5, "semibold", c.inkSoft)}>{text}</Text>
+      <Text style={type.ui(12.5, "semibold", c.inkSoft)} maxFontSizeMultiplier={1.1} numberOfLines={1}>
+        {text}
+      </Text>
     </View>
   );
 }
@@ -172,6 +174,9 @@ export default function StoreHeader({
                 <Text
                   style={[type.display(34, { ls: -1, lh: 38 }), styles.etaTime]}
                   numberOfLines={1}
+                  maxFontSizeMultiplier={1.1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
                   accessibilityRole="header"
                   accessibilityLabel={spoken}
                 >
@@ -196,7 +201,9 @@ export default function StoreHeader({
               accessibilityRole="button"
               accessibilityLabel={STORE_HEADER.signIn}
             >
-              <Text style={type.ui(13, "bold", c.onBrand)}>{STORE_HEADER.signIn}</Text>
+              <Text style={type.ui(13, "bold", c.onBrand)} maxFontSizeMultiplier={1.15} numberOfLines={1}>
+                {STORE_HEADER.signIn}
+              </Text>
             </PressableScale>
           )}
           <Avatar

@@ -3,6 +3,7 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, TextInput, Vi
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import MapView from "react-native-maps";
+import { DELIVERY_NOT_POSSIBLE } from "../../content/storefrontContent";
 import { etaFromQuote } from "../../services/deliveryService";
 import { validMapCoord } from "../../services/locationService";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
@@ -166,7 +167,7 @@ export function StatusChip({ icon, label, tone = "brand", style }) {
 export function DeliveryChip({ quote, fromShop = false, style }) {
   if (!quote) return null;
   if (quote.serviceable === false) {
-    return <StatusChip icon="alert-circle" tone="danger" label={quote.message || "Outside delivery area"} style={style} />;
+    return <StatusChip icon="alert-circle" tone="danger" label={quote.message || DELIVERY_NOT_POSSIBLE} style={style} />;
   }
   const distance = quote.distanceLabel && fromShop ? `${quote.distanceLabel} from shop` : quote.distanceLabel;
   const text = [distance, etaFromQuote(quote)].filter(Boolean).join(" · ");

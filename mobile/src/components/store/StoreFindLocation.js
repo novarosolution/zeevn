@@ -14,6 +14,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from "react-native-reanimated";
+import { STORE_LOCATION } from "../../content/storefrontContent";
 import { useDeliveryLocation } from "../../context/DeliveryLocationContext";
 import { validMapCoord } from "../../services/locationService";
 import { EASE_IN_OUT, EASE_OUT } from "../../theme/motion";
@@ -27,11 +28,7 @@ import StoreWordmark from "./StoreWordmark";
 const PLATE = 212;
 const RINGS = 4;
 
-const COPY = {
-  searching: { eyebrow: "Delivery zone", title: "Finding you…", body: "Scanning nearby streets for the best delivery experience." },
-  found: { eyebrow: "Location found", title: "Confirm your spot", body: "We pinned your area for faster delivery and curated picks." },
-  error: { eyebrow: "Unable to locate", title: "Turn on location", body: "Allow location access or enter your address manually." },
-};
+const COPY = STORE_LOCATION;
 
 /** One ring of the radar, swelling out from the pin and fading. */
 function RadarRing({ index }) {
@@ -123,7 +120,7 @@ function FoundMap({ snippet, onRetry }) {
       <View style={[styles.mapClip, { borderRadius: r.xxl, borderColor: c.line }]}>
         <MapThumb latitude={snippet.latitude ?? snippet.lat} longitude={snippet.longitude ?? snippet.lng} height={236}>
           <View style={styles.mapCorner} pointerEvents="box-none">
-            <GlassPill icon="refresh" onPress={onRetry} accessibilityLabel="Search again" />
+            <GlassPill icon="refresh" onPress={onRetry} accessibilityLabel={STORE_LOCATION.searchAgain} />
           </View>
         </MapThumb>
       </View>
@@ -141,7 +138,7 @@ function DeliveringTo({ snippet, quote }) {
         <View style={[styles.tick, { backgroundColor: c.brandSoft }]}>
           <Ionicons name="checkmark" size={15} color={c.brand} />
         </View>
-        <Text style={type.eyebrow(c.goldText, 10.5)}>Delivering to</Text>
+        <Text style={type.eyebrow(c.goldText, 10.5)}>{STORE_LOCATION.deliveringTo}</Text>
       </View>
       <Text style={type.ui(19, "bold", c.ink, { letterSpacing: -0.3 })} numberOfLines={2}>
         {title || snippet.label}
@@ -215,18 +212,18 @@ export default function StoreFindLocation({ phase = "searching", snippet, errorM
       <View style={styles.dock} onLayout={(e) => setDockH(e.nativeEvent.layout.height)}>
         <GlassDock>
           {found ? (
-            <Button label="Confirm location" onPress={onConfirm} />
+            <Button label={STORE_LOCATION.confirm} onPress={onConfirm} />
           ) : phase === "error" ? (
-            <Button label="Try again" onPress={onRetry} />
+            <Button label={STORE_LOCATION.tryAgain} onPress={onRetry} />
           ) : (
-            <View style={[styles.locating, { backgroundColor: c.soft }]} accessibilityRole="progressbar" accessibilityLabel="Locating you">
+            <View style={[styles.locating, { backgroundColor: c.soft }]} accessibilityRole="progressbar" accessibilityLabel={STORE_LOCATION.locating}>
               <ActivityIndicator size="small" color={c.brand} />
-              <Text style={type.ui(15, "bold", c.inkSoft)}>Locating you…</Text>
+              <Text style={type.ui(15, "bold", c.inkSoft)}>{STORE_LOCATION.locating}</Text>
             </View>
           )}
           <View style={styles.actions}>
-            <TextAction icon="map-outline" label="Select on map" onPress={onOpenMap} />
-            <TextAction icon="create-outline" label="Enter address manually" onPress={onManual} />
+            <TextAction icon="map-outline" label={STORE_LOCATION.selectOnMap} onPress={onOpenMap} />
+            <TextAction icon="create-outline" label={STORE_LOCATION.enterManually} onPress={onManual} />
           </View>
         </GlassDock>
       </View>

@@ -43,7 +43,8 @@ const LIGHT = {
   well: "#FFFFFF",
   ink: "#1A2216",
   inkSoft: "#4A5340",
-  inkMute: "#7C765F",
+  /** Secondary text. 4.9:1 on the ivory page, 4.6:1 on the sand fills — the old #7C765F read 4.2:1 and failed AA for small text. */
+  inkMute: "#716B56",
   line: "rgba(104, 82, 40, 0.11)",
   lineStrong: "rgba(104, 82, 40, 0.2)",
   brand: "#244424",
@@ -54,7 +55,8 @@ const LIGHT = {
   onBrand: "#FFFFFF",
   gold: "#DCAC74",
   goldBright: "#EDC27D",
-  goldText: "#A06C24",
+  /** Gold as text (eyebrows, chips). 4.9:1 on the page, 4.6:1 on its own tint; the old #A06C24 was 4.2:1. */
+  goldText: "#916221",
   goldSoft: "#FBEFD6",
   saffron: "#E9822B",
   danger: "#B8442F",

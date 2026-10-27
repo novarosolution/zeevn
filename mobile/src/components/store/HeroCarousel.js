@@ -47,9 +47,9 @@ function useScreenReader() {
 }
 
 /** Card size for a screen — shared with the loading skeleton so the placeholder is the same shape as the hero. */
-export function heroSize({ width, height, topInset = 0, bottomInset = 0 }) {
+export function heroSize({ width, height, topInset = 0, bottomInset = 0, reserve = 0 }) {
   const cardW = Math.round(width * 0.88);
-  const room = height - topInset - HEADER_BELOW_INSET - STORE_NAV_HEIGHT - Math.max(16, bottomInset + 6) - 16;
+  const room = height - topInset - HEADER_BELOW_INSET - STORE_NAV_HEIGHT - Math.max(16, bottomInset + 6) - 16 - reserve;
   const cardH = Math.round(Math.min(cardW * CARD_RATIO, Math.max(340, room)));
   return { cardW, cardH };
 }
@@ -179,7 +179,7 @@ function StoryBars({ count, active, progress, running, style }) {
  * progress bars and a gentle auto-advance (paused while you drag, while the hero is scrolled out of view, while the
  * screen is covered, and with "reduce motion" or a screen reader on). Tap a slide to shop that range.
  */
-export default function HeroCarousel({ items, onPressItem, signedIn = false, points = 0, paused = false }) {
+export default function HeroCarousel({ items, onPressItem, signedIn = false, points = 0, paused = false, reserve = 0 }) {
   const { gutter } = useStoreTheme();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -188,7 +188,7 @@ export default function HeroCarousel({ items, onPressItem, signedIn = false, poi
   const screenReader = useScreenReader();
 
   const count = items.length;
-  const { cardW, cardH } = heroSize({ width, height, topInset: insets.top, bottomInset: insets.bottom });
+  const { cardW, cardH } = heroSize({ width, height, topInset: insets.top, bottomInset: insets.bottom, reserve });
   const step = cardW + GAP;
 
   const listRef = useRef(null);

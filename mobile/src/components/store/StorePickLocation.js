@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { PICK_LOCATION_UI } from "../../content/appContent";
+import { STORE_COMMON, STORE_LOCATION } from "../../content/storefrontContent";
 import { useStoreTheme, withAlpha } from "../../theme/storefront";
 import PickLocationMap from "../location/PickLocationMap";
 import { DeliveryChip, GlassPill, placeLines } from "./AddressKit";
@@ -47,7 +48,7 @@ export default function StorePickLocation({
   const insets = useSafeAreaInsets();
   const [sheetH, setSheetH] = useState(250);
   const lines = draft ? placeLines(draft) : null;
-  const title = lines?.title || (hasPin ? "Selected place" : PICK_LOCATION_UI.hint);
+  const title = lines?.title || (hasPin ? STORE_LOCATION.selectedPlace : PICK_LOCATION_UI.hint);
   const detail = lines?.detail || "";
   const hasQuery = query.trim().length >= 2;
   const topPad = insets.top + 8;
@@ -78,7 +79,7 @@ export default function StorePickLocation({
 
       <View style={[styles.top, { paddingTop: topPad, paddingHorizontal: gutter }]} pointerEvents="box-none">
         <View style={styles.topRow}>
-          <GlassPill icon="chevron-back" size={TOP_ROW} onPress={onBack} accessibilityLabel="Back" />
+          <GlassPill icon="chevron-back" size={TOP_ROW} onPress={onBack} accessibilityLabel={STORE_COMMON.back} />
           <Glass material="regular" radius={TOP_ROW / 2} lift style={styles.search} contentStyle={styles.searchBody}>
             <Ionicons name="search" size={18} color={c.inkMute} />
             <TextInput
@@ -96,7 +97,7 @@ export default function StorePickLocation({
             {searching ? (
               <ActivityIndicator size="small" color={c.brand} />
             ) : query ? (
-              <PressableScale scaleTo={0.88} lite hitSlop={10} onPress={() => onQuery("")} accessibilityRole="button" accessibilityLabel="Clear search">
+              <PressableScale scaleTo={0.88} lite hitSlop={13} onPress={() => onQuery("")} accessibilityRole="button" accessibilityLabel="Clear search">
                 <Ionicons name="close-circle" size={19} color={c.inkMute} />
               </PressableScale>
             ) : null}
@@ -121,7 +122,7 @@ export default function StorePickLocation({
                       onHit(hit);
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel={hit.line1 || hit.city || "Place"}
+                    accessibilityLabel={hit.line1 || hit.city || STORE_LOCATION.place}
                     style={[styles.hit, index > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.line }]}
                   >
                     <View style={[styles.hitIcon, { backgroundColor: c.brandSoft }]}>
@@ -129,7 +130,7 @@ export default function StorePickLocation({
                     </View>
                     <View style={styles.hitText}>
                       <Text style={type.ui(15, "bold", c.ink)} numberOfLines={1}>
-                        {hit.line1 || hit.city || "Place"}
+                        {hit.line1 || hit.city || STORE_LOCATION.place}
                       </Text>
                       <Text style={type.ui(12.5, "medium", c.inkMute)} numberOfLines={2}>
                         {hitSubtitle(hit)}

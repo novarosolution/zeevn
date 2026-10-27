@@ -379,7 +379,7 @@ export function Avatar({ name, uri, size = 56 }) {
 }
 
 /** Centred empty state: floating icon, a short title, one line of body and an optional action. */
-export function EmptyState({ icon = "sparkles-outline", title, body, actionLabel, onAction }) {
+export function EmptyState({ icon = "sparkles-outline", title, body, actionLabel, onAction, secondaryLabel, onSecondary }) {
   const { c, type } = useStoreTheme();
   return (
     <Rise>
@@ -397,8 +397,13 @@ export function EmptyState({ icon = "sparkles-outline", title, body, actionLabel
         {body ? <Text style={[type.ui(14.5, "medium", c.inkMute), styles.emptyBody]}>{body}</Text> : null}
         {actionLabel ? (
           <View style={styles.emptyAction}>
-            <Button label={actionLabel} onPress={onAction} compact tone="secondary" />
+            <Button label={actionLabel} onPress={onAction} compact />
           </View>
+        ) : null}
+        {secondaryLabel ? (
+          <PressableScale scaleTo={0.97} lite onPress={onSecondary} hitSlop={8} accessibilityRole="button" accessibilityLabel={secondaryLabel} style={styles.emptySecondary}>
+            <Text style={type.ui(14, "bold", c.brandAlt)}>{secondaryLabel}</Text>
+          </PressableScale>
         ) : null}
       </View>
     </Rise>
@@ -445,4 +450,5 @@ const styles = StyleSheet.create({
   emptyTitle: { textAlign: "center" },
   emptyBody: { textAlign: "center", maxWidth: 290 },
   emptyAction: { marginTop: 10, alignSelf: "stretch" },
+  emptySecondary: { marginTop: 4, minHeight: 36, alignItems: "center", justifyContent: "center", paddingHorizontal: 12 },
 });

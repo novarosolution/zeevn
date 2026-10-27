@@ -106,7 +106,7 @@ export default function ShopHeader({
               style={[type.ui(15.5, "medium", c.ink), styles.input]}
             />
             {text ? (
-              <PressableScale scaleTo={0.88} lite onPress={handleClear} hitSlop={10} accessibilityRole="button" accessibilityLabel="Clear search">
+              <PressableScale scaleTo={0.88} lite onPress={handleClear} hitSlop={13} accessibilityRole="button" accessibilityLabel="Clear search">
                 <Ionicons name="close-circle" size={18} color={c.inkMute} />
               </PressableScale>
             ) : null}

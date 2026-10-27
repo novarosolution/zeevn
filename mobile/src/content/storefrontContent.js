@@ -154,7 +154,7 @@ export const STORE_CARD = {
  *  - `layout`                 optional section order — omit it to use `STORE_HOME.layout`
  *  - `tabBadges`              small badge on a category tab ({ gifts: "Diwali" })
  *  - `bento` / `picks`        festive collections (heading, route, tiles); `bento.colors` optionally recolours the tiles
- *  - `shopBanner`             the photo strip on top of the Shop screen (`title`, `subtitle`, `image`)
+ *  - `shopBanner`             the photo strip on top of the Shop screen (`title`, `image`)
  */
 
 const everydayTheme = {
@@ -223,7 +223,7 @@ const everydayTheme = {
       { key: "honey", title: "Honey", match: { lineKeys: ["honey"] }, route: { name: "Shop", params: { pill: "Honey" } } },
     ],
   },
-  shopBanner: { title: "Pure from the farm", subtitle: "Small batches, honest labels", image: require("../../assets/home-pantry-strip-bg.jpg") },
+  shopBanner: { title: "Pure from the farm", image: require("../../assets/home-pantry-strip-bg.jpg") },
 };
 
 const diwaliTheme = {
@@ -324,7 +324,7 @@ const diwaliTheme = {
       { key: "pantry", title: "Oil & Masala", match: { lineKeys: ["tel", "masala"] }, route: { name: "Shop", params: { pill: "Oil" } } },
     ],
   },
-  shopBanner: { title: "Celebrate Diwali", subtitle: "Gift purity, light up every home", image: require("../../assets/diwali-divider.jpg") },
+  shopBanner: { title: "Celebrate Diwali", image: require("../../assets/diwali-divider.jpg") },
 };
 
 export const FESTIVAL_THEMES = {
@@ -444,7 +444,6 @@ export const STORE_SECTIONS = {
     moreSuffix: "more",
     allTile: "See all",
     tileA11y: (label, n) => `${label}, ${n} ${n === 1 ? "product" : "products"}`,
-    count: (n) => (n === 1 ? "1 product" : `${n} products`),
   },
   /** `rankTop` products get a gold #1 / #2 / #3 badge. */
   bestsellers: {
@@ -469,7 +468,7 @@ export const STORE_SECTIONS = {
   empty: {
     title: "Fresh stock on the way",
     body: "New products will appear here as soon as they are added.",
-    cta: "Browse shop",
+    cta: "Start shopping",
   },
   error: { title: "Could not load the store", cta: "Try again" },
 };
@@ -610,7 +609,7 @@ export const STORE_PROFILE = {
   },
   tiles: [
     { key: "rewards", label: "Rewards", icon: { mci: "gift-outline" }, route: { name: "RedeemRewards" } },
-    { key: "support", label: "Support", icon: { mci: "headset" }, route: { name: "Support" } },
+    { key: "support", label: "Help", icon: { mci: "headset" }, route: { name: "Support" } },
     { key: "alerts", label: "Alerts", icon: { ion: "notifications-outline" }, route: { name: "Notifications" } },
   ],
   appearance: {
@@ -623,20 +622,17 @@ export const STORE_PROFILE = {
   },
   preferences: {
     key: "preferences",
-    label: "App preferences",
-    caption: "Theme, app icon & alerts",
+    label: "Settings",
+    caption: "App icon & alerts",
     icon: { ion: "options-outline" },
     route: { name: "Settings" },
-    highlight: true,
-    badge: "",
   },
   sectionTitle: "YOUR INFORMATION",
   rows: [
     { key: "orders", label: "Your orders", icon: { ion: "bag-handle-outline" }, route: { name: "MyOrders" } },
     { key: "wishlist", label: "Your wishlist", icon: { ion: "heart-outline" }, route: { name: "Wishlist" } },
-    { key: "address", label: "Address book", icon: { ion: "location-outline" }, route: { name: "ManageAddress" } },
+    { key: "address", label: "Delivery address", icon: { ion: "location-outline" }, route: { name: "ManageAddress" } },
     { key: "editProfile", label: "Edit profile", icon: { ion: "person-outline" }, route: { name: "EditProfile" } },
-    { key: "support", label: "Help & support", icon: { ion: "help-buoy-outline" }, route: { name: "Support" } },
   ],
   aboutTitle: "ABOUT ZEEVAN",
   aboutRows: [
@@ -656,15 +652,152 @@ export const STORE_PROFILE = {
   version: (v) => `Zeevan app · v${v}`,
 };
 
+/* ---- Settings ---- */
+
+export const STORE_SETTINGS = {
+  title: "Settings",
+  appearance: "Appearance",
+  appIcon: "App icon",
+  appIconOptions: { auto: "Match theme", light: "Light", dark: "Dark" },
+  appIconA11y: (label) => `App icon: ${label}`,
+  alerts: "Alerts",
+  push: { title: "Push notifications", body: "Order updates and offers" },
+  inbox: "Notification inbox",
+};
+
+/* ---- Finding the delivery spot (first run) ---- */
+
+export const STORE_LOCATION = {
+  searching: { eyebrow: "Delivery zone", title: "Finding you…", body: "Scanning nearby streets for the best delivery experience." },
+  found: { eyebrow: "Location found", title: "Confirm your spot", body: "We pinned your area for faster delivery and curated picks." },
+  error: { eyebrow: "Unable to locate", title: "Turn on location", body: "Allow location access or enter your address manually." },
+  searchAgain: "Search again",
+  deliveringTo: "Delivering to",
+  confirm: "Confirm location",
+  tryAgain: "Try again",
+  locating: "Locating you…",
+  selectOnMap: "Select on map",
+  enterManually: "Enter address manually",
+  place: "Place",
+  selectedPlace: "Selected place",
+};
+
+/* ---- Our story ---- */
+
+/** Fallbacks for the About page — the shop's own text from the admin (`aboutSection`) takes over when it is set. */
+export const STORE_ABOUT = {
+  eyebrow: "Our story",
+  title: "About Zeevan",
+  gallery: "Crafted for the pantry",
+  values: "What guides us",
+  craft: "How it is made",
+  ctaTitle: "Bring purity home",
+  ctaLabel: "Shop Zeevan",
+  ctaSecondary: "Talk to us",
+};
+
+/* ---- Delivery address ---- */
+
+export const STORE_ADDRESS = {
+  title: "Delivery address",
+  types: { Home: "Home", Work: "Work", Other: "Other" },
+  gpsVerified: "GPS verified",
+  add: "Add your address",
+  save: "Save address",
+  saving: "Saving…",
+  saveAs: "Save as",
+  fields: {
+    house: "House / Flat / Building no.",
+    street: "Street / Area / Colony",
+    landmark: "Landmark (optional)",
+    landmarkHint: "e.g. Near city mall",
+    city: "City",
+    pincode: "Pincode",
+  },
+};
+
+/* ---- Edit profile ---- */
+
+export const STORE_EDIT_PROFILE = {
+  title: "Edit profile",
+  changePhotoA11y: "Change profile photo",
+  removePhoto: "Remove photo",
+  addPhoto: "Tap to add a photo",
+  fullName: "Full name",
+  phone: "Phone number",
+  address: {
+    saved: { title: "Delivery address", subtitle: "Saved — tap to manage" },
+    none: { title: "Add delivery address", subtitle: "Where should we deliver?" },
+  },
+  save: "Save changes",
+  signedInAs: (account) => `Signed in as ${account}`,
+};
+
+/* ---- Notifications ---- */
+
+export const STORE_NOTIFICATIONS = {
+  title: "Notifications",
+  filters: { all: "All", unread: "Unread", archived: "Archived" },
+  groups: { today: "Today", week: "This week", earlier: "Earlier" },
+  empty: {
+    unread: { icon: "checkmark-done-outline", title: "No unread notifications", body: "You're all up to date." },
+    archived: { icon: "archive-outline", title: "Nothing archived", body: "Swipe a notification left to archive it." },
+    all: { icon: "notifications-off-outline", title: "You're all caught up", body: "We'll notify you when something arrives." },
+  },
+};
+
+/* ---- Rewards ---- */
+
+export const STORE_REWARDS = {
+  title: "Rewards",
+  points: "YOUR POINTS",
+  earn: "Earn on every delivered order",
+  unlocked: "Reward unlocked",
+  validUntil: (date) => `Use before ${date}`,
+  copyCodeA11y: (code) => `Copy code ${code}`,
+  copyA11y: (code) => `Copy ${code}`,
+  copy: "Copy",
+  useInCart: "Use in cart",
+  minOrder: (amount) => `Min ${amount}`,
+  expires: (date) => `Expires ${date}`,
+  codes: "Your codes",
+  redeemSection: "Redeem with points",
+  redeem: "Redeem",
+  unavailable: "Not available yet",
+  /** The text the backend sends when points are the only thing missing (`disabledReason`). */
+  notEnoughPoints: "Not enough points",
+  saves: (amount) => `≈ Save ${amount} on your cart`,
+  morePoints: (n) => `${n} more ${n === 1 ? "point" : "points"} to unlock`,
+  empty: { title: "No rewards right now", body: "New offers will appear here." },
+};
+
+/* ---- Help & support ---- */
+
+export const STORE_SUPPORT = {
+  title: "Help & support",
+  chat: { title: "Live chat", sub: "Message the shop" },
+  email: "Email",
+  conversation: "Conversation",
+  you: "You",
+  shop: "Zeevan",
+  empty: { title: "Start the conversation", body: "Tell us how we can help — replies appear right here." },
+  placeholder: "Write a message…",
+  send: "Send message",
+  faqTitle: "Common questions",
+};
+
 export const STORE_WISHLIST = {
   title: "Your wishlist",
   emptyTitle: "Nothing saved yet",
   emptyBody: "Tap the heart on any product to keep it here for later.",
-  emptyCta: "Browse shop",
+  emptyCta: "Start shopping",
   hint: "Saved on this device",
   added: "Saved to wishlist",
   removed: "Removed from wishlist",
 };
+
+/** Words every sheet and screen shares. */
+export const STORE_COMMON = { back: "Back", close: "Close", done: "Done" };
 
 /* ---- Bottom navigation ---- */
 
@@ -714,7 +847,7 @@ export const STORE_PRODUCT = {
       freeTitle: "Free delivery to your area",
       freeBody: "Cash on Delivery available · Sealed for freshness, easy returns.",
       freeAboveTitle: (amount) => `Free delivery over ${amount}`,
-      feeBody: (fee) => `${fee} below that · Cash on Delivery available · Sealed for freshness, easy returns.`,
+      feeBody: (fee) => `Below that, delivery is ${fee} · Cash on Delivery available · Sealed for freshness, easy returns.`,
       flatTitle: (fee) => `Delivery ${fee}`,
       flatBody: "Cash on Delivery available · Sealed for freshness, easy returns.",
     },

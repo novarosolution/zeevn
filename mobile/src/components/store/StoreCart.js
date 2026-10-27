@@ -20,6 +20,7 @@ import ScreenHeader, { SCREEN_HEADER_PAD } from "./ScreenHeader";
 import ScrollEdgeFade from "./ScrollEdgeFade";
 import StoreBanner from "./StoreBanner";
 import StoreField from "./StoreField";
+import { Card as KitCard, EmptyState } from "./StoreKit";
 import CheckoutPlacingOverlay from "../loading/CheckoutPlacingOverlay";
 
 const PAY_DOCK_HEIGHT = 78;
@@ -174,7 +175,7 @@ function CartLine({ item, onIncrease, onDecrease, onRemove, compact = false }) {
                 hapticTick();
                 onRemove(item);
               }}
-              hitSlop={10}
+              hitSlop={14}
               accessibilityRole="button"
               accessibilityLabel={STORE_CART.line.removeA11y(name)}
               style={styles.removeBtn}
@@ -575,23 +576,10 @@ function PayDock({ bottom, total, meta, notice = false, label, disabled, loading
 /* ---- empty + sign-in states ---- */
 
 function CenterCard({ icon, title, body, primary, onPrimary, secondary, onSecondary }) {
-  const { c, r, type } = useStoreTheme();
   return (
-    <Card style={styles.center}>
-      <View style={[styles.bigIcon, { backgroundColor: c.brandSoft }]}>
-        <Ionicons name={icon} size={36} color={c.brand} />
-      </View>
-      <Text style={type.display(24, { semi: true, lh: 30, ls: -0.4 })}>{title}</Text>
-      <Text style={[type.ui(14.5, "medium", c.inkMute, { lineHeight: 21 }), styles.centerText]}>{body}</Text>
-      <PressableScale onPress={onPrimary} accessibilityRole="button" accessibilityLabel={primary} style={[styles.bigBtn, { backgroundColor: c.brand, borderRadius: r.pill }]}>
-        <Text style={type.ui(15, "extrabold", c.onBrand)}>{primary}</Text>
-      </PressableScale>
-      {secondary ? (
-        <PressableScale scaleTo={0.97} lite onPress={onSecondary} hitSlop={8} accessibilityRole="button" accessibilityLabel={secondary}>
-          <Text style={type.ui(14, "bold", c.brandAlt)}>{secondary}</Text>
-        </PressableScale>
-      ) : null}
-    </Card>
+    <KitCard padded={false}>
+      <EmptyState icon={icon} title={title} body={body} actionLabel={primary} onAction={onPrimary} secondaryLabel={secondary} onSecondary={onSecondary} />
+    </KitCard>
   );
 }
 
@@ -855,8 +843,4 @@ const styles = StyleSheet.create({
   payRow: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12, paddingLeft: 20, paddingRight: 12 },
   payBtn: { minWidth: 148, height: 54, borderRadius: 27, overflow: "hidden", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingHorizontal: 20 },
   payBtnFill: { borderRadius: 27 },
-  center: { alignItems: "center", gap: 12, paddingVertical: 32, paddingHorizontal: 24 },
-  centerText: { textAlign: "center" },
-  bigIcon: { width: 76, height: 76, borderRadius: 38, alignItems: "center", justifyContent: "center", marginBottom: 2 },
-  bigBtn: { height: 52, paddingHorizontal: 30, alignItems: "center", justifyContent: "center", marginTop: 6 },
 });

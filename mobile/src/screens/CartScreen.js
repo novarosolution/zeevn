@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   Platform,
@@ -121,6 +121,9 @@ export default function CartScreen({ navigation, route }) {
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  /** One reference per checkout attempt: a double-tap or a retry after a lost reply can't create a second order. */
+  const orderClientRef = useRef(null);
+  const placingRef = useRef(false);
   const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -387,7 +390,7 @@ export default function CartScreen({ navigation, route }) {
   };
 
   const handlePlaceOrder = async () => {
-    if (cartItems.length === 0 || storeBlocked) {
+    if (cartItems.length === 0 || storeBlocked || placingRef.current) {
       return;
     }
 
@@ -401,10 +404,15 @@ export default function CartScreen({ navigation, route }) {
     }
 
     try {
+      placingRef.current = true;
       setIsPlacingOrder(true);
       setError("");
+      if (!orderClientRef.current) {
+        orderClientRef.current = `order-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+      }
 
       const created = await createOrderRequest(token, {
+        clientRef: orderClientRef.current,
         products: cartItems.map((item) => ({
           product: item.id,
           id: item.id,
@@ -428,6 +436,8 @@ export default function CartScreen({ navigation, route }) {
           note: note.trim()},
         paymentMethod: activePayment,
         couponCode: appliedCoupon?.code || ""});
+      // The server answered: the next checkout is a new order.
+      orderClientRef.current = null;
 
       if (activePayment === "Cash on Delivery") {
         clearCart();
@@ -483,6 +493,7 @@ export default function CartScreen({ navigation, route }) {
         setError(err.message || "Unable to place order.");
       }
     } finally {
+      placingRef.current = false;
       setIsPlacingOrder(false);
     }
   };
@@ -520,7 +531,8 @@ export default function CartScreen({ navigation, route }) {
           .filter(Boolean)
           .join(" · ")
       : "";
-  const platformFee = 1.2;
+  // The service fee belongs to an order, not to an empty bag (the API charges the same 1.20 per order).
+  const platformFee = cartItems.length > 0 ? 1.2 : 0;
   const discountAmount = Number(appliedCoupon?.discountAmount || 0);
   const payableAmount = Math.max(0, totalAmount + deliveryFee + platformFee - discountAmount);
   const isRazorpayMethod = activePayment === "Razorpay";

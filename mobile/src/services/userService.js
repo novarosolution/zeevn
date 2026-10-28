@@ -18,7 +18,8 @@ export const uploadUserAvatar = (_token, { imageBase64, mimeType }) =>
 /** @param {string} [_token] */
 export const fetchMyOrders = async (_token) => {
   const orders = await apiGet("/users/my-orders");
-  return Array.isArray(orders) ? orders.map(plainOilOrder) : orders;
+  // A non-list answer (proxy hiccup, wrong shape) must never reach screens that call .filter on it.
+  return Array.isArray(orders) ? orders.map(plainOilOrder) : [];
 };
 
 export const fetchOrderLiveLocation = (orderId) =>
@@ -32,11 +33,15 @@ const tidyReward = (row) => plainRupeeFields(row, ["title", "description", "bene
 const tidyCoupon = (row) => plainRupeeFields(row, ["title", "benefitSummary"]);
 
 /** @param {string} [_token] */
-export const fetchMyNotifications = async (_token) => mapApiList(await apiGet("/users/notifications"), "items", tidyNotification);
+/** Screens call .filter on this, so it is always a list, whatever shape the answer had. */
+const asNotificationList = (data) => (Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : []);
+
+export const fetchMyNotifications = async (_token) =>
+  asNotificationList(mapApiList(await apiGet("/users/notifications"), "items", tidyNotification));
 
 /** @param {string} [_token] */
 export const fetchMyNotificationsIncludingArchived = async (_token) =>
-  mapApiList(await apiGet("/users/notifications?includeArchived=true"), "items", tidyNotification);
+  asNotificationList(mapApiList(await apiGet("/users/notifications?includeArchived=true"), "items", tidyNotification));
 
 /** @param {string} [_token] */
 export const markMyNotificationRead = (_token, notificationId) =>

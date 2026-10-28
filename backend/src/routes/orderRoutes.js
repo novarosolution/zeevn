@@ -13,6 +13,7 @@ const {
 } = require("../controllers/orderController");
 const { createMyReturn } = require("../controllers/returnController");
 const { protect } = require("../middleware/authMiddleware");
+const { idempotent } = require("../middleware/idempotency");
 
 const router = express.Router();
 
@@ -40,7 +41,8 @@ router.post(
   youpiWebhook
 );
 
-router.post("/", protect, createOrder);
+// The app sends the same clientRef on a double-tap or a retry after a lost reply, so one checkout makes one order.
+router.post("/", protect, idempotent("order"), createOrder);
 router.get("/available-coupons", protect, getAvailableCouponsForCart);
 router.post("/validate-coupon", protect, validateCouponForCart);
 router.post("/:id/reorder", protect, reorderMyOrder);

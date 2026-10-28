@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
 import { getAdminTone } from "../../theme/adminTones";
-import { fonts } from "../../theme/tokens";
+import { ADMIN_FONT } from "../../theme/adminLayout";
 
 const SIZES = {
   sm: { height: 20, padX: 7, font: 10.5, icon: 11, dot: 5 },
@@ -48,5 +48,5 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
   },
-  text: { fontFamily: fonts.semibold, letterSpacing: 0.1 },
+  text: { fontFamily: ADMIN_FONT.semibold, letterSpacing: 0.1, fontVariant: ["tabular-nums"] },
 });

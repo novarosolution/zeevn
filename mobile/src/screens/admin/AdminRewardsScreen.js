@@ -12,9 +12,9 @@ import AdminPanel from "../../components/admin/AdminPanel";
 import AdminRewardTicket from "../../components/admin/AdminRewardTicket";
 import AdminToggleRow from "../../components/admin/AdminToggleRow";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../../components/ui/PremiumLoader";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminLoader from "../../components/admin/AdminLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { createAdminReward, fetchAdminRewards, updateAdminReward } from "../../services/adminService";
@@ -175,7 +175,7 @@ export default function AdminRewardsScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
@@ -318,8 +318,8 @@ export default function AdminRewardsScreen({ navigation, route }) {
                 <View style={adminTwoColMain(compact, 1.15)}>{formPanel}</View>
                 <View style={[adminTwoColAside(compact), styles.listCol]}>
                   <Text style={styles.listTitle}>Catalog</Text>
-                  {loading ? <PremiumLoader size="sm" caption="Loading rewards…" /> : null}
-                  {!loading && rewards.length === 0 ? <PremiumEmptyState iconName="gift-outline" title={COPY.empty} compact /> : null}
+                  {loading ? <AdminLoader size="sm" caption="Loading rewards…" /> : null}
+                  {!loading && rewards.length === 0 ? <AdminEmptyState iconName="gift-outline" title={COPY.empty} compact /> : null}
                   {!loading
                     ? rewards.map((reward) => (
                         <AdminRewardTicket key={reward._id} reward={reward} onPress={() => startEdit(reward)} />

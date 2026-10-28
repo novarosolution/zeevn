@@ -35,6 +35,9 @@ function initSocketServer(httpServer) {
       if (!user || user.deletedAt) {
         return next(new Error("Unauthorized"));
       }
+      if (Number(decoded.v || 0) !== Number(user.tokenVersion || 0)) {
+        return next(new Error("Unauthorized"));
+      }
       socket.user = user;
       return next();
     } catch {

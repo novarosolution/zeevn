@@ -13,9 +13,9 @@ import AdminInput from "../../components/admin/AdminInput";
 import AdminLineCard from "../../components/admin/AdminLineCard";
 import AdminPanel from "../../components/admin/AdminPanel";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../../components/ui/PremiumLoader";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminLoader from "../../components/admin/AdminLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
@@ -113,7 +113,7 @@ export default function AdminCycleCountScreen({ navigation, route }) {
       <AdminScreenShell style={styles.screen}>
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <View style={styles.gatePanel}>
-            <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+            <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
             <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} />
           </View>
         </KankregScrollPage>
@@ -149,8 +149,8 @@ export default function AdminCycleCountScreen({ navigation, route }) {
                     />
                     <AdminInput value={query} onChangeText={setQuery} placeholder="Find a jar" icon="search-outline" />
                   </AdminPanel>
-                  {loading ? <PremiumLoader size="sm" caption="Loading…" /> : null}
-                  {!loading && visible.length === 0 ? <PremiumEmptyState iconName="cube-outline" title="No jar matches." compact /> : null}
+                  {loading ? <AdminLoader size="sm" caption="Loading…" /> : null}
+                  {!loading && visible.length === 0 ? <AdminEmptyState iconName="cube-outline" title="No jar matches." compact /> : null}
                   {visible.map((p) => {
                     const expected = location === "online" ? Number(p.stockQty) || 0 : Number(p.stockCounter) || 0;
                     return (

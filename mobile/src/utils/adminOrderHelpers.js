@@ -1,4 +1,4 @@
-import { Platform, Alert } from "react-native";
+import { buildCsv, csvFilename, saveCsv } from "./adminCsv";
 import { formatOrderPublicRef } from "../content/appContent";
 import { getOrderStatusLabel } from "./orderStatus";
 
@@ -47,7 +47,7 @@ function paymentLabel(order) {
   return order.paymentMethod || "—";
 }
 
-export function exportOrdersCsv(orders) {
+export async function exportOrdersCsv(orders) {
   const headers = [
     "Order",
     "Placed",
@@ -85,20 +85,5 @@ export function exportOrdersCsv(orders) {
     order.assignedDeliveryUser?.name || "",
   ]);
 
-  const csv = [headers, ...rows]
-    .map((row) => row.map((cell) => `"${String(cell ?? "").replace(/"/g, '""')}"`).join(","))
-    .join("\n");
-
-  if (Platform.OS === "web" && typeof document !== "undefined") {
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `zeevan-orders-${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-    return;
-  }
-
-  Alert.alert("Export CSV", "CSV export is available on web. Open admin on desktop to download.");
+  return saveCsv(csvFilename("orders"), buildCsv(headers, rows), "Export orders");
 }

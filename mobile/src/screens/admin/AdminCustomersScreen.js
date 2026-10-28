@@ -14,8 +14,8 @@ import AdminInput from "../../components/admin/AdminInput";
 import AdminPanel from "../../components/admin/AdminPanel";
 import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
 import { useToast } from "../../context/ToastContext";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { createAdminWalkInCustomer, fetchAdminUsers, searchAdminOrders, updateAdminCustomerNote } from "../../services/adminService";
@@ -23,6 +23,7 @@ import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdmin
 import { customerScrollFill } from "../../theme/screenLayout";
 import { radius, spacing } from "../../theme/tokens";
 import { formatRupees, formatShortDate } from "../../utils/adminFormat";
+import { exportCustomersCsv } from "../../utils/adminExports";
 import { adminStatusMeta, orderRef } from "../../utils/adminOrderUi";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 import { printAdminHtml } from "../../utils/printAdminHtml";
@@ -186,7 +187,7 @@ export default function AdminCustomersScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton
                 label={ADMIN_GATE.backHome}
                 variant="primary"
@@ -297,7 +298,7 @@ export default function AdminCustomersScreen({ navigation, route }) {
               <Text style={styles.section}>Orders</Text>
               {ordersLoading ? <Text style={styles.muted}>Loading…</Text> : null}
               {!ordersLoading && orders.length === 0 ? (
-                <PremiumEmptyState
+                <AdminEmptyState
                   iconName="receipt-outline"
                   title="No orders yet."
                   ctaLabel="Bill at counter"
@@ -347,7 +348,23 @@ export default function AdminCustomersScreen({ navigation, route }) {
           route={route}
           title={COPY.title}
           subtitle={COPY.subtitle}
-          headerRight={<AdminButton label="Refresh" icon="refresh-outline" variant="ghost" size="sm" onPress={load} />}
+          headerRight={
+            <View style={styles.headerActions}>
+              <AdminButton
+                label="Export CSV"
+                icon="download-outline"
+                variant="ghost"
+                size="sm"
+                disabled={!customers.length}
+                onPress={() =>
+                  exportCustomersCsv(customers)
+                    .then(() => toast.toastSuccess(`Exported ${customers.length} customers.`))
+                    .catch((err) => toast.toastError(err?.message || "Couldn't export customers."))
+                }
+              />
+              <AdminButton label="Refresh" icon="refresh-outline" variant="ghost" size="sm" onPress={load} />
+            </View>
+          }
         >
           <View style={styles.panel}>
             <AdminAlerts error={error} onCloseError={() => setError("")} />
@@ -371,7 +388,7 @@ export default function AdminCustomersScreen({ navigation, route }) {
                 }}
               />
             </AdminPanel>
-            <AdminStatGrid min={compact ? 100 : 160}>
+            <AdminStatGrid min={compact ? 132 : 160}>
               <AdminStatTile
                 icon="people-outline"
                 label="Customers"
@@ -422,9 +439,9 @@ export default function AdminCustomersScreen({ navigation, route }) {
             <AdminInput label="Search" value={search} onChangeText={setSearch} placeholder="Name, phone, or note" icon="search-outline" />
 
             {loading ? <Text style={styles.muted}>Loading…</Text> : null}
-            {!loading && customers.length === 0 ? <PremiumEmptyState iconName="people-outline" title={COPY.empty} compact /> : null}
+            {!loading && customers.length === 0 ? <AdminEmptyState iconName="people-outline" title={COPY.empty} compact /> : null}
             {!loading && customers.length > 0 && visible.length === 0 ? (
-              <PremiumEmptyState iconName="search-outline" title={COPY.emptySearch} compact />
+              <AdminEmptyState iconName="search-outline" title={COPY.emptySearch} compact />
             ) : null}
 
             {!loading && visible.length > 0 && !compact ? (
@@ -502,11 +519,12 @@ export default function AdminCustomersScreen({ navigation, route }) {
 
 function createStyles(chrome, c, shadowPremium) {
   return StyleSheet.create({
+    headerActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 },
     screen: { flex: 1, width: "100%" },
     panel: { ...adminShellContent(), gap: spacing.sm },
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
-    tileRow: { flexBasis: "31%", flexGrow: 1, maxWidth: "33%" },
+    tileRow: Platform.OS === "web" ? {} : { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
     list: {
       backgroundColor: chrome.card,
       borderRadius: 16,

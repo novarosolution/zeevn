@@ -15,8 +15,8 @@ function requireSecret(name = "JWT_SECRET") {
 }
 
 /** Short-lived access token. Used as the bearer for normal API calls. */
-function generateToken(userId) {
-  return jwt.sign({ id: userId, type: "access" }, requireSecret(), {
+function generateToken(userId, version = 0) {
+  return jwt.sign({ id: userId, type: "access", v: Number(version) || 0 }, requireSecret(), {
     expiresIn: process.env.JWT_EXPIRES_IN || ACCESS_DEFAULT,
   });
 }
@@ -26,8 +26,8 @@ function generateToken(userId) {
  * leaked access tokens don't compromise refresh; falls back to JWT_SECRET when
  * JWT_REFRESH_SECRET is not provided (keeps current envs working).
  */
-function generateRefreshToken(userId) {
-  return jwt.sign({ id: userId, type: "refresh" }, requireSecret("JWT_REFRESH_SECRET"), {
+function generateRefreshToken(userId, version = 0) {
+  return jwt.sign({ id: userId, type: "refresh", v: Number(version) || 0 }, requireSecret("JWT_REFRESH_SECRET"), {
     expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || REFRESH_DEFAULT,
   });
 }

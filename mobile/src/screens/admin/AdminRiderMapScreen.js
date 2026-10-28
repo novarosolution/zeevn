@@ -10,8 +10,8 @@ import AdminBadge from "../../components/admin/AdminBadge";
 import AdminButton from "../../components/admin/AdminButton";
 import AdminDeliveryMap from "../../components/admin/AdminDeliveryMap";
 import { mapOrdersFrom } from "../../components/admin/zones/zoneHelpers";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import { useAuth } from "../../context/AuthContext";
 import { useLiveSocket } from "../../context/LiveSocketContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -185,7 +185,7 @@ export default function AdminRiderMapScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton
                 label={ADMIN_GATE.backHome}
                 variant="primary"
@@ -202,7 +202,7 @@ export default function AdminRiderMapScreen({ navigation, route }) {
   const list = (
     <View style={styles.list}>
       {loading ? <Text style={styles.muted}>Loading…</Text> : null}
-      {!loading && riders.length === 0 ? <PremiumEmptyState iconName="navigate-outline" title={COPY.empty} compact /> : null}
+      {!loading && riders.length === 0 ? <AdminEmptyState iconName="navigate-outline" title={COPY.empty} compact /> : null}
       {riders.map((rider) => {
         const on = String(rider._id) === String(selectedId);
         const loc = realPoint(rider.location);

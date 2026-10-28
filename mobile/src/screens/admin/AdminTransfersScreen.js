@@ -16,9 +16,9 @@ import AdminLineCard from "../../components/admin/AdminLineCard";
 import AdminPanel from "../../components/admin/AdminPanel";
 import AdminQtyStepper from "../../components/admin/AdminQtyStepper";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../../components/ui/PremiumLoader";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminLoader from "../../components/admin/AdminLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
@@ -228,7 +228,7 @@ export default function AdminTransfersScreen({ navigation, route }) {
       <AdminScreenShell style={styles.screen}>
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <View style={styles.gatePanel}>
-            <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+            <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
             <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} />
           </View>
         </KankregScrollPage>
@@ -268,8 +268,8 @@ export default function AdminTransfersScreen({ navigation, route }) {
                     </AdminPanel>
                     <AdminPanel title="Jars" icon="cube-outline">
                       <AdminInput value={query} onChangeText={setQuery} placeholder="Find a jar" icon="search-outline" />
-                      {loading ? <PremiumLoader size="sm" caption="Loading…" /> : null}
-                      {!loading && matches.length === 0 ? <PremiumEmptyState iconName="cube-outline" title="No jar matches." compact /> : null}
+                      {loading ? <AdminLoader size="sm" caption="Loading…" /> : null}
+                      {!loading && matches.length === 0 ? <AdminEmptyState iconName="cube-outline" title="No jar matches." compact /> : null}
                       {matches.map((product) => (
                         <AdminHitRow
                           key={product._id}
@@ -283,7 +283,7 @@ export default function AdminTransfersScreen({ navigation, route }) {
                   </View>
                   <View style={adminTwoColAside(compact)}>
                     <AdminPanel title="To move" icon="swap-horizontal-outline" meta={`${lines.length}`}>
-                      {lines.length === 0 ? <PremiumEmptyState iconName="swap-horizontal-outline" title="Nothing to move yet." compact /> : null}
+                      {lines.length === 0 ? <AdminEmptyState iconName="swap-horizontal-outline" title="Nothing to move yet." compact /> : null}
                       {lines.map((line) => (
                         <AdminLineCard
                           key={line.productId}
@@ -303,7 +303,7 @@ export default function AdminTransfersScreen({ navigation, route }) {
                       {!compact ? actions : null}
                     </AdminPanel>
                     <AdminPanel title="Recent" icon="time-outline">
-                      {history.length === 0 ? <PremiumEmptyState iconName="swap-horizontal-outline" title="No transfers yet." compact /> : null}
+                      {history.length === 0 ? <AdminEmptyState iconName="swap-horizontal-outline" title="No transfers yet." compact /> : null}
                       {history.map((row) => (
                         <AdminHitRow
                           key={row._id}

@@ -51,9 +51,12 @@ import { storeNavBase, useStoreNavPad } from "./StoreTracker";
 import { BrandFooter, TrustStrip } from "./TrustFooter";
 import PressableScale from "./PressableScale";
 import { VariantSheetProvider } from "./VariantSheet";
+import BuyAgainRail, { useBuyAgainItems } from "./premium/BuyAgainRail";
+import DeliveryPromiseCard from "./premium/DeliveryPromiseCard";
+import RecentlyViewedRail, { useRecentProducts } from "./premium/RecentlyViewedRail";
 
 /** App Home only — website extras (line rails, festive picks, bento) stay on the site. */
-const APP_HOME_LAYOUT = ["promos", "categories", "catalog", "trust", "footer"];
+const APP_HOME_LAYOUT = ["promos", "delivery", "categories", "buyAgain", "recent", "catalog", "trust", "footer"];
 
 
 const GRADIENT_OVERSCROLL = 800;
@@ -208,7 +211,10 @@ export default function StoreHome({
     [snippet, user?.defaultAddress, displayLabel]
   );
   const locationKind = user?.defaultAddress?.addressType || "";
-  const onLocationPress = () => navigation.navigate(isAuthenticated ? "ManageAddress" : "Login");
+  const onLocationPress = useCallback(
+    () => navigation.navigate(isAuthenticated ? "ManageAddress" : "Login"),
+    [isAuthenticated, navigation]
+  );
 
   /* ---- section data ---- */
   const hasProducts = products.length > 0;
@@ -231,6 +237,9 @@ export default function StoreHome({
   const trackerPad = bottomPad - storeNavBase(insets);
   const trackerReserve = trackerPad > 0 ? trackerPad + 12 : 0;
 
+  const buyAgainItems = useBuyAgainItems(products);
+  const recentItems = useRecentProducts(products);
+
   const blocks = useMemo(() => {
     const next = [];
     APP_HOME_LAYOUT.forEach((key) => {
@@ -248,6 +257,22 @@ export default function StoreHome({
               />
             ),
           });
+          break;
+        case "delivery":
+          next.push({
+            key,
+            node: (
+              <DeliveryPromiseCard onPressLocation={onLocationPress} style={{ marginHorizontal: gutter }} />
+            ),
+          });
+          break;
+        case "buyAgain":
+          if (!buyAgainItems.length) break;
+          next.push({ key, node: <BuyAgainRail items={buyAgainItems} onProductPress={openProduct} /> });
+          break;
+        case "recent":
+          if (!recentItems.length) break;
+          next.push({ key, node: <RecentlyViewedRail items={recentItems} onProductPress={openProduct} /> });
           break;
         case "categories":
           if (!categoryTiles.length) break;
@@ -311,6 +336,10 @@ export default function StoreHome({
     catalog,
     openProduct,
     trackerReserve,
+    buyAgainItems,
+    recentItems,
+    onLocationPress,
+    gutter,
   ]);
 
   const gradient = isDark ? festival.header.gradientDark : festival.header.gradient;

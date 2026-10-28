@@ -21,6 +21,8 @@ backend/node_modules
 mobile/.expo
 mobile/.expo-build-check
 mobile/.expo-web-*
+mobile/.expo-bundle-test*
+mobile/.expo-loading-test
 mobile/dist
 mobile/dist-web
 mobile/dist-export-check

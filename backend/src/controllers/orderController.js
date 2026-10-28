@@ -450,7 +450,31 @@ async function createOrder(req, res, next) {
     const initialStatus = isOnline ? "pending_payment" : "pending";
     const paymentExpiresAt = isOnline ? new Date(Date.now() + RAZORPAY_PAYMENT_WINDOW_MS) : null;
 
-    const order = await Order.create({
+    // Claim the coupon use atomically so two simultaneous orders can't both slip under a usage limit.
+    // Every path below that abandons the order gives the use back through releaseCouponUse().
+    let couponClaimed = false;
+    const releaseCouponUse = async () => {
+      if (!couponClaimed || !resolvedCoupon) return;
+      couponClaimed = false;
+      await Coupon.updateOne({ _id: resolvedCoupon._id, usedCount: { $gt: 0 } }, { $inc: { usedCount: -1 } }).catch(() => {});
+    };
+    if (resolvedCoupon) {
+      const limit = Number(resolvedCoupon.usageLimit);
+      const claim = await Coupon.updateOne(
+        Number.isFinite(limit) && limit > 0
+          ? { _id: resolvedCoupon._id, usedCount: { $lt: limit } }
+          : { _id: resolvedCoupon._id },
+        { $inc: { usedCount: 1 } }
+      );
+      if (!claim.modifiedCount) {
+        return res.status(400).json({ message: "This coupon has reached its usage limit." });
+      }
+      couponClaimed = true;
+    }
+
+    let order;
+    try {
+      order = await Order.create({
       user: req.user._id,
       products: normalizedItems,
       totalPrice,
@@ -477,7 +501,11 @@ async function createOrder(req, res, next) {
       },
       status: initialStatus,
       tracking: buildInitialTracking(deliveryQuote),
-    });
+      });
+    } catch (createErr) {
+      await releaseCouponUse();
+      throw createErr;
+    }
     order.invoice = {
       ...(order.invoice || {}),
       number: `INV-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-${String(order._id).slice(-6).toUpperCase()}`,
@@ -534,6 +562,7 @@ async function createOrder(req, res, next) {
         razorpayKeyId = getRazorpayKeyId();
       } catch (rzpErr) {
         await Order.findByIdAndDelete(order._id);
+        await releaseCouponUse();
         const status = rzpErr.statusCode || 500;
         return res.status(status).json({
           message: rzpErr.message || "Unable to start Razorpay payment.",
@@ -553,6 +582,7 @@ async function createOrder(req, res, next) {
         await order.save();
       } catch (stockErr) {
         await Order.findByIdAndDelete(order._id);
+        await releaseCouponUse();
         return res.status(stockErr.statusCode || 400).json({
           message: stockErr.message || "Insufficient stock to complete this order.",
         });
@@ -560,8 +590,6 @@ async function createOrder(req, res, next) {
     }
 
     if (resolvedCoupon) {
-      resolvedCoupon.usedCount = Number(resolvedCoupon.usedCount || 0) + 1;
-      await resolvedCoupon.save();
       await CouponRedemption.create({
         coupon: resolvedCoupon._id,
         user: req.user._id,

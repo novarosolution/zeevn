@@ -8,8 +8,8 @@ import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import AdminAlerts from "../../components/admin/AdminAlerts";
 import AdminButton from "../../components/admin/AdminButton";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminRiderPerformance } from "../../services/adminService";
@@ -86,7 +86,7 @@ export default function AdminRiderPerformanceScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton
                 label={ADMIN_GATE.backHome}
                 variant="primary"
@@ -124,7 +124,7 @@ export default function AdminRiderPerformanceScreen({ navigation, route }) {
             <AdminFilterTabs items={RANGES} value={range} onChange={setRange} />
 
             {loading ? <Text style={styles.muted}>Loading…</Text> : null}
-            {!loading && items.length === 0 ? <PremiumEmptyState iconName="bicycle-outline" title={COPY.empty} compact /> : null}
+            {!loading && items.length === 0 ? <AdminEmptyState iconName="bicycle-outline" title={COPY.empty} compact /> : null}
 
             {!loading && items.length > 0 && !compact ? (
               <View style={styles.list}>

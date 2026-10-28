@@ -12,9 +12,9 @@ import AdminInput from "../../components/admin/AdminInput";
 import AdminPanel from "../../components/admin/AdminPanel";
 import AdminToggleRow from "../../components/admin/AdminToggleRow";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../../components/ui/PremiumLoader";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminLoader from "../../components/admin/AdminLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { createAdminCoupon, fetchAdminCoupons, updateAdminCoupon } from "../../services/adminService";
@@ -170,7 +170,7 @@ export default function AdminCouponsScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
@@ -298,8 +298,8 @@ export default function AdminCouponsScreen({ navigation, route }) {
                 <View style={adminTwoColMain(compact, 1.15)}>{formPanel}</View>
                 <View style={[adminTwoColAside(compact), styles.listCol]}>
                   <Text style={styles.listTitle}>Codes</Text>
-                  {loading ? <PremiumLoader size="sm" caption="Loading coupons…" /> : null}
-                  {!loading && coupons.length === 0 ? <PremiumEmptyState iconName="pricetag-outline" title={COPY.empty} compact /> : null}
+                  {loading ? <AdminLoader size="sm" caption="Loading coupons…" /> : null}
+                  {!loading && coupons.length === 0 ? <AdminEmptyState iconName="pricetag-outline" title={COPY.empty} compact /> : null}
                   {!loading
                     ? coupons.map((coupon) => (
                         <AdminCouponTicket key={coupon._id} coupon={coupon} onPress={() => startEdit(coupon)} />

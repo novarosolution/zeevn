@@ -20,20 +20,10 @@ function normalizeEmail(value) {
 }
 
 function bootstrapAdminEmails() {
-  return String(process.env.ADMIN_EMAILS || "chaudharykuldip453@gmail.com")
+  return String(process.env.ADMIN_EMAILS || "")
     .split(",")
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
-}
-
-async function applyBootstrapAdmin(user) {
-  if (!user) return user;
-  const email = normalizeEmail(user.email);
-  if (email && bootstrapAdminEmails().includes(email) && !user.isAdmin) {
-    user.isAdmin = true;
-    await user.save();
-  }
-  return user;
 }
 
 function hasProvider(user, provider, providerId) {
@@ -45,9 +35,11 @@ function hasProvider(user, provider, providerId) {
 async function findOrCreateOAuthUser(profile) {
   const { provider, providerId, name, avatar } = profile;
   const email = normalizeEmail(profile.email);
-  let user = await User.findOne({
-    $or: [{ email }, { authProviders: { $elemMatch: { provider, providerId } } }],
-  });
+  // Only an email the provider has verified may link to an existing account or earn the bootstrap admin role.
+  const verifiedEmail = Boolean(profile.emailVerified) && Boolean(email);
+  const matchers = [{ authProviders: { $elemMatch: { provider, providerId } } }];
+  if (verifiedEmail) matchers.push({ email });
+  let user = await User.findOne({ $or: matchers });
 
   if (user) {
     if (!hasProvider(user, provider, providerId)) {
@@ -55,7 +47,7 @@ async function findOrCreateOAuthUser(profile) {
     }
     if (avatar && !user.avatar) user.avatar = avatar;
     if (name && (!user.name || user.name === user.email)) user.name = name;
-    if (normalizeEmail(user.email) && bootstrapAdminEmails().includes(normalizeEmail(user.email))) {
+    if (verifiedEmail && bootstrapAdminEmails().includes(normalizeEmail(user.email))) {
       user.isAdmin = true;
     }
     await user.save();
@@ -68,15 +60,15 @@ async function findOrCreateOAuthUser(profile) {
     email: normalizeEmail(email),
     password: "",
     avatar: avatar || "",
-    isAdmin: userCount === 0 || bootstrapAdminEmails().includes(normalizeEmail(email)),
+    isAdmin: userCount === 0 || (verifiedEmail && bootstrapAdminEmails().includes(email)),
     authProviders: [{ provider, providerId }],
   });
   return user;
 }
 
 function issueAuthResponse(user, res) {
-  const token = generateToken(user._id);
-  const refreshToken = generateRefreshToken(user._id);
+  const token = generateToken(user._id, user.tokenVersion);
+  const refreshToken = generateRefreshToken(user._id, user.tokenVersion);
   res.json({
     token,
     refreshToken,
@@ -114,6 +106,9 @@ async function registerUser(req, res, next) {
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Name, email, and password are required." });
     }
+    if (typeof password !== "string" || password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters." });
+    }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -128,11 +123,12 @@ async function registerUser(req, res, next) {
       email,
       password: hashedPassword,
       phone: phone || "",
-      isAdmin: userCount === 0 || bootstrapAdminEmails().includes(email),
+      // Password sign-ups never self-promote by email: nobody has proven they own that address yet.
+      isAdmin: userCount === 0,
     });
 
-    const token = generateToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
+    const token = generateToken(user._id, user.tokenVersion);
+    const refreshToken = generateRefreshToken(user._id, user.tokenVersion);
 
     res.status(201).json({
       token,
@@ -171,10 +167,8 @@ async function loginUser(req, res, next) {
       return res.status(401).json({ message: "Invalid email or password." });
     }
 
-    await applyBootstrapAdmin(user);
-
-    const token = generateToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
+    const token = generateToken(user._id, user.tokenVersion);
+    const refreshToken = generateRefreshToken(user._id, user.tokenVersion);
 
     res.json({
       token,
@@ -241,12 +235,25 @@ async function refreshAccessToken(req, res, next) {
     if (!user || user.deletedAt) {
       return res.status(401).json({ message: "User no longer exists." });
     }
+    if (Number(decoded.v || 0) !== Number(user.tokenVersion || 0)) {
+      return res.status(401).json({ message: "Session was signed out. Please log in again." });
+    }
 
-    const token = generateToken(user._id);
+    const token = generateToken(user._id, user.tokenVersion);
     res.json({
       token,
       user: serializePublicUser(user),
     });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** Sign this account out everywhere: every access and refresh token issued so far stops working. */
+async function logoutAllDevices(req, res, next) {
+  try {
+    await User.updateOne({ _id: req.user._id }, { $inc: { tokenVersion: 1 } });
+    res.json({ message: "Signed out on all devices." });
   } catch (error) {
     next(error);
   }
@@ -258,7 +265,6 @@ async function getProfile(req, res, next) {
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
-    await applyBootstrapAdmin(user);
     const payload = serializePublicUser(user);
     payload.deletion = deletionPublic(await latestForUser(user._id));
     res.json(payload);
@@ -607,6 +613,7 @@ module.exports = {
   authGoogle,
   authApple,
   refreshAccessToken,
+  logoutAllDevices,
   getProfile,
   updateProfile,
   uploadUserAvatar,

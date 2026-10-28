@@ -19,8 +19,8 @@ import AdminBulkBar from "../../components/admin/orders/AdminBulkBar";
 import AdminOrderDrawer from "../../components/admin/orders/AdminOrderDrawer";
 import AdminOrdersTable from "../../components/admin/orders/AdminOrdersTable";
 import useOrderActions from "../../components/admin/orders/useOrderActions";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import { useAuth } from "../../context/AuthContext";
 import { useLiveSocket } from "../../context/LiveSocketContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -401,7 +401,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
         pages = res.pages;
         pageNo += 1;
       } while (pageNo <= pages && pageNo <= 20);
-      exportOrdersCsv(all);
+      await exportOrdersCsv(all);
       toast.toastSuccess(`Exported ${plural(all.length, "order")}.`);
     } catch (err) {
       toast.toastError(err?.message || "Couldn't export orders.");
@@ -418,7 +418,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
               <AdminButton
                 label={ADMIN_GATE.backHome}
                 icon="home-outline"
@@ -575,7 +575,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
               {/* list */}
               <View onLayout={(e) => setTableWidth(e.nativeEvent.layout.width)} style={loading && data.items.length ? styles.dim : null}>
                 {!loading && data.items.length === 0 ? (
-                  <PremiumEmptyState
+                  <AdminEmptyState
                     iconName="receipt-outline"
                     title={tab === "counter" ? "No walk-in bills" : isFiltered ? ADMIN_SCREEN_COPY.orders.emptyFilter : ADMIN_SCREEN_COPY.orders.empty}
                     description={tab === "counter" ? "Open the till to take the first counter bill." : isFiltered ? "Try another tab, widen the date range or clear the search." : "New orders appear here the moment a customer checks out."}
@@ -665,11 +665,11 @@ function createStyles(chrome, c, shadowPremium) {
     headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
     filterBar: { width: "100%", alignItems: "stretch" },
     filters: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end", gap: 8, width: "100%" },
-    filtersStack: { flexDirection: "column", alignItems: "stretch" },
+    filtersStack: { flexDirection: "column", flexWrap: "nowrap", alignItems: "stretch" },
     searchCell: { flexGrow: 1, flexBasis: 280, minWidth: 220 },
     filterCell: { flexGrow: 1, flexBasis: 148, minWidth: 130, maxWidth: 220 },
     filterCellPhone: { minWidth: "100%", maxWidth: "100%", flexBasis: "100%" },
-    tilePhone: { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
+    tilePhone: Platform.OS === "web" ? {} : { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
     bulkDock: {
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: chrome.line,

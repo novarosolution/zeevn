@@ -19,8 +19,8 @@ import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, spacing } from "../../theme/tokens";
 import { formatRupees, timeAgo } from "../../utils/adminFormat";
 import { paymentShortLabel } from "../../utils/adminOrderUi";
-import PremiumLoader from "../../components/ui/PremiumLoader";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminLoader from "../../components/admin/AdminLoader";
+import AdminNotice from "../../components/admin/AdminNotice";
 
 function statusTone(status) {
   if (status === "approved") return "green";
@@ -174,9 +174,9 @@ export default function AdminReturnDetailScreen({ navigation, route }) {
               />
 
               {loading ? (
-                <PremiumLoader caption="Loading return…" />
+                <AdminLoader caption="Loading return…" />
               ) : !row ? (
-                <PremiumErrorBanner severity="error" title="Return not found" message={error || "This return may have been removed."} />
+                <AdminNotice severity="error" title="Return not found" message={error || "This return may have been removed."} />
               ) : (
                 <>
                   <AdminPanel

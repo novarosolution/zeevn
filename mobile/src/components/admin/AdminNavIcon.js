@@ -59,7 +59,7 @@ export default function AdminNavIcon({
       <Ionicons
         name={icon || "ellipse-outline"}
         size={Math.round(dim * 0.58)}
-        color={active ? chrome.linkOnText || chrome.goldDeep : idle}
+        color={active ? (onInk ? chrome.tabOnText : chrome.linkOnText || chrome.goldDeep) : idle}
       />
     </View>
   );

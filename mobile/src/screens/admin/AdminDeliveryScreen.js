@@ -18,8 +18,8 @@ import ZoneEditor from "../../components/admin/zones/ZoneEditor";
 import ZoneRiders from "../../components/admin/zones/ZoneRiders";
 import ZoneShops from "../../components/admin/zones/ZoneShops";
 import { mapOrdersFrom, polygonPoints } from "../../components/admin/zones/zoneHelpers";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import SkeletonBlock from "../../components/ui/SkeletonBlock";
 import { useAuth } from "../../context/AuthContext";
 import { useLiveSocket } from "../../context/LiveSocketContext";
@@ -418,7 +418,7 @@ export default function AdminDeliveryScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
@@ -501,7 +501,7 @@ export default function AdminDeliveryScreen({ navigation, route }) {
             ) : null}
           </View>
         ) : (
-          <PremiumEmptyState
+          <AdminEmptyState
             iconName="map-outline"
             title={ADMIN_SCREEN_COPY.delivery.emptyZones}
             ctaLabel="Create zone"

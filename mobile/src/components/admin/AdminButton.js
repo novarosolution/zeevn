@@ -46,7 +46,7 @@ export default function AdminButton({
       accessibilityLabel={accessibilityLabel || title || label}
       accessibilityState={{ disabled: inactive, busy: loading }}
       {...(Platform.OS === "web" && title ? { title } : null)}
-      style={({ pressed, hovered }) => [
+      style={({ pressed, hovered, focused }) => [
         styles.base,
         {
           height: dims.height,
@@ -57,6 +57,8 @@ export default function AdminButton({
           backgroundColor: hovered && !inactive ? palette.bgHover : palette.bg,
           borderColor: palette.border,
         },
+        Platform.OS === "web" && !inactive ? webDepth(variant, hovered, isDark) : null,
+        Platform.OS === "web" && focused && !inactive ? styles.focusRing : null,
         fullWidth && styles.fullWidth,
         pressed && !inactive && styles.pressed,
         disabled && styles.disabled,
@@ -76,6 +78,25 @@ export default function AdminButton({
       {iconRight && !loading ? <Ionicons name={iconRight} size={dims.icon} color={palette.fg} /> : null}
     </Pressable>
   );
+}
+
+/** Quiet depth on web: solid buttons sit on a soft shadow and lift a hair on hover. Flat variants stay flat. */
+function webDepth(variant, hovered, isDark) {
+  if (variant === "primary") {
+    return {
+      boxShadow: hovered
+        ? "0 1px 0 rgba(255,255,255,0.14) inset, 0 6px 14px -6px rgba(31,51,31,0.55)"
+        : "0 1px 0 rgba(255,255,255,0.12) inset, 0 2px 6px -3px rgba(31,51,31,0.45)",
+      transform: [{ translateY: hovered ? -0.5 : 0 }],
+    };
+  }
+  if (variant === "gold") {
+    return { boxShadow: hovered ? "0 6px 14px -6px rgba(143,94,20,0.55)" : "0 2px 6px -3px rgba(143,94,20,0.45)" };
+  }
+  if (variant === "secondary" || variant === "soft") {
+    return { boxShadow: isDark ? "none" : hovered ? "0 3px 8px -4px rgba(20,24,16,0.18)" : "0 1px 2px rgba(20,24,16,0.05)" };
+  }
+  return null;
 }
 
 function buildPalette(variant, tone, chrome, isDark) {
@@ -126,6 +147,7 @@ const styles = StyleSheet.create({
     }),
   },
   fullWidth: { alignSelf: "stretch" },
+  focusRing: Platform.select({ web: { outlineStyle: "solid", outlineWidth: 2, outlineOffset: 2, outlineColor: "rgba(184,136,76,0.65)" }, default: {} }),
   pressed: { transform: [{ scale: 0.97 }] },
   disabled: { opacity: 0.45, ...Platform.select({ web: { cursor: "not-allowed" }, default: {} }) },
   label: { fontFamily: ADMIN_FONT.semibold, letterSpacing: 0.1 },

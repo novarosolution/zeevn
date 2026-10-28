@@ -17,9 +17,9 @@ import AdminPanel from "../../components/admin/AdminPanel";
 import AdminQtyStepper from "../../components/admin/AdminQtyStepper";
 import AdminSwitch from "../../components/admin/AdminSwitch";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../../components/ui/PremiumLoader";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminLoader from "../../components/admin/AdminLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
@@ -323,7 +323,7 @@ export default function AdminCounterScreen({ navigation, route }) {
       <AdminScreenShell style={styles.screen}>
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <View style={styles.gatePanel}>
-            <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+            <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
             <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} />
           </View>
         </KankregScrollPage>
@@ -406,8 +406,8 @@ export default function AdminCounterScreen({ navigation, route }) {
           <Text style={styles.meta}>Show floor 0</Text>
           <AdminSwitch value={showOut} onChange={setShowOut} accessibilityLabel="Show out of floor stock" />
         </View>
-        {loading ? <PremiumLoader size="sm" caption="Loading jars…" /> : null}
-        {!loading && matches.length === 0 ? <PremiumEmptyState iconName="cube-outline" title="No jar matches." compact /> : null}
+        {loading ? <AdminLoader size="sm" caption="Loading jars…" /> : null}
+        {!loading && matches.length === 0 ? <AdminEmptyState iconName="cube-outline" title="No jar matches." compact /> : null}
         {matches.map((product) => {
           const floor = Math.max(0, Number(product.stockCounter) || 0);
           const low = floor >= 1 && floor <= LOW;
@@ -431,7 +431,7 @@ export default function AdminCounterScreen({ navigation, route }) {
   const billCol = (
     <>
       <AdminPanel title="Bill" icon="receipt-outline" meta={formatRupees(total)}>
-        {cart.length === 0 ? <PremiumEmptyState iconName="receipt-outline" title="Nothing on the till yet." compact /> : null}
+        {cart.length === 0 ? <AdminEmptyState iconName="receipt-outline" title="Nothing on the till yet." compact /> : null}
         {cart.map((line) => (
           <AdminLineCard
             key={line.productId}
@@ -484,7 +484,7 @@ export default function AdminCounterScreen({ navigation, route }) {
       ) : null}
 
       <AdminPanel title="Last bills" icon="time-outline" action="See all" onAction={() => navigation.navigate("AdminStoreSelling")}>
-        {bills.length === 0 ? <PremiumEmptyState iconName="receipt-outline" title="No walk-in bills yet." compact /> : null}
+        {bills.length === 0 ? <AdminEmptyState iconName="receipt-outline" title="No walk-in bills yet." compact /> : null}
         {bills.map((bill) => (
           <AdminHitRow
             key={bill._id}

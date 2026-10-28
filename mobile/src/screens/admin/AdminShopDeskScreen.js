@@ -18,8 +18,8 @@ import { adminShellContent, useAdminCompactLayout } from "../../theme/adminLayou
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, spacing } from "../../theme/tokens";
 import { formatRupees, formatWhole } from "../../utils/adminFormat";
-import PremiumLoader from "../../components/ui/PremiumLoader";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminLoader from "../../components/admin/AdminLoader";
+import AdminNotice from "../../components/admin/AdminNotice";
 
 const COPY = ADMIN_SCREEN_COPY.shopDesk;
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -96,7 +96,7 @@ export default function AdminShopDeskScreen({ navigation, route }) {
       <AdminScreenShell style={styles.screen}>
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <View style={styles.denied}>
-            <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
+            <AdminNotice severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
             <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" onPress={() => navigation.navigate("Home")} />
           </View>
         </KankregScrollPage>
@@ -164,9 +164,9 @@ export default function AdminShopDeskScreen({ navigation, route }) {
         refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={pulling} onRefresh={onPull} />}
       >
         <KankregAdminShell navigation={navigation} route={route || { name: "AdminShopDesk" }} title={COPY.title} subtitle={COPY.subtitle}>
-          {error && !summary ? <PremiumErrorBanner severity="error" message={error} compact style={styles.banner} /> : null}
+          {error && !summary ? <AdminNotice severity="error" message={error} compact style={styles.banner} /> : null}
           {loading && !summary ? (
-            <PremiumLoader caption="Loading shop desk…" />
+            <AdminLoader caption="Loading shop desk…" />
           ) : (
             <View style={styles.desk}>
               <AdminPanel title="Shop status" icon="storefront-outline">

@@ -34,7 +34,7 @@ import {
 import { customerScrollFill } from "../../theme/screenLayout";
 import { radius, spacing } from "../../theme/tokens";
 import { getImageUriCandidates, PRODUCT_HERO_BLURHASH } from "../../utils/image";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminNotice from "../../components/admin/AdminNotice";
 import SectionReveal from "../../components/motion/SectionReveal";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminButton from "../../components/admin/AdminButton";
@@ -615,7 +615,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
         >
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner
+              <AdminNotice
                 severity="warning"
                 title={ADMIN_GATE.title}
                 message="This account does not have admin privileges."
@@ -696,7 +696,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
         <AdminPanel title="Basics" meta="Required to publish">
         {uploadMessage ? (
           <View style={styles.fieldGap}>
-            <PremiumErrorBanner severity="success" message={uploadMessage} onClose={() => setUploadMessage("")} compact />
+            <AdminNotice severity="success" message={uploadMessage} onClose={() => setUploadMessage("")} compact />
           </View>
         ) : null}
 
@@ -979,7 +979,7 @@ export default function AdminAddProductScreen({ navigation, route }) {
         </View>
         {comingSoon && !isPublished ? (
           <View style={styles.fieldGap}>
-            <PremiumErrorBanner
+            <AdminNotice
               severity="warning"
               message="Turn on Published in store above — draft products are hidden from customers."
               compact

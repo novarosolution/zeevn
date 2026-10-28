@@ -17,3 +17,8 @@ export function googleAuthRequest({ idToken }) {
 export function appleAuthRequest({ identityToken, fullName }) {
   return apiPost("/users/auth/apple", { identityToken, fullName }, publicOpts);
 }
+
+/** Invalidates every access and refresh token this account has been given, on all devices. */
+export function logoutAllRequest() {
+  return apiPost("/users/logout-all", {});
+}

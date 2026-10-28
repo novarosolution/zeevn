@@ -9,8 +9,8 @@ import AdminAlerts from "../../components/admin/AdminAlerts";
 import AdminButton from "../../components/admin/AdminButton";
 import AdminInput from "../../components/admin/AdminInput";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -101,7 +101,7 @@ export default function AdminRiderMessagesScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton
                 label={ADMIN_GATE.backHome}
                 variant="primary"
@@ -171,7 +171,7 @@ export default function AdminRiderMessagesScreen({ navigation, route }) {
               <View style={styles.list}>
                 {loading ? <Text style={styles.muted}>Loading…</Text> : null}
                 {!loading && items.length === 0 ? (
-                  <PremiumEmptyState iconName="chatbubble-ellipses-outline" title={COPY.empty} compact />
+                  <AdminEmptyState iconName="chatbubble-ellipses-outline" title={COPY.empty} compact />
                 ) : null}
                 {items.map((row) => (
                   <View key={row._id} style={[styles.card, compact && styles.cardPhone]}>

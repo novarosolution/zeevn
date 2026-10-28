@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import SectionReveal from "../../components/motion/SectionReveal";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
@@ -14,8 +14,8 @@ import AdminRevenueBars from "../../components/admin/AdminRevenueBars";
 import AdminCategoryBar from "../../components/admin/AdminCategoryBar";
 import AdminStatusPill, { orderStatusTone } from "../../components/admin/AdminStatusPill";
 import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../../components/ui/PremiumLoader";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminLoader from "../../components/admin/AdminLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -139,7 +139,7 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
@@ -187,7 +187,7 @@ export default function AdminAnalyticsScreen({ navigation, route }) {
               ) : null}
             </AdminPanel>
 
-            {loading && !analytics ? <PremiumLoader size="sm" caption="Loading analytics…" /> : null}
+            {loading && !analytics ? <AdminLoader size="sm" caption="Loading analytics…" /> : null}
 
             {analytics ? (
               <>
@@ -340,7 +340,7 @@ function createStyles(chrome, c, shadowPremium, compact) {
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
     custom: { gap: 8, marginTop: 8 },
-    tilePhone: { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
+    tilePhone: Platform.OS === "web" ? {} : { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
     empty: { fontSize: 13.5, color: chrome.inkSoft, fontFamily: ADMIN_FONT.medium },
     row: {
       flexDirection: compact ? "column" : "row",

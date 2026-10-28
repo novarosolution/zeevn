@@ -11,8 +11,8 @@ import AdminButton from "../../components/admin/AdminButton";
 import AdminSelect from "../../components/admin/AdminSelect";
 import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
 import AdminPagination from "../../components/admin/AdminPagination";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import { useAuth } from "../../context/AuthContext";
 import { useLiveSocket } from "../../context/LiveSocketContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -151,7 +151,7 @@ export default function AdminDispatchScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
               <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
@@ -221,7 +221,7 @@ export default function AdminDispatchScreen({ navigation, route }) {
               </View>
 
               {!loading && data.items.length === 0 ? (
-                <PremiumEmptyState iconName="bicycle-outline" title={ADMIN_SCREEN_COPY.dispatch.empty} compact />
+                <AdminEmptyState iconName="bicycle-outline" title={ADMIN_SCREEN_COPY.dispatch.empty} compact />
               ) : (
                 <View style={styles.list}>
                   {!compact ? (
@@ -310,10 +310,10 @@ function createStyles(chrome, c, shadowPremium) {
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
     filters: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end", gap: 8 },
-    filtersStack: { flexDirection: "column", alignItems: "stretch" },
+    filtersStack: { flexDirection: "column", flexWrap: "nowrap", alignItems: "stretch" },
     filterCell: { flexGrow: 1, flexBasis: 148, minWidth: 130, maxWidth: 220 },
     filterCellPhone: { minWidth: "100%", maxWidth: "100%", flexBasis: "100%" },
-    tilePhone: { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
+    tilePhone: Platform.OS === "web" ? {} : { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
     list: {
       backgroundColor: chrome.card,
       borderRadius: 16,

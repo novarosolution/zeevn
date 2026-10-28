@@ -16,12 +16,14 @@ export const spacing = {
   xxl: 40,
 };
 
+/** Sans fallbacks keep text sans-serif while the webfont loads (or if Google Fonts is blocked) instead of falling back to a serif. */
+const WEB_SANS_STACK = '"Hanken Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 export const fonts = {
-  regular: "Hanken Grotesk",
-  medium: "Hanken Grotesk",
-  semibold: "Hanken Grotesk",
-  bold: "Hanken Grotesk",
-  extrabold: "Hanken Grotesk",
+  regular: WEB_SANS_STACK,
+  medium: WEB_SANS_STACK,
+  semibold: WEB_SANS_STACK,
+  bold: WEB_SANS_STACK,
+  extrabold: WEB_SANS_STACK,
 };
 
 export const typography = {

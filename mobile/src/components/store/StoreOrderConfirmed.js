@@ -25,6 +25,7 @@ import { productImageSource } from "../../utils/storefront";
 import { replaceCustomerRoute } from "../../navigation/customerNavigate";
 import FloatingNav from "./FloatingNav";
 import PressableScale from "./PressableScale";
+import ConfettiBurst from "./premium/ConfettiBurst";
 
 /**
  * The success moment is rare, so it may take a beat longer than everyday motion: four blocks rise 14 px on a strong
@@ -298,6 +299,7 @@ export function StoreOrderPlaced({ order, onTrack, onContinue }) {
           </PressableScale>
         </Animated.View>
       </View>
+      <ConfettiBurst />
     </View>
   );
 }
@@ -356,6 +358,7 @@ export default function StoreOrderConfirmed({ navigation, order }) {
           )}
         </View>
       </ScrollView>
+      {hasOrder ? <ConfettiBurst /> : null}
       <View style={[styles.scrim, { height: insets.top }]} pointerEvents="none">
         <View style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(c.page, 0.55) }]} />
       </View>

@@ -14,9 +14,9 @@ import AdminInput from "../../components/admin/AdminInput";
 import AdminPagination from "../../components/admin/AdminPagination";
 import AdminPanel from "../../components/admin/AdminPanel";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../../components/ui/PremiumLoader";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminLoader from "../../components/admin/AdminLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -198,7 +198,7 @@ export default function AdminDeletionsScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
               <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
@@ -276,9 +276,9 @@ export default function AdminDeletionsScreen({ navigation, route }) {
                 <>
                   <AdminButton label="Deletion requests" icon="chevron-back-outline" variant="soft" size="sm" onPress={closeDetail} />
                   {detailLoading ? (
-                    <PremiumLoader caption="Loading request…" />
+                    <AdminLoader caption="Loading request…" />
                   ) : !detail ? (
-                    <PremiumErrorBanner severity="error" title="Request not found" message={error || "This request may have been removed."} />
+                    <AdminNotice severity="error" title="Request not found" message={error || "This request may have been removed."} />
                   ) : (
                     <AdminPanel
                       title={detail.name || "Request"}
@@ -314,9 +314,9 @@ export default function AdminDeletionsScreen({ navigation, route }) {
                     }}
                   />
 
-                  {loading && !data.items.length ? <PremiumLoader caption="Loading requests…" /> : null}
+                  {loading && !data.items.length ? <AdminLoader caption="Loading requests…" /> : null}
                   {!loading && data.items.length === 0 ? (
-                    <PremiumEmptyState iconName="person-remove-outline" title={emptyTitle(tab)} compact />
+                    <AdminEmptyState iconName="person-remove-outline" title={emptyTitle(tab)} compact />
                   ) : (
                     <View style={styles.list}>
                       {!compact ? (

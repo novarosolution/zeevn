@@ -12,6 +12,8 @@ import AdminCategoryBar from "../../components/admin/AdminCategoryBar";
 import AdminRevenueBars from "../../components/admin/AdminRevenueBars";
 import AdminStatusPill, { orderStatusTone } from "../../components/admin/AdminStatusPill";
 import AdminToolsGrid from "../../components/admin/AdminToolsGrid";
+import AdminWelcomeBand from "../../components/admin/AdminWelcomeBand";
+import AdminAttentionList from "../../components/admin/AdminAttentionList";
 import { useAuth } from "../../context/AuthContext";
 import {
   fetchAdminAnalytics,
@@ -28,14 +30,14 @@ import {
   useAdminCompactLayout,
 } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, spacing } from "../../theme/tokens";
+import { spacing } from "../../theme/tokens";
 import { formatINR, formatINRCompact } from "../../utils/currency";
 import { getOrderItemQty } from "../../utils/adminOrderHelpers";
 import { getOrderStatusLabel } from "../../utils/orderStatus";
 import AdminButton from "../../components/admin/AdminButton";
 import { listAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
-import PremiumLoader from "../../components/ui/PremiumLoader";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminDashboardSkeleton from "../../components/admin/AdminDashboardSkeleton";
+import AdminNotice from "../../components/admin/AdminNotice";
 import SectionReveal from "../../components/motion/SectionReveal";
 
 function countStatuses(byStatus, names) {
@@ -48,6 +50,29 @@ function paymentLabel(order) {
   if (method.toLowerCase().includes("youpi")) return "YouPI";
   if (method.toLowerCase().includes("razor")) return "Razorpay";
   return method || "—";
+}
+
+function isoDay(date) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** The 30 days before the "30d" preset (which ends today), as from/to for the analytics API. */
+function priorThirtyDays() {
+  const to = new Date();
+  to.setDate(to.getDate() - 30);
+  const from = new Date(to);
+  from.setDate(from.getDate() - 29);
+  return { from: isoDay(from), to: isoDay(to) };
+}
+
+/** "12.4%" and which way it went; null when there is nothing to compare with. */
+function pctChange(current, previous) {
+  const cur = Number(current) || 0;
+  const prev = Number(previous) || 0;
+  if (prev <= 0) return null;
+  const pct = ((cur - prev) / prev) * 100;
+  return { text: `${Math.abs(pct).toFixed(1)}%`, up: pct >= 0 };
 }
 
 function shortDay(label) {
@@ -63,6 +88,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [analytics, setAnalytics] = useState(null);
+  const [prior, setPrior] = useState(null);
   const [ops, setOps] = useState(null);
   const [desk, setDesk] = useState(null);
   const [orders, setOrders] = useState([]);
@@ -74,13 +100,16 @@ export default function AdminDashboardScreen({ navigation, route }) {
       else setLoading(true);
       setError("");
       try {
-        const [a, orderPage, opsSummary, deskSummary] = await Promise.all([
-          fetchAdminAnalytics(token, { range: "30d" }),
+        const [a, orderPage, opsSummary, deskSummary, priorAnalytics] = await Promise.all([
+          fetchAdminAnalytics(token, { preset: "30d" }),
           searchAdminOrders(token, { pageSize: 6, page: 1 }),
           fetchAdminOpsSummary(token),
           fetchAdminDeskSummary(token),
+          // Only for the "vs prior 30 days" badges, so a failure here must not blank the dashboard.
+          fetchAdminAnalytics(token, priorThirtyDays()).catch(() => null),
         ]);
         setAnalytics(a);
+        setPrior(priorAnalytics);
         setOps(opsSummary);
         setDesk(deskSummary);
         setOrders(Array.isArray(orderPage?.items) ? orderPage.items : []);
@@ -122,6 +151,15 @@ export default function AdminDashboardScreen({ navigation, route }) {
       cancel: count ? `${((cancelled / count) * 100).toFixed(1)}%` : "0%",
     };
   }, [analytics]);
+
+  const deltas = useMemo(
+    () => ({
+      revenue: pctChange(analytics?.revenue?.total, prior?.revenue?.total),
+      orders: pctChange(analytics?.totals?.orders, prior?.totals?.orders),
+      aov: pctChange(analytics?.revenue?.averageOrderValue, prior?.revenue?.averageOrderValue),
+    }),
+    [analytics, prior]
+  );
 
   const chart = useMemo(() => {
     const series = analytics?.trends?.rangeSeries;
@@ -171,7 +209,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
       <AdminScreenShell style={styles.screen}>
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <View style={styles.denied}>
-            <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
+            <AdminNotice severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
             <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" onPress={() => go("Home")} />
           </View>
         </KankregScrollPage>
@@ -195,11 +233,28 @@ export default function AdminDashboardScreen({ navigation, route }) {
           title={ADMIN_SCREEN_COPY.dashboard.title}
           subtitle={ADMIN_SCREEN_COPY.dashboard.subtitle}
         >
-          {error ? <PremiumErrorBanner severity="error" message={error} compact style={styles.banner} /> : null}
+          {error ? <AdminNotice severity="error" message={error} compact style={styles.banner} /> : null}
           {loading && !ops ? (
-            <PremiumLoader caption="Loading overview…" />
+            <AdminDashboardSkeleton />
           ) : (
             <View style={styles.desk}>
+              <SectionReveal preset="fade-up">
+                <AdminWelcomeBand
+                  name={user?.name}
+                  compact={compact}
+                  stats={[
+                    { label: "Orders today", value: String(today.count ?? 0) },
+                    { label: "Revenue today", value: formatINRCompact((today.revenue || 0) + (desk?.orders?.counterToday?.revenue || 0)) },
+                    { label: "Delivered", value: String(deliveredToday) },
+                  ]}
+                  actions={[
+                    { label: "New walk-in bill", icon: "receipt-outline", primary: true, onPress: () => go("AdminCounter") },
+                    { label: "Add product", icon: "add-outline", onPress: () => go("AdminAddProduct") },
+                    { label: "Orders", icon: "list-outline", onPress: () => go("AdminOrders") },
+                  ]}
+                />
+              </SectionReveal>
+
               <SectionReveal preset="fade-up">
                 <AdminPanel
                   title="Needs you"
@@ -218,7 +273,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
                     <AdminKpiCard icon="close-circle-outline" label="Out of stock" hint={k.outOfStock ? "Restock" : "All in stock"} value={String(k.outOfStock ?? 0)} tone={tone(k.outOfStock)} onPress={() => go("AdminInventory", { filter: "out" })} />
                     <AdminKpiCard icon="chatbubble-ellipses-outline" label="Support" hint={desk?.support?.awaitingReply ? "Reply" : "Caught up"} value={String(desk?.support?.awaitingReply ?? 0)} tone={tone(desk?.support?.awaitingReply)} onPress={() => go("AdminSupport")} />
                     <AdminKpiCard icon="cash-outline" label="Cash due" hint={desk?.orders?.cashDue ? "Collect COD" : "Nothing due"} value={String(desk?.orders?.cashDue ?? 0)} tone={Number(desk?.orders?.cashDue) > 0 ? "hot" : "default"} onPress={() => go("AdminCash")} />
-                    <AdminKpiCard icon="cloud-offline-outline" label="Drafts on this phone" hint={drafts ? "Sync when online" : "None waiting"} value={String(drafts)} tone={tone(drafts)} onPress={() => go("AdminOffline")} />
+                    <AdminKpiCard icon="cloud-offline-outline" label="Offline drafts" hint={drafts ? "Sync when online" : "On this phone: none"} value={String(drafts)} tone={tone(drafts)} onPress={() => go("AdminOffline")} />
                   </AdminKpiGrid>
                 </AdminPanel>
               </SectionReveal>
@@ -243,19 +298,14 @@ export default function AdminDashboardScreen({ navigation, route }) {
               {attention.length ? (
                 <SectionReveal preset="fade-up" delay={40}>
                   <AdminPanel title="Needs attention" icon="alert-circle-outline" meta={`${attention.length}`} action="Orders" onAction={() => go("AdminOrders", { tab: "attention" })}>
-                    {attention.map((item) => (
-                      <AdminButton
-                        key={String(item._id)}
-                        label={`${formatOrderPublicRef(item) || "Order"} · ${item.reason}`}
-                        variant="soft"
-                        size="sm"
-                        fullWidth
-                        iconRight="chevron-forward"
-                        onPress={() => go("AdminOrderDetail", { orderId: String(item._id) })}
-                        style={styles.attentionBtn}
-                        textStyle={styles.attentionBtnText}
-                      />
-                    ))}
+                    <AdminAttentionList
+                      items={attention.map((item) => ({
+                        id: String(item._id),
+                        title: formatOrderPublicRef(item) || "Order",
+                        reason: item.reason,
+                      }))}
+                      onPress={(item) => go("AdminOrderDetail", { orderId: item.id })}
+                    />
                   </AdminPanel>
                 </SectionReveal>
               ) : null}
@@ -263,9 +313,9 @@ export default function AdminDashboardScreen({ navigation, route }) {
               <SectionReveal preset="fade-up" delay={50}>
                 <AdminPanel title="Last 30 days" icon="trending-up-outline" action="Analytics" onAction={() => go("AdminAnalytics")}>
                   <AdminKpiGrid compact={compact}>
-                    <AdminKpiCard icon="trending-up-outline" label="Revenue" hint="30 days" value={kpis.revenue} onPress={() => go("AdminAnalytics")} />
-                    <AdminKpiCard icon="receipt-outline" label="Orders" hint="30 days" value={kpis.orders} onPress={() => go("AdminOrders")} />
-                    <AdminKpiCard icon="pricetag-outline" label="Avg. order" hint="Per order" value={kpis.aov} />
+                    <AdminKpiCard icon="trending-up-outline" label="Revenue" hint={deltas.revenue ? "vs prior 30 days" : "30 days"} value={kpis.revenue} delta={deltas.revenue?.text} deltaUp={deltas.revenue?.up} onPress={() => go("AdminAnalytics")} />
+                    <AdminKpiCard icon="receipt-outline" label="Orders" hint={deltas.orders ? "vs prior 30 days" : "30 days"} value={kpis.orders} delta={deltas.orders?.text} deltaUp={deltas.orders?.up} onPress={() => go("AdminOrders")} />
+                    <AdminKpiCard icon="pricetag-outline" label="Avg. order" hint={deltas.aov ? "vs prior 30 days" : "Per order"} value={kpis.aov} delta={deltas.aov?.text} deltaUp={deltas.aov?.up} />
                     <AdminKpiCard icon="close-circle-outline" label="Cancel rate" hint="Cancelled" value={kpis.cancel} />
                   </AdminKpiGrid>
                 </AdminPanel>
@@ -312,7 +362,5 @@ const styles = StyleSheet.create({
   desk: adminShellContent(),
   banner: { marginBottom: spacing.md },
   cols: { marginTop: 0 },
-  attentionBtn: { marginBottom: 6, justifyContent: "flex-start" },
-  attentionBtnText: { fontFamily: fonts.medium, fontSize: 12, textAlign: "left" },
   muted: { fontSize: 13, paddingVertical: spacing.sm },
 });

@@ -626,7 +626,8 @@ export default function WebProductView({
         </TouchableOpacity>
       ) : null}
 
-      <View style={styles.crumbRow}>
+      {/* The floating back button covers the start of this row on narrow screens, so the row starts after it. */}
+      <View style={[styles.crumbRow, !useProductSplit && { paddingLeft: 52 }]}>
         <Pressable onPress={() => navigation.navigate("Home")}>
           <Text style={styles.crumbLink}>Home</Text>
         </Pressable>

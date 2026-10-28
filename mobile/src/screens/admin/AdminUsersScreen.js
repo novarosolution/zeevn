@@ -11,9 +11,9 @@ import AdminButton from "../../components/admin/AdminButton";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminSwitch from "../../components/admin/AdminSwitch";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../../components/ui/PremiumLoader";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminLoader from "../../components/admin/AdminLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminUsers, updateAdminRole, updateDeliveryPartnerRole } from "../../services/adminService";
@@ -137,7 +137,7 @@ export default function AdminUsersScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
@@ -245,8 +245,8 @@ export default function AdminUsersScreen({ navigation, route }) {
               autoCapitalize="none"
             />
 
-            {loading ? <PremiumLoader size="sm" caption="Loading users…" /> : null}
-            {!loading && visible.length === 0 ? <PremiumEmptyState iconName="people-outline" title={COPY.empty} compact /> : null}
+            {loading ? <AdminLoader size="sm" caption="Loading users…" /> : null}
+            {!loading && visible.length === 0 ? <AdminEmptyState iconName="people-outline" title={COPY.empty} compact /> : null}
             {!loading && visible.length > 0 ? (
               <View style={styles.list}>
                 {!compact ? (
@@ -255,7 +255,7 @@ export default function AdminUsersScreen({ navigation, route }) {
                     <Text style={[styles.headText, { flex: 1.3 }]}>Email</Text>
                     <Text style={[styles.headText, { flex: 0.9 }]}>Phone</Text>
                     <Text style={[styles.headText, { width: 140 }]}>Orders</Text>
-                    <Text style={[styles.headText, { width: 148 }]}>Access</Text>
+                    <Text style={[styles.headText, { width: 200 }]}>Access</Text>
                   </View>
                 ) : null}
                 {visible.map(renderRow)}
@@ -317,7 +317,7 @@ function createStyles(chrome, c, shadowPremium, compact) {
     name: { fontSize: 14, color: chrome.ink, fontFamily: ADMIN_FONT.semibold },
     meta: { fontSize: 12.5, color: chrome.inkSoft, fontFamily: ADMIN_FONT.regular },
     pills: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: compact ? 2 : 4 },
-    rowSwitches: { width: 148, flexDirection: "row", alignItems: "center", gap: 10 },
+    rowSwitches: { width: 200, flexDirection: "row", alignItems: "center", gap: 14 },
     cardSwitches: { flexDirection: "row", alignItems: "center", gap: 16, marginTop: 8 },
     switchItem: { flexDirection: "row", alignItems: "center", gap: 8 },
     switchLabel: { fontSize: 12, color: chrome.inkSoft, fontFamily: ADMIN_FONT.medium },

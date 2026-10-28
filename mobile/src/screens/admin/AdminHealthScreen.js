@@ -8,8 +8,8 @@ import AdminScreenShell from "../../components/admin/AdminScreenShell";
 import AdminBadge from "../../components/admin/AdminBadge";
 import AdminButton from "../../components/admin/AdminButton";
 import { AdminSettingRow } from "../../components/admin/AdminSection";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../../components/ui/PremiumLoader";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminLoader from "../../components/admin/AdminLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchApiHealth } from "../../services/apiClient";
@@ -138,7 +138,7 @@ export default function AdminHealthScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
@@ -170,7 +170,7 @@ export default function AdminHealthScreen({ navigation, route }) {
           headerRight={<AdminButton label="Refresh" icon="refresh-outline" variant="ghost" size="sm" onPress={() => load()} />}
         >
           <View style={styles.panel}>
-            {loading && !health && !unreachable ? <PremiumLoader size="sm" caption="Checking…" /> : null}
+            {loading && !health && !unreachable ? <AdminLoader size="sm" caption="Checking…" /> : null}
 
             {unreachable && !loading ? (
               <View style={styles.fail}>

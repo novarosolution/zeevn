@@ -26,8 +26,10 @@ import {
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
 import { formatRupees } from "../../utils/adminFormat";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
+import { exportProductsCsv } from "../../utils/adminExports";
+import { useToast } from "../../context/ToastContext";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
@@ -54,6 +56,7 @@ export default function AdminProductsScreen({ navigation, route }) {
   const styles = useMemo(() => createStyles(c, shadowPremium), [c, shadowPremium]);
   const { user, token } = useAuth();
   const { confirm, dialog } = useAdminConfirm();
+  const toast = useToast();
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
@@ -119,7 +122,7 @@ export default function AdminProductsScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton
                 label={ADMIN_GATE.backHome}
                 icon="home-outline"
@@ -155,12 +158,27 @@ export default function AdminProductsScreen({ navigation, route }) {
           route={route}
           title={COPY.title}
           subtitle={COPY.subtitle}
-          headerRight={<AdminButton label="Add product" variant="primary" icon="add-outline" onPress={openEmpty} />}
+          headerRight={
+            <View style={styles.headerActions}>
+              <AdminButton
+                label="Export CSV"
+                variant="ghost"
+                icon="download-outline"
+                disabled={!products.length}
+                onPress={() =>
+                  exportProductsCsv(filteredProducts)
+                    .then(() => toast.toastSuccess(`Exported ${filteredProducts.length} products.`))
+                    .catch((err) => toast.toastError(err?.message || "Couldn't export products."))
+                }
+              />
+              <AdminButton label="Add product" variant="primary" icon="add-outline" onPress={openEmpty} />
+            </View>
+          }
         >
           <View style={styles.panel}>
             {error ? (
               <View style={styles.bannerSpacer}>
-                <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+                <AdminNotice severity="error" message={error} onClose={() => setError("")} compact />
               </View>
             ) : null}
 
@@ -194,7 +212,7 @@ export default function AdminProductsScreen({ navigation, route }) {
             {bootLoading ? <Text style={styles.count}>Loading…</Text> : null}
 
             {emptyCatalogue ? (
-              <PremiumEmptyState
+              <AdminEmptyState
                 iconName="cube-outline"
                 title={COPY.empty}
                 ctaLabel="Add product"
@@ -205,7 +223,7 @@ export default function AdminProductsScreen({ navigation, route }) {
             ) : null}
 
             {emptySearch ? (
-              <PremiumEmptyState iconName="search-outline" title={COPY.emptySearch} compact />
+              <AdminEmptyState iconName="search-outline" title={COPY.emptySearch} compact />
             ) : null}
 
             {!bootLoading && filteredProducts.length > 0 && !compact ? (
@@ -269,12 +287,13 @@ export default function AdminProductsScreen({ navigation, route }) {
 
 function createStyles(c, shadowPremium) {
   return StyleSheet.create({
+    headerActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 },
     screen: { flex: 1, width: "100%", alignSelf: "center", maxWidth: "100%" },
     panel: { ...adminShellContent(), gap: spacing.sm, paddingBottom: spacing.xl },
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
     bannerSpacer: { marginBottom: spacing.xs },
-    tilePhone: { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
+    tilePhone: Platform.OS === "web" ? {} : { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
     count: {
       fontSize: typography.caption,
       color: c.textMuted,

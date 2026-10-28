@@ -9,6 +9,7 @@ export default function AdminTopBar({
   title,
   subtitle,
   onNotifications,
+  onSearch,
   hasNotifications = false,
   headerRight,
   compact,
@@ -35,7 +36,7 @@ export default function AdminTopBar({
           </Text>
         ) : null}
       </View>
-      <View style={styles.actions}>
+      <View style={[styles.actions, compact && styles.actionsCompact]}>
         <Pressable
           style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
           onPress={cycleTheme}
@@ -43,6 +44,16 @@ export default function AdminTopBar({
         >
           <Ionicons name={themeIcon} size={16} color={chrome.inkSoft} />
         </Pressable>
+        {onSearch ? (
+          <Pressable
+            style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
+            onPress={onSearch}
+            accessibilityLabel="Search tools"
+            {...(Platform.OS === "web" ? { title: "Search (Ctrl K)" } : null)}
+          >
+            <Ionicons name="search-outline" size={16} color={chrome.inkSoft} />
+          </Pressable>
+        ) : null}
         {onNotifications ? (
           <Pressable
             style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
@@ -120,7 +131,11 @@ function createStyles(chrome) {
       alignItems: "center",
       gap: 10,
       marginLeft: "auto",
+      flexWrap: "wrap",
+      justifyContent: "flex-end",
+      maxWidth: "100%",
     },
+    actionsCompact: { flexBasis: "100%", marginLeft: 0, justifyContent: "flex-start" },
     iconBtn: {
       width: 34,
       height: 34,

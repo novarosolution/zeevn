@@ -300,8 +300,8 @@ export default function SupportScreen({ navigation }) {
           ) : null}
           {thread ? (
             <Text style={styles.metaText}>
-              Ticket status: {thread.status || "open"} • Last update:{" "}
-              {thread.lastMessageAt ? new Date(thread.lastMessageAt).toLocaleString() : "N/A"}
+              Ticket status: {thread.status || "open"}
+              {thread.lastMessageAt ? ` • Last update: ${new Date(thread.lastMessageAt).toLocaleString()}` : ""}
             </Text>
           ) : null}
         </View>

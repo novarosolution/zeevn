@@ -11,8 +11,8 @@ import AdminButton from "../../components/admin/AdminButton";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminRiders, updateDeliveryPartnerRole } from "../../services/adminService";
@@ -129,7 +129,7 @@ export default function AdminRidersScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton
                 label={ADMIN_GATE.backHome}
                 variant="primary"
@@ -281,10 +281,10 @@ export default function AdminRidersScreen({ navigation, route }) {
             />
             {loading ? <Text style={styles.muted}>Loading…</Text> : null}
             {!loading && riders.length === 0 ? (
-              <PremiumEmptyState iconName="bicycle-outline" title={COPY.empty} compact />
+              <AdminEmptyState iconName="bicycle-outline" title={COPY.empty} compact />
             ) : null}
             {!loading && riders.length > 0 && visible.length === 0 ? (
-              <PremiumEmptyState iconName="search-outline" title="No riders match that search" compact />
+              <AdminEmptyState iconName="search-outline" title="No riders match that search" compact />
             ) : null}
             {!loading && visible.length > 0 && !compact ? (
               <View style={styles.head}>
@@ -312,7 +312,7 @@ function createStyles(chrome, c, shadowPremium) {
     panel: { ...adminShellContent(), gap: spacing.sm, paddingBottom: spacing.xl },
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
-    tilePhone: { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
+    tilePhone: Platform.OS === "web" ? {} : { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
     muted: { color: chrome.inkFaint, fontFamily: fonts.medium, fontSize: 12 },
     name: { color: chrome.ink, fontFamily: fonts.semibold, fontSize: 15 },
     phone: { marginTop: 2, color: chrome.inkSoft, fontFamily: fonts.medium, fontSize: 13, textDecorationLine: "underline" },

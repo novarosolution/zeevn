@@ -10,8 +10,8 @@ import AdminBadge from "../../components/admin/AdminBadge";
 import AdminButton, { AdminButtonRow } from "../../components/admin/AdminButton";
 import AdminPanel from "../../components/admin/AdminPanel";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
@@ -61,7 +61,7 @@ export default function AdminOfflineScreen({ navigation, route }) {
       <AdminScreenShell style={styles.screen}>
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <View style={styles.gatePanel}>
-            <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+            <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
             <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} />
           </View>
         </KankregScrollPage>
@@ -89,7 +89,7 @@ export default function AdminOfflineScreen({ navigation, route }) {
               <AdminAlerts error={error} onCloseError={() => setError("")} />
               <AdminPanel title="On this phone" icon="cloud-offline-outline" meta={`${rows.length}`}>
                 {!rows.length ? (
-                  <PremiumEmptyState iconName="cloud-done-outline" title="Nothing waiting." compact />
+                  <AdminEmptyState iconName="cloud-done-outline" title="Nothing waiting." compact />
                 ) : null}
                 {rows.map((row) => {
                   const payload = row.payload || {};

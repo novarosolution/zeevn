@@ -35,6 +35,7 @@ import ScreenHeader, { SCREEN_HEADER_PAD } from "./ScreenHeader";
 import StoreBanner from "./StoreBanner";
 import StoreField from "./StoreField";
 import { Card, EmptyState } from "./StoreKit";
+import OrderTimeline from "./premium/OrderTimeline";
 
 const LIVE_MAP_STATUSES = new Set(["ready_for_pickup", "shipped", "out_for_delivery"]);
 const GOOD_INK = "#2F5A22";
@@ -412,6 +413,12 @@ function OrderCardBase({
           ) : null}
         </View>
 
+        {expanded ? (
+          <View style={[styles.timelineBox, { backgroundColor: c.cardSoft, borderColor: c.line, borderRadius: r.lg }]}>
+            <Text style={type.ui(11.5, "extrabold", c.inkMute, { letterSpacing: 0.9, textTransform: "uppercase", marginBottom: 12 })}>Order journey</Text>
+            <OrderTimeline order={order} />
+          </View>
+        ) : null}
         {expanded ? <Breakdown order={order} /> : null}
         <OrderReturnRequest order={order} token={token} onChanged={handlers.onReload} />
         {editing ? (
@@ -743,6 +750,7 @@ export default function StoreOrders({
 }
 
 const styles = StyleSheet.create({
+  timelineBox: { padding: 14, borderWidth: StyleSheet.hairlineWidth },
   contentGap: { gap: 16 },
   screen: { flex: 1 },
   flex: { flex: 1, minWidth: 0 },

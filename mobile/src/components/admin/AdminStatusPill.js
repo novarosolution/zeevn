@@ -24,6 +24,7 @@ export default function AdminStatusPill({ label, tone = "pend", style }) {
 
   return (
     <View style={[styles.pill, { backgroundColor: palette.bg, borderColor: palette.border }, style]}>
+      <View style={[styles.dot, { backgroundColor: palette.solid }]} />
       <Text style={[styles.text, { color: palette.fg }]} numberOfLines={1}>
         {label}
       </Text>
@@ -32,8 +33,12 @@ export default function AdminStatusPill({ label, tone = "pend", style }) {
 }
 
 const styles = StyleSheet.create({
+  dot: { width: 5, height: 5, borderRadius: 3 },
   pill: {
     alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,

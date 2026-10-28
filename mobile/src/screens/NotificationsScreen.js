@@ -263,15 +263,15 @@ export default function NotificationsScreen({ navigation }) {
           right={headerRefresh}
           showHairline={!isNativeApp}
         />
-        <SectionReveal preset="fade-up" delay={40}>
-        <View style={styles.panel}>
-          {error ? (
-            <View style={styles.bannerWrap}>
-              <PremiumErrorBanner severity="error" message={error} compact />
+        {error ? (
+          <SectionReveal preset="fade-up" delay={40}>
+            <View style={styles.panel}>
+              <View style={styles.bannerWrap}>
+                <PremiumErrorBanner severity="error" message={error} compact />
+              </View>
             </View>
-          ) : null}
-        </View>
-        </SectionReveal>
+          </SectionReveal>
+        ) : null}
 
         {loading ? (
           <ListCardsSkeleton cardCount={4} chipWidths={[72, 92]} style={styles.loaderWrap} />

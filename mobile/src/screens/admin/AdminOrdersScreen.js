@@ -665,11 +665,11 @@ function createStyles(chrome, c, shadowPremium) {
     headerActions: { flexDirection: "row", alignItems: "center", gap: 8 },
     filterBar: { width: "100%", alignItems: "stretch" },
     filters: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end", gap: 8, width: "100%" },
-    filtersStack: { flexDirection: "column", alignItems: "stretch" },
+    filtersStack: { flexDirection: "column", flexWrap: "nowrap", alignItems: "stretch" },
     searchCell: { flexGrow: 1, flexBasis: 280, minWidth: 220 },
     filterCell: { flexGrow: 1, flexBasis: 148, minWidth: 130, maxWidth: 220 },
     filterCellPhone: { minWidth: "100%", maxWidth: "100%", flexBasis: "100%" },
-    tilePhone: { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
+    tilePhone: Platform.OS === "web" ? {} : { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
     bulkDock: {
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: chrome.line,

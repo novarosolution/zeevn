@@ -607,7 +607,7 @@ function createStyles(c, shadowPremium, isDark) {
     listContent: {
       paddingHorizontal: Platform.select({ web: spacing.xl, default: spacing.lg })},
     headerBlock: { marginBottom: spacing.sm, gap: spacing.sm },
-    tilePhone: { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
+    tilePhone: Platform.OS === "web" ? {} : { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
     catRow: {
       flexDirection: "row",
       alignItems: "center",

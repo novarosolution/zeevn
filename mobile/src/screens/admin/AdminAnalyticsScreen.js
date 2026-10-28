@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import { ADMIN_GATE, ADMIN_SCREEN_COPY } from "../../content/adminContent";
 import SectionReveal from "../../components/motion/SectionReveal";
 import KankregScrollPage from "../../components/kankreg/KankregScrollPage";
@@ -340,7 +340,7 @@ function createStyles(chrome, c, shadowPremium, compact) {
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
     custom: { gap: 8, marginTop: 8 },
-    tilePhone: { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
+    tilePhone: Platform.OS === "web" ? {} : { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
     empty: { fontSize: 13.5, color: chrome.inkSoft, fontFamily: ADMIN_FONT.medium },
     row: {
       flexDirection: compact ? "column" : "row",

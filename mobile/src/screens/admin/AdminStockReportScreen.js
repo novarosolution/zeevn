@@ -388,7 +388,7 @@ function createStyles(chrome, c, shadowPremium, compact) {
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
     headerActions: { flexDirection: "row", gap: 8 },
     chipScroll: { flexDirection: "row", gap: 8, paddingRight: 8 },
-    tilePhone: { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
+    tilePhone: Platform.OS === "web" ? {} : { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
     list: {
       backgroundColor: chrome.card,
       borderRadius: radius.lg,

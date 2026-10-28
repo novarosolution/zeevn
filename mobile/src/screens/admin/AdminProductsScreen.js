@@ -287,13 +287,13 @@ export default function AdminProductsScreen({ navigation, route }) {
 
 function createStyles(c, shadowPremium) {
   return StyleSheet.create({
-    headerActions: { flexDirection: "row", alignItems: "center", gap: 6 },
+    headerActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 },
     screen: { flex: 1, width: "100%", alignSelf: "center", maxWidth: "100%" },
     panel: { ...adminShellContent(), gap: spacing.sm, paddingBottom: spacing.xl },
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
     bannerSpacer: { marginBottom: spacing.xs },
-    tilePhone: { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
+    tilePhone: Platform.OS === "web" ? {} : { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
     count: {
       fontSize: typography.caption,
       color: c.textMuted,

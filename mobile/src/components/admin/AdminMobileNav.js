@@ -47,6 +47,7 @@ export default function AdminMobileNav({ links, groups, current, onNavigate, onE
                     size={28}
                     compact
                     active={on}
+                    onInk={on}
                   />
                   <Text style={[styles.label, on && styles.labelOn]}>{link.label}</Text>
                 </Pressable>

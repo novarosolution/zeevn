@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../context/ThemeContext";
-import { ADMIN_FONT, getAdminChrome } from "../../theme/adminLayout";
+import { ADMIN_FONT, getAdminChrome, useAdminCompactLayout } from "../../theme/adminLayout";
 
 /** Ops metric tile. Icon + hint make the number readable. Use tone warn or hot when it needs work. */
 export default function AdminKpiCard({
@@ -17,6 +17,7 @@ export default function AdminKpiCard({
   style,
 }) {
   const { colors: c, isDark } = useTheme();
+  const compact = useAdminCompactLayout();
   const chrome = useMemo(() => getAdminChrome(c, isDark), [c, isDark]);
   const styles = useMemo(() => createStyles(chrome), [chrome]);
   const hot = tone === "hot" || tone === "warn";
@@ -61,7 +62,7 @@ export default function AdminKpiCard({
         <Text style={styles.label} numberOfLines={1}>
           {label}
         </Text>
-        {onPress ? <Ionicons name="arrow-forward" size={12} color={toneColor} style={styles.go} /> : null}
+        {onPress && !compact ? <Ionicons name="arrow-forward" size={12} color={toneColor} style={styles.go} /> : null}
       </View>
       <Text
         style={[
@@ -118,7 +119,7 @@ const stylesGrid = StyleSheet.create({
   },
   gridWeb: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fill, minmax(168px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))",
     gap: 10,
   },
   grid2: Platform.select({

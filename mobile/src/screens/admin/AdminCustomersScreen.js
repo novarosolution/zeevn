@@ -388,7 +388,7 @@ export default function AdminCustomersScreen({ navigation, route }) {
                 }}
               />
             </AdminPanel>
-            <AdminStatGrid min={compact ? 100 : 160}>
+            <AdminStatGrid min={compact ? 132 : 160}>
               <AdminStatTile
                 icon="people-outline"
                 label="Customers"
@@ -519,12 +519,12 @@ export default function AdminCustomersScreen({ navigation, route }) {
 
 function createStyles(chrome, c, shadowPremium) {
   return StyleSheet.create({
-    headerActions: { flexDirection: "row", alignItems: "center", gap: 6 },
+    headerActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 6 },
     screen: { flex: 1, width: "100%" },
     panel: { ...adminShellContent(), gap: spacing.sm },
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
-    tileRow: { flexBasis: "31%", flexGrow: 1, maxWidth: "33%" },
+    tileRow: Platform.OS === "web" ? {} : { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
     list: {
       backgroundColor: chrome.card,
       borderRadius: 16,

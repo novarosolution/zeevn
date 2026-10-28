@@ -312,7 +312,7 @@ function createStyles(chrome, c, shadowPremium) {
     panel: { ...adminShellContent(), gap: spacing.sm, paddingBottom: spacing.xl },
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
-    tilePhone: { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
+    tilePhone: Platform.OS === "web" ? {} : { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
     muted: { color: chrome.inkFaint, fontFamily: fonts.medium, fontSize: 12 },
     name: { color: chrome.ink, fontFamily: fonts.semibold, fontSize: 15 },
     phone: { marginTop: 2, color: chrome.inkSoft, fontFamily: fonts.medium, fontSize: 13, textDecorationLine: "underline" },

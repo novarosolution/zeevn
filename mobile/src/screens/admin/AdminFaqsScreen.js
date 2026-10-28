@@ -12,6 +12,7 @@ import AdminInput from "../../components/admin/AdminInput";
 import AdminToggleRow from "../../components/admin/AdminToggleRow";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumLoader from "../../components/ui/PremiumLoader";
+import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminFaqs, updateAdminFaqs } from "../../services/adminService";
@@ -199,6 +200,16 @@ export default function AdminFaqsScreen({ navigation, route }) {
                 These show under live chat on Help. Product-page questions stay on the product.
               </Text>
               {loading ? <PremiumLoader size="sm" caption="Loading FAQs…" /> : null}
+              {!loading && rows.length === 0 ? (
+                <PremiumEmptyState
+                  iconName="help-circle-outline"
+                  title="No questions yet"
+                  description="Add the answers customers ask for most: delivery times, returns, how to pay."
+                  ctaLabel="Add first question"
+                  onCtaPress={addRow}
+                  compact
+                />
+              ) : null}
               {!loading
                 ? rows.map((row, index) => (
                     <View key={row.id} style={styles.card}>

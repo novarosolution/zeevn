@@ -537,7 +537,7 @@ function createStyles(chrome, c, shadowPremium, compact) {
     sheetHead: { gap: 10 },
     sheetTitle: { flexDirection: "row", alignItems: "center", gap: 10 },
     date: { fontSize: 22, letterSpacing: -0.4, color: chrome.ink, fontFamily: ADMIN_FONT.semibold },
-    tilePhone: { flexBasis: "30%", flexGrow: 1, maxWidth: "32%" },
+    tilePhone: Platform.OS === "web" ? {} : { flexBasis: "30%", flexGrow: 1, maxWidth: "32%" },
     list: {
       backgroundColor: chrome.card,
       borderRadius: 16,

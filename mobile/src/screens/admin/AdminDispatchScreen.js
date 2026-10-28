@@ -310,10 +310,10 @@ function createStyles(chrome, c, shadowPremium) {
     gatePanel: adminGatePanel(c, shadowPremium),
     gateCta: { marginTop: spacing.md, alignSelf: "flex-start" },
     filters: { flexDirection: "row", flexWrap: "wrap", alignItems: "flex-end", gap: 8 },
-    filtersStack: { flexDirection: "column", alignItems: "stretch" },
+    filtersStack: { flexDirection: "column", flexWrap: "nowrap", alignItems: "stretch" },
     filterCell: { flexGrow: 1, flexBasis: 148, minWidth: 130, maxWidth: 220 },
     filterCellPhone: { minWidth: "100%", maxWidth: "100%", flexBasis: "100%" },
-    tilePhone: { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
+    tilePhone: Platform.OS === "web" ? {} : { flexBasis: "47%", flexGrow: 1, maxWidth: "48%" },
     list: {
       backgroundColor: chrome.card,
       borderRadius: 16,

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
 import { useKankregLayout } from "../../theme/kankregBreakpoints";
@@ -17,6 +17,7 @@ import AdminNavIcon from "../admin/AdminNavIcon";
 import AdminStoreStatusChip from "../admin/AdminStoreStatusChip";
 import AdminInput from "../admin/AdminInput";
 import AdminTopBar from "../admin/AdminTopBar";
+import AdminCommandPalette from "../admin/AdminCommandPalette";
 import { useAdminDesk, useAdminOrderPop } from "../../services/adminDeskStore";
 import { unlockAdminNewOrderSound } from "../../utils/adminNewOrderSound";
 
@@ -63,6 +64,34 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
       shellShadow: chrome.shellShadow,
     }),
     [chrome]
+  );
+
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof document === "undefined" || !focused) return undefined;
+    const onKey = (event) => {
+      if ((event.ctrlKey || event.metaKey) && String(event.key).toLowerCase() === "k") {
+        event.preventDefault();
+        setPaletteOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [focused]);
+  const paletteEntries = useMemo(
+    () => [
+      { key: "action:walkin", label: "New walk-in bill", hint: "Open the till", icon: "receipt-outline", group: "Action", target: "AdminCounter" },
+      { key: "action:product", label: "Add product", hint: "New SKU wizard", icon: "add-circle-outline", group: "Action", target: "AdminAddProduct" },
+      ...FLAT_LINKS.filter((link) => !link.href),
+    ],
+    []
+  );
+  const pickPaletteEntry = useCallback(
+    (entry) => {
+      if (entry.target) stackNav.navigate(entry.target);
+      else openAdminNavLink(stackNav, entry);
+    },
+    [stackNav]
   );
 
   const [navQuery, setNavQuery] = useState("");
@@ -148,7 +177,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
             {link.label}
           </Text>
           {!row && link.hint ? (
-            <Text style={[styles.sideLinkHint, on && styles.sideLinkHintOn]} numberOfLines={1}>
+            <Text style={[styles.sideLinkHint, { color: palette.linkMuted, opacity: on ? 0.9 : 0.72 }]} numberOfLines={1}>
               {link.hint}
             </Text>
           ) : null}
@@ -173,7 +202,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
         <AdminInput
           value={navQuery}
           onChangeText={setNavQuery}
-          placeholder="Find a tool…"
+          placeholder={Platform.OS === "web" ? "Find a tool…  (Ctrl K)" : "Find a tool…"}
           icon="search-outline"
           autoCapitalize="none"
         />
@@ -268,6 +297,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
             }
             compact={isPhone}
             onNotifications={() => stackNav.navigate("AdminNotifications")}
+            onSearch={() => setPaletteOpen(true)}
           />
         </View>
 
@@ -320,6 +350,13 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
           {children}
         </View>
       </View>
+
+      <AdminCommandPalette
+        visible={focused && paletteOpen}
+        entries={paletteEntries}
+        onPick={pickPaletteEntry}
+        onClose={() => setPaletteOpen(false)}
+      />
 
       <AdminDialog
         visible={focused && popOpen && waiting > 0}

@@ -23,6 +23,10 @@ async function protect(req, res, next) {
       return res.status(401).json({ message: "This account has been closed.", code: "ACCOUNT_CLOSED" });
     }
 
+    if (Number(decoded.v || 0) !== Number(user.tokenVersion || 0)) {
+      return res.status(401).json({ message: "Session was signed out. Please log in again." });
+    }
+
     req.user = user;
     next();
   } catch (error) {

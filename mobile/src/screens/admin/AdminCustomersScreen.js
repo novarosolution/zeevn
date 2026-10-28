@@ -23,6 +23,7 @@ import { ADMIN_FONT, adminGatePanel, adminShellContent, useAdminChrome, useAdmin
 import { customerScrollFill } from "../../theme/screenLayout";
 import { radius, spacing } from "../../theme/tokens";
 import { formatRupees, formatShortDate } from "../../utils/adminFormat";
+import { exportCustomersCsv } from "../../utils/adminExports";
 import { adminStatusMeta, orderRef } from "../../utils/adminOrderUi";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 import { printAdminHtml } from "../../utils/printAdminHtml";
@@ -347,7 +348,23 @@ export default function AdminCustomersScreen({ navigation, route }) {
           route={route}
           title={COPY.title}
           subtitle={COPY.subtitle}
-          headerRight={<AdminButton label="Refresh" icon="refresh-outline" variant="ghost" size="sm" onPress={load} />}
+          headerRight={
+            <View style={styles.headerActions}>
+              <AdminButton
+                label="Export CSV"
+                icon="download-outline"
+                variant="ghost"
+                size="sm"
+                disabled={!customers.length}
+                onPress={() =>
+                  exportCustomersCsv(customers)
+                    .then(() => toast.toastSuccess(`Exported ${customers.length} customers.`))
+                    .catch((err) => toast.toastError(err?.message || "Couldn't export customers."))
+                }
+              />
+              <AdminButton label="Refresh" icon="refresh-outline" variant="ghost" size="sm" onPress={load} />
+            </View>
+          }
         >
           <View style={styles.panel}>
             <AdminAlerts error={error} onCloseError={() => setError("")} />
@@ -502,6 +519,7 @@ export default function AdminCustomersScreen({ navigation, route }) {
 
 function createStyles(chrome, c, shadowPremium) {
   return StyleSheet.create({
+    headerActions: { flexDirection: "row", alignItems: "center", gap: 6 },
     screen: { flex: 1, width: "100%" },
     panel: { ...adminShellContent(), gap: spacing.sm },
     gatePanel: adminGatePanel(c, shadowPremium),

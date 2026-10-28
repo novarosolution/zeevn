@@ -10,6 +10,8 @@ import AdminBadge from "../../components/admin/AdminBadge";
 import AdminButton from "../../components/admin/AdminButton";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminSection, { AdminSettingRow } from "../../components/admin/AdminSection";
+import { useAdminConfirm } from "../../components/admin/AdminDialog";
+import { logoutAllRequest } from "../../services/authService";
 import AdminSelect from "../../components/admin/AdminSelect";
 import AdminSwitch from "../../components/admin/AdminSwitch";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
@@ -155,8 +157,27 @@ function fieldFromServer(message) {
 }
 
 export default function AdminSettingsScreen({ navigation, route }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const toast = useToast();
+  const { confirm, dialog: confirmDialog } = useAdminConfirm();
+  const [signingOut, setSigningOut] = useState(false);
+  const signOutEverywhere = useCallback(async () => {
+    const ok = await confirm({
+      title: "Sign out on all devices?",
+      message: "You will be signed out here too and need to log in again.",
+      confirmLabel: "Sign out everywhere",
+      tone: "danger",
+    });
+    if (!ok) return;
+    setSigningOut(true);
+    try {
+      await logoutAllRequest();
+      await logout();
+    } catch (err) {
+      toast.toastError(err?.message || "Couldn't sign out everywhere. Try again.");
+      setSigningOut(false);
+    }
+  }, [confirm, logout, toast]);
   const { colors: c, shadowPremium, isDark } = useTheme();
   const chrome = useAdminChrome();
   const compact = useAdminCompactLayout();
@@ -472,6 +493,14 @@ export default function AdminSettingsScreen({ navigation, route }) {
                     <AdminSettingRow title="Online vs shop floor" description="Website sales take from online stock. The counter takes from floor stock. Transfer between them so a walk-in never steals a web order." right={<AdminButton label="Inventory" icon="cube-outline" variant="soft" size="sm" onPress={() => navigation.navigate("AdminInventory")} />} />
                     <AdminSettingRow last title="Store selling" description="Manage live shop bills and any sale saved on this phone while offline. Reprint, void, sync, or print the day book. The till still rings the sale." right={<AdminButton label="Open" icon="receipt-outline" variant="soft" size="sm" onPress={() => navigation.navigate("AdminStoreSelling")} />} />
                   </AdminSection>
+                  <AdminSection icon="shield-checkmark-outline" title="Security" description="Lost a phone, or shared a login? Signing out everywhere ends every session for this account, including this one.">
+                    <AdminSettingRow
+                      last
+                      title="Sign out on all devices"
+                      description="Every phone and browser signed in as you will need to log in again."
+                      right={<AdminButton label="Sign out everywhere" icon="log-out-outline" variant="danger" size="sm" loading={signingOut} onPress={signOutEverywhere} />}
+                    />
+                  </AdminSection>
                   <AdminSection icon="bicycle-outline" title="Delivery" description="Areas, fees, riders and delivery times are managed together on the Zones page.">
                     <AdminSettingRow last title="Zones, fees & riders" description="Draw areas on the map, set delivery fees and free-delivery levels, and choose who delivers where." right={<AdminButton label="Open Zones" icon="map-outline" variant="primary" size="sm" onPress={() => navigation.navigate("AdminDelivery")} />} />
                   </AdminSection>
@@ -504,6 +533,7 @@ export default function AdminSettingsScreen({ navigation, route }) {
           </View>
         </View>
       ) : null}
+      {confirmDialog}
     </AdminScreenShell>
   );
 }

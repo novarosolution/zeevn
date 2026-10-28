@@ -12,6 +12,8 @@ import AdminCategoryBar from "../../components/admin/AdminCategoryBar";
 import AdminRevenueBars from "../../components/admin/AdminRevenueBars";
 import AdminStatusPill, { orderStatusTone } from "../../components/admin/AdminStatusPill";
 import AdminToolsGrid from "../../components/admin/AdminToolsGrid";
+import AdminWelcomeBand from "../../components/admin/AdminWelcomeBand";
+import AdminAttentionList from "../../components/admin/AdminAttentionList";
 import { useAuth } from "../../context/AuthContext";
 import {
   fetchAdminAnalytics,
@@ -28,7 +30,7 @@ import {
   useAdminCompactLayout,
 } from "../../theme/adminLayout";
 import { customerScrollFill } from "../../theme/screenLayout";
-import { fonts, spacing } from "../../theme/tokens";
+import { spacing } from "../../theme/tokens";
 import { formatINR, formatINRCompact } from "../../utils/currency";
 import { getOrderItemQty } from "../../utils/adminOrderHelpers";
 import { getOrderStatusLabel } from "../../utils/orderStatus";
@@ -201,6 +203,23 @@ export default function AdminDashboardScreen({ navigation, route }) {
           ) : (
             <View style={styles.desk}>
               <SectionReveal preset="fade-up">
+                <AdminWelcomeBand
+                  name={user?.name}
+                  compact={compact}
+                  stats={[
+                    { label: "Orders today", value: String(today.count ?? 0) },
+                    { label: "Revenue today", value: formatINRCompact((today.revenue || 0) + (desk?.orders?.counterToday?.revenue || 0)) },
+                    { label: "Delivered", value: String(deliveredToday) },
+                  ]}
+                  actions={[
+                    { label: "New walk-in bill", icon: "receipt-outline", primary: true, onPress: () => go("AdminCounter") },
+                    { label: "Add product", icon: "add-outline", onPress: () => go("AdminAddProduct") },
+                    { label: "Orders", icon: "list-outline", onPress: () => go("AdminOrders") },
+                  ]}
+                />
+              </SectionReveal>
+
+              <SectionReveal preset="fade-up">
                 <AdminPanel
                   title="Needs you"
                   icon="flash-outline"
@@ -218,7 +237,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
                     <AdminKpiCard icon="close-circle-outline" label="Out of stock" hint={k.outOfStock ? "Restock" : "All in stock"} value={String(k.outOfStock ?? 0)} tone={tone(k.outOfStock)} onPress={() => go("AdminInventory", { filter: "out" })} />
                     <AdminKpiCard icon="chatbubble-ellipses-outline" label="Support" hint={desk?.support?.awaitingReply ? "Reply" : "Caught up"} value={String(desk?.support?.awaitingReply ?? 0)} tone={tone(desk?.support?.awaitingReply)} onPress={() => go("AdminSupport")} />
                     <AdminKpiCard icon="cash-outline" label="Cash due" hint={desk?.orders?.cashDue ? "Collect COD" : "Nothing due"} value={String(desk?.orders?.cashDue ?? 0)} tone={Number(desk?.orders?.cashDue) > 0 ? "hot" : "default"} onPress={() => go("AdminCash")} />
-                    <AdminKpiCard icon="cloud-offline-outline" label="Drafts on this phone" hint={drafts ? "Sync when online" : "None waiting"} value={String(drafts)} tone={tone(drafts)} onPress={() => go("AdminOffline")} />
+                    <AdminKpiCard icon="cloud-offline-outline" label="Offline drafts" hint={drafts ? "Sync when online" : "On this phone: none"} value={String(drafts)} tone={tone(drafts)} onPress={() => go("AdminOffline")} />
                   </AdminKpiGrid>
                 </AdminPanel>
               </SectionReveal>
@@ -243,19 +262,14 @@ export default function AdminDashboardScreen({ navigation, route }) {
               {attention.length ? (
                 <SectionReveal preset="fade-up" delay={40}>
                   <AdminPanel title="Needs attention" icon="alert-circle-outline" meta={`${attention.length}`} action="Orders" onAction={() => go("AdminOrders", { tab: "attention" })}>
-                    {attention.map((item) => (
-                      <AdminButton
-                        key={String(item._id)}
-                        label={`${formatOrderPublicRef(item) || "Order"} · ${item.reason}`}
-                        variant="soft"
-                        size="sm"
-                        fullWidth
-                        iconRight="chevron-forward"
-                        onPress={() => go("AdminOrderDetail", { orderId: String(item._id) })}
-                        style={styles.attentionBtn}
-                        textStyle={styles.attentionBtnText}
-                      />
-                    ))}
+                    <AdminAttentionList
+                      items={attention.map((item) => ({
+                        id: String(item._id),
+                        title: formatOrderPublicRef(item) || "Order",
+                        reason: item.reason,
+                      }))}
+                      onPress={(item) => go("AdminOrderDetail", { orderId: item.id })}
+                    />
                   </AdminPanel>
                 </SectionReveal>
               ) : null}
@@ -312,7 +326,5 @@ const styles = StyleSheet.create({
   desk: adminShellContent(),
   banner: { marginBottom: spacing.md },
   cols: { marginTop: 0 },
-  attentionBtn: { marginBottom: 6, justifyContent: "flex-start" },
-  attentionBtnText: { fontFamily: fonts.medium, fontSize: 12, textAlign: "left" },
   muted: { fontSize: 13, paddingVertical: spacing.sm },
 });

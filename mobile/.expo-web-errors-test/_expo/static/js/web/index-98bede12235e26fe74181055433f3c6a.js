@@ -1,2 +1,0 @@
-__d(function(g,r,i,a,m,e,d){var n=r(d[0]);Object.defineProperty(e,"__esModule",{value:!0}),e.getAppIcon=async function(){return t.default.getAppIcon()},e.setAppIcon=async function(n,c=!0){return t.default.setAppIcon(n,c)};var t=n(r(d[1]))},1523,[1,1525]);
-__d(function(g,r,i,a,m,e,d){Object.defineProperty(e,"__esModule",{value:!0}),e.default=void 0;var o=r(d[0]);e.default=(0,o.requireNativeModule)('ExpoDynamicAppIcon')},1525,[546]);

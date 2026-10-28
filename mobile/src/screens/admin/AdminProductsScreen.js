@@ -26,6 +26,8 @@ import {
 import { customerScrollFill } from "../../theme/screenLayout";
 import { fonts, radius, spacing, typography } from "../../theme/tokens";
 import { formatRupees } from "../../utils/adminFormat";
+import { exportProductsCsv } from "../../utils/adminExports";
+import { useToast } from "../../context/ToastContext";
 import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
 import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
 import SectionReveal from "../../components/motion/SectionReveal";
@@ -54,6 +56,7 @@ export default function AdminProductsScreen({ navigation, route }) {
   const styles = useMemo(() => createStyles(c, shadowPremium), [c, shadowPremium]);
   const { user, token } = useAuth();
   const { confirm, dialog } = useAdminConfirm();
+  const toast = useToast();
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
@@ -155,7 +158,22 @@ export default function AdminProductsScreen({ navigation, route }) {
           route={route}
           title={COPY.title}
           subtitle={COPY.subtitle}
-          headerRight={<AdminButton label="Add product" variant="primary" icon="add-outline" onPress={openEmpty} />}
+          headerRight={
+            <View style={styles.headerActions}>
+              <AdminButton
+                label="Export CSV"
+                variant="ghost"
+                icon="download-outline"
+                disabled={!products.length}
+                onPress={() =>
+                  exportProductsCsv(filteredProducts)
+                    .then(() => toast.toastSuccess(`Exported ${filteredProducts.length} products.`))
+                    .catch((err) => toast.toastError(err?.message || "Couldn't export products."))
+                }
+              />
+              <AdminButton label="Add product" variant="primary" icon="add-outline" onPress={openEmpty} />
+            </View>
+          }
         >
           <View style={styles.panel}>
             {error ? (
@@ -269,6 +287,7 @@ export default function AdminProductsScreen({ navigation, route }) {
 
 function createStyles(c, shadowPremium) {
   return StyleSheet.create({
+    headerActions: { flexDirection: "row", alignItems: "center", gap: 6 },
     screen: { flex: 1, width: "100%", alignSelf: "center", maxWidth: "100%" },
     panel: { ...adminShellContent(), gap: spacing.sm, paddingBottom: spacing.xl },
     gatePanel: adminGatePanel(c, shadowPremium),

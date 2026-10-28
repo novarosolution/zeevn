@@ -22,15 +22,23 @@ const productRoutes = require("./src/routes/productRoutes");
 const adminRoutes = require("./src/routes/adminRoutes");
 const deliveryRoutes = require("./src/routes/deliveryRoutes");
 const { notFound, errorHandler } = require("./src/middleware/errorMiddleware");
+const { loginLimiter, authLimiter } = require("./src/middleware/rateLimit");
 
-function stayUp(kind, err) {
+function logFatal(kind, err) {
   console.error(`[${kind}]`, err?.stack || err?.message || err);
 }
-process.on("unhandledRejection", (err) => stayUp("unhandledRejection", err));
-process.on("uncaughtException", (err) => stayUp("uncaughtException", err));
+// A rejected promise is logged and the shop keeps serving. An uncaught exception leaves the process in an
+// unknown state, so log it and exit: pm2 (ecosystem.config.cjs) restarts the API straight away.
+process.on("unhandledRejection", (err) => logFatal("unhandledRejection", err));
+process.on("uncaughtException", (err) => {
+  logFatal("uncaughtException", err);
+  setTimeout(() => process.exit(1), 200).unref();
+});
 
 const app = express();
 app.disable("x-powered-by");
+// nginx sits in front on EC2: trust its X-Forwarded-For so req.ip is the caller, not the proxy.
+app.set("trust proxy", 1);
 
 const corsOptions = {
   origin: corsOriginCallback,
@@ -42,8 +50,26 @@ app.use(cors(corsOptions));
 // Express 5: use a regex path (not '*') so every path answers CORS preflight
 app.options(/.*/, cors(corsOptions));
 
-app.use(express.json({ limit: "15mb" }));
-app.use(express.urlencoded({ extended: true, limit: "15mb" }));
+app.use((req, res, next) => {
+  res.set({
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+  });
+  next();
+});
+
+// Image/video uploads and the home page editor send base64 or large JSON; everything else stays small.
+const LARGE_BODY_PATHS = /^(\/api)?\/(admin\/(uploads|home-view)|users\/profile\/avatar)(\/|$)/;
+const smallJson = express.json({ limit: "1mb" });
+const largeJson = express.json({ limit: "15mb" });
+// Payment webhooks are HMAC-signed over the exact bytes, so they must reach orderRoutes unparsed (express.raw there).
+const RAW_BODY_PATHS = /^(\/api)?\/orders\/(razorpay|youpi)-webhook\/?$/;
+app.use((req, res, next) => {
+  if (RAW_BODY_PATHS.test(req.path)) return next();
+  return (LARGE_BODY_PATHS.test(req.path) ? largeJson : smallJson)(req, res, next);
+});
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 app.get("/", (req, res) => {
   res.json({ message: "E-commerce API is running", ok: true });
@@ -78,10 +104,10 @@ app.get("/store-info", getStoreInfo);
 app.get("/api/store-info", getStoreInfo);
 app.get("/faqs", getPublicFaqs);
 app.get("/api/faqs", getPublicFaqs);
-app.post("/users/register", registerUser);
-app.post("/users/login", loginUser);
-app.post("/api/users/register", registerUser);
-app.post("/api/users/login", loginUser);
+app.post("/users/register", authLimiter, registerUser);
+app.post("/users/login", loginLimiter, loginUser);
+app.post("/api/users/register", authLimiter, registerUser);
+app.post("/api/users/login", loginLimiter, loginUser);
 
 function mountApi(routePath, router) {
   app.use(routePath, router);

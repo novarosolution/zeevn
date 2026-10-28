@@ -401,7 +401,7 @@ export default function AdminOrdersScreen({ navigation, route }) {
         pages = res.pages;
         pageNo += 1;
       } while (pageNo <= pages && pageNo <= 20);
-      exportOrdersCsv(all);
+      await exportOrdersCsv(all);
       toast.toastSuccess(`Exported ${plural(all.length, "order")}.`);
     } catch (err) {
       toast.toastError(err?.message || "Couldn't export orders.");

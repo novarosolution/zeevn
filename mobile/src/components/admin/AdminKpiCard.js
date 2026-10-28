@@ -21,16 +21,18 @@ export default function AdminKpiCard({
   const styles = useMemo(() => createStyles(chrome), [chrome]);
   const hot = tone === "hot" || tone === "warn";
   const Wrapper = onPress ? Pressable : View;
+  const toneColor = tone === "hot" ? chrome.danger : tone === "warn" ? chrome.goldDeep : chrome.inkFaint;
   const wrapProps = onPress
     ? {
         onPress,
         accessibilityRole: "button",
         accessibilityLabel: hint ? `${label} ${value}. ${hint}` : `${label} ${value}`,
-        style: ({ pressed }) => [
+        style: ({ pressed, hovered }) => [
           styles.card,
           styles.cardInteractive,
           hot && styles.cardHot,
           tone === "warn" && styles.cardWarn,
+          hovered && !pressed ? styles.cardHover : null,
           pressed ? styles.cardPressed : null,
           style,
         ],
@@ -59,6 +61,7 @@ export default function AdminKpiCard({
         <Text style={styles.label} numberOfLines={1}>
           {label}
         </Text>
+        {onPress ? <Ionicons name="arrow-forward" size={12} color={toneColor} style={styles.go} /> : null}
       </View>
       <Text
         style={[
@@ -163,7 +166,7 @@ function createStyles(chrome) {
         default: chrome.danger,
       }),
       backgroundColor: Platform.select({
-        web: "rgba(184, 68, 47, 0.06)",
+        web: "rgba(184, 68, 47, 0.045)",
         default: chrome.card,
       }),
       borderLeftWidth: 3,
@@ -175,12 +178,21 @@ function createStyles(chrome) {
         default: chrome.gold,
       }),
       backgroundColor: Platform.select({
-        web: "rgba(212, 165, 116, 0.12)",
+        web: "rgba(212, 165, 116, 0.09)",
         default: chrome.card,
       }),
       borderLeftWidth: 3,
       borderLeftColor: chrome.goldDeep,
     },
+    cardHover: Platform.select({
+      web: {
+        transform: [{ translateY: -1 }],
+        borderColor: chrome.goldDeep,
+        boxShadow: "0 2px 4px rgba(20,24,16,0.05), 0 16px 28px -18px rgba(20,24,16,0.22)",
+      },
+      default: {},
+    }),
+    go: { opacity: 0.55 },
     cardPressed: {
       transform: [{ scale: 0.97 }],
       ...Platform.select({ web: { cursor: "pointer" }, default: {} }),
@@ -211,6 +223,7 @@ function createStyles(chrome) {
       color: chrome.ink,
       marginTop: 8,
       letterSpacing: -0.6,
+      fontVariant: ["tabular-nums"],
     },
     valueHot: {
       color: chrome.danger,

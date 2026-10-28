@@ -5,6 +5,7 @@ const {
   authGoogle,
   authApple,
   refreshAccessToken,
+  logoutAllDevices,
   getProfile,
   updateProfile,
   uploadUserAvatar,
@@ -26,14 +27,16 @@ const {
 } = require("../controllers/supportController");
 const { getRewardsCatalog, getMyRewardCoupons, redeemReward } = require("../controllers/rewardController");
 const { protect } = require("../middleware/authMiddleware");
+const { authLimiter } = require("../middleware/rateLimit");
 
 const router = express.Router();
 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
-router.post("/auth/google", authGoogle);
-router.post("/auth/apple", authApple);
-router.post("/refresh", refreshAccessToken);
+router.post("/auth/google", authLimiter, authGoogle);
+router.post("/auth/apple", authLimiter, authApple);
+router.post("/refresh", authLimiter, refreshAccessToken);
+router.post("/logout-all", protect, logoutAllDevices);
 router.get("/profile", protect, getProfile);
 router.put("/profile", protect, updateProfile);
 router.get("/account-deletion", protect, getMyDeletion);

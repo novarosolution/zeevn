@@ -55,6 +55,8 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    // Bumped to sign the account out everywhere; tokens carry the value they were issued under.
+    tokenVersion: { type: Number, default: 0 },
     password: {
       type: String,
       default: "",

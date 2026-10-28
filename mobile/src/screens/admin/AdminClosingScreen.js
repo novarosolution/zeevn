@@ -13,8 +13,8 @@ import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -269,7 +269,7 @@ export default function AdminClosingScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
               <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
@@ -335,7 +335,7 @@ export default function AdminClosingScreen({ navigation, route }) {
 
               {mode === "list" ? (
                 !loading && past.length === 0 ? (
-                  <PremiumEmptyState iconName="clipboard-outline" title={COPY.emptyPast} compact />
+                  <AdminEmptyState iconName="clipboard-outline" title={COPY.emptyPast} compact />
                 ) : (
                   <View style={styles.list}>
                     {!compact ? (
@@ -513,7 +513,7 @@ export default function AdminClosingScreen({ navigation, route }) {
                   {!compact ? actions : null}
                 </>
               ) : loading ? null : (
-                <PremiumEmptyState iconName="clipboard-outline" title={COPY.emptyPast} compact />
+                <AdminEmptyState iconName="clipboard-outline" title={COPY.emptyPast} compact />
               )}
             </View>
           </KankregAdminShell>

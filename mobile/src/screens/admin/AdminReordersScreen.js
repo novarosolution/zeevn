@@ -10,8 +10,8 @@ import AdminBadge from "../../components/admin/AdminBadge";
 import AdminButton from "../../components/admin/AdminButton";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminProductCell from "../../components/admin/AdminProductCell";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminReorders, saveAdminStockInDraft } from "../../services/adminService";
@@ -124,7 +124,7 @@ export default function AdminReordersScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
               <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
@@ -179,7 +179,7 @@ export default function AdminReordersScreen({ navigation, route }) {
               <AdminFilterTabs items={tabs} value={tab} onChange={setTab} />
 
               {!loading && visible.length === 0 ? (
-                <PremiumEmptyState iconName="refresh-outline" title={emptyTitle} compact />
+                <AdminEmptyState iconName="refresh-outline" title={emptyTitle} compact />
               ) : (
                 <View style={styles.list}>
                   {!compact ? (

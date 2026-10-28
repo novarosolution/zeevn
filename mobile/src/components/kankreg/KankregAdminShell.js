@@ -129,6 +129,11 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
     return map;
   }, [summary]);
 
+  const canvasWash =
+    Platform.OS === "web" && !isDark
+      ? { backgroundImage: "radial-gradient(1100px 380px at 85% -80px, rgba(217,164,65,0.10), transparent 70%)" }
+      : null;
+
   const adminInitial = String(user?.name || user?.email || "A")
     .trim()
     .charAt(0)
@@ -280,7 +285,7 @@ export default function KankregAdminShell({ navigation, route, title, subtitle, 
       {sidebarContent}
       {topNavStrip}
 
-      <View style={[styles.main, { backgroundColor: palette.mainBg }]}>
+      <View style={[styles.main, { backgroundColor: palette.mainBg }, canvasWash]}>
         {showBackLink ? (
           <AdminBackLink navigation={navigation} label="Dashboard" style={styles.backLink} />
         ) : null}

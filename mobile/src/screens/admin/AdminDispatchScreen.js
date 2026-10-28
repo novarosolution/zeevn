@@ -11,8 +11,8 @@ import AdminButton from "../../components/admin/AdminButton";
 import AdminSelect from "../../components/admin/AdminSelect";
 import AdminStatTile, { AdminStatGrid } from "../../components/admin/AdminStatTile";
 import AdminPagination from "../../components/admin/AdminPagination";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import { useAuth } from "../../context/AuthContext";
 import { useLiveSocket } from "../../context/LiveSocketContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -151,7 +151,7 @@ export default function AdminDispatchScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
               <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" size="md" onPress={() => navigation.navigate("Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
@@ -221,7 +221,7 @@ export default function AdminDispatchScreen({ navigation, route }) {
               </View>
 
               {!loading && data.items.length === 0 ? (
-                <PremiumEmptyState iconName="bicycle-outline" title={ADMIN_SCREEN_COPY.dispatch.empty} compact />
+                <AdminEmptyState iconName="bicycle-outline" title={ADMIN_SCREEN_COPY.dispatch.empty} compact />
               ) : (
                 <View style={styles.list}>
                   {!compact ? (

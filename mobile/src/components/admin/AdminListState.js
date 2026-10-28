@@ -2,8 +2,8 @@ import React, { useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import { ADMIN_LIST_UI } from "../../content/adminContent";
 import { spacing } from "../../theme/tokens";
-import PremiumEmptyState from "../ui/PremiumEmptyState";
-import PremiumLoader from "../ui/PremiumLoader";
+import AdminEmptyState from "./AdminEmptyState";
+import AdminLoader from "./AdminLoader";
 import SkeletonBlock from "../ui/SkeletonBlock";
 
 /** Consistent loading / empty for admin list screens. */
@@ -37,7 +37,7 @@ export default function AdminListState({
   if (loading) {
     return (
       <View style={styles.load}>
-        <PremiumLoader caption={caption} />
+        <AdminLoader caption={caption} />
         {Array.from({ length: skeletonRows }).map((_, i) => (
           <View key={i} style={styles.skel}>
             <SkeletonBlock width="100%" height={78} rounded="lg" />
@@ -49,7 +49,7 @@ export default function AdminListState({
 
   if (empty) {
     return (
-      <PremiumEmptyState
+      <AdminEmptyState
         iconName={emptyIcon}
         title={emptyTitle}
         description={emptyDescription}

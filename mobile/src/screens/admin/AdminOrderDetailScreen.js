@@ -34,8 +34,8 @@ import { formatOrderPublicRef } from "../../content/appContent";
 import { formatINR } from "../../utils/currency";
 import { getOrderItemQty } from "../../utils/adminOrderHelpers";
 import { ORDER_ADMIN_NEXT_STATUS, ORDER_STATUSES_ALLOW_ADDRESS_EDIT, getAdminNextStatusLabel } from "../../utils/orderStatus";
-import PremiumLoader from "../../components/ui/PremiumLoader";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminLoader from "../../components/admin/AdminLoader";
+import AdminNotice from "../../components/admin/AdminNotice";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { openPickLocation, usePickedPlace } from "../../navigation/pickLocationNav";
 import { buildCounterBillHtml, buildOrderInvoiceHtml } from "../../utils/orderInvoiceHtml";
@@ -381,9 +381,9 @@ export default function AdminOrderDetailScreen({ navigation, route }) {
               />
 
               {loading ? (
-                <PremiumLoader caption="Loading order…" />
+                <AdminLoader caption="Loading order…" />
               ) : !order ? (
-                <PremiumErrorBanner
+                <AdminNotice
                   severity="error"
                   title="Order not found"
                   message={error || "This order may have been deleted."}

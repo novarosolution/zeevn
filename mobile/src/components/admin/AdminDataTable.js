@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
 import { ADMIN_FONT, getAdminChrome } from "../../theme/adminLayout";
 
 /**
@@ -87,7 +88,8 @@ export default function AdminDataTable({ columns, rows, keyExtractor, onRowPress
         })}
         {rows.length === 0 ? (
           <View style={styles.empty}>
-            <Text style={styles.emptyText}>No records</Text>
+            <Ionicons name="file-tray-outline" size={22} color={chrome.inkFaint} />
+            <Text style={styles.emptyText}>No records yet</Text>
           </View>
         ) : null}
       </View>
@@ -144,6 +146,7 @@ function createStyles(chrome, interactive) {
       : {},
     trHover: {
       backgroundColor: chrome.rowHover,
+      ...Platform.select({ web: { boxShadow: `inset 3px 0 0 ${chrome.goldDeep}` }, default: {} }),
     },
     trPressed: {
       backgroundColor: chrome.rowHover,
@@ -161,13 +164,14 @@ function createStyles(chrome, interactive) {
       color: chrome.inkSoft,
       fontFamily: ADMIN_FONT.regular,
       lineHeight: 18,
+      fontVariant: ["tabular-nums"],
     },
     tdStrong: {
       color: chrome.ink,
       fontFamily: ADMIN_FONT.semibold,
     },
     alignRight: { alignItems: "flex-end" },
-    empty: { padding: 28, alignItems: "center" },
+    empty: { padding: 28, alignItems: "center", gap: 6 },
     emptyText: { fontSize: 13, color: chrome.inkFaint, fontFamily: ADMIN_FONT.medium },
   });
 }

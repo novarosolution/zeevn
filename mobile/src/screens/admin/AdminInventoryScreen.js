@@ -29,9 +29,9 @@ import { buildInventoryTableColumns } from "../../components/admin/adminTableCol
 import { productCoverUri } from "../../utils/adminProductHelpers";
 import { customerScrollFill } from "../../theme/screenLayout";
 import { radius, spacing, typography } from "../../theme/tokens";
-import PremiumLoader from "../../components/ui/PremiumLoader";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
+import AdminLoader from "../../components/admin/AdminLoader";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { staggerDelay } from "../../theme/motion";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
@@ -450,13 +450,13 @@ export default function AdminInventoryScreen({ navigation, route }) {
 
             {error ? (
               <View style={styles.bannerSpacer}>
-                <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+                <AdminNotice severity="error" message={error} onClose={() => setError("")} compact />
               </View>
             ) : null}
 
             {loading ? (
               <View style={styles.loadRow}>
-                <PremiumLoader size="sm" caption="Loading inventory…" inline />
+                <AdminLoader size="sm" caption="Loading inventory…" inline />
               </View>
             ) : null}
             {!compact && visible.length > 0 ? (
@@ -492,7 +492,7 @@ export default function AdminInventoryScreen({ navigation, route }) {
         ListEmptyComponent={
           !loading && (compact || visible.length === 0) ? (
             <View style={styles.emptyWrap}>
-              <PremiumEmptyState
+              <AdminEmptyState
                 iconName="file-tray-outline"
                 title={products.length === 0 ? ADMIN_SCREEN_COPY.inventory.empty : ADMIN_SCREEN_COPY.inventory.emptySearch}
                 ctaLabel={products.length === 0 ? "Add product" : undefined}

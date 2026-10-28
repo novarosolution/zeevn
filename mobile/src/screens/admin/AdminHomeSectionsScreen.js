@@ -11,8 +11,8 @@ import AdminButton from "../../components/admin/AdminButton";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminProductCell from "../../components/admin/AdminProductCell";
 import AdminToggleRow from "../../components/admin/AdminToggleRow";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import {
@@ -202,7 +202,7 @@ export default function AdminHomeSectionsScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton
                 label={ADMIN_GATE.backHome}
                 variant="primary"
@@ -317,7 +317,7 @@ export default function AdminHomeSectionsScreen({ navigation, route }) {
             <AdminAlerts error={error} onCloseError={() => setError("")} />
             {loading ? <Text style={styles.muted}>Loading…</Text> : null}
             {!loading && products.length === 0 ? (
-              <PremiumEmptyState
+              <AdminEmptyState
                 iconName="cube-outline"
                 title={COPY.empty}
                 compact

@@ -11,9 +11,9 @@ import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminPagination from "../../components/admin/AdminPagination";
 import PremiumChip from "../../components/ui/PremiumChip";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../../components/ui/PremiumLoader";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminLoader from "../../components/admin/AdminLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminLogs } from "../../services/adminService";
@@ -130,7 +130,7 @@ export default function AdminLogsScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
@@ -213,7 +213,7 @@ export default function AdminLogsScreen({ navigation, route }) {
             <View style={styles.panel}>
               <AdminAlerts error={error} onCloseError={() => setError("")} />
 
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={styles.chipScroll}>
                 {RANGES.map((item) => (
                   <PremiumChip
                     key={item.key}
@@ -238,7 +238,7 @@ export default function AdminLogsScreen({ navigation, route }) {
                 }}
               />
 
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={styles.chipScroll}>
                 {ACTION_CHIPS.map((item) => (
                   <PremiumChip
                     key={item.key || "all-actions"}
@@ -264,8 +264,8 @@ export default function AdminLogsScreen({ navigation, route }) {
                 autoCapitalize="none"
               />
 
-              {loading ? <PremiumLoader size="sm" caption="Loading logs…" /> : null}
-              {!loading && data.items.length === 0 ? <PremiumEmptyState iconName="time-outline" title={COPY.empty} compact /> : null}
+              {loading ? <AdminLoader size="sm" caption="Loading logs…" /> : null}
+              {!loading && data.items.length === 0 ? <AdminEmptyState iconName="time-outline" title={COPY.empty} compact /> : null}
               {!loading && data.items.length > 0 ? (
                 <View style={styles.list}>
                   {!compact ? (

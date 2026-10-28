@@ -28,8 +28,8 @@ import { fonts, radius, spacing, typography } from "../../theme/tokens";
 import { formatRupees } from "../../utils/adminFormat";
 import { exportProductsCsv } from "../../utils/adminExports";
 import { useToast } from "../../context/ToastContext";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
 import SectionReveal from "../../components/motion/SectionReveal";
 import { navigateCustomerRoute } from "../../navigation/customerNavigate";
 
@@ -122,7 +122,7 @@ export default function AdminProductsScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton
                 label={ADMIN_GATE.backHome}
                 icon="home-outline"
@@ -178,7 +178,7 @@ export default function AdminProductsScreen({ navigation, route }) {
           <View style={styles.panel}>
             {error ? (
               <View style={styles.bannerSpacer}>
-                <PremiumErrorBanner severity="error" message={error} onClose={() => setError("")} compact />
+                <AdminNotice severity="error" message={error} onClose={() => setError("")} compact />
               </View>
             ) : null}
 
@@ -212,7 +212,7 @@ export default function AdminProductsScreen({ navigation, route }) {
             {bootLoading ? <Text style={styles.count}>Loading…</Text> : null}
 
             {emptyCatalogue ? (
-              <PremiumEmptyState
+              <AdminEmptyState
                 iconName="cube-outline"
                 title={COPY.empty}
                 ctaLabel="Add product"
@@ -223,7 +223,7 @@ export default function AdminProductsScreen({ navigation, route }) {
             ) : null}
 
             {emptySearch ? (
-              <PremiumEmptyState iconName="search-outline" title={COPY.emptySearch} compact />
+              <AdminEmptyState iconName="search-outline" title={COPY.emptySearch} compact />
             ) : null}
 
             {!bootLoading && filteredProducts.length > 0 && !compact ? (

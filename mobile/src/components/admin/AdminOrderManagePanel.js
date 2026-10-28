@@ -18,8 +18,8 @@ import {
 import { isCod } from "../../utils/adminOrderUi";
 import AdminPanel from "./AdminPanel";
 import AdminOrderQuickActions from "./AdminOrderQuickActions";
-import PremiumInput from "../ui/PremiumInput";
-import PremiumButton from "../ui/PremiumButton";
+import AdminInput from "./AdminInput";
+import AdminButton from "./AdminButton";
 import PremiumChip from "../ui/PremiumChip";
 import SectionReveal from "../motion/SectionReveal";
 
@@ -87,17 +87,17 @@ export default function AdminOrderManagePanel({
         <InfoRow label="Phone" value={phone || "—"} c={c} />
         <InfoRow label="Email" value={order.user?.email} c={c} />
         <View style={panelStyles.contactActions}>
-          <PremiumButton
+          <AdminButton
             label="Call customer"
-            iconLeft="call-outline"
+            icon="call-outline"
             variant="primary"
             size="sm"
             disabled={!phone}
             onPress={callCustomer}
           />
-          <PremiumButton
+          <AdminButton
             label="Copy phone"
-            iconLeft="copy-outline"
+            icon="copy-outline"
             variant="ghost"
             size="sm"
             disabled={!phone || Platform.OS !== "web"}
@@ -162,9 +162,9 @@ export default function AdminOrderManagePanel({
         <InfoRow label="Payment method" value={order.paymentMethod || "—"} c={c} />
         <InfoRow label="Payment status" value={order.paymentStatus || "pending"} c={c} />
         {onPayment && order.paymentStatus === "pending" ? (
-          <PremiumButton
+          <AdminButton
             label={isCod(order) ? "Mark cash collected" : "Mark paid"}
-            iconLeft="checkmark-circle-outline"
+            icon="checkmark-circle-outline"
             variant="primary"
             size="sm"
             disabled={busy}
@@ -172,9 +172,9 @@ export default function AdminOrderManagePanel({
           />
         ) : null}
         {onPayment && order.paymentStatus === "pending" && order.status === "pending_payment" ? (
-          <PremiumButton
+          <AdminButton
             label="Mark failed"
-            iconLeft="close-circle-outline"
+            icon="close-circle-outline"
             variant="danger"
             size="sm"
             disabled={busy}
@@ -183,17 +183,17 @@ export default function AdminOrderManagePanel({
         ) : null}
         {onPayment && order.paymentStatus === "paid" ? (
           <View style={panelStyles.contactActions}>
-            <PremiumButton
+            <AdminButton
               label="Set unpaid"
-              iconLeft="arrow-undo-outline"
+              icon="arrow-undo-outline"
               variant="ghost"
               size="sm"
               disabled={busy}
               onPress={() => onPayment("pending")}
             />
-            <PremiumButton
+            <AdminButton
               label="Record refund"
-              iconLeft="return-down-back-outline"
+              icon="return-down-back-outline"
               variant="ghost"
               size="sm"
               disabled={busy}
@@ -255,9 +255,9 @@ export default function AdminOrderManagePanel({
         description="One step at a time. Notes show on the customer timeline."
       >
         {nextStatus ? (
-          <PremiumButton
+          <AdminButton
             label={busy ? "Updating…" : `Advance to ${getAdminNextStatusLabel(order.status)}`}
-            iconLeft="arrow-forward-outline"
+            icon="arrow-forward-outline"
             variant="primary"
             size="md"
             fullWidth
@@ -277,11 +277,11 @@ export default function AdminOrderManagePanel({
         )}
 
         <View style={panelStyles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Status note (customer timeline)"
             value={editForm.statusNote}
             onChangeText={(v) => onUpdateField("statusNote", v)}
-            iconLeft="chatbubble-ellipses-outline"
+            icon="chatbubble-ellipses-outline"
             placeholder="e.g. Rider left the store"
           />
         </View>
@@ -367,17 +367,17 @@ export default function AdminOrderManagePanel({
           ))}
         </View>
         <View style={panelStyles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Tracking note"
             value={editForm.trackingNote}
             onChangeText={(v) => onUpdateField("trackingNote", v)}
-            iconLeft="navigate-outline"
+            icon="navigate-outline"
             placeholder="e.g. Almost at your gate"
           />
         </View>
         <View style={panelStyles.splitRow}>
           <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
-            <PremiumInput
+            <AdminInput
               label="ETA min (minutes)"
               value={editForm.etaMinutesMin}
               onChangeText={(v) => onUpdateField("etaMinutesMin", v)}
@@ -385,7 +385,7 @@ export default function AdminOrderManagePanel({
             />
           </View>
           <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
-            <PremiumInput
+            <AdminInput
               label="ETA max (minutes)"
               value={editForm.etaMinutesMax}
               onChangeText={(v) => onUpdateField("etaMinutesMax", v)}
@@ -394,15 +394,15 @@ export default function AdminOrderManagePanel({
           </View>
         </View>
         <View style={panelStyles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Courier name"
             value={editForm.courierName}
             onChangeText={(v) => onUpdateField("courierName", v)}
-            iconLeft="bicycle-outline"
+            icon="bicycle-outline"
           />
         </View>
         <View style={panelStyles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Tracking ID"
             value={editForm.trackingId}
             onChangeText={(v) => onUpdateField("trackingId", v)}
@@ -410,17 +410,17 @@ export default function AdminOrderManagePanel({
           />
         </View>
         <View style={panelStyles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Tracking URL"
             value={editForm.trackingUrl}
             onChangeText={(v) => onUpdateField("trackingUrl", v)}
             autoCapitalize="none"
-            iconLeft="link-outline"
+            icon="link-outline"
           />
         </View>
-        <PremiumButton
+        <AdminButton
           label={busy ? "Saving…" : "Save tracking"}
-          iconLeft="save-outline"
+          icon="save-outline"
           variant="secondary"
           size="md"
           fullWidth
@@ -452,36 +452,36 @@ export default function AdminOrderManagePanel({
         description={canEditAddress ? "Payment method and shipping fields." : "Address is locked after packing starts. Payment method can still be saved."}
       >
         <View style={panelStyles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Payment method"
             value={editForm.paymentMethod}
             onChangeText={(v) => onUpdateField("paymentMethod", v)}
-            iconLeft="card-outline"
+            icon="card-outline"
           />
         </View>
         <View style={panelStyles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Full name"
             value={editForm.fullName}
             onChangeText={(v) => onUpdateField("fullName", v)}
-            iconLeft="person-outline"
+            icon="person-outline"
             editable={canEditAddress}
           />
         </View>
         <View style={panelStyles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Phone"
             value={editForm.phone}
             onChangeText={(v) => onUpdateField("phone", v)}
             keyboardType="phone-pad"
-            iconLeft="call-outline"
+            icon="call-outline"
             editable={canEditAddress}
           />
         </View>
         <View style={panelStyles.fieldGap}>
-          <PremiumButton
+          <AdminButton
             label="Select on map"
-            iconLeft="map-outline"
+            icon="map-outline"
             variant="ghost"
             size="md"
             disabled={!canEditAddress}
@@ -489,25 +489,25 @@ export default function AdminOrderManagePanel({
           />
         </View>
         <View style={panelStyles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Address line"
             value={editForm.line1}
             onChangeText={(v) => onUpdateField("line1", v)}
-            iconLeft="home-outline"
+            icon="home-outline"
             editable={canEditAddress}
           />
         </View>
         <View style={panelStyles.splitRow}>
           <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
-            <PremiumInput label="City" value={editForm.city} onChangeText={(v) => onUpdateField("city", v)} editable={canEditAddress} />
+            <AdminInput label="City" value={editForm.city} onChangeText={(v) => onUpdateField("city", v)} editable={canEditAddress} />
           </View>
           <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
-            <PremiumInput label="State" value={editForm.state} onChangeText={(v) => onUpdateField("state", v)} editable={canEditAddress} />
+            <AdminInput label="State" value={editForm.state} onChangeText={(v) => onUpdateField("state", v)} editable={canEditAddress} />
           </View>
         </View>
         <View style={panelStyles.splitRow}>
           <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
-            <PremiumInput
+            <AdminInput
               label="Postal code"
               value={editForm.postalCode}
               onChangeText={(v) => onUpdateField("postalCode", v)}
@@ -516,21 +516,21 @@ export default function AdminOrderManagePanel({
             />
           </View>
           <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
-            <PremiumInput label="Country" value={editForm.country} onChangeText={(v) => onUpdateField("country", v)} editable={canEditAddress} />
+            <AdminInput label="Country" value={editForm.country} onChangeText={(v) => onUpdateField("country", v)} editable={canEditAddress} />
           </View>
         </View>
         <View style={panelStyles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Order note"
             value={editForm.note}
             onChangeText={(v) => onUpdateField("note", v)}
-            iconLeft="document-outline"
+            icon="document-outline"
             editable={canEditAddress}
           />
         </View>
-        <PremiumButton
+        <AdminButton
           label={busy ? "Saving…" : "Save changes"}
-          iconLeft="save-outline"
+          icon="save-outline"
           variant="secondary"
           size="md"
           fullWidth
@@ -542,16 +542,16 @@ export default function AdminOrderManagePanel({
 
       <AdminPanel title="Invoice" icon="document-text-outline" description="Invoice number, tax, and due dates.">
         <View style={panelStyles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Invoice number"
             value={editForm.invoiceNumber}
             onChangeText={(v) => onUpdateField("invoiceNumber", v)}
-            iconLeft="receipt-outline"
+            icon="receipt-outline"
           />
         </View>
         <View style={panelStyles.splitRow}>
           <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
-            <PremiumInput
+            <AdminInput
               label="Issue date"
               value={editForm.invoiceIssueDate}
               onChangeText={(v) => onUpdateField("invoiceIssueDate", v)}
@@ -560,7 +560,7 @@ export default function AdminOrderManagePanel({
             />
           </View>
           <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
-            <PremiumInput
+            <AdminInput
               label="Due date"
               value={editForm.invoiceDueDate}
               onChangeText={(v) => onUpdateField("invoiceDueDate", v)}
@@ -571,7 +571,7 @@ export default function AdminOrderManagePanel({
         </View>
         <View style={panelStyles.splitRow}>
           <View style={[panelStyles.fieldGap, panelStyles.halfField]}>
-            <PremiumInput
+            <AdminInput
               label="Tax %"
               value={editForm.invoiceTaxRatePercent}
               onChangeText={(v) => onUpdateField("invoiceTaxRatePercent", v)}
@@ -595,7 +595,7 @@ export default function AdminOrderManagePanel({
           </View>
         </View>
         <View style={panelStyles.fieldGap}>
-          <PremiumInput
+          <AdminInput
             label="Invoice notes"
             value={editForm.invoiceNotes}
             onChangeText={(v) => onUpdateField("invoiceNotes", v)}
@@ -605,9 +605,9 @@ export default function AdminOrderManagePanel({
         </View>
       </AdminPanel>
 
-      <PremiumButton
+      <AdminButton
         label={busy ? "Deleting…" : "Delete order"}
-        iconLeft="trash-outline"
+        icon="trash-outline"
         variant="danger"
         size="md"
         fullWidth

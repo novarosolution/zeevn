@@ -1,6 +1,6 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
-import PremiumErrorBanner from "../ui/PremiumErrorBanner";
+import AdminNotice from "./AdminNotice";
 import { spacing } from "../../theme/tokens";
 
 export default function AdminAlerts({ error, success, onCloseError, onCloseSuccess }) {
@@ -8,10 +8,10 @@ export default function AdminAlerts({ error, success, onCloseError, onCloseSucce
   return (
     <View style={styles.wrap}>
       {error ? (
-        <PremiumErrorBanner severity="error" message={error} onClose={onCloseError} compact />
+        <AdminNotice severity="error" message={error} onClose={onCloseError} compact />
       ) : null}
       {success ? (
-        <PremiumErrorBanner severity="success" message={success} onClose={onCloseSuccess} compact />
+        <AdminNotice severity="success" message={success} onClose={onCloseSuccess} compact />
       ) : null}
     </View>
   );

@@ -12,9 +12,9 @@ import AdminButton from "../../components/admin/AdminButton";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminInput from "../../components/admin/AdminInput";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../../components/ui/PremiumLoader";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminLoader from "../../components/admin/AdminLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useLiveSocket } from "../../context/LiveSocketContext";
 import { useTheme } from "../../context/ThemeContext";
@@ -189,7 +189,7 @@ export default function AdminSupportScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
@@ -247,9 +247,9 @@ export default function AdminSupportScreen({ navigation, route }) {
           if (compact) setSelectedId("");
         }}
       />
-      {loading ? <PremiumLoader size="sm" caption="Loading threads…" /> : null}
-      {!loading && threads.length === 0 ? <PremiumEmptyState iconName="chatbubbles-outline" title={COPY.empty} compact /> : null}
-      {!loading && threads.length > 0 && visible.length === 0 ? <PremiumEmptyState iconName="chatbubbles-outline" title={COPY.emptyTab} compact /> : null}
+      {loading ? <AdminLoader size="sm" caption="Loading threads…" /> : null}
+      {!loading && threads.length === 0 ? <AdminEmptyState iconName="chatbubbles-outline" title={COPY.empty} compact /> : null}
+      {!loading && threads.length > 0 && visible.length === 0 ? <AdminEmptyState iconName="chatbubbles-outline" title={COPY.emptyTab} compact /> : null}
       {!loading && visible.length > 0 ? (
         compact ? (
           <View style={styles.list}>{visible.map(renderListRow)}</View>
@@ -326,7 +326,7 @@ export default function AdminSupportScreen({ navigation, route }) {
     </View>
   ) : (
     <View style={styles.threadEmpty}>
-      <PremiumEmptyState iconName="chatbubbles-outline" title={COPY.selectThread} compact />
+      <AdminEmptyState iconName="chatbubbles-outline" title={COPY.selectThread} compact />
     </View>
   );
 

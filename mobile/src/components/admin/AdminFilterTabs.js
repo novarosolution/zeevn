@@ -15,7 +15,7 @@ export default function AdminFilterTabs({ items, value, onChange, style }) {
 
   return (
     <View style={[styles.track, style]}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={styles.row}>
         {items.map((item) => {
           const key = item.key ?? item.value ?? item.label;
           const on = value === key;

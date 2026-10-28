@@ -10,9 +10,9 @@ import AdminAlerts from "../../components/admin/AdminAlerts";
 import AdminButton from "../../components/admin/AdminButton";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminToggleRow from "../../components/admin/AdminToggleRow";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../../components/ui/PremiumLoader";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminLoader from "../../components/admin/AdminLoader";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminFaqs, updateAdminFaqs } from "../../services/adminService";
@@ -141,7 +141,7 @@ export default function AdminFaqsScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} style={styles.gateCta} />
             </View>
           </SectionReveal>
@@ -199,9 +199,9 @@ export default function AdminFaqsScreen({ navigation, route }) {
               <Text style={styles.hint}>
                 These show under live chat on Help. Product-page questions stay on the product.
               </Text>
-              {loading ? <PremiumLoader size="sm" caption="Loading FAQs…" /> : null}
+              {loading ? <AdminLoader size="sm" caption="Loading FAQs…" /> : null}
               {!loading && rows.length === 0 ? (
-                <PremiumEmptyState
+                <AdminEmptyState
                   iconName="help-circle-outline"
                   title="No questions yet"
                   description="Add the answers customers ask for most: delivery times, returns, how to pay."

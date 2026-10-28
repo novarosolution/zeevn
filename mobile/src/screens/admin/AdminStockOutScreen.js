@@ -13,9 +13,9 @@ import AdminHitRow from "../../components/admin/AdminHitRow";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminPanel from "../../components/admin/AdminPanel";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../../components/ui/PremiumLoader";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminLoader from "../../components/admin/AdminLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
@@ -157,7 +157,7 @@ export default function AdminStockOutScreen({ navigation, route }) {
       <AdminScreenShell style={styles.screen}>
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <View style={styles.gatePanel}>
-            <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+            <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
             <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} />
           </View>
         </KankregScrollPage>
@@ -203,8 +203,8 @@ export default function AdminStockOutScreen({ navigation, route }) {
                   <View style={adminTwoColMain(compact)}>
                     <AdminPanel title="Jar" icon="cube-outline">
                       <AdminInput value={query} onChangeText={setQuery} placeholder="Find a jar" icon="search-outline" />
-                      {loading ? <PremiumLoader size="sm" caption="Loading…" /> : null}
-                      {!loading && matches.length === 0 ? <PremiumEmptyState iconName="cube-outline" title="No jar matches." compact /> : null}
+                      {loading ? <AdminLoader size="sm" caption="Loading…" /> : null}
+                      {!loading && matches.length === 0 ? <AdminEmptyState iconName="cube-outline" title="No jar matches." compact /> : null}
                       {matches.map((product) => (
                         <AdminHitRow
                           key={product._id}

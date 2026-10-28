@@ -12,8 +12,8 @@ import AdminButton from "../../components/admin/AdminButton";
 import AdminFilterTabs from "../../components/admin/AdminFilterTabs";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminProductCell from "../../components/admin/AdminProductCell";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { fetchAdminProducts, saveAdminProductPrices } from "../../services/adminService";
@@ -223,7 +223,7 @@ export default function AdminPricesScreen({ navigation, route }) {
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <SectionReveal delay={40} preset="fade-up">
             <View style={styles.gatePanel}>
-              <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+              <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
               <AdminButton
                 label={ADMIN_GATE.backHome}
                 variant="primary"
@@ -423,7 +423,7 @@ export default function AdminPricesScreen({ navigation, route }) {
               {loading ? <Text style={styles.muted}>Loading…</Text> : null}
 
               {!loading && products.length === 0 ? (
-                <PremiumEmptyState
+                <AdminEmptyState
                   iconName="pricetag-outline"
                   title={COPY.empty}
                   ctaLabel="Add product"
@@ -434,7 +434,7 @@ export default function AdminPricesScreen({ navigation, route }) {
               ) : null}
 
               {!loading && products.length > 0 && visible.length === 0 ? (
-                <PremiumEmptyState iconName="search-outline" title="No products match that search" compact />
+                <AdminEmptyState iconName="search-outline" title="No products match that search" compact />
               ) : null}
 
               {!loading && visible.length > 0 && !compact ? (

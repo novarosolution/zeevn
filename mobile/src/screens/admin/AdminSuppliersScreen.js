@@ -9,8 +9,8 @@ import AdminAlerts from "../../components/admin/AdminAlerts";
 import AdminButton from "../../components/admin/AdminButton";
 import AdminInput from "../../components/admin/AdminInput";
 import AdminPanel from "../../components/admin/AdminPanel";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
@@ -81,7 +81,7 @@ export default function AdminSuppliersScreen({ navigation, route }) {
       <AdminScreenShell style={styles.screen}>
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <View style={styles.gatePanel}>
-            <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+            <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
             <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} />
           </View>
         </KankregScrollPage>
@@ -113,7 +113,7 @@ export default function AdminSuppliersScreen({ navigation, route }) {
                 <AdminInput label="Note" value={note} onChangeText={setNote} placeholder="Optional" />
                 <AdminButton label="Save" variant="primary" loading={busy} onPress={save} />
               </AdminPanel>
-              {!loading && rows.length === 0 ? <PremiumEmptyState iconName="people-outline" title="No suppliers yet" compact /> : null}
+              {!loading && rows.length === 0 ? <AdminEmptyState iconName="people-outline" title="No suppliers yet" compact /> : null}
               {rows.map((row) => {
                 const wa = waLink(row.phone);
                 return (

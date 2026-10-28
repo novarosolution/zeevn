@@ -37,7 +37,7 @@ import { getOrderStatusLabel } from "../../utils/orderStatus";
 import AdminButton from "../../components/admin/AdminButton";
 import { listAdminOfflineDrafts } from "../../utils/adminOfflineQueue";
 import AdminDashboardSkeleton from "../../components/admin/AdminDashboardSkeleton";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
+import AdminNotice from "../../components/admin/AdminNotice";
 import SectionReveal from "../../components/motion/SectionReveal";
 
 function countStatuses(byStatus, names) {
@@ -209,7 +209,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
       <AdminScreenShell style={styles.screen}>
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <View style={styles.denied}>
-            <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
+            <AdminNotice severity="warning" title={ADMIN_GATE.title} message="This account does not have admin privileges." />
             <AdminButton label={ADMIN_GATE.backHome} icon="home-outline" variant="primary" onPress={() => go("Home")} />
           </View>
         </KankregScrollPage>
@@ -233,7 +233,7 @@ export default function AdminDashboardScreen({ navigation, route }) {
           title={ADMIN_SCREEN_COPY.dashboard.title}
           subtitle={ADMIN_SCREEN_COPY.dashboard.subtitle}
         >
-          {error ? <PremiumErrorBanner severity="error" message={error} compact style={styles.banner} /> : null}
+          {error ? <AdminNotice severity="error" message={error} compact style={styles.banner} /> : null}
           {loading && !ops ? (
             <AdminDashboardSkeleton />
           ) : (

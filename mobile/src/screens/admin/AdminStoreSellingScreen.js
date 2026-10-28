@@ -16,9 +16,9 @@ import AdminKpiCard, { AdminKpiGrid } from "../../components/admin/AdminKpiCard"
 import AdminPanel from "../../components/admin/AdminPanel";
 import { useAdminConfirm } from "../../components/admin/AdminDialog";
 import AdminOfflineBanner from "../../components/admin/AdminOfflineBanner";
-import PremiumEmptyState from "../../components/ui/PremiumEmptyState";
-import PremiumErrorBanner from "../../components/ui/PremiumErrorBanner";
-import PremiumLoader from "../../components/ui/PremiumLoader";
+import AdminEmptyState from "../../components/admin/AdminEmptyState";
+import AdminNotice from "../../components/admin/AdminNotice";
+import AdminLoader from "../../components/admin/AdminLoader";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
 import { useToast } from "../../context/ToastContext";
@@ -261,7 +261,7 @@ export default function AdminStoreSellingScreen({ navigation, route }) {
       <AdminScreenShell style={styles.screen}>
         <KankregScrollPage scrollVariant="inner" showFooter={false} style={customerScrollFill}>
           <View style={styles.gatePanel}>
-            <PremiumErrorBanner severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
+            <AdminNotice severity="warning" title={ADMIN_GATE.title} message={ADMIN_GATE.message} />
             <AdminButton label={ADMIN_GATE.backHome} variant="primary" onPress={() => navigateCustomerRoute(navigation, "Home")} />
           </View>
         </KankregScrollPage>
@@ -279,7 +279,7 @@ export default function AdminStoreSellingScreen({ navigation, route }) {
 
   const waitingList = (
     <AdminPanel title="Waiting on this phone" icon="cloud-offline-outline" meta={`${shownDrafts.length}`} description="Floor stock changes only after Sync.">
-      {!shownDrafts.length ? <PremiumEmptyState iconName="cloud-done-outline" title="No store drafts waiting." compact /> : null}
+      {!shownDrafts.length ? <AdminEmptyState iconName="cloud-done-outline" title="No store drafts waiting." compact /> : null}
       {shownDrafts.map((row) => {
         const p = row.payload || {};
         const amount = draftAmount(row);
@@ -327,8 +327,8 @@ export default function AdminStoreSellingScreen({ navigation, route }) {
       meta={`${shownBills.length}`}
       description="Live walk-in bills. Floor stock already moved."
     >
-      {loading ? <PremiumLoader size="sm" caption="Loading store bills…" /> : null}
-      {!loading && !shownBills.length ? <PremiumEmptyState iconName="receipt-outline" title="No store bills in this view." compact /> : null}
+      {loading ? <AdminLoader size="sm" caption="Loading store bills…" /> : null}
+      {!loading && !shownBills.length ? <AdminEmptyState iconName="receipt-outline" title="No store bills in this view." compact /> : null}
       {shownBills.map((bill) => {
         const amount = Number(bill.totalPrice || 0);
         const cash = cashReceivedOf(bill);

@@ -19,6 +19,8 @@ import ShopHeader from "./ShopHeader";
 import ShopSidebar, { SHOP_SIDEBAR_WIDTH } from "./ShopSidebar";
 import { EmptyState } from "./StoreKit";
 import { VariantSheetProvider } from "./VariantSheet";
+import RecentSearches from "./premium/RecentSearches";
+import { rememberSearch } from "../../utils/recentSearches";
 import SkeletonBlock from "../ui/SkeletonBlock";
 
 const GRID_GAP = 10;
@@ -160,6 +162,14 @@ export default function StoreShop({
     Share.share({ message: STORE_SHOP.shareMessage(activeTitle === STORE_SHOP.title ? "Zeevan" : activeTitle) }).catch(() => {});
   }, [activeTitle]);
 
+  // A query only counts as a search once the shopper pauses on it, so half-typed words never reach the history.
+  const typedQuery = String(filters.searchQuery || "").trim();
+  useEffect(() => {
+    if (typedQuery.length < 2) return undefined;
+    const id = setTimeout(() => rememberSearch(typedQuery), 1400);
+    return () => clearTimeout(id);
+  }, [typedQuery]);
+
   const toggleSearch = useCallback(() => {
     setSearching((open) => {
       if (open) onSearchChange("");
@@ -188,6 +198,7 @@ export default function StoreShop({
 
   const header = (
     <View>
+      {searching && !typedQuery ? <RecentSearches onPick={onSearchChange} style={styles.recent} /> : null}
       <FilterChips chips={chips} />
       <ShopBanner theme={festival} />
       <View style={styles.countRow}>
@@ -280,6 +291,7 @@ const styles = StyleSheet.create({
   body: { flex: 1, flexDirection: "row" },
   main: { flex: 1, minWidth: 0 },
   column: { gap: GRID_GAP, paddingHorizontal: GRID_PAD, marginBottom: GRID_GAP + 2 },
+  recent: { paddingTop: 10, paddingBottom: 4, gap: 8 },
   countRow: { paddingHorizontal: GRID_PAD + 2, paddingBottom: 10 },
   banner: { height: 108, borderRadius: 22, overflow: "hidden", borderWidth: 1, alignItems: "center" },
   bannerCopy: { alignItems: "center", paddingTop: 12 },

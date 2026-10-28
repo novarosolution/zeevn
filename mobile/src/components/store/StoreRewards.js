@@ -13,6 +13,7 @@ import { CoinArt } from "./PromoCarousel";
 import StoreBanner from "./StoreBanner";
 import { Bone, ShimmerProvider } from "./StoreSkeleton";
 import StoreScreen from "./StoreScreen";
+import LoyaltyTierCard from "./premium/LoyaltyTierCard";
 import { Button, Card, EmptyState, Group, Rise, SectionLabel } from "./StoreKit";
 
 function shortDate(iso) {
@@ -213,6 +214,12 @@ export default function StoreRewards({
       <Rise index={0}>
         <PointsHero points={balance} />
       </Rise>
+
+      {!loading ? (
+        <Rise index={1}>
+          <LoyaltyTierCard points={Number(balance || 0)} />
+        </Rise>
+      ) : null}
 
       {lastRedeem?.code ? (
         <Rise index={1}>

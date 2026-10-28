@@ -26,6 +26,10 @@ import ScreenHeader from "./ScreenHeader";
 import ScrollEdgeFade from "./ScrollEdgeFade";
 import { SectionHeader } from "./SectionTitle";
 import { VariantSheetProvider } from "./VariantSheet";
+import RatingSummary from "./premium/RatingSummary";
+import RecentlyViewedRail, { useRecentProducts } from "./premium/RecentlyViewedRail";
+import useCatalog from "./premium/useCatalog";
+import { recordProductView } from "../../utils/recentlyViewed";
 
 const HEADER_PAD = 64;
 const OFFER_INK = "#3A2A0C";
@@ -588,6 +592,11 @@ export default function StoreProduct({
   const { width } = useWindowDimensions();
   const { totalItems } = useCart();
   const { quote } = useDeliveryLocation();
+  const catalog = useCatalog();
+  const recentItems = useRecentProducts(catalog, { excludeId: product?.id });
+  useEffect(() => {
+    if (product?.id) recordProductView(product.id);
+  }, [product?.id]);
   const wishlist = useWishlist();
 
   const pageContent = useMemo(() => resolveProductPageContent(product, { shelfMatch }), [product, shelfMatch]);
@@ -997,7 +1006,9 @@ export default function StoreProduct({
               <View style={styles.reviewHead}>
                 <View style={styles.stack}>
                   <Text style={type.display(19, { semi: true, ls: -0.3, lh: 24 })}>{STORE_PRODUCT.reviews.title}</Text>
-                  {reviewCountDisplay > 0 ? (
+                  {reviews.length >= 2 ? (
+                    <RatingSummary reviews={reviews} average={rating} count={reviewCountDisplay} />
+                  ) : reviewCountDisplay > 0 ? (
                     <View style={styles.reviewSummary}>
                       <Text style={type.display(34, { ls: -1, lh: 38 })}>{rating.toFixed(1)}</Text>
                       <View style={styles.stack}>
@@ -1057,6 +1068,12 @@ export default function StoreProduct({
                   <ProductCard key={p.id} product={p} width={158} hideEta onPress={() => onRelatedPress?.(p)} />
                 ))}
               </ScrollView>
+            </View>
+          ) : null}
+
+          {recentItems.length ? (
+            <View style={styles.related}>
+              <RecentlyViewedRail items={recentItems} onProductPress={onRelatedPress} />
             </View>
           ) : null}
         </ScrollView>

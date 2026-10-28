@@ -20,6 +20,8 @@ import { CoinArt } from "./PromoCarousel";
 import PressableScale from "./PressableScale";
 import ScreenHeader, { SCREEN_HEADER_PAD } from "./ScreenHeader";
 import StoreIcon from "./StoreIcon";
+import AccountStatsCard from "./premium/AccountStatsCard";
+import LoyaltyTierCard from "./premium/LoyaltyTierCard";
 
 function SectionLabel({ children }) {
   const { c, type } = useStoreTheme();
@@ -271,6 +273,9 @@ export default function StoreProfile({
           ) : null}
 
           <RewardsBanner points={loading ? "—" : points} onPress={() => go(STORE_PROFILE.banner.route)} />
+
+          {!loading ? <LoyaltyTierCard points={Number(rewardPoints || 0)} onPress={() => go(STORE_PROFILE.banner.route)} /> : null}
+          {!loading && orderCount > 0 ? <AccountStatsCard /> : null}
 
           <View style={styles.tiles}>
             {STORE_PROFILE.tiles.map((tile) => (

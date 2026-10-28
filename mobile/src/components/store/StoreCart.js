@@ -22,6 +22,7 @@ import StoreBanner from "./StoreBanner";
 import StoreField from "./StoreField";
 import { Card as KitCard, EmptyState } from "./StoreKit";
 import CheckoutPlacingOverlay from "../loading/CheckoutPlacingOverlay";
+import CartSavingsCard from "./premium/CartSavingsCard";
 
 const PAY_DOCK_HEIGHT = 78;
 const SUCCESS_INK = "#2F5A22";
@@ -741,6 +742,7 @@ export default function StoreCart({
         {rules.closed ? <ClosedNotice closed={rules.closed} /> : null}
         {error ? <StoreBanner message={error} onClose={onDismissError} /> : null}
         <FreeDeliveryStrip subtotal={bill.subtotal} freeAbove={bill.freeAbove} />
+        <CartSavingsCard items={items} couponDiscount={Number(bill?.discount) || 0} />
         <Animated.View layout={LinearTransition.duration(200)} style={styles.lines}>
           {renderItems(false)}
         </Animated.View>

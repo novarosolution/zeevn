@@ -2,6 +2,7 @@ import React from "react";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { isLocalApiUrl } from "../services/apiBase";
 import { useApiHealth } from "../context/ApiHealthContext";
 import { useTheme } from "../context/ThemeContext";
@@ -15,6 +16,7 @@ export default function BackendOfflineBanner() {
   const { isOnline, checking, apiBaseUrl, retry } = useApiHealth();
   const { isDark } = useTheme();
   const reducedMotion = useReducedMotion();
+  const insets = useSafeAreaInsets();
 
   if (isOnline || checking) return null;
 
@@ -28,6 +30,8 @@ export default function BackendOfflineBanner() {
       exiting={reducedMotion ? undefined : FadeOutUp.duration(220)}
       style={[
         styles.wrap,
+        // On a phone the notch / status bar sits above the screen edge, so the banner starts below it.
+        Platform.OS === "web" ? null : { top: (insets.top || 0) + 8 },
         {
           backgroundColor: isDark ? "rgba(28, 25, 23, 0.96)" : "rgba(255, 251, 245, 0.98)",
           borderColor: isDark ? "rgba(168, 184, 108, 0.35)" : "rgba(92, 104, 52, 0.4)",
